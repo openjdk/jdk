@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,10 +70,10 @@ import jdk.internal.util.xml.PropertiesDefaultHandler;
  * {@code Properties} object.  Their use is strongly discouraged as they
  * allow the caller to insert entries whose keys or values are not
  * {@code Strings}.  The {@code setProperty} method should be used
- * instead.  If the {@code store} or {@code save} method is called
+ * instead. If the {@code store}, {@code save}, or {@code list} method is called
  * on a "compromised" {@code Properties} object that contains a
  * non-{@code String} key or value, the call will fail. Similarly,
- * the call to the {@code propertyNames} or {@code list} method
+ * the call to the {@code propertyNames} method
  * will fail if it is called on a "compromised" {@code Properties}
  * object that contains a non-{@code String} key.
  *
@@ -239,8 +239,8 @@ public class Properties extends Hashtable<Object,Object> {
      * Properties are processed in terms of lines. There are two
      * kinds of lines, <i>natural lines</i> and <i>logical lines</i>.
      * A natural line is defined as a line of
-     * characters that is terminated either by a set of line terminator
-     * characters ({@code \n} or {@code \r} or {@code \r\n})
+     * characters that is terminated either by a line terminator
+     * sequence ({@code \n}, {@code \r}, or {@code \r\n})
      * or by the end of the stream. A natural line may be either a blank line,
      * a comment line, or hold all or some of a key-element pair. A logical
      * line holds all the data of a key-element pair, which may be spread
@@ -266,7 +266,7 @@ public class Properties extends Hashtable<Object,Object> {
      * <p>
      * If a logical line is spread across several natural lines, the
      * backslash escaping the line terminator sequence, the line
-     * terminator sequence, and any white space at the start of the
+     * terminator sequence itself, and any white space at the start of the
      * following line have no effect on the key or element values.
      * The remainder of the discussion of key and element parsing
      * (when loading) will assume all the characters constituting
@@ -1215,8 +1215,8 @@ public class Properties extends Hashtable<Object,Object> {
      * This method is useful for debugging.
      *
      * @param   out   an output stream.
-     * @throws  ClassCastException if any key in this property list
-     *          is not a string.
+     * @throws  ClassCastException if either a key or a value
+     *          in this property list is not a string.
      */
     public void list(PrintStream out) {
         out.println("-- listing properties --");
@@ -1237,8 +1237,8 @@ public class Properties extends Hashtable<Object,Object> {
      * This method is useful for debugging.
      *
      * @param   out   an output stream.
-     * @throws  ClassCastException if any key in this property list
-     *          is not a string.
+     * @throws  ClassCastException if either a key or a value
+     *          in this property list is not a string.
      * @since   1.1
      */
     /*

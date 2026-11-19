@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #define SHARE_JFR_UTILITIES_JFREPOCHQUEUE_INLINE_HPP
 
 #include "jfr/utilities/jfrEpochQueue.hpp"
+
 #include "jfr/recorder/storage/jfrEpochStorage.inline.hpp"
 #include "jfr/recorder/storage/jfrStorageUtils.inline.hpp"
 #include "runtime/javaThread.hpp"

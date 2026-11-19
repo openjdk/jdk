@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ UncommonTrapBlob* OptoRuntime::generate_uncommon_trap_blob() {
   ResourceMark rm;
 
   // setup code generation tools
-  const char* name = OptoRuntime::stub_name(OptoStubId::uncommon_trap_id);
+  const char* name = OptoRuntime::stub_name(StubId::c2_uncommon_trap_id);
 #ifdef _LP64
   CodeBuffer buffer(name, 2700, 512);
 #else
@@ -176,14 +176,12 @@ UncommonTrapBlob* OptoRuntime::generate_uncommon_trap_blob() {
   __ mov(SP, FP);
   __ pop(RegisterSet(FP) | RegisterSet(PC));
 
-  masm->flush();
+  masm->invalidate_icache();
   return UncommonTrapBlob::create(&buffer, nullptr, 2 /* LR+FP */);
 }
 
 //------------------------------ generate_exception_blob ---------------------------
 // creates exception blob at the end
-// Using exception blob, this code is jumped from a compiled method.
-// (see emit_exception_handler in sparc.ad file)
 //
 // Given an exception pc at a call we call into the runtime for the
 // handler in this method. This handler might merely restore state
@@ -210,7 +208,7 @@ ExceptionBlob* OptoRuntime::generate_exception_blob() {
 
   // setup code generation tools
   // Measured 8/7/03 at 256 in 32bit debug build
-  const char* name = OptoRuntime::stub_name(OptoStubId::exception_id);
+  const char* name = OptoRuntime::stub_name(StubId::c2_exception_id);
   CodeBuffer buffer(name, 600, 512);
   if (buffer.blob() == nullptr) {
     return nullptr;
@@ -264,11 +262,6 @@ ExceptionBlob* OptoRuntime::generate_exception_blob() {
 
   __ raw_pop(FP, LR);
 
-  // Restore SP from its saved reg (FP) if the exception PC is a MethodHandle call site.
-  __ ldr(Rtemp, Address(Rthread, JavaThread::is_method_handle_return_offset()));
-  __ cmp(Rtemp, 0);
-  __ mov(SP, Rmh_SP_save, ne);
-
   // R0 contains handler address
   // Since this may be the deopt blob we must set R5 to look like we returned
   // from the original pc that threw the exception
@@ -287,7 +280,7 @@ ExceptionBlob* OptoRuntime::generate_exception_blob() {
 
   // -------------
   // make sure all code is generated
-  masm->flush();
+  masm->invalidate_icache();
 
   return ExceptionBlob::create(&buffer, oop_maps, framesize_in_words);
 }

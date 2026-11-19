@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2024, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -24,6 +24,7 @@
  */
 
 #include "asm/macroAssembler.inline.hpp"
+#include "code/aotCodeCache.hpp"
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1BarrierSetAssembler.hpp"
 #include "gc/g1/g1BarrierSetRuntime.hpp"
@@ -87,19 +88,64 @@ void G1BarrierSetAssembler::gen_write_ref_array_pre_barrier(MacroAssembler* masm
   }
 }
 
-void G1BarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators,
-                                                             Register start, Register count, Register tmp, RegSet saved_regs) {
-  __ push_reg(saved_regs, sp);
+void G1BarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* masm,
+                                                             DecoratorSet decorators,
+                                                             Register start,
+                                                             Register count,
+                                                             Register tmp) {
   assert_different_registers(start, count, tmp);
-  assert_different_registers(c_rarg0, count);
-  __ mv(c_rarg0, start);
-  __ mv(c_rarg1, count);
-  __ call_VM_leaf(CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_array_post_entry), 2);
-  __ pop_reg(saved_regs, sp);
+
+  Label loop, next, done;
+
+  // Zero count? Nothing to do.
+  __ beqz(count, done);
+
+  // Calculate the number of card marks to set. Since the object might start and
+  // end within a card, we need to calculate this via the card table indexes of
+  // the actual start and last addresses covered by the object.
+  // Temporarily use the count register for the last element address.
+  __ shift_left_add(count, count, start, LogBytesPerHeapOop); // end = start + count << LogBytesPerHeapOop
+  __ subi(count, count, BytesPerHeapOop);                 // Use last element address for end.
+
+  __ srli(start, start, CardTable::card_shift());
+  __ srli(count, count, CardTable::card_shift());
+
+  // Add card table base offset to get card addresses directly.
+  Address card_table_address(xthread, G1ThreadLocalData::card_table_base_offset());
+  __ ld(tmp, card_table_address);
+  __ add(start, start, tmp);                              // start := first card address
+  __ add(count, count, tmp);                              // count := last card address
+
+  // Iterate from start card to end card (inclusive).
+  __ bind(loop);
+  if (UseCondCardMark) {
+    // All non-clean cards (dirty, to-cset, from-remset) have bit0 == 0.
+    static_assert((G1CardTable::g1_dirty_card & 1U) == 0
+               && (G1CardTable::g1_to_cset_card & 1U) == 0
+               && (G1CardTable::g1_from_remset_card & 1U) == 0,
+               "cards needing scan must have bit0 == 0");
+    // Clean card has bit0 == 1.
+    static_assert(((uint)G1CardTable::clean_card_val() & 1U) == 1,
+                  "clean card must have bit0 == 1");
+    __ lbu(tmp, Address(start, 0));
+    __ test_bit(tmp, tmp, 0);                         // test bit0: clean has bit0 == 1, non-clean has bit0 == 0
+    __ beqz(tmp, next);                               // skip store if already non-clean
+  }
+
+  // `sb zr` writes 0, which must be the dirty value.
+  static_assert(G1CardTable::dirty_card_val() == 0, "must be to use zr");
+  __ sb(zr, Address(start, 0));
+
+  __ bind(next);
+  __ addi(start, start, 1);
+  __ ble(start, count, loop);
+
+  __ bind(done);
 }
 
 static void generate_queue_test_and_insertion(MacroAssembler* masm, ByteSize index_offset, ByteSize buffer_offset, Label& runtime,
                                               const Register thread, const Register value, const Register tmp1, const Register tmp2) {
+  assert_different_registers(value, tmp1, tmp2);
   // Can we store a value in the given thread's buffer?
   // (The index field is typed as size_t.)
   __ ld(tmp1, Address(thread, in_bytes(index_offset)));   // tmp1 := *(index address)
@@ -138,7 +184,7 @@ static void generate_pre_barrier_slow_path(MacroAssembler* masm,
     __ load_heap_oop(pre_val, Address(obj, 0), noreg, noreg, AS_RAW);
   }
   // Is the previous value null?
-  __ beqz(pre_val, done, true);
+  __ beqz(pre_val, done, /* is_far */ true);
   generate_queue_test_and_insertion(masm,
                                     G1ThreadLocalData::satb_mark_queue_index_offset(),
                                     G1ThreadLocalData::satb_mark_queue_buffer_offset(),
@@ -176,6 +222,18 @@ void G1BarrierSetAssembler::g1_write_barrier_pre(MacroAssembler* masm,
 
   __ push_call_clobbered_registers();
 
+  // Calling the runtime using the regular call_VM_leaf mechanism generates
+  // code (generated by InterpreterMacroAssember::call_VM_leaf_base)
+  // that checks that the *(fp+frame::interpreter_frame_last_sp) == nullptr.
+  //
+  // If we care generating the pre-barrier without a frame (e.g. in the
+  // intrinsified Reference.get() routine) then fp might be pointing to
+  // the caller frame and so this check will most likely fail at runtime.
+  //
+  // Expanding the call directly bypasses the generation of the check.
+  // So when we do not have have a full interpreter frame on the stack
+  // expand_call should be passed true.
+
   if (expand_call) {
     assert(pre_val != c_rarg1, "smashed arg");
     __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_field_pre_entry), pre_val, thread);
@@ -189,47 +247,62 @@ void G1BarrierSetAssembler::g1_write_barrier_pre(MacroAssembler* masm,
 
 }
 
-static void generate_post_barrier_fast_path(MacroAssembler* masm,
-                                            const Register store_addr,
-                                            const Register new_val,
-                                            const Register tmp1,
-                                            const Register tmp2,
-                                            Label& done,
-                                            bool new_val_may_be_null) {
+static void generate_post_barrier(MacroAssembler* masm,
+                                  const Register store_addr,
+                                  const Register new_val,
+                                  const Register thread,
+                                  const Register tmp1,
+                                  const Register tmp2,
+                                  Label& done,
+                                  bool new_val_may_be_null) {
+  assert(thread == xthread, "must be");
+  assert_different_registers(store_addr, new_val, thread, tmp1, tmp2, noreg);
   // Does store cross heap regions?
-  __ xorr(tmp1, store_addr, new_val);                    // tmp1 := store address ^ new value
-  __ srli(tmp1, tmp1, G1HeapRegion::LogOfHRGrainBytes);  // tmp1 := ((store address ^ new value) >> LogOfHRGrainBytes)
-  __ beqz(tmp1, done);
+#if INCLUDE_CDS
+  // AOT code needs to load the barrier grain shift from the aot
+  // runtime constants area in the code cache otherwise we can compile
+  // it as an immediate operand
+  if (AOTCodeCache::is_on_for_dump()) {
+    __ xorr(tmp1, store_addr, new_val);
+    __ lwu(tmp2, ExternalAddress(AOTRuntimeConstants::grain_shift_address()));
+    __ srl(tmp1, tmp1, tmp2);
+    __ beqz(tmp1, done);
+  } else
+#endif
+  {
+    __ xorr(tmp1, store_addr, new_val);                    // tmp1 := store address ^ new value
+    __ srli(tmp1, tmp1, G1HeapRegion::LogOfHRGrainBytes);  // tmp1 := ((store address ^ new value) >> LogOfHRGrainBytes)
+    __ beqz(tmp1, done);
+  }
+
   // Crosses regions, storing null?
   if (new_val_may_be_null) {
     __ beqz(new_val, done);
   }
-  // Storing region crossing non-null, is card young?
+  // Storing region crossing non-null, is card clean?
   __ srli(tmp1, store_addr, CardTable::card_shift());    // tmp1 := card address relative to card table base
-  __ load_byte_map_base(tmp2);                           // tmp2 := card table base address
-  __ add(tmp1, tmp1, tmp2);                              // tmp1 := card address
-  __ lbu(tmp2, Address(tmp1));                           // tmp2 := card
-}
 
-static void generate_post_barrier_slow_path(MacroAssembler* masm,
-                                            const Register thread,
-                                            const Register tmp1,
-                                            const Register tmp2,
-                                            Label& done,
-                                            Label& runtime) {
-  __ membar(MacroAssembler::StoreLoad);  // StoreLoad membar
-  __ lbu(tmp2, Address(tmp1));           // tmp2 := card
-  __ beqz(tmp2, done, true);
-  // Storing a region crossing, non-null oop, card is clean.
-  // Dirty card and log.
-  STATIC_ASSERT(CardTable::dirty_card_val() == 0);
-  __ sb(zr, Address(tmp1));       // *(card address) := dirty_card_val
-  generate_queue_test_and_insertion(masm,
-                                    G1ThreadLocalData::dirty_card_queue_index_offset(),
-                                    G1ThreadLocalData::dirty_card_queue_buffer_offset(),
-                                    runtime,
-                                    thread, tmp1, tmp2, t0);
-  __ j(done);
+  Address card_table_address(xthread, G1ThreadLocalData::card_table_base_offset());
+  __ ld(tmp2, card_table_address);                       // tmp2 := card table base address
+  __ add(tmp1, tmp1, tmp2);                              // tmp1 := card address
+
+  if (UseCondCardMark) {
+    // All non-clean cards (dirty, to-cset, from-remset) have bit0 == 0.
+    static_assert((G1CardTable::g1_dirty_card & 1U) == 0
+               && (G1CardTable::g1_to_cset_card & 1U) == 0
+               && (G1CardTable::g1_from_remset_card & 1U) == 0,
+               "cards needing scan must have bit0 == 0");
+    // Clean card has bit0 == 1.
+    static_assert(((uint)G1CardTable::clean_card_val() & 1U) == 1,
+                  "clean card must have bit0 == 1");
+    __ lbu(tmp2, Address(tmp1, 0));                      // tmp2 := card
+    __ test_bit(tmp2, tmp2, 0);                          // test bit0: clean has bit0 == 1, non-clean has bit0 == 0
+    __ beqz(tmp2, done);                                 // skip store if already non-clean
+  }
+
+  // `sb zr` writes 0, which must be the dirty value.
+  static_assert(G1CardTable::dirty_card_val() == 0, "must be to use zr");
+  __ sb(zr, Address(tmp1, 0));
 }
 
 void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm,
@@ -238,27 +311,8 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm,
                                                   Register thread,
                                                   Register tmp1,
                                                   Register tmp2) {
-  assert(thread == xthread, "must be");
-  assert_different_registers(store_addr, new_val, thread, tmp1, tmp2, t0);
-  assert(store_addr != noreg && new_val != noreg && tmp1 != noreg && tmp2 != noreg,
-         "expecting a register");
-
   Label done;
-  Label runtime;
-
-  generate_post_barrier_fast_path(masm, store_addr, new_val, tmp1, tmp2, done, true /* new_val_may_be_null */);
-  // If card is young, jump to done (tmp2 holds the card value)
-  __ mv(t0, (int)G1CardTable::g1_young_card_val());
-  __ beq(tmp2, t0, done);   // card == young_card_val?
-  generate_post_barrier_slow_path(masm, thread, tmp1, tmp2, done, runtime);
-
-  __ bind(runtime);
-  // save the live input values
-  RegSet saved = RegSet::of(store_addr);
-  __ push_reg(saved, sp);
-  __ call_VM_leaf(CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_field_post_entry), tmp1, thread);
-  __ pop_reg(saved, sp);
-
+  generate_post_barrier(masm, store_addr, new_val, thread, tmp1, tmp2, done, true /* new_val_may_be_null */);
   __ bind(done);
 }
 
@@ -270,8 +324,7 @@ static void generate_c2_barrier_runtime_call(MacroAssembler* masm, G1BarrierStub
     __ mv(c_rarg0, arg);
   }
   __ mv(c_rarg1, xthread);
-  __ mv(t1, runtime_path);
-  __ jalr(t1);
+  __ rt_call(runtime_path);
 }
 
 void G1BarrierSetAssembler::g1_write_barrier_pre_c2(MacroAssembler* masm,
@@ -289,7 +342,7 @@ void G1BarrierSetAssembler::g1_write_barrier_pre_c2(MacroAssembler* masm,
 
   generate_pre_barrier_fast_path(masm, thread, tmp1);
   // If marking is active (*(mark queue active address) != 0), jump to stub (slow path)
-  __ bnez(tmp1, *stub->entry(), true);
+  __ bnez(tmp1, *stub->entry(), /* is_far */ true);
 
   __ bind(*stub->continuation());
 }
@@ -318,37 +371,10 @@ void G1BarrierSetAssembler::g1_write_barrier_post_c2(MacroAssembler* masm,
                                                      Register thread,
                                                      Register tmp1,
                                                      Register tmp2,
-                                                     G1PostBarrierStubC2* stub) {
-  assert(thread == xthread, "must be");
-  assert_different_registers(store_addr, new_val, thread, tmp1, tmp2, t0);
-  assert(store_addr != noreg && new_val != noreg && tmp1 != noreg && tmp2 != noreg,
-         "expecting a register");
-
-  stub->initialize_registers(thread, tmp1, tmp2);
-
-  bool new_val_may_be_null = (stub->barrier_data() & G1C2BarrierPostNotNull) == 0;
-  generate_post_barrier_fast_path(masm, store_addr, new_val, tmp1, tmp2, *stub->continuation(), new_val_may_be_null);
-  // If card is not young, jump to stub (slow path) (tmp2 holds the card value)
-  __ mv(t0, (int)G1CardTable::g1_young_card_val());
-  __ bne(tmp2, t0, *stub->entry(), true);
-
-  __ bind(*stub->continuation());
-}
-
-void G1BarrierSetAssembler::generate_c2_post_barrier_stub(MacroAssembler* masm,
-                                                          G1PostBarrierStubC2* stub) const {
-  Assembler::InlineSkippedInstructionsCounter skip_counter(masm);
-  Label runtime;
-  Register thread = stub->thread();
-  Register tmp1 = stub->tmp1(); // tmp1 holds the card address.
-  Register tmp2 = stub->tmp2();
-
-  __ bind(*stub->entry());
-  generate_post_barrier_slow_path(masm, thread, tmp1, tmp2, *stub->continuation(), runtime);
-
-  __ bind(runtime);
-  generate_c2_barrier_runtime_call(masm, stub, tmp1, CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_field_post_entry));
-  __ j(*stub->continuation());
+                                                     bool new_val_may_be_null) {
+  Label done;
+  generate_post_barrier(masm, store_addr, new_val, thread, tmp1, tmp2, done, new_val_may_be_null);
+  __ bind(done);
 }
 
 #endif // COMPILER2
@@ -359,7 +385,7 @@ void G1BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorator
   bool on_weak = (decorators & ON_WEAK_OOP_REF) != 0;
   bool on_phantom = (decorators & ON_PHANTOM_OOP_REF) != 0;
   bool on_reference = on_weak || on_phantom;
-  ModRefBarrierSetAssembler::load_at(masm, decorators, type, dst, src, tmp1, tmp2);
+  CardTableBarrierSetAssembler::load_at(masm, decorators, type, dst, src, tmp1, tmp2);
   if (on_oop && on_reference) {
     // RA is live.  It must be saved around calls.
     __ enter(); // barrier may call runtime
@@ -379,6 +405,16 @@ void G1BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorator
 
 void G1BarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                                          Address dst, Register val, Register tmp1, Register tmp2, Register tmp3) {
+
+  bool in_heap = (decorators & IN_HEAP) != 0;
+  bool as_normal = (decorators & AS_NORMAL) != 0;
+  bool dest_uninitialized = (decorators & IS_DEST_UNINITIALIZED) != 0;
+
+  bool needs_pre_barrier = as_normal && !dest_uninitialized;
+  bool needs_post_barrier = (val != noreg && in_heap);
+
+  assert_different_registers(val, tmp1, tmp2, tmp3);
+
   // flatten object address if needed
   if (dst.offset() == 0) {
     if (dst.base() != tmp3) {
@@ -388,31 +424,37 @@ void G1BarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorSet deco
     __ la(tmp3, dst);
   }
 
-  g1_write_barrier_pre(masm,
-                       tmp3 /* obj */,
-                       tmp2 /* pre_val */,
-                       xthread /* thread */,
-                       tmp1 /* tmp1 */,
-                       t1 /* tmp2 */,
-                       val != noreg /* tosca_live */,
-                       false /* expand_call */);
+  if (needs_pre_barrier) {
+    g1_write_barrier_pre(masm,
+                         tmp3 /* obj */,
+                         tmp2 /* pre_val */,
+                         xthread /* thread */,
+                         tmp1 /* tmp1 */,
+                         t1 /* tmp2 */,
+                         val != noreg /* tosca_live */,
+                         false /* expand_call */);
+  }
 
   if (val == noreg) {
     BarrierSetAssembler::store_at(masm, decorators, type, Address(tmp3, 0), noreg, noreg, noreg, noreg);
   } else {
     // G1 barrier needs uncompressed oop for region cross check.
     Register new_val = val;
-    if (UseCompressedOops) {
-      new_val = t1;
-      __ mv(new_val, val);
+    if (needs_post_barrier) {
+      if (UseCompressedOops) {
+        new_val = t1;
+        __ mv(new_val, val);
+      }
     }
     BarrierSetAssembler::store_at(masm, decorators, type, Address(tmp3, 0), val, noreg, noreg, noreg);
-    g1_write_barrier_post(masm,
-                          tmp3 /* store_adr */,
-                          new_val /* new_val */,
-                          xthread /* thread */,
-                          tmp1 /* tmp1 */,
-                          tmp2 /* tmp2 */);
+    if (needs_post_barrier) {
+      g1_write_barrier_post(masm,
+                            tmp3 /* store_adr */,
+                            new_val /* new_val */,
+                            xthread /* thread */,
+                            tmp1 /* tmp1 */,
+                            tmp2 /* tmp2 */);
+    }
   }
 }
 
@@ -421,7 +463,7 @@ void G1BarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorSet deco
 #undef __
 #define __ ce->masm()->
 
-void G1BarrierSetAssembler::gen_pre_barrier_stub(LIR_Assembler* ce, G1PreBarrierStub* stub) {
+void G1BarrierSetAssembler::gen_pre_barrier_stub(LIR_Assembler* ce, G1PreBarrierStubC1* stub) {
   G1BarrierSetC1* bs = (G1BarrierSetC1*)BarrierSet::barrier_set()->barrier_set_c1();
 
   // At this point we know that marking is in progress.
@@ -443,19 +485,18 @@ void G1BarrierSetAssembler::gen_pre_barrier_stub(LIR_Assembler* ce, G1PreBarrier
   __ j(*stub->continuation());
 }
 
-void G1BarrierSetAssembler::gen_post_barrier_stub(LIR_Assembler* ce, G1PostBarrierStub* stub) {
-  G1BarrierSetC1* bs = (G1BarrierSetC1*)BarrierSet::barrier_set()->barrier_set_c1();
-  __ bind(*stub->entry());
-  assert(stub->addr()->is_register(), "Precondition");
-  assert(stub->new_val()->is_register(), "Precondition");
-  Register new_val_reg = stub->new_val()->as_register();
-  __ beqz(new_val_reg, *stub->continuation(), /* is_far */ true);
-  ce->store_parameter(stub->addr()->as_pointer_register(), 0);
-  __ far_call(RuntimeAddress(bs->post_barrier_c1_runtime_code_blob()->code_begin()));
-  __ j(*stub->continuation());
-}
-
 #undef __
+
+void G1BarrierSetAssembler::g1_write_barrier_post_c1(MacroAssembler* masm,
+                                                     Register store_addr,
+                                                     Register new_val,
+                                                     Register thread,
+                                                     Register tmp1,
+                                                     Register tmp2) {
+  Label done;
+  generate_post_barrier(masm, store_addr, new_val, thread, tmp1, tmp2, done, true /* new_val_may_be_null */);
+  masm->bind(done);
+}
 
 #define __ sasm->
 
@@ -504,74 +545,6 @@ void G1BarrierSetAssembler::generate_c1_pre_barrier_runtime_stub(StubAssembler* 
   __ pop_call_clobbered_registers();
   __ bind(done);
 
-  __ epilogue();
-}
-
-void G1BarrierSetAssembler::generate_c1_post_barrier_runtime_stub(StubAssembler* sasm) {
-  __ prologue("g1_post_barrier", false);
-
-  // arg0 : store_address
-  Address store_addr(fp, 2 * BytesPerWord); // 2 BytesPerWord from fp
-
-  BarrierSet* bs = BarrierSet::barrier_set();
-  CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(bs);
-
-  Label done;
-  Label runtime;
-
-  // At this point we know new_value is non-null and the new_value crosses regions.
-  // Must check to see if card is already dirty
-  const Register thread = xthread;
-
-  Address queue_index(thread, in_bytes(G1ThreadLocalData::dirty_card_queue_index_offset()));
-  Address buffer(thread, in_bytes(G1ThreadLocalData::dirty_card_queue_buffer_offset()));
-
-  const Register card_offset = t1;
-  // RA is free here, so we can use it to hold the byte_map_base.
-  const Register byte_map_base = ra;
-
-  assert_different_registers(card_offset, byte_map_base, t0);
-
-  __ load_parameter(0, card_offset);
-  __ srli(card_offset, card_offset, CardTable::card_shift());
-  __ load_byte_map_base(byte_map_base);
-
-  // Convert card offset into an address in card_addr
-  Register card_addr = card_offset;
-  __ add(card_addr, byte_map_base, card_addr);
-
-  __ lbu(t0, Address(card_addr, 0));
-  __ sub(t0, t0, (int)G1CardTable::g1_young_card_val());
-  __ beqz(t0, done);
-
-  assert((int)CardTable::dirty_card_val() == 0, "must be 0");
-
-  __ membar(MacroAssembler::StoreLoad);
-  __ lbu(t0, Address(card_addr, 0));
-  __ beqz(t0, done);
-
-  // storing region crossing non-null, card is clean.
-  // dirty card and log.
-  __ sb(zr, Address(card_addr, 0));
-
-  __ ld(t0, queue_index);
-  __ beqz(t0, runtime);
-  __ subi(t0, t0, wordSize);
-  __ sd(t0, queue_index);
-
-  // Reuse RA to hold buffer_addr
-  const Register buffer_addr = ra;
-
-  __ ld(buffer_addr, buffer);
-  __ add(t0, buffer_addr, t0);
-  __ sd(card_addr, Address(t0, 0));
-  __ j(done);
-
-  __ bind(runtime);
-  __ push_call_clobbered_registers();
-  __ call_VM_leaf(CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_field_post_entry), card_addr, thread);
-  __ pop_call_clobbered_registers();
-  __ bind(done);
   __ epilogue();
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ class Universe: AllStatic {
   friend class VMStructs;
   friend class VM_PopulateDumpSharedSpace;
   friend class Metaspace;
-  friend class MetaspaceShared;
+  friend class AOTMetaspace;
   friend class vmClasses;
 
   friend jint  universe_init();
@@ -65,7 +65,7 @@ class Universe: AllStatic {
  private:
   // Known classes in the VM
   static TypeArrayKlass* _typeArrayKlasses[T_LONG+1];
-  static ObjArrayKlass* _objectArrayKlass;
+  static RefArrayKlass* _objectArrayKlass;
   // Special int-Array that represents filler objects that are used by GC to overwrite
   // dead objects. References to them are generally an error.
   static Klass* _fillerArrayKlass;
@@ -129,9 +129,9 @@ class Universe: AllStatic {
   static bool _fully_initialized;                     // true after universe_init and initialize_vtables called
 
   // the array of preallocated errors with backtraces
-  static objArrayOop  preallocated_out_of_memory_errors();
+  static refArrayOop preallocated_out_of_memory_errors();
 
-  static objArrayOop out_of_memory_errors();
+  static refArrayOop out_of_memory_errors();
   // generate an out of memory error; if possible using an error with preallocated backtrace;
   // otherwise return the given default error.
   static oop        gen_out_of_memory_error(oop default_err);
@@ -167,7 +167,7 @@ class Universe: AllStatic {
 
 #if INCLUDE_CDS_JAVA_HEAP
   // Each slot i stores an index that can be used to restore _basic_type_mirrors[i]
-  // from the archive heap using HeapShared::get_root(int)
+  // from the archive heap using AOTHeap::get_root(int)
   static int _archived_basic_type_mirror_indices[T_VOID+1];
 #endif
 
@@ -185,15 +185,24 @@ class Universe: AllStatic {
   static TypeArrayKlass* floatArrayKlass()       { return typeArrayKlass(T_FLOAT); }
   static TypeArrayKlass* doubleArrayKlass()      { return typeArrayKlass(T_DOUBLE); }
 
-  static ObjArrayKlass* objectArrayKlass()       { return _objectArrayKlass; }
+  static RefArrayKlass* objectArrayKlass() {
+    RefArrayKlass* k = _objectArrayKlass;
+    assert(k != nullptr, "Object array klass should be initialized; too early?");
+    return k;
+  }
 
-  static Klass* fillerArrayKlass()               { return _fillerArrayKlass; }
+  static Klass* fillerArrayKlass() {
+    Klass* k = _fillerArrayKlass;
+    assert(k != nullptr, "Filler array class should be initialized; too early?");
+    return k;
+  }
 
   static TypeArrayKlass* typeArrayKlass(BasicType t) {
     assert((uint)t >= T_BOOLEAN, "range check for type: %s", type2name(t));
     assert((uint)t < T_LONG+1,   "range check for type: %s", type2name(t));
-    assert(_typeArrayKlasses[t] != nullptr, "domain check");
-    return _typeArrayKlasses[t];
+    TypeArrayKlass* k = _typeArrayKlasses[t];
+    assert(k != nullptr, "Type array class should be initialized; too early?");
+    return k;
   }
 
   // Known objects in the VM
@@ -232,16 +241,19 @@ class Universe: AllStatic {
   static oop          array_index_out_of_bounds_exception_instance();
   static oop          array_store_exception_instance();
   static oop          class_cast_exception_instance();
+  static oop          preempted_exception_instance();
   static oop          vm_exception()                  { return internal_error_instance(); }
 
   static Array<Klass*>* the_array_interfaces_array()  { return _the_array_interfaces_array; }
   static uintx        the_array_interfaces_bitmap()   { return _the_array_interfaces_bitmap; }
 
   static Method*      finalizer_register_method();
-  static Method*      loader_addClass_method();
   static Method*      throw_illegal_access_error();
   static Method*      throw_no_such_method_error();
   static Method*      do_stack_walk_method();
+
+  static Method*      is_substitutable_method();
+  static Method*      value_object_hash_code_method();
 
   static oop          the_null_sentinel();
   static address      the_null_sentinel_addr()        { return (address) &_the_null_sentinel;  }
@@ -296,12 +308,14 @@ class Universe: AllStatic {
   // The particular choice of collected heap.
   static CollectedHeap* heap() { return _collectedHeap; }
 
+  static void before_exit();
+
   DEBUG_ONLY(static bool is_stw_gc_active();)
   DEBUG_ONLY(static bool is_in_heap(const void* p);)
   DEBUG_ONLY(static bool is_in_heap_or_null(const void* p) { return p == nullptr || is_in_heap(p); })
 
   // Reserve Java heap and determine CompressedOops mode
-  static ReservedHeapSpace reserve_heap(size_t heap_size, size_t alignment);
+  static ReservedHeapSpace reserve_heap(size_t heap_size, size_t alignment, size_t desired_page_size = 0);
 
   // Global OopStorages
   static OopStorage* vm_weak();

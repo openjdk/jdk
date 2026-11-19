@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,9 +33,6 @@
 #include "utilities/debug.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/macros.hpp"
-#if INCLUDE_JVMCI
-#include "jvmci/jvmciRuntime.hpp"
-#endif
 
 class NativeNMethodCmpBarrier: public NativeInstruction {
 public:
@@ -50,8 +47,31 @@ public:
   address instruction_address() const { return addr_at(0); }
   address immediate_address() const { return addr_at(imm_offset); }
 
+  NativeNMethodCmpBarrier* nativeNMethodCmpBarrier_at(address a) { return (NativeNMethodCmpBarrier*)a; }
+
   jint get_immediate() const { return int_at(imm_offset); }
-  void set_immediate(jint imm) { set_int_at(imm_offset, imm); }
+  void set_immediate(jint imm, int bit_mask) {
+    if (bit_mask == ~0) {
+      set_int_at(imm_offset, imm);
+      return;
+    }
+
+    assert((imm & ~bit_mask) == 0, "trying to set bits outside the mask");
+    imm &= bit_mask;
+
+    assert(align_up(immediate_address(), sizeof(jint)) ==
+           align_down(immediate_address(), sizeof(jint)), "immediate not aligned");
+    jint* data_addr = (jint*)immediate_address();
+    jint old_value = AtomicAccess::load(data_addr);
+    while (true) {
+      // Only bits in the mask are changed
+      jint new_value = imm | (old_value & ~bit_mask);
+      if (new_value == old_value) break;
+      jint v = AtomicAccess::cmpxchg(data_addr, old_value, new_value, memory_order_release);
+      if (v == old_value) break;
+      old_value = v;
+    }
+  }
   bool check_barrier(err_msg& msg) const;
   void verify() const {
 #ifdef ASSERT
@@ -144,28 +164,43 @@ static int entry_barrier_offset(nmethod* nm) {
 }
 
 static NativeNMethodCmpBarrier* native_nmethod_barrier(nmethod* nm) {
-  address barrier_address;
-#if INCLUDE_JVMCI
-  if (nm->is_compiled_by_jvmci()) {
-    barrier_address = nm->code_begin() + nm->jvmci_nmethod_data()->nmethod_entry_patch_offset();
-  } else
-#endif
-    {
-      barrier_address = nm->code_begin() + nm->frame_complete_offset() + entry_barrier_offset(nm);
-    }
-
+  address barrier_address = nm->code_begin() + nm->frame_complete_offset() + entry_barrier_offset(nm);
   NativeNMethodCmpBarrier* barrier = reinterpret_cast<NativeNMethodCmpBarrier*>(barrier_address);
   barrier->verify();
   return barrier;
 }
 
-void BarrierSetNMethod::set_guard_value(nmethod* nm, int value) {
+static void set_immediate(nmethod* nm, jint val, int bit_mask) {
+  NativeNMethodCmpBarrier* cmp1 = native_nmethod_barrier(nm);
+  cmp1->set_immediate(val, bit_mask);
+
+  if (!nm->is_osr_method() && nm->method()->has_scalarized_args()) {
+    // nmethods with scalarized arguments have multiple entry points that each have an own nmethod entry barrier
+    assert(nm->verified_entry_point() != nm->verified_value_entry_point(), "scalarized entry point not found");
+    address method_body = nm->is_compiled_by_c1() ? nm->verified_value_entry_point() : nm->verified_entry_point();
+    address entry_point2 = nm->is_compiled_by_c1() ? nm->verified_entry_point() : nm->verified_value_entry_point();
+
+    int barrier_offset = reinterpret_cast<address>(cmp1) - method_body;
+    NativeNMethodCmpBarrier* cmp2 = reinterpret_cast<NativeNMethodCmpBarrier*>(entry_point2 + barrier_offset);
+    assert(cmp1 != cmp2, "sanity");
+    DEBUG_ONLY(cmp2->verify());
+    cmp2->set_immediate(val, bit_mask);
+
+    if (method_body != nm->verified_value_ro_entry_point() && entry_point2 != nm->verified_value_ro_entry_point()) {
+      NativeNMethodCmpBarrier* cmp3 = reinterpret_cast<NativeNMethodCmpBarrier*>(nm->verified_value_ro_entry_point() + barrier_offset);
+      assert(cmp1 != cmp3 && cmp2 != cmp3, "sanity");
+      DEBUG_ONLY(cmp3->verify());
+      cmp3->set_immediate(val, bit_mask);
+    }
+  }
+}
+
+void BarrierSetNMethod::set_guard_value(nmethod* nm, int value, int bit_mask) {
   if (!supports_entry_barrier(nm)) {
     return;
   }
 
-  NativeNMethodCmpBarrier* cmp = native_nmethod_barrier(nm);
-  cmp->set_immediate(value);
+  set_immediate(nm, value, bit_mask);
 }
 
 int BarrierSetNMethod::guard_value(nmethod* nm) {
@@ -176,11 +211,3 @@ int BarrierSetNMethod::guard_value(nmethod* nm) {
   NativeNMethodCmpBarrier* cmp = native_nmethod_barrier(nm);
   return cmp->get_immediate();
 }
-
-
-#if INCLUDE_JVMCI
-bool BarrierSetNMethod::verify_barrier(nmethod* nm, err_msg& msg) {
-  NativeNMethodCmpBarrier* barrier = native_nmethod_barrier(nm);
-  return barrier->check_barrier(msg);
-}
-#endif

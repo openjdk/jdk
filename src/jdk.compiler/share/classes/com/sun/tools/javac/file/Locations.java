@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,18 +77,13 @@ import javax.tools.StandardJavaFileManager;
 import javax.tools.StandardJavaFileManager.PathFactory;
 import javax.tools.StandardLocation;
 
-import com.sun.tools.javac.code.Lint;
-import com.sun.tools.javac.resources.CompilerProperties.LintWarnings;
 import jdk.internal.jmod.JmodFile;
 
-import com.sun.tools.javac.code.Lint;
-import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.main.Option;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
-import com.sun.tools.javac.resources.CompilerProperties.Warnings;
+import com.sun.tools.javac.resources.CompilerProperties.LintWarnings;
 import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
-import com.sun.tools.javac.util.JCDiagnostic.Warning;
 import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.jvm.ModuleNameReader;
@@ -127,11 +122,6 @@ public class Locations {
      */
     private FSInfo fsInfo;
 
-    /**
-     * The root {@link Lint} instance.
-     */
-    private Lint lint;
-
     private ModuleNameReader moduleNameReader;
 
     private PathFactory pathFactory = Paths::get;
@@ -140,8 +130,10 @@ public class Locations {
     static final Path thisSystemModules = javaHome.resolve("lib").resolve("modules");
 
     Map<Path, FileSystem> fileSystems = new LinkedHashMap<>();
-    List<Closeable> closeables = new ArrayList<>();
-    private Map<String,String> fsEnv = Collections.emptyMap();
+    // List of resources to be closed (self-sychronized).
+    private final List<Closeable> closeables = new ArrayList<>();
+    private String releaseVersion = null;
+    private boolean previewMode = false;
 
     Locations() {
         initHandlers();
@@ -155,15 +147,26 @@ public class Locations {
         }
     }
 
+    private void addCloseable(Closeable c) {
+        synchronized (closeables) {
+            closeables.add(c);
+        }
+    }
+
     public void close() throws IOException {
         ListBuffer<IOException> list = new ListBuffer<>();
-        closeables.forEach(closeable -> {
+        Closeable[] arr;
+        synchronized (closeables) {
+            arr = closeables.toArray(Closeable[]::new);
+            closeables.clear();
+        }
+        for (Closeable closeable : arr) {
             try {
                 closeable.close();
             } catch (IOException ex) {
                 list.add(ex);
             }
-        });
+        }
         if (list.nonEmpty()) {
             IOException ex = new IOException();
             for (IOException e: list)
@@ -172,9 +175,8 @@ public class Locations {
         }
     }
 
-    void update(Log log, Lint lint, FSInfo fsInfo) {
+    void update(Log log, FSInfo fsInfo) {
         this.log = log;
-        this.lint = lint;
         this.fsInfo = fsInfo;
     }
 
@@ -225,7 +227,7 @@ public class Locations {
                 try {
                     entries.add(getPath(s));
                 } catch (IllegalArgumentException e) {
-                    lint.logIfEnabled(LintWarnings.InvalidPath(s));
+                    log.warning(LintWarnings.InvalidPath(s));
                 }
             }
         }
@@ -233,7 +235,13 @@ public class Locations {
     }
 
     public void setMultiReleaseValue(String multiReleaseValue) {
-        fsEnv = Collections.singletonMap("releaseVersion", multiReleaseValue);
+        // Null is implicitly allowed and unsets the value.
+        this.releaseVersion = multiReleaseValue;
+    }
+
+    public void setPreviewMode(boolean previewMode) {
+        // Null is implicitly allowed and unsets the value.
+        this.previewMode = previewMode;
     }
 
     private boolean contains(Collection<Path> searchPath, Path file) throws IOException {
@@ -319,7 +327,7 @@ public class Locations {
         private void addDirectory(Path dir, boolean warn) {
             if (!Files.isDirectory(dir)) {
                 if (warn) {
-                    lint.logIfEnabled(LintWarnings.DirPathElementNotFound(dir));
+                    log.warning(LintWarnings.DirPathElementNotFound(dir));
                 }
                 return;
             }
@@ -364,7 +372,7 @@ public class Locations {
             if (!fsInfo.exists(file)) {
                 /* No such file or directory exists */
                 if (warn) {
-                    lint.logIfEnabled(LintWarnings.PathElementNotFound(file));
+                    log.warning(LintWarnings.PathElementNotFound(file));
                 }
                 super.add(file);
                 return;
@@ -386,12 +394,12 @@ public class Locations {
                         try {
                             FileSystems.newFileSystem(file, (ClassLoader)null).close();
                             if (warn) {
-                                lint.logIfEnabled(LintWarnings.UnexpectedArchiveFile(file));
+                                log.warning(LintWarnings.UnexpectedArchiveFile(file));
                             }
                         } catch (IOException | ProviderNotFoundException e) {
                             // FIXME: include e.getLocalizedMessage in warning
                             if (warn) {
-                                lint.logIfEnabled(LintWarnings.InvalidArchiveFile(file));
+                                log.warning(LintWarnings.InvalidArchiveFile(file));
                             }
                             return;
                         }
@@ -480,7 +488,7 @@ public class Locations {
         }
 
         /**
-         * @see JavaFileManager#getLocationForModule(Location, JavaFileObject, String)
+         * @see JavaFileManager#getLocationForModule(Location, JavaFileObject)
          */
         Location getLocationForModule(Path file) throws IOException  {
             return null;
@@ -1387,7 +1395,7 @@ public class Locations {
                         log.error(Errors.NoZipfsForArchive(p));
                         return null;
                     }
-                    try (FileSystem fs = jarFSProvider.newFileSystem(p, fsEnv)) {
+                    try (FileSystem fs = jarFSProvider.newFileSystem(p, fsInfo.readOnlyJarFSEnv(releaseVersion))) {
                         Path moduleInfoClass = fs.getPath("module-info.class");
                         if (Files.exists(moduleInfoClass)) {
                             String moduleName = readModuleName(moduleInfoClass);
@@ -1463,13 +1471,13 @@ public class Locations {
                                 log.error(Errors.LocnCantReadFile(p));
                                 return null;
                             }
-                            fs = jarFSProvider.newFileSystem(p, Collections.emptyMap());
+                            fs = jarFSProvider.newFileSystem(p, fsInfo.readOnlyJarFSEnv(null));
                             try {
                                 Path moduleInfoClass = fs.getPath("classes/module-info.class");
                                 String moduleName = readModuleName(moduleInfoClass);
                                 Path modulePath = fs.getPath("classes");
                                 fileSystems.put(p, fs);
-                                closeables.add(fs);
+                                addCloseable(fs);
                                 fs = null; // prevent fs being closed in the finally clause
                                 return new Pair<>(moduleName, modulePath);
                             } finally {
@@ -1654,7 +1662,7 @@ public class Locations {
 
         void add(Map<String, List<Path>> map, Path prefix, Path suffix) {
             if (!Files.isDirectory(prefix)) {
-                lint.logIfEnabled(Files.exists(prefix) ?
+                log.warning(Files.exists(prefix) ?
                     LintWarnings.DirPathElementNotDirectory(prefix) :
                     LintWarnings.DirPathElementNotFound(prefix));
                 return;
@@ -1960,24 +1968,33 @@ public class Locations {
                     FileSystem jrtfs;
 
                     if (isCurrentPlatform(systemJavaHome)) {
-                        jrtfs = FileSystems.getFileSystem(jrtURI);
+                        JRTIndex jrtIndex = JRTIndex.instance(previewMode);
+                        addCloseable(jrtIndex);
+                        jrtfs = jrtIndex.getFileSystem();
                     } else {
+                        ClassLoader currentLoader = Locations.class.getClassLoader();
                         try {
                             Map<String, String> attrMap =
-                                    Collections.singletonMap("java.home", systemJavaHome.toString());
+                                    Map.of("java.home", systemJavaHome.toString(),
+                                            "previewMode", String.valueOf(previewMode));
                             jrtfs = FileSystems.newFileSystem(jrtURI, attrMap);
+                            // Ensure the file system’s class loader is closed so that
+                            // the ${systemJavaHome}/lib/jrt-fs.jar is not left open.
+                            ClassLoader cl = jrtfs.provider().getClass().getClassLoader();
+                            if (cl != currentLoader && cl instanceof URLClassLoader urlcl) {
+                                closeables.add(urlcl);
+                            }
                         } catch (ProviderNotFoundException ex) {
                             URL jfsJar = resolveInJavaHomeLib(systemJavaHome, "jrt-fs.jar").toUri().toURL();
-                            ClassLoader currentLoader = Locations.class.getClassLoader();
                             URLClassLoader fsLoader =
                                     new URLClassLoader(new URL[] {jfsJar}, currentLoader);
 
                             jrtfs = FileSystems.newFileSystem(jrtURI, Collections.emptyMap(), fsLoader);
 
-                            closeables.add(fsLoader);
+                            addCloseable(fsLoader);
                         }
 
-                        closeables.add(jrtfs);
+                        addCloseable(jrtfs);
                     }
 
                     modules = jrtfs.getPath("/modules");

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,10 +27,13 @@
 #include "c1/c1_MacroAssembler.hpp"
 #include "c1/c1_Runtime1.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/barrierSet.hpp"
+#include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "interpreter/interpreter.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/markWord.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/basicLock.hpp"
 #include "runtime/os.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -45,19 +48,38 @@ void C1_MacroAssembler::explicit_null_check(Register base) {
 }
 
 
-void C1_MacroAssembler::build_frame(int frame_size_in_bytes, int bang_size_in_bytes) {
+void C1_MacroAssembler::build_frame_helper(int frame_size_in_bytes, int sp_offset_for_orig_pc, bool reset_orig_pc) {
   const Register return_pc = R20;
   mflr(return_pc);
+  std(return_pc, _abi0(lr), R1_SP);    // SP->lr = return_pc
+  push_frame(frame_size_in_bytes, R0); // SP -= frame_size_in_bytes
 
+  if (reset_orig_pc) {
+    // Zero orig_pc to detect deoptimization during buffering in the entry points
+    li(R0, 0);
+    untested("build_frame_helper reset_orig_pc");
+    std(R0, sp_offset_for_orig_pc, R1_SP);
+  }
+}
+
+
+void C1_MacroAssembler::build_frame(int frame_size_in_bytes, int bang_size_in_bytes,
+                                    int sp_offset_for_orig_pc,
+                                    bool has_scalarized_args,
+                                    Label* verified_value_entry_label) {
   // Make sure there is enough stack space for this method's activation.
   assert(bang_size_in_bytes >= frame_size_in_bytes, "stack bang size incorrect");
   generate_stack_overflow_check(bang_size_in_bytes);
 
-  std(return_pc, _abi0(lr), R1_SP);     // SP->lr = return_pc
-  push_frame(frame_size_in_bytes, R0); // SP -= frame_size_in_bytes
+  build_frame_helper(frame_size_in_bytes, sp_offset_for_orig_pc, has_scalarized_args);
 
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
   bs->nmethod_entry_barrier(this, R20);
+
+  if (verified_value_entry_label != nullptr) {
+    // Jump here from the scalarized entry points that already created the frame.
+    bind(*verified_value_entry_label);
+  }
 }
 
 
@@ -82,59 +104,13 @@ void C1_MacroAssembler::lock_object(Register Rmark, Register Roop, Register Rbox
   // Save object being locked into the BasicObjectLock...
   std(Roop, in_bytes(BasicObjectLock::obj_offset()), Rbox);
 
-  if (LockingMode == LM_LIGHTWEIGHT) {
-    lightweight_lock(Rbox, Roop, Rmark, Rscratch, slow_int);
-  } else if (LockingMode == LM_LEGACY) {
-
-    if (DiagnoseSyncOnValueBasedClasses != 0) {
-      load_klass(Rscratch, Roop);
-      lbz(Rscratch, in_bytes(Klass::misc_flags_offset()), Rscratch);
-      testbitdi(CR0, R0, Rscratch, exact_log2(KlassFlags::_misc_is_value_based_class));
-      bne(CR0, slow_int);
-    }
-
-    // ... and mark it unlocked.
-    ori(Rmark, Rmark, markWord::unlocked_value);
-
-    // Save unlocked object header into the displaced header location on the stack.
-    std(Rmark, BasicLock::displaced_header_offset_in_bytes(), Rbox);
-
-    // Compare object markWord with Rmark and if equal exchange Rscratch with object markWord.
-    assert(oopDesc::mark_offset_in_bytes() == 0, "cas must take a zero displacement");
-    cmpxchgd(/*flag=*/CR0,
-             /*current_value=*/Rscratch,
-             /*compare_value=*/Rmark,
-             /*exchange_value=*/Rbox,
-             /*where=*/Roop/*+0==mark_offset_in_bytes*/,
-             MacroAssembler::MemBarRel | MacroAssembler::MemBarAcq,
-             MacroAssembler::cmpxchgx_hint_acquire_lock(),
-             noreg,
-             &cas_failed,
-             /*check without membar and ldarx first*/true);
-    // If compare/exchange succeeded we found an unlocked object and we now have locked it
-    // hence we are done.
-  } else {
-    assert(false, "Unhandled LockingMode:%d", LockingMode);
-  }
+  fast_lock(Rbox, Roop, Rmark, Rscratch, slow_int);
   b(done);
 
   bind(slow_int);
   b(slow_case); // far
 
-  if (LockingMode == LM_LEGACY) {
-    bind(cas_failed);
-    // We did not find an unlocked object so see if this is a recursive case.
-    sub(Rscratch, Rscratch, R1_SP);
-    load_const_optimized(R0, (~(os::vm_page_size()-1) | markWord::lock_mask_in_place));
-    and_(R0/*==0?*/, Rscratch, R0);
-    std(R0/*==0, perhaps*/, BasicLock::displaced_header_offset_in_bytes(), Rbox);
-    bne(CR0, slow_int);
-  }
-
   bind(done);
-  if (LockingMode == LM_LEGACY) {
-    inc_held_monitor_count(Rmark /*tmp*/);
-  }
 }
 
 
@@ -146,43 +122,17 @@ void C1_MacroAssembler::unlock_object(Register Rmark, Register Roop, Register Rb
   Address mark_addr(Roop, oopDesc::mark_offset_in_bytes());
   assert(mark_addr.disp() == 0, "cas must take a zero displacement");
 
-  if (LockingMode != LM_LIGHTWEIGHT) {
-    // Test first if it is a fast recursive unlock.
-    ld(Rmark, BasicLock::displaced_header_offset_in_bytes(), Rbox);
-    cmpdi(CR0, Rmark, 0);
-    beq(CR0, done);
-  }
-
   // Load object.
   ld(Roop, in_bytes(BasicObjectLock::obj_offset()), Rbox);
   verify_oop(Roop, FILE_AND_LINE);
 
-  if (LockingMode == LM_LIGHTWEIGHT) {
-    lightweight_unlock(Roop, Rmark, slow_int);
-  } else if (LockingMode == LM_LEGACY) {
-    // Check if it is still a light weight lock, this is is true if we see
-    // the stack address of the basicLock in the markWord of the object.
-    cmpxchgd(/*flag=*/CR0,
-             /*current_value=*/R0,
-             /*compare_value=*/Rbox,
-             /*exchange_value=*/Rmark,
-             /*where=*/Roop,
-             MacroAssembler::MemBarRel,
-             MacroAssembler::cmpxchgx_hint_release_lock(),
-             noreg,
-             &slow_int);
-  } else {
-    assert(false, "Unhandled LockingMode:%d", LockingMode);
-  }
+  fast_unlock(Roop, Rmark, slow_int);
   b(done);
   bind(slow_int);
   b(slow_case); // far
 
   // Done
   bind(done);
-  if (LockingMode == LM_LEGACY) {
-    dec_held_monitor_count(Rmark /*tmp*/);
-  }
 }
 
 
@@ -205,18 +155,26 @@ void C1_MacroAssembler::try_allocate(
 void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register len, Register t1, Register t2) {
   assert_different_registers(obj, klass, len, t1, t2);
 
-  if (UseCompactObjectHeaders) {
+  if (UseCompactObjectHeaders || Arguments::is_valhalla_enabled()) {
+    // COH: Markword contains class pointer which is only known at runtime.
+    // Valhalla: Could have value class which has a different prototype header to a normal object.
+    // In both cases, we need to fetch dynamically.
     ld(t1, in_bytes(Klass::prototype_header_offset()), klass);
-    std(t1, oopDesc::mark_offset_in_bytes(), obj);
   } else {
+    // Otherwise: Can use the statically computed prototype header which is the same for every object.
     load_const_optimized(t1, (intx)markWord::prototype().value());
-    std(t1, oopDesc::mark_offset_in_bytes(), obj);
+  }
+  std(t1, oopDesc::mark_offset_in_bytes(), obj);
+
+  if (!UseCompactObjectHeaders) {
+    // COH: Markword already contains class pointer. Nothing else to do.
+    // Otherwise: Store encoded klass pointer following the markword
     store_klass(obj, klass);
   }
 
   if (len->is_valid()) {
     stw(len, arrayOopDesc::length_offset_in_bytes(), obj);
-  } else if (UseCompressedClassPointers && !UseCompactObjectHeaders) {
+  } else if (!UseCompactObjectHeaders) {
     // Otherwise length is in the class gap.
     store_klass_gap(obj);
   }
@@ -304,13 +262,6 @@ void C1_MacroAssembler::initialize_object(
     initialize_body(obj, t1, t2, con_size_in_bytes, hdr_size_in_bytes);
   }
 
-  if (CURRENT_ENV->dtrace_alloc_probes()) {
-    Unimplemented();
-//    assert(obj == O0, "must be");
-//    call(CAST_FROM_FN_PTR(address, Runtime1::entry_for(C1StubId::dtrace_object_alloc_id)),
-//         relocInfo::runtime_call_type);
-  }
-
   verify_oop(obj, FILE_AND_LINE);
 }
 
@@ -380,13 +331,6 @@ void C1_MacroAssembler::allocate_array(
     initialize_body(base, index);
   }
 
-  if (CURRENT_ENV->dtrace_alloc_probes()) {
-    Unimplemented();
-    //assert(obj == O0, "must be");
-    //call(CAST_FROM_FN_PTR(address, Runtime1::entry_for(C1StubId::dtrace_object_alloc_id)),
-    //     relocInfo::runtime_call_type);
-  }
-
   verify_oop(obj, FILE_AND_LINE);
 }
 
@@ -412,9 +356,13 @@ void C1_MacroAssembler::null_check(Register r, Label* Lnull) {
   if (TrapBasedNullChecks) { // SIGTRAP based
     trap_null_check(r);
   } else { // explicit
-    //const address exception_entry = Runtime1::entry_for(C1StubId::throw_null_pointer_exception_id);
+    //const address exception_entry = Runtime1::entry_for(StubId::c1_throw_null_pointer_exception_id);
     assert(Lnull != nullptr, "must have Label for explicit check");
     cmpdi(CR0, r, 0);
     bc_far_optimized(Assembler::bcondCRbiIs1, bi0(CR0, Assembler::equal), *Lnull);
   }
+}
+
+int C1_MacroAssembler::scalarized_entry(const CompiledEntrySignature* ces, int frame_size_in_bytes, int bang_size_in_bytes, int sp_offset_for_orig_pc, Label& verified_value_entry_label, bool is_value_ro_entry) {
+  Unimplemented();
 }

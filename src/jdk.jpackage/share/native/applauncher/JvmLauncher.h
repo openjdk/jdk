@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,11 +86,11 @@ JvmlLauncherData* jvmLauncherCreateJvmlLauncherData(JvmlLauncherAPI* api,
                                             JvmlLauncherHandle h, int* size);
 int jvmLauncherStartJvm(JvmlLauncherData* jvmArgs, void* JLI_Launch);
 
-void jvmLauncherLog(const char* format, ...);
+void jvmLauncherLog(const char* file, int line, const char* format, ...);
 
-#define JP_LOG_ERRMSG(msg) do { jvmLauncherLog((msg)); } while (0)
+#define JP_LOG_ERRMSG(msg) do { jvmLauncherLog(__FILE__, __LINE__, (msg)); } while (0)
 #define JP_LOG_ERRNO JP_LOG_ERRMSG(strerror(errno))
-#define JP_LOG_TRACE jvmLauncherLog
+#define JP_LOG_TRACE(format, ...) jvmLauncherLog(__FILE__, __LINE__, format, ##__VA_ARGS__)
 
 
 #ifdef __cplusplus

@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2024 Marti Maria Saguer
+//  Copyright (c) 1998-2026 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -295,7 +295,7 @@ typedef struct {
         WRITEMODE as;      // How is supposed to be written
     } PROPERTY;
 
-static PROPERTY PredefinedProperties[] = {
+static const PROPERTY PredefinedProperties[] = {
 
         {"NUMBER_OF_FIELDS", WRITE_UNCOOKED},    // Required - NUMBER OF FIELDS
         {"NUMBER_OF_SETS",   WRITE_UNCOOKED},    // Required - NUMBER OF SETS
@@ -458,7 +458,7 @@ cmsBool StringAppend(string* s, char c)
         new_ptr = (char*) AllocChunk(s->it8, s->max);
         if (new_ptr == NULL) return FALSE;
 
-        if (new_ptr != NULL && s->begin != NULL)
+        if (s->begin != NULL)
             memcpy(new_ptr, s->begin, s->len);
 
         s->begin = new_ptr;
@@ -899,6 +899,11 @@ void InSymbol(cmsIT8* it8)
                     sign = -1;
                     NextCh(it8);
                 }
+                else
+                    if (it8->ch == '+') {
+                        sign = +1;
+                        NextCh(it8);
+                    }
 
                 it8->inum = 0;
                 it8->sy   = SINUM;
@@ -1269,19 +1274,26 @@ void* AllocChunk(cmsIT8* it8, cmsUInt32Number size)
 
         it8 ->Allocator.Used = 0;
         new_block = (cmsUInt8Number*)AllocBigBlock(it8, it8->Allocator.BlockSize);
-        if (new_block == NULL)
-            return NULL;
+        if (new_block == NULL) goto Error;
 
         it8->Allocator.Block = new_block;
     }
 
     if (it8->Allocator.Block == NULL)
-        return NULL;
+        goto Error;
 
     ptr = it8 ->Allocator.Block + it8 ->Allocator.Used;
     it8 ->Allocator.Used += size;
 
     return (void*) ptr;
+
+Error:
+
+    SynError(it8, "Allocation error");
+    it8->Allocator.BlockSize = 0;
+    it8->Allocator.Used = 0;
+    it8->Allocator.Block = NULL;
+    return NULL;
 }
 
 
@@ -1701,8 +1713,8 @@ cmsBool SetDataFormat(cmsIT8* it8, int n, const char *label)
             return FALSE;
     }
 
-    if (n >= t -> nSamples) {
-        SynError(it8, "More than NUMBER_OF_FIELDS fields.");
+    if (n < 0 || n >= t -> nSamples) {
+        SynError(it8, "Invalid or more than NUMBER_OF_FIELDS fields.");
         return FALSE;
     }
 
@@ -1715,9 +1727,11 @@ cmsBool SetDataFormat(cmsIT8* it8, int n, const char *label)
 }
 
 
-cmsBool CMSEXPORT cmsIT8SetDataFormat(cmsHANDLE  h, int n, const char *Sample)
+cmsBool CMSEXPORT cmsIT8SetDataFormat(cmsHANDLE h, int n, const char *Sample)
 {
     cmsIT8* it8 = (cmsIT8*)h;
+
+    _cmsAssert(n >= 0);
     return SetDataFormat(it8, n, Sample);
 }
 
@@ -2292,7 +2306,7 @@ cmsBool HeaderSection(cmsIT8* it8)
                     // for each pair, split the subkey and the value
                     Value = (char*)strrchr(Subkey, ',');
                     if (Value == NULL)
-                        return SynError(it8, "Invalid value for property '%s'.", VarName);
+                        break;
 
                     // gobble the spaces before the coma, and the coma itself
                     temp = Value++;
@@ -2307,7 +2321,7 @@ cmsBool HeaderSection(cmsIT8* it8)
                     Value += strspn(Value, " ");
 
                     if (Subkey[0] == 0 || Value[0] == 0)
-                        return SynError(it8, "Invalid value for property '%s'.", VarName);
+                        break;
                     AddToList(it8, &GetTable(it8)->HeaderList, VarName, Subkey, Value, WRITE_PAIR);
                 }
             }
@@ -2606,7 +2620,12 @@ cmsHANDLE  CMSEXPORT cmsIT8LoadFromMem(cmsContext ContextID, const void *Ptr, cm
     strncpy(it8->FileStack[0]->FileName, "", cmsMAX_PATH-1);
     it8-> Source = it8 -> MemoryBlock;
 
-    if (!ParseIT8(it8, type-1)) {
+    if (!ParseIT8(it8, type - 1)) {
+
+        while (it8->IncludeSP > 0) {
+            fclose(it8->FileStack[it8->IncludeSP]->Stream);
+            it8->IncludeSP--;
+        }
 
         cmsIT8Free(hIT8);
         return NULL;
@@ -2652,11 +2671,15 @@ cmsHANDLE  CMSEXPORT cmsIT8LoadFromFile(cmsContext ContextID, const char* cFileN
     strncpy(it8->FileStack[0]->FileName, cFileName, cmsMAX_PATH-1);
     it8->FileStack[0]->FileName[cmsMAX_PATH-1] = 0;
 
-    if (!ParseIT8(it8, type-1)) {
+    if (!ParseIT8(it8, type - 1)) {
 
-            fclose(it8 ->FileStack[0]->Stream);
-            cmsIT8Free(hIT8);
-            return NULL;
+        while (it8->IncludeSP > 0) {
+            fclose(it8->FileStack[it8->IncludeSP]->Stream);
+            it8->IncludeSP--;
+        }
+        fclose(it8->FileStack[0]->Stream);
+        cmsIT8Free(hIT8);
+        return NULL;
     }
 
     CookPointers(it8);
@@ -3139,6 +3162,8 @@ cmsBool ParseCube(cmsIT8* cube, cmsStage** Shaper, cmsStage** CLUT, char title[]
             InSymbol(cube);
             if (!Check(cube, SINUM, "Shaper size expected")) return FALSE;
             shaper_size = cube->inum;
+            if (shaper_size < 2 || shaper_size > 65536)
+                 return SynError(cube, "LUT_1D_SIZE '%d' is out of bounds", shaper_size);
             InSymbol(cube);
             break;
 
@@ -3183,7 +3208,10 @@ cmsBool ParseCube(cmsIT8* cube, cmsStage** Shaper, cmsStage** CLUT, char title[]
 
                     cmsFloat64Number nums[3];
 
-                    if (!ReadNumbers(cube, 3, nums)) return FALSE;
+                    if (!ReadNumbers(cube, 3, nums)) {
+                        _cmsFree(cube->ContextID, shapers);
+                        return FALSE;
+                    }
 
                     shapers[i + 0]               = (cmsFloat32Number) ((nums[0] - domain_min[0]) / (domain_max[0] - domain_min[0]));
                     shapers[i + 1 * shaper_size] = (cmsFloat32Number) ((nums[1] - domain_min[1]) / (domain_max[1] - domain_min[1]));
@@ -3200,20 +3228,34 @@ cmsBool ParseCube(cmsIT8* cube, cmsStage** Shaper, cmsStage** CLUT, char title[]
                 *Shaper = cmsStageAllocToneCurves(cube->ContextID, 3, curves);
 
                 cmsFreeToneCurveTriple(curves);
+                _cmsFree(cube->ContextID, shapers);
             }
 
             if (lut_size > 0) {
 
-                int nodes = lut_size * lut_size * lut_size;
+                int nodes;
+                cmsFloat32Number* lut_table;
 
-                cmsFloat32Number* lut_table = _cmsMalloc(cube->ContextID, nodes * 3 * sizeof(cmsFloat32Number));
+                /**
+                * Professional LUT generation tools (e.g., Nobe LutBake) list 65×65×65 as their highest supported size.
+                */
+                if (lut_size < 2 || lut_size > 65)
+                    return SynError(cube, "LUT size '%d' is not allowed", lut_size);
+
+                nodes = lut_size * lut_size * lut_size;
+
+
+                lut_table = (cmsFloat32Number*) _cmsMalloc(cube->ContextID, nodes * 3 * sizeof(cmsFloat32Number));
                 if (lut_table == NULL) return FALSE;
 
                 for (i = 0; i < nodes; i++) {
 
                     cmsFloat64Number nums[3];
 
-                    if (!ReadNumbers(cube, 3, nums)) return FALSE;
+                    if (!ReadNumbers(cube, 3, nums)) {
+                        _cmsFree(cube->ContextID, lut_table);
+                        return FALSE;
+                    }
 
                     lut_table[i * 3 + 2] = (cmsFloat32Number) ((nums[0] - domain_min[0]) / (domain_max[0] - domain_min[0]));
                     lut_table[i * 3 + 1] = (cmsFloat32Number) ((nums[1] - domain_min[1]) / (domain_max[1] - domain_min[1]));
@@ -3240,7 +3282,7 @@ cmsHPROFILE CMSEXPORT cmsCreateDeviceLinkFromCubeFileTHR(cmsContext ContextID, c
     cmsStage* CLUT = NULL;
     cmsStage* Shaper = NULL;
     cmsMLU* DescriptionMLU = NULL;
-    char title[MAXSTR];
+    char title[MAXSTR] = { 0 };
 
     _cmsAssert(cFileName != NULL);
 
@@ -3255,6 +3297,7 @@ cmsHPROFILE CMSEXPORT cmsCreateDeviceLinkFromCubeFileTHR(cmsContext ContextID, c
     strncpy(cube->FileStack[0]->FileName, cFileName, cmsMAX_PATH - 1);
     cube->FileStack[0]->FileName[cmsMAX_PATH - 1] = 0;
 
+    // Note that it can allocate Shaper and CLUT even when failing
     if (!ParseCube(cube, &Shaper, &CLUT, title)) goto Done;
 
     // Success on parsing, let's create the profile
@@ -3275,13 +3318,17 @@ cmsHPROFILE CMSEXPORT cmsCreateDeviceLinkFromCubeFileTHR(cmsContext ContextID, c
 
     // Populates the pipeline
     if (Shaper != NULL) {
-        if (!cmsPipelineInsertStage(Pipeline, cmsAT_BEGIN, Shaper))
+        if (!cmsPipelineInsertStage(Pipeline, cmsAT_BEGIN, Shaper)) {
             goto Done;
+        }
+        Shaper = NULL; // ownership has been transferred
     }
 
     if (CLUT != NULL) {
-        if (!cmsPipelineInsertStage(Pipeline, cmsAT_END, CLUT))
+        if (!cmsPipelineInsertStage(Pipeline, cmsAT_END, CLUT)) {
             goto Done;
+        }
+        CLUT = NULL;
     }
 
     // Propagate the description. We put no copyright because we know
@@ -3294,6 +3341,15 @@ cmsHPROFILE CMSEXPORT cmsCreateDeviceLinkFromCubeFileTHR(cmsContext ContextID, c
     if (!cmsWriteTag(hProfile, cmsSigAToB0Tag, (void*)Pipeline)) goto Done;
 
 Done:
+
+    if (CLUT != NULL)
+        cmsStageFree(CLUT);
+
+    if (Shaper != NULL)
+        cmsStageFree(Shaper);
+
+    if (cube->FileStack[0]->Stream != NULL)
+        fclose(cube->FileStack[0]->Stream);
 
     if (DescriptionMLU != NULL)
         cmsMLUfree(DescriptionMLU);

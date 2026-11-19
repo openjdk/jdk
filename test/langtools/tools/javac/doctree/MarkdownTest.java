@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8298405
+ * @bug 8298405 8356411
  * @summary Markdown support in the standard doclet
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
@@ -659,5 +659,29 @@ DocComment[DOC_COMMENT, pos:0
 ]
 */
 
+    /// @see Ref label
+    /// @see <a href="..">link<a>
+    /// @see "Text"
+    void seeTags() { }
+/*
+DocComment[DOC_COMMENT, pos:0
+  firstSentence: empty
+  body: empty
+  block tags: 3
+    See[SEE, pos:0
+      reference: 2
+        Reference[REFERENCE, pos:5, Ref]
+        RawText[MARKDOWN, pos:9, label]
+    ]
+    See[SEE, pos:15
+      reference: 1
+        RawText[MARKDOWN, pos:20, <a_href="..">link<a>]
+    ]
+    See[SEE, pos:41
+      reference: 1
+        Text[TEXT, pos:46, "Text"]
+    ]
+]
+*/
 
 }

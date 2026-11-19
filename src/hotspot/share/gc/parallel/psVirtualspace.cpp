@@ -23,13 +23,14 @@
  */
 
 #include "gc/parallel/psVirtualspace.hpp"
+#include "logging/log.hpp"
 #include "memory/reservedSpace.hpp"
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
 
 PSVirtualSpace::PSVirtualSpace(ReservedSpace rs, size_t alignment) :
-  _alignment(alignment)
-{
+  _alignment(alignment),
+  _page_size(rs.page_size()) {
   set_reserved(rs);
   set_committed(reserved_low_addr(), reserved_low_addr());
   DEBUG_ONLY(verify());
@@ -61,6 +62,8 @@ bool PSVirtualSpace::expand_by(size_t bytes) {
          os::commit_memory(base_addr, bytes, alignment(), !ExecMem);
   if (result) {
     _committed_high_addr += bytes;
+  } else {
+    log_warning(gc)("PSVirtualSpace::expand_by: to commit %zu bytes failed", bytes);
   }
 
   return result;
@@ -75,17 +78,19 @@ bool PSVirtualSpace::shrink_by(size_t bytes) {
   }
 
   char* const base_addr = committed_high_addr() - bytes;
-  bool result = special() || os::uncommit_memory(base_addr, bytes);
-  if (result) {
-    _committed_high_addr -= bytes;
+  if (!special()) {
+    os::uncommit_memory(base_addr, bytes);
   }
 
-  return result;
+  _committed_high_addr -= bytes;
+
+  return true;
 }
 
 #ifndef PRODUCT
 void PSVirtualSpace::verify() const {
-  assert(is_aligned(_alignment, os::vm_page_size()), "bad alignment");
+  assert(is_aligned(_page_size, os::vm_page_size()), "bad alignment");
+  assert(is_aligned(_alignment, _page_size), "inv");
   assert(is_aligned(reserved_low_addr(), _alignment), "bad reserved_low_addr");
   assert(is_aligned(reserved_high_addr(), _alignment), "bad reserved_high_addr");
   assert(is_aligned(committed_low_addr(), _alignment), "bad committed_low_addr");

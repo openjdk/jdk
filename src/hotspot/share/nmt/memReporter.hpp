@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,8 @@ class MemReporterBase : public StackObj {
   // Calculate total reserved and committed amount
   static size_t reserved_total(const MallocMemory* malloc, const VirtualMemory* vm);
   static size_t committed_total(const MallocMemory* malloc, const VirtualMemory* vm);
+
+  static void report_detail_failure(outputStream* out, const char* action = "Falling back to summary output");
 
  protected:
   inline outputStream* output() const {
@@ -178,7 +180,7 @@ class MemDetailReporter : public MemSummaryReporter {
   int report_virtual_memory_allocation_sites();
 
   // Report a virtual memory region
-  void report_virtual_memory_region(const ReservedMemoryRegion* rgn);
+  void report_virtual_memory_region(const VirtualMemoryRegion* rgn);
 };
 
 /*

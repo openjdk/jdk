@@ -29,8 +29,10 @@
 
 #include "memory/metadataFactory.hpp"
 #include "oops/constantPool.hpp"
+#include "oops/instanceKlass.hpp"
+#include "oops/layoutKind.hpp"
 #include "oops/symbol.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/checkedCast.hpp"
 
 inline Symbol* FieldInfo::name(ConstantPool* cp) const {
@@ -96,10 +98,17 @@ inline void Mapper<CON>::map_field_info(const FieldInfo& fi) {
     if (fi.field_flags().is_contended()) {
       _consumer->accept_uint(fi.contention_group());
     }
+    if (fi.field_flags().is_flat()) {
+      _consumer->accept_uint((uint32_t)fi.layout_kind());
+    }
+    if (fi.field_flags().has_null_marker()) {
+      _consumer->accept_uint(fi.null_marker_offset());
+    }
   } else {
     assert(fi.initializer_index() == 0, "");
     assert(fi.generic_signature_index() == 0, "");
     assert(fi.contention_group() == 0, "");
+    assert(fi.null_marker_offset() == 0, "");
   }
 }
 
@@ -139,6 +148,18 @@ inline void FieldInfoReader::read_field_info(FieldInfo& fi) {
   } else {
     fi._contention_group = 0;
   }
+  if (fi._field_flags.is_flat()) {
+    int layout_kind_value = integer_cast<int>(next_uint());
+    assert(LayoutKindHelper::is_valid_underlying_value(layout_kind_value), "Must be");
+    fi._flat_layout_slot = FlatLayout(static_cast<LayoutKind>(layout_kind_value));
+  } else {
+    fi._flat_layout_slot = FlatLayoutSlot();
+  }
+  if (fi._field_flags.has_null_marker()) {
+    fi._null_marker_offset = next_uint();
+  } else {
+    fi._null_marker_offset = 0;
+  }
 }
 
 inline FieldInfoReader&  FieldInfoReader::skip_field_info() {
@@ -149,7 +170,9 @@ inline FieldInfoReader&  FieldInfoReader::skip_field_info() {
   if (ff.has_any_optionals()) {
     const int init_gen_cont = (ff.is_initialized() +
                                 ff.is_generic() +
-                                ff.is_contended());
+                                ff.is_contended() +
+                                ff.is_flat() +
+                                ff.has_null_marker());
     skip(init_gen_cont);  // up to three items
   }
   return *this;
@@ -173,11 +196,11 @@ inline FieldInfoReader& FieldInfoReader::set_position_and_next_index(int positio
 }
 
 inline void FieldStatus::atomic_set_bits(u1& flags, u1 mask) {
-  Atomic::fetch_then_or(&flags, mask);
+  AtomicAccess::fetch_then_or(&flags, mask);
 }
 
 inline void FieldStatus::atomic_clear_bits(u1& flags, u1 mask) {
-  Atomic::fetch_then_and(&flags, (u1)(~mask));
+  AtomicAccess::fetch_then_and(&flags, (u1)(~mask));
 }
 
 inline void FieldStatus::update_flag(FieldStatusBitPosition pos, bool z) {
@@ -185,8 +208,10 @@ inline void FieldStatus::update_flag(FieldStatusBitPosition pos, bool z) {
   else atomic_clear_bits(_flags, flag_mask(pos));
 }
 
-inline void FieldStatus::update_access_watched(bool z) { update_flag(_fs_access_watched, z); }
-inline void FieldStatus::update_modification_watched(bool z) { update_flag(_fs_modification_watched, z); }
+inline void FieldStatus::update_access_watched(bool z)           { update_flag(_fs_access_watched, z); }
+inline void FieldStatus::update_modification_watched(bool z)     { update_flag(_fs_modification_watched, z); }
+inline void FieldStatus::update_strict_static_unset(bool z)      { update_flag(_fs_strict_static_unset, z); }
+inline void FieldStatus::update_strict_static_unread(bool z)     { update_flag(_fs_strict_static_unread, z); }
 inline void FieldStatus::update_initialized_final_update(bool z) { update_flag(_initialized_final_update, z); }
 
 #endif // SHARE_OOPS_FIELDINFO_INLINE_HPP

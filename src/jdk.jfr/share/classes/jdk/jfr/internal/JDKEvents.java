@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,6 @@ import jdk.jfr.events.MethodTraceEvent;
 import jdk.jfr.internal.periodic.PeriodicEvents;
 import jdk.jfr.internal.settings.MethodSetting;
 import jdk.jfr.internal.tracing.PlatformTracer;
-import jdk.jfr.tracing.MethodTracer;
 
 public final class JDKEvents {
 
@@ -76,6 +75,7 @@ public final class JDKEvents {
         jdk.internal.event.VirtualThreadSubmitFailedEvent.class,
         jdk.internal.event.X509CertificateEvent.class,
         jdk.internal.event.X509ValidationEvent.class,
+        jdk.internal.event.FinalFieldMutationEvent.class,
         DirectBufferStatisticsEvent.class,
         InitialSecurityPropertyEvent.class,
         MethodTraceEvent.class,
@@ -180,6 +180,7 @@ public final class JDKEvents {
             event.memoryFailCount = containerMetrics.getMemoryFailCount();
             event.memoryUsage = containerMetrics.getMemoryUsage();
             event.swapMemoryUsage = containerMetrics.getMemoryAndSwapUsage();
+            event.hostMemoryUsage = JVM.hostMemoryUsage();
             event.commit();
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,15 +27,16 @@
 
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/gcWhen.hpp"
-#include "gc/shared/softRefPolicy.hpp"
 #include "gc/shared/verifyOption.hpp"
 #include "memory/allocation.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/universe.hpp"
 #include "oops/stackChunkOop.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/perfDataTypes.hpp"
 #include "runtime/safepoint.hpp"
+#include "services/cpuTimeUsage.hpp"
 #include "services/memoryUsage.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/formatBuffer.hpp"
@@ -89,20 +90,20 @@ public:
 //   ZCollectedHeap
 //
 class CollectedHeap : public CHeapObj<mtGC> {
+  friend class CPUTimeUsage::GC;
   friend class VMStructs;
-  friend class JVMCIVMStructs;
   friend class IsSTWGCActiveMark; // Block structured external access to _is_stw_gc_active
   friend class MemAllocator;
 
  private:
+  static bool _is_shutting_down;
+
   GCHeapLog*      _heap_log;
   GCMetaspaceLog* _metaspace_log;
 
   // Historic gc information
   size_t _capacity_at_last_gc;
   size_t _used_at_last_gc;
-
-  SoftRefPolicy _soft_ref_policy;
 
   // First, set it to java_lang_Object.
   // Then, set it to FillerObject after the FillerObject_klass loading is complete.
@@ -129,8 +130,10 @@ class CollectedHeap : public CHeapObj<mtGC> {
 
   unsigned int _total_collections;          // ... started
   unsigned int _total_full_collections;     // ... started
-  NOT_PRODUCT(volatile size_t _promotion_failure_alot_count;)
-  NOT_PRODUCT(volatile size_t _promotion_failure_alot_gc_number;)
+  NOT_PRODUCT(Atomic<size_t> _promotion_failure_alot_count;)
+  NOT_PRODUCT(Atomic<size_t> _promotion_failure_alot_gc_number;)
+
+  jlong _vmthread_cpu_time;
 
   // Reason for current garbage collection.  Should be set to
   // a value reflecting no collection between collections.
@@ -158,8 +161,7 @@ class CollectedHeap : public CHeapObj<mtGC> {
   // The obj and array allocate methods are covers for these methods.
   // mem_allocate() should never be
   // called to allocate TLABs, only individual objects.
-  virtual HeapWord* mem_allocate(size_t size,
-                                 bool* gc_overhead_limit_was_exceeded) = 0;
+  virtual HeapWord* mem_allocate(size_t size) = 0;
 
   // Filler object utilities.
   static inline size_t filler_array_hdr_size();
@@ -168,7 +170,6 @@ class CollectedHeap : public CHeapObj<mtGC> {
 
 protected:
   static inline void zap_filler_array_with(HeapWord* start, size_t words, juint value);
-  DEBUG_ONLY(static void fill_args_check(HeapWord* start, size_t words);)
   DEBUG_ONLY(static void zap_filler_array(HeapWord* start, size_t words, bool zap = true);)
 
   // Fill with a single array; caller must ensure filler_array_min_size() <=
@@ -206,7 +207,13 @@ protected:
     return static_cast<T*>(heap);
   }
 
+  // Print any relevant tracing info that flags imply.
+  // Default implementation does nothing.
+  virtual void print_tracing_info() const = 0;
+
  public:
+  // Stop any onging concurrent work and prepare for exit.
+  virtual void stop() = 0;
 
   static inline size_t filler_array_max_size() {
     return _filler_array_max_size;
@@ -234,17 +241,24 @@ protected:
    */
   virtual jint initialize() = 0;
 
+  // Initialize serviceability support. This should prepare the implementation
+  // for accepting serviceability-related calls, like memory_managers(), memory_pools().
+  virtual void initialize_serviceability() = 0;
+
   // In many heaps, there will be a need to perform some initialization activities
   // after the Universe is fully formed, but before general heap allocation is allowed.
   // This is the correct place to place such initialization methods.
   virtual void post_initialize();
 
-  // Stop any onging concurrent work and prepare for exit.
-  virtual void stop() {}
+  static bool is_shutting_down();
+
+  void initiate_shutdown();
 
   // Stop and resume concurrent GC threads interfering with safepoint operations
   virtual void safepoint_synchronize_begin() {}
   virtual void safepoint_synchronize_end() {}
+
+  void add_vmthread_cpu_time(jlong time);
 
   void initialize_reserved_region(const ReservedHeapSpace& rs);
 
@@ -275,7 +289,7 @@ protected:
   DEBUG_ONLY(bool is_in_or_null(const void* p) const { return p == nullptr || is_in(p); })
 
   void set_gc_cause(GCCause::Cause v);
-  GCCause::Cause gc_cause() { return _gc_cause; }
+  GCCause::Cause gc_cause() const { return _gc_cause; }
 
   oop obj_allocate(Klass* klass, size_t size, TRAPS);
   virtual oop array_allocate(Klass* klass, size_t size, int length, bool do_zero, TRAPS);
@@ -295,12 +309,11 @@ protected:
   static void fill_with_objects(HeapWord* start, size_t words, bool zap = true);
 
   static void fill_with_object(HeapWord* start, size_t words, bool zap = true);
-  static void fill_with_object(MemRegion region, bool zap = true) {
-    fill_with_object(region.start(), region.word_size(), zap);
-  }
   static void fill_with_object(HeapWord* start, HeapWord* end, bool zap = true) {
     fill_with_object(start, pointer_delta(end, start), zap);
   }
+
+  inline static bool is_filler_object(oop obj);
 
   virtual void fill_with_dummy_object(HeapWord* start, HeapWord* end, bool zap);
   static size_t min_dummy_object_size() {
@@ -330,21 +343,19 @@ protected:
   virtual void ensure_parsability(bool retire_tlabs);
 
   // The amount of space available for thread-local allocation buffers.
-  virtual size_t tlab_capacity(Thread *thr) const = 0;
+  virtual size_t tlab_capacity() const = 0;
 
-  // The amount of used space for thread-local allocation buffers for the given thread.
-  virtual size_t tlab_used(Thread *thr) const = 0;
+  // The amount of space used for thread-local allocation buffers.
+  virtual size_t tlab_used() const = 0;
 
   virtual size_t max_tlab_size() const;
 
   // An estimate of the maximum allocation that could be performed
   // for thread-local allocation buffers without triggering any
   // collection or expansion activity.
-  virtual size_t unsafe_max_tlab_alloc(Thread *thr) const = 0;
+  virtual size_t unsafe_max_tlab_alloc() const = 0;
 
-  // Perform a collection of the heap; intended for use in implementing
-  // "System.gc".  This probably implies as full a collection as the
-  // "CollectedHeap" supports.
+  // Perform a collection of the heap of a type depending on the given cause.
   virtual void collect(GCCause::Cause cause) = 0;
 
   // Perform a full collection
@@ -384,15 +395,16 @@ protected:
     }
   }
 
-  // Return the SoftRefPolicy for the heap;
-  SoftRefPolicy* soft_ref_policy() { return &_soft_ref_policy; }
-
   virtual MemoryUsage memory_usage();
   virtual GrowableArray<GCMemoryManager*> memory_managers() = 0;
   virtual GrowableArray<MemoryPool*> memory_pools() = 0;
 
   // Iterate over all objects, calling "cl.do_object" on each.
   virtual void object_iterate(ObjectClosure* cl) = 0;
+
+  // Returns true if the collector implements parallel_object_iterator(), so
+  // heap dump and heap inspection may iterate the heap with multiple worker threads.
+  virtual bool supports_parallel_object_iteration() const { return false; }
 
   virtual ParallelObjectIteratorImpl* parallel_object_iterator(uint thread_num) {
     return nullptr;
@@ -414,8 +426,6 @@ protected:
  private:
   // Generate any dumps preceding or following a full gc
   void full_gc_dump(GCTimer* timer, bool before);
-
-  virtual void initialize_serviceability() = 0;
 
   void print_relative_to_gc(GCWhen::Type when) const;
 
@@ -451,10 +461,6 @@ protected:
   // Iterator for all GC threads (other than VM thread)
   virtual void gc_threads_do(ThreadClosure* tc) const = 0;
 
-  // Print any relevant tracing info that flags imply.
-  // Default implementation does nothing.
-  virtual void print_tracing_info() const = 0;
-
   void print_before_gc() const;
   void print_after_gc() const;
 
@@ -473,17 +479,6 @@ protected:
   // this collector.  The default implementation returns false.
   virtual bool supports_concurrent_gc_breakpoints() const;
 
-  // Workers used in non-GC safepoints for parallel safepoint cleanup. If this
-  // method returns null, cleanup tasks are done serially in the VMThread. See
-  // `SafepointSynchronize::do_cleanup_tasks` for details.
-  // GCs using a GC worker thread pool inside GC safepoints may opt to share
-  // that pool with non-GC safepoints, avoiding creating extraneous threads.
-  // Such sharing is safe, because GC safepoints and non-GC safepoints never
-  // overlap. For example, `G1CollectedHeap::workers()` (for GC safepoints) and
-  // `G1CollectedHeap::safepoint_workers()` (for non-GC safepoints) return the
-  // same thread-pool.
-  virtual WorkerThreads* safepoint_workers() { return nullptr; }
-
   // Support for object pinning. This is used by JNI Get*Critical()
   // and Release*Critical() family of functions. The GC must guarantee
   // that pinned objects never move and don't get reclaimed as garbage.
@@ -496,19 +491,17 @@ protected:
   virtual bool can_load_archived_objects() const { return false; }
   virtual HeapWord* allocate_loaded_archive_space(size_t size) { return nullptr; }
   virtual void complete_loaded_archive_space(MemRegion archive_space) { }
+  virtual size_t bootstrap_max_memory() const;
 
   virtual bool is_oop(oop object) const;
   // Non product verification and debugging.
 #ifndef PRODUCT
   // Support for PromotionFailureALot.  Return true if it's time to cause a
-  // promotion failure.  The no-argument version uses
-  // this->_promotion_failure_alot_count as the counter.
-  bool promotion_should_fail(volatile size_t* count);
+  // promotion failure.
   bool promotion_should_fail();
 
   // Reset the PromotionFailureALot counters.  Should be called at the end of a
   // GC in which promotion failure occurred.
-  void reset_promotion_should_fail(volatile size_t* count);
   void reset_promotion_should_fail();
 #endif  // #ifndef PRODUCT
 };

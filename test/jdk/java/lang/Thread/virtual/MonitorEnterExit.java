@@ -26,35 +26,35 @@
  * @summary Test virtual thread with monitor enter/exit
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
- * @run junit/othervm/native --enable-native-access=ALL-UNNAMED MonitorEnterExit
+ * @run junit/othervm/native/timeout=480 --enable-native-access=ALL-UNNAMED MonitorEnterExit
  */
 
 /*
  * @test id=Xint
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
- * @run junit/othervm/native -Xint --enable-native-access=ALL-UNNAMED MonitorEnterExit
+ * @run junit/othervm/native/timeout=480 -Xint --enable-native-access=ALL-UNNAMED MonitorEnterExit
  */
 
 /*
  * @test id=Xcomp
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
- * @run junit/othervm/native -Xcomp --enable-native-access=ALL-UNNAMED MonitorEnterExit
+ * @run junit/othervm/native/timeout=480 -Xcomp --enable-native-access=ALL-UNNAMED MonitorEnterExit
  */
 
 /*
  * @test id=Xcomp-TieredStopAtLevel1
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
- * @run junit/othervm/native -Xcomp -XX:TieredStopAtLevel=1 --enable-native-access=ALL-UNNAMED MonitorEnterExit
+ * @run junit/othervm/native/timeout=480 -Xcomp -XX:TieredStopAtLevel=1 --enable-native-access=ALL-UNNAMED MonitorEnterExit
  */
 
 /*
  * @test id=Xcomp-noTieredCompilation
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
- * @run junit/othervm/native -Xcomp -XX:-TieredCompilation --enable-native-access=ALL-UNNAMED MonitorEnterExit
+ * @run junit/othervm/native/timeout=480 -Xcomp -XX:-TieredCompilation --enable-native-access=ALL-UNNAMED MonitorEnterExit
  */
 
 import java.time.Duration;

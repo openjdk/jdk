@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
 #include "jfr/utilities/jfrBlob.hpp"
 #include "jfr/utilities/jfrTime.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/mutexLocker.hpp"
 
 #ifdef LINUX
@@ -46,7 +46,6 @@ class JfrThreadLocal {
   friend class Jfr;
   friend class JfrIntrinsicSupport;
   friend class JfrJavaSupport;
-  friend class JVMCIVMStructs;
  private:
   mutable JfrSampleRequest _sample_request;
   JfrSampleRequestQueue _sample_request_queue;
@@ -75,6 +74,7 @@ class JfrThreadLocal {
   jlong _wallclock_time;
   int32_t _non_reentrant_nesting;
   u2 _vthread_epoch;
+  mutable u2 _generation;
   bool _vthread_excluded;
   bool _jvm_thread_excluded;
   volatile bool _enqueued_requests;
@@ -85,15 +85,6 @@ class JfrThreadLocal {
 
 #ifdef LINUX
   timer_t* _cpu_timer;
-
-  enum CPUTimeLockState {
-    UNLOCKED,
-    // locked for enqueuing
-    ENQUEUE,
-    // locked for dequeuing
-    DEQUEUE
-  };
-  volatile CPUTimeLockState _cpu_time_jfr_locked;
   volatile bool _has_cpu_time_jfr_requests;
   JfrCPUTimeTraceQueue _cpu_time_jfr_queue;
   volatile bool _do_async_processing_of_cpu_time_jfr_requests;
@@ -168,11 +159,11 @@ class JfrThreadLocal {
 
 
   int sample_state() const {
-    return Atomic::load_acquire(&_sample_state);
+    return AtomicAccess::load_acquire(&_sample_state);
   }
 
   void set_sample_state(int state) {
-    Atomic::release_store(&_sample_state, state);
+    AtomicAccess::release_store(&_sample_state, state);
   }
 
   Monitor* sample_monitor() {
@@ -208,14 +199,14 @@ class JfrThreadLocal {
   }
 
   bool has_enqueued_requests() const {
-    return Atomic::load_acquire(&_enqueued_requests);
+    return AtomicAccess::load_acquire(&_enqueued_requests);
   }
 
   void enqueue_request() {
     assert_lock_strong(sample_monitor());
     assert(sample_state() == JAVA_SAMPLE, "invariant");
     if (_sample_request_queue.append(_sample_request) == 0) {
-      Atomic::release_store(&_enqueued_requests, true);
+      AtomicAccess::release_store(&_enqueued_requests, true);
     }
     set_sample_state(NO_SAMPLE);
   }
@@ -225,7 +216,7 @@ class JfrThreadLocal {
     assert(has_enqueued_requests(), "invariant");
     assert(_sample_request_queue.is_nonempty(), "invariant");
     _sample_request_queue.clear();
-    Atomic::release_store(&_enqueued_requests, false);
+    AtomicAccess::release_store(&_enqueued_requests, false);
   }
 
   bool has_native_sample_request() const {
@@ -341,12 +332,15 @@ class JfrThreadLocal {
   }
 
   bool is_dead() const {
-    return _dead;
+    return AtomicAccess::load(&_dead);
   }
 
   bool in_sampling_critical_section() const {
     return _sampling_critical_section;
   }
+
+  // Serialization state.
+  bool should_write() const;
 
   static int32_t make_non_reentrant(Thread* thread);
   static void make_reentrant(Thread* thread, int32_t previous_nesting);
@@ -368,26 +362,10 @@ class JfrThreadLocal {
   void unset_cpu_timer();
   timer_t* cpu_timer() const;
 
-  // The CPU time JFR lock has three different states:
-  // - ENQUEUE: lock for enqueuing CPU time requests
-  // - DEQUEUE: lock for dequeuing CPU time requests
-  // - UNLOCKED: no lock held
-  // This ensures that we can safely enqueue and dequeue CPU time requests,
-  // without interleaving
-
-  bool is_cpu_time_jfr_enqueue_locked();
-  bool is_cpu_time_jfr_dequeue_locked();
-
-  bool try_acquire_cpu_time_jfr_enqueue_lock();
-  bool try_acquire_cpu_time_jfr_dequeue_lock();
-  void acquire_cpu_time_jfr_dequeue_lock();
-  void release_cpu_time_jfr_queue_lock();
-
   void set_has_cpu_time_jfr_requests(bool has_events);
   bool has_cpu_time_jfr_requests();
 
   JfrCPUTimeTraceQueue& cpu_time_jfr_queue();
-  void deallocate_cpu_time_jfr_queue();
 
   void set_do_async_processing_of_cpu_time_jfr_requests(bool wants);
   bool wants_async_processing_of_cpu_time_jfr_requests();

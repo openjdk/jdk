@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,41 +64,30 @@ public class TestFonts extends JavadocTester {
         javadoc("-d", base.resolve("out").toString(),
                 src.resolve("Dummy.java").toString());
         checkExit(Exit.OK);
+        checkOutput("resource-files/stylesheet.css", true,
+                "@import url('fonts/dejavu.css');");
         checkOutput("resource-files/fonts/dejavu.css", true,
                 """
                     /* DejaVu fonts v2.37 */""",
                 """
                     @font-face {
                       font-family: 'DejaVu Sans Mono';
-                      src: url('DejaVuLGCSansMono.woff2') format('woff2'),
-                           url('DejaVuLGCSansMono.woff') format('woff');
+                      src: url('DejaVuLGCSansMono.woff2') format('woff2');
                       font-weight: normal;
                       font-style: normal;
                     }""");
         checkFiles(true,
-                "resource-files/fonts/DejaVuLGCSans-Bold.woff",
                 "resource-files/fonts/DejaVuLGCSans-Bold.woff2",
-                "resource-files/fonts/DejaVuLGCSans-BoldOblique.woff",
                 "resource-files/fonts/DejaVuLGCSans-BoldOblique.woff2",
-                "resource-files/fonts/DejaVuLGCSans-Oblique.woff",
                 "resource-files/fonts/DejaVuLGCSans-Oblique.woff2",
-                "resource-files/fonts/DejaVuLGCSans.woff",
                 "resource-files/fonts/DejaVuLGCSans.woff2",
-                "resource-files/fonts/DejaVuLGCSansMono-Bold.woff",
                 "resource-files/fonts/DejaVuLGCSansMono-Bold.woff2",
-                "resource-files/fonts/DejaVuLGCSansMono-BoldOblique.woff",
                 "resource-files/fonts/DejaVuLGCSansMono-BoldOblique.woff2",
-                "resource-files/fonts/DejaVuLGCSansMono-Oblique.woff",
                 "resource-files/fonts/DejaVuLGCSansMono-Oblique.woff2",
-                "resource-files/fonts/DejaVuLGCSansMono.woff",
                 "resource-files/fonts/DejaVuLGCSansMono.woff2",
-                "resource-files/fonts/DejaVuLGCSerif-Bold.woff",
                 "resource-files/fonts/DejaVuLGCSerif-Bold.woff2",
-                "resource-files/fonts/DejaVuLGCSerif-BoldItalic.woff",
                 "resource-files/fonts/DejaVuLGCSerif-BoldItalic.woff2",
-                "resource-files/fonts/DejaVuLGCSerif-Italic.woff",
                 "resource-files/fonts/DejaVuLGCSerif-Italic.woff2",
-                "resource-files/fonts/DejaVuLGCSerif.woff",
                 "resource-files/fonts/DejaVuLGCSerif.woff2");
     }
 
@@ -111,10 +100,11 @@ public class TestFonts extends JavadocTester {
         checkExit(Exit.OK);
         checkFiles(true, "resource-files/copy.svg",
                 "resource-files/glass.svg",
-                "resource-files/jquery-ui.min.css",
                 "resource-files/link.svg",
                 "resource-files/stylesheet.css",
                 "resource-files/x.svg");
+        checkOutput("resource-files/stylesheet.css", false,
+                "@import url('fonts/dejavu.css');");
         checkFiles(false, "resource-files/fonts");
     }
 }

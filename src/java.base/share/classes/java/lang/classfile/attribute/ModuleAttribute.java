@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,8 +81,8 @@ public sealed interface ModuleAttribute
     ModuleEntry moduleName();
 
     /**
-     * {@return the module flags of the module, as a bit mask}  It is in the
-     * range of unsigned short, {@code [0, 0xFFFF]}.
+     * {@return the module flags of the module, as a bit mask}  It is a {@link
+     * java.lang.classfile##u2 u2} value.
      *
      * @see ModuleDescriptor#modifiers()
      * @see AccessFlag.Location#MODULE
@@ -170,6 +170,9 @@ public sealed interface ModuleAttribute
      * @param opens the opened packages
      * @param uses the consumed services
      * @param provides the provided services
+     * @throws IllegalArgumentException if {@code moduleFlags} is not {@link
+     *         java.lang.classfile##u2 u2} or any of the collections has a size
+     *         over the limit of {@link java.lang.classfile##u2 u2}
      */
     static ModuleAttribute of(ModuleEntry moduleName, int moduleFlags,
                               Utf8Entry moduleVersion,
@@ -186,6 +189,10 @@ public sealed interface ModuleAttribute
      *
      * @param moduleName the module name
      * @param attrHandler a handler that receives a {@link ModuleAttributeBuilder}
+     * @throws IllegalArgumentException if {@code moduleName} represents an
+     *         unnamed module; or if the information from the handler exceeds
+     *         the {@code class} file format limit, such as a list with size
+     *         over the limit of {@link java.lang.classfile##u2 u2}
      */
     static ModuleAttribute of(ModuleDesc moduleName,
                               Consumer<ModuleAttributeBuilder> attrHandler) {
@@ -222,6 +229,8 @@ public sealed interface ModuleAttribute
          *
          * @param moduleName the module name
          * @return this builder
+         * @throws IllegalArgumentException if {@code moduleName} represents an
+         *         unnamed module
          */
         ModuleAttributeBuilder moduleName(ModuleDesc moduleName);
 
@@ -230,6 +239,8 @@ public sealed interface ModuleAttribute
          *
          * @param flagsMask the module flags
          * @return this builder
+         * @throws IllegalArgumentException if {@code flagsMask} is not {@link
+         *         java.lang.classfile##u2 u2}
          */
         ModuleAttributeBuilder moduleFlags(int flagsMask);
 
@@ -260,6 +271,8 @@ public sealed interface ModuleAttribute
          * @param requiresFlagsMask the requires flags
          * @param version the required module version, may be {@code null}
          * @return this builder
+         * @throws IllegalArgumentException if {@code module} represents an
+         *         unnamed module
          */
         ModuleAttributeBuilder requires(ModuleDesc module, int requiresFlagsMask, String version);
 
@@ -270,7 +283,8 @@ public sealed interface ModuleAttribute
          * @param requiresFlags the requires flags
          * @param version the required module version, may be {@code null}
          * @return this builder
-         * @throws IllegalArgumentException if any flag cannot be applied to the
+         * @throws IllegalArgumentException if {@code module} represents an
+         *         unnamed module; or if any flag cannot be applied to the
          *         {@link AccessFlag.Location#MODULE_REQUIRES} location
          */
         default ModuleAttributeBuilder requires(ModuleDesc module, Collection<AccessFlag> requiresFlags, String version) {
@@ -292,6 +306,10 @@ public sealed interface ModuleAttribute
          * @param exportsFlagsMask the export flags
          * @param exportsToModules the modules to export to, or empty for an unqualified export
          * @return this builder
+         * @throws IllegalArgumentException if {@code pkge} represents an
+         *         unnamed package; if any of {@code exportsToModules}
+         *         represents an unnamed module; or if the number of modules
+         *         exceeds the limit of {@link java.lang.classfile##u2 u2}
          */
         ModuleAttributeBuilder exports(PackageDesc pkge, int exportsFlagsMask, ModuleDesc... exportsToModules);
 
@@ -302,8 +320,12 @@ public sealed interface ModuleAttribute
          * @param exportsFlags the export flags
          * @param exportsToModules the modules to export to, or empty for an unqualified export
          * @return this builder
-         * @throws IllegalArgumentException if any flag cannot be applied to the
-         *         {@link AccessFlag.Location#MODULE_EXPORTS} location
+         * @throws IllegalArgumentException if {@code pkge} represents an
+         *         unnamed package; if any of {@code exportsToModules}
+         *         represents an unnamed module; if any flag cannot be applied
+         *         to the {@link AccessFlag.Location#MODULE_EXPORTS} location;
+         *         or if the number of modules exceeds the limit of {@link
+         *         java.lang.classfile##u2 u2}
          */
         default ModuleAttributeBuilder exports(PackageDesc pkge, Collection<AccessFlag> exportsFlags, ModuleDesc... exportsToModules) {
             return exports(pkge, Util.flagsToBits(AccessFlag.Location.MODULE_EXPORTS, exportsFlags), exportsToModules);
@@ -329,6 +351,10 @@ public sealed interface ModuleAttribute
          * @param opensFlagsMask the open package flags
          * @param opensToModules the modules to open to, or empty for an unqualified open
          * @return this builder
+         * @throws IllegalArgumentException if {@code pkge} represents an
+         *         unnamed package; if any of {@code opensToModules} represents
+         *         an unnamed module; or if the number of modules exceeds the
+         *         limit of {@link java.lang.classfile##u2 u2}
          */
         ModuleAttributeBuilder opens(PackageDesc pkge, int opensFlagsMask, ModuleDesc... opensToModules);
 
@@ -344,8 +370,12 @@ public sealed interface ModuleAttribute
          * @param opensFlags the open package flags
          * @param opensToModules the modules to open to, or empty for an unqualified open
          * @return this builder
-         * @throws IllegalArgumentException if any flag cannot be applied to the
-         *         {@link AccessFlag.Location#MODULE_OPENS} location
+         * @throws IllegalArgumentException if {@code pkge} represents an
+         *         unnamed package; if any of {@code opensToModules} represents
+         *         an unnamed module; if any flag cannot be applied to the
+         *         {@link AccessFlag.Location#MODULE_OPENS} location; or if the
+         *         number of modules exceeds the limit of {@link
+         *         java.lang.classfile##u2 u2}
          */
         default ModuleAttributeBuilder opens(PackageDesc pkge, Collection<AccessFlag> opensFlags, ModuleDesc... opensToModules) {
             return opens(pkge, Util.flagsToBits(AccessFlag.Location.MODULE_OPENS, opensFlags), opensToModules);
@@ -387,7 +417,10 @@ public sealed interface ModuleAttribute
          * @param service the service class provided
          * @param implClasses the implementation classes
          * @return this builder
-         * @throws IllegalArgumentException if {@code service} or any of the {@code implClasses} represents a primitive type
+         * @throws IllegalArgumentException if {@code service} or any of the
+         *         {@code implClasses} represents a primitive type, or the
+         *         number of implementations exceeds the limit of {@link
+         *         java.lang.classfile##u2 u2}
          */
         ModuleAttributeBuilder provides(ClassDesc service, ClassDesc... implClasses);
 

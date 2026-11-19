@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,8 @@
  * @build nsk.jdi.VirtualMachine.instanceCounts.instancecounts003.instancecounts003
  *        nsk.share.jdi.TestClass1
  *        nsk.share.jdi.TestInterfaceImplementer1
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run driver
  *      nsk.jdi.VirtualMachine.instanceCounts.instancecounts003.instancecounts003
  *      -verbose
@@ -55,7 +57,9 @@
  *      -waittime=5
  *      -debugee.vmkind=java
  *      -transport.address=dynamic
- *      -debugee.vmkeys="-Xmx256M ${test.vm.opts} ${test.java.opts}"
+ *      -debugee.vmkeys="-Xmx256M ${test.vm.opts} ${test.java.opts}
+ *                      -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *                      -XX:+WhiteBoxAPI"
  *      -testClassPath ${test.class.path}
  */
 

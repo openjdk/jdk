@@ -276,10 +276,10 @@ import java.util.stream.Stream;
  * if {@code A >= S}. An aligned var handle is guaranteed to support the following
  * access modes:
  * <ul>
- * <li>read write access modes for all {@code T}. On 32-bit platforms, access modes
- *     {@code get} and {@code set} for {@code long}, {@code double} and {@code MemorySegment}
- *     are supported but might lead to word tearing, as described in Section {@jls 17.7}.
- *     of <cite>The Java Language Specification</cite>.
+ * <li>read write access modes for all {@code T}.  Access modes {@code get} and
+ *     {@code set} for {@code long}, {@code double} and {@code MemorySegment}
+ *     are supported but have no atomicity guarantee, as described in Section
+ *     {@jls 17.7} of <cite>The Java Language Specification</cite>.
  * <li>atomic update access modes for {@code int}, {@code long},
  *     {@code float}, {@code double} and {@link MemorySegment}.
  *     (Future major platform releases of the JDK may support additional

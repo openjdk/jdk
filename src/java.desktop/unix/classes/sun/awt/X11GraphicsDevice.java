@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -153,6 +153,14 @@ public final class X11GraphicsDevice extends GraphicsDevice
 
     public Rectangle getBounds() {
         return bounds.getBounds();
+    }
+
+    /**
+     * Returns the screen bounds in native pixels,
+     * ignoring UI scaling and Xwayland display mode emulation.
+     */
+    public Rectangle getNativeBounds() {
+        return pGetBounds(getScreen());
     }
 
     public Insets getInsets() {
@@ -333,7 +341,7 @@ public final class X11GraphicsDevice extends GraphicsDevice
 
     private static native void enterFullScreenExclusive(long window);
     private static native void exitFullScreenExclusive(long window);
-    private static native boolean initXrandrExtension();
+    private static native boolean initXrandrExtension(boolean useOldConfigDisplayMode);
     private static native DisplayMode getCurrentDisplayMode(int screen);
     private static native void enumDisplayModes(int screen,
                                                 ArrayList<DisplayMode> modes);
@@ -350,10 +358,11 @@ public final class X11GraphicsDevice extends GraphicsDevice
      */
     private static synchronized boolean isXrandrExtensionSupported() {
         if (xrandrExtSupported == null) {
-            xrandrExtSupported =
-                Boolean.valueOf(initXrandrExtension());
+            boolean useOldConfigDisplayMode =
+                    Boolean.getBoolean("awt.x11useOldConfigDisplayMode");
+            xrandrExtSupported = initXrandrExtension(useOldConfigDisplayMode);
         }
-        return xrandrExtSupported.booleanValue();
+        return xrandrExtSupported;
     }
 
     @Override

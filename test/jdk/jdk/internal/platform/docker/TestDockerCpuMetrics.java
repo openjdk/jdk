@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,9 +46,8 @@ public class TestDockerCpuMetrics {
     private static final String imageName = Common.imageName("metrics-cpu");
 
     public static void main(String[] args) throws Exception {
-        if (!DockerTestUtils.canTestDocker()) {
-            return;
-        }
+        DockerTestUtils.checkCanTestDocker();
+        DockerTestUtils.checkCanUseResourceLimits();
 
         // These tests create a docker image and run this image with
         // varying docker cpu options.  The arguments passed to the docker
@@ -103,7 +102,7 @@ public class TestDockerCpuMetrics {
         Common.logNewTestCase("testCpuSetMems, mem nodes = " + value);
         DockerRunOptions opts =
                 new DockerRunOptions(imageName, "/jdk/bin/java", "MetricsCpuTester");
-        opts.addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/");
+        opts.addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/:z");
         opts.addDockerOpts("--cpuset-mems=" + value);
         opts.addJavaOpts("-cp", "/test-classes/").addJavaOpts("--add-exports", "java.base/jdk.internal.platform=ALL-UNNAMED");
         opts.addClassOptions("cpumems", value);
@@ -118,7 +117,7 @@ public class TestDockerCpuMetrics {
         Common.logNewTestCase("testCpuSet, value = " + value);
         DockerRunOptions opts =
                 new DockerRunOptions(imageName, "/jdk/bin/java", "MetricsCpuTester");
-        opts.addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/");
+        opts.addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/:z");
         if (addCgroupMount) {
             // Extra cgroup mount should be ignored by product code
             opts.addDockerOpts("--volume", "/sys/fs/cgroup:/cgroup-in:ro");
@@ -138,7 +137,7 @@ public class TestDockerCpuMetrics {
         Common.logNewTestCase("testCpuQuota, quota = " + quota + ", period = " + period);
         DockerRunOptions opts =
                 new DockerRunOptions(imageName, "/jdk/bin/java", "MetricsCpuTester");
-        opts.addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/");
+        opts.addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/:z");
         if (addCgroupMount) {
             // Extra cgroup mount should be ignored by product code
             opts.addDockerOpts("--volume", "/sys/fs/cgroup:/cgroup-in:ro");
@@ -153,7 +152,7 @@ public class TestDockerCpuMetrics {
         Common.logNewTestCase("testCpuShares, shares = " + shares);
         DockerRunOptions opts =
                 new DockerRunOptions(imageName, "/jdk/bin/java", "MetricsCpuTester");
-        opts.addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/");
+        opts.addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/:z");
         opts.addDockerOpts("--cpu-shares=" + shares);
         opts.addJavaOpts("-cp", "/test-classes/").addJavaOpts("--add-exports", "java.base/jdk.internal.platform=ALL-UNNAMED");
         opts.addClassOptions("cpushares", shares + "");
@@ -164,7 +163,7 @@ public class TestDockerCpuMetrics {
         Common.logNewTestCase("testCpuThrottling, cpus = " + cpus);
         DockerRunOptions opts =
                 new DockerRunOptions(imageName, "/jdk/bin/java", "MetricsCpuTester");
-        opts.addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/");
+        opts.addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/:z");
         opts.addDockerOpts("--cpus=" + cpus);
         opts.addJavaOpts("-cp", "/test-classes/").addJavaOpts("--add-exports", "java.base/jdk.internal.platform=ALL-UNNAMED");
         opts.addClassOptions("cpus", cpus + "");
@@ -175,7 +174,7 @@ public class TestDockerCpuMetrics {
         Common.logNewTestCase("testComboOptions, shares = " + shares);
         DockerRunOptions opts =
                 new DockerRunOptions(imageName, "/jdk/bin/java", "MetricsCpuTester");
-        opts.addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/");
+        opts.addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/:z");
         opts.addDockerOpts("--cpuset-cpus", "" + cpuset)
                 .addDockerOpts("--cpu-period=" + period)
                 .addDockerOpts("--cpu-quota=" + quota)

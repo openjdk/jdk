@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @run testng/othervm --enable-native-access=ALL-UNNAMED TestHeapAlignment
+ * @run junit/othervm --enable-native-access=ALL-UNNAMED TestHeapAlignment
  */
 
 import java.lang.foreign.AddressLayout;
@@ -34,14 +34,17 @@ import java.lang.foreign.ValueLayout;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
-import static org.testng.Assert.fail;
+import static org.junit.jupiter.api.Assertions.fail;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestHeapAlignment {
 
-    @Test(dataProvider = "layouts")
+    @ParameterizedTest
+    @MethodSource("layouts")
     public void testHeapAlignment(MemorySegment segment, int align, Object val, Object arr, ValueLayout layout, Function<Object, MemorySegment> segmentFactory) {
         assertAligned(align, layout, () -> layout.varHandle().get(segment, 0L));
         assertAligned(align, layout, () -> layout.varHandle().set(segment, 0L, val));
@@ -101,7 +104,6 @@ public class TestHeapAlignment {
         }
     }
 
-    @DataProvider
     public static Object[][] layouts() {
         List<Object[]> layouts = new ArrayList<>();
         for (SegmentAndAlignment testCase : SegmentAndAlignment.values()) {

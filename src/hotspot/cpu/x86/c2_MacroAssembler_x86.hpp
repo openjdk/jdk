@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,20 +29,19 @@
 
 public:
   // C2 compiled method's prolog code.
-  void verified_entry(int framesize, int stack_bang_size, bool fp_mode_24b, bool is_stub);
+  void verified_entry(Compile* C, int sp_inc = 0, bool do_stack_bang = true);
 
+  void entry_barrier();
   Assembler::AvxVectorLen vector_length_encoding(int vlen_in_bytes);
 
   // Code used by cmpFastLock and cmpFastUnlock mach instructions in .ad file.
-  // See full description in macroAssembler_x86.cpp.
-  void fast_lock(Register obj, Register box, Register tmp,
-                 Register scr, Register cx1, Register cx2, Register thread,
-                 Metadata* method_data);
-  void fast_unlock(Register obj, Register box, Register tmp);
+  // See full description in c2_MacroAssembler_x86.cpp.
+  void fast_lock(Register obj, Register box, Register rax_reg,
+                 Register t, Register thread);
+  void fast_unlock(Register obj, Register reg_rax, Register t, Register thread);
 
-  void fast_lock_lightweight(Register obj, Register box, Register rax_reg,
-                             Register t, Register thread);
-  void fast_unlock_lightweight(Register obj, Register reg_rax, Register t, Register thread);
+  static void abort_verify_int_in_range(uint idx, jint val, jint lo, jint hi);
+  static void abort_verify_long_in_range(uint idx, jlong val, jlong lo, jlong hi);
 
   void verify_int_in_range(uint idx, const TypeInt* t, Register val);
   void verify_long_in_range(uint idx, const TypeLong* t, Register val, Register tmp);
@@ -71,6 +70,12 @@ public:
                   XMMRegister dst, XMMRegister a, XMMRegister b,
                   XMMRegister tmp, XMMRegister atmp, XMMRegister btmp,
                   int vlen_enc);
+
+  void vminmax_fp_avx10_2(int opc, BasicType elem_bt, XMMRegister dst, KRegister mask,
+                          XMMRegister src1, XMMRegister src2, int vlen_enc);
+
+  void sminmax_fp_avx10_2(int opc, BasicType elem_bt, XMMRegister dst, KRegister mask,
+                          XMMRegister src1, XMMRegister src2);
 
   void vpuminmaxq(int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2, XMMRegister xtmp1, XMMRegister xtmp2, int vlen_enc);
 
@@ -110,6 +115,9 @@ public:
   void varshiftq(int opcode, XMMRegister dst, XMMRegister src, XMMRegister shift, int vlen_enc, XMMRegister vtmp = xnoreg);
   void varshiftbw(int opcode, XMMRegister dst, XMMRegister src, XMMRegister shift, int vector_len, XMMRegister vtmp);
   void evarshiftb(int opcode, XMMRegister dst, XMMRegister src, XMMRegister shift, int vector_len, XMMRegister vtmp);
+  // Uniform byte shift via GFNI affine instruction. shift holds the scalar count.
+  void vshiftb_gfni(int opcode, XMMRegister dst, XMMRegister src, XMMRegister shift,
+                    Register rtmp, Register rbase, int vlen_enc);
 
   void insert(BasicType typ, XMMRegister dst, Register val, int idx);
   void vinsert(BasicType typ, XMMRegister dst, XMMRegister src, Register val, int idx);
@@ -306,6 +314,8 @@ public:
 
   void convertF2I(BasicType dst_bt, BasicType src_bt, Register dst, XMMRegister src);
 
+  void convertHF2X(BasicType dst_bt, Register dst, Register src, XMMRegister xtmp);
+
   void evmasked_op(int ideal_opc, BasicType eType, KRegister mask,
                    XMMRegister dst, XMMRegister src1, XMMRegister src2,
                    bool merge, int vlen_enc, bool is_varshift = false);
@@ -333,6 +343,14 @@ public:
                           XMMRegister xtmp2, XMMRegister xtmp3, XMMRegister xtmp4,
                           AddressLiteral float_sign_flip, Register rscratch, int vec_enc);
 
+  void vector_castHF2I_evex(BasicType to_elem_bt, XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
+                            XMMRegister xtmp2, KRegister ktmp1, KRegister ktmp2,
+                            AddressLiteral float_sign_flip, Register rscratch, int vec_enc);
+
+  void vector_castHF2L_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
+                            XMMRegister xtmp2, KRegister ktmp1, KRegister ktmp2,
+                            AddressLiteral double_sign_flip, Register rscratch, int vec_enc);
+
   void vector_castF2X_evex(BasicType to_elem_bt, XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
                            XMMRegister xtmp2, KRegister ktmp1, KRegister ktmp2, AddressLiteral float_sign_flip,
                            Register rscratch, int vec_enc);
@@ -349,26 +367,28 @@ public:
                           XMMRegister xtmp2, XMMRegister xtmp3, XMMRegister xtmp4, XMMRegister xtmp5,
                           AddressLiteral float_sign_flip, Register rscratch, int vec_enc);
 
+  void vector_castF2X_avx10_2(BasicType to_elem_bt, XMMRegister dst, XMMRegister src, int vec_enc);
+
+  void vector_castF2X_avx10_2(BasicType to_elem_bt, XMMRegister dst, Address src, int vec_enc);
+
+  void vector_castD2X_avx10_2(BasicType to_elem_bt, XMMRegister dst, XMMRegister src, int vec_enc);
+
+  void vector_castD2X_avx10_2(BasicType to_elem_bt, XMMRegister dst, Address src, int vec_enc);
 
   void vector_cast_double_to_int_special_cases_avx(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
                                                    XMMRegister xtmp3, XMMRegister xtmp4, XMMRegister xtmp5, Register rscratch,
                                                    AddressLiteral float_sign_flip, int vec_enc);
 
-  void vector_cast_double_to_int_special_cases_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
-                                                    KRegister ktmp1, KRegister ktmp2, Register rscratch, AddressLiteral float_sign_flip,
-                                                    int vec_enc);
+  void evcmp_fp(BasicType src_elem_bt, KRegister kdst, KRegister mask, XMMRegister nds, XMMRegister src,
+                ComparisonPredicateFP comparison, int vec_enc);
 
-  void vector_cast_double_to_long_special_cases_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
-                                                     KRegister ktmp1, KRegister ktmp2, Register rscratch, AddressLiteral double_sign_flip,
-                                                     int vec_enc);
+  void vector_cast_fp_to_int_special_cases_evex(BasicType src_elem_bt, XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
+                                                XMMRegister xtmp2, KRegister ktmp1, KRegister ktmp2, Register rscratch,
+                                                AddressLiteral float_sign_flip, int vec_enc);
 
-  void vector_cast_float_to_int_special_cases_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
-                                                   KRegister ktmp1, KRegister ktmp2, Register rscratch, AddressLiteral float_sign_flip,
-                                                   int vec_enc);
-
-  void vector_cast_float_to_long_special_cases_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
-                                                    KRegister ktmp1, KRegister ktmp2, Register rscratch, AddressLiteral double_sign_flip,
-                                                    int vec_enc);
+  void vector_cast_fp_to_long_special_cases_evex(BasicType src_elem_bt, XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
+                                                 XMMRegister xtmp2, KRegister ktmp1, KRegister ktmp2, Register rscratch,
+                                                 AddressLiteral double_sign_flip, int vec_enc);
 
   void vector_cast_float_to_int_special_cases_avx(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2, XMMRegister xtmp3,
                                                   XMMRegister xtmp4, Register rscratch, AddressLiteral float_sign_flip,
@@ -492,16 +512,6 @@ public:
 
   void efp16sh(int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2);
 
-  void vgather_subword(BasicType elem_ty, XMMRegister dst,  Register base, Register idx_base, Register offset,
-                       Register mask, XMMRegister xtmp1, XMMRegister xtmp2, XMMRegister xtmp3, Register rtmp,
-                       Register midx, Register length, int vector_len, int vlen_enc);
-
-  void vgather8b_masked_offset(BasicType elem_bt, XMMRegister dst, Register base, Register idx_base,
-                               Register offset, Register mask, Register midx, Register rtmp, int vlen_enc);
-
-  void vgather8b_offset(BasicType elem_bt, XMMRegister dst, Register base, Register idx_base,
-                              Register offset, Register rtmp, int vlen_enc);
-
   void vector_saturating_op(int opc, BasicType elem_bt, XMMRegister dst, XMMRegister src1, XMMRegister src2, bool is_unsigned, int vlen_enc);
 
   void vector_saturating_op(int opc, BasicType elem_bt, XMMRegister dst, XMMRegister src1, Address src2, bool is_unsigned, int vlen_enc);
@@ -568,16 +578,30 @@ public:
 
   void select_from_two_vectors_evex(BasicType elem_bt, XMMRegister dst, XMMRegister src1, XMMRegister src2, int vlen_enc);
 
+  void vector_slice_evex(XMMRegister dst, XMMRegister src1, XMMRegister src2, XMMRegister xtmp, int origin, int vlen_enc);
+
+  void vector_slice_avx(XMMRegister dst, XMMRegister src1, XMMRegister src2, int origin, int vlen_enc);
+
   void evfp16ph(int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2, int vlen_enc);
 
   void evfp16ph(int opcode, XMMRegister dst, XMMRegister src1, Address src2, int vlen_enc);
 
-  void vector_max_min_fp16(int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2,
-                          KRegister ktmp, XMMRegister xtmp1, XMMRegister xtmp2, int vlen_enc);
+  void vminmax_fp16(int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2,
+                    KRegister ktmp, XMMRegister xtmp1, XMMRegister xtmp2, int vlen_enc);
 
-  void scalar_max_min_fp16(int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2,
-                          KRegister ktmp, XMMRegister xtmp1, XMMRegister xtmp2);
+  void vminmax_fp16_avx10_2(int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2,
+                            KRegister ktmp, int vlen_enc);
+
+  void vminmax_fp16_avx10_2(int opcode, XMMRegister dst, XMMRegister src1, Address src2,
+                            KRegister ktmp, int vlen_enc);
+
+  void sminmax_fp16(int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2,
+                    KRegister ktmp, XMMRegister xtmp1, XMMRegister xtmp2);
+
+  void sminmax_fp16_avx10_2(int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2,
+                            KRegister ktmp);
 
   void reconstruct_frame_pointer(Register rtmp);
 
+  int vector_iota_entry_index(BasicType bt);
 #endif // CPU_X86_C2_MACROASSEMBLER_X86_HPP

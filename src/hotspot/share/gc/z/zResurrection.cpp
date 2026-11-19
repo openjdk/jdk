@@ -22,7 +22,7 @@
  */
 
 #include "gc/z/zResurrection.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/safepoint.hpp"
 #include "utilities/debug.hpp"
 
@@ -37,5 +37,5 @@ void ZResurrection::unblock() {
   // No need for anything stronger than a relaxed store here.
   // The preceding handshake makes sure that all non-strong
   // oops have already been healed at this point.
-  Atomic::store(&_blocked, false);
+  AtomicAccess::store(&_blocked, false);
 }

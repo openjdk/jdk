@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,17 +24,18 @@
 
 #include "cds/aotConstantPoolResolver.hpp"
 #include "cds/aotLogging.hpp"
+#include "cds/aotMetaspace.hpp"
+#include "cds/aotSystemDictionary.hpp"
 #include "cds/archiveUtils.hpp"
 #include "cds/classListParser.hpp"
 #include "cds/lambdaFormInvokers.hpp"
 #include "cds/lambdaProxyClassDictionary.hpp"
-#include "cds/metaspaceShared.hpp"
 #include "cds/unregisteredClasses.hpp"
-#include "classfile/classLoaderExt.hpp"
+#include "classfile/classLoader.hpp"
 #include "classfile/javaClasses.inline.hpp"
+#include "classfile/javaStackTraceClasses.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
-#include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "interpreter/bytecode.hpp"
@@ -47,7 +48,7 @@
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/constantPool.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
@@ -87,7 +88,7 @@ ClassListParser::ClassListParser(const char* file, ParseMode parse_mode) :
   // _instance should only be accessed by the thread that created _instance.
   assert(_instance == nullptr, "must be singleton");
   _instance = this;
-  Atomic::store(&_parsing_thread, Thread::current());
+  AtomicAccess::store(&_parsing_thread, Thread::current());
 }
 
 FILE* ClassListParser::do_open(const char* file) {
@@ -104,11 +105,11 @@ FILE* ClassListParser::do_open(const char* file) {
 }
 
 bool ClassListParser::is_parsing_thread() {
-  return Atomic::load(&_parsing_thread) == Thread::current();
+  return AtomicAccess::load(&_parsing_thread) == Thread::current();
 }
 
 ClassListParser::~ClassListParser() {
-  Atomic::store(&_parsing_thread, (Thread*)nullptr);
+  AtomicAccess::store(&_parsing_thread, (Thread*)nullptr);
   delete _indy_items;
   delete _interfaces;
   _instance = nullptr;
@@ -185,7 +186,7 @@ void ClassListParser::parse_class_name_and_attributes(TRAPS) {
     // cpcache to be created. The linking is done as soon as classes
     // are loaded in order that the related data structures (klass and
     // cpCache) are located together.
-    MetaspaceShared::try_link_class(THREAD, ik);
+    AOTMetaspace::try_link_class(THREAD, ik);
   }
 }
 
@@ -514,7 +515,7 @@ void ClassListParser::check_supertype_obstruction(int specified_supertype_id, co
   if (specified_supertype->defined_by_other_loaders()) {
     return; // Only registered supertypes can be obstructed
   }
-  const InstanceKlass* obstructor = SystemDictionaryShared::get_unregistered_class(specified_supertype->name());
+  const InstanceKlass* obstructor = AOTSystemDictionary::get_unregistered_class(specified_supertype->name());
   if (obstructor == nullptr) {
     return; // No unregistered types with the same name have been loaded, i.e. no obstruction
   }
@@ -561,10 +562,10 @@ InstanceKlass* ClassListParser::load_class_from_source(Symbol* class_name, TRAPS
   const char* source_path = ClassLoader::uri_to_path(_source);
   InstanceKlass* k = UnregisteredClasses::load_class(class_name, source_path, CHECK_NULL);
 
-  if (k->java_super() != specified_super) {
+  if (k->super() != specified_super) {
     error("The specified super class %s (id %d) does not match actual super class %s",
           specified_super->external_name(), _super,
-          k->java_super()->external_name());
+          k->super()->external_name());
   }
   if (k->local_interfaces()->length() != _interfaces->length()) {
     print_specified_interfaces();
@@ -584,7 +585,7 @@ InstanceKlass* ClassListParser::load_class_from_source(Symbol* class_name, TRAPS
 
   assert(k->defined_by_other_loaders(), "must be");
 
-  bool added = SystemDictionaryShared::add_unregistered_class(THREAD, k);
+  bool added = AOTSystemDictionary::add_unregistered_class(THREAD, k);
   if (!added) {
     // We allow only a single unregistered class for each unique name.
     error("Duplicated class %s", _class_name);
@@ -674,7 +675,7 @@ void ClassListParser::resolve_indy_impl(Symbol* class_name_symbol, TRAPS) {
   Klass* klass = SystemDictionary::resolve_or_fail(class_name_symbol, class_loader, true, CHECK);
   if (klass->is_instance_klass()) {
     InstanceKlass* ik = InstanceKlass::cast(klass);
-    MetaspaceShared::try_link_class(THREAD, ik);
+    AOTMetaspace::try_link_class(THREAD, ik);
     if (!ik->is_linked()) {
       // Verification of ik has failed
       return;
@@ -767,14 +768,11 @@ Klass* ClassListParser::load_current_class(Symbol* class_name_symbol, TRAPS) {
   if (is_id_specified()) {
     InstanceKlass* ik = InstanceKlass::cast(klass);
     int id = this->id();
-    SystemDictionaryShared::update_shared_entry(ik, id);
+    AOTSystemDictionary::update_shared_entry(ik, id);
     bool created;
     id2klass_table()->put_if_absent(id, ik, &created);
     if (!created) {
       error("Duplicated ID %d for class %s", id, _class_name);
-    }
-    if (id2klass_table()->maybe_grow()) {
-      log_info(aot, hashtables)("Expanded id2klass_table() to %d", id2klass_table()->table_size());
     }
   }
 
@@ -877,7 +875,7 @@ void ClassListParser::parse_constant_pool_tag() {
     }
   }
 
-  if (SystemDictionaryShared::should_be_excluded(ik)) {
+  if (AOTSystemDictionary::should_be_excluded(ik)) {
     if (log_is_enabled(Warning, aot, resolve)) {
       ResourceMark rm;
       log_warning(aot, resolve)("Cannot aot-resolve constants for %s because it is excluded", ik->external_name());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,10 @@
 
 /*
  * @test
- * @bug 8136874
+ * @bug 8136874 8362376
+ * @build Tests
+ * @build PowTests
+ * @run main PowTests
  * @summary Tests for StrictMath.pow
  */
 
@@ -283,6 +286,33 @@ public class PowTests {
              0x1.ffffffffffd9fp1023, // 1.7976931348621944E308
             },
 
+            // Check refactoring, abs(y) < 2^31, x < sqrt(3/2), x < sqrt(3)
+            {1.2, // x < sqrt(3/2)
+             5.0,
+             2.4883199999999994
+            },
+
+            {1.4142135623730951, // sqrt(3/2) < x < sqrt(3)
+             5.0,
+             5.656854249492382
+            },
+
+            {2.23606797749979, // x > sqrt(3)
+             5.0,
+             55.901699437494756
+            },
+
+            {
+                0x1.000002c5e2e99p+0,   // |x| > 1
+                0x1.c9eee35374af6p+31,  // |y| huge
+                0x1.ffffe0bc9e399p+915
+            },
+
+            {
+                0x1.fffff4e900013p-1,   // |x| < 1
+                0x1.0000100000001p+31,  // |y| huge
+                0x0.421378008b246p-1022
+            },
         };
 
         for (double[] testCase: testCases)

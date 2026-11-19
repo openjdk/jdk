@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,11 @@
  *
  */
 
-#ifndef SHARE_JFR_RECORDER_STACKTRACE_JFRSTCKFILTERREGISTRY_HPP
-#define SHARE_JFR_RECORDER_STACKTRACE_JFRSTCKFILTERREGISTRY_HPP
+#ifndef SHARE_JFR_RECORDER_STACKTRACE_JFRSTACKFILTERREGISTRY_HPP
+#define SHARE_JFR_RECORDER_STACKTRACE_JFRSTACKFILTERREGISTRY_HPP
 
-#include "jni.h"
 #include "jfr/utilities/jfrAllocation.hpp"
+#include "jni.h"
 
 class JavaThread;
 class JfrStackFilter;
@@ -40,4 +40,4 @@ class JfrStackFilterRegistry : AllStatic {
   static const JfrStackFilter* lookup(int64_t id);
 };
 
-#endif // SHARE_JFR_RECORDER_STACKTRACE_JFRSTCKFILTERREGISTRY_HPP
+#endif // SHARE_JFR_RECORDER_STACKTRACE_JFRSTACKFILTERREGISTRY_HPP

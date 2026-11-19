@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -170,13 +170,6 @@ public abstract class X11InputMethodBase extends InputMethodAdapter {
         if (initXIM() == false) {
             throw new AWTException("Cannot open X Input Method");
         }
-    }
-
-    @Override
-    @SuppressWarnings("removal")
-    protected void finalize() throws Throwable {
-        dispose();
-        super.finalize();
     }
 
     /**
@@ -441,7 +434,7 @@ public abstract class X11InputMethodBase extends InputMethodAdapter {
         if (source != null) {
             InputMethodEvent event = new InputMethodEvent(source,
                 id, when, text, committedCharacterCount, caret, visiblePosition);
-            SunToolkit.postEvent(SunToolkit.targetToAppContext(source), (AWTEvent)event);
+            SunToolkit.postEvent((AWTEvent)event);
         }
     }
 

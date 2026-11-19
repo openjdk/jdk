@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,8 @@ import java.io.InputStreamReader;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.net.JarURLConnection;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -47,11 +49,13 @@ import jdk.internal.util.StaticProperty;
 
 public class CDS {
     // Must be in sync with cdsConfig.hpp
-    private static final int IS_DUMPING_ARCHIVE              = 1 << 0;
-    private static final int IS_DUMPING_METHOD_HANDLES       = 1 << 1;
-    private static final int IS_DUMPING_STATIC_ARCHIVE       = 1 << 2;
-    private static final int IS_LOGGING_LAMBDA_FORM_INVOKERS = 1 << 3;
-    private static final int IS_USING_ARCHIVE                = 1 << 4;
+    private static final int IS_DUMPING_AOT_LINKED_CLASSES   = 1 << 0;
+    private static final int IS_DUMPING_ARCHIVE              = 1 << 1;
+    private static final int IS_DUMPING_METHOD_HANDLES       = 1 << 2;
+    private static final int IS_DUMPING_STATIC_ARCHIVE       = 1 << 3;
+    private static final int IS_LOGGING_LAMBDA_FORM_INVOKERS = 1 << 4;
+    private static final int IS_USING_ARCHIVE                = 1 << 5;
+
     private static final int configStatus = getCDSConfigStatus();
 
     /**
@@ -80,6 +84,10 @@ public class CDS {
       */
     public static boolean isDumpingStaticArchive() {
         return (configStatus & IS_DUMPING_STATIC_ARCHIVE) != 0;
+    }
+
+    public static boolean isDumpingAOTLinkedClasses() {
+        return (configStatus & IS_DUMPING_AOT_LINKED_CLASSES) != 0;
     }
 
     public static boolean isSingleThreadVM() {
@@ -392,6 +400,30 @@ public class CDS {
     }
 
     private static native boolean needsClassInitBarrier0(Class<?> c);
+
+    /**
+     * Returns a resource located in a JAR file
+     * @param loader Class loader used by AOT
+     * @param jarURL URL of JAR archive which should contain the resource
+     * @param name Resource name
+     */
+    public static URL getResource(ClassLoader loader, URL jarURL, String name) throws Exception {
+        URL resource = loader.getResource(name);
+
+        if (resource != null) {
+            // If the resource is not in the correct JAR file, discard it
+            if (resource.getProtocol().equalsIgnoreCase("jar")) {
+                JarURLConnection resourceJarURL = (JarURLConnection)resource.openConnection();
+                if (!resourceJarURL.getJarFileURL().equals(jarURL)) {
+                    return null;
+                }
+            } else {
+                return null;
+            }
+        }
+
+        return resource;
+    }
 
     /**
      * This class is used only by native JVM code at CDS dump time for loading

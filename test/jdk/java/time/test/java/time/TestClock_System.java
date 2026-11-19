@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,8 +59,8 @@
  */
 package test.java.time;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertSame;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
 import java.lang.reflect.Field;
 import java.time.Clock;
@@ -68,18 +68,21 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /**
  * Test system clock.
  */
-@Test
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestClock_System {
 
     private static final ZoneId PARIS = ZoneId.of("Europe/Paris");
     private static final Clock systemUTC = Clock.systemUTC();
 
+    @Test
     public void test_withZone_same() {
         Clock test = Clock.system(PARIS);
         Clock changed = test.withZone(PARIS);
@@ -87,13 +90,13 @@ public class TestClock_System {
     }
 
     //-----------------------------------------------------------------------
+    @Test
     public void test_toString() {
         Clock test = Clock.system(PARIS);
-        assertEquals(test.toString(), "SystemClock[Europe/Paris]");
+        assertEquals("SystemClock[Europe/Paris]", test.toString());
     }
 
     //-----------------------------------------------------------------------
-    @DataProvider(name="sampleSystemUTC")
     Object[][] provider_sampleSystemUTC() {
         return new Object[][] {
             {"Clock.systemUTC()#1",  Clock.systemUTC()},
@@ -104,7 +107,8 @@ public class TestClock_System {
     }
 
     // Test for 8073394
-    @Test(dataProvider="sampleSystemUTC")
+    @ParameterizedTest
+    @MethodSource("provider_sampleSystemUTC")
     public void test_systemUTC(String s, Clock clock) {
         if (clock != systemUTC) {
             throw new RuntimeException("Unexpected clock instance for " + s + ": "
@@ -126,6 +130,7 @@ public class TestClock_System {
                         + time.getNano();
     }
 
+    @Test
     public void test_ClockResolution() {
         Clock highestUTC = Clock.systemUTC();
 
@@ -392,6 +397,7 @@ public class TestClock_System {
         }
     }
 
+    @Test
     public void test_OffsetRegular() throws IllegalAccessException {
         System.out.println("*** Testing regular cases ***");
         SystemClockOffset.testWithOffset("System.currentTimeMillis()/1000",
@@ -402,6 +408,7 @@ public class TestClock_System {
                 System.currentTimeMillis()/1000 + 1024);
     }
 
+    @Test
     public void test_OffsetLimits() throws IllegalAccessException {
         System.out.println("*** Testing limits ***");
         SystemClockOffset.testWithOffset("System.currentTimeMillis()/1000 - MAX_OFFSET + 1",

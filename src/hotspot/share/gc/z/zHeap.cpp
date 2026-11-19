@@ -26,6 +26,7 @@
 #include "gc/shared/gcLogPrecious.hpp"
 #include "gc/shared/locationPrinter.hpp"
 #include "gc/shared/tlab_globals.hpp"
+#include "gc/z/zAdaptiveHeap.inline.hpp"
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zArray.inline.hpp"
 #include "gc/z/zGeneration.inline.hpp"
@@ -34,6 +35,7 @@
 #include "gc/z/zHeapIterator.hpp"
 #include "gc/z/zHeuristics.hpp"
 #include "gc/z/zInitialize.hpp"
+#include "gc/z/zObjectAllocator.hpp"
 #include "gc/z/zPage.inline.hpp"
 #include "gc/z/zPageTable.inline.hpp"
 #include "gc/z/zResurrection.hpp"
@@ -47,19 +49,22 @@
 #include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/javaThread.hpp"
+#include "runtime/os.hpp"
+#include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 
 static const ZStatCounter ZCounterUndoPageAllocation("Memory", "Undo Page Allocation", ZStatUnitOpsPerSecond);
 static const ZStatCounter ZCounterOutOfMemory("Memory", "Out Of Memory", ZStatUnitOpsPerSecond);
+static const ZStatCounter ZCounterUndoObjectAllocationSucceeded("Memory", "Undo Object Allocation Succeeded", ZStatUnitOpsPerSecond);
+static const ZStatCounter ZCounterUndoObjectAllocationFailed("Memory", "Undo Object Allocation Failed", ZStatUnitOpsPerSecond);
 
 ZHeap* ZHeap::_heap = nullptr;
 
 ZHeap::ZHeap()
   : _page_allocator(MinHeapSize, InitialHeapSize, SoftMaxHeapSize, MaxHeapSize),
     _page_table(),
-    _allocator_eden(),
-    _allocator_relocation(),
-    _serviceability(InitialHeapSize, min_capacity(), max_capacity()),
+    _object_allocator(),
+    _serviceability(InitialHeapSize, static_min_capacity(), static_max_capacity()),
     _old(&_page_table, &_page_allocator),
     _young(&_page_table, _old.forwarding_table(), &_page_allocator),
     _tlab_usage(),
@@ -84,8 +89,13 @@ ZHeap::ZHeap()
   }
 
   // Update statistics
-  _young.stat_heap()->at_initialize(_page_allocator.min_capacity(), _page_allocator.max_capacity());
-  _old.stat_heap()->at_initialize(_page_allocator.min_capacity(), _page_allocator.max_capacity());
+  _young.stat_heap()->at_initialize(_page_allocator.static_min_capacity(), MaxHeapSize);
+  _old.stat_heap()->at_initialize(_page_allocator.static_min_capacity(), MaxHeapSize);
+
+  // Initialize Adaptive heap generation data
+  if (ZAdaptiveHeapSizing) {
+    ZAdaptiveHeap::initialize_generation_data();
+  }
 
   // Successfully initialized
   _initialized = true;
@@ -95,16 +105,24 @@ bool ZHeap::is_initialized() const {
   return _initialized;
 }
 
-size_t ZHeap::min_capacity() const {
-  return _page_allocator.min_capacity();
+size_t ZHeap::static_min_capacity() const {
+  return _page_allocator.static_min_capacity();
 }
 
-size_t ZHeap::max_capacity() const {
-  return _page_allocator.max_capacity();
+size_t ZHeap::static_max_capacity() const {
+  return _page_allocator.static_max_capacity();
 }
 
-size_t ZHeap::soft_max_capacity() const {
-  return _page_allocator.soft_max_capacity();
+size_t ZHeap::dynamic_max_capacity() const {
+  return _page_allocator.dynamic_max_capacity();
+}
+
+size_t ZHeap::current_max_capacity() const {
+  return _page_allocator.current_max_capacity();
+}
+
+size_t ZHeap::heuristic_max_capacity() const {
+  return _page_allocator.heuristic_max_capacity();
 }
 
 size_t ZHeap::capacity() const {
@@ -113,6 +131,16 @@ size_t ZHeap::capacity() const {
 
 size_t ZHeap::used() const {
   return _page_allocator.used();
+}
+
+void ZHeap::adapt_heuristic_max_capacity(ZGenerationId generation) {
+  precond(ZAdaptiveHeapSizing);
+  _page_allocator.adapt_heuristic_max_capacity(generation);
+}
+
+void ZHeap::adjust_capacity(size_t used_soon) {
+  precond(ZAdaptiveHeapSizing);
+  _page_allocator.adjust_capacity(used_soon);
 }
 
 size_t ZHeap::used_generation(ZGenerationId id) const {
@@ -144,7 +172,7 @@ size_t ZHeap::max_tlab_size() const {
 }
 
 size_t ZHeap::unsafe_max_tlab_alloc() const {
-  size_t size = _allocator_eden.remaining();
+  size_t size = _object_allocator.fast_available(ZPageAge::eden);
 
   if (size < MinTLABSize) {
     // The remaining space in the allocator is not enough to
@@ -157,6 +185,7 @@ size_t ZHeap::unsafe_max_tlab_alloc() const {
 
   return MIN2(size, max_tlab_size());
 }
+
 void ZHeap::reset_tlab_used() {
   _tlab_usage.reset();
 }
@@ -216,7 +245,7 @@ void ZHeap::threads_do(ThreadClosure* tc) const {
   _old.threads_do(tc);
 }
 
-void ZHeap::out_of_memory() {
+void ZHeap::out_of_memory() const {
   ResourceMark rm;
 
   ZStatInc(ZCounterOutOfMemory);
@@ -247,8 +276,8 @@ void ZHeap::account_undo_alloc_page(ZPage* page) {
                 p2i(Thread::current()), ZUtils::thread_name(), p2i(page), page->size());
 }
 
-ZPage* ZHeap::alloc_page(ZPageType type, size_t size, ZAllocationFlags flags, ZPageAge age) {
-  ZPage* const page = _page_allocator.alloc_page(type, size, flags, age);
+ZPage* ZHeap::alloc_page(ZPageType type, size_t size, ZAllocationFlags flags, ZPageAge age, uint32_t preferred_partition) {
+  ZPage* const page = _page_allocator.alloc_page(type, size, flags, age, preferred_partition);
   if (page != nullptr) {
     // Insert page table entry
     _page_table.insert(page);
@@ -290,6 +319,21 @@ size_t ZHeap::free_empty_pages(ZGenerationId id, const ZArray<ZPage*>* pages) {
   _page_allocator.free_pages(id, pages);
 
   return freed;
+}
+
+void ZHeap::undo_alloc_object_for_relocation(zaddress addr, size_t size) {
+  ZPage* const page = this->page(addr);
+
+  if (page->is_large()) {
+    undo_alloc_page(page);
+    ZStatInc(ZCounterUndoObjectAllocationSucceeded);
+  } else {
+    if (page->undo_alloc_object_atomic(addr, size)) {
+      ZStatInc(ZCounterUndoObjectAllocationSucceeded);
+    } else {
+      ZStatInc(ZCounterUndoObjectAllocationFailed);
+    }
+  }
 }
 
 void ZHeap::keep_alive(oop obj) {
@@ -444,6 +488,7 @@ bool ZHeap::print_location(outputStream* st, zaddress addr) const {
   }
 
   if (LocationPrinter::is_valid_obj((void*)untype(addr))) {
+    ResourceMark rm;
     to_oop(addr)->print_on(st);
     return true;
   }
@@ -494,6 +539,7 @@ bool ZHeap::print_location(outputStream* st, zpointer ptr) const {
   }
 
   if (LocationPrinter::is_valid_obj((void*)untype(addr))) {
+    ResourceMark rm;
     to_oop(addr)->print_on(st);
     return true;
   }

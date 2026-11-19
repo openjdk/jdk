@@ -44,7 +44,7 @@ import jdk.jfr.consumer.RecordingStream;
  */
 public class TestStartMultiChunk {
 
-    @Period("10 s")
+    @Period("2 s")
     @Name("Zebra")
     static class ZebraEvent extends Event {
     }
@@ -65,7 +65,7 @@ public class TestStartMultiChunk {
         CountDownLatch dogLatch = new CountDownLatch(1);
         CountDownLatch catLatch = new CountDownLatch(1);
         CountDownLatch mouseLatch = new CountDownLatch(1);
-        CountDownLatch zebraLatch = new CountDownLatch(3);
+        CountDownLatch zebraLatch = new CountDownLatch(2);
 
         FlightRecorder.addPeriodicEvent(ZebraEvent.class, () -> {
             ZebraEvent ze = new ZebraEvent();

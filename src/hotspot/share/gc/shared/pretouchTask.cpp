@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,11 +52,11 @@ size_t PretouchTask::chunk_size() {
 
 void PretouchTask::work(uint worker_id) {
   while (true) {
-    char* cur_start = Atomic::load(&_cur_addr);
+    char* cur_start = _cur_addr.load_relaxed();
     char* cur_end = cur_start + MIN2(_chunk_size, pointer_delta(_end_addr, cur_start, 1));
     if (cur_start >= cur_end) {
       break;
-    } else if (cur_start == Atomic::cmpxchg(&_cur_addr, cur_start, cur_end)) {
+    } else if (_cur_addr.compare_set(cur_start, cur_end)) {
       os::pretouch_memory(cur_start, cur_end, _page_size);
     } // Else attempt to claim chunk failed, so try again.
   }

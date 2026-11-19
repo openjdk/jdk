@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,14 +24,14 @@
 /*
  * @test
  * @bug 8209022
- * @run testng TypeVariableCastTest
+ * @run junit TypeVariableCastTest
  * @summary Missing checkcast when casting to type parameter bounded by intersection type
  */
 
 import java.util.*;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
-@Test
 public class TypeVariableCastTest {
     static <T extends List<?> & Runnable> void f() {
         Runnable r = (T) new ArrayList<>();
@@ -41,13 +41,17 @@ public class TypeVariableCastTest {
         Runnable r = (T) new ArrayList<>();
     }
 
-    @Test(expectedExceptions = ClassCastException.class)
-    static void testMethodF() {
-        f();
+    @Test
+    void testMethodF() {
+        Assertions.assertThrows(ClassCastException.class, () -> {
+            f();
+        });
     }
 
-    @Test(expectedExceptions = ClassCastException.class)
-    static void testMethodG() {
-        g();
+    @Test
+    void testMethodG() {
+        Assertions.assertThrows(ClassCastException.class, () -> {
+            g();
+        });
     }
 }

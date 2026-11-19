@@ -42,6 +42,8 @@ import java.util.function.IntUnaryOperator;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
+import jdk.internal.vm.annotation.TrustFinalFields;
+
 import java.lang.invoke.VarHandle;
 
 /**
@@ -371,6 +373,7 @@ public abstract class AtomicIntegerFieldUpdater<T> {
     /**
      * Standard hotspot implementation using intrinsics.
      */
+    @TrustFinalFields
     private static final class AtomicIntegerFieldUpdaterImpl<T>
         extends AtomicIntegerFieldUpdater<T> {
         private static final Unsafe U = Unsafe.getUnsafe();
@@ -402,6 +405,9 @@ public abstract class AtomicIntegerFieldUpdater<T> {
 
             if (!Modifier.isVolatile(modifiers))
                 throw new IllegalArgumentException("Must be volatile type");
+
+            if (Modifier.isStatic(modifiers))
+                throw new IllegalArgumentException("Must not be a static field");
 
             // Access to protected field members is restricted to receivers only
             // of the accessing class, or one of its subclasses, and the

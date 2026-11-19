@@ -22,31 +22,41 @@
  *
  */
 
-#include "gc/shenandoah/shenandoahEvacInfo.hpp"
+#include "gc/shenandoah/shenandoahCollectionSet.inline.hpp"
+#include "gc/shenandoah/shenandoahInPlacePromoter.hpp"
 #include "gc/shenandoah/shenandoahTrace.hpp"
 #include "jfr/jfrEvents.hpp"
 
-void ShenandoahTracer::report_evacuation_info(ShenandoahEvacuationInformation* info) {
-  send_evacuation_info_event(info);
-}
+void ShenandoahTracer::report_evacuation_info(const ShenandoahCollectionSet* cset,
+    size_t free_regions, size_t regions_immediate, size_t immediate_size) {
 
-void ShenandoahTracer::send_evacuation_info_event(ShenandoahEvacuationInformation* info) {
   EventShenandoahEvacuationInformation e;
   if (e.should_commit()) {
     e.set_gcId(GCId::current());
-    e.set_cSetRegions(info->collection_set_regions());
-    e.set_cSetUsedBefore(info->collection_set_used_before());
-    e.set_cSetUsedAfter(info->collection_set_used_after());
-    e.set_collectedOld(info->collected_old());
-    e.set_collectedPromoted(info->collected_promoted());
-    e.set_collectedYoung(info->collected_young());
-    e.set_regionsPromotedHumongous(info->regions_promoted_humongous());
-    e.set_regionsPromotedRegular(info->regions_promoted_regular());
-    e.set_regularPromotedGarbage(info->regular_promoted_garbage());
-    e.set_regularPromotedFree(info->regular_promoted_free());
-    e.set_freeRegions(info->free_regions());
-    e.set_regionsImmediate(info->regions_immediate());
-    e.set_immediateBytes(info->immediate_size());
+    e.set_cSetRegions(cset->count());
+    e.set_cSetUsedBefore(cset->used());
+    e.set_cSetUsedAfter(cset->live());
+    e.set_freeRegions(free_regions);
+    e.set_regionsImmediate(regions_immediate);
+    e.set_immediateBytes(immediate_size);
+
+    e.commit();
+  }
+}
+
+void ShenandoahTracer::report_promotion_info(const ShenandoahCollectionSet* cset, const ShenandoahInPlacePromotionPlanner& planner) {
+  EventShenandoahPromotionInformation e;
+  if (e.should_commit()) {
+    e.set_gcId(GCId::current());
+    e.set_collectedOld(cset->get_live_bytes_in_old_regions());
+    e.set_collectedPromoted(cset->get_live_bytes_in_tenurable_regions());
+    e.set_collectedYoung(cset->get_live_bytes_in_untenurable_regions());
+    e.set_regionsPromotedHumongous(planner.humongous_region_stats().count);
+    e.set_humongousPromotedGarbage(planner.humongous_region_stats().garbage);
+    e.set_humongousPromotedFree(planner.humongous_region_stats().free);
+    e.set_regionsPromotedRegular(planner.regular_region_stats().count);
+    e.set_regularPromotedGarbage(planner.regular_region_stats().garbage);
+    e.set_regularPromotedFree(planner.regular_region_stats().free);
 
     e.commit();
   }

@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,13 @@
 *
 */
 
-#include "jfrfiles/jfrEventIds.hpp"
 #include "jfr/recorder/checkpoint/jfrCheckpointWriter.hpp"
 #include "jfr/recorder/jfrEventSetting.inline.hpp"
 #include "jfr/recorder/repository/jfrChunkWriter.hpp"
 #include "jfr/support/jfrDeprecationEventWriter.hpp"
 #include "jfr/support/jfrDeprecationManager.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
+#include "jfrfiles/jfrEventIds.hpp"
 #include "runtime/thread.inline.hpp"
 
 // This dual state machine for the level setting is because when multiple recordings are running,
@@ -48,7 +48,7 @@ void JfrDeprecatedEventWriterState::on_level_setting_update(int64_t new_level) {
   _current_level_setting = new_level;
 }
 
-static inline bool level() {
+static inline bool previous_epoch_level() {
   assert(_current_level_setting != uninitialized, "invariant");
   return _previous_level_setting == uninitialized ? _current_level_setting : _previous_level_setting;
 }
@@ -56,7 +56,7 @@ static inline bool level() {
 static inline bool only_for_removal() {
   assert(JfrEventSetting::is_enabled(JfrDeprecatedInvocationEvent), "invariant");
   // level 0: forRemoval, level 1: = all
-  return level() == 0;
+  return previous_epoch_level() == 0;
 }
 
 void JfrDeprecatedStackTraceWriter::install_stacktrace_blob(JfrDeprecatedEdge* edge, JfrCheckpointWriter& writer, JavaThread* jt) {

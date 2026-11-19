@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ public sealed interface ModuleRequireInfo
 
     /**
      * {@return the flags associated with this require declaration, as a bit mask}
-     * It is in the range of unsigned short, {@code [0, 0xFFFF]}.
+     * It is a {@link java.lang.classfile##u2 u2} value.
      *
      * @see ModuleDescriptor.Requires#modifiers()
      * @see AccessFlag.Location#MODULE_REQUIRES
@@ -97,6 +97,8 @@ public sealed interface ModuleRequireInfo
      * @param requires the required module
      * @param requiresFlags the require-specific flags
      * @param requiresVersion the required version, may be {@code null}
+     * @throws IllegalArgumentException if {@code requiresFlags} is not {@link
+     *         java.lang.classfile##u2 u2}
      */
     static ModuleRequireInfo of(ModuleEntry requires, int requiresFlags, Utf8Entry requiresVersion) {
         return new UnboundAttribute.UnboundModuleRequiresInfo(requires, requiresFlags, Optional.ofNullable(requiresVersion));
@@ -121,9 +123,12 @@ public sealed interface ModuleRequireInfo
      * @param requires the required module
      * @param requiresFlags the require-specific flags
      * @param requiresVersion the required version, may be {@code null}
+     * @throws IllegalArgumentException if {@code requires} represents an
+     *         unnamed module, or {@code requiresFlags} is not {@link
+     *         java.lang.classfile##u2 u2}
      */
     static ModuleRequireInfo of(ModuleDesc requires, int requiresFlags, String requiresVersion) {
-        return new UnboundAttribute.UnboundModuleRequiresInfo(TemporaryConstantPool.INSTANCE.moduleEntry(TemporaryConstantPool.INSTANCE.utf8Entry(requires.name())), requiresFlags, Optional.ofNullable(requiresVersion).map(s -> TemporaryConstantPool.INSTANCE.utf8Entry(s)));
+        return new UnboundAttribute.UnboundModuleRequiresInfo(TemporaryConstantPool.INSTANCE.moduleEntry(requires), requiresFlags, Optional.ofNullable(requiresVersion).map(s -> TemporaryConstantPool.INSTANCE.utf8Entry(s)));
     }
 
     /**
@@ -132,7 +137,8 @@ public sealed interface ModuleRequireInfo
      * @param requires the required module
      * @param requiresFlags the require-specific flags
      * @param requiresVersion the required version, may be {@code null}
-     * @throws IllegalArgumentException if any flag cannot be applied to the
+     * @throws IllegalArgumentException if {@code requires} represents an
+     *         unnamed module; or if any flag cannot be applied to the
      *         {@link AccessFlag.Location#MODULE_REQUIRES} location
      */
     static ModuleRequireInfo of(ModuleDesc requires, Collection<AccessFlag> requiresFlags, String requiresVersion) {

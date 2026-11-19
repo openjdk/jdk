@@ -27,7 +27,7 @@
  * @summary C2: Access to [].clone from interfaces fails.
  * @library /test/lib /
  *
- * @requires vm.flavor == "server" & !vm.emulatedClient
+ * @requires vm.flavor == "server"
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xcomp -Xbatch -Xbootclasspath/a:.  -XX:-TieredCompilation  -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI

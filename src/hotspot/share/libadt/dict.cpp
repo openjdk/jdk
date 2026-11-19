@@ -29,8 +29,6 @@
 
 // %%%%% includes not needed with AVM framework - Ungar
 
-#include <assert.h>
-
 //------------------------------data-----------------------------------------
 // String hash tables
 #define MAXID 20

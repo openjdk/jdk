@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -502,19 +502,26 @@ public abstract class SSLSocket extends Socket
 
 
     /**
-     * Starts an SSL handshake on this connection.  Common reasons include
-     * a need to use new encryption keys, to change cipher suites, or to
-     * initiate a new session.  To force complete reauthentication, the
-     * current session could be invalidated before starting this handshake.
-     *
-     * <P> If data has already been sent on the connection, it continues
+     * Starts handshaking on this {@code SSLSocket}.
+     * <P>
+     * Common reasons include a need to initiate a new protected session,
+     * create new encryption keys, or to change cipher suites. To force
+     * complete reauthentication, the current session should be invalidated
+     * before starting this handshake.
+     * <P>
+     * The behavior of this method is protocol (and possibly implementation)
+     * dependent. For example, in TLSv1.3 calling this method after the
+     * connection has been established will force a key update. For prior TLS
+     * versions it will force a renegotiation (re-handshake).
+     * <P>
+     * If data has already been sent on the connection, it continues
      * to flow during this handshake.  When the handshake completes, this
      * will be signaled with an event.
-     *
+     * <P>
      * This method is synchronous for the initial handshake on a connection
      * and returns when the negotiated handshake is complete. Some
      * protocols may not support multiple handshakes on an existing socket
-     * and may throw an IOException.
+     * and may throw an {@code IOException}.
      *
      * @throws IOException on a network level error
      * @see #addHandshakeCompletedListener(HandshakeCompletedListener)
@@ -864,5 +871,34 @@ public abstract class SSLSocket extends Socket
     public BiFunction<SSLSocket, List<String>, String>
             getHandshakeApplicationProtocolSelector() {
         throw new UnsupportedOperationException();
+    }
+
+    /**
+     * Returns the names of the named groups which could be enabled for use
+     * on this connection.
+     * <P>
+     * The returned array includes named groups from the list of standard
+     * named group names in the
+     * <a href="{@docRoot}/../specs/security/standard-names.html#named-groups">
+     * Named Groups</a> section of the Java Security Standard Algorithm Names
+     * Specification, and may also include other named groups that the provider
+     * supports.
+     * <P>
+     * To get the names of the named groups which are currently enabled for use
+     * on this connection, call {@link SSLParameters#getNamedGroups()},
+     * accessible through {@link #getSSLParameters()}.
+     *
+     * @implSpec The implementation in this class throws
+     *           {@code UnsupportedOperationException} and performs no other
+     *           action.
+     * @return an array of named group names
+     * @throws UnsupportedOperationException if the underlying provider
+     *         does not implement the operation.
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
+     * @since 28
+     */
+    public String [] getSupportedNamedGroups() {
+        throw new UnsupportedOperationException(
+                "Underlying provider does not implement the method");
     }
 }

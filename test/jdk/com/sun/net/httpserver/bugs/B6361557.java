@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,9 @@ import java.io.*;
 import java.nio.*;
 import java.nio.channels.*;
 import java.net.*;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import static com.sun.net.httpserver.HttpExchange.RSPBODY_EMPTY;
 
 /**
  * The test simply opens 1,000 separate connections
@@ -48,23 +51,27 @@ public class B6361557 {
 
     public static boolean error = false;
     static final int NUM = 1000;
+    static final AtomicInteger count = new AtomicInteger(0);
 
     static class Handler implements HttpHandler {
         int invocation = 1;
         public void handle (HttpExchange t)
             throws IOException
         {
+            count.getAndIncrement();
             InputStream is = t.getRequestBody();
             Headers map = t.getRequestHeaders();
             Headers rmap = t.getResponseHeaders();
             while (is.read () != -1) ;
             is.close();
-            t.sendResponseHeaders (200, -1);
+            t.sendResponseHeaders (200, RSPBODY_EMPTY);
             t.close();
         }
     }
 
-    final static String request = "GET /test/foo.html HTTP/1.1\r\nContent-length: 0\r\n\r\n";
+    final static String request = "GET /test/foo.html HTTP/1.1\r\n" +
+            "Host: localhost\r\n" +
+            "Content-length: 0\r\n\r\n";
     final static ByteBuffer requestBuf = ByteBuffer.wrap(request.getBytes());
 
     public static void main (String[] args) throws Exception {
@@ -125,6 +132,9 @@ public class B6361557 {
                 System.out.println ("Finished clients");
                 break;
             }
+        }
+        if (count.get() != NUM) {
+            throw new RuntimeException("Unexpected number of handled requests: " +count.get());
         }
         server.stop(0);
         selector.close();

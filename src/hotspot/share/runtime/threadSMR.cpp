@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #include "classfile/javaClasses.inline.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/orderAccess.hpp"
@@ -39,9 +39,9 @@
 #include "utilities/copy.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/hashTable.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/powerOfTwo.hpp"
-#include "utilities/resourceHash.hpp"
 #include "utilities/vmError.hpp"
 
 // The '_cnt', '_max' and '_times" fields are enabled via
@@ -68,7 +68,7 @@ volatile uint         ThreadsSMRSupport::_deleted_thread_cnt = 0;
 
 // Max time in millis to delete a thread.
 // Impl note: 16-bit might be too small on an overloaded machine. Use
-// unsigned since this is a time value. Set via Atomic::cmpxchg() in a
+// unsigned since this is a time value. Set via AtomicAccess::cmpxchg() in a
 // loop for correctness.
 volatile uint         ThreadsSMRSupport::_deleted_thread_time_max = 0;
 
@@ -116,7 +116,7 @@ volatile uint         ThreadsSMRSupport::_tlh_cnt = 0;
 
 // Max time in millis to delete a ThreadsListHandle.
 // Impl note: 16-bit might be too small on an overloaded machine. Use
-// unsigned since this is a time value. Set via Atomic::cmpxchg() in a
+// unsigned since this is a time value. Set via AtomicAccess::cmpxchg() in a
 // loop for correctness.
 volatile uint         ThreadsSMRSupport::_tlh_time_max = 0;
 
@@ -137,14 +137,19 @@ uint                  ThreadsSMRSupport::_to_delete_list_cnt = 0;
 // Impl note: See _to_delete_list_cnt note.
 uint                  ThreadsSMRSupport::_to_delete_list_max = 0;
 
+// Track the number of ThreadsLists (and total size in bytes) that have been
+// retired since the last reclaim attempt in free_list().
+uint                  ThreadsSMRSupport::_retired_since_reclaim_cnt = 0;
+size_t                ThreadsSMRSupport::_retired_since_reclaim_mem = 0;
+
 // 'inline' functions first so the definitions are before first use:
 
 inline void ThreadsSMRSupport::add_deleted_thread_times(uint add_value) {
-  Atomic::add(&_deleted_thread_times, add_value);
+  AtomicAccess::add(&_deleted_thread_times, add_value);
 }
 
 inline void ThreadsSMRSupport::inc_deleted_thread_cnt() {
-  Atomic::inc(&_deleted_thread_cnt);
+  AtomicAccess::inc(&_deleted_thread_cnt);
 }
 
 inline void ThreadsSMRSupport::inc_java_thread_list_alloc_cnt() {
@@ -162,7 +167,7 @@ inline void ThreadsSMRSupport::update_deleted_thread_time_max(uint new_value) {
       // No need to update max value so we're done.
       break;
     }
-    if (Atomic::cmpxchg(&_deleted_thread_time_max, cur_value, new_value) == cur_value) {
+    if (AtomicAccess::cmpxchg(&_deleted_thread_time_max, cur_value, new_value) == cur_value) {
       // Updated max value so we're done. Otherwise try it all again.
       break;
     }
@@ -176,7 +181,7 @@ inline void ThreadsSMRSupport::update_java_thread_list_max(uint new_value) {
 }
 
 inline ThreadsList* ThreadsSMRSupport::xchg_java_thread_list(ThreadsList* new_list) {
-  return (ThreadsList*)Atomic::xchg(&_java_thread_list, new_list);
+  return (ThreadsList*)AtomicAccess::xchg(&_java_thread_list, new_list);
 }
 
 // Hash table of pointers found by a scan. Used for collecting hazard
@@ -191,15 +196,15 @@ class ThreadScanHashtable : public CHeapObj<mtThread> {
     return (unsigned int)(((uint32_t)(uintptr_t)s1) * 2654435761u);
   }
 
-  // ResourceHashtable SIZE is specified at compile time so we
+  // HashTable SIZE is specified at compile time so we
   // use 1031 which is the first prime after 1024.
-  typedef ResourceHashtable<void *, int, 1031,
+  typedef HashTable<void *, int, 1031,
                             AnyObj::C_HEAP, mtThread,
                             &ThreadScanHashtable::ptr_hash> PtrTable;
   PtrTable * _ptrs;
 
  public:
-  // ResourceHashtable is passed to various functions and populated in
+  // HashTable is passed to various functions and populated in
   // different places so we allocate it using C_HEAP to make it immune
   // from any ResourceMarks that happen to be in the code paths.
   ThreadScanHashtable() : _ptrs(new (mtThread) PtrTable()) {}
@@ -667,7 +672,7 @@ ThreadsList::ThreadsList(int entries) :
 
 ThreadsList::~ThreadsList() {
   if (_threads != empty_threads_list_data) {
-    FREE_C_HEAP_ARRAY(JavaThread*, _threads);
+    FREE_C_HEAP_ARRAY(_threads);
   }
   _magic = 0xDEADBEEF;
 }
@@ -690,7 +695,16 @@ ThreadsList *ThreadsList::add_thread(ThreadsList *list, JavaThread *java_thread)
 }
 
 void ThreadsList::dec_nested_handle_cnt() {
-  Atomic::dec(&_nested_handle_cnt);
+  AtomicAccess::dec(&_nested_handle_cnt);
+}
+
+size_t ThreadsList::size_in_bytes() const {
+  size_t size = sizeof(*this);
+  if (_length != 0) {
+    // Add the size of the pointer array, and its null-terminator.
+    size += (size_t(_length) + 1) * sizeof(JavaThread *);
+  }
+  return size;
 }
 
 int ThreadsList::find_index_of_JavaThread(JavaThread *target) {
@@ -726,14 +740,15 @@ JavaThread* ThreadsList::find_JavaThread_from_java_tid(jlong java_tid) const {
         }
       }
     }
-  } else if (!thread->is_exiting()) {
+  } else if (includes(thread) && !thread->is_exiting()) {
+    // The thread is protected by this list and has not yet exited
     return thread;
   }
   return nullptr;
 }
 
 void ThreadsList::inc_nested_handle_cnt() {
-  Atomic::inc(&_nested_handle_cnt);
+  AtomicAccess::inc(&_nested_handle_cnt);
 }
 
 bool ThreadsList::includes(const JavaThread * const p) const {
@@ -791,10 +806,16 @@ ThreadsListHandle::~ThreadsListHandle() {
 // associated ThreadsList. This ThreadsListHandle "protects" the
 // returned JavaThread *.
 //
+// If the jthread resolves to a virtual thread then the JavaThread *
+// for its current carrier thread (if any) is returned via *jt_pp.
+// It is up to the caller to prevent the virtual thread from changing
+// its mounted status, or else account for it when acting on the carrier
+// JavaThread.
+//
 // If thread_oop_p is not null, then the caller wants to use the oop
-// after this call so the oop is returned. On success, *jt_pp is set
+// after this call so the oop is always returned. On success, *jt_pp is set
 // to the converted JavaThread * and true is returned. On error,
-// returns false.
+// returns false, and *jt_pp is unchanged.
 //
 bool ThreadsListHandle::cv_internal_thread_to_JavaThread(jobject jthread,
                                                          JavaThread ** jt_pp,
@@ -818,10 +839,22 @@ bool ThreadsListHandle::cv_internal_thread_to_JavaThread(jobject jthread,
 
   JavaThread *java_thread = java_lang_Thread::thread_acquire(thread_oop);
   if (java_thread == nullptr) {
-    // The java.lang.Thread does not contain a JavaThread* so it has not
-    // run enough to be put on a ThreadsList or it has exited enough to
-    // make it past ensure_join() where the JavaThread* is cleared.
-    return false;
+    if (!java_lang_VirtualThread::is_instance(thread_oop)) {
+      // The java.lang.Thread does not contain a JavaThread* so it has not
+      // run enough to be put on a ThreadsList or it has exited enough to
+      // make it past ensure_join() where the JavaThread* is cleared.
+      return false;
+    } else {
+      // For virtual threads we need to extract the carrier's JavaThread - if any.
+       oop carrier_thread = java_lang_VirtualThread::carrier_thread(thread_oop);
+       if (carrier_thread != nullptr) {
+         java_thread = java_lang_Thread::thread(carrier_thread);
+       }
+       if (java_thread == nullptr) {
+         // Virtual thread was unmounted, or else carrier has now terminated.
+         return false;
+       }
+    }
   }
   // Looks like a live JavaThread at this point.
 
@@ -865,7 +898,7 @@ void ThreadsSMRSupport::add_thread(JavaThread *thread){
 
   ThreadsList *old_list = xchg_java_thread_list(new_list);
   free_list(old_list);
-  if (ThreadIdTable::is_initialized()) {
+  if (ThreadIdTable::is_initialized_acquire()) {
     jlong tid = SharedRuntime::get_java_tid(thread);
     ThreadIdTable::add_thread(tid, thread);
   }
@@ -877,20 +910,31 @@ void ThreadsSMRSupport::add_thread(JavaThread *thread){
 // when the delete_lock is dropped.
 //
 void ThreadsSMRSupport::clear_delete_notify() {
-  Atomic::dec(&_delete_notify);
+  AtomicAccess::dec(&_delete_notify);
 }
 
 bool ThreadsSMRSupport::delete_notify() {
   // Use load_acquire() in order to see any updates to _delete_notify
   // earlier than when delete_lock is grabbed.
-  return (Atomic::load_acquire(&_delete_notify) != 0);
+  return (AtomicAccess::load_acquire(&_delete_notify) != 0);
 }
 
 // Safely free a ThreadsList after a Threads::add() or Threads::remove().
 // The specified ThreadsList may not get deleted during this call if it
 // is still in-use (referenced by a hazard ptr). Other ThreadsLists
 // in the chain may get deleted by this call if they are no longer in-use.
-void ThreadsSMRSupport::free_list(ThreadsList* threads) {
+// A non-null thread_to_delete means that we were called from remove_thread()
+// which should force an attempt to reclaim any retired ThreadsList.
+void ThreadsSMRSupport::free_list(ThreadsList* threads, JavaThread* thread_to_delete) {
+  // Tests have shown that the latency sweet spot occurs when batching
+  // reclamation attempts for 16 retired ThreadsLists. A ThreadsList
+  // containing 32K threads occupies about 256K. Setting the memory
+  // threshold to 4M will thereby also allow a batch of 16 such lists,
+  // but may trigger an earlier reclamation attempt when individual
+  // ThreadsList instances are larger.
+  static const uint   max_retire_cnt_before_reclaim = 16;
+  static const size_t max_retire_mem_before_reclaim = 4 * M;
+
   assert_locked_or_safepoint(Threads_lock);
 
   if (is_bootstrap_list(threads)) {
@@ -909,6 +953,26 @@ void ThreadsSMRSupport::free_list(ThreadsList* threads) {
     }
   }
 
+  // We can defer a reclamation attempt if free_list() was called when adding
+  // a thread (i.e., thread_to_delete == nullptr). This amortizes the cost of
+  // scanning the hazard pointers. When removing a thread, we attempt to
+  // reclaim any retired ThreadsList. We also use the same scan to determine
+  // if it's safe to delete the thread, thereby potentially avoiding a costly
+  // re-scan in wait_until_not_protected().
+  if (thread_to_delete == nullptr) {
+    _retired_since_reclaim_cnt++;
+    _retired_since_reclaim_mem += threads->size_in_bytes();
+    if ((_retired_since_reclaim_cnt < max_retire_cnt_before_reclaim) &&
+        (_retired_since_reclaim_mem < max_retire_mem_before_reclaim)) {
+      return;
+    }
+  }
+  // Since the thresholds only control the intervals between reclamation
+  // attempts, we reset the bookkeeping here, even if some ThreadsList
+  // instances remain after the reclamation attempt.
+  _retired_since_reclaim_cnt = 0;
+  _retired_since_reclaim_mem = 0;
+
   // Gather a hash table of the current hazard ptrs:
   ThreadScanHashtable *scan_table = new ThreadScanHashtable();
   ScanHazardPtrGatherThreadsListClosure scan_cl(scan_table);
@@ -922,6 +986,8 @@ void ThreadsSMRSupport::free_list(ThreadsList* threads) {
   ThreadsList* prev = nullptr;
   ThreadsList* next = nullptr;
   bool threads_is_freed = false;
+  bool thread_is_safe_to_delete = thread_to_delete != nullptr;
+
   while (current != nullptr) {
     next = current->next_list();
     if (!scan_table->has_entry((void*)current) && current->_nested_handle_cnt == 0) {
@@ -941,6 +1007,14 @@ void ThreadsSMRSupport::free_list(ThreadsList* threads) {
         _to_delete_list_cnt--;
       }
     } else {
+      // This ThreadsList is referenced by a hazard ptr, or a nested
+      // handle. When a thread is removed, the 'threads' argument will
+      // be the old list and it will therefore contain thread_to_delete.
+      if (thread_is_safe_to_delete && (current == threads || current->includes(thread_to_delete))) {
+        // Since we found thread_to_delete in the current ThreadsList, it is
+        // still protected, and therefore not yet safe to delete.
+        thread_is_safe_to_delete = false;
+      }
       prev = current;
     }
     current = next;
@@ -958,6 +1032,11 @@ void ThreadsSMRSupport::free_list(ThreadsList* threads) {
 #endif
 
   delete scan_table;
+
+  if (thread_is_safe_to_delete) {
+    assert(thread_to_delete != nullptr, "must be");
+    thread_to_delete->set_smr_delete_is_safe();
+  }
 }
 
 // Return true if the specified JavaThread is protected by a hazard
@@ -1030,13 +1109,13 @@ void ThreadsSMRSupport::remove_thread(JavaThread *thread) {
   log_debug(thread, smr)("tid=%zu: Threads::remove: new ThreadsList=" INTPTR_FORMAT, os::current_thread_id(), p2i(new_list));
 
   ThreadsList *old_list = ThreadsSMRSupport::xchg_java_thread_list(new_list);
-  ThreadsSMRSupport::free_list(old_list);
+  ThreadsSMRSupport::free_list(old_list, thread);
 }
 
 // See note for clear_delete_notify().
 //
 void ThreadsSMRSupport::set_delete_notify() {
-  Atomic::inc(&_delete_notify);
+  AtomicAccess::inc(&_delete_notify);
 }
 
 // Safely delete a JavaThread when it is no longer in use by a
@@ -1065,6 +1144,13 @@ void ThreadsSMRSupport::smr_delete(JavaThread *thread) {
 void ThreadsSMRSupport::wait_until_not_protected(JavaThread *thread) {
   assert(!Threads_lock->owned_by_self(), "sanity");
 
+  if (thread->smr_delete_is_safe()) {
+    // ThreadsSMRSupport::free_list() has decided that it's safe to
+    // delete the thread, because it's no longer protected, and
+    // therefore we return early.
+    return;
+  }
+
   bool has_logged_once = false;
 
   while (true) {
@@ -1072,6 +1158,18 @@ void ThreadsSMRSupport::wait_until_not_protected(JavaThread *thread) {
       // Will not make a safepoint check because this JavaThread
       // is not on the current ThreadsList.
       MutexLocker ml(Threads_lock);
+      // ThreadsSMRSupport::remove_thread() has removed the thread
+      // from the current ThreadsList, but an older retired
+      // ThreadsList may still contain the thread. In that case, that
+      // ThreadsList will remain on the _to_delete_list as long as
+      // it's protected by a hazard pointer or a nested handle. Thus,
+      // if the _to_delete_list is empty, there is no ThreadsList
+      // protecting the thread, hence we return early.
+      if (_to_delete_list == nullptr) {
+        assert(!get_java_thread_list()->includes(thread),
+               "Thread should not be on the current ThreadsList");
+        return;
+      }
       // Cannot use a MonitorLocker helper here because we have
       // to drop the Threads_lock first if we wait.
       ThreadsSMRSupport::delete_lock()->lock_without_safepoint_check();

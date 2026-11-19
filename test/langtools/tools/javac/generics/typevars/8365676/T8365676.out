@@ -1,0 +1,4 @@
+T8365676.java:16:17: compiler.err.cant.resolve.location.args: kindname.method, reverseOrder, , , (compiler.misc.location: kindname.class, java.text.Collator, null)
+T8365676.java:17:10: compiler.err.cant.resolve.location.args: kindname.method, reverseOrder, , , (compiler.misc.location: kindname.type.variable.bound, java.lang.Object&java.util.Comparator<java.lang.Object>, null)
+T8365676.java:18:10: compiler.err.cant.resolve.location.args: kindname.method, reverseOrder, , , (compiler.misc.location: kindname.type.variable.bound, T, null)
+3 errors

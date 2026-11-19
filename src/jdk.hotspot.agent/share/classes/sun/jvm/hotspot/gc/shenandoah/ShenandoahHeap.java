@@ -43,7 +43,7 @@ import sun.jvm.hotspot.utilities.Observer;
 
 public class ShenandoahHeap extends CollectedHeap {
     private static CIntegerField numRegions;
-    private static AddressField  globalGeneration;
+    private static AddressField  globalFreeSet;
     private static CIntegerField committed;
     private static AddressField  regions;
     private static CIntegerField logMinObjAlignmentInBytes;
@@ -60,7 +60,7 @@ public class ShenandoahHeap extends CollectedHeap {
     private static synchronized void initialize(TypeDataBase db) {
         Type type = db.lookupType("ShenandoahHeap");
         numRegions = type.getCIntegerField("_num_regions");
-        globalGeneration = type.getAddressField("_global_generation");
+        globalFreeSet = type.getAddressField("_free_set");
         committed = type.getCIntegerField("_committed");
         regions = type.getAddressField("_regions");
         logMinObjAlignmentInBytes = type.getCIntegerField("_log_min_obj_alignment_in_bytes");
@@ -89,9 +89,9 @@ public class ShenandoahHeap extends CollectedHeap {
 
     @Override
     public long used() {
-        Address globalGenerationAddress = globalGeneration.getValue(addr);
-        ShenandoahGeneration global = VMObjectFactory.newObject(ShenandoahGeneration.class, globalGenerationAddress);
-        return global.used();
+        Address globalFreeSetAddress = globalFreeSet.getValue(addr);
+        ShenandoahFreeSet freeset = VMObjectFactory.newObject(ShenandoahFreeSet.class, globalFreeSetAddress);
+        return freeset.used();
     }
 
     public long committed() {

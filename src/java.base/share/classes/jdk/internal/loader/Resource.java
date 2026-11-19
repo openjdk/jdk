@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@ import java.security.CodeSigner;
 import java.util.jar.Manifest;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
-import sun.nio.ByteBuffered;
 
 /**
  * This class is used to represent a Resource that has been loaded
@@ -130,10 +129,6 @@ public abstract class Resource {
      * @return Resource data or null.
      */
     public ByteBuffer getByteBuffer() throws IOException {
-        InputStream in = cachedInputStream();
-        if (in instanceof ByteBuffered) {
-            return ((ByteBuffered)in).getByteBuffer();
-        }
         return null;
     }
 

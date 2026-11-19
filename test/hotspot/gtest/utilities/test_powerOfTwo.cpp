@@ -22,12 +22,11 @@
  */
 
 
+#include "cppstdlib/limits.hpp"
+#include "cppstdlib/type_traits.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "unittest.hpp"
-
-#include <limits>
-#include <type_traits>
 
 struct StaticTestIsPowerOf2Result {
   uint64_t _value;
@@ -65,12 +64,12 @@ template <typename T> static void test_is_power_of_2() {
   EXPECT_FALSE(is_power_of_2(T(0)));
   EXPECT_FALSE(is_power_of_2(~T(0)));
 
-  static_assert(!is_power_of_2(T(0)), "");
-  static_assert(!is_power_of_2(~T(0)), "");
+  static_assert(!is_power_of_2(T(0)));
+  static_assert(!is_power_of_2(~T(0)));
 
   // Should be false regardless of whether T is signed or unsigned.
   EXPECT_FALSE(is_power_of_2(std::numeric_limits<T>::min()));
-  static_assert(!is_power_of_2(std::numeric_limits<T>::min()), "");
+  static_assert(!is_power_of_2(std::numeric_limits<T>::min()));
 
   // Test true
   for (T i = max_power_of_2<T>(); i > 0; i = (i >> 1)) {

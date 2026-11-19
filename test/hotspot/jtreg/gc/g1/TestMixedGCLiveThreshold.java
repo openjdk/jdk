@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,7 @@ import jdk.test.lib.Asserts;
 import jdk.test.whitebox.WhiteBox;
 
 public class TestMixedGCLiveThreshold {
-    private static final String pattern = "Remembered Set Tracking update regions total ([0-9]+), selected ([0-9]+)$";
+    private static final String pattern = "Remembered Set Tracking update regions total ([0-9]+), selected rebuild targets ([0-9]+)$";
 
     public static void main(String[] args) throws Exception {
         int liveThresholdPercent = Integer.parseInt(args[0]);

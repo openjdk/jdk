@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,9 @@
 
 #include "runtime/globals_shared.hpp"
 
+#define DEFAULT_SHARED_BASE_ADDRESS (LP64_ONLY(32*G) \
+                                    NOT_LP64(LINUX_ONLY(2*G) NOT_LINUX(0)))
+
 //
 // Defines all globals flags used by CDS.
 //
@@ -51,8 +54,7 @@
   product(bool, PrintSharedArchiveAndExit, false,                           \
           "Print shared archive file contents")                             \
                                                                             \
-  product(size_t, SharedBaseAddress, LP64_ONLY(32*G)                        \
-          NOT_LP64(LINUX_ONLY(2*G) NOT_LINUX(0)),                           \
+  product(size_t, SharedBaseAddress, DEFAULT_SHARED_BASE_ADDRESS,           \
           "Address to allocate shared memory region for class data")        \
           range(0, SIZE_MAX)                                                \
                                                                             \
@@ -63,15 +65,6 @@
           "Average number of symbols per bucket in shared table")           \
           range(2, 246)                                                     \
                                                                             \
-  product(bool, AllowArchivingWithJavaAgent, false, DIAGNOSTIC,             \
-          "Allow Java agent to be run with CDS dumping (not applicable"     \
-          " to AOT")                                                        \
-                                                                            \
-  develop(ccstr, ArchiveHeapTestClass, nullptr,                             \
-          "For JVM internal testing only. The static field named "          \
-          "\"archivedObjects\" of the specified class is stored in the "    \
-          "CDS archive heap")                                               \
-                                                                            \
   develop(ccstr, AOTInitTestClass, nullptr,                                 \
           "For JVM internal testing only. The specified class is stored "   \
           "in the initialized state in the AOT cache ")                     \
@@ -79,6 +72,12 @@
   product(ccstr, DumpLoadedClassList, nullptr,                              \
           "Dump the names all loaded classes, that could be stored into "   \
           "the CDS archive, in the specified file")                         \
+                                                                            \
+  product(bool, AOTStreamableObjects, false, DIAGNOSTIC,                    \
+          "Archive the Java heap in a generic streamable object format")    \
+                                                                            \
+  product(bool, AOTEagerlyLoadObjects, false, DIAGNOSTIC,                   \
+          "Load streamable objects synchronously without concurrency")      \
                                                                             \
   product(ccstr, SharedClassListFile, nullptr,                              \
           "Override the default CDS class list")                            \
@@ -100,13 +99,19 @@
            "do not map the archive")                                        \
            range(0, 2)                                                      \
                                                                             \
+  product(bool, AOTStressArchiveUnmapping, false, DIAGNOSTIC,               \
+           "Iff ArchiveRelocationMode is 1, always map the archive at  "    \
+           "the preferred address, unmap it, and then map at alternative "  \
+           "address")                                                       \
+                                                                            \
   /*========== New "AOT" flags =========================================*/  \
   /* The following 3 flags are aliases of -Xshare:dump,                 */  \
   /* -XX:SharedArchiveFile=..., etc. See CDSConfig::check_flag_aliases()*/  \
                                                                             \
   product(ccstr, AOTMode, nullptr,                                          \
           "Specifies how AOTCache should be created or used. Valid values " \
-          "are: off, record, create, auto, on; the default is auto")        \
+          "are: off, record, create, auto, required, and (deprecated) on; "   \
+          "the default is auto")                                            \
           constraint(AOTModeConstraintFunc, AtParse)                        \
                                                                             \
   product(ccstr, AOTConfiguration, nullptr,                                 \
@@ -121,6 +126,7 @@
                                                                             \
   product(ccstr, AOTCacheOutput, nullptr,                                   \
           "Specifies the file name for writing the AOT cache")              \
+          constraint(AOTCacheOutputConstraintFunc, AtParse)                 \
                                                                             \
   product(bool, AOTInvokeDynamicLinking, false, DIAGNOSTIC,                 \
           "AOT-link JVM_CONSTANT_InvokeDynamic entries in cached "          \
@@ -135,6 +141,10 @@
                                                                             \
   /* flags to control training and deployment modes  */                     \
                                                                             \
+  product(bool, AOTIgnoreIncompatibleCacheInTraining, false, DIAGNOSTIC,    \
+          "If an incompatible AOT cache is specified during AOT training, " \
+          "ignore it instead of giving an error")                           \
+                                                                            \
   product(bool, AOTRecordTraining, false, DIAGNOSTIC,                       \
           "Request output of training data for improved deployment.")       \
                                                                             \
@@ -147,10 +157,13 @@
   product(bool, AOTVerifyTrainingData, trueInDebug, DIAGNOSTIC,             \
           "Verify archived training data")                                  \
                                                                             \
-  product(bool, AOTCompileEagerly, false, EXPERIMENTAL,                     \
-          "Compile methods as soon as possible")                            \
+  product(bool, AOTCompileEagerly, false, DIAGNOSTIC,                       \
+          "Compile methods as soon as possible during production run")      \
                                                                             \
   /* AOT Code flags */                                                      \
+                                                                            \
+  product(bool, AOTCodeCaching, false, DIAGNOSTIC,                          \
+          "Enable saving and restoring JIT compiled code in AOT cache")     \
                                                                             \
   product(bool, AOTAdapterCaching, false, DIAGNOSTIC,                       \
           "Enable saving and restoring i2c2i adapters in AOT cache")        \
@@ -158,9 +171,9 @@
   product(bool, AOTStubCaching, false, DIAGNOSTIC,                          \
           "Enable saving and restoring stubs and code blobs in AOT cache")  \
                                                                             \
-  product(uint, AOTCodeMaxSize, 10*M, DIAGNOSTIC,                           \
+  product(uint, AOTCodeMaxSize, 512*M, DIAGNOSTIC,                          \
           "Buffer size in bytes for AOT code caching")                      \
-          range(1*M, max_jint)                                              \
+          range(1*M, CODE_CACHE_SIZE_LIMIT)                                 \
                                                                             \
   product(bool, AbortVMOnAOTCodeFailure, false, DIAGNOSTIC,                 \
           "Abort VM on the first occurrence of AOT code load or store "     \
@@ -168,6 +181,11 @@
                                                                             \
   develop(bool, TestAOTAdapterLinkFailure, false,                           \
           "Test failure of adapter linking when loading from AOT cache.")   \
+                                                                            \
+  product(bool, UseAOTCacheCpuFeaturesOnly, false,                          \
+          "Enable only the cpu features recorded in the AOTCache if the "   \
+          "runtime cpu features are a super set of the cached features")    \
+
 
 // end of CDS_FLAGS
 

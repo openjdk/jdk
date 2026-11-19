@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,21 +26,21 @@
  * @bug 8143964
  * @summary test queries to the JShell that return Streams
  * @build KullaTesting
- * @run testng JShellQueryTest
+ * @run junit JShellQueryTest
  */
 import jdk.jshell.Snippet;
-import org.testng.annotations.Test;
 
 import jdk.jshell.ImportSnippet;
 import jdk.jshell.MethodSnippet;
 import jdk.jshell.TypeDeclSnippet;
 import jdk.jshell.VarSnippet;
 import static java.util.stream.Collectors.joining;
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.Test;
 
-@Test
 public class JShellQueryTest extends KullaTesting {
 
+    @Test
     public void testSnippets() {
         assertStreamMatch(getState().snippets());
         VarSnippet sx = varKey(assertEval("int x = 5;"));
@@ -54,6 +54,7 @@ public class JShellQueryTest extends KullaTesting {
         assertStreamMatch(getState().snippets(), sx, sfoo, smm, svv, sc, si, simp);
     }
 
+    @Test
     public void testVars() {
         assertStreamMatch(getState().variables());
         VarSnippet sx = varKey(assertEval("int x = 5;"));
@@ -67,6 +68,7 @@ public class JShellQueryTest extends KullaTesting {
         assertStreamMatch(getState().variables(), sx, sfoo);
     }
 
+    @Test
     public void testMethods() {
         assertStreamMatch(getState().methods());
         VarSnippet sx = varKey(assertEval("int x = 5;"));
@@ -79,6 +81,7 @@ public class JShellQueryTest extends KullaTesting {
         assertStreamMatch(getState().methods(), smm, svv);
     }
 
+    @Test
     public void testTypes() {
         assertStreamMatch(getState().types());
         VarSnippet sx = varKey(assertEval("int x = 5;"));
@@ -91,6 +94,7 @@ public class JShellQueryTest extends KullaTesting {
         assertStreamMatch(getState().types(), sc, si);
     }
 
+    @Test
     public void testImports() {
         assertStreamMatch(getState().imports());
         VarSnippet sx = varKey(assertEval("int x = 5;"));
@@ -103,6 +107,7 @@ public class JShellQueryTest extends KullaTesting {
         assertStreamMatch(getState().imports(), simp);
     }
 
+    @Test
     public void testDiagnostics() {
         Snippet sx = varKey(assertEval("int x = 5;"));
         assertStreamMatch(getState().diagnostics(sx));
@@ -110,9 +115,10 @@ public class JShellQueryTest extends KullaTesting {
         String res = getState().diagnostics(broken)
                 .map(d -> d.getCode())
                 .collect(joining("+"));
-        assertEquals(res, "compiler.err.cant.resolve.location.args+compiler.err.prob.found.req");
+        assertEquals("compiler.err.cant.resolve.location.args+compiler.err.prob.found.req", res);
     }
 
+    @Test
     public void testUnresolvedDependencies() {
         VarSnippet sx = varKey(assertEval("int x = 5;"));
         assertStreamMatch(getState().unresolvedDependencies(sx));

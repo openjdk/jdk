@@ -1,4 +1,4 @@
-//   Copyright Naoki Shibata and contributors 2010 - 2021.
+//   Copyright Naoki Shibata and contributors 2010 - 2025.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
@@ -1490,7 +1490,7 @@ EXPORT CONST double xexp(double d) {
   u = s * s * u + s + 1;
   u = ldexp2k(u, q);
 
-  if (d > 709.78271114955742909217217426) u = SLEEF_INFINITY;
+  if (d > LOG_DBL_MAX) u = SLEEF_INFINITY;
   if (d < -1000) u = 0;
 
   return u;
@@ -1641,7 +1641,7 @@ EXPORT CONST double xpow(double x, double y) {
   Sleef_double2 d = ddmul_d2_d2_d(logk(fabsk(x)), y);
   double result = expk(d);
 
-  result = (d.x > 709.78271114955742909217217426 || xisnan(result)) ? SLEEF_INFINITY : result;
+  result = (d.x > LOG_DBL_MAX || xisnan(result)) ? SLEEF_INFINITY : result;
   result *= (x > 0 ? 1 : (yisint ? (yisodd ? -1 : 1) : SLEEF_NAN));
 
   double efx = mulsign(fabsk(x) - 1, y);
@@ -2145,6 +2145,8 @@ EXPORT CONST double xlog1p(double d) {
   double m, t, x2;
   int e;
 
+  if (d > LOG1P_BOUND) return xlog_u1(d); // ~log(d)
+
   double dp1 = d + 1;
 
   int o = dp1 < DBL_MIN;
@@ -2176,7 +2178,6 @@ EXPORT CONST double xlog1p(double d) {
 
   double r = s.x + s.y;
 
-  if (d > 1e+307) r = SLEEF_INFINITY;
   if (d < -1 || xisnan(d)) r = SLEEF_NAN;
   if (d == -1) r = -SLEEF_INFINITY;
   if (xisnegzero(d)) r = -0.0;

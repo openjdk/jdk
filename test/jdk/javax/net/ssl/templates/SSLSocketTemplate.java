@@ -59,10 +59,25 @@ import java.util.concurrent.TimeUnit;
 public class SSLSocketTemplate extends SSLContextTemplate {
 
     /*
+     * Enables the JSSE system debugging system property:
+     *
+     *     -Djavax.net.debug=all
+     *
+     * This gives a lot of low-level information about operations underway,
+     * including specific handshake messages, and might be best examined
+     * after gaining some familiarity with this application.
+     */
+    private static final boolean debug = false;
+
+    /*
      * ==================
      * Run the test case.
      */
     public static void main(String[] args) throws Exception {
+        if (debug) {
+            System.setProperty("javax.net.debug", "all");
+        }
+
         (new SSLSocketTemplate()).run();
     }
 
@@ -190,6 +205,7 @@ public class SSLSocketTemplate extends SSLContextTemplate {
         try {
             sslServerSocket.setSoTimeout(30000);
             sslSocket = (SSLSocket)sslServerSocket.accept();
+            System.out.println("Connection established on port : " +serverPort);
         } catch (SocketTimeoutException ste) {
             // Ignore the test case if no connection within 30 seconds.
             System.out.println(
@@ -228,6 +244,7 @@ public class SSLSocketTemplate extends SSLContextTemplate {
             }
         } finally {
             sslSocket.close();
+            System.out.println("Connection closed on port : " +serverPort);
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @summary Verifies JVMTI GetLocalStorage/SetLocalStorage
  * @requires vm.continuations
  * @requires vm.jvmti
+ * @requires test.thread.factory == null
  * @run main/othervm/native -agentlib:VThreadTLSTest VThreadTLSTest
  */
 
@@ -35,6 +36,7 @@
  * @summary Verifies JVMTI GetLocalStorage/SetLocalStorage
  * @requires vm.continuations
  * @requires vm.jvmti
+ * @requires test.thread.factory == null
  * @run main/othervm/native -Djdk.attach.allowAttachSelf=true -XX:+EnableDynamicAgentLoading VThreadTLSTest attach
  */
 

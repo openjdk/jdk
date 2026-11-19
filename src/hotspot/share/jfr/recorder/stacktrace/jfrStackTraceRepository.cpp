@@ -29,6 +29,7 @@
 #include "jfr/recorder/stacktrace/jfrStackTraceRepository.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "runtime/safepoint.hpp"
 
 /*
  * There are two separate repository instances.
@@ -186,6 +187,7 @@ void JfrStackTraceRepository::record_for_leak_profiler(JavaThread* current_threa
 }
 
 traceid JfrStackTraceRepository::add_trace(const JfrStackTrace& stacktrace) {
+  assert(!SafepointSynchronize::is_at_safepoint(), "invariant");
   MutexLocker lock(JfrStacktrace_lock, Mutex::_no_safepoint_check_flag);
   assert(stacktrace.number_of_frames() > 0, "invariant");
   const size_t index = stacktrace._hash % TABLE_SIZE;
@@ -210,6 +212,7 @@ traceid JfrStackTraceRepository::add_trace(const JfrStackTrace& stacktrace) {
 
 // invariant is that the entry to be resolved actually exists in the table
 const JfrStackTrace* JfrStackTraceRepository::lookup_for_leak_profiler(traceid hash, traceid id) {
+  MutexLocker lock(JfrStacktrace_lock, Mutex::_no_safepoint_check_flag);
   const size_t index = (hash % TABLE_SIZE);
   const JfrStackTrace* trace = leak_profiler_instance()._table[index];
   while (trace != nullptr && trace->id() != id) {

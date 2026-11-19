@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2025 Unicode, Inc.
+<!-- Copyright © 1991-2026 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -1092,7 +1092,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</fields>
 		<timeZoneNames>
 			<gmtFormat>ߜ߭ߕߖ{0}</gmtFormat>
-			<gmtZeroFormat>ߜ߭ߕߖ</gmtZeroFormat>
 			<regionFormat>{0} ߕߎ߬ߡߊ</regionFormat>
 			<regionFormat type="daylight">{0} ߕߎ߬ߡߊ߬-ߦߟߍߡߊ߲</regionFormat>
 			<regionFormat type="standard">{0} ߕߎ߬ߡߊ߬-ߦߟߍߡߊ߲ߓߊߟߌ</regionFormat>
@@ -1567,9 +1566,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>ߟߌߓߙߋߝ߭ߌߟ</exemplarCity>
 			</zone>
 			<zone type="Europe/London">
-				<long>
-					<daylight>ߓߙߌߕߊ߲߫ ߕߟߋ߬ߡߊ߬ ߕߎߡߘߊ</daylight>
-				</long>
 				<exemplarCity>ߟߐ߲ߘߙߍߛ</exemplarCity>
 			</zone>
 			<zone type="America/Grenada">
@@ -1660,9 +1656,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>ߖߦߊߔߎߙߊ߫</exemplarCity>
 			</zone>
 			<zone type="Europe/Dublin">
-				<long>
-					<daylight>ߌߙߑߟߊ߲ߘ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</daylight>
-				</long>
 				<exemplarCity>ߘߎߓߑߟߍ߫</exemplarCity>
 			</zone>
 			<zone type="Asia/Jerusalem">
@@ -1710,7 +1703,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Asia/Phnom_Penh">
 				<exemplarCity>ߔߑߣߐ߲߫ ߔߍ߲߫</exemplarCity>
 			</zone>
-			<zone type="Pacific/Kanton">
+			<zone type="Pacific/Enderbury">
 				<exemplarCity>ߞߊ߲ߕߐ߲߫</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
@@ -2380,9 +2373,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Africa_Western">
 				<long>
-					<generic>ߝߘߊ߬ߝߌ߲߬ߠߊ߫ ߕߟߋ߬ߓߋ ߕߎ߬ߡߊ߬ߙߋ߲</generic>
-					<standard>ߝߘߊ߬ߝߌ߲߬ߠߊ߫ ߕߟߋ߬ߓߋ ߕߎ߬ߡߊ߬ߙߋ߲ ߢߊߓߘߍ</standard>
-					<daylight>ߝߘߊ߬ߝߌ߲߬ߠߊ߫ ߕߟߋ߬ߓߋ ߕߟߋ߬ߡߊ߬ ߕߎߡߊߙߋ߲</daylight>
+					<standard>ߝߘߊ߬ߝߌ߲߬ߠߊ߫ ߕߟߋ߬ߓߋ ߕߎ߬ߡߊ߬ߙߋ߲</standard>
 				</long>
 			</metazone>
 			<metazone type="Alaska">
@@ -2533,6 +2524,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>ߓߙߋߖ߭ߟߌߟߊ߫ ߕߎ߬ߡߊ߬ߘߊ</generic>
 					<standard>ߓߙߋߖ߭ߟߌߟߊ߫ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
 					<daylight>ߓߙߋߖ߭ߟߌߟߊ߫ ߕߟߋ߬ߡߊ߬ ߕߎߡߘߊ</daylight>
+				</long>
+			</metazone>
+			<metazone type="British">
+				<long>
+					<daylight>ߓߙߌߕߊ߲߫ ߕߟߋ߬ߡߊ߬ ߕߎߡߘߊ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Brunei">
@@ -2732,6 +2728,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>ߜ߭ߎߦߣߊ߫ ߕߎ߬ߡߊ߬ߘߊ</standard>
 				</long>
 			</metazone>
+			<metazone type="Hawaii">
+				<long>
+					<standard>ߤߥߊߦ - ߊߟߋߦߎߕߌߦߊ߲߫ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
+				</long>
+			</metazone>
 			<metazone type="Hawaii_Aleutian">
 				<long>
 					<generic>ߤߥߊߦ - ߊߟߋߦߎߕߌߦߊ߲߫ ߕߎ߬ߡߊ߬ߘߊ</generic>
@@ -2788,6 +2789,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>ߌߙߊ߲߫ ߕߎ߬ߡߊ߬ߘߊ</generic>
 					<standard>ߌߙߊ߲߫ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
 					<daylight>ߌߙߊ߲߫ ߕߟߋ߬ߡߊ߬ ߕߎߡߘߊ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Irish">
+				<long>
+					<daylight>ߌߙߑߟߊ߲ߘ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Irkutsk">
@@ -3075,9 +3081,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Samoa">
 				<long>
-					<generic>ߛߊߡߏߥߊ߫ ߕߎ߬ߡߊ߬ߘߊ</generic>
 					<standard>ߛߊߡߏߥߊ߫ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
-					<daylight>ߛߊߡߏߥߊ߫ ߕߟߋ߬ߡߊ߬ ߕߎߡߘߊ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">

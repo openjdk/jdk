@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,20 +30,20 @@
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.jshell
  * @build Compiler KullaTesting TestingInputStream ExpectedDiagnostic
- * @run testng UnnamedTest
+ * @run junit UnnamedTest
  */
 
 import java.util.function.Consumer;
 
 import jdk.jshell.SourceCodeAnalysis;
 import jdk.jshell.VarSnippet;
-import org.testng.Assert;
-import org.testng.annotations.Test;
 
 import jdk.jshell.JShell;
 
 import static jdk.jshell.SourceCodeAnalysis.Completeness.COMPLETE;
 import static jdk.jshell.SourceCodeAnalysis.Completeness.DEFINITELY_INCOMPLETE;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public class UnnamedTest extends KullaTesting {
 
@@ -51,8 +51,8 @@ public class UnnamedTest extends KullaTesting {
     public void unnamed() {
         VarSnippet sn1 = varKey(assertEval("int _ = 0;"));
         VarSnippet sn2 = varKey(assertEval("String _ = \"x\";"));
-        Assert.assertEquals(getState().varValue(sn1), "0");
-        Assert.assertEquals(getState().varValue(sn2), "\"x\"");
+        Assertions.assertEquals("0", getState().varValue(sn1));
+        Assertions.assertEquals("\"x\"", getState().varValue(sn2));
     }
 
     static final String[] definitely_incomplete = new String[]{

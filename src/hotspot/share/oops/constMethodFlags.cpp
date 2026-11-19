@@ -23,7 +23,7 @@
  */
 
 #include "oops/constMethodFlags.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/ostream.hpp"
 
 void ConstMethodFlags::print_on(outputStream* st) const {

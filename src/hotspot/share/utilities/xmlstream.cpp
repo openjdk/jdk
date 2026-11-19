@@ -26,8 +26,8 @@
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
-#include "oops/methodData.hpp"
 #include "oops/method.inline.hpp"
+#include "oops/methodData.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/handles.inline.hpp"
@@ -65,7 +65,7 @@ void xmlStream::initialize(outputStream* out) {
 
 #ifdef ASSERT
 xmlStream::~xmlStream() {
-  FREE_C_HEAP_ARRAY(char, _element_close_stack_low);
+  FREE_C_HEAP_ARRAY(_element_close_stack_low);
 }
 #endif
 
@@ -169,7 +169,7 @@ void xmlStream::see_tag(const char* tag, bool push) {
     _element_close_stack_high = new_high;
     _element_close_stack_low  = new_low;
     _element_close_stack_ptr  = new_ptr;
-    FREE_C_HEAP_ARRAY(char, old_low);
+    FREE_C_HEAP_ARRAY(old_low);
     push_ptr = new_ptr - (tag_len+1);
   }
   assert(push_ptr >= _element_close_stack_low, "in range");

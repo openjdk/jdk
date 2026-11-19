@@ -51,8 +51,8 @@
 #include "runtime/thread.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/hashTable.hpp"
 #include "utilities/preserveException.hpp"
-#include "utilities/resourceHash.hpp"
 #include "utilities/vmError.hpp"
 
 #ifdef ASSERT
@@ -130,7 +130,10 @@ static void z_verify_root_oop_object(zaddress addr, void* p) {
 
 static void z_verify_old_oop(zpointer* p) {
   const zpointer o = *p;
-  assert(o != zpointer::null, "Old should not contain raw null");
+  if (o == zpointer::null) {
+    guarantee(ZGeneration::young()->is_phase_mark_complete(), "Only possible when flip promoting");
+    guarantee(ZHeap::heap()->page(p)->is_allocating(), "Raw nulls only possible in allocating pages");
+  }
   if (!z_is_null_relaxed(o)) {
     if (ZPointer::is_mark_good(o)) {
       // Even though the pointer is mark good, we can't verify that it should
@@ -444,7 +447,7 @@ public:
   virtual void do_field(oop base, oop* p) {
     _visited_base = to_zaddress(base);
     _visited_p = (volatile zpointer*)p;
-    _visited_ptr_pre_loaded = Atomic::load(_visited_p);
+    _visited_ptr_pre_loaded = AtomicAccess::load(_visited_p);
   }
 };
 
@@ -516,7 +519,7 @@ void ZVerify::after_weak_processing() {
 // Remembered set verification
 //
 
-typedef ResourceHashtable<volatile zpointer*, bool, 1009, AnyObj::C_HEAP, mtGC> ZStoreBarrierBufferTable;
+typedef HashTable<volatile zpointer*, bool, 1009, AnyObj::C_HEAP, mtGC> ZStoreBarrierBufferTable;
 
 static ZStoreBarrierBufferTable* z_verify_store_barrier_buffer_table = nullptr;
 
@@ -604,7 +607,7 @@ void ZVerify::on_color_flip() {
   }
 }
 
-void ZVerify::before_relocation(ZForwarding* forwarding) {
+void ZVerify::remset_before(ZForwarding* forwarding) {
   if (!ZVerifyRemembered) {
     return;
   }
@@ -630,17 +633,23 @@ void ZVerify::before_relocation(ZForwarding* forwarding) {
   });
 }
 
+void ZVerify::before_relocation(ZForwarding* forwarding) {
+  remset_before(forwarding);
+}
+
 class ZVerifyRemsetAfterOopClosure : public BasicOopIterateClosure {
 private:
   ZForwarding* const _forwarding;
   zaddress_unsafe    _from_addr;
   zaddress           _to_addr;
+  const bool         _after_relocation;
 
 public:
-  ZVerifyRemsetAfterOopClosure(ZForwarding* forwarding)
+  ZVerifyRemsetAfterOopClosure(ZForwarding* forwarding, bool after_relocation)
     : _forwarding(forwarding),
       _from_addr(zaddress_unsafe::null),
-      _to_addr(zaddress::null) {}
+      _to_addr(zaddress::null),
+      _after_relocation(after_relocation) {}
 
   void set_from_addr(zaddress_unsafe addr) {
     _from_addr = addr;
@@ -652,7 +661,7 @@ public:
 
   virtual void do_oop(oop* p_) {
     volatile zpointer* const p = (volatile zpointer*)p_;
-    const zpointer ptr = Atomic::load(p);
+    const zpointer ptr = AtomicAccess::load(p);
 
     // Order this load w.r.t. the was_remembered load which can race when
     // the remset scanning of the to-space object is concurrently forgetting
@@ -695,7 +704,7 @@ public:
     }
 
     OrderAccess::loadload();
-    if (Atomic::load(p) != ptr) {
+    if (AtomicAccess::load(p) != ptr) {
       // Order the was_remembered bitmap load w.r.t. the reload of the zpointer.
       // Sometimes the was_remembered() call above races with clearing of the
       // previous bits, when the to-space object is concurrently forgetting
@@ -706,7 +715,8 @@ public:
     }
 
     guarantee(ZGeneration::young()->is_phase_mark(), "Should be in the mark phase " BAD_REMSET_ARG(p, ptr, _to_addr));
-    guarantee(_forwarding->relocated_remembered_fields_published_contains(p), BAD_REMSET_ARG(p, ptr, _to_addr));
+    guarantee(_after_relocation, "The published array should only be needed to be verified after relocation" BAD_REMSET_ARG(p, ptr, _to_addr));
+    guarantee(_forwarding->relocated_remembered_fields_published_contains(p, _after_relocation), BAD_REMSET_ARG(p, ptr, _to_addr));
   }
 
   virtual void do_oop(narrowOop* p) {
@@ -718,8 +728,13 @@ public:
   }
 };
 
-void ZVerify::after_relocation_internal(ZForwarding* forwarding) {
-  ZVerifyRemsetAfterOopClosure cl(forwarding);
+void ZVerify::remset_after_inner(ZForwarding* forwarding, bool after_relocation) {
+  if (after_relocation) {
+    // Used to optimize otherwise linear scanning
+    forwarding->relocated_remembered_fields_published_sort();
+  }
+
+  ZVerifyRemsetAfterOopClosure cl(forwarding, after_relocation);
 
   forwarding->address_unsafe_iterate_via_table([&](zaddress_unsafe from_addr) {
     // If no field in this object was in the store barrier buffer
@@ -735,7 +750,7 @@ void ZVerify::after_relocation_internal(ZForwarding* forwarding) {
   });
 }
 
-void ZVerify::after_relocation(ZForwarding* forwarding) {
+void ZVerify::remset_after_relocation(ZForwarding* forwarding) {
   if (!ZVerifyRemembered) {
     return;
   }
@@ -754,10 +769,14 @@ void ZVerify::after_relocation(ZForwarding* forwarding) {
     return;
   }
 
-  after_relocation_internal(forwarding);
+  remset_after_inner(forwarding, true /* after_relocation */);
 }
 
-void ZVerify::after_scan(ZForwarding* forwarding) {
+void ZVerify::after_relocation(ZForwarding* forwarding) {
+  remset_after_relocation(forwarding);
+}
+
+void ZVerify::remset_after_scan(ZForwarding* forwarding) {
   if (!ZVerifyRemembered) {
     return;
   }
@@ -775,5 +794,9 @@ void ZVerify::after_scan(ZForwarding* forwarding) {
     return;
   }
 
-  after_relocation_internal(forwarding);
+  remset_after_inner(forwarding, false /* after_relocation */);
+}
+
+void ZVerify::after_scan(ZForwarding* forwarding) {
+  remset_after_scan(forwarding);
 }

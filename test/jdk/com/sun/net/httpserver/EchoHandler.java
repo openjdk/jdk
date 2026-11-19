@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@ import java.nio.charset.StandardCharsets;
 import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
+import static com.sun.net.httpserver.HttpExchange.RSPBODY_EMPTY;
+import static com.sun.net.httpserver.HttpExchange.RSPBODY_CHUNKED;
 
 /**
  * Implements a basic static EchoHandler for an HTTP server
@@ -50,9 +52,9 @@ public class EchoHandler implements HttpHandler {
             in = Integer.toString(in.length).getBytes(StandardCharsets.UTF_8);
         }
         if (fixedrequest != null) {
-            t.sendResponseHeaders(200, in.length == 0 ? -1 : in.length);
+            t.sendResponseHeaders(200, in.length == 0 ? RSPBODY_EMPTY : in.length);
         } else {
-            t.sendResponseHeaders(200, 0);
+            t.sendResponseHeaders(200, RSPBODY_CHUNKED);
         }
         os.write(in);
         close(t, os);

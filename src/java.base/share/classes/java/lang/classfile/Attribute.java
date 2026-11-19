@@ -65,7 +65,7 @@ public sealed interface Attribute<A extends Attribute<A>>
                 CharacterRangeTableAttribute, CodeAttribute, CompilationIDAttribute,
                 ConstantValueAttribute, DeprecatedAttribute, EnclosingMethodAttribute,
                 ExceptionsAttribute, InnerClassesAttribute, LineNumberTableAttribute,
-                LocalVariableTableAttribute, LocalVariableTypeTableAttribute,
+                LoadableDescriptorsAttribute, LocalVariableTableAttribute, LocalVariableTypeTableAttribute,
                 MethodParametersAttribute, ModuleAttribute, ModuleHashesAttribute,
                 ModuleMainClassAttribute, ModulePackagesAttribute, ModuleResolutionAttribute,
                 ModuleTargetAttribute, NestHostAttribute, NestMembersAttribute,

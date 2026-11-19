@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 8246774
  * @summary Ensures that the serialization implementation can *always* access
  *          the record constructor
- * @run testng ConstructorAccessTest
+ * @run junit ConstructorAccessTest
  */
 
 import java.io.ByteArrayInputStream;
@@ -38,16 +38,19 @@ import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import java.io.Externalizable;
 import java.io.Serializable;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 import static java.lang.System.out;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.fail;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /*implicit*/ record Aux1 (int x) implements Serializable { }
 
 /*implicit*/ record Aux2 (int x) implements Serializable { }
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class ConstructorAccessTest {
 
     public record A (int x) implements Serializable { }
@@ -75,7 +78,6 @@ public class ConstructorAccessTest {
 
     private record H (double d) implements ThrowingExternalizable { }
 
-    @DataProvider(name = "recordInstances")
     public Object[][] recordInstances() {
         return new Object[][] {
             new Object[] { new A(34)        },
@@ -91,7 +93,8 @@ public class ConstructorAccessTest {
         };
     }
 
-    @Test(dataProvider = "recordInstances")
+    @ParameterizedTest
+    @MethodSource("recordInstances")
     public void roundTrip(Object objToSerialize) throws Exception {
         out.println("\n---");
         out.println("serializing : " + objToSerialize);

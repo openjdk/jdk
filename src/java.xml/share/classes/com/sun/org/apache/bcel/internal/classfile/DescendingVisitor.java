@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -23,11 +23,13 @@ import java.util.Objects;
 import java.util.Stack;
 import java.util.stream.Stream;
 
+import jdk.xml.internal.Utils;
+
 /**
- * Traverses a JavaClass with another Visitor object 'piggy-backed' that is
- * applied to all components of a JavaClass object. I.e. this class supplies the
- * traversal strategy, other classes can make use of it.
+ * Traverses a JavaClass with another Visitor object 'piggy-backed' that is applied to all components of a JavaClass
+ * object. I.e. this class supplies the traversal strategy, other classes can make use of it.
  *
+ * @LastModified: Nov 2026
  */
 public class DescendingVisitor implements Visitor {
     private final JavaClass clazz;
@@ -37,8 +39,10 @@ public class DescendingVisitor implements Visitor {
     private final Stack<Object> stack = new Stack<>();
 
     /**
-     * @param clazz Class to traverse
-     * @param visitor visitor object to apply to all components
+     * Constructs a DescendingVisitor.
+     *
+     * @param clazz Class to traverse.
+     * @param visitor visitor object to apply to all components.
      */
     public DescendingVisitor(final JavaClass clazz, final Visitor visitor) {
         this.clazz = clazz;
@@ -46,26 +50,32 @@ public class DescendingVisitor implements Visitor {
     }
 
     private <E extends Node> void accept(final E[] node) {
-        Stream.of(node).forEach(e -> e.accept(this));
+        Utils.streamOfIfNonNull(node).forEach(e -> e.accept(this));
     }
 
     /**
-     * @return current object
+     * Gets the current object.
+     *
+     * @return current object.
      */
     public Object current() {
         return stack.peek();
     }
 
     /**
-     * @return container of current entitity, i.e., predecessor during traversal
+     * Gets the container of current entity, that is, predecessor during traversal.
+     *
+     * @return container of current entity, that is, predecessor during traversal.
      */
     public Object predecessor() {
         return predecessor(0);
     }
 
     /**
-     * @param level nesting level, i.e., 0 returns the direct predecessor
-     * @return container of current entitity, i.e., predecessor during traversal
+     * Gets the container of current entity, that is, predecessor during traversal.
+     *
+     * @param level nesting level, that is, 0 returns the direct predecessor.
+     * @return container of current entity, that is, predecessor during traversal.
      */
     public Object predecessor(final int level) {
         final int size = stack.size();
@@ -507,6 +517,29 @@ public class DescendingVisitor implements Visitor {
         stack.pop();
     }
 
+    /** @since 6.13.0 */
+    @Override
+    public void visitPermittedSubclasses(final PermittedSubclasses obj) {
+        stack.push(obj);
+        obj.accept(visitor);
+        stack.pop();
+    }
+
+    @Override
+    public void visitRecord(final Record record) {
+        stack.push(record);
+        record.accept(visitor);
+        accept(record.getComponents());
+        stack.pop();
+    }
+
+    @Override
+    public void visitRecordComponent(final RecordComponentInfo recordComponentInfo) {
+        stack.push(recordComponentInfo);
+        recordComponentInfo.accept(visitor);
+        stack.pop();
+    }
+
     @Override
     public void visitSignature(final Signature attribute) {
         stack.push(attribute);
@@ -533,6 +566,21 @@ public class DescendingVisitor implements Visitor {
     public void visitStackMapEntry(final StackMapEntry var) {
         stack.push(var);
         var.accept(visitor);
+        accept(var.getTypesOfLocals());
+        accept(var.getTypesOfStackItems());
+        stack.pop();
+    }
+
+    /**
+     * Visits a {@link StackMapType} object.
+     *
+     * @param var object to visit.
+     * @since 6.8.0
+     */
+    @Override
+    public void visitStackMapType(final StackMapType var) {
+        stack.push(var);
+        var.accept(visitor);
         stack.pop();
     }
 
@@ -549,4 +597,5 @@ public class DescendingVisitor implements Visitor {
         attribute.accept(visitor);
         stack.pop();
     }
+
 }

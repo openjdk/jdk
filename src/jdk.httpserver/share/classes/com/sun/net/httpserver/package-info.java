@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,26 +117,25 @@
    The following code shows how the SSLContext is then used in a HttpsConfigurator
    and how the SSLContext and HttpsConfigurator are linked to the HttpsServer.
    <blockquote><pre>
-    server.setHttpsConfigurator (new HttpsConfigurator(sslContext) {
-        public void configure (HttpsParameters params) {
+   server.setHttpsConfigurator(new HttpsConfigurator(sslContext) {
+       public void configure(HttpsParameters params) {
 
-        // get the remote address if needed
-        InetSocketAddress remote = params.getClientAddress();
+           // get the remote address if needed
+           InetSocketAddress remote = params.getClientAddress();
 
-        SSLContext c = getSSLContext();
+           SSLContext c = getSSLContext();
 
-        // get the default parameters
-        SSLParameters sslparams = c.getDefaultSSLParameters();
-        if (remote.equals (...) ) {
-            // modify the default set for client x
-        }
+           // get the default parameters
+           SSLParameters sslparams = c.getDefaultSSLParameters();
+           if (remote.equals(...)) {
+               // modify the default set for client x
+           }
 
-        params.setSSLParameters(sslparams);
-        // statement above could throw IAE if any params invalid.
-        // eg. if app has a UI and parameters supplied by a user.
-
-        }
-    });
+           params.setSSLParameters(sslparams);
+           // statement above could throw IAE if any params invalid.
+           // eg. if app has a UI and parameters supplied by a user.
+       }
+   });
    </pre></blockquote>
    @since 1.6
  */

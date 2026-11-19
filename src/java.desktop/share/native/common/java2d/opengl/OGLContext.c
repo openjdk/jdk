@@ -484,6 +484,7 @@ OGLContext_SetTransform(OGLContext *oglc,
     if (oglc->xformMatrix == NULL) {
         size_t arrsize = 16 * sizeof(GLdouble);
         oglc->xformMatrix = (GLdouble *)malloc(arrsize);
+        RETURN_IF_NULL(oglc->xformMatrix);
         memset(oglc->xformMatrix, 0, arrsize);
         oglc->xformMatrix[10] = 1.0;
         oglc->xformMatrix[15] = 1.0;

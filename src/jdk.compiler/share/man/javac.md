@@ -1,5 +1,5 @@
 ---
-# Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -139,7 +139,7 @@ file system locations may be directories, JAR files or JMOD files.
 <a id="option-at">`@`*filename*</a>
 :   Reads options and file names from a file. To shorten or simplify the
     `javac` command, you can specify one or more files that contain arguments
-    to the `javac` command (except [`-J`](#option-J) options). This lets you to create
+    to the `javac` command (except [`-J`](#option-J) options). This lets you create
     `javac` commands of any length on any operating system.
     See [Command-Line Argument Files].
 
@@ -208,8 +208,8 @@ file system locations may be directories, JAR files or JMOD files.
     `-deprecation` option is shorthand for `-Xlint:deprecation`.
 
 <a id="option-enable-preview">`--enable-preview`</a>
-:   Enables preview language features. Used in conjunction with either
-    [`-source`](#option-source) or [`--release`](#option-release).
+:   Enables preview language features. Also disables the `preview` lint category.
+    Used in conjunction with either [`-source`](#option-source) or [`--release`](#option-release).
 
 <a id="option-encoding">`-encoding` *encoding*</a>
 :   Specifies character encoding used by source files, such as EUC-JP and
@@ -233,7 +233,7 @@ file system locations may be directories, JAR files or JMOD files.
     If you are compiling for a release of the platform that supports the
     Extension Mechanism, then this option specifies the directories that
     contain the extension classes.
-    See [Compiling for Other Releases of the Platform].
+    See [Compiling for Earlier Releases of the Platform].
 
     **Note:** This can only be used when compiling for releases prior to JDK 9.
     As applicable, see the descriptions in [`--release`](#option-release), [`-source`](#option-source), or
@@ -297,7 +297,7 @@ file system locations may be directories, JAR files or JMOD files.
 
 <a id="option-J">`-J`*option*</a>
 :   Passes *option* to the runtime system, where *option* is one of the Java
-    options described on [java](java.html) command. For example, `-J-Xms48m`
+    options described for the [java](java.html) command. For example, `-J-Xms48m`
     sets the startup memory to 48 MB.
 
     **Note:** The `CLASSPATH` environment variable, `-classpath` option, `-bootclasspath`
@@ -448,7 +448,16 @@ file system locations may be directories, JAR files or JMOD files.
 :   Prints version information.
 
 <a id="option-Werror">`-Werror`</a>
-:   Terminates compilation when warnings occur.
+:   Terminates compilation when any warnings occur; this includes warnings in all lint
+    categories, as well as non-lint warnings.
+
+<a id="option-Werror-custom">`-Werror:`\[`-`\]*key*(`,`\[`-`\]*key*)\*</a>
+:   Specify lint categories for which warnings should terminate compilation. The keys
+    `all` and `none` include or exclude all categories (respectively); other keys include
+    the corresponding category, or exclude it if preceded by a hyphen (`-`). By default,
+    no categories are included. In order to terminate compilation, the category must also
+    be enabled (via [`-Xlint`](#option-Xlint-custom), if necessary).
+    See [`-Xlint`](#option-Xlint-custom) below for the list of lint category keys.
 
 ### Extra Options
 
@@ -557,11 +566,12 @@ file system locations may be directories, JAR files or JMOD files.
     section of the `javadoc` command documentation.
 
 <a id="option-Xlint">`-Xlint`</a>
-:   Enables all recommended warnings. In this release, enabling all available
-    warnings is recommended.
+:   Enables recommended lint warning categories. All lint warning categories are
+    recommended by default. If preview language features are enabled
+    (`--enable-preview`), all lint warning categories except `preview` are recommended.
 
 <a id="option-Xlint-custom">`-Xlint:`\[`-`\]*key*(`,`\[`-`\]*key*)\*</a>
-:   Enables and/or disables warning categories using the one or more of the keys described
+:   Enables and/or disables lint warning categories using the one or more of the keys described
     below separated by commas. The keys `all` and `none` enable or disable all categories
     (respectively); other keys enable the corresponding category, or disable it if preceded
     by a hyphen (`-`).
@@ -602,7 +612,7 @@ file system locations may be directories, JAR files or JMOD files.
     -   `incubating`: Warns about the use of incubating modules.
 
     -   `lossy-conversions`: Warns about possible lossy conversions
-        in compound assignment.
+        in compound assignment and bit shift operations.
 
     -   `missing-explicit-ctor`: Warns about missing explicit constructors in
          public and protected classes in exported packages.
@@ -648,10 +658,9 @@ file system locations may be directories, JAR files or JMOD files.
 
     -   `strictfp`: Warns about unnecessary use of the `strictfp` modifier.
 
-    -   `synchronization`: Warns about synchronization attempts on instances
-        of value-based classes. This key is a deprecated alias for `identity`,
-        which has the same uses and effects. Users are encouraged to use the
-        `identity` category for all future and existing uses of `synchronization`.
+    -   `synchronization`: Deprecated alias for `identity` with an identical
+        effect. Users are encouraged to use `identity` instead of `synchronization`
+        for all current and future uses.
 
     -   `text-blocks`: Warns about inconsistent white space characters in text
         block indentation.
@@ -667,9 +676,13 @@ file system locations may be directories, JAR files or JMOD files.
 
     -   `none`: Disables all warning categories.
 
-    With the exception of `all` and `none`, the keys can be used with
-    the `@SuppressWarnings` annotation to suppress warnings in a part
-    of the source code being compiled.
+    The keys listed above may be used in `@SuppressWarnings` annotations to suppress
+    warnings within the annotated declaration, with the exception of: `all`, `none`,
+    `classfile`, `incubating`, `options`, `output-file-clash`, `processing`, and `path`.
+
+    By default, the following lint warning categories are enabled: `dep-ann`, `identity`,
+    `incubating`, `module`, `opens`, `preview`, `removal`, `requires-transitive-automatic`,
+    and `strictfp`.
 
     See [Examples of Using -Xlint keys].
 
@@ -1138,7 +1151,7 @@ This may be useful when performing white-box testing; relying on access
 to internal API in production code is strongly discouraged.
 
 You can patch additional content into any module using the
-[`--patch-module`](#option-patch-module) option. See [Patching a Module] for more details.
+[`--patch-module`](#option-patch-module) option. See [Patching Modules] for more details.
 
 ## Searching for Module, Package and Type Declarations
 
@@ -1222,7 +1235,7 @@ If the module is one of those currently being compiled, the module declaration
 will be either the file named `module-info.class` in the root of the
 package hierarchy for the module in the class output directory, or the
 file named `module-info.java` in one of the locations on the source path
-or one the module source path for the module.
+or on the module source path for the module.
 
 ### Searching for the Declaration of a Type When the Reference is not in a Module
 
@@ -1261,7 +1274,7 @@ readable by the enclosing module.
 If so, `javac` will simply and directly go to the definition of that module
 to find the definition of the required type.
 Unless the module is another of the modules being compiled, `javac` will
-only look for compiled class files files. In other words, `javac` will
+only look for compiled class files. In other words, `javac` will
 not look for source files in platform modules or modules on the module path.
 
 If the type being referenced is not in some other readable module,
@@ -1298,6 +1311,12 @@ word `module`, like [`--module-path`](#option-module-path), are used to specify 
 although some module-related path options allow a package hierarchy to be
 specified on a per-module basis. All other path options are used to specify
 package hierarchies.
+
+When a JAR file in the user class path has a `Class-Path` manifest attribute,
+and the specified JAR file(s) exist, they are automatically inserted into the
+user class path after the JAR file. This rule also applies recursively to any
+new JAR files found. Consult the [JAR File Specification](../jar/jar.html#class-path-attribute)
+for details.
 
 ### Package Hierarchy
 
@@ -1458,7 +1477,7 @@ specified, then the user class path is used. Processors are located by
 means of service provider-configuration files named
 `META-INF/services/javax.annotation.processing.Processor` on the
 search path.  Such files should contain the names of any
-annotationation processors to be used, listed one per
+annotation processors to be used, listed one per
 line. Alternatively, processors can be specified explicitly, using the
 [`-processor`](#option-processor) option.
 
@@ -1633,7 +1652,7 @@ internal and subject to change at any time.
     >   `int divideByZero = 42 / 0;`
 
 `empty`
-:   Warns about empty statements after `if`statements, for example:
+:   Warns about empty statements after `if` statements, for example:
 
     ```
     class E {

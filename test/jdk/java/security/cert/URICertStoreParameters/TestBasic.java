@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,12 @@
 import java.security.cert.CertStore;
 import java.security.cert.URICertStoreParameters;
 import java.net.URI;
+import java.util.HashSet;
+import java.util.Set;
 
 /*
  * @test
- * @bug 8038084
+ * @bug 8038084 8355379
  * @summary Basic testing for URICertStoreParameters
  * @run main TestBasic
  */
@@ -37,6 +39,7 @@ public class TestBasic {
         String str1 = "ldap://myownhost:5000/";
         String str2 = "ldap://myownhost:5000/cn=foo";
         test(str1, str2);
+        testRepeatedHashCode(str1);
         System.out.println("Test passed");
     }
 
@@ -67,5 +70,16 @@ public class TestBasic {
         if (p1.equals(p2) || p1Too.equals(p2)) {
             throw new Exception("Error: p1/p1Too should NOT equal p2");
         }
+    }
+
+    private static void testRepeatedHashCode(String str) throws Exception {
+        System.out.println("Testing repeated hashCode consistency");
+        URICertStoreParameters p = new URICertStoreParameters(new URI(str));
+        int h1 = p.hashCode();
+        int h2 = p.hashCode();
+        if (h1 != h2) {
+            throw new Exception("hashCode inconsistent across calls");
+        }
+        System.out.println("hashCode consistency verified");
     }
 }

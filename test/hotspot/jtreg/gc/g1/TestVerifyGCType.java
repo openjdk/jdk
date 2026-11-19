@@ -166,6 +166,7 @@ public class TestVerifyGCType {
                                        "-Xmx16m",
                                        "-XX:ParallelGCThreads=1",
                                        "-XX:G1HeapWastePercent=1",
+                                       "-XX:+G1VerifyBitmaps",
                                        "-XX:+VerifyBeforeGC",
                                        "-XX:+VerifyAfterGC",
                                        "-XX:+VerifyDuringGC"});

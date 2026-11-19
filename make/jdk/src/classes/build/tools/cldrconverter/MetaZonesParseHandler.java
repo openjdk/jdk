@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
  */
 
 package build.tools.cldrconverter;
+
+import static build.tools.cldrconverter.CLDRConverter.SPPL_LDML_DTD_SYSTEM_ID;
 
 import java.io.File;
 import java.io.IOException;
@@ -58,7 +60,7 @@ class MetaZonesParseHandler extends AbstractLDMLHandler<String> {
     @Override
     public InputSource resolveEntity(String publicID, String systemID) throws IOException, SAXException {
         // avoid HTTP traffic to unicode.org
-        if (systemID.startsWith(CLDRConverter.SPPL_LDML_DTD_SYSTEM_ID)) {
+        if (systemID.startsWith(SPPL_LDML_DTD_SYSTEM_ID)) {
             return new InputSource((new File(CLDRConverter.LOCAL_SPPL_LDML_DTD)).toURI().toString());
         }
         return null;
@@ -84,7 +86,15 @@ class MetaZonesParseHandler extends AbstractLDMLHandler<String> {
 
             if (fromLDT.isBefore(now) && toLDT.isAfter(now)) {
                 metazone = attributes.getValue("mzone");
+
+                // Explicit metazone DST offsets. Only the "dst" offset is needed,
+                // as "std" is used by default when it doesn't match.
+                String dstOffset = attributes.getValue("dstOffset");
+                if (dstOffset != null) {
+                    CLDRConverter.explicitDstOffsets.put(tzid, dstOffset);
+                }
             }
+
             pushIgnoredContainer(qName);
             break;
 
@@ -94,9 +104,9 @@ class MetaZonesParseHandler extends AbstractLDMLHandler<String> {
                 zones.put(attributes.getValue("other"), attributes.getValue("type"));
             } else {
                 mzoneMapEntryList.add(String.format("        \"%s\", \"%s\", \"%s\",",
-                    attributes.getValue("other"),
-                    territory,
-                    attributes.getValue("type")));
+                    CLDRConverter.escape(attributes.getValue("other")),
+                    CLDRConverter.escape(territory),
+                    CLDRConverter.escape(attributes.getValue("type"))));
             }
             pushIgnoredContainer(qName);
             break;

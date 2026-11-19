@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,27 +44,27 @@ public class CondyIndyTest {
                                                                              "CondyIndy");
         OutputAnalyzer o = new OutputAnalyzer(pb.start());
         o.shouldHaveExitValue(0);
-        o.shouldContain("[info][methodhandles");
-        o.shouldNotContain("[debug][methodhandles,indy");
-        o.shouldNotContain("[debug][methodhandles,condy");
+        o.shouldMatch("\\[info *\\]\\[methodhandles");
+        o.shouldNotMatch("\\[debug *\\]\\[methodhandles,indy");
+        o.shouldNotMatch("\\[debug *\\]\\[methodhandles,condy");
 
         // (2) methodhandles+condy=debug only
         pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:methodhandles+condy=debug",
                                                               "CondyIndy");
         o = new OutputAnalyzer(pb.start());
         o.shouldHaveExitValue(0);
-        o.shouldNotContain("[info ][methodhandles");
-        o.shouldNotContain("[debug][methodhandles,indy");
-        o.shouldContain("[debug][methodhandles,condy");
+        o.shouldNotMatch("\\[info *\\]\\[methodhandles");
+        o.shouldNotMatch("\\[debug *\\]\\[methodhandles,indy");
+        o.shouldMatch("\\[debug *\\]\\[methodhandles,condy");
 
         // (3) methodhandles+indy=debug only
         pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:methodhandles+indy=debug",
                                                               "CondyIndy");
         o = new OutputAnalyzer(pb.start());
         o.shouldHaveExitValue(0);
-        o.shouldNotContain("[info ][methodhandles");
-        o.shouldContain("[debug][methodhandles,indy");
-        o.shouldNotContain("[debug][methodhandles,condy");
+        o.shouldNotMatch("\\[info *\\]\\[methodhandles");
+        o.shouldMatch("\\[debug *\\]\\[methodhandles,indy");
+        o.shouldNotMatch("\\[debug *\\]\\[methodhandles,condy");
 
         // (4) methodhandles, condy, indy all on
         pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:methodhandles=info",
@@ -73,8 +73,8 @@ public class CondyIndyTest {
                                                               "CondyIndy");
         o = new OutputAnalyzer(pb.start());
         o.shouldHaveExitValue(0);
-        o.shouldContain("[info ][methodhandles");
-        o.shouldContain("[debug][methodhandles,indy");
-        o.shouldContain("[debug][methodhandles,condy");
+        o.shouldMatch("\\[info *\\]\\[methodhandles");
+        o.shouldMatch("\\[debug *\\]\\[methodhandles,indy");
+        o.shouldMatch("\\[debug *\\]\\[methodhandles,condy");
     };
 }

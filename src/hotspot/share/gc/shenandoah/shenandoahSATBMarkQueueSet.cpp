@@ -28,7 +28,7 @@
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 
 ShenandoahSATBMarkQueueSet::ShenandoahSATBMarkQueueSet(BufferNode::Allocator* allocator) :
-  SATBMarkQueueSet(allocator)
+  SATBMarkQueueSet(allocator), _filter_out_young(false)
 {}
 
 SATBMarkQueue& ShenandoahSATBMarkQueueSet::satb_queue_for_thread(Thread* const t) const {
@@ -39,16 +39,33 @@ class ShenandoahSATBMarkQueueFilterFn {
   ShenandoahHeap* const _heap;
 
 public:
-  ShenandoahSATBMarkQueueFilterFn(ShenandoahHeap* heap) : _heap(heap) {}
+  explicit ShenandoahSATBMarkQueueFilterFn(ShenandoahHeap* heap) : _heap(heap) {}
 
-  // Return true if entry should be filtered out (removed), false if
-  // it should be retained.
+  // Return true if entry should be filtered out (removed), false if it should be retained.
   bool operator()(const void* entry) const {
     return !_heap->requires_marking(entry);
   }
 };
 
+class ShenandoahSATBOldMarkQueueFilterFn {
+  ShenandoahHeap* const _heap;
+
+public:
+  explicit ShenandoahSATBOldMarkQueueFilterFn(ShenandoahHeap* heap) : _heap(heap) {}
+
+  // Return true if entry should be filtered out (removed), false if it should be retained.
+  bool operator()(const void* entry) const {
+    assert(_heap->is_concurrent_old_mark_in_progress(), "Should only use this when old marking is in progress");
+    assert(!_heap->is_concurrent_young_mark_in_progress(), "Should only use this when young marking is not in progress");
+    return !_heap->requires_marking(entry) || !_heap->is_in_old(entry);
+  }
+};
+
 void ShenandoahSATBMarkQueueSet::filter(SATBMarkQueue& queue) {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
-  apply_filter(ShenandoahSATBMarkQueueFilterFn(heap), queue);
+  if (_filter_out_young) {
+    apply_filter(ShenandoahSATBOldMarkQueueFilterFn(heap), queue);
+  } else {
+    apply_filter(ShenandoahSATBMarkQueueFilterFn(heap), queue);
+  }
 }

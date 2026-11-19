@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,9 +101,21 @@ public abstract class URLConnection extends java.net.URLConnection {
         return Collections.emptyMap();
     }
 
+    /**
+     * This method is called whenever the headers related methods are called on the
+     * {@code URLConnection}. This method does any necessary checks and initializations
+     * to make sure that the headers can be served. If this {@code URLConnection} cannot
+     * serve the headers, then this method throws an {@code IOException}.
+     *
+     * @throws IOException if the headers cannot be served
+     */
+    protected void ensureCanServeHeaders() throws IOException {
+        getInputStream();
+    }
+
     public String getHeaderField(String name) {
         try {
-            getInputStream();
+            ensureCanServeHeaders();
         } catch (Exception e) {
             return null;
         }
@@ -111,13 +123,13 @@ public abstract class URLConnection extends java.net.URLConnection {
     }
 
 
-    Map<String, List<String>> headerFields;
+    private Map<String, List<String>> headerFields;
 
     @Override
     public Map<String, List<String>> getHeaderFields() {
         if (headerFields == null) {
             try {
-                getInputStream();
+                ensureCanServeHeaders();
                 if (properties == null) {
                     headerFields = super.getHeaderFields();
                 } else {
@@ -137,7 +149,7 @@ public abstract class URLConnection extends java.net.URLConnection {
      */
     public String getHeaderFieldKey(int n) {
         try {
-            getInputStream();
+            ensureCanServeHeaders();
         } catch (Exception e) {
             return null;
         }
@@ -152,7 +164,7 @@ public abstract class URLConnection extends java.net.URLConnection {
      */
     public String getHeaderField(int n) {
         try {
-            getInputStream();
+            ensureCanServeHeaders();
         } catch (Exception e) {
             return null;
         }
@@ -221,7 +233,7 @@ public abstract class URLConnection extends java.net.URLConnection {
      */
     public int getContentLength() {
         try {
-            getInputStream();
+            ensureCanServeHeaders();
         } catch (Exception e) {
             return -1;
         }

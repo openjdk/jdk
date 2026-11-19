@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +26,11 @@
 package sun.awt.screencast;
 
 import sun.awt.UNIXToolkit;
-import sun.java2d.pipe.Region;
+import sun.awt.X11GraphicsDevice;
 
-import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsEnvironment;
 import java.awt.Rectangle;
 import java.awt.Toolkit;
-import java.awt.geom.AffineTransform;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
@@ -63,9 +61,11 @@ public final class ScreencastHelper {
     private static final int DELAY_BEFORE_SESSION_CLOSE = 2000;
 
     private static volatile TimerTask timerTask = null;
-    private static final Timer timerCloseSession
-            = new Timer("auto-close screencast session", true);
 
+    private static class TimerHolder {
+        private static final Timer timerCloseSession =
+                new Timer("auto-close screencast session", true);
+    }
 
     private ScreencastHelper() {}
 
@@ -113,19 +113,7 @@ public final class ScreencastHelper {
                 .stream(GraphicsEnvironment
                         .getLocalGraphicsEnvironment()
                         .getScreenDevices())
-                .map(graphicsDevice -> {
-                    GraphicsConfiguration gc =
-                            graphicsDevice.getDefaultConfiguration();
-                    Rectangle screen = gc.getBounds();
-                    AffineTransform tx = gc.getDefaultTransform();
-
-                    return new Rectangle(
-                            Region.clipRound(screen.x * tx.getScaleX()),
-                            Region.clipRound(screen.y * tx.getScaleY()),
-                            Region.clipRound(screen.width * tx.getScaleX()),
-                            Region.clipRound(screen.height * tx.getScaleY())
-                    );
-                })
+                .map(d -> ((X11GraphicsDevice) d).getNativeBounds())
                 .toList();
     }
 
@@ -143,7 +131,7 @@ public final class ScreencastHelper {
             }
         };
 
-        timerCloseSession.schedule(timerTask, DELAY_BEFORE_SESSION_CLOSE);
+        TimerHolder.timerCloseSession.schedule(timerTask, DELAY_BEFORE_SESSION_CLOSE);
     }
 
     public static synchronized void getRGBPixels(

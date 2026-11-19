@@ -77,7 +77,17 @@ public class TestStress {
 
     static void sum(int n) {
         int acc = 0;
-        for (int i = 0; i < n; i++) acc += i;
+        int[] arr1 = new int[n];
+        int[] arr2 = new int[n];
+        int[] arr3 = new int[n];
+        int[] arr4 = new int[n];
+        for (int i = 0; i < n; i++) {
+            acc += i;
+            arr1[i] = i;
+            arr2[i] = acc;
+            arr3[i] = i * n;
+            arr4[i] = acc * n;
+        }
         System.out.println(acc);
     }
 

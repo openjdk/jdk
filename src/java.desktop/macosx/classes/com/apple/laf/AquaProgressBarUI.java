@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package com.apple.laf;
 
 import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.awt.event.*;
 import java.awt.geom.AffineTransform;
 import java.beans.*;
@@ -43,7 +44,7 @@ import apple.laf.JRSUIState.ValueState;
 import com.apple.laf.AquaUtilControlSize.*;
 import com.apple.laf.AquaUtils.RecyclableSingleton;
 
-public class AquaProgressBarUI extends ProgressBarUI implements ChangeListener, PropertyChangeListener, AncestorListener, Sizeable {
+public final class AquaProgressBarUI extends ProgressBarUI implements ChangeListener, PropertyChangeListener, AncestorListener, Sizeable {
     private static final boolean ADJUSTTIMER = true;
 
     private static final RecyclableSingleton<SizeDescriptor> sizeDescriptor = new RecyclableSingleton<SizeDescriptor>() {
@@ -76,12 +77,14 @@ public class AquaProgressBarUI extends ProgressBarUI implements ChangeListener, 
 
     protected AquaProgressBarUI() { }
 
+    @Override
     public void installUI(final JComponent c) {
         progressBar = (JProgressBar)c;
         installDefaults();
         installListeners();
     }
 
+    @Override
     public void uninstallUI(final JComponent c) {
         uninstallDefaults();
         uninstallListeners();
@@ -114,10 +117,12 @@ public class AquaProgressBarUI extends ProgressBarUI implements ChangeListener, 
         progressBar.removeChangeListener(this);
     }
 
+    @Override
     public void stateChanged(final ChangeEvent e) {
         progressBar.repaint();
     }
 
+    @Override
     public void propertyChange(final PropertyChangeEvent e) {
         final String prop = e.getPropertyName();
         if ("indeterminate".equals(prop)) {
@@ -137,10 +142,12 @@ public class AquaProgressBarUI extends ProgressBarUI implements ChangeListener, 
 
     // listen for Ancestor events to stop our timer when we are no longer visible
     // <rdar://problem/5405035> JProgressBar: UI in Aqua look and feel causes memory leaks
+    @Override
     public void ancestorRemoved(final AncestorEvent e) {
         stopAnimationTimer();
     }
 
+    @Override
     public void ancestorAdded(final AncestorEvent e) {
         if (!progressBar.isIndeterminate()) return;
         if (progressBar.isDisplayable()) {
@@ -148,8 +155,10 @@ public class AquaProgressBarUI extends ProgressBarUI implements ChangeListener, 
         }
     }
 
+    @Override
     public void ancestorMoved(final AncestorEvent e) { }
 
+    @Override
     public void paint(final Graphics g, final JComponent c) {
         revalidateAnimationTimers(); // revalidate to turn on/off timers when values change
 
@@ -179,24 +188,66 @@ public class AquaProgressBarUI extends ProgressBarUI implements ChangeListener, 
     }
 
     protected void paint(final Graphics g) {
-        // this is questionable. We may want the insets to mean something different.
         final Insets i = progressBar.getInsets();
-        final int width = progressBar.getWidth() - (i.right + i.left);
-        final int height = progressBar.getHeight() - (i.bottom + i.top);
+        final int componentWidth = progressBar.getWidth();
+        final int componentHeight = progressBar.getHeight();
+        final int width = componentWidth - (i.right + i.left);
+        final int height = componentHeight - (i.bottom + i.top);
 
-        Graphics2D g2 = (Graphics2D) g;
+        Graphics2D g2;
+        BufferedImage image = null;
+
+        if (g instanceof Graphics2D) {
+            g2 = (Graphics2D) g;
+        } else {
+            image = new BufferedImage(componentWidth, componentHeight,
+                                      BufferedImage.TYPE_INT_RGB);
+            g2 = image.createGraphics();
+            g2.setColor(progressBar.getBackground());
+            g2.fillRect(0, 0, componentWidth, componentHeight);
+        }
+
         final AffineTransform savedAT = g2.getTransform();
         if (!progressBar.getComponentOrientation().isLeftToRight()) {
             //Scale operation: Flips component about pivot
             //Translate operation: Moves component back into original position
             g2.scale(-1, 1);
-            g2.translate(-progressBar.getWidth(), 0);
+            g2.translate(-componentWidth, 0);
         }
-        painter.paint(g, progressBar, i.left, i.top, width, height);
-
+        painter.paint(g2, progressBar, i.left, i.top, width, height);
         g2.setTransform(savedAT);
-        if (progressBar.isStringPainted() && !progressBar.isIndeterminate()) {
-                paintString(g, i.left, i.top, width, height);
+
+        if (image != null) {
+            if (!isHorizontal()) {
+                final boolean paintText = progressBar.isStringPainted()
+                                         && !progressBar.isIndeterminate();
+                final Graphics2D printerGraphics = SwingUtilities2.getGraphics2D(g);
+                if (paintText && printerGraphics == null) {
+                    paintString(g2, i.left, i.top, width, height);
+                }
+                g2.dispose();
+                g.drawImage(image, 0, 0, null);
+                if (paintText && printerGraphics != null) {
+                    final Graphics2D textGraphics = (Graphics2D) printerGraphics.create();
+                    try {
+                        paintString(textGraphics, i.left, i.top, width, height);
+                    } finally{
+                        textGraphics.dispose();
+                   }
+               }
+            } else {
+                g.drawImage(image, 0, 0, null);
+                g2.dispose();
+                if (progressBar.isStringPainted() && !progressBar.isIndeterminate()) {
+                    paintString(g, i.left, i.top, width, height);
+                }
+            }
+        } else if (progressBar.isStringPainted() && !progressBar.isIndeterminate()) {
+            BufferedImage stringImage = new BufferedImage(componentWidth, componentHeight, BufferedImage.TYPE_INT_ARGB);
+            Graphics2D stringGraphics = stringImage.createGraphics();
+            paintString(stringGraphics, i.left, i.top, width, height);
+            stringGraphics.dispose();
+            g.drawImage(stringImage, 0, 0, null);
         }
     }
 
@@ -207,18 +258,17 @@ public class AquaProgressBarUI extends ProgressBarUI implements ChangeListener, 
     }
 
     protected void paintString(final Graphics g, final int x, final int y, final int width, final int height) {
-        if (!(g instanceof Graphics2D)) return;
 
-        final Graphics2D g2 = (Graphics2D)g;
         final String progressString = progressBar.getString();
-        g2.setFont(progressBar.getFont());
-        final Point renderLocation = getStringPlacement(g2, progressString, x, y, width, height);
-        final Rectangle oldClip = g2.getClipBounds();
+        g.setFont(progressBar.getFont());
+        final Point renderLocation = getStringPlacement(g, progressString, x, y, width, height);
+        final Rectangle oldClip = g.getClipBounds();
 
         if (isHorizontal()) {
-            g2.setColor(selectionForeground);
-            SwingUtilities2.drawString(progressBar, g2, progressString, renderLocation.x, renderLocation.y);
+            g.setColor(selectionForeground);
+            SwingUtilities2.drawString(progressBar, g, progressString, renderLocation.x, renderLocation.y);
         } else { // VERTICAL
+            Graphics2D g2 = (Graphics2D) g;
             // We rotate it -90 degrees, then translate it down since we are going to be bottom up.
             final AffineTransform savedAT = g2.getTransform();
             g2.transform(AffineTransform.getRotateInstance(0.0f - (Math.PI / 2.0f), 0, 0));
@@ -232,7 +282,7 @@ public class AquaProgressBarUI extends ProgressBarUI implements ChangeListener, 
             g2.setTransform(savedAT);
         }
 
-        g2.setClip(oldClip);
+        g.setClip(oldClip);
     }
 
     /**
@@ -263,6 +313,7 @@ public class AquaProgressBarUI extends ProgressBarUI implements ChangeListener, 
         return new Dimension(20, 20);
     }
 
+    @Override
     public Dimension getPreferredSize(final JComponent c) {
         if (isCircular) {
             return getCircularPreferredSize();
@@ -322,6 +373,7 @@ public class AquaProgressBarUI extends ProgressBarUI implements ChangeListener, 
         return size;
     }
 
+    @Override
     public Dimension getMinimumSize(final JComponent c) {
         if (isCircular) {
             return getCircularPreferredSize();
@@ -340,6 +392,7 @@ public class AquaProgressBarUI extends ProgressBarUI implements ChangeListener, 
         return pref;
     }
 
+    @Override
     public Dimension getMaximumSize(final JComponent c) {
         if (isCircular) {
             return getCircularPreferredSize();
@@ -356,6 +409,7 @@ public class AquaProgressBarUI extends ProgressBarUI implements ChangeListener, 
         return pref;
     }
 
+    @Override
     public void applySizeFor(final JComponent c, final Size size) {
         painter.state.set(sizeVariant = size == Size.MINI ? Size.SMALL : sizeVariant); // CUI doesn't support mini progress bars right now
     }
@@ -440,7 +494,7 @@ public class AquaProgressBarUI extends ProgressBarUI implements ChangeListener, 
         progressBar.repaint(repaintRect);
     }
 
-    protected class Animator implements ActionListener {
+    protected final class Animator implements ActionListener {
         private static final int MINIMUM_DELAY = 5;
         private Timer timer;
         private long previousDelay; // used to tune the repaint interval
@@ -476,6 +530,7 @@ public class AquaProgressBarUI extends ProgressBarUI implements ChangeListener, 
             timer.stop();
         }
 
+        @Override
         public void actionPerformed(final ActionEvent e) {
             if (!ADJUSTTIMER) {
                 repaint();

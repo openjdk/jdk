@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,29 +26,30 @@ package jdk.httpclient.test.lib.http2;
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.util.Objects;
+import java.util.concurrent.Semaphore;
 
 import jdk.internal.net.http.frame.DataFrame;
+import jdk.internal.net.http.frame.Http2Frame;
 import jdk.internal.net.http.frame.ResetFrame;
 
 /**
  * OutputStream. Incoming window updates handled by the main connection
  * reader thread.
  */
-@SuppressWarnings({"rawtypes","unchecked"})
 public class BodyOutputStream extends OutputStream {
     final static byte[] EMPTY_BARRAY = new byte[0];
 
     final int streamid;
-    int window;
+    // stream level send window, permits = bytes
+    final Semaphore window;
     volatile boolean closed;
     volatile BodyInputStream bis;
-    volatile int resetErrorCode;
     boolean goodToGo = false; // not allowed to send until headers sent
     final Http2TestServerConnection conn;
-    final Queue outputQ;
+    final Queue<? super Http2Frame> outputQ;
 
     BodyOutputStream(int streamid, int initialWindow, Http2TestServerConnection conn) {
-        this.window = initialWindow;
+        this.window = new Semaphore(initialWindow);
         this.streamid = streamid;
         this.conn = conn;
         this.outputQ = conn.outputQ;
@@ -57,9 +58,8 @@ public class BodyOutputStream extends OutputStream {
 
     // called from connection reader thread as all incoming window
     // updates are handled there.
-    synchronized void updateWindow(int update) {
-        window += update;
-        notifyAll();
+    void updateWindow(int update) {
+        window.release(update);
     }
 
     void waitForWindow(int demand) throws InterruptedException {
@@ -69,23 +69,8 @@ public class BodyOutputStream extends OutputStream {
         conn.obtainConnectionWindow(demand);
     }
 
-    public void waitForStreamWindow(int amount) throws InterruptedException {
-        int demand = amount;
-        try {
-            synchronized (this) {
-                while (amount > 0) {
-                    int n = Math.min(amount, window);
-                    amount -= n;
-                    window -= n;
-                    if (amount > 0) {
-                        wait();
-                    }
-                }
-            }
-        } catch (Throwable t) {
-            window += (demand - amount);
-            throw t;
-        }
+    public void waitForStreamWindow(int demand) throws InterruptedException {
+        window.acquire(demand);
     }
 
     public void goodToGo() {
@@ -176,7 +161,7 @@ public class BodyOutputStream extends OutputStream {
             sendEndStream();
             if (bis!= null && bis.unconsumed()) {
                 // Send a reset if there is still unconsumed data in the input stream
-                sendReset(EMPTY_BARRAY, 0, 0, ResetFrame.NO_ERROR);
+                sendReset(ResetFrame.NO_ERROR);
             }
         } catch (IOException ex) {
             ex.printStackTrace();
@@ -187,12 +172,18 @@ public class BodyOutputStream extends OutputStream {
         send(EMPTY_BARRAY, 0, 0, DataFrame.END_STREAM);
     }
 
-    public void sendReset(byte[] buf, int offset, int len, int flags) throws IOException {
-        ByteBuffer buffer = ByteBuffer.allocate(len);
-        buffer.put(buf, offset, len);
-        buffer.flip();
+    public void sendReset(int resetErrorCode) throws IOException {
         assert streamid != 0;
-        ResetFrame rf = new ResetFrame(streamid, flags);
+        ResetFrame rf = new ResetFrame(streamid, resetErrorCode);
         outputQ.put(rf);
+    }
+
+    public void reset(int resetErrorCode) throws IOException {
+        if (closed) return;
+        synchronized (this) {
+            if (closed) return;
+            this.closed = true;
+        }
+        sendReset(resetErrorCode);
     }
 }

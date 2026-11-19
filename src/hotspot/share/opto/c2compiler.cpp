@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,8 @@
  */
 
 #include "classfile/vmClasses.hpp"
+#include "classfile/vmIntrinsics.hpp"
+#include "code/aotCodeCache.hpp"
 #include "compiler/compilationMemoryStatistic.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
 #include "jfr/support/jfrIntrinsics.hpp"
@@ -31,6 +33,7 @@
 #include "opto/optoreg.hpp"
 #include "opto/output.hpp"
 #include "opto/runtime.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -58,6 +61,9 @@ const char* C2Compiler::retry_no_reduce_allocation_merges() {
 }
 const char* C2Compiler::retry_no_superword() {
   return "retry without SuperWord";
+}
+const char* C2Compiler::retry_no_stringopts() {
+  return "retry without StringOpts";
 }
 
 void compiler_stubs_init(bool in_compiler_thread);
@@ -90,6 +96,12 @@ bool C2Compiler::init_c2_runtime() {
 
   compiler_stubs_init(true /* in_compiler_thread */); // generate compiler's intrinsics stubs
 
+  // If there was an error generating the blob then UseCompiler will
+  // have been unset and we need to skip the remaining initialization
+  if (!UseCompiler) {
+    return false;
+  }
+
   Compile::pd_compiler2_init();
 
   CompilerThread* thread = CompilerThread::current();
@@ -99,7 +111,7 @@ bool C2Compiler::init_c2_runtime() {
 }
 
 void C2Compiler::initialize() {
-  assert(!CompilerConfig::is_c1_or_interpreter_only_no_jvmci(), "C2 compiler is launched, it's not c1/interpreter only mode");
+  assert(!CompilerConfig::is_c1_or_interpreter_only(), "C2 compiler is launched, it's not c1/interpreter only mode");
   // The first compiler thread that gets here will initialize the
   // small amount of global state (and runtime stubs) that C2 needs.
 
@@ -116,8 +128,15 @@ void C2Compiler::initialize() {
 
 void C2Compiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci, bool install_code, DirectiveSet* directive) {
   assert(is_initialized(), "Compiler thread must be initialized");
-
   CompilationMemoryStatisticMark cmsm(directive);
+  CompileTask* task = env->task();
+  if (task->is_aot_load()) {
+    assert(install_code, "AOT code loading requires install_code");
+    AOTCodeCache::load_nmethod(env, target, entry_bci, this);
+    // We want to go quickly through AOT code load requests
+    // instead of spending time on normal compilation.
+    return;
+  }
 
   bool subsume_loads = SubsumeLoads;
   bool do_escape_analysis = DoEscapeAnalysis;
@@ -126,6 +145,11 @@ void C2Compiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci, boo
   bool eliminate_boxing = EliminateAutoBox;
   bool do_locks_coarsening = EliminateLocks;
   bool do_superword = UseSuperWord;
+  bool do_stringopts = OptimizeStringConcat;
+  bool aot_compile = env->is_aot_compile();
+  bool for_aot_preload = (task->compile_reason() == CompileTask::Reason_AOTCompileForPreload);
+  assert(!for_aot_preload || aot_compile, "sanity");
+  assert(!for_aot_preload || (ClassInitBarrierMode > 0), "sanity");
 
   while (!env->failing()) {
     ResourceMark rm;
@@ -137,6 +161,9 @@ void C2Compiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci, boo
                     eliminate_boxing,
                     do_locks_coarsening,
                     do_superword,
+                    do_stringopts,
+                    aot_compile,
+                    for_aot_preload,
                     install_code);
     Compile C(env, target, entry_bci, options, directive);
 
@@ -178,6 +205,12 @@ void C2Compiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci, boo
         env->report_failure(C.failure_reason());
         continue;  // retry
       }
+      if (C.failure_reason_is(retry_no_stringopts())) {
+        assert(do_stringopts, "must make progress");
+        do_stringopts = false;
+        env->report_failure(C.failure_reason());
+        continue;  // retry
+      }
       if (C.has_boxed_value()) {
         // Recompile without boxing elimination regardless failure reason.
         assert(eliminate_boxing, "must make progress");
@@ -201,6 +234,10 @@ void C2Compiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci, boo
       }
       if (do_locks_coarsening) {
         do_locks_coarsening = false;
+        continue;  // retry
+      }
+      if (do_stringopts) {
+        do_stringopts = false;
         continue;  // retry
       }
     }
@@ -273,6 +310,9 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
     break;
   case vmIntrinsics::_bigIntegerLeftShiftWorker:
     if (StubRoutines::bigIntegerLeftShift() == nullptr) return false;
+    break;
+  case vmIntrinsics::_quad_keccak:
+    if (StubRoutines::quad_keccak() == nullptr) return false;
     break;
   case vmIntrinsics::_encodeAsciiArray:
     if (!Matcher::match_rule_supported(Op_EncodeISOArray) || !Matcher::supports_encode_ascii_array) return false;
@@ -615,6 +655,7 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_dsin:
   case vmIntrinsics::_dcos:
   case vmIntrinsics::_dtan:
+  case vmIntrinsics::_dsinh:
   case vmIntrinsics::_dtanh:
   case vmIntrinsics::_dcbrt:
   case vmIntrinsics::_dabs:
@@ -660,6 +701,7 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_getLong:
   case vmIntrinsics::_getFloat:
   case vmIntrinsics::_getDouble:
+  case vmIntrinsics::_getFlatValue:
   case vmIntrinsics::_putReference:
   case vmIntrinsics::_putBoolean:
   case vmIntrinsics::_putByte:
@@ -669,6 +711,7 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_putLong:
   case vmIntrinsics::_putFloat:
   case vmIntrinsics::_putDouble:
+  case vmIntrinsics::_putFlatValue:
   case vmIntrinsics::_getReferenceVolatile:
   case vmIntrinsics::_getBooleanVolatile:
   case vmIntrinsics::_getByteVolatile:
@@ -735,6 +778,10 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_storeFence:
   case vmIntrinsics::_storeStoreFence:
   case vmIntrinsics::_fullFence:
+  case vmIntrinsics::_arrayInstanceBaseOffset:
+  case vmIntrinsics::_arrayInstanceIndexScale:
+  case vmIntrinsics::_arrayLayout:
+  case vmIntrinsics::_getFieldMap:
   case vmIntrinsics::_currentCarrierThread:
   case vmIntrinsics::_currentThread:
   case vmIntrinsics::_setCurrentThread:
@@ -746,12 +793,19 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_counterTime:
   case vmIntrinsics::_getEventWriter:
   case vmIntrinsics::_jvm_commit:
+  case vmIntrinsics::_tryUpdateEpochField:
 #endif
   case vmIntrinsics::_currentTimeMillis:
   case vmIntrinsics::_nanoTime:
   case vmIntrinsics::_allocateInstance:
   case vmIntrinsics::_allocateUninitializedArray:
   case vmIntrinsics::_newArray:
+  case vmIntrinsics::_newNullRestrictedNonAtomicArray:
+  case vmIntrinsics::_newNullRestrictedAtomicArray:
+  case vmIntrinsics::_newNullableAtomicArray:
+  case vmIntrinsics::_isFlatArray:
+  case vmIntrinsics::_isNullRestrictedArray:
+  case vmIntrinsics::_isAtomicArray:
   case vmIntrinsics::_getLength:
   case vmIntrinsics::_copyOf:
   case vmIntrinsics::_copyOfRange:
@@ -760,7 +814,6 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_isInstance:
   case vmIntrinsics::_isHidden:
   case vmIntrinsics::_getSuperclass:
-  case vmIntrinsics::_getClassAccessFlags:
   case vmIntrinsics::_floatToRawIntBits:
   case vmIntrinsics::_floatToIntBits:
   case vmIntrinsics::_intBitsToFloat:
@@ -769,6 +822,7 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_longBitsToDouble:
   case vmIntrinsics::_Reference_get0:
   case vmIntrinsics::_Reference_refersTo0:
+  case vmIntrinsics::_Reference_reachabilityFence:
   case vmIntrinsics::_PhantomReference_refersTo0:
   case vmIntrinsics::_Reference_clear0:
   case vmIntrinsics::_PhantomReference_clear0:
@@ -810,6 +864,8 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_poly1305_processBlocks:
   case vmIntrinsics::_intpoly_montgomeryMult_P256:
   case vmIntrinsics::_intpoly_assign:
+  case vmIntrinsics::_intpoly_mult_25519:
+  case vmIntrinsics::_intpoly_square_25519:
   case vmIntrinsics::_updateCRC32:
   case vmIntrinsics::_updateBytesCRC32:
   case vmIntrinsics::_updateByteBufferCRC32:
@@ -822,6 +878,10 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_Preconditions_checkIndex:
   case vmIntrinsics::_Preconditions_checkLongIndex:
   case vmIntrinsics::_getObjectSize:
+  case vmIntrinsics::_addInt128TLo:
+  case vmIntrinsics::_addInt128THi:
+  case vmIntrinsics::_subInt128TLo:
+  case vmIntrinsics::_subInt128THi:
     break;
   case vmIntrinsics::_VectorCompressExpand:
   case vmIntrinsics::_VectorUnaryOp:
@@ -835,6 +895,7 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_VectorSelectFromTwoVectorOp:
   case vmIntrinsics::_VectorGatherOp:
   case vmIntrinsics::_VectorScatterOp:
+  case vmIntrinsics::_VectorSlice:
   case vmIntrinsics::_VectorReductionCoerced:
   case vmIntrinsics::_VectorTest:
   case vmIntrinsics::_VectorBlend:
@@ -853,11 +914,11 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_VectorBinaryLibOp:
     return EnableVectorSupport && Matcher::supports_vector_calling_convention();
   case vmIntrinsics::_blackhole:
+  case vmIntrinsics::_vthreadEndFirstTransition:
+  case vmIntrinsics::_vthreadStartFinalTransition:
+  case vmIntrinsics::_vthreadStartTransition:
+  case vmIntrinsics::_vthreadEndTransition:
 #if INCLUDE_JVMTI
-  case vmIntrinsics::_notifyJvmtiVThreadStart:
-  case vmIntrinsics::_notifyJvmtiVThreadEnd:
-  case vmIntrinsics::_notifyJvmtiVThreadMount:
-  case vmIntrinsics::_notifyJvmtiVThreadUnmount:
   case vmIntrinsics::_notifyJvmtiVThreadDisableSuspend:
 #endif
     break;

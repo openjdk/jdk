@@ -153,8 +153,9 @@ public sealed interface ClassReader extends ConstantPool
     int readU1(int offset);
 
     /**
-     * {@return the unsigned short at the specified offset within the {@code
-     * class} file}  Reads a 2-byte value and zero-extends it to an {@code int}.
+     * {@return the {@link java.lang.classfile##u2 u2} at the specified offset
+     * within the {@code class} file}  Reads a 2-byte value and zero-extends it
+     * to an {@code int}.
      *
      * @param offset the offset within the {@code class} file
      */

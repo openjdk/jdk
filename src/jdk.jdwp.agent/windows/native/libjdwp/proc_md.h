@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,8 @@
 
 #define MUTEX_T         int
 #define MUTEX_INIT      0
-#define MUTEX_LOCK(x)           /* FIXUP? */
-#define MUTEX_UNLOCK(x)         /* FIXUP? */
+#define MUTEX_LOCK(x)   ((void) (x))        /* FIXUP? */
+#define MUTEX_UNLOCK(x) ((void) (x))        /* FIXUP? */
 #define GET_THREAD_ID() GetCurrentThreadId()
 #define THREAD_T        unsigned long
 #define PID_T           int

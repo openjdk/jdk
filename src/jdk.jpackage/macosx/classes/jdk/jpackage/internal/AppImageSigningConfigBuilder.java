@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ import java.nio.file.Path;
 import java.util.Objects;
 import java.util.Optional;
 import jdk.jpackage.internal.model.AppImageSigningConfig;
-import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.LauncherStartupInfo;
 
 final class AppImageSigningConfigBuilder {
@@ -62,25 +61,26 @@ final class AppImageSigningConfigBuilder {
         return this;
     }
 
-    Optional<AppImageSigningConfig> create() throws ConfigException {
-        final var identityCfg = signingIdentityBuilder.create();
-        if (identityCfg.isEmpty()) {
-            return Optional.empty();
-        } else {
-            final var validatedEntitlements = validatedEntitlements();
-            return identityCfg.map(cfg -> {
-                return new AppImageSigningConfig.Stub(cfg.identity(), signingIdentifierPrefix,
-                        validatedEntitlements, cfg.keychain().map(Keychain::name),
-                        Optional.ofNullable(entitlementsResourceName).orElse("entitlements.plist"));
-            });
-        }
+    AppImageSigningConfig create() {
+
+        var cfg = signingIdentityBuilder.create();
+
+        var validatedEntitlements = validatedEntitlements();
+
+        return new AppImageSigningConfig.Stub(
+                Objects.requireNonNull(cfg.identity()),
+                Objects.requireNonNull(signingIdentifierPrefix),
+                validatedEntitlements,
+                cfg.keychain().map(Keychain::name),
+                Optional.ofNullable(entitlementsResourceName).orElse("entitlements.plist")
+        );
     }
 
-    private Optional<Path> validatedEntitlements() throws ConfigException {
+    private Optional<Path> validatedEntitlements() {
         return Optional.ofNullable(entitlements);
     }
 
-    private SigningIdentityBuilder signingIdentityBuilder;
+    private final SigningIdentityBuilder signingIdentityBuilder;
     private Path entitlements;
     private String entitlementsResourceName;
     private String signingIdentifierPrefix;

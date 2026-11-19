@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,9 @@
  */
 package jdk.jpackage.internal;
 
-import jdk.jpackage.internal.model.LinuxPackage;
-import jdk.jpackage.internal.model.LinuxLauncher;
-import jdk.jpackage.internal.model.Package;
-import jdk.jpackage.internal.model.Launcher;
+import static jdk.jpackage.internal.ApplicationImageUtils.createLauncherIconResource;
+import static jdk.jpackage.internal.model.LauncherShortcut.toRequest;
+
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -35,22 +34,28 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.imageio.ImageIO;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
-import static jdk.jpackage.internal.ApplicationImageUtils.createLauncherIconResource;
 import jdk.jpackage.internal.model.FileAssociation;
+import jdk.jpackage.internal.model.LauncherShortcut;
+import jdk.jpackage.internal.model.LinuxLauncher;
+import jdk.jpackage.internal.model.LinuxPackage;
+import jdk.jpackage.internal.model.Package;
 import jdk.jpackage.internal.util.CompositeProxy;
 import jdk.jpackage.internal.util.PathUtils;
 import jdk.jpackage.internal.util.XmlUtils;
-import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
 
 /**
  * Helper to create files for desktop integration.
@@ -65,7 +70,7 @@ final class DesktopIntegration extends ShellCustomAction {
     private static final List<String> REPLACEMENT_STRING_IDS = List.of(
             COMMANDS_INSTALL, COMMANDS_UNINSTALL, SCRIPTS, COMMON_SCRIPTS);
 
-    private DesktopIntegration(BuildEnv env, LinuxPackage pkg, LinuxLauncher launcher) throws IOException {
+    private DesktopIntegration(BuildEnv env, LinuxPackage pkg, LinuxLauncher launcher) {
 
         associations = launcher.fileAssociations().stream().map(
                 LinuxFileAssociation::create).toList();
@@ -77,20 +82,14 @@ final class DesktopIntegration extends ShellCustomAction {
         // Need desktop and icon files if one of conditions is met:
         //  - there are file associations configured
         //  - user explicitly requested to create a shortcut
-        boolean withDesktopFile = !associations.isEmpty() || launcher.shortcut().orElse(false);
+        boolean withDesktopFile = !associations.isEmpty() || toRequest(launcher.shortcut()).orElse(false);
 
-        var curIconResource = createLauncherIconResource(pkg.app(), launcher,
-                env::createResource);
-
-        if (curIconResource.isEmpty()) {
+        if (!launcher.hasIcon()) {
             // This is additional launcher with explicit `no icon` configuration.
             withDesktopFile = false;
-        } else {
-            final Path nullPath = null;
-            if (curIconResource.get().saveToFile(nullPath) != OverridableResource.Source.DefaultResource) {
-                // This launcher has custom icon configured.
-                withDesktopFile = true;
-            }
+        } else if (launcher.hasCustomIcon()) {
+            // This launcher has custom icon configured.
+            withDesktopFile = true;
         }
 
         desktopFileResource = env.createResource("template.desktop")
@@ -112,17 +111,12 @@ final class DesktopIntegration extends ShellCustomAction {
         if (withDesktopFile) {
             desktopFile = Optional.of(createDesktopFile(desktopFileName));
             iconFile = Optional.of(createDesktopFile(escapedAppFileName + ".png"));
-
-            if (curIconResource.isEmpty()) {
-                // Create default icon.
-                curIconResource = createLauncherIconResource(pkg.app(), pkg.app().mainLauncher().orElseThrow(), env::createResource);
-            }
         } else {
             desktopFile = Optional.empty();
             iconFile = Optional.empty();
         }
 
-        iconResource = curIconResource;
+        iconResource = createLauncherIconResource(launcher, env::createResource);
 
         desktopFileData = createDataForDesktopFile();
 
@@ -132,19 +126,34 @@ final class DesktopIntegration extends ShellCustomAction {
             nestedIntegrations = pkg.app().additionalLaunchers().stream().map(v -> {
                 return (LinuxLauncher)v;
             }).filter(l -> {
-                return l.shortcut().orElse(true);
-            }).map(toFunction(l -> {
+                return toRequest(l.shortcut()).orElse(true);
+            }).map(l -> {
                 return new DesktopIntegration(env, pkg, l);
-            })).toList();
+            }).toList();
         }
     }
 
-    static ShellCustomAction create(BuildEnv env, Package pkg) throws IOException {
+    static ShellCustomAction create(BuildEnv env, Package pkg) {
         if (pkg.isRuntimeInstaller()) {
             return ShellCustomAction.nop(REPLACEMENT_STRING_IDS);
         }
         return new DesktopIntegration(env, (LinuxPackage) pkg,
                 (LinuxLauncher) pkg.app().mainLauncher().orElseThrow());
+    }
+
+    SortedMap<LinuxLauncher, Path> cookedDesktopEntryFiles() {
+        return unfold().flatMap(v -> {
+            return v.desktopFile.stream().map(InstallableFile::srcPath).map(path -> {
+                return Map.entry(v.launcher, path);
+            });
+        }).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (a, b) -> {
+            throw new IllegalStateException();
+        }, () -> {
+            // The main launcher first; additional launchers follow, sorted by name.
+            return new TreeMap<>(Comparator.<LinuxLauncher>comparingInt(launcher -> {
+                return launcher == pkg.app().mainLauncher().orElseThrow() ? 0 : 1;
+            }).thenComparing(LinuxLauncher::name));
+        }));
     }
 
     @Override
@@ -225,17 +234,38 @@ final class DesktopIntegration extends ShellCustomAction {
     }
 
     private Map<String, String> createDataForDesktopFile() {
+
+        var installedLayout = pkg.asInstalledPackageApplicationLayout().orElseThrow();
+
         Map<String, String> data = new HashMap<>();
-        data.put("APPLICATION_NAME", launcher.name());
-        data.put("APPLICATION_DESCRIPTION", launcher.description());
+        data.put("APPLICATION_NAME", DesktopEntry.NAME.formatDesktopFileEntryValue(launcher.name()));
+        data.put("APPLICATION_DESCRIPTION", DesktopEntry.COMMENT.formatDesktopFileEntryValue(launcher.description()));
         data.put("APPLICATION_ICON", iconFile.map(
-                f -> f.installPath().toString()).orElse(null));
-        data.put("DEPLOY_BUNDLE_CATEGORY", pkg.menuGroupName());
-        data.put("APPLICATION_LAUNCHER", Enquoter.forPropertyValues().applyTo(
-                pkg.asInstalledPackageApplicationLayout().orElseThrow().launchersDirectory().resolve(
-                        launcher.executableNameWithSuffix()).toString()));
+                f -> DesktopEntry.ICON.formatDesktopFileEntryValue(f.installPath().toString())).orElse(null));
+        data.put("DEPLOY_BUNDLE_CATEGORY", DesktopEntry.CATEGORIES.formatDesktopFileEntryValue(pkg.menuGroupName()));
+        data.put("APPLICATION_LAUNCHER", DesktopEntry.EXEC.formatDesktopFileEntryValue(
+                installedLayout.launchersDirectory().resolve(launcher.executableNameWithSuffix()).toString()));
+        data.put("STARTUP_DIRECTORY", launcher.shortcut()
+                .flatMap(LauncherShortcut::startupDirectory)
+                .map(startupDirectory -> {
+                    switch (startupDirectory) {
+                        case DEFAULT -> {
+                            return (Path)null;
+                        }
+                        case APP_DIR -> {
+                            return installedLayout.appDirectory();
+                        }
+                        default -> {
+                            throw new AssertionError();
+                        }
+                    }
+                }).map(Path::toString).map(DesktopEntry.PATH::formatDesktopFileEntry).orElse(null));
 
         return data;
+    }
+
+    private Stream<DesktopIntegration> unfold() {
+        return Stream.concat(Stream.of(this), nestedIntegrations.stream().flatMap(DesktopIntegration::unfold));
     }
 
     /**
@@ -334,7 +364,7 @@ final class DesktopIntegration extends ShellCustomAction {
      *  - installPath(): path where it should be installed by package manager;
      */
     private InstallableFile createDesktopFile(String fileName) {
-        var srcPath = pkg.asPackageApplicationLayout().orElseThrow().resolveAt(env.appImageDir()).desktopIntegrationDirectory().resolve(fileName);
+        var srcPath = env.asApplicationLayout().orElseThrow().desktopIntegrationDirectory().resolve(fileName);
         var installPath = pkg.asInstalledPackageApplicationLayout().orElseThrow().desktopIntegrationDirectory().resolve(fileName);
         return new InstallableFile(srcPath, installPath);
     }
@@ -403,7 +433,17 @@ final class DesktopIntegration extends ShellCustomAction {
 
     private void saveDesktopFile(Map<String, String> data) throws IOException {
         List<String> mimeTypes = getMimeTypeNamesFromFileAssociations();
-        data.put("DESKTOP_MIMES", "MimeType=" + String.join(";", mimeTypes));
+        // Don't write an empty "MimeType" desktop entry.
+        // To pass validation with the older desktop-file-validate command,
+        // the value must end with a semicolon (;).
+        // If the list is empty, the value of the entry becomes a semicolon
+        // and barely passes validation with a newer desktop-file-validate command;
+        // it emits a non-fatal error:
+        //
+        // (error: (will be fatal in the future): value ";" for key "MimeType" in group "Desktop Entry" contains value "" which is an invalid MIME type: "" does not contain a subtype).
+        //
+        data.put("DESKTOP_MIMES", mimeTypes.isEmpty() ? null
+                : DesktopEntry.MIME_TYPE.formatDesktopFileEntry(String.join(";", mimeTypes)));
 
         // prepare desktop shortcut
         desktopFileResource
@@ -420,7 +460,7 @@ final class DesktopIntegration extends ShellCustomAction {
             BufferedImage bi = ImageIO.read(path.toFile());
             return Math.max(bi.getWidth(), bi.getHeight());
         } catch (IOException e) {
-            Log.verbose(e);
+            Log.trace(e, "Failed to get dimensions of an image at [%s]", path);
         }
         return 0;
     }
@@ -481,7 +521,7 @@ final class DesktopIntegration extends ShellCustomAction {
 
     private final BuildEnv env;
     private final LinuxPackage pkg;
-    private final Launcher launcher;
+    private final LinuxLauncher launcher;
 
     private final List<LinuxFileAssociation> associations;
 

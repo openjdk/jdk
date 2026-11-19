@@ -51,8 +51,6 @@ import java.io.*;
  * @spec https://standards.ieee.org/ieee/754/6210/
  *       IEEE Standard for Floating-Point Arithmetic
  *
- * @author  Mike Cowlishaw
- * @author  Joseph D. Darcy
  * @since 1.5
  */
 

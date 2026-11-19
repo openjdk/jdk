@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,14 +27,12 @@
  * @library /test/lib
  * @build jdk.test.lib.Platform
  * @summary Check that setSendBufferSize and getSendBufferSize work as expected
- * @run testng SetGetSendBufferSize
- * @run testng/othervm -Djava.net.preferIPv4Stack=true SetGetSendBufferSize
+ * @run junit ${test.main.class}
+ * @run junit/othervm -Djava.net.preferIPv4Stack=true ${test.main.class}
  */
 
 import jdk.test.lib.Platform;
 import jdk.test.lib.net.IPSupport;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.net.DatagramSocket;
@@ -42,9 +40,11 @@ import java.net.MulticastSocket;
 import java.net.SocketException;
 import java.nio.channels.DatagramChannel;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.expectThrows;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class SetGetSendBufferSize {
     static final Class<SocketException> SE = SocketException.class;
@@ -55,8 +55,7 @@ public class SetGetSendBufferSize {
     }
     static DatagramSocketSupplier supplier(DatagramSocketSupplier supplier) { return supplier; }
 
-    @DataProvider
-    public Object[][] invariants() {
+    public static Object[][] suppliers() {
         return new Object[][]{
                 {"DatagramSocket", supplier(() -> new DatagramSocket())},
                 {"MulticastSocket", supplier(() -> new MulticastSocket())},
@@ -64,51 +63,55 @@ public class SetGetSendBufferSize {
         };
     }
 
-    @Test(dataProvider = "invariants")
+    @ParameterizedTest
+    @MethodSource("suppliers")
     public void testSetInvalidBufferSize(String name, DatagramSocketSupplier supplier) throws IOException {
         var invalidArgs = new int[]{ -1, 0 };
 
         try (var socket = supplier.open()) {
             for (int i : invalidArgs) {
-                Exception ex = expectThrows(IAE, () -> socket.setSendBufferSize(i));
+                Exception ex = assertThrows(IAE, () -> socket.setSendBufferSize(i));
                 System.out.println(name + " got expected exception: " + ex);
             }
         }
     }
 
-    @Test(dataProvider = "invariants")
+    @ParameterizedTest
+    @MethodSource("suppliers")
     public void testSetAndGetBufferSize(String name, DatagramSocketSupplier supplier) throws IOException {
         var validArgs = new int[]{ 2345, 3456 };
 
         try (var socket = supplier.open()) {
             for (int i : validArgs) {
                 socket.setSendBufferSize(i);
-                assertEquals(socket.getSendBufferSize(), i, name);
+                assertEquals(i, socket.getSendBufferSize(), name);
             }
         }
     }
 
-    @Test(dataProvider = "invariants")
+    @ParameterizedTest
+    @MethodSource("suppliers")
     public void testInitialSendBufferSize(String name, DatagramSocketSupplier supplier) throws IOException {
         if (Platform.isOSX()) {
             try (var socket = supplier.open()){
                 assertTrue(socket.getSendBufferSize() >= 65507, name);
                 if (IPSupport.hasIPv6() && !IPSupport.preferIPv4Stack()) {
-                    assertEquals(socket.getSendBufferSize(), 65527, name);
+                    assertEquals(65527, socket.getSendBufferSize(), name);
                 }
             }
         }
     }
 
-    @Test(dataProvider = "invariants")
+    @ParameterizedTest
+    @MethodSource("suppliers")
     public void testSetGetAfterClose(String name, DatagramSocketSupplier supplier) throws IOException {
         var socket = supplier.open();
         socket.close();
 
-        Exception setException = expectThrows(SE, () -> socket.setSendBufferSize(2345));
+        Exception setException = assertThrows(SE, () -> socket.setSendBufferSize(2345));
         System.out.println(name + " got expected exception: " + setException);
 
-        Exception getException = expectThrows(SE, () -> socket.getSendBufferSize());
+        Exception getException = assertThrows(SE, () -> socket.getSendBufferSize());
         System.out.println(name + " got expected exception: " + getException);
     }
 }

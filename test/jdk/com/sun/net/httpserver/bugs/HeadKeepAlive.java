@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,14 +21,6 @@
  * questions.
  */
 
-/**
- * @test
- * @bug 8304963
- * @summary Connection should be reusable after HEAD request
- * @library /test/lib
- * @run junit HeadKeepAlive
- */
-
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
@@ -41,18 +33,33 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.URL;
+import java.util.logging.ConsoleHandler;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.logging.SimpleFormatter;
-import java.util.logging.StreamHandler;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static com.sun.net.httpserver.HttpExchange.RSPBODY_EMPTY;
 
-public class HeadKeepAlive
-{
+/*
+ * @test
+ * @bug 8304963
+ * @summary Connection should be reusable after HEAD request
+ * @library /test/lib
+ * @comment We use othervm because this test configures logging handlers
+ *          for the system wide "com.sun.net.httpserver" logger
+ * @run junit/othervm ${test.main.class}
+ */
+public class HeadKeepAlive {
 
-    public static final Logger LOGGER = Logger.getLogger("com.sun.net.httpserver");
+    private static final Logger LOGGER = Logger.getLogger("com.sun.net.httpserver");
+
+    private static void setupLogging() {
+        final Handler handler = new ConsoleHandler();
+        handler.setLevel(Level.FINEST);
+        LOGGER.setLevel(Level.FINEST);
+        LOGGER.addHandler(handler);
+    }
 
     @Test
     void test() throws IOException, InterruptedException {
@@ -89,11 +96,7 @@ public class HeadKeepAlive
      * Http Server
      */
     HttpServer startHttpServer() throws IOException {
-        Handler outHandler = new StreamHandler(System.out,
-                                 new SimpleFormatter());
-        outHandler.setLevel(Level.FINEST);
-        LOGGER.setLevel(Level.FINEST);
-        LOGGER.addHandler(outHandler);
+        setupLogging(); // merely for debugging
         InetAddress loopback = InetAddress.getLoopbackAddress();
         HttpServer httpServer = HttpServer.create(new InetSocketAddress(loopback, 0), 0);
         httpServer.createContext("/", new MyHandler());
@@ -111,15 +114,15 @@ public class HeadKeepAlive
                 port1 = t.getRemoteAddress().getPort();
                 System.out.println("First connection on client port = " + port1);
                 // send response
-                t.sendResponseHeaders(200, -1);
+                t.sendResponseHeaders(200, RSPBODY_EMPTY);
                 // the connection should still be reusable
             } else if (path.equals("/secondCall")) {
                 int port2 = t.getRemoteAddress().getPort();
                 System.out.println("Second connection on client port = " + port2);
                 if (port1 == port2) {
-                    t.sendResponseHeaders(200, -1);
+                    t.sendResponseHeaders(200, RSPBODY_EMPTY);
                 } else {
-                    t.sendResponseHeaders(500, -1);
+                    t.sendResponseHeaders(500, RSPBODY_EMPTY);
                 }
             }
             t.close();

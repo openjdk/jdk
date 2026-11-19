@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  *
  */
 
+#include "cppstdlib/new.hpp"
 #include "gc/shared/workerUtils.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -30,12 +31,12 @@
 
 WorkerThreadsBarrierSync::WorkerThreadsBarrierSync()
   : _monitor(Mutex::nosafepoint, "WorkerThreadsBarrierSync_lock"),
-    _n_workers(0), _n_completed(0), _should_reset(false), _aborted(false) {
+    _num_workers(0), _num_completed(0), _should_reset(false), _aborted(false) {
 }
 
-void WorkerThreadsBarrierSync::set_n_workers(uint n_workers) {
-  _n_workers    = n_workers;
-  _n_completed  = 0;
+void WorkerThreadsBarrierSync::set_num_workers(uint num_workers) {
+  _num_workers    = num_workers;
+  _num_completed  = 0;
   _should_reset = false;
   _aborted      = false;
 }
@@ -44,26 +45,26 @@ bool WorkerThreadsBarrierSync::enter() {
   MonitorLocker ml(monitor(), Mutex::_no_safepoint_check_flag);
   if (should_reset()) {
     // The should_reset() was set and we are the first worker to enter
-    // the sync barrier. We will zero the n_completed() count which
+    // the sync barrier. We will zero the num_completed() count which
     // effectively resets the barrier.
     zero_completed();
     set_should_reset(false);
   }
   inc_completed();
-  if (n_completed() == n_workers()) {
+  if (num_completed() == num_workers()) {
     // At this point we would like to reset the barrier to be ready in
-    // case it is used again. However, we cannot set n_completed() to
+    // case it is used again. However, we cannot set num_completed() to
     // 0, even after the notify_all(), given that some other workers
-    // might still be waiting for n_completed() to become ==
-    // n_workers(). So, if we set n_completed() to 0, those workers
-    // will get stuck (as they will wake up, see that n_completed() !=
-    // n_workers() and go back to sleep). Instead, we raise the
+    // might still be waiting for num_completed() to become ==
+    // num_workers(). So, if we set num_completed() to 0, those workers
+    // will get stuck (as they will wake up, see that num_completed() !=
+    // num_workers() and go back to sleep). Instead, we raise the
     // should_reset() flag and the barrier will be reset the first
     // time a worker enters it again.
     set_should_reset(true);
     ml.notify_all();
   } else {
-    while (n_completed() != n_workers() && !aborted()) {
+    while (num_completed() != num_workers() && !aborted()) {
       ml.wait();
     }
   }
@@ -79,22 +80,22 @@ void WorkerThreadsBarrierSync::abort() {
 // SubTasksDone functions.
 
 SubTasksDone::SubTasksDone(uint n) :
-  _tasks(nullptr), _n_tasks(n) {
-  _tasks = NEW_C_HEAP_ARRAY(bool, n, mtInternal);
-  for (uint i = 0; i < _n_tasks; i++) {
-    _tasks[i] = false;
+  _tasks(nullptr), _num_tasks(n) {
+  _tasks = NEW_C_HEAP_ARRAY(Atomic<bool>, n, mtGC);
+  for (uint i = 0; i < _num_tasks; i++) {
+    ::new (&_tasks[i]) Atomic<bool>(false);
   }
 }
 
 #ifdef ASSERT
 void SubTasksDone::all_tasks_claimed_impl(uint skipped[], size_t skipped_size) {
-  if (Atomic::cmpxchg(&_verification_done, false, true)) {
+  if (!_verification_done.compare_set(false, true)) {
     // another thread has done the verification
     return;
   }
   // all non-skipped tasks are claimed
-  for (uint i = 0; i < _n_tasks; ++i) {
-    if (!_tasks[i]) {
+  for (uint i = 0; i < _num_tasks; ++i) {
+    if (!_tasks[i].load_relaxed()) {
       auto is_skipped = false;
       for (size_t j = 0; j < skipped_size; ++j) {
         if (i == skipped[j]) {
@@ -108,28 +109,28 @@ void SubTasksDone::all_tasks_claimed_impl(uint skipped[], size_t skipped_size) {
   // all skipped tasks are *not* claimed
   for (size_t i = 0; i < skipped_size; ++i) {
     auto task_index = skipped[i];
-    assert(task_index < _n_tasks, "Array in range.");
-    assert(!_tasks[task_index], "%d is both claimed and skipped.", task_index);
+    assert(task_index < _num_tasks, "Array in range.");
+    assert(!_tasks[task_index].load_relaxed(), "%d is both claimed and skipped.", task_index);
   }
 }
 #endif
 
 bool SubTasksDone::try_claim_task(uint t) {
-  assert(t < _n_tasks, "bad task id.");
-  return !_tasks[t] && !Atomic::cmpxchg(&_tasks[t], false, true);
+  assert(t < _num_tasks, "bad task id.");
+  return !_tasks[t].load_relaxed() && _tasks[t].compare_set(false, true);
 }
 
 SubTasksDone::~SubTasksDone() {
-  assert(_verification_done, "all_tasks_claimed must have been called.");
-  FREE_C_HEAP_ARRAY(bool, _tasks);
+  assert(_verification_done.load_relaxed(), "all_tasks_claimed must have been called.");
+  FREE_C_HEAP_ARRAY(_tasks);
 }
 
 // *** SequentialSubTasksDone
 
 bool SequentialSubTasksDone::try_claim_task(uint& t) {
-  t = _num_claimed;
+  t = _num_claimed.load_relaxed();
   if (t < _num_tasks) {
-    t = Atomic::add(&_num_claimed, 1u) - 1;
+    t = _num_claimed.fetch_then_add(1u);
   }
   return t < _num_tasks;
 }

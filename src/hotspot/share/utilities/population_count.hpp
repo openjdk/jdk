@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,11 @@
 #ifndef SHARE_UTILITIES_POPULATION_COUNT_HPP
 #define SHARE_UTILITIES_POPULATION_COUNT_HPP
 
+#include "cppstdlib/type_traits.hpp"
 #include "metaprogramming/enableIf.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
-
-#include <type_traits>
 
 // Returns the population count of x, i.e., the number of bits set in x.
 //
@@ -45,10 +44,10 @@
 // a 32-bit integer type.
 template <typename T>
 constexpr unsigned population_count(T x) {
-  STATIC_ASSERT(BitsPerWord <= 128);
-  STATIC_ASSERT(BitsPerByte == 8);
-  STATIC_ASSERT(std::is_integral<T>::value);
-  STATIC_ASSERT(!std::is_signed<T>::value);
+  static_assert(BitsPerWord <= 128);
+  static_assert(BitsPerByte == 8);
+  static_assert(std::is_integral<T>::value);
+  static_assert(!std::is_signed<T>::value);
   // We need to take care with implicit integer promotion when dealing with
   // integers < 32-bit. We chose to do this by explicitly widening constants
   // to unsigned

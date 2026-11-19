@@ -23,8 +23,8 @@
 */
 
 #include "classfile/javaClasses.inline.hpp"
-#include "jfr/recorder/checkpoint/types/jfrThreadState.hpp"
 #include "jfr/recorder/checkpoint/jfrCheckpointWriter.hpp"
+#include "jfr/recorder/checkpoint/types/jfrThreadState.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
 #include "jvmtifiles/jvmti.h"
 #include "runtime/javaThread.hpp"

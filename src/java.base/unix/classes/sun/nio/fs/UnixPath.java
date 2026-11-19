@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@ import java.util.Objects;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.ArraysSupport;
+import jdk.internal.vm.annotation.Stable;
 
 import static sun.nio.fs.UnixConstants.*;
 import static sun.nio.fs.UnixNativeDispatcher.*;
@@ -59,7 +60,7 @@ class UnixPath implements Path {
     private final byte[] path;
 
     // String representation (created lazily, no need to be volatile)
-    private String stringValue;
+    private @Stable String stringValue;
 
     // cached hashcode (created lazily, no need to be volatile)
     private int hash;
@@ -124,9 +125,8 @@ class UnixPath implements Path {
 
     // encodes the given path-string into a sequence of bytes
     private static byte[] encode(UnixFileSystem fs, String input) {
-        input = fs.normalizeNativePath(input);
         try {
-            return JLA.uncheckedGetBytesNoRepl(input, Util.jnuEncoding());
+            return JLA.uncheckedGetBytesOrThrow(input, Util.jnuEncoding());
         } catch (CharacterCodingException cce) {
             throw new InvalidPathException(input,
                 "Malformed input or input contains unmappable characters");
@@ -565,95 +565,74 @@ class UnixPath implements Path {
     @Override
     public UnixPath normalize() {
         final int count = getNameCount();
-        if (count == 0 || isEmpty())
+        if (count == 0 || isEmpty()) {
             return this;
+        }
 
-        boolean[] ignore = new boolean[count];      // true => ignore name
-        int[] size = new int[count];                // length of name
-        int remaining = count;                      // number of names remaining
-        boolean hasDotDot = false;                  // has at least one ..
-        boolean isAbsolute = isAbsolute();
-
-        // first pass:
-        //   1. compute length of names
-        //   2. mark all occurrences of "." to ignore
-        //   3. and look for any occurrences of ".."
-        for (int i=0; i<count; i++) {
-            int begin = offsets[i];
-            int len;
-            if (i == (offsets.length-1)) {
-                len = path.length - begin;
-            } else {
-                len = offsets[i+1] - begin - 1;
-            }
-            size[i] = len;
-
-            if (path[begin] == '.') {
-                if (len == 1) {
-                    ignore[i] = true;  // ignore  "."
-                    remaining--;
-                }
-                else {
-                    if (path[begin+1] == '.')   // ".." found
-                        hasDotDot = true;
+        // find the first "." or ".." name element
+        int first = 0;
+        for (; first < count; first++) {
+            int start = offsets[first];
+            if (path[start] == '.') {
+                int len = (first == (count - 1))
+                        ? (path.length - start)
+                        : (offsets[first + 1] - start - 1);
+                if (len == 1 || (len == 2 && path[start + 1] == '.')) {
+                    break;
                 }
             }
         }
+        if (first == count) {
+            return this;    // no "." or ".." name element
+        }
 
-        // multiple passes to eliminate all occurrences of name/..
-        if (hasDotDot) {
-            int prevRemaining;
-            do {
-                prevRemaining = remaining;
-                int prevName = -1;
-                for (int i=0; i<count; i++) {
-                    if (ignore[i])
-                        continue;
+        int[] lengths = new int[count];       // lengths of name elements
+        int[] names = new int[count];         // indices of remaining name elements
+        int remaining = first;                // number of name elements remaining
+        boolean isAbsolute = isAbsolute();
 
-                    // not a ".."
-                    if (size[i] != 2) {
-                        prevName = i;
-                        continue;
-                    }
+        // lengths/indices for the name elements before the first "." or ".."
+        for (int i = 0; i < first; i++) {
+            lengths[i] = offsets[i + 1] - offsets[i] - 1;
+            names[i] = i;
+         }
 
-                    int begin = offsets[i];
-                    if (path[begin] != '.' || path[begin+1] != '.') {
-                        prevName = i;
-                        continue;
-                    }
-
-                    // ".." found
-                    if (prevName >= 0) {
-                        // name/<ignored>/.. found so mark name and ".." to be
-                        // ignored
-                        ignore[prevName] = true;
-                        ignore[i] = true;
-                        remaining = remaining - 2;
-                        prevName = -1;
-                    } else {
-                        // Case: /<ignored>/.. so mark ".." as ignored
-                        if (isAbsolute) {
-                            boolean hasPrevious = false;
-                            for (int j=0; j<i; j++) {
-                                if (!ignore[j]) {
-                                    hasPrevious = true;
-                                    break;
-                                }
-                            }
-                            if (!hasPrevious) {
-                                // all proceeding names are ignored
-                                ignore[i] = true;
-                                remaining--;
-                            }
+        // process name elements from the first "." or ".."
+        for (int i = first; i < count; i++) {
+            int start = offsets[i];
+            int len = (i == (count - 1))
+                    ? (path.length - start)
+                    : (offsets[i + 1] - start - 1);
+            lengths[i] = len;
+            boolean keep = true;
+            if (path[start] == '.') {
+                if (len == 1) {
+                    keep = false;
+                } else if (len == 2 && path[start + 1] == '.') {
+                    if (remaining > 0) {
+                        int previous = names[remaining - 1];
+                        int previousStart = offsets[previous];
+                        if ((lengths[previous] != 2)
+                                || (path[previousStart] != '.')
+                                || (path[previousStart + 1] != '.')) {
+                            remaining--;  // cancel previous
+                            keep = false;
                         }
                     }
+                    if (isAbsolute) {
+                        keep = false;
+                    }
                 }
-            } while (prevRemaining > remaining);
+            }
+            if (keep) {
+                names[remaining++] = i;
+            }
         }
 
         // no redundant names
-        if (remaining == count)
+        if (remaining == count) {
             return this;
+        }
 
         // corner case - all names removed
         if (remaining == 0) {
@@ -662,26 +641,24 @@ class UnixPath implements Path {
 
         // compute length of result
         int len = remaining - 1;
-        if (isAbsolute)
+        if (isAbsolute) {
             len++;
-
-        for (int i=0; i<count; i++) {
-            if (!ignore[i])
-                len += size[i];
         }
-        byte[] result = new byte[len];
+        for (int i = 0; i < remaining; i++) {
+            len += lengths[names[i]];
+        }
 
         // copy names into result
+        byte[] result = new byte[len];
         int pos = 0;
         if (isAbsolute)
             result[pos++] = '/';
-        for (int i=0; i<count; i++) {
-            if (!ignore[i]) {
-                System.arraycopy(path, offsets[i], result, pos, size[i]);
-                pos += size[i];
-                if (--remaining > 0) {
-                    result[pos++] = '/';
-                }
+        for (int i = 0; i < remaining; i++) {
+            int name = names[i];
+            System.arraycopy(path, offsets[name], result, pos, lengths[name]);
+            pos += lengths[name];
+            if (i < (remaining - 1)) {
+                result[pos++] = '/';
             }
         }
         return new UnixPath(getFileSystem(), result);
@@ -814,7 +791,7 @@ class UnixPath implements Path {
         // OK if two or more threads create a String
         String stringValue = this.stringValue;
         if (stringValue == null) {
-            this.stringValue = stringValue = fs.normalizeJavaPath(Util.toString(path));     // platform encoding
+            this.stringValue = stringValue = Util.toString(path);     // platform encoding
         }
         return stringValue;
     }
@@ -948,28 +925,51 @@ class UnixPath implements Path {
 
             // Obtain the stream of entries in the directory corresponding
             // to the path constructed thus far, and extract the entry whose
-            // key is equal to the key of the current element
+            // internal path bytes equal the internal path bytes of the current
+            // element, or whose key is equal to the key  of the current element
+            boolean found = false;
             DirectoryStream.Filter<Path> filter = (p) -> { return true; };
+            // compare path bytes until a match is found or no more entries
             try (DirectoryStream<Path> entries = new UnixDirectoryStream(path, dp, filter)) {
-                boolean found = false;
                 for (Path entry : entries) {
-                    UnixPath p = path.resolve(entry.getFileName());
-                    UnixFileAttributes attributes = null;
-                    try {
-                        attributes = UnixFileAttributes.get(p, false);
-                        UnixFileKey key = attributes.fileKey();
-                        if (key.equals(elementKey)) {
-                            path = path.resolve(entry);
-                            found = true;
-                            break;
+                    Path name = entry.getFileName();
+                    if (name.compareTo(element) == 0) {
+                        found = true;
+                        path = path.resolve(entry);
+                        break;
+                    }
+                }
+            }
+
+            // if no path match found, compare file keys
+            if (!found) {
+                try {
+                    dp = opendir(path);
+                } catch (UnixException x) {
+                    x.rethrowAsIOException(path);
+                }
+
+                try (DirectoryStream<Path> entries = new UnixDirectoryStream(path, dp, filter)) {
+                    for (Path entry : entries) {
+                        Path name = entry.getFileName();
+                        UnixPath p = path.resolve(name);
+                        UnixFileAttributes attributes = null;
+                        try {
+                            attributes = UnixFileAttributes.get(p, false);
+                            UnixFileKey key = attributes.fileKey();
+                            if (key.equals(elementKey)) {
+                                found = true;
+                                path = path.resolve(entry);
+                                break;
+                            }
+                        } catch (UnixException ignore) {
+                            continue;
                         }
-                    } catch (UnixException ignore) {
-                        continue;
                     }
                 }
 
-                // Fallback which should in theory never happen
                 if (!found) {
+                    // Fallback which should in theory never happen
                     path = path.resolve(element);
                 }
             }

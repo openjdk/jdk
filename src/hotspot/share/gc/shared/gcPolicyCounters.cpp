@@ -59,10 +59,5 @@ GCPolicyCounters::GCPolicyCounters(const char* name, int collectors,
     _desired_survivor_size =
         PerfDataManager::create_variable(SUN_GC, cname, PerfData::U_Bytes,
                                          CHECK);
-
-    cname = PerfDataManager::counter_name(_name_space, "gcTimeLimitExceeded");
-    _gc_overhead_limit_exceeded_counter =
-        PerfDataManager::create_variable(SUN_GC, cname, PerfData::U_Events,
-                                         CHECK);
   }
 }

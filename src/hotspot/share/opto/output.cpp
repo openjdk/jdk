@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "asm/assembler.inline.hpp"
+#include "ci/ciFlatArrayKlass.hpp"
 #include "code/aotCodeCache.hpp"
 #include "code/compiledIC.hpp"
 #include "code/debugInfo.hpp"
@@ -33,7 +34,9 @@
 #include "compiler/oopMap.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/c2/barrierSetC2.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "memory/allocation.hpp"
+#include "oops/arrayKlass.hpp"
 #include "opto/ad.hpp"
 #include "opto/block.hpp"
 #include "opto/c2_MacroAssembler.hpp"
@@ -64,9 +67,6 @@
 class Scheduling {
 
 private:
-  // Arena to use
-  Arena *_arena;
-
   // Control-Flow Graph info
   PhaseCFG *_cfg;
 
@@ -77,20 +77,20 @@ private:
   uint _node_bundling_limit;
 
   // List of scheduled nodes. Generated in reverse order
-  Node_List _scheduled;
+  Node_List<Node> _scheduled;
 
   // List of nodes currently available for choosing for scheduling
-  Node_List _available;
+  Node_List<Node> _available;
 
   // For each instruction beginning a bundle, the number of following
   // nodes to be bundled with it.
   Bundle *_node_bundling_base;
 
   // Mapping from register to Node
-  Node_List _reg_node;
+  Node_List<Node> _reg_node;
 
   // Free list for pinch nodes.
-  Node_List _pinch_free_list;
+  Node_List<Node> _pinch_free_list;
 
   // Number of uses of this node within the containing basic block.
   short *_uses;
@@ -105,12 +105,6 @@ private:
 
   // Remember the next node
   Node *_next_node;
-
-  // Use this for an unconditional branch delay slot
-  Node *_unconditional_delay_slot;
-
-  // Pointer to a Nop
-  MachNopNode *_nop;
 
   // Length of the current bundle, in instructions
   uint _bundle_instr_count;
@@ -127,9 +121,6 @@ private:
 
 public:
   Scheduling(Arena *arena, Compile &compile);
-
-  // Destructor
-  NOT_PRODUCT( ~Scheduling(); )
 
   // Step ahead "i" cycles
   void step(uint i);
@@ -194,10 +185,7 @@ public:
 #ifndef PRODUCT
 private:
   // Gather information on size of nops relative to total
-  uint _branches, _unconditional_delays;
-
   static uint _total_nop_size, _total_method_size;
-  static uint _total_branches, _total_unconditional_delays;
   static uint _total_instructions_per_bundle[Pipeline::_max_instrs_per_cycle+1];
 
 public:
@@ -234,15 +222,13 @@ PhaseOutput::PhaseOutput()
     _code_offsets(),
     _node_bundling_limit(0),
     _node_bundling_base(nullptr),
-    _orig_pc_slot(0),
     _orig_pc_slot_offset_in_bytes(0),
+    _java_callees(nullptr),
     _buf_sizes(),
     _block(nullptr),
     _index(0) {
   C->set_output(this);
-  if (C->stub_name() == nullptr) {
-    _orig_pc_slot = C->fixed_slots() - (sizeof(address) / VMRegImpl::stack_slot_size);
-  }
+
 }
 
 PhaseOutput::~PhaseOutput() {
@@ -282,24 +268,34 @@ void PhaseOutput::Output() {
   const StartNode *start = entry->head()->as_Start();
 
   // Replace StartNode with prolog
-  MachPrologNode *prolog = new MachPrologNode();
+  Label verified_entry;
+  MachPrologNode* prolog = new MachPrologNode(&verified_entry);
   entry->map_node(prolog, 0);
   C->cfg()->map_node_to_block(prolog, entry);
   C->cfg()->unmap_node_from_block(start); // start is no longer in any block
 
   // Virtual methods need an unverified entry point
-
-  if( C->is_osr_compilation() ) {
-    if( PoisonOSREntry ) {
+  if (C->is_osr_compilation()) {
+    if (PoisonOSREntry) {
       // TODO: Should use a ShouldNotReachHereNode...
       C->cfg()->insert( broot, 0, new MachBreakpointNode() );
     }
   } else {
-    if( C->method() && !C->method()->flags().is_static() ) {
-      // Insert unvalidated entry point
-      C->cfg()->insert( broot, 0, new MachUEPNode() );
+    if (C->method()) {
+      if (C->method()->has_scalarized_args()) {
+        // Add entry point to unpack all value type arguments
+        C->cfg()->insert(broot, 0, new MachVEPNode(&verified_entry, /* verified */ true, /* receiver_only */ false));
+        if (!C->method()->is_static()) {
+          // Add verified/unverified entry points to only unpack value type receiver at interface calls
+          C->cfg()->insert(broot, 0, new MachVEPNode(&verified_entry, /* verified */ false, /* receiver_only */ false));
+          C->cfg()->insert(broot, 0, new MachVEPNode(&verified_entry, /* verified */ true,  /* receiver_only */ true));
+          C->cfg()->insert(broot, 0, new MachVEPNode(&verified_entry, /* verified */ false, /* receiver_only */ true));
+        }
+      } else if (!C->method()->is_static()) {
+        // Insert unvalidated entry point
+        C->cfg()->insert(broot, 0, new MachUEPNode());
+      }
     }
-
   }
 
   // Break before main entry point
@@ -339,6 +335,31 @@ void PhaseOutput::Output() {
   blk_starts[0] = 0;
   shorten_branches(blk_starts);
 
+  if (!C->is_osr_compilation() && C->has_scalarized_args()) {
+    // Compute the offsets of the entry points required by the value type calling convention
+    if (!C->method()->is_static()) {
+      // We have entries at the beginning of the method, implemented by the first 4 nodes.
+      // Entry                     (unverified) @ offset 0
+      // Verified_Value_Entry_RO
+      // Value_Entry               (unverified)
+      // Verified_Value_Entry
+      uint offset = 0;
+      _code_offsets.set_value(CodeOffsets::Entry, offset);
+
+      offset += ((MachVEPNode*)broot->get_node(0))->size(C->regalloc());
+      _code_offsets.set_value(CodeOffsets::Verified_Value_Entry_RO, offset);
+
+      offset += ((MachVEPNode*)broot->get_node(1))->size(C->regalloc());
+      _code_offsets.set_value(CodeOffsets::Value_Entry, offset);
+
+      offset += ((MachVEPNode*)broot->get_node(2))->size(C->regalloc());
+      _code_offsets.set_value(CodeOffsets::Verified_Value_Entry, offset);
+    } else {
+      _code_offsets.set_value(CodeOffsets::Entry, CodeOffsets::no_such_entry_point); // will be patched later
+      _code_offsets.set_value(CodeOffsets::Verified_Value_Entry, 0);
+    }
+  }
+
   ScheduleAndBundle();
   if (C->failing()) {
     return;
@@ -360,6 +381,11 @@ void PhaseOutput::Output() {
 
   C2_MacroAssembler masm(cb);
   fill_buffer(&masm, blk_starts);
+  if (C->failing()) {
+    // If we bailed out during matching, not all nodes were visited and the
+    // label might be in inconsistent state (used but not bound). Reset it.
+    verified_entry.reset();
+  }
 }
 
 bool PhaseOutput::need_stack_bang(int frame_size_in_bytes) const {
@@ -374,15 +400,6 @@ bool PhaseOutput::need_stack_bang(int frame_size_in_bytes) const {
           (C->has_java_calls() || frame_size_in_bytes > (int)(os::vm_page_size())>>3
            DEBUG_ONLY(|| true)));
 }
-
-bool PhaseOutput::need_register_stack_bang() const {
-  // Determine if we need to generate a register stack overflow check.
-  // This is only used on architectures which have split register
-  // and memory stacks.
-  // Bang if the method is not a stub function and has java calls
-  return (C->stub_function() == nullptr && C->has_java_calls());
-}
-
 
 // Compute the size of first NumberOfLoopInstrToAlign instructions at the top
 // of a loop. When aligning a loop we need to provide enough instructions
@@ -491,16 +508,31 @@ void PhaseOutput::shorten_branches(uint* blk_starts) {
         MachNode* mach = nj->as_Mach();
         blk_size += (mach->alignment_required() - 1) * relocInfo::addr_unit(); // assume worst case padding
         reloc_size += mach->reloc();
-        if (mach->is_MachCall()) {
-          // add size information for trampoline stub
+        // CallStubImpl reserves space and relocations in the stub section for
+        // per-call trampolines (AArch64/PPC) or address stubs (RISC-V).
+        // To-interpreter stubs are accounted for separately below.
+        if (mach->is_MachUncommonTrap()) {
+          // Add size information for call stub.
           // class CallStubImpl is platform-specific and defined in the *.ad files.
-          stub_size  += CallStubImpl::size_call_trampoline();
-          reloc_size += CallStubImpl::reloc_call_trampoline();
+          stub_size  += CallStubImpl::size_call_stub();
+          reloc_size += CallStubImpl::reloc_call_stub();
+
+          // No nop is needed to disambiguate from another safepoint.
+          assert(mach->as_MachUncommonTrap()->ret_addr_offset() > 0 &&
+                 (uint)mach->as_MachUncommonTrap()->ret_addr_offset() < mach->size(C->regalloc()),
+                 "Safepoint address should be offset from the first instruction and should not point after the node");
+        } else if (mach->is_MachCall()) {
+          // Add size information for call stub.
+          // class CallStubImpl is platform-specific and defined in the *.ad files.
+          stub_size  += CallStubImpl::size_call_stub();
+          reloc_size += CallStubImpl::reloc_call_stub();
 
           MachCallNode *mcall = mach->as_MachCall();
           // This destination address is NOT PC-relative
 
-          mcall->method_set((intptr_t)mcall->entry_point());
+          if (mcall->entry_point() != nullptr) {
+            mcall->method_set((intptr_t)mcall->entry_point());
+          }
 
           if (mcall->is_MachCallJava() && mcall->as_MachCallJava()->_method) {
             stub_size  += CompiledDirectCall::to_interp_stub_size();
@@ -511,6 +543,7 @@ void PhaseOutput::shorten_branches(uint* blk_starts) {
           // nop to disambiguate the two safepoints.
           // ScheduleAndBundle() can rearrange nodes in a block,
           // check for all offsets inside this block.
+          assert(mach->ideal_Opcode() == Op_SafePoint, "An unexpected safepoint node, which might need handling above");
           if (last_call_adr >= blk_starts[i]) {
             blk_size += nop_size;
           }
@@ -726,6 +759,20 @@ void PhaseOutput::set_sv_for_object_node(GrowableArray<ScopeValue*> *objs,
   objs->append(sv);
 }
 
+static jint array_description_value(const TypeAryPtr* ary_type) {
+  ciArrayKlass* array_klass = ary_type->exact_klass()->as_array_klass();
+  const bool is_element_value = array_klass->element_klass()->is_value_klass();
+  ArrayProperties properties = ArrayProperties::Default()
+      .with_null_restricted(is_element_value && array_klass->is_elem_null_free())
+      .with_non_atomic(is_element_value && !array_klass->is_elem_atomic());
+
+  if (ary_type->is_flat()) {
+    return (jint)ArrayDescription::flat(properties, array_klass->as_flat_array_klass()->flat_layout()).value();
+  } else {
+    return (jint)ArrayDescription::reference(properties).value();
+  }
+}
+
 
 void PhaseOutput::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
                             GrowableArray<ScopeValue*> *array,
@@ -752,14 +799,33 @@ void PhaseOutput::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
 
     ObjectValue* sv = sv_for_node_id(objs, spobj->_idx);
     if (sv == nullptr) {
-      ciKlass* cik = t->is_oopptr()->exact_klass();
+      ciKlass* cik = t->as_oopptr()->exact_klass();
       assert(cik->is_instance_klass() ||
              cik->is_array_klass(), "Not supported allocation.");
+      uint first_ind = spobj->first_index(sfpt->jvms());
+      // Nullable, scalarized value types have a null_marker input
+      // that needs to be checked before using the field values.
+      ScopeValue* properties = nullptr;
+      if (cik->is_value_klass()) {
+        Node* null_marker_node = sfpt->in(first_ind++);
+        assert(null_marker_node != nullptr, "null_marker node not found");
+        if (!null_marker_node->is_top()) {
+          const TypeInt* null_marker_type = null_marker_node->bottom_type()->as_int();
+          if (null_marker_node->is_Con()) {
+            properties = new ConstantIntValue(null_marker_type->get_con());
+          } else {
+            OptoReg::Name null_marker_reg = C->regalloc()->get_reg_first(null_marker_node);
+            properties = new_loc_value(C->regalloc(), null_marker_reg, Location::normal);
+          }
+        }
+      }
+      if (cik->is_array_klass() && !cik->is_type_array_klass()) {
+        properties = new ConstantIntValue(array_description_value(t->as_aryptr()));
+      }
       sv = new ObjectValue(spobj->_idx,
-                           new ConstantOopWriteValue(cik->java_mirror()->constant_encoding()));
+                           new ConstantOopWriteValue(cik->java_mirror()->constant_encoding()), true, properties);
       set_sv_for_object_node(objs, sv);
 
-      uint first_ind = spobj->first_index(sfpt->jvms());
       for (uint i = 0; i < spobj->n_fields(); i++) {
         Node* fld_node = sfpt->in(first_ind+i);
         (void)FillLocArray(sv->field_values()->length(), sfpt, fld_node, sv->field_values(), objs);
@@ -857,6 +923,7 @@ void PhaseOutput::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
     } else if (t->base() == Type::VectorA || t->base() == Type::VectorS ||
                t->base() == Type::VectorD || t->base() == Type::VectorX ||
                t->base() == Type::VectorY || t->base() == Type::VectorZ) {
+      C->debug_info()->set_has_vectors();
       array->append(new_loc_value( C->regalloc(), regnum, Location::vector ));
     } else if (C->regalloc()->is_oop(local)) {
       assert(t->base() == Type::OopPtr || t->base() == Type::InstPtr ||
@@ -882,35 +949,35 @@ void PhaseOutput::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
       break;
     case Type::AryPtr:
     case Type::InstPtr:          // fall through
-      array->append(new ConstantOopWriteValue(t->isa_oopptr()->const_oop()->constant_encoding()));
+      array->append(new ConstantOopWriteValue(t->as_oopptr()->const_oop()->constant_encoding()));
       break;
     case Type::NarrowOop:
       if (t == TypeNarrowOop::NULL_PTR) {
         array->append(new ConstantOopWriteValue(nullptr));
       } else {
-        array->append(new ConstantOopWriteValue(t->make_ptr()->isa_oopptr()->const_oop()->constant_encoding()));
+        array->append(new ConstantOopWriteValue(t->make_ptr()->as_oopptr()->const_oop()->constant_encoding()));
       }
       break;
     case Type::Int:
-      array->append(new ConstantIntValue(t->is_int()->get_con()));
+      array->append(new ConstantIntValue(t->as_int()->get_con()));
       break;
     case Type::RawPtr:
       // A return address (T_ADDRESS).
-      assert((intptr_t)t->is_ptr()->get_con() < (intptr_t)0x10000, "must be a valid BCI");
+      assert((intptr_t)t->as_ptr()->get_con() < (intptr_t)0x10000, "must be a valid BCI");
 #ifdef _LP64
       // Must be restored to the full-width 64-bit stack slot.
-      array->append(new ConstantLongValue(t->is_ptr()->get_con()));
+      array->append(new ConstantLongValue(t->as_ptr()->get_con()));
 #else
-      array->append(new ConstantIntValue(t->is_ptr()->get_con()));
+      array->append(new ConstantIntValue(t->as_ptr()->get_con()));
 #endif
       break;
     case Type::FloatCon: {
-      float f = t->is_float_constant()->getf();
+      float f = t->as_float_constant()->getf();
       array->append(new ConstantIntValue(jint_cast(f)));
       break;
     }
     case Type::DoubleCon: {
-      jdouble d = t->is_double_constant()->getd();
+      jdouble d = t->as_double_constant()->getd();
 #ifdef _LP64
       array->append(new ConstantIntValue((jint)0));
       array->append(new ConstantDoubleValue(d));
@@ -930,7 +997,7 @@ void PhaseOutput::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
       break;
     }
     case Type::Long: {
-      jlong d = t->is_long()->get_con();
+      jlong d = t->as_long()->get_con();
 #ifdef _LP64
       array->append(new ConstantIntValue((jint)0));
       array->append(new ConstantLongValue(d));
@@ -1001,37 +1068,33 @@ bool PhaseOutput::contains_as_scalarized_obj(JVMState* jvms, MachSafePointNode* 
 void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
   // Handle special safepoint nodes for synchronization
   MachSafePointNode *sfn   = mach->as_MachSafePoint();
-  MachCallNode      *mcall;
 
   int safepoint_pc_offset = current_offset;
-  bool is_method_handle_invoke = false;
   bool return_oop = false;
+  bool return_scalarized = false;
   bool has_ea_local_in_scope = sfn->_has_ea_local_in_scope;
   bool arg_escape = false;
 
   // Add the safepoint in the DebugInfoRecorder
-  if( !mach->is_MachCall() ) {
-    mcall = nullptr;
-    C->debug_info()->add_safepoint(safepoint_pc_offset, sfn->_oop_map);
-  } else {
-    mcall = mach->as_MachCall();
+  if (mach->is_MachUncommonTrap()) {
+    safepoint_pc_offset += mach->as_MachUncommonTrap()->ret_addr_offset();
+  } else if (mach->is_MachCall()) {
+    MachCallNode* mcall = mach->as_MachCall();
 
-    // Is the call a MethodHandle call?
     if (mcall->is_MachCallJava()) {
-      if (mcall->as_MachCallJava()->_method_handle_invoke) {
-        assert(C->has_method_handle_invokes(), "must have been set during call generation");
-        is_method_handle_invoke = true;
-      }
       arg_escape = mcall->as_MachCallJava()->_arg_escape;
     }
 
     // Check if a call returns an object.
-    if (mcall->returns_pointer()) {
+    if (mcall->returns_pointer() || mcall->returns_scalarized()) {
       return_oop = true;
     }
+    if (mcall->returns_scalarized()) {
+      return_scalarized = true;
+    }
     safepoint_pc_offset += mcall->ret_addr_offset();
-    C->debug_info()->add_safepoint(safepoint_pc_offset, mcall->_oop_map);
   }
+  C->debug_info()->add_safepoint(safepoint_pc_offset, sfn->_oop_map);
 
   // Loop over the JVMState list to add scope information
   // Do not skip safepoints with a null method, they need monitor info
@@ -1074,8 +1137,7 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
     assert( !method ||
             !method->is_synchronized() ||
             method->is_native() ||
-            num_mon > 0 ||
-            !GenerateSynchronizationCode,
+            num_mon > 0,
             "monitors must always exist for synchronized methods");
 
     // Build the growable array of ScopeValues for exp stack
@@ -1095,11 +1157,16 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
         scval = PhaseOutput::sv_for_node_id(objs, spobj->_idx);
         if (scval == nullptr) {
           const Type *t = spobj->bottom_type();
-          ciKlass* cik = t->is_oopptr()->exact_klass();
+          ciKlass* cik = t->as_oopptr()->exact_klass();
           assert(cik->is_instance_klass() ||
                  cik->is_array_klass(), "Not supported allocation.");
+          assert(!cik->is_value_klass(), "Synchronization on value object?");
+          ScopeValue* properties = nullptr;
+          if (cik->is_array_klass() && !cik->is_type_array_klass()) {
+            properties = new ConstantIntValue(array_description_value(t->as_aryptr()));
+          }
           ObjectValue* sv = new ObjectValue(spobj->_idx,
-                                            new ConstantOopWriteValue(cik->java_mirror()->constant_encoding()));
+                                            new ConstantOopWriteValue(cik->java_mirror()->constant_encoding()), true, properties);
           PhaseOutput::set_sv_for_object_node(objs, sv);
 
           uint first_ind = spobj->first_index(youngest_jvms);
@@ -1149,7 +1216,7 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
         }
       } else {
         const TypePtr *tp = obj_node->get_ptr_type();
-        scval = new ConstantOopWriteValue(tp->is_oopptr()->const_oop()->constant_encoding());
+        scval = new ConstantOopWriteValue(tp->as_oopptr()->const_oop()->constant_encoding());
       }
 
       OptoReg::Name box_reg = BoxLockNode::reg(box_node);
@@ -1205,8 +1272,8 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
       jvms->bci(),
       jvms->should_reexecute(),
       rethrow_exception,
-      is_method_handle_invoke,
       return_oop,
+      return_scalarized,
       has_ea_local_in_scope,
       arg_escape,
       locvals,
@@ -1315,7 +1382,16 @@ void PhaseOutput::estimate_buffer_size(int& const_req) {
 
   // Compute the byte offset where we can store the deopt pc.
   if (C->fixed_slots() != 0) {
-    _orig_pc_slot_offset_in_bytes = C->regalloc()->reg2offset(OptoReg::stack2reg(_orig_pc_slot));
+    // Skip other fixed slots
+    int current_slot = C->fixed_slots();
+    if (C->needs_stack_repair()) {
+      current_slot -= VMRegImpl::slots_per_word;
+    }
+    if (C->needs_nm_slot()) {
+      current_slot -= VMRegImpl::slots_per_word;
+    }
+    int orig_pc_slot = current_slot - VMRegImpl::slots_per_word;
+    _orig_pc_slot_offset_in_bytes = C->regalloc()->reg2offset(OptoReg::stack2reg(orig_pc_slot));
   }
 
   // Compute prolog code size
@@ -1367,24 +1443,19 @@ CodeBuffer* PhaseOutput::init_buffer() {
 
   // nmethod and CodeBuffer count stubs & constants as part of method's code.
   // class HandlerImpl is platform-specific and defined in the *.ad files.
-  int exception_handler_req = HandlerImpl::size_exception_handler() + MAX_stubs_size; // add marginal slop for handler
   int deopt_handler_req     = HandlerImpl::size_deopt_handler()     + MAX_stubs_size; // add marginal slop for handler
   stub_req += MAX_stubs_size;   // ensure per-stub margin
   code_req += MAX_inst_size;    // ensure per-instruction margin
 
   if (StressCodeBuffers)
-    code_req = const_req = stub_req = exception_handler_req = deopt_handler_req = 0x10;  // force expansion
+    code_req = const_req = stub_req = deopt_handler_req = 0x10;  // force expansion
 
   int total_req =
           const_req +
           code_req +
           pad_req +
           stub_req +
-          exception_handler_req +
           deopt_handler_req;               // deopt handler
-
-  if (C->has_method_handle_invokes())
-    total_req += deopt_handler_req;  // deopt MH handler
 
   CodeBuffer* cb = code_buffer();
   cb->set_const_section_alignment(constant_table().alignment());
@@ -1399,10 +1470,6 @@ CodeBuffer* PhaseOutput::init_buffer() {
   cb->initialize_consts_size(const_req);
   cb->initialize_stubs_size(stub_req);
   cb->initialize_oop_recorder(C->env()->oop_recorder());
-
-  // fill in the nop array for bundling computations
-  MachNode *_nop_list[Bundle::_nop_count];
-  Bundle::initialize_nops(_nop_list);
 
   return cb;
 }
@@ -1446,6 +1513,13 @@ void PhaseOutput::fill_buffer(C2_MacroAssembler* masm, uint* blk_starts) {
   uint* jmp_rule   = NEW_RESOURCE_ARRAY(uint,nblocks);
 #endif
 
+#if INCLUDE_CDS
+  VectorSet callee_visited;
+  if (C->is_aot_compile() && ValueTypePassFieldsAsArgs) {
+    _java_callees = new(C->comp_arena()) GrowableArray<ciMethod*>(C->comp_arena(), 8, 0, nullptr);
+  }
+#endif
+
   // Create an array of unused labels, one for each basic block, if printing is enabled
 #if defined(SUPPORT_OPTO_ASSEMBLY)
   int* node_offsets      = nullptr;
@@ -1477,7 +1551,6 @@ void PhaseOutput::fill_buffer(C2_MacroAssembler* masm, uint* blk_starts) {
   }
 
   // Now fill in the code buffer
-  Node* delay_slot = nullptr;
   for (uint i = 0; i < nblocks; i++) {
     Block* block = C->cfg()->get_block(i);
     _block = block;
@@ -1516,15 +1589,6 @@ void PhaseOutput::fill_buffer(C2_MacroAssembler* masm, uint* blk_starts) {
       // Get the node
       Node* n = block->get_node(j);
 
-      // See if delay slots are supported
-      if (valid_bundle_info(n) && node_bundling(n)->used_in_unconditional_delay()) {
-        assert(delay_slot == nullptr, "no use of delay slot node");
-        assert(n->size(C->regalloc()) == Pipeline::instr_unit_size(), "delay slot instruction wrong size");
-
-        delay_slot = n;
-        continue;
-      }
-
       // If this starts a new instruction group, then flush the current one
       // (but allow split bundles)
       if (Pipeline::requires_bundling() && starts_bundle(n))
@@ -1543,15 +1607,34 @@ void PhaseOutput::fill_buffer(C2_MacroAssembler* masm, uint* blk_starts) {
           current_offset = masm->offset();
         }
 
-        // A padding may be needed again since a previous instruction
-        // could be moved to delay slot.
-
+#if INCLUDE_CDS
+        // Record callees for AOT code when Valhalla is enabled
+        // to cache their fingerprint which are verified when
+        // AOT code is loaded in production run.
+        if (C->is_aot_compile() && ValueTypePassFieldsAsArgs &&
+            mach->is_MachCallJava() && mach->as_MachCallJava()->_method != nullptr) {
+          ciMethod* m = mach->as_MachCallJava()->_method;
+          if (!callee_visited.test_set(m->ident())) {
+            _java_callees->append(m);
+          }
+        }
+#endif
         // align the instruction if necessary
         int padding = mach->compute_padding(current_offset);
         // Make sure safepoint node for polling is distinct from a call's
         // return by adding a nop if needed.
-        if (is_sfn && !is_mcall && padding == 0 && current_offset == last_call_offset) {
-          padding = nop_size;
+        if (padding == 0 && current_offset == last_call_offset) {
+          if (is_mcall) {
+            assert(mach->as_MachCall()->ret_addr_offset() > 0,
+                   "Safepoint address should be offset from the first instruction");
+          } else if (mach->is_MachUncommonTrap()) {
+            assert(mach->as_MachUncommonTrap()->ret_addr_offset() > 0 &&
+                   (uint)mach->as_MachUncommonTrap()->ret_addr_offset() < mach->size(C->regalloc()),
+                   "Safepoint address should be offset from the first instruction and should not point after the node");
+          } else if (is_sfn) {
+            assert(mach->ideal_Opcode() == Op_SafePoint, "An unexpected safepoint node, which might need handling above");
+            padding = nop_size;
+          }
         }
         if (padding == 0 && mach->avoid_back_to_back(MachNode::AVOID_BEFORE) &&
             current_offset == last_avoid_back_to_back_offset) {
@@ -1582,8 +1665,10 @@ void PhaseOutput::fill_buffer(C2_MacroAssembler* masm, uint* blk_starts) {
         if (is_mcall) {
           MachCallNode *mcall = mach->as_MachCall();
 
-          // This destination address is NOT PC-relative
-          mcall->method_set((intptr_t)mcall->entry_point());
+          if (mcall->entry_point() != nullptr) {
+            // This destination address is NOT PC-relative
+            mcall->method_set((intptr_t)mcall->entry_point());
+          }
 
           // Save the return address
           call_returns[block->_pre_order] = current_offset + mcall->ret_addr_offset();
@@ -1618,13 +1703,10 @@ void PhaseOutput::fill_buffer(C2_MacroAssembler* masm, uint* blk_starts) {
           // This requires the TRUE branch target be in succs[0]
           uint block_num = block->non_connector_successor(0)->_pre_order;
 
-          // Try to replace long branch if delay slot is not used,
+          // Try to replace long branch,
           // it is mostly for back branches since forward branch's
           // distance is not updated yet.
-          bool delay_slot_is_used = valid_bundle_info(n) &&
-                                    C->output()->node_bundling(n)->use_unconditional_delay();
-          if (!delay_slot_is_used && mach->may_be_short_branch()) {
-            assert(delay_slot == nullptr, "not expecting delay slot node");
+          if (mach->may_be_short_branch()) {
             int br_size = n->size(C->regalloc());
             int offset = blk_starts[block_num] - current_offset;
             if (block_num >= i) {
@@ -1696,7 +1778,12 @@ void PhaseOutput::fill_buffer(C2_MacroAssembler* masm, uint* blk_starts) {
       }
 
       // Verify that there is sufficient space remaining
-      masm->code()->insts()->maybe_expand_to_ensure_remaining(MAX_inst_size);
+      uint required_size = MAX_inst_size;
+      if (n->is_MachVEP()) {
+        // MachVEPNodes can be much larger because they unpack all scalarized arguments.
+        required_size += n->as_Mach()->size(C->regalloc());
+      }
+      masm->code()->insts()->maybe_expand_to_ensure_remaining(required_size);
       if ((masm->code()->blob() == nullptr) || (!CompileBroker::should_compile_new_jobs())) {
         C->record_failure("CodeCache is full");
         return;
@@ -1724,7 +1811,6 @@ void PhaseOutput::fill_buffer(C2_MacroAssembler* masm, uint* blk_starts) {
 
       assert(!is_mcall || (call_returns[block->_pre_order] <= (uint)current_offset),
              "ret_addr_offset() not within emitted code");
-
 #ifdef ASSERT
       uint n_size = n->size(C->regalloc());
       if (n_size < (current_offset-instr_offset)) {
@@ -1756,44 +1842,6 @@ void PhaseOutput::fill_buffer(C2_MacroAssembler* masm, uint* blk_starts) {
       if (n->is_Mach() && n->as_Mach()->avoid_back_to_back(MachNode::AVOID_AFTER)) {
         // Avoid back to back some instructions.
         last_avoid_back_to_back_offset = current_offset;
-      }
-
-      // See if this instruction has a delay slot
-      if (valid_bundle_info(n) && node_bundling(n)->use_unconditional_delay()) {
-        guarantee(delay_slot != nullptr, "expecting delay slot node");
-
-        // Back up 1 instruction
-        masm->code()->set_insts_end(masm->code()->insts_end() - Pipeline::instr_unit_size());
-
-        // Save the offset for the listing
-#if defined(SUPPORT_OPTO_ASSEMBLY)
-        if ((node_offsets != nullptr) && (delay_slot->_idx < node_offset_limit)) {
-          node_offsets[delay_slot->_idx] = masm->offset();
-        }
-#endif
-
-        // Support a SafePoint in the delay slot
-        if (delay_slot->is_MachSafePoint()) {
-          MachNode *mach = delay_slot->as_Mach();
-          // !!!!! Stubs only need an oopmap right now, so bail out
-          if (!mach->is_MachCall() && mach->as_MachSafePoint()->jvms()->method() == nullptr) {
-            // Write the oopmap directly to the code blob??!!
-            delay_slot = nullptr;
-            continue;
-          }
-
-          int adjusted_offset = current_offset - Pipeline::instr_unit_size();
-          non_safepoints.observe_safepoint(mach->as_MachSafePoint()->jvms(),
-                                           adjusted_offset);
-          // Generate an OopMap entry
-          Process_OopMap_Node(mach, adjusted_offset);
-        }
-
-        // Insert the delay slot instruction
-        delay_slot->emit(masm, C->regalloc());
-
-        // Don't reuse it
-        delay_slot = nullptr;
       }
 
     } // End for all instructions in block
@@ -1870,20 +1918,11 @@ void PhaseOutput::fill_buffer(C2_MacroAssembler* masm, uint* blk_starts) {
   // Only java methods have exception handlers and deopt handlers
   // class HandlerImpl is platform-specific and defined in the *.ad files.
   if (C->method()) {
-    // Emit the exception handler code.
-    _code_offsets.set_value(CodeOffsets::Exceptions, HandlerImpl::emit_exception_handler(masm));
     if (C->failing()) {
       return; // CodeBuffer::expand failed
     }
     // Emit the deopt handler code.
     _code_offsets.set_value(CodeOffsets::Deopt, HandlerImpl::emit_deopt_handler(masm));
-
-    // Emit the MethodHandle deopt handler code (if required).
-    if (C->has_method_handle_invokes() && !C->failing()) {
-      // We can use the same code as for the normal deopt handler, we
-      // just need a different entry point address.
-      _code_offsets.set_value(CodeOffsets::DeoptMH, HandlerImpl::emit_deopt_handler(masm));
-    }
   }
 
   // One last check for failed CodeBuffer::expand:
@@ -1902,11 +1941,7 @@ void PhaseOutput::fill_buffer(C2_MacroAssembler* masm, uint* blk_starts) {
 #if defined(SUPPORT_OPTO_ASSEMBLY)
   // Dump the assembly code, including basic-block numbers
   if (C->print_assembly()) {
-    ttyLocker ttyl;  // keep the following output all in one block
-    if (!VMThread::should_terminate()) {  // test this under the tty lock
-      // print_metadata and dump_asm may safepoint which makes us loose the ttylock.
-      // We call them first and write to a stringStream, then we retake the lock to
-      // make sure the end tag is coherent, and that xmlStream->pop_tag is done thread safe.
+    if (!VMThread::should_terminate()) {
       ResourceMark rm;
       stringStream method_metadata_str;
       if (C->method() != nullptr) {
@@ -1915,23 +1950,28 @@ void PhaseOutput::fill_buffer(C2_MacroAssembler* masm, uint* blk_starts) {
       stringStream dump_asm_str;
       dump_asm_on(&dump_asm_str, node_offsets, node_offset_limit);
 
+      // Make sure the end tag is coherent, and that xmlStream->pop_tag is done thread safe.
       NoSafepointVerifier nsv;
-      ttyLocker ttyl2;
+      ttyLocker ttyl;
       // This output goes directly to the tty, not the compiler log.
       // To enable tools to match it up with the compilation activity,
       // be sure to tag this tty output with the compile ID.
+      bool aot_comp = C->is_aot_compile();
+      bool aot_preload_comp = C->for_aot_preload();
       if (xtty != nullptr) {
         xtty->head("opto_assembly compile_id='%d'%s", C->compile_id(),
-                   C->is_osr_compilation() ? " compile_kind='osr'" : "");
+                   C->is_osr_compilation() ? " compile_kind='osr'" :
+                   (aot_preload_comp ? " compile_kind='AP'" : (aot_comp ? " compile_kind='A'" : "")));
       }
+      const char* is_aot = aot_comp ? (aot_preload_comp ? "(AP) " : "(A) -") : "-----";
       if (C->method() != nullptr) {
-        tty->print_cr("----------------------- MetaData before Compile_id = %d ------------------------", C->compile_id());
+        tty->print_cr("----------------------- MetaData before Compile_id = %d %s-------------------", C->compile_id(), is_aot);
         tty->print_raw(method_metadata_str.freeze());
       } else if (C->stub_name() != nullptr) {
         tty->print_cr("----------------------------- RuntimeStub %s -------------------------------", C->stub_name());
       }
       tty->cr();
-      tty->print_cr("------------------------ OptoAssembly for Compile_id = %d -----------------------", C->compile_id());
+      tty->print_cr("------------------------ OptoAssembly for Compile_id = %d %s------------------", C->compile_id(), is_aot);
       tty->print_raw(dump_asm_str.freeze());
       tty->print_cr("--------------------------------------------------------------------------------");
       if (xtty != nullptr) {
@@ -2036,16 +2076,13 @@ void PhaseOutput::FillExceptionTables(uint cnt, uint *call_returns, uint *inct_s
 #ifndef PRODUCT
 uint Scheduling::_total_nop_size = 0;
 uint Scheduling::_total_method_size = 0;
-uint Scheduling::_total_branches = 0;
-uint Scheduling::_total_unconditional_delays = 0;
 uint Scheduling::_total_instructions_per_bundle[Pipeline::_max_instrs_per_cycle+1];
 #endif
 
 // Initializer for class Scheduling
 
 Scheduling::Scheduling(Arena *arena, Compile &compile)
-        : _arena(arena),
-          _cfg(compile.cfg()),
+        : _cfg(compile.cfg()),
           _regalloc(compile.regalloc()),
           _scheduled(arena),
           _available(arena),
@@ -2055,16 +2092,8 @@ Scheduling::Scheduling(Arena *arena, Compile &compile)
           _bundle_instr_count(0),
           _bundle_cycle_number(0),
           _bundle_use(0, 0, resource_count, &_bundle_use_elements[0])
-#ifndef PRODUCT
-        , _branches(0)
-        , _unconditional_delays(0)
-#endif
 {
-  // Create a MachNopNode
-  _nop = new MachNopNode();
-
-  // Now that the nops are in the array, save the count
-  // (but allow entries for the nops)
+  // Save the count
   _node_bundling_limit = compile.unique();
   uint node_max = _regalloc->node_regs_max_index();
 
@@ -2092,14 +2121,6 @@ Scheduling::Scheduling(Arena *arena, Compile &compile)
 
   _next_node = block->get_node(block->number_of_nodes() - 1);
 }
-
-#ifndef PRODUCT
-// Scheduling destructor
-Scheduling::~Scheduling() {
-  _total_branches             += _branches;
-  _total_unconditional_delays += _unconditional_delays;
-}
-#endif
 
 // Step ahead "i" cycles
 void Scheduling::step(uint i) {
@@ -2205,15 +2226,6 @@ void PhaseOutput::print_scheduling(outputStream* output_stream) {
 bool Scheduling::NodeFitsInBundle(Node *n) {
   uint n_idx = n->_idx;
 
-  // If this is the unconditional delay instruction, then it fits
-  if (n == _unconditional_delay_slot) {
-#ifndef PRODUCT
-    if (_cfg->C->trace_opto_output())
-      tty->print("#     NodeFitsInBundle [%4d]: TRUE; is in unconditional delay slot\n", n->_idx);
-#endif
-    return (true);
-  }
-
   // If the node cannot be scheduled this cycle, skip it
   if (_current_latency[n_idx] > _bundle_cycle_number) {
 #ifndef PRODUCT
@@ -2229,8 +2241,6 @@ bool Scheduling::NodeFitsInBundle(Node *n) {
   uint instruction_count = node_pipeline->instructionCount();
   if (node_pipeline->mayHaveNoCode() && n->size(_regalloc) == 0)
     instruction_count = 0;
-  else if (node_pipeline->hasBranchDelay() && !_unconditional_delay_slot)
-    instruction_count++;
 
   if (_bundle_instr_count + instruction_count > Pipeline::_max_instrs_per_cycle) {
 #ifndef PRODUCT
@@ -2442,99 +2452,6 @@ void Scheduling::AddNodeToBundle(Node *n, const Block *bb) {
   const Pipeline *node_pipeline = n->pipeline();
   const Pipeline_Use& node_usage = node_pipeline->resourceUse();
 
-  // Check for instructions to be placed in the delay slot. We
-  // do this before we actually schedule the current instruction,
-  // because the delay slot follows the current instruction.
-  if (Pipeline::_branch_has_delay_slot &&
-      node_pipeline->hasBranchDelay() &&
-      !_unconditional_delay_slot) {
-
-    uint siz = _available.size();
-
-    // Conditional branches can support an instruction that
-    // is unconditionally executed and not dependent by the
-    // branch, OR a conditionally executed instruction if
-    // the branch is taken.  In practice, this means that
-    // the first instruction at the branch target is
-    // copied to the delay slot, and the branch goes to
-    // the instruction after that at the branch target
-    if ( n->is_MachBranch() ) {
-
-      assert( !n->is_MachNullCheck(), "should not look for delay slot for Null Check" );
-      assert( !n->is_Catch(),         "should not look for delay slot for Catch" );
-
-#ifndef PRODUCT
-      _branches++;
-#endif
-
-      // At least 1 instruction is on the available list
-      // that is not dependent on the branch
-      for (uint i = 0; i < siz; i++) {
-        Node *d = _available[i];
-        const Pipeline *avail_pipeline = d->pipeline();
-
-        // Don't allow safepoints in the branch shadow, that will
-        // cause a number of difficulties
-        if ( avail_pipeline->instructionCount() == 1 &&
-             !avail_pipeline->hasMultipleBundles() &&
-             !avail_pipeline->hasBranchDelay() &&
-             Pipeline::instr_has_unit_size() &&
-             d->size(_regalloc) == Pipeline::instr_unit_size() &&
-             NodeFitsInBundle(d) &&
-             !node_bundling(d)->used_in_delay()) {
-
-          if (d->is_Mach() && !d->is_MachSafePoint()) {
-            // A node that fits in the delay slot was found, so we need to
-            // set the appropriate bits in the bundle pipeline information so
-            // that it correctly indicates resource usage.  Later, when we
-            // attempt to add this instruction to the bundle, we will skip
-            // setting the resource usage.
-            _unconditional_delay_slot = d;
-            node_bundling(n)->set_use_unconditional_delay();
-            node_bundling(d)->set_used_in_unconditional_delay();
-            _bundle_use.add_usage(avail_pipeline->resourceUse());
-            _current_latency[d->_idx] = _bundle_cycle_number;
-            _next_node = d;
-            ++_bundle_instr_count;
-#ifndef PRODUCT
-            _unconditional_delays++;
-#endif
-            break;
-          }
-        }
-      }
-    }
-
-    // No delay slot, add a nop to the usage
-    if (!_unconditional_delay_slot) {
-      // See if adding an instruction in the delay slot will overflow
-      // the bundle.
-      if (!NodeFitsInBundle(_nop)) {
-#ifndef PRODUCT
-        if (_cfg->C->trace_opto_output())
-          tty->print("#  *** STEP(1 instruction for delay slot) ***\n");
-#endif
-        step(1);
-      }
-
-      _bundle_use.add_usage(_nop->pipeline()->resourceUse());
-      _next_node = _nop;
-      ++_bundle_instr_count;
-    }
-
-    // See if the instruction in the delay slot requires a
-    // step of the bundles
-    if (!NodeFitsInBundle(n)) {
-#ifndef PRODUCT
-      if (_cfg->C->trace_opto_output())
-        tty->print("#  *** STEP(branch won't fit) ***\n");
-#endif
-      // Update the state information
-      _bundle_instr_count = 0;
-      _bundle_cycle_number += 1;
-      _bundle_use.step(1);
-    }
-  }
 
   // Get the number of instructions
   uint instruction_count = node_pipeline->instructionCount();
@@ -2562,46 +2479,39 @@ void Scheduling::AddNodeToBundle(Node *n, const Block *bb) {
     }
   }
 
-  // If this was placed in the delay slot, ignore it
-  if (n != _unconditional_delay_slot) {
-
-    if (delay == 0) {
-      if (node_pipeline->hasMultipleBundles()) {
+  if (delay == 0) {
+    if (node_pipeline->hasMultipleBundles()) {
 #ifndef PRODUCT
-        if (_cfg->C->trace_opto_output())
-          tty->print("#  *** STEP(multiple instructions) ***\n");
+      if (_cfg->C->trace_opto_output())
+        tty->print("#  *** STEP(multiple instructions) ***\n");
 #endif
-        step(1);
-      }
-
-      else if (instruction_count + _bundle_instr_count > Pipeline::_max_instrs_per_cycle) {
-#ifndef PRODUCT
-        if (_cfg->C->trace_opto_output())
-          tty->print("#  *** STEP(%d >= %d instructions) ***\n",
-                     instruction_count + _bundle_instr_count,
-                     Pipeline::_max_instrs_per_cycle);
-#endif
-        step(1);
-      }
+      step(1);
     }
 
-    if (node_pipeline->hasBranchDelay() && !_unconditional_delay_slot)
-      _bundle_instr_count++;
-
-    // Set the node's latency
-    _current_latency[n->_idx] = _bundle_cycle_number;
-
-    // Now merge the functional unit information
-    if (instruction_count > 0 || !node_pipeline->mayHaveNoCode())
-      _bundle_use.add_usage(node_usage);
-
-    // Increment the number of instructions in this bundle
-    _bundle_instr_count += instruction_count;
-
-    // Remember this node for later
-    if (n->is_Mach())
-      _next_node = n;
+    else if (instruction_count + _bundle_instr_count > Pipeline::_max_instrs_per_cycle) {
+#ifndef PRODUCT
+      if (_cfg->C->trace_opto_output())
+        tty->print("#  *** STEP(%d >= %d instructions) ***\n",
+                   instruction_count + _bundle_instr_count,
+                   Pipeline::_max_instrs_per_cycle);
+#endif
+      step(1);
+    }
   }
+
+  // Set the node's latency
+  _current_latency[n->_idx] = _bundle_cycle_number;
+
+  // Now merge the functional unit information
+  if (instruction_count > 0 || !node_pipeline->mayHaveNoCode())
+    _bundle_use.add_usage(node_usage);
+
+  // Increment the number of instructions in this bundle
+  _bundle_instr_count += instruction_count;
+
+  // Remember this node for later
+  if (n->is_Mach())
+    _next_node = n;
 
   // It's possible to have a BoxLock in the graph and in the _bbs mapping but
   // not in the bb->_nodes array.  This happens for debug-info-only BoxLocks.
@@ -2652,9 +2562,6 @@ void Scheduling::ComputeUseCount(const Block *bb) {
   // Clear the list of available and scheduled instructions, just in case
   _available.clear();
   _scheduled.clear();
-
-  // No delay slot specified
-  _unconditional_delay_slot = nullptr;
 
 #ifdef ASSERT
   for( uint i=0; i < bb->number_of_nodes(); i++ )
@@ -2773,11 +2680,7 @@ void Scheduling::DoScheduling() {
       break;                    // Funny loop structure to be sure...
     }
     // Compute last "interesting" instruction in block - last instruction we
-    // might schedule.  _bb_end points just after last schedulable inst.  We
-    // normally schedule conditional branches (despite them being forced last
-    // in the block), because they have delay slots we can fill.  Calls all
-    // have their delay slots filled in the template expansions, so we don't
-    // bother scheduling them.
+    // might schedule.  _bb_end points just after last schedulable inst.
     Node *last = bb->get_node(_bb_end);
     // Ignore trailing NOPs.
     while (_bb_end > 0 && last->is_Mach() &&
@@ -2843,7 +2746,7 @@ void Scheduling::DoScheduling() {
         Node *n = bb->get_node(j);
         if( valid_bundle_info(n) ) {
           Bundle *bundle = node_bundling(n);
-          if (bundle->instr_count() > 0 || bundle->flags() > 0) {
+          if (bundle->instr_count() > 0) {
             tty->print("*** Bundle: ");
             bundle->dump();
           }
@@ -3024,6 +2927,7 @@ void Scheduling::anti_do_def( Block *b, Node *def, OptoReg::Name def_reg, int is
         // Yes, found a use/kill pinch-point
         pinch->set_req(0,nullptr);  //
         pinch->replace_by(kill); // Move anti-dep edges up
+        _pinch_free_list.push(pinch);
         pinch = kill;
         _reg_node.map(def_reg,pinch);
         return;
@@ -3151,16 +3055,30 @@ void Scheduling::ComputeRegisterAntidependencies(Block *b) {
 
     Node *m = b->get_node(i);
 
-    // Add precedence edge from following safepoint to use of derived pointer
-    if( last_safept_node != end_node &&
+    if (last_safept_node != end_node &&
         m != last_safept_node) {
+      bool need_safept_prec = false;
+      // Add precedence edge from following safepoint to use of derived pointer
       for (uint k = 1; k < m->req(); k++) {
         const Type *t = m->in(k)->bottom_type();
-        if( t->isa_oop_ptr() &&
-            t->is_ptr()->offset() != 0 ) {
-          last_safept_node->add_prec( m );
+        if (t->is_oopptr() &&
+            t->as_ptr()->offset() != 0) {
+          need_safept_prec = true;
           break;
         }
+      }
+
+      // A CheckCastPP whose input is still RawPtr must stay above the following safepoint.
+      // Otherwise post-regalloc block-local scheduling can leave a live raw oop at the safepoint.
+      if (!need_safept_prec && m->is_Mach() &&
+          m->as_Mach()->ideal_Opcode() == Op_CheckCastPP) {
+        Node* def = m->in(1);
+        if (def != nullptr && def->bottom_type()->base() == Type::RawPtr) {
+          need_safept_prec = true;
+        }
+      }
+      if (need_safept_prec) {
+        last_safept_node->add_prec(m);
       }
     }
 
@@ -3217,7 +3135,7 @@ void Scheduling::garbage_collect_pinch_nodes() {
   int trace_cnt = 0;
   for (uint k = 0; k < _reg_node.max(); k++) {
     Node* pinch = _reg_node[k];
-    if ((pinch != nullptr) && pinch->Opcode() == Op_Node &&
+    if (Node::is_exact<Op_Node>(pinch) &&
         // no predecence input edges
         (pinch->req() == pinch->len() || pinch->in(pinch->req()) == nullptr) ) {
       cleanup_pinch(pinch);
@@ -3242,7 +3160,7 @@ void Scheduling::garbage_collect_pinch_nodes() {
 
 // Clean up a pinch node for reuse.
 void Scheduling::cleanup_pinch( Node *pinch ) {
-  assert (pinch && pinch->Opcode() == Op_Node && pinch->req() == 1, "just checking");
+  assert(Node::is_exact<Op_Node>(pinch) && pinch->req() == 1, "just checking");
 
   for (DUIterator_Last imin, i = pinch->last_outs(imin); i >= imin; ) {
     Node* use = pinch->last_out(i);
@@ -3279,16 +3197,6 @@ void Scheduling::print_statistics() {
                ((double)_total_nop_size) / ((double) _total_method_size) * 100.0);
   tty->print("\n");
 
-  // Print the number of branch shadows filled
-  if (Pipeline::_branch_has_delay_slot) {
-    tty->print("Of %d branches, %d had unconditional delay slots filled",
-               _total_branches, _total_unconditional_delays);
-    if (_total_branches > 0)
-      tty->print(", for %.2f%%",
-                 ((double)_total_unconditional_delays) / ((double)_total_branches) * 100.0);
-    tty->print("\n");
-  }
-
   uint total_instructions = 0, total_bundles = 0;
 
   for (uint i = 1; i <= Pipeline::_max_instrs_per_cycle; i++) {
@@ -3320,6 +3228,39 @@ void PhaseOutput::init_scratch_buffer_blob(int const_size) {
     ResourceMark rm;
     _scratch_const_size = const_size;
     int size = C2Compiler::initial_code_buffer_size(const_size);
+    if (C->has_scalarized_args()) {
+      // Value type entry points (MachVEPNodes) require lots of space when
+      // unpacking fields from buffered arguments. Increase the scratch buffer
+      // for field moves, GC barriers and oop verification accordingly.
+      const int move_size = 32;
+      int barrier_size = 7; // Base oop load barrier
+      DEBUG_ONLY(barrier_size += 37;)
+      if (UseShenandoahGC) {
+        barrier_size += 700;
+      } else if (UseZGC) {
+        // Covers the worst-case x64 APX save/restore of all extended general purpose
+        // registers, including the slow-path jump triggered by ForceUnreachable.
+        barrier_size += 400;
+      }
+      ciMethod* method = C->method();
+      auto add_value_arg_size = [&](ciValueKlass* vk) {
+        size += vk->value_arg_length() * move_size;
+        size += vk->oop_count() * barrier_size;
+      };
+      int arg_num = 0;
+      if (!method->is_static()) {
+        if (method->is_scalarized_arg(arg_num)) {
+          add_value_arg_size(method->holder()->as_value_klass());
+        }
+        arg_num++;
+      }
+      for (ciSignatureStream str(method->signature()); !str.at_return_type(); str.next()) {
+        if (method->is_scalarized_arg(arg_num)) {
+          add_value_arg_size(str.type()->as_value_klass());
+        }
+        arg_num++;
+      }
+    }
     blob = BufferBlob::create("Compile::scratch_buffer", size);
     // Record the buffer blob for next time.
     set_scratch_buffer_blob(blob);
@@ -3390,8 +3331,10 @@ uint PhaseOutput::scratch_emit_size(const Node* n) {
   // Emitting into the scratch buffer should not fail
   assert(!C->failing_internal() || C->failure_is_artificial(), "Must not have pending failure. Reason is: %s", C->failure_reason());
 
-  if (is_branch) // Restore label.
+  // Restore label.
+  if (is_branch) {
     n->as_MachBranch()->label_set(saveL, save_bnum);
+  }
 
   // End scratch_emit_size section.
   set_in_scratch_emit_size(false);
@@ -3400,9 +3343,7 @@ uint PhaseOutput::scratch_emit_size(const Node* n) {
 }
 
 void PhaseOutput::install() {
-  if (!C->should_install_code()) {
-    return;
-  } else if (C->stub_function() != nullptr) {
+  if (C->should_install_code() && C->stub_function() != nullptr) {
     install_stub(C->stub_name());
   } else {
     install_code(C->method(),
@@ -3432,35 +3373,43 @@ void PhaseOutput::install_code(ciMethod*         target,
       _code_offsets.set_value(CodeOffsets::Verified_Entry, 0);
       _code_offsets.set_value(CodeOffsets::OSR_Entry, _first_block_size);
     } else {
-      if (!target->is_static()) {
-        // The UEP of an nmethod ensures that the VEP is padded. However, the padding of the UEP is placed
-        // before the inline cache check, so we don't have to execute any nop instructions when dispatching
-        // through the UEP, yet we can ensure that the VEP is aligned appropriately.
-        _code_offsets.set_value(CodeOffsets::Entry, _first_block_size - MacroAssembler::ic_check_size());
-      }
       _code_offsets.set_value(CodeOffsets::Verified_Entry, _first_block_size);
+      if (_code_offsets.value(CodeOffsets::Verified_Value_Entry) == CodeOffsets::no_such_entry_point) {
+        _code_offsets.set_value(CodeOffsets::Verified_Value_Entry, _first_block_size);
+      }
+      if (_code_offsets.value(CodeOffsets::Verified_Value_Entry_RO) == CodeOffsets::no_such_entry_point) {
+        _code_offsets.set_value(CodeOffsets::Verified_Value_Entry_RO, _first_block_size);
+      }
+      if (_code_offsets.value(CodeOffsets::Entry) == CodeOffsets::no_such_entry_point) {
+        _code_offsets.set_value(CodeOffsets::Entry, _first_block_size);
+      }
       _code_offsets.set_value(CodeOffsets::OSR_Entry, 0);
     }
 
     C->env()->register_method(target,
-                                     entry_bci,
-                                     &_code_offsets,
-                                     _orig_pc_slot_offset_in_bytes,
-                                     code_buffer(),
-                                     frame_size_in_words(),
-                                     oop_map_set(),
-                                     &_handler_table,
-                                     inc_table(),
-                                     compiler,
-                                     has_unsafe_access,
-                                     SharedRuntime::is_wide_vector(C->max_vector_size()),
-                                     C->has_monitors(),
-                                     C->has_scoped_access(),
-                                     0);
+                              entry_bci,
+                              &_code_offsets,
+                              _orig_pc_slot_offset_in_bytes,
+                              code_buffer(),
+                              frame_size_in_words(),
+                              _oop_map_set,
+                              &_handler_table,
+                              inc_table(),
+                              _java_callees,
+                              compiler,
+                              C->has_clinit_barriers(),
+                              C->for_aot_preload(),
+                              has_unsafe_access,
+                              SharedRuntime::is_wide_vector(C->max_vector_size()),
+                              C->has_monitors(),
+                              C->has_scoped_access(),
+                              0,
+                              C->should_install_code());
 
     if (C->log() != nullptr) { // Print code cache state into compiler log
       C->log()->code_cache_state();
     }
+    assert(!C->has_clinit_barriers() || C->for_aot_preload(), "class init barriers should be only in preload code");
   }
 }
 void PhaseOutput::install_stub(const char* stub_name) {
@@ -3490,7 +3439,8 @@ void PhaseOutput::install_stub(const char* stub_name) {
       } else {
         assert(rs->is_runtime_stub(), "sanity check");
         C->set_stub_entry_point(rs->entry_point());
-        AOTCodeCache::store_code_blob(*rs, AOTCodeEntry::C2Blob, C->stub_id(), stub_name);
+        BlobId blob_id = StubInfo::blob(C->stub_id());
+        AOTCodeCache::store_code_blob(*rs, AOTCodeEntry::C2Blob, blob_id);
       }
     }
   }
@@ -3521,7 +3471,19 @@ int PhaseOutput::frame_size_in_words() const {
 // removes the need to bang the stack in the deoptimization blob which
 // in turn simplifies stack overflow handling.
 int PhaseOutput::bang_size_in_bytes() const {
-  return MAX2(frame_size_in_bytes() + os::extra_bang_size_in_bytes(), C->interpreter_frame_size());
+  int extra_arg_size = 0;
+  // Methods retrieved from AOT archive can have needs_stack_repair
+  // set to true, but now we could be using nonscalarized convention,
+  // i.e. C->method()->get_sig_cc() returns null. Guard check with
+  // has_scalarized_args() which is cleared when archiving.
+  if (C->has_scalarized_args() && C->needs_stack_repair()) {
+    // Account for required stack extension conservatively
+    assert(C->method()->get_sig_cc() != nullptr, "must have scalarized signature");
+    extra_arg_size = MIN2(CompiledEntrySignature::max_stack_slots_cc() * VMRegImpl::stack_slot_size,
+                          C->method()->get_sig_cc()->length() * wordSize);
+    assert(extra_arg_size < (int)os::vm_page_size(), "assumption is it adds at most one page");
+  }
+  return MAX2(frame_size_in_bytes() + os::extra_bang_size_in_bytes() + extra_arg_size, C->interpreter_frame_size());
 }
 
 //------------------------------dump_asm---------------------------------------
@@ -3577,7 +3539,6 @@ void PhaseOutput::dump_asm_on(outputStream* st, int* pcs, uint pc_limit) {
     }
 
     // For all instructions
-    Node *delay = nullptr;
     for (uint j = 0; j < block->number_of_nodes(); j++) {
       if (VMThread::should_terminate()) {
         cut_short = true;
@@ -3586,10 +3547,6 @@ void PhaseOutput::dump_asm_on(outputStream* st, int* pcs, uint pc_limit) {
       n = block->get_node(j);
       if (valid_bundle_info(n)) {
         Bundle* bundle = node_bundling(n);
-        if (bundle->used_in_unconditional_delay()) {
-          delay = n;
-          continue;
-        }
         if (bundle->starts_bundle()) {
           starts_bundle = '+';
         }
@@ -3622,29 +3579,6 @@ void PhaseOutput::dump_asm_on(outputStream* st, int* pcs, uint pc_limit) {
         st->cr();
       }
 
-      // If we have an instruction with a delay slot, and have seen a delay,
-      // then back up and print it
-      if (valid_bundle_info(n) && node_bundling(n)->use_unconditional_delay()) {
-        // Coverity finding - Explicit null dereferenced.
-        guarantee(delay != nullptr, "no unconditional delay instruction");
-        if (WizardMode) delay->dump();
-
-        if (node_bundling(delay)->starts_bundle())
-          starts_bundle = '+';
-        if ((pcs != nullptr) && (n->_idx < pc_limit)) {
-          pc = pcs[n->_idx];
-          st->print("%*.*x", pc_digits, pc_digits, pc);
-        } else {
-          st->fill_to(pc_digits);
-        }
-        st->print(" %c ", starts_bundle);
-        starts_bundle = ' ';
-        st->fill_to(prefix_len);
-        delay->format(C->regalloc(), st);
-        st->cr();
-        delay = nullptr;
-      }
-
       // Dump the exception table as well
       if( n->is_Catch() && (Verbose || WizardMode) ) {
         // Print the exception table for this offset
@@ -3653,7 +3587,6 @@ void PhaseOutput::dump_asm_on(outputStream* st, int* pcs, uint pc_limit) {
       st->bol(); // Make sure we start on a new line
     }
     st->cr(); // one empty line between blocks
-    assert(cut_short || delay == nullptr, "no unconditional delay branch");
   } // End of per-block dump
 
   if (cut_short)  st->print_cr("*** disassembly is cut short ***");

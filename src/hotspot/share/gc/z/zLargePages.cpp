@@ -22,6 +22,7 @@
  */
 
 #include "gc/shared/gcLogPrecious.hpp"
+#include "gc/z/zAdaptiveHeap.hpp"
 #include "gc/z/zLargePages.hpp"
 #include "runtime/os.hpp"
 
@@ -31,7 +32,11 @@ bool ZLargePages::_os_enforced_transparent_mode;
 void ZLargePages::initialize() {
   pd_initialize();
 
-  log_info_p(gc, init)("Memory: " JULONG_FORMAT "M", os::physical_memory() / M);
+  const size_t memory = os::is_containerized()
+      ? os::physical_memory()
+      : ZAdaptiveHeap::machine_physical_memory();
+
+  log_info_p(gc, init)("Memory: " PROPERFMT, PROPERFMTARGS(memory));
   log_info_p(gc, init)("Large Page Support: %s", to_string());
 }
 
@@ -46,6 +51,9 @@ const char* ZLargePages::to_string() {
     } else {
       return "Enabled (Transparent)";
     }
+
+  case Collapse:
+    return "Enabled (Transparent, JVM enforced)";
 
   default:
     if (_os_enforced_transparent_mode) {

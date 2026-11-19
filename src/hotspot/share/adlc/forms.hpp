@@ -25,6 +25,9 @@
 #ifndef SHARE_ADLC_FORMS_HPP
 #define SHARE_ADLC_FORMS_HPP
 
+#include "dict2.hpp"
+#include "opto/adlcVMDeps.hpp"
+
 // FORMS.HPP - ADL Parser Generic and Utility Forms Classes
 
 #define TRUE 1

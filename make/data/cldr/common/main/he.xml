@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2025 Unicode, Inc.
+<!-- Copyright © 1991-2026 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -283,6 +283,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ksf">באפיה</language>
 			<language type="ksh">קולוניאן</language>
 			<language type="ku">כורדית</language>
+			<language type="ku" menu="core">כורדית</language>
+			<language type="ku" menu="extension">כורמנג׳י</language>
 			<language type="kum">קומיקית</language>
 			<language type="kut">קוטנאי</language>
 			<language type="kv">קומי</language>
@@ -416,6 +418,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="pi">פאלי</language>
 			<language type="pis">פייג׳ין</language>
 			<language type="pl">פולנית</language>
+			<language type="pms">פיימונטית</language>
 			<language type="pon">פונפיאן</language>
 			<language type="pqm">מליסיט-פאסמקוודי</language>
 			<language type="prg">פרוסית</language>
@@ -791,7 +794,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="029">האיים הקריביים</territory>
 			<territory type="030">מזרח אסיה</territory>
 			<territory type="034">דרום אסיה</territory>
-			<territory type="035">דרום־מזרח אסיה</territory>
+			<territory type="035">דרום-מזרח אסיה</territory>
 			<territory type="039">דרום אירופה</territory>
 			<territory type="053">אוסטרלאסיה</territory>
 			<territory type="054">מלנזיה</territory>
@@ -860,6 +863,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="CN">סין</territory>
 			<territory type="CO">קולומביה</territory>
 			<territory type="CP">האי קליפרטון</territory>
+			<territory type="CQ">סרק</territory>
 			<territory type="CR">קוסטה ריקה</territory>
 			<territory type="CU">קובה</territory>
 			<territory type="CV">כף ורדה</territory>
@@ -1086,7 +1090,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<subdivisions>
 			<subdivision type="gbeng">אנגליה</subdivision>
 			<subdivision type="gbsct">סקוטלנד</subdivision>
-			<subdivision type="gbwls">וויילס</subdivision>
+			<subdivision type="gbwls">ויילס</subdivision>
 		</subdivisions>
 		<variants>
 			<variant type="1901">כתיב גרמני מסורתי</variant>
@@ -1201,99 +1205,191 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<keys>
 			<key type="calendar">לוח שנה</key>
 			<key type="cf">תבנית מטבע</key>
-			<key type="colAlternate">התעלם מסמלים במיון</key>
+			<key type="colAlternate">התעלמות מסמלים במיון</key>
 			<key type="colBackwards">מיון לפי הטעמות בסדר הפוך</key>
 			<key type="colCaseFirst">סידור לפי אותיות רישיות/קטנות</key>
 			<key type="colCaseLevel">מיון תלוי רישיות</key>
 			<key type="collation">סדר מיון</key>
 			<key type="colNormalization">מיון מנורמל</key>
 			<key type="colNumeric">מיון לפי מספרים</key>
+			<key type="colReorder">מיון מחדש של מערכת הכתב</key>
 			<key type="colStrength">עוצמת המיון</key>
 			<key type="currency">מטבע</key>
+			<key type="d0">יעד המרה</key>
+			<key type="dx">החרגות של מעברי שורה באמצע מילה</key>
+			<key type="em">הצגת אמוג׳י</key>
+			<key type="fw">היום הראשון בשבוע</key>
+			<key type="h0">מעורב</key>
 			<key type="hc">מחזור השעות (12 או 24)</key>
+			<key type="i0">שיטת קלט</key>
+			<key type="k0">מקלדת</key>
+			<key type="kv">התעלמות מהגבוה ביותר</key>
 			<key type="lb">סגנון מעבר שורה</key>
+			<key type="lw">פיצול שורה בתוך מילים</key>
+			<key type="m0">כללי תעתיק</key>
 			<key type="ms">מערכת מדידה</key>
+			<key type="mu">יחידת מידה</key>
 			<key type="numbers">מספרים</key>
+			<key type="rg">אזור לצורך מידע נוסף</key>
+			<key type="s0">המרת המקור</key>
+			<key type="sd">תת-חלוקה של האזור</key>
+			<key type="ss">פיצול משפט אחרי מילה מקוצרת</key>
+			<key type="t">המרה</key>
+			<key type="t0">תרגום מכונה</key>
 			<key type="timezone">אזור זמן</key>
 			<key type="va">משתנה אזור</key>
 			<key type="x">שימוש פרטי</key>
+			<key type="x0">המרה בשימוש פרטי</key>
 		</keys>
 		<types>
 			<type key="calendar" type="buddhist">לוח השנה הבודהיסטי</type>
+			<type key="calendar" type="buddhist" scope="core">בודהיסטי</type>
 			<type key="calendar" type="chinese">לוח השנה הסיני</type>
+			<type key="calendar" type="chinese" scope="core">סיני</type>
 			<type key="calendar" type="coptic">לוח השנה הקופטי</type>
+			<type key="calendar" type="coptic" scope="core">קופטי</type>
 			<type key="calendar" type="dangi">לוח השנה הקוריאני</type>
+			<type key="calendar" type="dangi" scope="core">קוריאני</type>
 			<type key="calendar" type="ethiopic">לוח השנה האתיופי</type>
+			<type key="calendar" type="ethiopic" scope="core">אתיופי</type>
 			<type key="calendar" type="ethiopic-amete-alem">לוח השנה אמטה אלם האתיופי</type>
+			<type key="calendar" type="ethiopic-amete-alem" scope="core">אמטה אלם האתיופי</type>
 			<type key="calendar" type="gregorian">לוח השנה הגרגוריאני</type>
+			<type key="calendar" type="gregorian" scope="core">גרגוריאני</type>
 			<type key="calendar" type="hebrew">לוח השנה העברי</type>
+			<type key="calendar" type="hebrew" scope="core">עברי</type>
 			<type key="calendar" type="indian">לוח השנה ההודי הלאומי</type>
+			<type key="calendar" type="indian" scope="core">לוח השנה ההודי הלאומי</type>
 			<type key="calendar" type="islamic">לוח שנה ההיג׳רי</type>
+			<type key="calendar" type="islamic" scope="core">היג׳רי</type>
 			<type key="calendar" type="islamic-civil">לוח השנה המוסלמי האזרחי</type>
+			<type key="calendar" type="islamic-civil" scope="core">היג׳רי אזרחי</type>
 			<type key="calendar" type="islamic-rgsa">לוח השנה המוסלמי (ערב הסעודית)</type>
+			<type key="calendar" type="islamic-rgsa" scope="core">היג׳רי, תצפיות בערב הסעודית</type>
 			<type key="calendar" type="islamic-tbla">לוח השנה המוסלמי האסטרונומי</type>
+			<type key="calendar" type="islamic-tbla" scope="core">מוסלמי אסטרונומי</type>
 			<type key="calendar" type="islamic-umalqura">לוח השנה המוסלמי אום אל-קורא</type>
+			<type key="calendar" type="islamic-umalqura" scope="core">מוסלמי אום אל-קורא</type>
 			<type key="calendar" type="iso8601">לוח שנה ISO-8601</type>
+			<type key="calendar" type="iso8601" scope="core">גרגוריאני</type>
 			<type key="calendar" type="japanese">לוח השנה היפני</type>
+			<type key="calendar" type="japanese" scope="core">יפני</type>
 			<type key="calendar" type="persian">לוח השנה הפרסי</type>
+			<type key="calendar" type="persian" scope="core">פרסי</type>
 			<type key="calendar" type="roc">לוח השנה הטייוואני</type>
+			<type key="calendar" type="roc" scope="core">טייוואני</type>
 			<type key="cf" type="account">תבנית מטבע למטרות חשבונאות</type>
+			<type key="cf" type="account" scope="core">חשבונאות</type>
 			<type key="cf" type="standard">תבנית מטבע רגילה</type>
+			<type key="cf" type="standard" scope="core">רגילה</type>
 			<type key="colAlternate" type="non-ignorable">מיין סמלים</type>
 			<type key="colAlternate" type="shifted" draft="contributed">מיין תוך התעלמות מסמלים</type>
 			<type key="colBackwards" type="no" draft="contributed">מיין הטעמות בצורה רגילה</type>
 			<type key="colBackwards" type="yes" draft="contributed">מיין לפי הטעמות בסדר הפוך</type>
 			<type key="colCaseFirst" type="lower" draft="contributed">מיין תחילה לפי אותיות קטנות</type>
+			<type key="colCaseFirst" type="lower" scope="core">אותיות קטנות</type>
 			<type key="colCaseFirst" type="no" draft="contributed">מיין לפי סדר רישיות רגיל</type>
+			<type key="colCaseFirst" type="no" scope="core">אותיות קטנות</type>
 			<type key="colCaseFirst" type="upper" draft="contributed">מיין תחילה לפי אותיות רישיות</type>
+			<type key="colCaseFirst" type="upper" scope="core">אותיות רישיות</type>
 			<type key="colCaseLevel" type="no" draft="contributed">מיין באופן שאינו תלוי רישיות</type>
 			<type key="colCaseLevel" type="yes" draft="contributed">מיין באופן תלוי רישיות</type>
-			<type key="collation" type="big5han">מיון סינית מסורתית</type>
-			<type key="collation" type="compat">סדר מיון קודם, עבור תאימות</type>
+			<type key="collation" type="compat">סדר המיון הקודם, לצורך תאימות</type>
+			<type key="collation" type="compat" scope="core">תאימות</type>
 			<type key="collation" type="dictionary">סדר מיון במילון</type>
+			<type key="collation" type="dictionary" scope="core">מילון</type>
 			<type key="collation" type="ducet">סדר מיון Unicode המוגדר כברירת מחדל</type>
+			<type key="collation" type="ducet" scope="core">Unicode כברירת מחדל</type>
 			<type key="collation" type="emoji" draft="contributed">סדר מיון אימוג׳י</type>
+			<type key="collation" type="emoji" scope="core">אמוג׳י</type>
 			<type key="collation" type="eor">חוקי סדר אירופיים</type>
-			<type key="collation" type="gb2312han">סדר מיון סיני פשוט - GB2312</type>
+			<type key="collation" type="eor" scope="core">כללים אירופאיים</type>
 			<type key="collation" type="phonebook">מיון ספר טלפונים</type>
+			<type key="collation" type="phonebook" scope="core">ספר טלפונים</type>
 			<type key="collation" type="phonetic">סדר מיון פונטי</type>
+			<type key="collation" type="phonetic" scope="core">פונטי</type>
 			<type key="collation" type="pinyin">מיון פיניין</type>
+			<type key="collation" type="pinyin" scope="core">פיניין</type>
 			<type key="collation" type="search">חיפוש למטרה כללית</type>
+			<type key="collation" type="search" scope="core">חיפוש</type>
 			<type key="collation" type="searchjl" draft="contributed">חפש לפי העיצור הראשון באותיות הנגול</type>
+			<type key="collation" type="searchjl" scope="core">עיצור ראשון בקוריאנית</type>
 			<type key="collation" type="standard">סדר מיון רגיל</type>
+			<type key="collation" type="standard" scope="core">רגיל</type>
 			<type key="collation" type="stroke">סדר מיון לפי ספירת תווים</type>
-			<type key="collation" type="traditional">מיון מסורתי</type>
+			<type key="collation" type="stroke" scope="core">ספירת תווים</type>
+			<type key="collation" type="traditional">סדר מיון מסורתי</type>
+			<type key="collation" type="traditional" scope="core">מסורתי</type>
 			<type key="collation" type="unihan">סדר מיון לפי ספירת תווים Radical-Stroke</type>
+			<type key="collation" type="unihan" scope="core">Radical-Stroke</type>
 			<type key="collation" type="zhuyin">סדר מיון של ג׳ואין</type>
+			<type key="collation" type="zhuyin" scope="core">ג׳ואין</type>
 			<type key="colNormalization" type="no" draft="contributed">מיין ללא נורמליזציה</type>
 			<type key="colNormalization" type="yes" draft="contributed">מיין לפי Unicode מנורמל</type>
 			<type key="colNumeric" type="no" draft="contributed">מיין ספרות בנפרד</type>
 			<type key="colNumeric" type="yes" draft="contributed">מיין ספרות לפי סדר מספרי</type>
+			<type key="colReorder" type="currency" scope="core">מטבע</type>
+			<type key="colReorder" type="digit" scope="core">ספרות</type>
+			<type key="colReorder" type="punct" scope="core">סימני פיסוק</type>
+			<type key="colReorder" type="space" scope="core">רווח לבן</type>
+			<type key="colReorder" type="symbol" scope="core">סמל</type>
 			<type key="colStrength" type="identical" draft="contributed">מיין הכל</type>
+			<type key="colStrength" type="identical" scope="core">הכול</type>
 			<type key="colStrength" type="primary" draft="contributed">מיין תוך התעלמות מהטעמות</type>
+			<type key="colStrength" type="primary" scope="core">אותיות בסיסיות בלבד</type>
 			<type key="colStrength" type="quaternary" draft="contributed">מיין לפי הטעמות/רישיות/רוחב/קאנה</type>
+			<type key="colStrength" type="quaternary" scope="core">בסיס, דגשים, הטיה, משתנים, קאנה</type>
 			<type key="colStrength" type="secondary" draft="contributed">מיין לפי הטעמות</type>
+			<type key="colStrength" type="secondary" scope="core">בסיס, דגשים</type>
 			<type key="colStrength" type="tertiary" draft="contributed">מיין הטעמות/רישיות/רוחב</type>
+			<type key="colStrength" type="tertiary" scope="core">בסיס, דגשים, הטיה, משתנים</type>
 			<type key="d0" type="fwidth">רוחב מלא</type>
 			<type key="d0" type="hwidth">חצי רוחב</type>
 			<type key="d0" type="npinyin" draft="contributed">מספרי</type>
+			<type key="em" type="default" scope="core">ברירת מחדל</type>
+			<type key="em" type="emoji" scope="core">אמוג׳י</type>
+			<type key="em" type="text" scope="core">טקסט</type>
+			<type key="hc" type="c12">מערכת של 12 שעות</type>
+			<type key="hc" type="c12" scope="core">12</type>
+			<type key="hc" type="c24">מערכת של 24 שעות</type>
+			<type key="hc" type="c24" scope="core">24</type>
 			<type key="hc" type="h11">מערכת של 12 שעות (‎0–11)</type>
+			<type key="hc" type="h11" scope="core">12 (0–11)</type>
 			<type key="hc" type="h12">מערכת של 12 שעות (‎1–12)</type>
+			<type key="hc" type="h12" scope="core">12 (1–12)</type>
 			<type key="hc" type="h23">מערכת של 24 שעות (0‎–23)</type>
+			<type key="hc" type="h23" scope="core">24 (0–23)</type>
 			<type key="hc" type="h24">מערכת של 24 שעות (1‎–24)</type>
+			<type key="hc" type="h24" scope="core">‎24 (1–24)</type>
+			<type key="kv" type="currency" scope="core">הסטת רווחים, סימני פיסוק, כל הסמלים</type>
+			<type key="kv" type="punct" scope="core">הסטת רווחים, סימני פיסוק</type>
+			<type key="kv" type="space" scope="core">הסטת רווחים, סימני פיסוק</type>
+			<type key="kv" type="symbol" scope="core">הסטת רווחים, סימני פיסוק, סמלים שאינם סמלי מטבע</type>
 			<type key="lb" type="loose">סגנון מעבר שורה גמיש</type>
+			<type key="lb" type="loose" scope="core">גמיש</type>
 			<type key="lb" type="normal">סגנון מעבר שורה רגיל</type>
+			<type key="lb" type="normal" scope="core">רגיל</type>
 			<type key="lb" type="strict">סגנון מעבר שורה קשיח</type>
+			<type key="lb" type="strict" scope="core">קשיח</type>
+			<type key="lw" type="breakall" scope="core">לחלק הכול</type>
+			<type key="lw" type="keepall" scope="core">לשמור הכול</type>
+			<type key="lw" type="normal" scope="core">רגיל</type>
+			<type key="lw" type="phrase" scope="core">לשמור כביטויים</type>
 			<type key="m0" type="bgn">תעתיק BGN ארה״ב</type>
 			<type key="m0" type="ungegn">תעתיק GEGN האו״ם</type>
 			<type key="ms" type="metric">מערכת מטרית</type>
+			<type key="ms" type="metric" scope="core">מטרית</type>
 			<type key="ms" type="uksystem">מערכת מדידה אימפריאלית</type>
+			<type key="ms" type="uksystem" scope="core">בריטית</type>
 			<type key="ms" type="ussystem">מערכת מדידה אמריקאית</type>
+			<type key="ms" type="ussystem" scope="core">אמריקאית</type>
 			<type key="numbers" type="ahom" draft="contributed">ספרות אהום</type>
 			<type key="numbers" type="arab">ספרות הודיות-ערביות</type>
 			<type key="numbers" type="arabext">ספרות הודיות-ערביות מורחבות</type>
+			<type key="numbers" type="arabext" scope="core">הודיות-ערביות מורחבות</type>
 			<type key="numbers" type="armn">ספרות ארמניות</type>
 			<type key="numbers" type="armnlow">ספרות ארמניות קטנות</type>
+			<type key="numbers" type="armnlow" scope="core">ארמניות קטנות</type>
 			<type key="numbers" type="bali" draft="contributed">ספרות באלינתיות</type>
 			<type key="numbers" type="beng">ספרות בנגליות</type>
 			<type key="numbers" type="brah" draft="contributed">ספרות ברהמי</type>
@@ -1304,56 +1400,80 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="diak" draft="contributed">ספרות אקורו דיפס</type>
 			<type key="numbers" type="ethi">ספרות אתיופיות</type>
 			<type key="numbers" type="finance" draft="contributed">ספרות פיננסיות</type>
+			<type key="numbers" type="finance" scope="core">סימנים פיננסיים</type>
 			<type key="numbers" type="fullwide">ספרות ברוחב מלא</type>
+			<type key="numbers" type="fullwide" scope="core">רוחב מלא</type>
 			<type key="numbers" type="geor">ספרות גאורגיות</type>
 			<type key="numbers" type="gong" draft="contributed">ספרות של ג׳ונג׳לה גונדי</type>
 			<type key="numbers" type="gonm" draft="contributed">ספרות מסארם גונדי</type>
 			<type key="numbers" type="grek">ספרות יווניות</type>
 			<type key="numbers" type="greklow">ספרות יווניות קטנות</type>
+			<type key="numbers" type="greklow" scope="core">יווניות קטנות</type>
 			<type key="numbers" type="gujr">ספרות גוג׳רטיות</type>
 			<type key="numbers" type="guru">ספרות גורמוקיות</type>
+			<type key="numbers" type="hanidays" scope="core">מספור היום בחודש בתווי האן בלוחות שנה מסורתיים</type>
 			<type key="numbers" type="hanidec">ספרות סיניות עשרוניות</type>
-			<type key="numbers" type="hans">ספרות סיניות פשוטות</type>
-			<type key="numbers" type="hansfin">ספרות פיננסיות סיניות פשוטות</type>
-			<type key="numbers" type="hant">ספרות סיניות מסורתיות</type>
-			<type key="numbers" type="hantfin">ספרות פיננסיות סיניות מסורתיות</type>
+			<type key="numbers" type="hanidec" scope="core">שיטה עשרונית מבוססת-מיקום עם אידיוגרמות סיניות כספרות</type>
+			<type key="numbers" type="hans">ספרות בסינית פשוטה</type>
+			<type key="numbers" type="hansfin">ספרות פיננסיות בסינית פשוטה</type>
+			<type key="numbers" type="hansfin" scope="core">סימנים פיננסיים בסינית פשוטה</type>
+			<type key="numbers" type="hant">ספרות בסינית מסורתית</type>
+			<type key="numbers" type="hantfin">ספרות פיננסיות בסינית מסורתית</type>
+			<type key="numbers" type="hantfin" scope="core">סימנים פיננסיים בסינית מסורתית</type>
 			<type key="numbers" type="hebr">ספרות עבריות</type>
 			<type key="numbers" type="hmng" draft="contributed">ספרות פאהח המונג</type>
 			<type key="numbers" type="hmnp" draft="contributed">ספרות המונג פוצ׳ו יאקנג</type>
 			<type key="numbers" type="java">ספרות ג׳אוואניות</type>
 			<type key="numbers" type="jpan">ספרות יפניות</type>
-			<type key="numbers" type="jpanfin">ספרות פיננסיות יפניות</type>
+			<type key="numbers" type="jpanfin">ספרות פיננסיות ביפנית</type>
+			<type key="numbers" type="jpanfin" scope="core">סימנים פיננסיים ביפנית</type>
+			<type key="numbers" type="jpanyear" scope="core">מספור יפני לפי שנה ראשונה (גאנן)</type>
 			<type key="numbers" type="kali" draft="contributed">ספרות קיה ליי</type>
 			<type key="numbers" type="khmr">ספרות חמריות</type>
 			<type key="numbers" type="knda">ספרות של קאנאדה</type>
 			<type key="numbers" type="lana" draft="contributed">ספרות טאי תם הורה</type>
 			<type key="numbers" type="lanatham" draft="contributed">ספרות טאי תם תם</type>
+			<type key="numbers" type="lanatham" scope="core">תאי תם תם (כנסייתי)</type>
 			<type key="numbers" type="laoo">ספרות של לאוס</type>
 			<type key="numbers" type="latn">ספרות מערביות</type>
 			<type key="numbers" type="lepc" draft="contributed">ספרות לפחה</type>
 			<type key="numbers" type="limb" draft="contributed">ספרות לימבו</type>
 			<type key="numbers" type="mathbold" draft="contributed">ספרות מודגשות מתמטיות</type>
+			<type key="numbers" type="mathbold" scope="core">ספרות מתמטיות מודגשות</type>
 			<type key="numbers" type="mathdbl" draft="contributed">ספרות מתמטיות סטרוק כפולות</type>
+			<type key="numbers" type="mathdbl" scope="core">ספרות מתמטיות עם שני קווים חוצים</type>
 			<type key="numbers" type="mathmono" draft="contributed">ספרות חד-מרחביות מתמטיות</type>
+			<type key="numbers" type="mathmono" scope="core">ספרות מתמטיות ברווח אחיד</type>
 			<type key="numbers" type="mathsanb" draft="contributed">ספרות מודגשות מתמטיות של סאנס סריף</type>
+			<type key="numbers" type="mathsanb" scope="core">ספרות מתמטיות מודגשות סן סריף</type>
 			<type key="numbers" type="mathsans" draft="contributed">ספרות סאנס סריף מתמטיות</type>
+			<type key="numbers" type="mathsans" scope="core">ספרות מתמטיות סן סריף</type>
 			<type key="numbers" type="mlym">ספרות של מליאלאם</type>
 			<type key="numbers" type="modi" draft="contributed">ספרות מודי</type>
 			<type key="numbers" type="mong" draft="contributed">ספרות מונגוליות</type>
 			<type key="numbers" type="mroo" draft="contributed">ספרות מרו</type>
 			<type key="numbers" type="mtei">ספרות של מיטיי מאייק</type>
 			<type key="numbers" type="mymr">ספרות של מיאנמר</type>
+			<type key="numbers" type="mymrepka" scope="core">ספרות של מיאנמר פוו קרן</type>
+			<type key="numbers" type="mymrpao" scope="core">ספרות של מיאנמר פאו</type>
 			<type key="numbers" type="mymrshan" draft="contributed">ספרות מיאנמר שאן</type>
+			<type key="numbers" type="mymrshan" scope="core">ספרות של מיאנמר שאן</type>
 			<type key="numbers" type="mymrtlng" draft="contributed">ספרות טאי לאינג במיאנמר</type>
+			<type key="numbers" type="mymrtlng" scope="core">ספרות של מיאנמר טאי ליינג</type>
 			<type key="numbers" type="native">ספרות מקומיות</type>
+			<type key="numbers" type="native" scope="core">ספרות מקומיות</type>
 			<type key="numbers" type="nkoo" draft="contributed">ספרות נקו</type>
 			<type key="numbers" type="olck">ספרות אול צ׳יקי</type>
 			<type key="numbers" type="orya">ספרות אוריה</type>
 			<type key="numbers" type="osma" draft="contributed">ספרות אוסמניה</type>
+			<type key="numbers" type="outlined" scope="core">ספרות עם קו מקיף</type>
 			<type key="numbers" type="rohg" draft="contributed">ספרות חניפי רוהינגיה</type>
 			<type key="numbers" type="roman">ספרות רומיות</type>
+			<type key="numbers" type="roman" scope="core">ספרות רומיות גדולות</type>
 			<type key="numbers" type="romanlow">ספרות רומיות קטנות</type>
+			<type key="numbers" type="romanlow" scope="core">רומיות קטנות</type>
 			<type key="numbers" type="saur" draft="contributed">ספרות סאוראשטרה</type>
+			<type key="numbers" type="segment" scope="core">ספרות מקטעים</type>
 			<type key="numbers" type="shrd" draft="contributed">ספרות שרדה</type>
 			<type key="numbers" type="sind" draft="contributed">ספרות חודוואדי</type>
 			<type key="numbers" type="sinh" draft="contributed">ספרות ליטה בסינהלה</type>
@@ -1363,16 +1483,26 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="talu" draft="contributed">ספרות טאי לואה חדשות</type>
 			<type key="numbers" type="taml">ספרות טמיליות מסורתיות</type>
 			<type key="numbers" type="tamldec">ספרות טמיליות</type>
+			<type key="numbers" type="tamldec" scope="core">ספרות טמיליות מודרניות</type>
 			<type key="numbers" type="telu">ספרות טלוגו</type>
 			<type key="numbers" type="thai">ספרות תאיות</type>
 			<type key="numbers" type="tibt">ספרות טיבטיות</type>
 			<type key="numbers" type="tirh" draft="contributed">ספרות תרחותא</type>
 			<type key="numbers" type="tnsa" draft="contributed">ספרות טנגסה</type>
 			<type key="numbers" type="traditional" draft="contributed">ספרות מסורתיות</type>
+			<type key="numbers" type="traditional" scope="core">ספרות מסורתיות</type>
 			<type key="numbers" type="vaii">ספרות ואי</type>
 			<type key="numbers" type="wara" draft="contributed">ספרות ווראנג סיטי</type>
 			<type key="numbers" type="wcho" draft="contributed">ספרות וונצ׳ו</type>
+			<type key="ss" type="none" scope="core">כבוי</type>
+			<type key="ss" type="standard" scope="core">פועל</type>
+			<type key="t0" type="und">לא מסומן כתרגום מכונה</type>
+			<type key="va" type="posix" scope="core">משתנה POSIX</type>
 		</types>
+		<typeValues>
+			<typeValue type="no">מצב כבוי</typeValue>
+			<typeValue type="yes">מצב פעיל</typeValue>
+		</typeValues>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">מטרי</measurementSystemName>
 			<measurementSystemName type="UK">אימפריאלי</measurementSystemName>
@@ -1397,9 +1527,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . '׳ &quot;״ ( ) \[ \] / ־]</exemplarCharacters>
 		<parseLenients scope="date" level="lenient">
 			<parseLenient sample=":">[\: ∶]</parseLenient>
-		</parseLenients>
-		<parseLenients scope="general" level="lenient">
-			<parseLenient sample="£">[£￡ ₤]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
 			<parseLenient sample="-">[\-－﹣ ‑ ‒ −⁻₋ ➖]</parseLenient>
@@ -1435,6 +1562,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</intervalFormats>
 				</dateTimeFormats>
 			</calendar>
+			<calendar type="chinese">
+				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator draft="contributed">/</numericDateSeparator>
+					</numericSeparators>
+				</dateTimeFormats>
+			</calendar>
 			<calendar type="coptic">
 				<months>
 					<monthContext type="format">
@@ -1455,12 +1589,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</monthWidth>
 					</monthContext>
 				</months>
-				<eras>
-					<eraNames>
-						<era type="0" draft="contributed">עידן 0</era>
-						<era type="1" draft="contributed">עידן 1</era>
-					</eraNames>
-				</eras>
 			</calendar>
 			<calendar type="ethiopic">
 				<months>
@@ -1482,12 +1610,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</monthWidth>
 					</monthContext>
 				</months>
-				<eras>
-					<eraNames>
-						<era type="0" draft="contributed">עידן 0</era>
-						<era type="1" draft="contributed">עידן 1</era>
-					</eraNames>
-				</eras>
 			</calendar>
 			<calendar type="generic">
 				<dateFormats>
@@ -1543,6 +1665,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<availableFormats>
 						<dateFormatItem id="Ed">E ה-d</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
+						<dateFormatItem id="GyM">MM-y G</dateFormatItem>
 						<dateFormatItem id="GyMd">d/M/y GGGGG</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d בMMM y G</dateFormatItem>
@@ -1555,6 +1678,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="MEd">E, d/M</dateFormatItem>
 						<dateFormatItem id="MMMd">d בMMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E, d בMMM</dateFormatItem>
+						<dateFormatItem id="MMMMd">d‎ בMMMM</dateFormatItem>
 						<dateFormatItem id="y">y G</dateFormatItem>
 						<dateFormatItem id="yyyy">y G</dateFormatItem>
 						<dateFormatItem id="yyyyM">M.y G</dateFormatItem>
@@ -1562,10 +1686,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yyyyMEd">E, d/M/y G</dateFormatItem>
 						<dateFormatItem id="yyyyMM">MM/y G</dateFormatItem>
 						<dateFormatItem id="yyyyMMM">MMM y G</dateFormatItem>
-						<dateFormatItem id="yyyyMMMd">d בMMM y G</dateFormatItem>
-						<dateFormatItem id="yyyyMMMEd">E, d בMMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMd">d‏ בMMMM‏, y‏ G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMEd">E,‏ ‏d בMMMM‏, y‏ G</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="mixed">{0} – {1}</intervalFormatRange>
+						</intervalFormatRanges>
 						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="Gy">
 							<greatestDifference id="G">y G – y G</greatestDifference>
@@ -1635,6 +1762,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMM">
 							<greatestDifference id="M">LLLL–LLLL</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMMd">
+							<greatestDifference id="d">d–d בMMMM</greatestDifference>
+							<greatestDifference id="M">d בMMMM – ‏d בMMMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="y">
 							<greatestDifference id="y">y–y</greatestDifference>
@@ -1778,8 +1909,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
 							<dayPeriod type="midnight">חצות</dayPeriod>
-							<dayPeriod type="am">AM</dayPeriod>
-							<dayPeriod type="pm">PM</dayPeriod>
 							<dayPeriod type="morning1">בבוקר</dayPeriod>
 							<dayPeriod type="afternoon1">בצהריים</dayPeriod>
 							<dayPeriod type="afternoon2">אחה״צ</dayPeriod>
@@ -1789,8 +1918,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
 							<dayPeriod type="midnight">חצות</dayPeriod>
-							<dayPeriod type="am">AM</dayPeriod>
-							<dayPeriod type="pm">PM</dayPeriod>
 							<dayPeriod type="morning1">בבוקר</dayPeriod>
 							<dayPeriod type="afternoon1">בצהריים</dayPeriod>
 							<dayPeriod type="afternoon2">אחר הצהריים</dayPeriod>
@@ -1801,18 +1928,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</dayPeriodContext>
 					<dayPeriodContext type="stand-alone">
 						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="am">AM</dayPeriod>
-							<dayPeriod type="pm">PM</dayPeriod>
 							<dayPeriod type="morning1">בוקר</dayPeriod>
 							<dayPeriod type="afternoon1">צהריים</dayPeriod>
 							<dayPeriod type="afternoon2">אחה״צ</dayPeriod>
 							<dayPeriod type="evening1">ערב</dayPeriod>
 							<dayPeriod type="night1">לילה</dayPeriod>
 							<dayPeriod type="night2">לפנות בוקר</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="narrow">
-							<dayPeriod type="am">לפנה״צ</dayPeriod>
-							<dayPeriod type="pm">אחה״צ</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
 							<dayPeriod type="morning1">בוקר</dayPeriod>
@@ -1890,6 +2011,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</timeFormatLength>
 				</timeFormats>
 				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator>.</numericDateSeparator>
+					</numericSeparators>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
@@ -1925,15 +2049,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d בMMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, d בMMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMM">MMMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMMd">d בMMMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMMEd">E, d בMMMM y G</dateFormatItem>
 						<dateFormatItem id="h">‏h a</dateFormatItem>
 						<dateFormatItem id="H">H</dateFormatItem>
 						<dateFormatItem id="Hm">H:mm</dateFormatItem>
 						<dateFormatItem id="Hms">H:mm:ss</dateFormatItem>
+						<dateFormatItem id="Hv">H v</dateFormatItem>
 						<dateFormatItem id="Md">d.M</dateFormatItem>
 						<dateFormatItem id="MEd">E, d.M</dateFormatItem>
 						<dateFormatItem id="MMMd">d בMMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E, d בMMM</dateFormatItem>
 						<dateFormatItem id="MMMMd">d בMMMM</dateFormatItem>
+						<dateFormatItem id="MMMMEd">E, d בMMMM</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="one">שבוע W בMMMM</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="two">שבוע W בMMMM</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="other">שבוע W בMMMM</dateFormatItem>
@@ -1945,6 +2074,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yMMMd">d בMMM y</dateFormatItem>
 						<dateFormatItem id="yMMMEd">E, d בMMM y</dateFormatItem>
 						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
+						<dateFormatItem id="yMMMMd">d בMMMM y</dateFormatItem>
+						<dateFormatItem id="yMMMMEd">E, d בMMMM y</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
 						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
 						<dateFormatItem id="yw" count="one">שבוע w בשנת Y</dateFormatItem>
@@ -2030,6 +2161,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<intervalFormatItem id="MMMM">
 							<greatestDifference id="M">LLLL–LLLL</greatestDifference>
 						</intervalFormatItem>
+						<intervalFormatItem id="MMMMd">
+							<greatestDifference id="d">d–d בMMMM</greatestDifference>
+							<greatestDifference id="M">d בMMMM – d בMMMM</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="yM">
 							<greatestDifference id="M">M.y–M.y</greatestDifference>
 							<greatestDifference id="y">M.y‏–M.y</greatestDifference>
@@ -2050,13 +2185,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMd">
 							<greatestDifference id="d">d–d בMMM y</greatestDifference>
-							<greatestDifference id="M">d MMM – d MMM y</greatestDifference>
-							<greatestDifference id="y">d MMM y – d MMM y</greatestDifference>
+							<greatestDifference id="M">d בMMM – d בMMM y</greatestDifference>
+							<greatestDifference id="y">d בMMM y – d בMMM y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d">EEEE d MMM – EEEE d MMM y</greatestDifference>
-							<greatestDifference id="M">EEEE d MMM – EEEE d MMM y</greatestDifference>
-							<greatestDifference id="y">EEEE d MMM y – EEEE d MMM y</greatestDifference>
+							<greatestDifference id="d">EEEE d בMMM – EEEE d בMMM y</greatestDifference>
+							<greatestDifference id="M">EEEE d בMMM – EEEE d בMMM y</greatestDifference>
+							<greatestDifference id="y">EEEE d בMMM y – EEEE d בMMM y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMM">
 							<greatestDifference id="M">MMMM–MMMM y</greatestDifference>
@@ -2068,22 +2203,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<calendar type="hebrew">
 				<months>
 					<monthContext type="format">
-						<monthWidth type="abbreviated">
-							<month type="1">תשרי</month>
-							<month type="2">חשון</month>
-							<month type="3">כסלו</month>
-							<month type="4">טבת</month>
-							<month type="5">שבט</month>
-							<month type="6">אדר א׳</month>
-							<month type="7">אדר</month>
-							<month type="7" yeartype="leap">אדר ב׳</month>
-							<month type="8">ניסן</month>
-							<month type="9">אייר</month>
-							<month type="10">סיון</month>
-							<month type="11">תמוז</month>
-							<month type="12">אב</month>
-							<month type="13">אלול</month>
-						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">תשרי</month>
 							<month type="2">חשוון</month>
@@ -2325,8 +2444,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<month type="8">שעבאן</month>
 							<month type="9">רמדאן</month>
 							<month type="10">שוואל</month>
-							<month type="11">ד׳ו אל־קעדה</month>
-							<month type="12">ד׳ו אל־חיג׳ה</month>
+							<month type="11">ד׳ו אל-קעדה</month>
+							<month type="12">ד׳ו אל-חיג׳ה</month>
 						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">מוחרם</month>
@@ -2344,19 +2463,33 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
-						<monthWidth type="wide">
+						<monthWidth type="abbreviated">
 							<month type="1">מוחרם</month>
 							<month type="2">צפר</month>
-							<month type="3">רביע אל־אוול</month>
-							<month type="4">רביע א־ת׳אני</month>
-							<month type="5">ג׳ומאדא אל־אולא</month>
-							<month type="6">ג׳ומאדא א־ת׳אניה</month>
+							<month type="3">רביע א׳</month>
+							<month type="4">רביע ב׳</month>
+							<month type="5">ג׳ומאדא א׳</month>
+							<month type="6">ג׳ומאדא ב׳</month>
 							<month type="7">רג׳ב</month>
 							<month type="8">שעבאן</month>
 							<month type="9">רמדאן</month>
 							<month type="10">שוואל</month>
-							<month type="11">ד׳ו אל־קעדה</month>
-							<month type="12">ד׳ו אל־חיג׳ה</month>
+							<month type="11">ד׳ו אל-קעדה</month>
+							<month type="12">ד׳ו אל-חיג׳ה</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1">מוחרם</month>
+							<month type="2">צפר</month>
+							<month type="3">רביע אל-אוול</month>
+							<month type="4">רביע א-ת׳אני</month>
+							<month type="5">ג׳ומאדא אל-אולא</month>
+							<month type="6">ג׳ומאדא א-ת׳אניה</month>
+							<month type="7">רג׳ב</month>
+							<month type="8">שעבאן</month>
+							<month type="9">רמדאן</month>
+							<month type="10">שוואל</month>
+							<month type="11">ד׳ו אל-קעדה</month>
+							<month type="12">ד׳ו אל-חיג׳ה</month>
 						</monthWidth>
 					</monthContext>
 				</months>
@@ -2406,14 +2539,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</availableFormats>
 				</dateTimeFormats>
 			</calendar>
-			<calendar type="japanese">
-				<eras>
-					<eraAbbr>
-						<era type="0">טאיקה</era>
-						<era type="24">נינג׳ו</era>
-						<era type="73">שוטוקו</era>
-					</eraAbbr>
-				</eras>
+			<calendar type="iso8601">
+				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator draft="contributed">/</numericDateSeparator>
+					</numericSeparators>
+					<availableFormats>
+						<dateFormatItem id="yw" count="one" draft="contributed">Y שבוע w</dateFormatItem>
+						<dateFormatItem id="yw" count="two">Y 'week' w</dateFormatItem>
+						<dateFormatItem id="yw" count="other">Y 'week' w</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
 			</calendar>
 			<calendar type="persian">
 				<months>
@@ -2458,9 +2594,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 			<field type="year">
 				<displayName>שנה</displayName>
-				<relative type="-1">השנה שעברה</relative>
+				<relative type="-1">בשנה שעברה</relative>
 				<relative type="0">השנה</relative>
-				<relative type="1">השנה הבאה</relative>
+				<relative type="1">בשנה הבאה</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">בעוד שנה</relativeTimePattern>
 					<relativeTimePattern count="two">בעוד שנתיים</relativeTimePattern>
@@ -2474,109 +2610,139 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 			<field type="year-short">
 				<displayName>שנ׳</displayName>
+				<relative type="-1">בשנה שעברה</relative>
+				<relative type="0">השנה</relative>
+				<relative type="1">בשנה הבאה</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">בעוד שנה</relativeTimePattern>
+					<relativeTimePattern count="two">בעוד שנתיים ({0})</relativeTimePattern>
+					<relativeTimePattern count="other">בעוד {0} שנים</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">לפני שנה ({0})</relativeTimePattern>
+					<relativeTimePattern count="two">לפני שנתיים ({0})</relativeTimePattern>
+					<relativeTimePattern count="other">לפני {0} שנים</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="year-narrow">
+				<relative type="-1">בשנה שעברה</relative>
+				<relative type="0">השנה</relative>
+				<relative type="1">בשנה הבאה</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">בעוד שנה ({0})</relativeTimePattern>
+					<relativeTimePattern count="two">בעוד שנתיים ({0})</relativeTimePattern>
+					<relativeTimePattern count="other">בעוד {0} שנים</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="quarter">
 				<displayName>רבעון</displayName>
 				<relative type="-1">הרבעון הקודם</relative>
-				<relative type="0">רבעון זה</relative>
+				<relative type="0">הרבעון הזה</relative>
 				<relative type="1">הרבעון הבא</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">ברבעון הבא</relativeTimePattern>
+					<relativeTimePattern count="one">בעוד רבעון אחד ({0})</relativeTimePattern>
 					<relativeTimePattern count="two">בעוד שני רבעונים</relativeTimePattern>
 					<relativeTimePattern count="other">בעוד {0} רבעונים</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">ברבעון הקודם</relativeTimePattern>
-					<relativeTimePattern count="two">לפני שני רבעונים</relativeTimePattern>
+					<relativeTimePattern count="one">לפני רבעון אחד ({0})</relativeTimePattern>
+					<relativeTimePattern count="two">לפני {0} רבעונים</relativeTimePattern>
 					<relativeTimePattern count="other">לפני {0} רבעונים</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="quarter-short">
 				<displayName>רבע׳</displayName>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">ברבע׳ הבא</relativeTimePattern>
-					<relativeTimePattern count="two">בעוד שני רבע׳</relativeTimePattern>
+					<relativeTimePattern count="one">בעוד רבע׳ אחד ({0})</relativeTimePattern>
+					<relativeTimePattern count="two">בעוד {0} רבע׳</relativeTimePattern>
 					<relativeTimePattern count="many">בעוד {0} רבע׳</relativeTimePattern>
 					<relativeTimePattern count="other">בעוד {0} רבע׳</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">ברבע׳ הקודם</relativeTimePattern>
-					<relativeTimePattern count="two">לפני שני רבע׳</relativeTimePattern>
+					<relativeTimePattern count="one">לפני רבע׳ אחד ({0})</relativeTimePattern>
+					<relativeTimePattern count="two">לפני {0} רבע׳</relativeTimePattern>
 					<relativeTimePattern count="many">לפני {0} רבע׳</relativeTimePattern>
 					<relativeTimePattern count="other">לפני {0} רבע׳</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="month">
 				<displayName>חודש</displayName>
-				<relative type="-1">החודש שעבר</relative>
+				<relative type="-1">בחודש שעבר</relative>
 				<relative type="0">החודש</relative>
-				<relative type="1">החודש הבא</relative>
+				<relative type="1">בחודש הבא</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">בעוד חודש</relativeTimePattern>
-					<relativeTimePattern count="two">בעוד חודשיים</relativeTimePattern>
+					<relativeTimePattern count="one">בעוד חודש ({0})</relativeTimePattern>
+					<relativeTimePattern count="two">בעוד חודשיים ({0})</relativeTimePattern>
 					<relativeTimePattern count="other">בעוד {0} חודשים</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">לפני חודש</relativeTimePattern>
-					<relativeTimePattern count="two">לפני חודשיים</relativeTimePattern>
+					<relativeTimePattern count="one">לפני חודש ({0})</relativeTimePattern>
+					<relativeTimePattern count="two">לפני חודשיים ({0})</relativeTimePattern>
 					<relativeTimePattern count="other">לפני {0} חודשים</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="month-short">
 				<displayName>חו׳</displayName>
+				<relative type="-1">בחודש שעבר</relative>
+				<relative type="0">החודש</relative>
+				<relative type="1">בחודש הבא</relative>
 			</field>
 			<field type="month-narrow">
+				<relative type="-1">בחודש שעבר</relative>
+				<relative type="0">החודש</relative>
+				<relative type="1">בחודש הבא</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">בעוד חו׳</relativeTimePattern>
-					<relativeTimePattern count="two">בעוד חודשיים</relativeTimePattern>
+					<relativeTimePattern count="two">בעוד חודשיים ({0})</relativeTimePattern>
 					<relativeTimePattern count="many">בעוד {0} חו׳</relativeTimePattern>
 					<relativeTimePattern count="other">בעוד {0} חו׳</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">לפני חו׳</relativeTimePattern>
-					<relativeTimePattern count="two">לפני חודשיים</relativeTimePattern>
+					<relativeTimePattern count="one">לפני חו׳ ({0})</relativeTimePattern>
+					<relativeTimePattern count="two">לפני חודשיים ({0})</relativeTimePattern>
 					<relativeTimePattern count="many">לפני {0} חו׳</relativeTimePattern>
 					<relativeTimePattern count="other">לפני {0} חו׳</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="week">
 				<displayName>שבוע</displayName>
-				<relative type="-1">השבוע שעבר</relative>
+				<relative type="-1">בשבוע שעבר</relative>
 				<relative type="0">השבוע</relative>
-				<relative type="1">השבוע הבא</relative>
+				<relative type="1">בשבוע הבא</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">בעוד שבוע</relativeTimePattern>
-					<relativeTimePattern count="two">בעוד שבועיים</relativeTimePattern>
+					<relativeTimePattern count="one">בעוד שבוע ({0})</relativeTimePattern>
+					<relativeTimePattern count="two">בעוד שבועיים ({0})</relativeTimePattern>
 					<relativeTimePattern count="other">בעוד {0} שבועות</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">לפני שבוע</relativeTimePattern>
-					<relativeTimePattern count="two">לפני שבועיים</relativeTimePattern>
+					<relativeTimePattern count="one">לפני שבוע ({0})</relativeTimePattern>
+					<relativeTimePattern count="two">לפני שבועיים ({0})</relativeTimePattern>
 					<relativeTimePattern count="other">לפני {0} שבועות</relativeTimePattern>
 				</relativeTime>
 				<relativePeriod>השבוע של {0}</relativePeriod>
 			</field>
 			<field type="week-short">
 				<displayName>שב׳</displayName>
+				<relative type="-1">בשבוע שעבר</relative>
+				<relative type="0">השבוע</relative>
+				<relative type="1">בשבוע הבא</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">בעוד שב׳</relativeTimePattern>
-					<relativeTimePattern count="two">בעוד שבועיים</relativeTimePattern>
+					<relativeTimePattern count="one">בעוד שב׳ ({0})</relativeTimePattern>
+					<relativeTimePattern count="two">בעוד שבועיים ({0})</relativeTimePattern>
 					<relativeTimePattern count="many">בעוד {0} שב׳</relativeTimePattern>
 					<relativeTimePattern count="other">בעוד {0} שב׳</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">לפני שב׳</relativeTimePattern>
-					<relativeTimePattern count="two">לפני שבועיים</relativeTimePattern>
+					<relativeTimePattern count="one">לפני שב׳ ({0})</relativeTimePattern>
+					<relativeTimePattern count="two">לפני שבועיים ({0})</relativeTimePattern>
 					<relativeTimePattern count="many">לפני {0} שב׳</relativeTimePattern>
 					<relativeTimePattern count="other">לפני {0} שב׳</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="week-narrow">
-				<relativeTime type="past">
-					<relativeTimePattern count="one">לפני שבוע</relativeTimePattern>
-					<relativeTimePattern count="two">לפני שבועיים</relativeTimePattern>
-					<relativeTimePattern count="other">לפני {0} שב׳</relativeTimePattern>
-				</relativeTime>
+				<relative type="-1">בשבוע שעבר</relative>
+				<relative type="0">השבוע</relative>
+				<relative type="1">בשבוע הבא</relative>
 			</field>
 			<field type="weekOfMonth">
 				<displayName>השבוע בחודש</displayName>
@@ -2589,26 +2755,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relative type="1">מחר</relative>
 				<relative type="2">מחרתיים</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">בעוד יום {0}</relativeTimePattern>
-					<relativeTimePattern count="two">בעוד יומיים</relativeTimePattern>
+					<relativeTimePattern count="one">בעוד יום ({0})</relativeTimePattern>
+					<relativeTimePattern count="two">בעוד יומיים ({0})</relativeTimePattern>
 					<relativeTimePattern count="other">בעוד {0} ימים</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">לפני יום {0}</relativeTimePattern>
-					<relativeTimePattern count="two">לפני יומיים</relativeTimePattern>
+					<relativeTimePattern count="one">לפני יום אחד ({0})</relativeTimePattern>
+					<relativeTimePattern count="two">לפני יומיים ({0})</relativeTimePattern>
 					<relativeTimePattern count="other">לפני {0} ימים</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="day-short">
 				<relativeTime type="future">
-					<relativeTimePattern count="one">מחר</relativeTimePattern>
-					<relativeTimePattern count="two">בעוד יומיים</relativeTimePattern>
+					<relativeTimePattern count="one">בעוד יום אחד ({0})</relativeTimePattern>
+					<relativeTimePattern count="two">בעוד יומיים ({0})</relativeTimePattern>
 					<relativeTimePattern count="other">בעוד {0} ימים</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">אתמול</relativeTimePattern>
-					<relativeTimePattern count="two">לפני יומיים</relativeTimePattern>
-					<relativeTimePattern count="other">לפני {0} ימים</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="dayOfYear">
@@ -2628,12 +2789,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relative type="0">ביום ראשון הזה</relative>
 				<relative type="1">ביום ראשון הבא</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">בעוד יום ראשון {0}</relativeTimePattern>
+					<relativeTimePattern count="one">בעוד יום ראשון אחד ({0})</relativeTimePattern>
 					<relativeTimePattern count="two">בעוד {0} ימי ראשון</relativeTimePattern>
 					<relativeTimePattern count="other">בעוד {0} ימי ראשון</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">לפני יום ראשון {0}</relativeTimePattern>
+					<relativeTimePattern count="one">לפני יום ראשון אחד ({0})</relativeTimePattern>
 					<relativeTimePattern count="two">לפני {0} ימי ראשון</relativeTimePattern>
 					<relativeTimePattern count="other">לפני {0} ימי ראשון</relativeTimePattern>
 				</relativeTime>
@@ -2642,12 +2803,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relative type="-1">יום א׳ שעבר</relative>
 				<relative type="0">יום א׳</relative>
 				<relative type="1">יום א׳ הבא</relative>
-			</field>
-			<field type="sun-narrow">
 				<relativeTime type="future">
-					<relativeTimePattern count="one">בעוד יום ראשון {0}</relativeTimePattern>
+					<relativeTimePattern count="one">בעוד יום א׳ אחד ({0})</relativeTimePattern>
 					<relativeTimePattern count="two">בעוד {0} ימי א׳</relativeTimePattern>
-					<relativeTimePattern count="other">בעוד {0} ימי ראשון</relativeTimePattern>
+					<relativeTimePattern count="many">בעוד {0} ימי א׳</relativeTimePattern>
+					<relativeTimePattern count="other">בעוד {0} ימי א׳</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">לפני יום א׳ אחד ({0})</relativeTimePattern>
+					<relativeTimePattern count="two">לפני {0} ימי א׳</relativeTimePattern>
+					<relativeTimePattern count="many">לפני {0} ימי א׳</relativeTimePattern>
+					<relativeTimePattern count="other">לפני {0} ימי א׳</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="mon">
@@ -2655,12 +2821,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relative type="0">יום שני</relative>
 				<relative type="1">יום שני הבא</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">בעוד יום שני {0}</relativeTimePattern>
+					<relativeTimePattern count="one">בעוד יום שני אחד ({0})</relativeTimePattern>
 					<relativeTimePattern count="two">בעוד {0} ימי שני</relativeTimePattern>
 					<relativeTimePattern count="other">בעוד {0} ימי שני</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">לפני יום שני {0}</relativeTimePattern>
+					<relativeTimePattern count="one">לפני יום שני אחד ({0})</relativeTimePattern>
 					<relativeTimePattern count="two">לפני {0} ימי שני</relativeTimePattern>
 					<relativeTimePattern count="other">לפני {0} ימי שני</relativeTimePattern>
 				</relativeTime>
@@ -2669,18 +2835,30 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relative type="-1">יום ב׳ שעבר</relative>
 				<relative type="0">יום ב׳</relative>
 				<relative type="1">יום ב׳ הבא</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">בעוד יום ב׳ אחד ({0})</relativeTimePattern>
+					<relativeTimePattern count="two">בעוד {0} ימי ב׳</relativeTimePattern>
+					<relativeTimePattern count="many">בעוד {0} ימי ב׳</relativeTimePattern>
+					<relativeTimePattern count="other">בעוד {0} ימי ב׳</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">לפני יום ב׳ אחד ({0})</relativeTimePattern>
+					<relativeTimePattern count="two">לפני {0} ימי ב׳</relativeTimePattern>
+					<relativeTimePattern count="many">לפני {0} ימי ב׳</relativeTimePattern>
+					<relativeTimePattern count="other">לפני {0} ימי ב׳</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="tue">
 				<relative type="-1">יום שלישי שעבר</relative>
 				<relative type="0">יום שלישי</relative>
 				<relative type="1">יום שלישי הבא</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">בעוד יום שלישי {0}</relativeTimePattern>
+					<relativeTimePattern count="one">בעוד יום שלישי אחד ({0})</relativeTimePattern>
 					<relativeTimePattern count="two">בעוד {0} ימי שלישי</relativeTimePattern>
 					<relativeTimePattern count="other">בעוד {0} ימי שלישי</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">לפני יום שלישי {0}</relativeTimePattern>
+					<relativeTimePattern count="one">לפני יום שלישי אחד ({0})</relativeTimePattern>
 					<relativeTimePattern count="two">לפני {0} ימי שלישי</relativeTimePattern>
 					<relativeTimePattern count="other">לפני {0} ימי שלישי</relativeTimePattern>
 				</relativeTime>
@@ -2689,18 +2867,30 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relative type="-1">יום ג׳ שעבר</relative>
 				<relative type="0">יום ג׳</relative>
 				<relative type="1">יום ג׳ הבא</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">בעוד יום ג׳ אחד ({0})</relativeTimePattern>
+					<relativeTimePattern count="two">בעוד {0} ימי ג׳</relativeTimePattern>
+					<relativeTimePattern count="many">בעוד {0} ימי ג׳</relativeTimePattern>
+					<relativeTimePattern count="other">בעוד {0} ימי ג׳</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">לפני יום ג׳ אחד ({0})</relativeTimePattern>
+					<relativeTimePattern count="two">לפני {0} ימי ג׳</relativeTimePattern>
+					<relativeTimePattern count="many">לפני {0} ימי ג׳</relativeTimePattern>
+					<relativeTimePattern count="other">לפני {0} ימי ג׳</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="wed">
 				<relative type="-1">יום רביעי שעבר</relative>
 				<relative type="0">יום רביעי</relative>
 				<relative type="1">יום רביעי הבא</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">בעוד יום רביעי {0}</relativeTimePattern>
+					<relativeTimePattern count="one">בעוד יום רביעי אחד ({0})</relativeTimePattern>
 					<relativeTimePattern count="two">בעוד {0} ימי רביעי</relativeTimePattern>
 					<relativeTimePattern count="other">בעוד {0} ימי רביעי</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">לפני יום רביעי {0}</relativeTimePattern>
+					<relativeTimePattern count="one">לפני יום רביעי אחד ({0})</relativeTimePattern>
 					<relativeTimePattern count="two">לפני {0} ימי רביעי</relativeTimePattern>
 					<relativeTimePattern count="other">לפני {0} ימי רביעי</relativeTimePattern>
 				</relativeTime>
@@ -2709,18 +2899,30 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relative type="-1">יום ד׳ שעבר</relative>
 				<relative type="0">יום ד׳</relative>
 				<relative type="1">יום ד׳ הבא</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">בעוד יום ד׳ אחד ({0})</relativeTimePattern>
+					<relativeTimePattern count="two">בעוד {0} ימי ד׳</relativeTimePattern>
+					<relativeTimePattern count="many">בעוד {0} ימי ד׳</relativeTimePattern>
+					<relativeTimePattern count="other">בעוד {0} ימי ד׳</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">לפני יום ד׳ אחד ({0})</relativeTimePattern>
+					<relativeTimePattern count="two">לפני {0} ימי ד׳</relativeTimePattern>
+					<relativeTimePattern count="many">לפני {0} ימי ד׳</relativeTimePattern>
+					<relativeTimePattern count="other">לפני {0} ימי ד׳</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="thu">
 				<relative type="-1">יום חמישי שעבר</relative>
 				<relative type="0">יום חמישי</relative>
 				<relative type="1">יום חמישי הבא</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">בעוד יום חמישי {0}</relativeTimePattern>
+					<relativeTimePattern count="one">בעוד יום חמישי אחד ({0})</relativeTimePattern>
 					<relativeTimePattern count="two">בעוד {0} ימי חמישי</relativeTimePattern>
 					<relativeTimePattern count="other">בעוד {0} ימי חמישי</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">לפני יום חמישי {0}</relativeTimePattern>
+					<relativeTimePattern count="one">לפני יום חמישי אחד ({0})</relativeTimePattern>
 					<relativeTimePattern count="two">לפני {0} ימי חמישי</relativeTimePattern>
 					<relativeTimePattern count="other">לפני {0} ימי חמישי</relativeTimePattern>
 				</relativeTime>
@@ -2729,18 +2931,30 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relative type="-1">יום ה׳ שעבר</relative>
 				<relative type="0">יום ה׳</relative>
 				<relative type="1">יום ה׳ הבא</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">בעוד יום ה׳ אחד ({0})</relativeTimePattern>
+					<relativeTimePattern count="two">בעוד {0} ימי ה׳</relativeTimePattern>
+					<relativeTimePattern count="many">בעוד {0} ימי ה׳</relativeTimePattern>
+					<relativeTimePattern count="other">בעוד {0} ימי ה׳</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">לפני יום ה׳ אחד ({0})</relativeTimePattern>
+					<relativeTimePattern count="two">לפני {0} ימי ה׳</relativeTimePattern>
+					<relativeTimePattern count="many">לפני {0} ימי ה׳</relativeTimePattern>
+					<relativeTimePattern count="other">לפני {0} ימי ה׳</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="fri">
 				<relative type="-1">יום שישי שעבר</relative>
 				<relative type="0">יום שישי</relative>
 				<relative type="1">יום שישי הבא</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">בעוד יום שישי אחד {0}</relativeTimePattern>
+					<relativeTimePattern count="one">בעוד יום שישי אחד ({0})</relativeTimePattern>
 					<relativeTimePattern count="two">בעוד {0} ימי שישי</relativeTimePattern>
 					<relativeTimePattern count="other">בעוד {0} ימי שישי</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">לפני יום שישי אחד {0}</relativeTimePattern>
+					<relativeTimePattern count="one">לפני יום שישי אחד ({0})</relativeTimePattern>
 					<relativeTimePattern count="two">לפני {0} ימי שישי</relativeTimePattern>
 					<relativeTimePattern count="other">לפני {0} ימי שישי</relativeTimePattern>
 				</relativeTime>
@@ -2750,27 +2964,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relative type="0">יום ו׳</relative>
 				<relative type="1">יום ו׳ הבא</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">בעוד יום שישי אחד {0}</relativeTimePattern>
-					<relativeTimePattern count="two">בעוד {0} ימי שישי</relativeTimePattern>
-					<relativeTimePattern count="other">בעוד {0} ימי שישי</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">לפני יום שישי אחד {0}</relativeTimePattern>
-					<relativeTimePattern count="two">לפני {0} ימי שישי</relativeTimePattern>
-					<relativeTimePattern count="other">לפני {0} ימי שישי</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="fri-narrow">
-				<relativeTime type="future">
-					<relativeTimePattern count="one">בעוד יום ו׳ אחד {0}</relativeTimePattern>
+					<relativeTimePattern count="one">בעוד יום ו׳ אחד ({0})</relativeTimePattern>
 					<relativeTimePattern count="two">בעוד {0} ימי ו׳</relativeTimePattern>
 					<relativeTimePattern count="many">בעוד {0} ימי ו׳</relativeTimePattern>
 					<relativeTimePattern count="other">בעוד {0} ימי ו׳</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">לפני יום ו׳ אחד {0}</relativeTimePattern>
-					<relativeTimePattern count="two">לפני {0} ימי שישי</relativeTimePattern>
-					<relativeTimePattern count="other">לפני {0} ימי שישי</relativeTimePattern>
+					<relativeTimePattern count="one">לפני יום ו׳ אחד ({0})</relativeTimePattern>
+					<relativeTimePattern count="two">לפני {0} ימי ו׳</relativeTimePattern>
+					<relativeTimePattern count="many">לפני {0} ימי ו׳</relativeTimePattern>
+					<relativeTimePattern count="other">לפני {0} ימי ו׳</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="sat">
@@ -2778,12 +2981,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relative type="0">יום שבת</relative>
 				<relative type="1">יום שבת הבא</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">בעוד שבת {0}</relativeTimePattern>
+					<relativeTimePattern count="one">בעוד שבת אחת ({0})</relativeTimePattern>
 					<relativeTimePattern count="two">בעוד {0} שבתות</relativeTimePattern>
 					<relativeTimePattern count="other">בעוד {0} שבתות</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">לפני שבת אחת {0}</relativeTimePattern>
+					<relativeTimePattern count="one">לפני שבת אחת ({0})</relativeTimePattern>
 					<relativeTimePattern count="two">לפני {0} שבתות</relativeTimePattern>
 					<relativeTimePattern count="other">לפני {0} שבתות</relativeTimePattern>
 				</relativeTime>
@@ -2792,18 +2995,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relative type="-1">שבת שעברה</relative>
 				<relative type="0">שבת</relative>
 				<relative type="1">שבת הבאה</relative>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">לפני שבת אחת {0}</relativeTimePattern>
-					<relativeTimePattern count="two">לפני {0} שבתות</relativeTimePattern>
-					<relativeTimePattern count="other">לפני {0} שבתות</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="sat-narrow">
-				<relativeTime type="past">
-					<relativeTimePattern count="one">לפני שבת אחת {0}</relativeTimePattern>
-					<relativeTimePattern count="two">לפני {0} שבתות</relativeTimePattern>
-					<relativeTimePattern count="other">לפני {0} שבתות</relativeTimePattern>
-				</relativeTime>
 			</field>
 			<field type="dayperiod-short">
 				<displayName>AM/PM</displayName>
@@ -2815,26 +3006,26 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>שעה</displayName>
 				<relative type="0">בשעה זו</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">בעוד שעה</relativeTimePattern>
-					<relativeTimePattern count="two">בעוד שעתיים</relativeTimePattern>
+					<relativeTimePattern count="one">בעוד שעה ({0})</relativeTimePattern>
+					<relativeTimePattern count="two">בעוד שעתיים ({0})</relativeTimePattern>
 					<relativeTimePattern count="other">בעוד {0} שעות</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">לפני שעה</relativeTimePattern>
-					<relativeTimePattern count="two">לפני שעתיים</relativeTimePattern>
+					<relativeTimePattern count="one">לפני שעה ({0})</relativeTimePattern>
+					<relativeTimePattern count="two">לפני שעתיים ({0})</relativeTimePattern>
 					<relativeTimePattern count="other">לפני {0} שעות</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="hour-short">
 				<relativeTime type="future">
-					<relativeTimePattern count="one">בעוד שעה</relativeTimePattern>
-					<relativeTimePattern count="two">בעוד שעתיים</relativeTimePattern>
+					<relativeTimePattern count="one">בעוד שעה ({0})</relativeTimePattern>
+					<relativeTimePattern count="two">בעוד שעתיים ({0})</relativeTimePattern>
 					<relativeTimePattern count="many">בעוד {0} שע׳</relativeTimePattern>
 					<relativeTimePattern count="other">בעוד {0} שע׳</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">לפני שעה</relativeTimePattern>
-					<relativeTimePattern count="two">לפני שעתיים</relativeTimePattern>
+					<relativeTimePattern count="one">לפני שע׳ ({0})</relativeTimePattern>
+					<relativeTimePattern count="two">לפני שעתיים ({0})</relativeTimePattern>
 					<relativeTimePattern count="many">לפני {0} שע׳</relativeTimePattern>
 					<relativeTimePattern count="other">לפני {0} שע׳</relativeTimePattern>
 				</relativeTime>
@@ -2846,13 +3037,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>דקה</displayName>
 				<relative type="0">בדקה זו</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">בעוד דקה</relativeTimePattern>
-					<relativeTimePattern count="two">בעוד שתי דקות</relativeTimePattern>
+					<relativeTimePattern count="one">בעוד דקה ({0})</relativeTimePattern>
+					<relativeTimePattern count="two">בעוד {0} דקות</relativeTimePattern>
 					<relativeTimePattern count="other">בעוד {0} דקות</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">לפני דקה</relativeTimePattern>
-					<relativeTimePattern count="two">לפני שתי דקות</relativeTimePattern>
+					<relativeTimePattern count="one">לפני דקה ({0})</relativeTimePattern>
+					<relativeTimePattern count="two">לפני {0} דקות</relativeTimePattern>
 					<relativeTimePattern count="other">לפני {0} דקות</relativeTimePattern>
 				</relativeTime>
 			</field>
@@ -2860,22 +3051,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>דק׳</displayName>
 				<relative type="0" draft="contributed">דקה זו</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">בעוד דקה</relativeTimePattern>
-					<relativeTimePattern count="two">בעוד שתי דק׳</relativeTimePattern>
+					<relativeTimePattern count="one">בעוד דק׳ ({0})</relativeTimePattern>
+					<relativeTimePattern count="two">בעוד {0} דק׳</relativeTimePattern>
 					<relativeTimePattern count="many">בעוד {0} דק׳</relativeTimePattern>
 					<relativeTimePattern count="other">בעוד {0} דק׳</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">לפני דקה</relativeTimePattern>
+					<relativeTimePattern count="one">לפני דק׳ ({0})</relativeTimePattern>
 					<relativeTimePattern count="two">לפני {0} דק׳</relativeTimePattern>
 					<relativeTimePattern count="many">לפני {0} דק׳</relativeTimePattern>
-					<relativeTimePattern count="other">לפני {0} דק׳</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="minute-narrow">
-				<relativeTime type="past">
-					<relativeTimePattern count="one">לפני דקה</relativeTimePattern>
-					<relativeTimePattern count="two">לפני שתי דק׳</relativeTimePattern>
 					<relativeTimePattern count="other">לפני {0} דק׳</relativeTimePattern>
 				</relativeTime>
 			</field>
@@ -2883,7 +3067,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>שנייה</displayName>
 				<relative type="0">עכשיו</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">בעוד שנייה</relativeTimePattern>
+					<relativeTimePattern count="one">בעוד שנייה ({0})</relativeTimePattern>
 					<relativeTimePattern count="two">בעוד שתי שניות</relativeTimePattern>
 					<relativeTimePattern count="other">בעוד {0} שניות</relativeTimePattern>
 				</relativeTime>
@@ -2894,18 +3078,33 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</relativeTime>
 			</field>
 			<field type="second-short">
-				<displayName>שנ׳</displayName>
+				<displayName>שני׳</displayName>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">בעוד שנ׳</relativeTimePattern>
-					<relativeTimePattern count="two">בעוד שתי שנ׳</relativeTimePattern>
-					<relativeTimePattern count="many">בעוד {0} שנ׳</relativeTimePattern>
-					<relativeTimePattern count="other">בעוד {0} שנ׳</relativeTimePattern>
+					<relativeTimePattern count="one">בעוד שני׳ ({0})</relativeTimePattern>
+					<relativeTimePattern count="two">בעוד {0} שני׳</relativeTimePattern>
+					<relativeTimePattern count="many">בעוד {0} שני׳</relativeTimePattern>
+					<relativeTimePattern count="other">בעוד {0} שני׳</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">לפני שנ׳</relativeTimePattern>
-					<relativeTimePattern count="two">לפני שתי שנ׳</relativeTimePattern>
-					<relativeTimePattern count="many">לפני {0} שנ׳</relativeTimePattern>
-					<relativeTimePattern count="other">לפני {0} שנ׳</relativeTimePattern>
+					<relativeTimePattern count="one">לפני שני׳ ({0})</relativeTimePattern>
+					<relativeTimePattern count="two">לפני שתי שני׳</relativeTimePattern>
+					<relativeTimePattern count="many">לפני {0} שני׳</relativeTimePattern>
+					<relativeTimePattern count="other">לפני {0} שני׳</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="second-narrow">
+				<displayName>שני׳</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">בעוד שני׳ ({0})</relativeTimePattern>
+					<relativeTimePattern count="two">בעוד {0} שני׳</relativeTimePattern>
+					<relativeTimePattern count="many">בעוד {0} שני׳</relativeTimePattern>
+					<relativeTimePattern count="other">בעוד {0} שני׳</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">לפני שני׳ ({0})</relativeTimePattern>
+					<relativeTimePattern count="two">לפני שתי שני׳</relativeTimePattern>
+					<relativeTimePattern count="many">לפני {0} שני׳</relativeTimePattern>
+					<relativeTimePattern count="other">לפני {0} שני׳</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="zone">
@@ -3274,6 +3473,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Pacific/Easter">
 				<exemplarCity>אי הפסחא</exemplarCity>
 			</zone>
+			<zone type="America/Coyhaique">
+				<exemplarCity>קויאיקה</exemplarCity>
+			</zone>
 			<zone type="America/Punta_Arenas">
 				<exemplarCity>פונטה ארנס</exemplarCity>
 			</zone>
@@ -3395,9 +3597,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>ליברוויל</exemplarCity>
 			</zone>
 			<zone type="Europe/London">
-				<long>
-					<daylight>שעון קיץ בריטניה</daylight>
-				</long>
 				<exemplarCity>לונדון</exemplarCity>
 			</zone>
 			<zone type="America/Grenada">
@@ -3488,9 +3687,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>ג׳איאפורה</exemplarCity>
 			</zone>
 			<zone type="Europe/Dublin">
-				<long>
-					<daylight>שעון קיץ אירלנד</daylight>
-				</long>
 				<exemplarCity>דבלין</exemplarCity>
 			</zone>
 			<zone type="Asia/Jerusalem">
@@ -3539,9 +3735,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>פנום פן</exemplarCity>
 			</zone>
 			<zone type="Pacific/Enderbury">
-				<exemplarCity>אנדרבורי</exemplarCity>
-			</zone>
-			<zone type="Pacific/Kanton">
 				<exemplarCity>קנטון</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
@@ -3704,7 +3897,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>צ׳יוואווה</exemplarCity>
 			</zone>
 			<zone type="America/Bahia_Banderas">
-				<exemplarCity>באהיה בנדרס</exemplarCity>
+				<exemplarCity>באהיה דה בנדרס</exemplarCity>
 			</zone>
 			<zone type="America/Ojinaga">
 				<exemplarCity>אוג׳ינאגה</exemplarCity>
@@ -4189,6 +4382,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Africa/Harare">
 				<exemplarCity>הרארה</exemplarCity>
 			</zone>
+			<metazone type="Acre">
+				<long>
+					<generic>שעון אקרי</generic>
+					<standard>שעון אקרי (חורף)</standard>
+					<daylight>שעון אקרי (קיץ)</daylight>
+				</long>
+			</metazone>
 			<metazone type="Afghanistan">
 				<long>
 					<standard>שעון אפגניסטן</standard>
@@ -4211,9 +4411,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Africa_Western">
 				<long>
-					<generic>שעון מערב אפריקה</generic>
-					<standard>שעון מערב אפריקה (חורף)</standard>
-					<daylight>שעון מערב אפריקה (קיץ)</daylight>
+					<standard>שעון מערב אפריקה</standard>
 				</long>
 			</metazone>
 			<metazone type="Alaska">
@@ -4221,13 +4419,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>שעון אלסקה</generic>
 					<standard>שעון אלסקה (חורף)</standard>
 					<daylight>שעון אלסקה (קיץ)</daylight>
-				</long>
-			</metazone>
-			<metazone type="Almaty">
-				<long>
-					<generic draft="contributed">שעון אלמטי</generic>
-					<standard draft="contributed">שעון אלמטי (חורף)</standard>
-					<daylight draft="contributed">שעון אלמטי (קיץ)</daylight>
 				</long>
 			</metazone>
 			<metazone type="Amazon">
@@ -4277,20 +4468,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>שעון אפיה</generic>
 					<standard>שעון אפיה (חורף)</standard>
 					<daylight>שעון אפיה (קיץ)</daylight>
-				</long>
-			</metazone>
-			<metazone type="Aqtau">
-				<long>
-					<generic draft="contributed">שעון אקטאו</generic>
-					<standard draft="contributed">שעון אקטאו (חורף)</standard>
-					<daylight draft="contributed">שעון אקטאו (קיץ)</daylight>
-				</long>
-			</metazone>
-			<metazone type="Aqtobe">
-				<long>
-					<generic draft="contributed">שעון אקטובה</generic>
-					<standard draft="contributed">שעון אוקטובה (חורף)</standard>
-					<daylight draft="contributed">שעון אוקטובה (קיץ)</daylight>
 				</long>
 			</metazone>
 			<metazone type="Arabian">
@@ -4392,6 +4569,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>שעון ברזיליה</generic>
 					<standard>שעון ברזיליה (חורף)</standard>
 					<daylight>שעון ברזיליה (קיץ)</daylight>
+				</long>
+			</metazone>
+			<metazone type="British">
+				<long>
+					<generic>שעון בריטניה (חורף)</generic>
+					<daylight>שעון בריטניה (קיץ)</daylight>
 				</long>
 			</metazone>
 			<metazone type="Brunei">
@@ -4567,6 +4750,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>שעון גריניץ׳‏</standard>
 				</long>
 			</metazone>
+			<metazone type="Greenland">
+				<long>
+					<generic>שעון גרינלנד</generic>
+					<standard>שעון גרינלנד (חורף)</standard>
+					<daylight>שעון גרינלנד (קיץ)</daylight>
+				</long>
+			</metazone>
 			<metazone type="Greenland_Eastern">
 				<long>
 					<generic>שעון מזרח גרינלנד</generic>
@@ -4581,11 +4771,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>שעון מערב גרינלנד (קיץ)</daylight>
 				</long>
 			</metazone>
-			<metazone type="Guam">
-				<long>
-					<standard draft="contributed">שעון גואם</standard>
-				</long>
-			</metazone>
 			<metazone type="Gulf">
 				<long>
 					<standard>שעון מדינות המפרץ</standard>
@@ -4594,6 +4779,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Guyana">
 				<long>
 					<standard>שעון גיאנה</standard>
+				</long>
+			</metazone>
+			<metazone type="Hawaii">
+				<long>
+					<standard>שעון הוואי (חורף)</standard>
 				</long>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
@@ -4654,6 +4844,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>שעון איראן (קיץ)</daylight>
 				</long>
 			</metazone>
+			<metazone type="Irish">
+				<long>
+					<generic>שעון אירלנד (חורף)</generic>
+					<daylight>שעון אירלנד (קיץ)</daylight>
+				</long>
+			</metazone>
 			<metazone type="Irkutsk">
 				<long>
 					<generic>שעון אירקוטסק</generic>
@@ -4677,9 +4873,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Kamchatka">
 				<long>
-					<generic draft="contributed">שעון פטרופבלובסק-קמצ׳טסקי</generic>
-					<standard draft="contributed">שעון רגיל פטרופבלובסק-קמצ׳טסקי</standard>
-					<daylight draft="contributed">שעון קיץ פטרופבלובסק-קמצ׳טסקי</daylight>
+					<generic>שעון פטרופבלובסק-קמצ׳טסקי</generic>
+					<standard>שעון רגיל פטרופבלובסק-קמצ׳טסקי</standard>
+					<daylight>שעון קיץ פטרופבלובסק-קמצ׳טסקי</daylight>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan">
@@ -4731,13 +4927,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>שעון אי הלורד האו</generic>
 					<standard>שעון אי הלורד האו (חורף)</standard>
 					<daylight>שעון אי הלורד האו (קיץ)</daylight>
-				</long>
-			</metazone>
-			<metazone type="Macau">
-				<long>
-					<generic draft="contributed">שעון מקאו</generic>
-					<standard draft="contributed">שעון חורף מקאו</standard>
-					<daylight draft="contributed">שעון קיץ מקאו</daylight>
 				</long>
 			</metazone>
 			<metazone type="Magadan">
@@ -4855,11 +5044,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>שעון פרננדו די נורוניה (קיץ)</daylight>
 				</long>
 			</metazone>
-			<metazone type="North_Mariana">
-				<long>
-					<standard draft="contributed">שעון איי מריאנה הצפוניים</standard>
-				</long>
-			</metazone>
 			<metazone type="Novosibirsk">
 				<long>
 					<generic>שעון נובוסיבירסק</generic>
@@ -4939,13 +5123,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>שעון פיונגיאנג</standard>
 				</long>
 			</metazone>
-			<metazone type="Qyzylorda">
-				<long>
-					<generic draft="contributed">שעון קיזילורדה</generic>
-					<standard draft="contributed">שעון קיזילורדה (חורף)</standard>
-					<daylight draft="contributed">שעון קיזילורדה (קיץ)</daylight>
-				</long>
-			</metazone>
 			<metazone type="Reunion">
 				<long>
 					<standard>שעון ראוניון</standard>
@@ -4965,16 +5142,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Samara">
 				<long>
-					<generic draft="contributed">שעון סמרה</generic>
-					<standard draft="contributed">שעון רגיל סמרה</standard>
-					<daylight draft="contributed">שעון קיץ סמרה</daylight>
+					<generic>שעון סמרה</generic>
+					<standard>שעון רגיל סמרה</standard>
+					<daylight>שעון קיץ סמרה</daylight>
 				</long>
 			</metazone>
 			<metazone type="Samoa">
 				<long>
-					<generic>שעון סמואה</generic>
 					<standard>שעון סמואה (חורף)</standard>
-					<daylight>שעון סמואה (קיץ)</daylight>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">
@@ -5041,6 +5216,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>שעון צ׳וק</standard>
 				</long>
 			</metazone>
+			<metazone type="Turkey">
+				<long>
+					<generic>שעון טורקיה</generic>
+					<standard>שעון טורקיה (חורף)</standard>
+					<daylight>שעון טורקיה (קיץ)</daylight>
+				</long>
+			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
 					<generic>שעון טורקמניסטן</generic>
@@ -5058,6 +5240,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>שעון אורוגוואי</generic>
 					<standard>שעון אורוגוואי (חורף)</standard>
 					<daylight>שעון אורוגוואי (קיץ)</daylight>
+				</long>
+			</metazone>
+			<metazone type="Urumqi">
+				<long>
+					<standard>שעון אורומצ׳י</standard>
 				</long>
 			</metazone>
 			<metazone type="Uzbekistan">
@@ -5193,28 +5380,40 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<decimalFormatLength type="short">
 				<decimalFormat>
 					<pattern type="1000" count="one">0K‏</pattern>
+					<pattern type="1000" count="two">0K‏</pattern>
 					<pattern type="1000" count="other">0K‏</pattern>
 					<pattern type="10000" count="one">00K‏</pattern>
+					<pattern type="10000" count="two">00K‏</pattern>
 					<pattern type="10000" count="other">00K‏</pattern>
 					<pattern type="100000" count="one">000K‏</pattern>
+					<pattern type="100000" count="two">000K‏</pattern>
 					<pattern type="100000" count="other">000K‏</pattern>
 					<pattern type="1000000" count="one">0M‏</pattern>
+					<pattern type="1000000" count="two">0M‏</pattern>
 					<pattern type="1000000" count="other">0M‏</pattern>
 					<pattern type="10000000" count="one">00M‏</pattern>
+					<pattern type="10000000" count="two">00M‏</pattern>
 					<pattern type="10000000" count="other">00M‏</pattern>
 					<pattern type="100000000" count="one">000M‏</pattern>
+					<pattern type="100000000" count="two">000M‏</pattern>
 					<pattern type="100000000" count="other">000M‏</pattern>
 					<pattern type="1000000000" count="one">0B‏</pattern>
+					<pattern type="1000000000" count="two">0B‏</pattern>
 					<pattern type="1000000000" count="other">0B‏</pattern>
 					<pattern type="10000000000" count="one">00B‏</pattern>
+					<pattern type="10000000000" count="two">00B‏</pattern>
 					<pattern type="10000000000" count="other">00B‏</pattern>
 					<pattern type="100000000000" count="one">000B‏</pattern>
+					<pattern type="100000000000" count="two">000B‏</pattern>
 					<pattern type="100000000000" count="other">000B‏</pattern>
 					<pattern type="1000000000000" count="one">0T‏</pattern>
+					<pattern type="1000000000000" count="two">0T‏</pattern>
 					<pattern type="1000000000000" count="other">0T‏</pattern>
 					<pattern type="10000000000000" count="one">00T‏</pattern>
+					<pattern type="10000000000000" count="two">00T‏</pattern>
 					<pattern type="10000000000000" count="other">00T‏</pattern>
 					<pattern type="100000000000000" count="one">000T‏</pattern>
+					<pattern type="100000000000000" count="two">000T‏</pattern>
 					<pattern type="100000000000000" count="other">000T‏</pattern>
 				</decimalFormat>
 			</decimalFormatLength>
@@ -5223,95 +5422,48 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>‏#,##0.00 ‏¤;‏-#,##0.00 ‏¤</pattern>
-					<pattern alt="noCurrency" draft="provisional">‏#,##0.00‏;‏-#,##0.00‏</pattern>
+					<pattern alt="alphaNextToNumber">‏#,##0.00 ‏¤;‏-#,##0.00 ‏¤</pattern>
+					<pattern alt="noCurrency">‏#,##0.00 ‏;‏-#,##0.00 ‏</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
 				<currencyFormat type="standard">
-					<pattern type="1000" count="one">¤0K‏</pattern>
-					<pattern type="1000" count="one" alt="alphaNextToNumber">¤ 0K‏</pattern>
-					<pattern type="1000" count="two">¤0K‏</pattern>
-					<pattern type="1000" count="two" alt="alphaNextToNumber">¤ 0K‏</pattern>
-					<pattern type="1000" count="many" alt="alphaNextToNumber">¤ 0K‏</pattern>
-					<pattern type="1000" count="other">¤0K‏</pattern>
-					<pattern type="1000" count="other" alt="alphaNextToNumber">¤ 0K‏</pattern>
-					<pattern type="10000" count="one">¤00K‏</pattern>
-					<pattern type="10000" count="one" alt="alphaNextToNumber">¤ 00K‏</pattern>
-					<pattern type="10000" count="two">¤00K‏</pattern>
-					<pattern type="10000" count="two" alt="alphaNextToNumber">¤ 00K‏</pattern>
-					<pattern type="10000" count="many" alt="alphaNextToNumber">¤ 00K‏</pattern>
-					<pattern type="10000" count="other">¤00K‏</pattern>
-					<pattern type="10000" count="other" alt="alphaNextToNumber">¤ 00K‏</pattern>
-					<pattern type="100000" count="one">¤000K‏</pattern>
-					<pattern type="100000" count="one" alt="alphaNextToNumber">¤ 000K‏</pattern>
-					<pattern type="100000" count="two">¤000K‏</pattern>
-					<pattern type="100000" count="two" alt="alphaNextToNumber">¤ 000K‏</pattern>
-					<pattern type="100000" count="many" alt="alphaNextToNumber">¤ 000K‏</pattern>
-					<pattern type="100000" count="other">¤000K‏</pattern>
-					<pattern type="100000" count="other" alt="alphaNextToNumber">¤ 000K‏</pattern>
-					<pattern type="1000000" count="one">¤0M‏</pattern>
-					<pattern type="1000000" count="one" alt="alphaNextToNumber">¤ 0M‏</pattern>
-					<pattern type="1000000" count="two">¤0M‏</pattern>
-					<pattern type="1000000" count="two" alt="alphaNextToNumber">¤ 0M‏</pattern>
-					<pattern type="1000000" count="many" alt="alphaNextToNumber">¤ 0M‏</pattern>
-					<pattern type="1000000" count="other">¤0M‏</pattern>
-					<pattern type="1000000" count="other" alt="alphaNextToNumber">¤ 0M‏</pattern>
-					<pattern type="10000000" count="one">¤00M‏</pattern>
-					<pattern type="10000000" count="one" alt="alphaNextToNumber">¤ 00M‏</pattern>
-					<pattern type="10000000" count="two">¤00M‏</pattern>
-					<pattern type="10000000" count="two" alt="alphaNextToNumber">¤ 00M‏</pattern>
-					<pattern type="10000000" count="many" alt="alphaNextToNumber">¤ 00M‏</pattern>
-					<pattern type="10000000" count="other">¤00M‏</pattern>
-					<pattern type="10000000" count="other" alt="alphaNextToNumber">¤ 00M‏</pattern>
-					<pattern type="100000000" count="one">¤000M‏</pattern>
-					<pattern type="100000000" count="one" alt="alphaNextToNumber">¤ 000M‏</pattern>
-					<pattern type="100000000" count="two">¤000M‏</pattern>
-					<pattern type="100000000" count="two" alt="alphaNextToNumber">¤ 000M‏</pattern>
-					<pattern type="100000000" count="many" alt="alphaNextToNumber">¤ 000M‏</pattern>
-					<pattern type="100000000" count="other">¤000M‏</pattern>
-					<pattern type="100000000" count="other" alt="alphaNextToNumber">¤ 000M‏</pattern>
-					<pattern type="1000000000" count="one">¤0B‏</pattern>
-					<pattern type="1000000000" count="one" alt="alphaNextToNumber">¤ 0B‏</pattern>
-					<pattern type="1000000000" count="two">¤0B‏</pattern>
-					<pattern type="1000000000" count="two" alt="alphaNextToNumber">¤ 0B‏</pattern>
-					<pattern type="1000000000" count="many" alt="alphaNextToNumber">¤ 0B‏</pattern>
-					<pattern type="1000000000" count="other">¤0B‏</pattern>
-					<pattern type="1000000000" count="other" alt="alphaNextToNumber">¤ 0B‏</pattern>
-					<pattern type="10000000000" count="one">¤00B‏</pattern>
-					<pattern type="10000000000" count="one" alt="alphaNextToNumber">¤ 00B‏</pattern>
-					<pattern type="10000000000" count="two">¤00B‏</pattern>
-					<pattern type="10000000000" count="two" alt="alphaNextToNumber">¤ 00B‏</pattern>
-					<pattern type="10000000000" count="many" alt="alphaNextToNumber">¤ 00B‏</pattern>
-					<pattern type="10000000000" count="other">¤00B‏</pattern>
-					<pattern type="10000000000" count="other" alt="alphaNextToNumber">¤ 00B‏</pattern>
-					<pattern type="100000000000" count="one">¤000B‏</pattern>
-					<pattern type="100000000000" count="one" alt="alphaNextToNumber">¤ 000B‏</pattern>
-					<pattern type="100000000000" count="two">¤000B‏</pattern>
-					<pattern type="100000000000" count="two" alt="alphaNextToNumber">¤ 000B‏</pattern>
-					<pattern type="100000000000" count="many" alt="alphaNextToNumber">¤ 000B‏</pattern>
-					<pattern type="100000000000" count="other">¤000B‏</pattern>
-					<pattern type="100000000000" count="other" alt="alphaNextToNumber">¤ 000B‏</pattern>
-					<pattern type="1000000000000" count="one">¤0T‏</pattern>
-					<pattern type="1000000000000" count="one" alt="alphaNextToNumber">¤ 0T‏</pattern>
-					<pattern type="1000000000000" count="two">¤0T‏</pattern>
-					<pattern type="1000000000000" count="two" alt="alphaNextToNumber">¤ 0T‏</pattern>
-					<pattern type="1000000000000" count="many" alt="alphaNextToNumber">¤ 0T‏</pattern>
-					<pattern type="1000000000000" count="other">¤0T‏</pattern>
-					<pattern type="1000000000000" count="other" alt="alphaNextToNumber">¤ 0T‏</pattern>
-					<pattern type="10000000000000" count="one">¤00T‏</pattern>
-					<pattern type="10000000000000" count="one" alt="alphaNextToNumber">¤ 00T‏</pattern>
-					<pattern type="10000000000000" count="two">¤00T‏</pattern>
-					<pattern type="10000000000000" count="two" alt="alphaNextToNumber">¤ 00T‏</pattern>
-					<pattern type="10000000000000" count="many" alt="alphaNextToNumber">¤ 00T‏</pattern>
-					<pattern type="10000000000000" count="other">¤00T‏</pattern>
-					<pattern type="10000000000000" count="other" alt="alphaNextToNumber">¤ 00T‏</pattern>
-					<pattern type="100000000000000" count="one">¤000T‏</pattern>
-					<pattern type="100000000000000" count="one" alt="alphaNextToNumber">¤ 000T‏</pattern>
-					<pattern type="100000000000000" count="two">¤000T‏</pattern>
-					<pattern type="100000000000000" count="two" alt="alphaNextToNumber">¤ 000T‏</pattern>
-					<pattern type="100000000000000" count="many" alt="alphaNextToNumber">¤ 000T‏</pattern>
-					<pattern type="100000000000000" count="other">¤000T‏</pattern>
-					<pattern type="100000000000000" count="other" alt="alphaNextToNumber">¤ 000T‏</pattern>
+					<pattern type="1000" count="one">‏0 א׳‏ ‏¤</pattern>
+					<pattern type="1000" count="two">‏0K‏ ‏¤</pattern>
+					<pattern type="1000" count="other">‏0K‏ ‏¤</pattern>
+					<pattern type="10000" count="one">‏00K‏ ‏¤</pattern>
+					<pattern type="10000" count="two">‏00K‏ ‏¤</pattern>
+					<pattern type="10000" count="other">‏00K‏ ‏¤</pattern>
+					<pattern type="100000" count="one">‏000K‏ ‏¤</pattern>
+					<pattern type="100000" count="two">‏000K‏ ‏¤</pattern>
+					<pattern type="100000" count="other">‏000K‏ ‏¤</pattern>
+					<pattern type="1000000" count="one">‏0M‏ ‏¤</pattern>
+					<pattern type="1000000" count="two">‏0M‏ ‏¤</pattern>
+					<pattern type="1000000" count="other">‏0M‏ ‏¤</pattern>
+					<pattern type="10000000" count="one">‏00M‏ ‏¤</pattern>
+					<pattern type="10000000" count="two">‏00M‏ ‏¤</pattern>
+					<pattern type="10000000" count="other">‏00M‏ ‏¤</pattern>
+					<pattern type="100000000" count="one">‏000M‏ ‏¤</pattern>
+					<pattern type="100000000" count="two">‏000M‏ ‏¤</pattern>
+					<pattern type="100000000" count="other">‏000M‏ ‏¤</pattern>
+					<pattern type="1000000000" count="one">‏0B‏ ‏¤</pattern>
+					<pattern type="1000000000" count="two">‏0B‏ ‏¤</pattern>
+					<pattern type="1000000000" count="other">‏0B‏ ‏¤</pattern>
+					<pattern type="10000000000" count="one">‏00B‏ ‏¤</pattern>
+					<pattern type="10000000000" count="two">‏00B‏ ‏¤</pattern>
+					<pattern type="10000000000" count="other">‏00B‏ ‏¤</pattern>
+					<pattern type="100000000000" count="one">‏000B‏ ‏¤</pattern>
+					<pattern type="100000000000" count="two">‏000B‏ ‏¤</pattern>
+					<pattern type="100000000000" count="other">‏000B‏ ‏¤</pattern>
+					<pattern type="1000000000000" count="one">‏0T‏ ‏¤</pattern>
+					<pattern type="1000000000000" count="two">‏0T‏ ‏¤</pattern>
+					<pattern type="1000000000000" count="other">‏0T‏ ‏¤</pattern>
+					<pattern type="10000000000000" count="one">‏00T‏ ‏¤</pattern>
+					<pattern type="10000000000000" count="two">‏00T‏ ‏¤</pattern>
+					<pattern type="10000000000000" count="other">‏00T‏ ‏¤</pattern>
+					<pattern type="100000000000000" count="one">‏000T‏ ‏¤</pattern>
+					<pattern type="100000000000000" count="two">‏000T‏ ‏¤</pattern>
+					<pattern type="100000000000000" count="other">‏000T‏ ‏¤</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
@@ -5944,7 +6096,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>לירה טורקית חדשה</displayName>
 				<displayName count="one">לירה טורקית חדשה</displayName>
 				<displayName count="two">לירות טורקיות</displayName>
-				<displayName count="many">לירות טורקיות</displayName>
 				<displayName count="other">לירות טורקיות</displayName>
 			</currency>
 			<currency type="TTD">
@@ -6012,6 +6163,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="XCD">
 				<displayName>דולר מזרח קריבי</displayName>
 			</currency>
+			<currency type="XCG">
+				<displayName>גילדר של הקריביים</displayName>
+			</currency>
 			<currency type="XDR">
 				<displayName>זכויות משיכה מיוחדות</displayName>
 			</currency>
@@ -6069,13 +6223,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="ZWD">
 				<displayName>דולר זימבבואי</displayName>
 			</currency>
+			<currency type="ZWG">
+				<displayName>זהב של זימבבואה</displayName>
+			</currency>
 		</currencies>
 		<minimalPairs>
 			<pluralMinimalPairs count="one">יום</pluralMinimalPairs>
 			<pluralMinimalPairs count="two">יומיים</pluralMinimalPairs>
 			<pluralMinimalPairs count="many">{0} יום</pluralMinimalPairs>
 			<pluralMinimalPairs count="other">{0} ימים</pluralMinimalPairs>
-			<ordinalMinimalPairs ordinal="other">פנה ימינה בפנייה ה-{0}</ordinalMinimalPairs>
+			<ordinalMinimalPairs ordinal="other">פנו ימינה בפנייה ה-{0}</ordinalMinimalPairs>
 			<genderMinimalPairs gender="feminine">ה{0} הראשונה היא הקובעת</genderMinimalPairs>
 			<genderMinimalPairs gender="masculine">ה{0} הראשון הוא הקובע</genderMinimalPairs>
 		</minimalPairs>
@@ -6233,12 +6390,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} מייל רבוע</unitPattern>
 				<perUnitPattern>{0} למייל רבוע</perUnitPattern>
 			</unit>
-			<unit type="area-acre">
-				<unitPattern count="one">{0} אקר</unitPattern>
-				<unitPattern count="two">{0} אקר</unitPattern>
-				<unitPattern count="many">{0} אקר</unitPattern>
-				<unitPattern count="other">{0} אקר</unitPattern>
-			</unit>
 			<unit type="area-square-yard">
 				<displayName>יארד רבוע</displayName>
 				<unitPattern count="one">{0} יארד רבוע</unitPattern>
@@ -6289,7 +6440,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>masculine</gender>
 				<displayName>פריטים</displayName>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part">
+				<displayName>חלקים</displayName>
+				<unitPattern count="one">{0} חלק</unitPattern>
+				<unitPattern count="two">{0} חלקים</unitPattern>
+				<unitPattern count="other">{0} חלקים</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-1e6">
 				<gender>masculine</gender>
 				<displayName>חלקים למיליון</displayName>
 				<unitPattern count="one">{0} חלקים למיליון</unitPattern>
@@ -6328,6 +6485,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="two">{0} מול</unitPattern>
 				<unitPattern count="many">{0} מול</unitPattern>
 				<unitPattern count="other">{0} מול</unitPattern>
+			</unit>
+			<unit type="concentr-ofglucose">
+				<unitPattern count="one">{0} גלוקוז</unitPattern>
+				<unitPattern count="two">{0} גלוקוז</unitPattern>
+				<unitPattern count="other">{0} גלוקוז</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<gender>masculine</gender>
@@ -6543,10 +6705,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="electric-ohm">
 				<gender>masculine</gender>
-				<unitPattern count="one">{0} ohm</unitPattern>
-				<unitPattern count="two">{0} ohms</unitPattern>
-				<unitPattern count="many">{0} ohms</unitPattern>
-				<unitPattern count="other">{0} ohms</unitPattern>
+				<unitPattern count="one">{0} אוהם</unitPattern>
+				<unitPattern count="two">{0} אוהם</unitPattern>
+				<unitPattern count="many">{0} אוהם</unitPattern>
+				<unitPattern count="other">{0} אוהם</unitPattern>
 			</unit>
 			<unit type="electric-volt">
 				<gender>masculine</gender>
@@ -6675,9 +6837,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="graphics-em">
 				<gender>masculine</gender>
 				<displayName>קו מפריד מסוג em</displayName>
-				<unitPattern count="one">{0} em</unitPattern>
-				<unitPattern count="two">{0} em</unitPattern>
-				<unitPattern count="other">{0} ems</unitPattern>
 			</unit>
 			<unit type="graphics-pixel">
 				<gender>masculine</gender>
@@ -6693,16 +6852,30 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="graphics-pixel-per-inch">
 				<displayName>פיקסלים לאינץ׳</displayName>
-				<unitPattern count="one">{0} פיקסל לאינץ'</unitPattern>
-				<unitPattern count="two">{0} פיקסלים לאינץ'</unitPattern>
-				<unitPattern count="many">{0} פיקסלים לאינץ'</unitPattern>
-				<unitPattern count="other">{0} פיקסלים לאינץ'</unitPattern>
+				<unitPattern count="one">{0} פיקסל לאינץ׳</unitPattern>
+				<unitPattern count="two">{0} פיקסלים לאינץ׳</unitPattern>
+				<unitPattern count="many">{0} פיקסלים לאינץ׳</unitPattern>
+				<unitPattern count="other">{0} פיקסלים לאינץ׳</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
 				<displayName>נקודות לסנטימטר</displayName>
+				<unitPattern count="one">{0} נקודות לסנטימטר</unitPattern>
+				<unitPattern count="two">{0} נקודות לסנטימטר</unitPattern>
+				<unitPattern count="many">{0} נקודות לסנטימטר</unitPattern>
+				<unitPattern count="other">{0} נקודות לסנטימטר</unitPattern>
+			</unit>
+			<unit type="graphics-dot-per-inch">
+				<displayName>נקודות לאינץ׳</displayName>
+				<unitPattern count="one">{0} נק׳ לאינץ׳</unitPattern>
+				<unitPattern count="two">dpi ‏{0}</unitPattern>
+				<unitPattern count="other">{0} נק׳ לאינץ׳</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
 				<displayName>נקודות קטנות</displayName>
+				<unitPattern count="one">נקודה קטנה אחת ({0})</unitPattern>
+				<unitPattern count="two">{0} נקודות קטנות</unitPattern>
+				<unitPattern count="many">{0} נקודות קטנות</unitPattern>
+				<unitPattern count="other">{0} נקודות קטנות</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>רדיוס כדור-הארץ</displayName>
@@ -6836,7 +7009,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="length-point">
 				<gender>feminine</gender>
-				<unitPattern count="one">{0} נקודה</unitPattern>
+				<unitPattern count="one">נקודה אחת ({0})</unitPattern>
 				<unitPattern count="two">{0} נקודות</unitPattern>
 				<unitPattern count="many">{0} נקודות</unitPattern>
 				<unitPattern count="other">{0} נקודות</unitPattern>
@@ -7027,6 +7200,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} מילימטר כספית</unitPattern>
 				<unitPattern count="other">{0} מילימטר כספית</unitPattern>
 			</unit>
+			<unit type="pressure-ofhg">
+				<displayName>כספית</displayName>
+				<unitPattern count="one">{0} כספית</unitPattern>
+				<unitPattern count="two">{0} כספית</unitPattern>
+				<unitPattern count="other">{0} כספית</unitPattern>
+			</unit>
 			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>פאונד לאינץ׳ רבוע</displayName>
 				<unitPattern count="one">פאונד {0} לאינץ׳ רבוע</unitPattern>
@@ -7054,7 +7233,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="pressure-atmosphere">
 				<gender>feminine</gender>
-				<displayName>אטמוספרות</displayName>
+				<displayName>אטמוספירות</displayName>
 				<unitPattern count="one">{0} אטמוספרה</unitPattern>
 				<unitPattern count="two">{0} אטמוספרה</unitPattern>
 				<unitPattern count="many">{0} אטמוספרה</unitPattern>
@@ -7288,6 +7467,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} כ׳ מידה מטרית</unitPattern>
 				<unitPattern count="other">{0} כ׳ מידה מטרית</unitPattern>
 			</unit>
+			<unit type="volume-fluid-ounce-metric">
+				<displayName>אונקיית נוזל</displayName>
+				<unitPattern count="one">{0} אונקיית נוזל</unitPattern>
+				<unitPattern count="two">{0} fl oz m.</unitPattern>
+				<unitPattern count="other">{0} אונקיית נוזל</unitPattern>
+			</unit>
 			<unit type="volume-acre-foot">
 				<displayName>אקר-רגל</displayName>
 				<unitPattern count="one">{0} אקר-רגל</unitPattern>
@@ -7380,9 +7565,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="volume-dessert-spoon-imperial">
 				<displayName>כפית קינוחים בארה״ב</displayName>
 				<unitPattern count="one">{0} כפית קינוחים בארה״ב</unitPattern>
-				<unitPattern count="two">{0} כפיות קינוחים בארה&quot;ב</unitPattern>
-				<unitPattern count="many">{0} כפיות קינוחים בארה&quot;ב</unitPattern>
-				<unitPattern count="other">{0} כפיות קינוחים בארה&quot;ב</unitPattern>
+				<unitPattern count="two">{0} כפיות קינוחים בארה״ב</unitPattern>
+				<unitPattern count="many">{0} כפיות קינוחים בארה״ב</unitPattern>
+				<unitPattern count="other">{0} כפיות קינוחים בארה״ב</unitPattern>
 			</unit>
 			<unit type="volume-drop">
 				<displayName>טיפות</displayName>
@@ -7397,14 +7582,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="volume-jigger">
 				<displayName>ג׳יגר</displayName>
 				<unitPattern count="one">{0} ג׳יגר</unitPattern>
-				<unitPattern count="two">{0} ג'יגר</unitPattern>
-				<unitPattern count="many">{0} ג'יגר</unitPattern>
-				<unitPattern count="other">{0} ג'יגר</unitPattern>
-			</unit>
-			<unit type="volume-pinch">
-				<unitPattern count="one">{0} פינץ׳</unitPattern>
-				<unitPattern count="two">{0} פינץ'</unitPattern>
-				<unitPattern count="other">{0} פינץ'</unitPattern>
+				<unitPattern count="two">{0} ג׳יגר</unitPattern>
+				<unitPattern count="many">{0} ג׳יגר</unitPattern>
+				<unitPattern count="other">{0} ג׳יגר</unitPattern>
 			</unit>
 			<unit type="volume-quart-imperial">
 				<displayName>קווארט אימפריאלי</displayName>
@@ -7413,14 +7593,58 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} קווארטות אימפריאליות</unitPattern>
 				<unitPattern count="other">{0} קווארטות אימפריאליות</unitPattern>
 			</unit>
+			<unit type="angle-steradian">
+				<displayName>סטרדיאן</displayName>
+				<unitPattern count="one">{0} סטרדיאן</unitPattern>
+				<unitPattern count="two">{0} סטרדיאן</unitPattern>
+				<unitPattern count="other">{0} סטרדיאן</unitPattern>
+			</unit>
+			<unit type="concentr-katal">
+				<displayName>קטאל</displayName>
+				<unitPattern count="one">{0} קטאל</unitPattern>
+				<unitPattern count="two">{0} קטאל</unitPattern>
+				<unitPattern count="other">{0} קטאל</unitPattern>
+			</unit>
+			<unit type="electric-coulomb">
+				<displayName>קולון</displayName>
+			</unit>
+			<unit type="electric-farad">
+				<displayName>פאראד</displayName>
+			</unit>
+			<unit type="electric-henry">
+				<displayName>הנרי</displayName>
+			</unit>
+			<unit type="electric-siemens">
+				<displayName>סימנס</displayName>
+			</unit>
+			<unit type="energy-becquerel">
+				<displayName>בקרל</displayName>
+				<unitPattern count="one">{0} בקרל</unitPattern>
+				<unitPattern count="two">{0} בקרל</unitPattern>
+				<unitPattern count="other">{0} בקרל</unitPattern>
+			</unit>
+			<unit type="force-kilogram-force">
+				<displayName>קילוגרם כוח</displayName>
+				<unitPattern count="one">{0} קילוגרם כוח</unitPattern>
+				<unitPattern count="two">{0} קילוגרם כוח</unitPattern>
+				<unitPattern count="other">{0} קילוגרם כוח</unitPattern>
+			</unit>
+			<unit type="magnetic-tesla">
+				<displayName>טסלה</displayName>
+				<unitPattern count="one">{0} טסלה</unitPattern>
+				<unitPattern count="two">{0} טסלה</unitPattern>
+				<unitPattern count="other">{0} טסלה</unitPattern>
+			</unit>
+			<unit type="magnetic-weber">
+				<displayName>ובר</displayName>
+				<unitPattern count="one">{0} ובר</unitPattern>
+				<unitPattern count="two">{0} ובר</unitPattern>
+				<unitPattern count="other">{0} ובר</unitPattern>
+			</unit>
 			<unit type="speed-light-speed">
 				<gender>masculine</gender>
-				<displayName>אור</displayName>
-				<unitPattern count="one">{0} אור</unitPattern>
-				<unitPattern count="two">{0} אור</unitPattern>
-				<unitPattern count="other">{0} אור</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<gender>masculine</gender>
 				<displayName>חלקים למיליארד</displayName>
 				<unitPattern count="one">{0} חלקים למיליארד</unitPattern>
@@ -7429,11 +7653,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="duration-night">
 				<gender>masculine</gender>
-				<displayName>לילות</displayName>
-				<unitPattern count="one">{0} לילה</unitPattern>
-				<unitPattern count="two">{0} לילות</unitPattern>
-				<unitPattern count="other">{0} לילות</unitPattern>
-				<perUnitPattern>{0}/לילה</perUnitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>רוחות השמיים</displayName>
@@ -7546,9 +7765,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="area-hectare">
 				<displayName>הקטאר</displayName>
-				<unitPattern count="one">{0} ha</unitPattern>
-				<unitPattern count="two">{0} ha</unitPattern>
-				<unitPattern count="other">{0} ha</unitPattern>
 			</unit>
 			<unit type="area-square-meter">
 				<displayName>מ״ר</displayName>
@@ -7569,7 +7785,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} sq mi</unitPattern>
 				<unitPattern count="two">{0} sq mi</unitPattern>
 				<unitPattern count="other">{0} sq mi</unitPattern>
-				<perUnitPattern>{0}/mi²</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
 				<displayName>אקר</displayName>
@@ -7579,20 +7794,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="area-square-yard">
 				<displayName>yards²</displayName>
-				<unitPattern count="one">{0} yd²</unitPattern>
-				<unitPattern count="two">{0} yd²</unitPattern>
-				<unitPattern count="other">{0} yd²</unitPattern>
 			</unit>
 			<unit type="area-square-foot">
 				<unitPattern count="one">{0} sq ft</unitPattern>
 				<unitPattern count="two">{0} sq ft</unitPattern>
 				<unitPattern count="other">{0} sq ft</unitPattern>
-			</unit>
-			<unit type="area-square-inch">
-				<unitPattern count="one">{0} in²</unitPattern>
-				<unitPattern count="two">{0} in²</unitPattern>
-				<unitPattern count="other">{0} in²</unitPattern>
-				<perUnitPattern>{0}/in²</perUnitPattern>
 			</unit>
 			<unit type="area-dunam">
 				<displayName>דונם</displayName>
@@ -7600,21 +7806,23 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="two">{0} דונם</unitPattern>
 				<unitPattern count="other">{0} דונם</unitPattern>
 			</unit>
-			<unit type="concentr-karat">
-				<unitPattern count="one">{0} kt</unitPattern>
-				<unitPattern count="two">{0} kt</unitPattern>
-				<unitPattern count="other">{0} kt</unitPattern>
-			</unit>
-			<unit type="concentr-milligram-ofglucose-per-deciliter">
-				<unitPattern count="one">{0} mg/dL</unitPattern>
-				<unitPattern count="two">{0} mg/dL</unitPattern>
-				<unitPattern count="other">{0} mg/dL</unitPattern>
-			</unit>
 			<unit type="concentr-item">
 				<displayName>פריט</displayName>
 				<unitPattern count="one">{0} פריט</unitPattern>
 				<unitPattern count="two">{0} פריטים</unitPattern>
 				<unitPattern count="other">{0} פריטים</unitPattern>
+			</unit>
+			<unit type="concentr-part">
+				<displayName>חלק</displayName>
+				<unitPattern count="one">{0} חלק</unitPattern>
+				<unitPattern count="two">{0} חלקים</unitPattern>
+				<unitPattern count="other">{0} חלק</unitPattern>
+			</unit>
+			<unit type="concentr-ofglucose">
+				<displayName>גלוקוז</displayName>
+				<unitPattern count="one">{0} גלוקוז</unitPattern>
+				<unitPattern count="two">{0} Glc</unitPattern>
+				<unitPattern count="other">{0} Glc</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>ליטרים/ק״מ</displayName>
@@ -7637,11 +7845,52 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="consumption-mile-per-gallon-imperial">
 				<displayName>miles/gal Imp.</displayName>
 			</unit>
+			<unit type="digital-petabyte">
+				<unitPattern count="one">PB‏{0}</unitPattern>
+				<unitPattern count="two">PB‏{0}</unitPattern>
+				<unitPattern count="other">PB‏{0}</unitPattern>
+			</unit>
+			<unit type="digital-terabyte">
+				<unitPattern count="one">TB‏{0}</unitPattern>
+				<unitPattern count="two">{0} TB</unitPattern>
+				<unitPattern count="other">{0} TB</unitPattern>
+			</unit>
+			<unit type="digital-terabit">
+				<unitPattern count="one">Tb‏{0}</unitPattern>
+				<unitPattern count="two">Tb‏{0}</unitPattern>
+				<unitPattern count="other">Tb‏{0}</unitPattern>
+			</unit>
+			<unit type="digital-gigabyte">
+				<unitPattern count="one">GB‏{0}</unitPattern>
+				<unitPattern count="two">{0} GB</unitPattern>
+				<unitPattern count="other">{0} GB</unitPattern>
+			</unit>
 			<unit type="digital-gigabit">
 				<displayName>Gbit</displayName>
+				<unitPattern count="one">Gb‏{0}</unitPattern>
+				<unitPattern count="two">{0} Gb</unitPattern>
+				<unitPattern count="other">{0} Gb</unitPattern>
+			</unit>
+			<unit type="digital-megabyte">
+				<unitPattern count="one">MB‏{0}</unitPattern>
+				<unitPattern count="two">{0} MB</unitPattern>
+				<unitPattern count="other">{0} MB</unitPattern>
 			</unit>
 			<unit type="digital-megabit">
 				<displayName>Mbit</displayName>
+				<unitPattern count="one">Mb‏{0}</unitPattern>
+				<unitPattern count="two">{0} Mb</unitPattern>
+				<unitPattern count="other">{0} Mb</unitPattern>
+			</unit>
+			<unit type="digital-kilobyte">
+				<unitPattern count="one">kB‏{0}</unitPattern>
+				<unitPattern count="two">{0} kB</unitPattern>
+				<unitPattern count="other">{0} kB</unitPattern>
+			</unit>
+			<unit type="digital-kilobit">
+				<unitPattern count="one">kb‏{0}</unitPattern>
+				<unitPattern count="two">{0} kb</unitPattern>
+				<unitPattern count="other">{0} kb</unitPattern>
 			</unit>
 			<unit type="digital-byte">
 				<displayName>בייט</displayName>
@@ -7729,7 +7978,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>amps</displayName>
 			</unit>
 			<unit type="electric-ohm">
-				<displayName>ohms</displayName>
+				<displayName>אוהם</displayName>
 			</unit>
 			<unit type="electric-volt">
 				<displayName>וולט</displayName>
@@ -7760,42 +8009,48 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>קוט״ש/100 ק״מ</displayName>
 				<unitPattern count="one">{0} קוט״ש/100 ק״מ</unitPattern>
 				<unitPattern count="two">{0} קוט״ש/100 ק״מ</unitPattern>
-				<unitPattern count="many">{0} קוט״ש/100 ק״מ</unitPattern>
 				<unitPattern count="other">{0} קוט״ש/100 ק״מ</unitPattern>
 			</unit>
-			<unit type="graphics-em">
-				<unitPattern count="one">{0} em</unitPattern>
-				<unitPattern count="two">{0} em</unitPattern>
-				<unitPattern count="other">{0} em</unitPattern>
-			</unit>
 			<unit type="graphics-pixel">
-				<unitPattern count="one">{0} px</unitPattern>
-				<unitPattern count="two">{0} px</unitPattern>
-				<unitPattern count="other">{0} px</unitPattern>
+				<unitPattern count="one">px ‏{0}</unitPattern>
+				<unitPattern count="two">px ‏{0}</unitPattern>
+				<unitPattern count="other">px ‏{0}</unitPattern>
 			</unit>
 			<unit type="graphics-megapixel">
-				<unitPattern count="one">{0} MP</unitPattern>
-				<unitPattern count="two">{0} MP</unitPattern>
-				<unitPattern count="other">{0} MP</unitPattern>
+				<unitPattern count="one">MP ‏{0}</unitPattern>
+				<unitPattern count="two">MP ‏{0}</unitPattern>
+				<unitPattern count="other">MP ‏{0}</unitPattern>
 			</unit>
 			<unit type="graphics-pixel-per-centimeter">
-				<unitPattern count="one">{0} ppcm</unitPattern>
-				<unitPattern count="two">{0} ppcm</unitPattern>
-				<unitPattern count="other">{0} ppcm</unitPattern>
+				<unitPattern count="one">ppcm ‏{0}</unitPattern>
+				<unitPattern count="two">ppcm ‏{0}</unitPattern>
+				<unitPattern count="other">ppcm ‏{0}</unitPattern>
 			</unit>
 			<unit type="graphics-pixel-per-inch">
-				<unitPattern count="one">{0} ppi</unitPattern>
-				<unitPattern count="two">{0} ppi</unitPattern>
-				<unitPattern count="other">{0} ppi</unitPattern>
+				<unitPattern count="one">ppi ‏{0}</unitPattern>
+				<unitPattern count="two">ppi ‏{0}</unitPattern>
+				<unitPattern count="other">ppi ‏{0}</unitPattern>
+			</unit>
+			<unit type="graphics-dot-per-centimeter">
+				<displayName>dpcm</displayName>
+				<unitPattern count="one">dpcm‏ {0}</unitPattern>
+				<unitPattern count="two">dpcm‏ {0}</unitPattern>
+				<unitPattern count="many">dpcm‏ {0}</unitPattern>
+				<unitPattern count="other">dpcm‏ {0}</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
 				<displayName>dpi</displayName>
-				<unitPattern count="one">{0} ppi</unitPattern>
-				<unitPattern count="two">{0} ppi</unitPattern>
-				<unitPattern count="other">{0} dpi</unitPattern>
+				<unitPattern count="one">ppi ‏{0}</unitPattern>
+				<unitPattern count="two">dpi ‏{0}</unitPattern>
+				<unitPattern count="many">dpi ‏{0}</unitPattern>
+				<unitPattern count="other">dpi ‏{0}</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
 				<displayName>נקודה קטנה</displayName>
+				<unitPattern count="one">נק׳ קטנה אחת ({0})</unitPattern>
+				<unitPattern count="two">{0} נק׳ קטנות</unitPattern>
+				<unitPattern count="many">{0} נק׳ קטנות</unitPattern>
+				<unitPattern count="other">{0} נק׳ קטנות</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>ק״מ</displayName>
@@ -7830,21 +8085,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="two">{0} מ״מ</unitPattern>
 				<unitPattern count="other">{0} מ״מ</unitPattern>
 			</unit>
-			<unit type="length-micrometer">
-				<unitPattern count="one">{0} μm</unitPattern>
-				<unitPattern count="two">{0} μm</unitPattern>
-				<unitPattern count="other">{0} μm</unitPattern>
-			</unit>
-			<unit type="length-nanometer">
-				<unitPattern count="one">{0} nm</unitPattern>
-				<unitPattern count="two">{0} nm</unitPattern>
-				<unitPattern count="other">{0} nm</unitPattern>
-			</unit>
 			<unit type="length-picometer">
 				<displayName>פ״מ</displayName>
 				<unitPattern count="one">{0} פ“מ</unitPattern>
 				<unitPattern count="two">{0} פ״מ</unitPattern>
-				<unitPattern count="other">{0} פ&quot;מ</unitPattern>
+				<unitPattern count="other">{0} פ״מ</unitPattern>
 			</unit>
 			<unit type="length-mile">
 				<displayName>מייל</displayName>
@@ -7860,33 +8105,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="length-foot">
 				<displayName>רגל</displayName>
-				<unitPattern count="one">{0} ft</unitPattern>
-				<unitPattern count="two">{0} ft</unitPattern>
-				<unitPattern count="other">{0} ft</unitPattern>
 				<perUnitPattern>{0} ‎/ft</perUnitPattern>
 			</unit>
 			<unit type="length-inch">
 				<displayName>אינץ׳</displayName>
-				<unitPattern count="one">{0} in</unitPattern>
-				<unitPattern count="two">{0} in</unitPattern>
-				<unitPattern count="other">{0} in</unitPattern>
 				<perUnitPattern>{0} ‎/in</perUnitPattern>
-			</unit>
-			<unit type="length-parsec">
-				<unitPattern count="one">{0} pc</unitPattern>
-				<unitPattern count="two">{0} pc</unitPattern>
-				<unitPattern count="other">{0} pc</unitPattern>
 			</unit>
 			<unit type="length-light-year">
 				<displayName>שנות אור</displayName>
 				<unitPattern count="one">{0} שנת אור</unitPattern>
 				<unitPattern count="two">{0} שנות אור</unitPattern>
 				<unitPattern count="other">{0} שנות אור</unitPattern>
-			</unit>
-			<unit type="length-astronomical-unit">
-				<unitPattern count="one">{0} au</unitPattern>
-				<unitPattern count="two">{0} au</unitPattern>
-				<unitPattern count="other">{0} au</unitPattern>
 			</unit>
 			<unit type="length-nautical-mile">
 				<displayName>מ״י</displayName>
@@ -7898,7 +8127,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>נקודות</displayName>
 				<unitPattern count="one">{0} נק׳</unitPattern>
 				<unitPattern count="two">{0} נק׳</unitPattern>
-				<unitPattern count="other">{0} נק'</unitPattern>
+				<unitPattern count="other">{0} נק׳</unitPattern>
 			</unit>
 			<unit type="length-solar-radius">
 				<unitPattern count="one">{0} R☉‎</unitPattern>
@@ -8010,9 +8239,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} קמ״ק</unitPattern>
 			</unit>
 			<unit type="volume-cubic-meter">
-				<unitPattern count="one">{0} m³</unitPattern>
-				<unitPattern count="two">{0} m³</unitPattern>
-				<unitPattern count="other">{0} m³</unitPattern>
+				<unitPattern count="one">{0} מ״ק</unitPattern>
+				<unitPattern count="two">{0} מ״ק</unitPattern>
+				<unitPattern count="other">{0} מ״ק</unitPattern>
 			</unit>
 			<unit type="volume-cubic-centimeter">
 				<displayName>סמ״ק</displayName>
@@ -8021,36 +8250,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} סמ״ק</unitPattern>
 				<perUnitPattern>{0}/סמ״ק</perUnitPattern>
 			</unit>
-			<unit type="volume-cubic-mile">
-				<unitPattern count="one">{0} mi³</unitPattern>
-				<unitPattern count="two">{0} mi³</unitPattern>
-				<unitPattern count="other">{0} mi³</unitPattern>
-			</unit>
-			<unit type="volume-cubic-yard">
-				<unitPattern count="one">{0} yd³</unitPattern>
-				<unitPattern count="two">{0} yd³</unitPattern>
-				<unitPattern count="other">{0} yd³</unitPattern>
-			</unit>
 			<unit type="volume-cubic-foot">
 				<displayName>feet³</displayName>
-				<unitPattern count="one">{0} ft³</unitPattern>
-				<unitPattern count="two">{0} ft³</unitPattern>
-				<unitPattern count="other">{0} ft³</unitPattern>
-			</unit>
-			<unit type="volume-cubic-inch">
-				<unitPattern count="one">{0} in³</unitPattern>
-				<unitPattern count="two">{0} in³</unitPattern>
-				<unitPattern count="other">{0} in³</unitPattern>
-			</unit>
-			<unit type="volume-megaliter">
-				<unitPattern count="one">{0} ML</unitPattern>
-				<unitPattern count="two">{0} ML</unitPattern>
-				<unitPattern count="other">{0} ML</unitPattern>
-			</unit>
-			<unit type="volume-hectoliter">
-				<unitPattern count="one">{0} hL</unitPattern>
-				<unitPattern count="two">{0} hL</unitPattern>
-				<unitPattern count="other">{0} hL</unitPattern>
 			</unit>
 			<unit type="volume-liter">
 				<displayName>ליטר</displayName>
@@ -8065,31 +8266,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="two">{0} דצ״ל</unitPattern>
 				<unitPattern count="other">{0} דצ״ל</unitPattern>
 			</unit>
-			<unit type="volume-centiliter">
-				<unitPattern count="one">{0} cL</unitPattern>
-				<unitPattern count="two">{0} cL</unitPattern>
-				<unitPattern count="other">{0} cL</unitPattern>
-			</unit>
 			<unit type="volume-milliliter">
 				<displayName>מ״ל</displayName>
 				<unitPattern count="one">{0} מ״ל</unitPattern>
 				<unitPattern count="two">{0} מ״ל</unitPattern>
 				<unitPattern count="other">{0} מ״ל</unitPattern>
-			</unit>
-			<unit type="volume-pint-metric">
-				<unitPattern count="one">{0} mpt</unitPattern>
-				<unitPattern count="two">{0} mpt</unitPattern>
-				<unitPattern count="other">{0} mpt</unitPattern>
-			</unit>
-			<unit type="volume-cup-metric">
-				<unitPattern count="one">{0} mc</unitPattern>
-				<unitPattern count="two">{0} mc</unitPattern>
-				<unitPattern count="other">{0} mc</unitPattern>
-			</unit>
-			<unit type="volume-acre-foot">
-				<unitPattern count="one">{0} ac ft</unitPattern>
-				<unitPattern count="two">{0} ac ft</unitPattern>
-				<unitPattern count="other">{0} ac ft</unitPattern>
 			</unit>
 			<unit type="volume-gallon">
 				<displayName>גלון</displayName>
@@ -8107,15 +8288,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="volume-quart">
 				<displayName>qts</displayName>
-				<unitPattern count="one">{0} qt</unitPattern>
-				<unitPattern count="two">{0} qt</unitPattern>
-				<unitPattern count="other">{0} qt</unitPattern>
 			</unit>
 			<unit type="volume-pint">
 				<displayName>פינט</displayName>
-				<unitPattern count="one">{0} pt</unitPattern>
-				<unitPattern count="two">{0} pt</unitPattern>
-				<unitPattern count="other">{0} pt</unitPattern>
 			</unit>
 			<unit type="volume-cup">
 				<displayName>כוסות</displayName>
@@ -8129,11 +8304,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="two">{0} fl oz</unitPattern>
 				<unitPattern count="other">{0} fl oz</unitPattern>
 			</unit>
-			<unit type="volume-fluid-ounce-imperial">
-				<unitPattern count="one">{0} fl oz Imp.</unitPattern>
-				<unitPattern count="two">{0} fl oz Imp.</unitPattern>
-				<unitPattern count="other">{0} fl oz Imp.</unitPattern>
-			</unit>
 			<unit type="volume-tablespoon">
 				<displayName>כפות</displayName>
 				<unitPattern count="one">{0} כפ׳</unitPattern>
@@ -8146,11 +8316,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="two">{0} כפי׳</unitPattern>
 				<unitPattern count="other">{0} כפי׳</unitPattern>
 			</unit>
-			<unit type="volume-barrel">
-				<unitPattern count="one">{0} bbl</unitPattern>
-				<unitPattern count="two">{0} bbl</unitPattern>
-				<unitPattern count="other">{0} bbl</unitPattern>
-			</unit>
 			<unit type="volume-drop">
 				<displayName>טיפה</displayName>
 				<unitPattern count="one">טיפה</unitPattern>
@@ -8159,9 +8324,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="volume-pinch">
 				<displayName>פינץ׳</displayName>
-				<unitPattern count="one">{0} פינץ'</unitPattern>
-				<unitPattern count="two">{0} פינץ'</unitPattern>
-				<unitPattern count="other">{0} פינץ'</unitPattern>
+				<unitPattern count="one">{0} פינץ׳</unitPattern>
+				<unitPattern count="two">{0} פינץ׳</unitPattern>
+				<unitPattern count="other">{0} פינץ׳</unitPattern>
+			</unit>
+			<unit type="energy-calorie-it">
+				<displayName>קלוריה-IT</displayName>
+			</unit>
+			<unit type="force-kilogram-force">
+				<displayName>ק״ג-כוח</displayName>
+				<unitPattern count="one">{0} ק״ג כוח</unitPattern>
+				<unitPattern count="two">{0} ק״ג כוח</unitPattern>
+				<unitPattern count="other">{0} ק״ג כוח</unitPattern>
 			</unit>
 			<unit type="speed-light-speed">
 				<displayName>אור</displayName>
@@ -8203,16 +8377,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} שנ׳</unitPattern>
 				<unitPattern count="other">{0} שנ׳</unitPattern>
 			</unit>
-			<unit type="area-square-kilometer">
-				<unitPattern count="one">{0} קמ״ר</unitPattern>
-				<unitPattern count="two">{0} קמ״ר</unitPattern>
-				<unitPattern count="other">{0} קמ״ר</unitPattern>
-			</unit>
 			<unit type="concentr-item">
 				<unitPattern count="one">{0} פריט</unitPattern>
-				<unitPattern count="two">{0} פר'</unitPattern>
-				<unitPattern count="many">{0} פר'</unitPattern>
-				<unitPattern count="other">{0} פר'</unitPattern>
+				<unitPattern count="two">{0} פר׳</unitPattern>
+				<unitPattern count="many">{0} פר׳</unitPattern>
+				<unitPattern count="other">{0} פר׳</unitPattern>
+			</unit>
+			<unit type="concentr-part">
+				<unitPattern count="one">{0} חלק</unitPattern>
+				<unitPattern count="two">{0} חלקים</unitPattern>
+				<unitPattern count="other">{0} חלקים</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>ל׳/100ק״מ</displayName>
@@ -8220,6 +8394,23 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="two">{0}ל׳/100ק״מ</unitPattern>
 				<unitPattern count="many">{0}ל׳/100ק״מ</unitPattern>
 				<unitPattern count="other">{0}ל׳/100ק״מ</unitPattern>
+			</unit>
+			<unit type="digital-terabyte">
+				<unitPattern count="one">TB‏{0}</unitPattern>
+				<unitPattern count="two">TB‏{0}</unitPattern>
+				<unitPattern count="many">TB‏{0}</unitPattern>
+				<unitPattern count="other">TB‏{0}</unitPattern>
+			</unit>
+			<unit type="digital-byte">
+				<unitPattern count="one">B‏{0}</unitPattern>
+				<unitPattern count="two">B‏{0}</unitPattern>
+				<unitPattern count="many">B‏{0}</unitPattern>
+				<unitPattern count="other">B‏{0}</unitPattern>
+			</unit>
+			<unit type="digital-bit">
+				<unitPattern count="one">bit‏{0}</unitPattern>
+				<unitPattern count="two">{0} ביט</unitPattern>
+				<unitPattern count="other">{0} ביט</unitPattern>
 			</unit>
 			<unit type="duration-year">
 				<displayName>ש׳</displayName>
@@ -8255,15 +8446,24 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="duration-nanosecond">
 				<displayName>ns</displayName>
 			</unit>
-			<unit type="energy-foodcalorie">
-				<displayName>קל׳</displayName>
-			</unit>
 			<unit type="force-kilowatt-hour-per-100-kilometer">
 				<displayName>kWh/100km</displayName>
 				<unitPattern count="one">{0} kWh/100km</unitPattern>
 				<unitPattern count="two">{0} kWh/100km</unitPattern>
 				<unitPattern count="many">{0} kWh/100km</unitPattern>
 				<unitPattern count="other">{0} kWh</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-centimeter">
+				<unitPattern count="one">ppcm‏{0}</unitPattern>
+				<unitPattern count="two">ppcm‏{0}</unitPattern>
+				<unitPattern count="many">ppcm‏{0}</unitPattern>
+				<unitPattern count="other">ppcm‏{0}</unitPattern>
+			</unit>
+			<unit type="graphics-dot-per-centimeter">
+				<unitPattern count="one">‎dpcm‏{0}</unitPattern>
+				<unitPattern count="two">‎dpcm‏{0}</unitPattern>
+				<unitPattern count="many">‎dpcm‏{0}</unitPattern>
+				<unitPattern count="other">‎dpcm‏{0}</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
 				<displayName>נקודה</displayName>
@@ -8323,6 +8523,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0}dsp-Imp</unitPattern>
 				<unitPattern count="other">{0}dsp-Imp</unitPattern>
 			</unit>
+			<unit type="energy-calorie-it">
+				<displayName>קל׳-IT</displayName>
+			</unit>
 		</unitLength>
 	</units>
 	<listPatterns>
@@ -8333,9 +8536,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<listPattern type="or">
 			<listPatternPart type="end">{0} או {1}</listPatternPart>
 			<listPatternPart type="2">{0} או {1}</listPatternPart>
-		</listPattern>
-		<listPattern type="unit">
-			<listPatternPart type="end">{0} ו-{1}</listPatternPart>
 		</listPattern>
 		<listPattern type="unit-narrow">
 			<listPatternPart type="start">{0} {1}</listPatternPart>

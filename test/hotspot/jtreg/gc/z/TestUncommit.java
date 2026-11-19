@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,9 @@ package gc.z;
 /*
  * @test TestUncommit
  * @requires vm.gc.Z
+ * @requires vm.opt.ZAdaptiveHeapSizing == null | !vm.opt.ZAdaptiveHeapSizing
  * @summary Test ZGC uncommit unused memory
- * @run main/othervm -XX:+UseZGC -Xlog:gc*,gc+heap=debug,gc+stats=off -Xms128M -Xmx512M -XX:ZUncommitDelay=5 gc.z.TestUncommit
+ * @run main/othervm/timeout=480 -XX:+UseZGC -Xlog:gc*,gc+heap=debug,gc+stats=off -XX:-ZAdaptiveHeapSizing -Xms128M -Xmx512M -XX:ZUncommitDelay=5 gc.z.TestUncommit
  */
 
 import java.util.ArrayList;
@@ -108,7 +109,16 @@ public class TestUncommit {
             throw new Exception("Uncommitted too fast");
         }
 
+        // In typical conditions (system not over-provisioned or slow),
+        // uncommitting is expected to complete within 3 * ZUncommitDelay after
+        // the last commit. To accommodate less ideal environments, only
+        // durations exceeding 5 * ZUncommitDelay are flagged as errors.
+
         if (actualDelay > delay * 3) {
+            log(" *** Uncommit slower than expected. ***");
+        }
+
+        if (actualDelay > delay * 5) {
             throw new Exception("Uncommitted too slow");
         }
 

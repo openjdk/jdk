@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 8145239 8129559 8080354 8189248 8010319 8246353 8247456 8282160 8292755 8319532
  * @summary Tests for EvaluationState.classes
  * @build KullaTesting TestingInputStream ExpectedDiagnostic
- * @run testng ClassesTest
+ * @run junit/timeout=480 ClassesTest
  */
 
 import java.util.ArrayList;
@@ -37,8 +37,6 @@ import javax.tools.Diagnostic;
 import jdk.jshell.Snippet;
 import jdk.jshell.TypeDeclSnippet;
 import jdk.jshell.VarSnippet;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import jdk.jshell.Diag;
 import jdk.jshell.Snippet.Status;
@@ -51,16 +49,22 @@ import static jdk.jshell.Snippet.Status.REJECTED;
 import static jdk.jshell.Snippet.Status.OVERWRITTEN;
 import static jdk.jshell.Snippet.Status.NONEXISTENT;
 import static jdk.jshell.Snippet.SubKind.*;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
-@Test
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class ClassesTest extends KullaTesting {
 
+    @Test
     public void noClasses() {
         assertNumberOfActiveClasses(0);
     }
 
+    @Test
     public void testSignature1() {
         TypeDeclSnippet c1 = classKey(assertEval("class A extends B {}", added(RECOVERABLE_NOT_DEFINED)));
         assertTypeDeclSnippet(c1, "A", RECOVERABLE_NOT_DEFINED, CLASS_SUBKIND, 1, 0);
@@ -82,6 +86,7 @@ public class ClassesTest extends KullaTesting {
         assertTypeDeclSnippet(c5, "A", RECOVERABLE_NOT_DEFINED, CLASS_SUBKIND, 1, 0);
     }
 
+    @Test
     public void testSignature2() {
         TypeDeclSnippet c1 = (TypeDeclSnippet) assertDeclareFail("class A { void f() { return g(); } }", "compiler.err.prob.found.req");
         assertTypeDeclSnippet(c1, "A", REJECTED, CLASS_SUBKIND, 0, 2);
@@ -92,27 +97,32 @@ public class ClassesTest extends KullaTesting {
                 ste(c2, RECOVERABLE_DEFINED, DROPPED, true, null));
     }
 
+    @Test
     public void classDeclaration() {
         assertEval("class A { }");
         assertClasses(clazz(KullaTesting.ClassType.CLASS, "A"));
     }
 
 
+    @Test
     public void interfaceDeclaration() {
         assertEval("interface A { }");
         assertClasses(clazz(KullaTesting.ClassType.INTERFACE, "A"));
     }
 
+    @Test
     public void annotationDeclaration() {
         assertEval("@interface A { }");
         assertClasses(clazz(KullaTesting.ClassType.ANNOTATION, "A"));
     }
 
+    @Test
     public void enumDeclaration() {
         assertEval("enum A { }");
         assertClasses(clazz(KullaTesting.ClassType.ENUM, "A"));
     }
 
+    @Test
     public void classesDeclaration() {
         assertEval("interface A { }");
         assertEval("class B implements A { }");
@@ -128,6 +138,7 @@ public class ClassesTest extends KullaTesting {
         assertActiveKeys();
     }
 
+    @Test
     public void classesRedeclaration1() {
         Snippet a = classKey(assertEval("class A { }"));
         Snippet b = classKey(assertEval("interface B { }"));
@@ -149,6 +160,7 @@ public class ClassesTest extends KullaTesting {
         assertActiveKeys();
     }
 
+    @Test
     public void classesRedeclaration2() {
         assertEval("class A { }");
         assertClasses(clazz(KullaTesting.ClassType.CLASS, "A"));
@@ -180,6 +192,7 @@ public class ClassesTest extends KullaTesting {
     }
 
     //8154496: test3 update: sig change should false
+    @Test
     public void classesRedeclaration3() {
         Snippet a = classKey(assertEval("class A { }"));
         assertClasses(clazz(KullaTesting.ClassType.CLASS, "A"));
@@ -201,6 +214,7 @@ public class ClassesTest extends KullaTesting {
         assertActiveKeys();
     }
 
+    @Test
     public void classesCyclic1() {
         Snippet b = classKey(assertEval("class B extends A { }",
                 added(RECOVERABLE_NOT_DEFINED)));
@@ -221,11 +235,12 @@ public class ClassesTest extends KullaTesting {
             diags = diagsA;
             assertTrue(diagsB.isEmpty());
         }
-        assertEquals(diags.size(), 1, "Expected one error");
-        assertEquals(diags.get(0).getCode(), "compiler.err.cyclic.inheritance", "Expected cyclic inheritance error");
+        assertEquals(1, diags.size(), "Expected one error");
+        assertEquals("compiler.err.cyclic.inheritance", diags.get(0).getCode(), "Expected cyclic inheritance error");
         assertActiveKeys();
     }
 
+    @Test
     public void classesCyclic2() {
         Snippet d = classKey(assertEval("class D extends E { }", added(RECOVERABLE_NOT_DEFINED)));
         assertEval("class E { D d; }",
@@ -234,6 +249,7 @@ public class ClassesTest extends KullaTesting {
         assertActiveKeys();
     }
 
+    @Test
     public void classesCyclic3() {
         Snippet outer = classKey(assertEval("class Outer { class Inner extends Foo { } }",
                 added(RECOVERABLE_NOT_DEFINED)));
@@ -247,6 +263,7 @@ public class ClassesTest extends KullaTesting {
         assertActiveKeys();
     }
 
+    @Test
     public void classesIgnoredModifiers() {
         assertEval("public interface A { }");
         assertEval("static class B implements A { }");
@@ -254,6 +271,7 @@ public class ClassesTest extends KullaTesting {
         assertActiveKeys();
     }
 
+    @Test
     public void classesIgnoredModifiersAnnotation() {
         assertEval("public @interface X { }");
         assertEval("@X public interface A { }");
@@ -262,6 +280,7 @@ public class ClassesTest extends KullaTesting {
         assertActiveKeys();
     }
 
+    @Test
     public void classesIgnoredModifiersOtherModifiers() {
         assertEval("strictfp public interface A { }");
         assertEval("strictfp static class B implements A { }");
@@ -269,6 +288,7 @@ public class ClassesTest extends KullaTesting {
         assertActiveKeys();
     }
 
+    @Test
     public void ignoreModifierSpaceIssue() {
         assertEval("interface I { void f(); } ");
         // there should not be a space between 'I' and '{' to reproduce the failure
@@ -277,7 +297,6 @@ public class ClassesTest extends KullaTesting {
         assertActiveKeys();
     }
 
-    @DataProvider(name = "innerClasses")
     public Object[][] innerClasses() {
         List<Object[]> list = new ArrayList<>();
         for (ClassType outerClassType : ClassType.values()) {
@@ -288,7 +307,8 @@ public class ClassesTest extends KullaTesting {
         return list.toArray(new Object[list.size()][]);
     }
 
-    @Test(dataProvider = "innerClasses")
+    @ParameterizedTest
+    @MethodSource("innerClasses")
     public void innerClasses(ClassType outerClassType, ClassType innerClassType) {
         String source =
                 outerClassType + " A {" + (outerClassType == ClassType.ENUM ? ";" : "") +
@@ -299,6 +319,7 @@ public class ClassesTest extends KullaTesting {
         assertActiveKeys();
     }
 
+    @Test
     public void testInnerClassesCrash() {
         Snippet a = classKey(assertEval("class A { class B extends A {} }"));
         Snippet a2 = classKey(assertEval("class A { interface I1 extends I2 {} interface I2 {} }",
@@ -309,20 +330,23 @@ public class ClassesTest extends KullaTesting {
                 ste(a2, VALID, OVERWRITTEN, false, MAIN_SNIPPET));
     }
 
+    @Test
     public void testInnerClassesCrash1() {
         assertEval("class A { class B extends A {} B getB() { return new B();} }");
-        assertEquals(varKey(assertEval("A a = new A();")).name(), "a");
+        assertEquals("a", varKey(assertEval("A a = new A();")).name());
         VarSnippet variableKey = varKey(assertEval("a.getB();"));
-        assertEquals(variableKey.typeName(), "A.B");
+        assertEquals("A.B", variableKey.typeName());
     }
 
+    @Test
     public void testInnerClassesCrash2() {
         assertEval("class A { interface I1 extends I2 {} interface I2 {} I1 x; }");
-        assertEquals(varKey(assertEval("A a = new A();")).name(), "a");
+        assertEquals("a", varKey(assertEval("A a = new A();")).name());
         VarSnippet variableKey = varKey(assertEval("a.x;"));
-        assertEquals(variableKey.typeName(), "A.I1");
+        assertEquals("A.I1", variableKey.typeName());
     }
 
+    @Test
     public void testCircular() {
         assertEval("import java.util.function.Supplier;");
         TypeDeclSnippet aClass =
@@ -342,6 +366,7 @@ public class ClassesTest extends KullaTesting {
         assertEval("new A()");
     }
 
+    @Test
     public void testCircular8282160() {
         TypeDeclSnippet classKey = classKey(assertEval("""
                                                        class B {
@@ -360,6 +385,7 @@ public class ClassesTest extends KullaTesting {
                    ste(classKey, Status.RECOVERABLE_NOT_DEFINED, Status.VALID, true, null));
     }
 
+    @Test
     public void testDefaultMethodInInterface() {
         assertEvalFail("""
                        interface C {
@@ -374,6 +400,7 @@ public class ClassesTest extends KullaTesting {
                        """);
     }
 
+    @Test
     public void testNonSealed() {
         assertAnalyze("non-sealed class C extends B {}int i;",
                       "non-sealed class C extends B {}",

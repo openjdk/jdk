@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ class MemoryReserver : AllStatic {
   static ReservedSpace reserve_memory(char* requested_address,
                                       size_t size,
                                       size_t alignment,
+                                      size_t page_size,
                                       bool exec,
                                       MemTag mem_tag);
 
@@ -41,7 +42,8 @@ class MemoryReserver : AllStatic {
                                               size_t size,
                                               size_t alignment,
                                               size_t page_size,
-                                              bool exec);
+                                              bool exec,
+                                              MemTag mem_tag);
 
 public:
   // Final destination
@@ -69,7 +71,7 @@ public:
                                MemTag mem_tag);
 
   // Release reserved memory
-  static bool release(const ReservedSpace& reserved);
+  static void release(const ReservedSpace& reserved);
 };
 
 class CodeMemoryReserver : AllStatic {

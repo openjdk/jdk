@@ -24,6 +24,8 @@
  */
 package jdk.jpackage.internal.model;
 
+import java.util.Optional;
+
 /**
  * Details of application launcher startup configuration using Java module.
  */
@@ -36,9 +38,18 @@ public interface LauncherModularStartupInfoMixin {
     String moduleName();
 
     /**
+     * Gets the main module version if available or an empty {@link Optional}
+     * otherwise.
+     *
+     * @return the main module version if available or an empty {@link Optional}
+     *         otherwise
+     */
+    Optional<String> moduleVersion();
+
+    /**
      * Default implementation of {@link LauncherModularStartupInfoMixin} interface.
      */
-    record Stub(String moduleName) implements LauncherModularStartupInfoMixin {
+    record Stub(String moduleName, Optional<String> moduleVersion) implements LauncherModularStartupInfoMixin {
     }
 
 }

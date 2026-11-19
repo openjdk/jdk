@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,11 +49,11 @@ class CompilePhaseCollector {
         List<Method> irAnnotatedMethods = getIRAnnotatedMethods(testClass);
         try {
             for (Method method : irAnnotatedMethods) {
-                methodNameToCompilePhasesMap.put(testClass.getCanonicalName() + "::" + method.getName(),
+                methodNameToCompilePhasesMap.put(testClass.getName() + "::" + method.getName(),
                                                  collectCompilePhases(method));
             }
         } catch (TestFormatException e) {
-            // Create default map and let the IR matcher report the format failures later in the driver VM.
+            // Create default map and let the IR matcher report the format failures later in the Driver VM.
             return createDefaultMap(testClass);
         }
         return methodNameToCompilePhasesMap;
@@ -75,7 +75,7 @@ class CompilePhaseCollector {
         HashSet<CompilePhase> defaultSet = new HashSet<>();
         defaultSet.add(CompilePhase.PRINT_IDEAL);
         defaultSet.add(CompilePhase.PRINT_OPTO_ASSEMBLY);
-        defaultMap.put(testClass.getCanonicalName() + "::*", defaultSet);
+        defaultMap.put(testClass.getName() + "::*", defaultSet);
         return defaultMap;
     }
 }

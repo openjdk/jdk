@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -193,6 +193,8 @@ public:
                                       ZStoreBarrierStubC2* stub) const;
 #endif // COMPILER2
 
+  void try_peek_weak_handle_in_nmethod(MacroAssembler* masm, Register weak_handle, Register obj, Register tmp, Label& slow_path);
+
   void check_oop(MacroAssembler* masm, Register obj, Register tmp1, Register tmp2, Label& error);
 };
 
@@ -274,7 +276,6 @@ public:
   bool is_test_and_branch_reachable();
   Label* entry();
 };
-
 
 class ZStoreBarrierStubC2Aarch64 : public ZStoreBarrierStubC2 {
 private:

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #define SHARE_GC_PARALLEL_MUTABLENUMASPACE_HPP
 
 #include "gc/parallel/mutableSpace.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/gcUtil.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/growableArray.hpp"
@@ -60,7 +61,7 @@
  */
 
 class MutableNUMASpace : public MutableSpace {
-  friend class VMStructs;
+  friend class MutableNUMASpaceTest_reactivate_vm_Test;
 
   class LGRPSpace : public CHeapObj<mtGC> {
     uint _lgrp_id;
@@ -82,8 +83,8 @@ class MutableNUMASpace : public MutableSpace {
     SpaceStats _space_stats;
 
    public:
-    LGRPSpace(uint l, size_t alignment) : _lgrp_id(l), _allocation_failed(false) {
-      _space = new MutableSpace(alignment);
+    LGRPSpace(uint l, size_t page_size) : _lgrp_id(l), _allocation_failed(false) {
+      _space = new MutableSpace(page_size);
       _alloc_rate = new AdaptiveWeightedAverage(NUMAChunkResizeWeight);
     }
     ~LGRPSpace() {
@@ -118,24 +119,17 @@ class MutableNUMASpace : public MutableSpace {
     void accumulate_statistics(size_t page_size);
   };
 
+  // The discovered topology is stable for the lifetime of this space. The
+  // active view may shrink and grow as eden crosses NUMA page-count limits.
+  GrowableArray<LGRPSpace*>* _all_lgrp_spaces;
   GrowableArray<LGRPSpace*>* _lgrp_spaces;
-  size_t _page_size;
   unsigned _adaptation_cycles, _samples_count;
-
-  bool _must_use_large_pages;
-
-  void set_page_size(size_t psz)                     { _page_size = psz;          }
-  size_t page_size() const                           { return _page_size;         }
 
   unsigned adaptation_cycles()                       { return _adaptation_cycles; }
   void set_adaptation_cycles(int v)                  { _adaptation_cycles = v;    }
 
   unsigned samples_count()                           { return _samples_count;     }
   void increment_samples_count()                     { ++_samples_count;          }
-
-  size_t _base_space_size;
-  void set_base_space_size(size_t v)                 { _base_space_size = v;      }
-  size_t base_space_size() const                     { return _base_space_size;   }
 
   // Bias region towards the lgrp.
   void bias_region(MemRegion mr, uint lgrp_id);
@@ -152,11 +146,17 @@ class MutableNUMASpace : public MutableSpace {
   void select_tails(MemRegion new_region, MemRegion intersection,
                     MemRegion* bottom_region, MemRegion *top_region);
 
-  int lgrp_space_index(int lgrp_id) const;
+  LGRPSpace *lgrp_space_for_current_thread() const;
+
+  GrowableArray<LGRPSpace*>* all_lgrp_spaces() const { return _all_lgrp_spaces; }
+  static int update_active_lgrp_spaces(GrowableArray<LGRPSpace*>* all_lgrp_spaces,
+                                       GrowableArray<LGRPSpace*>* active_lgrp_spaces,
+                                       size_t region_size,
+                                       size_t page_size);
 
 public:
   GrowableArray<LGRPSpace*>* lgrp_spaces() const     { return _lgrp_spaces;       }
-  MutableNUMASpace(size_t alignment);
+  MutableNUMASpace(size_t page_size);
   virtual ~MutableNUMASpace();
   // Space initialization.
   virtual void initialize(MemRegion mr,
@@ -178,9 +178,9 @@ public:
   virtual size_t used_in_words() const;
   virtual size_t free_in_words() const;
 
-  virtual size_t tlab_capacity(Thread* thr) const;
-  virtual size_t tlab_used(Thread* thr) const;
-  virtual size_t unsafe_max_tlab_alloc(Thread* thr) const;
+  virtual size_t tlab_capacity() const;
+  virtual size_t tlab_used() const;
+  virtual size_t unsafe_max_tlab_alloc() const;
 
   // Allocation (return null if full)
   virtual HeapWord* cas_allocate(size_t word_size);

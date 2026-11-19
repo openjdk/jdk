@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ import java.io.InvalidObjectException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.OutputStream;
+import java.io.Serial;
 import java.security.*;
 import javax.security.auth.Subject;
 import javax.security.auth.kerberos.KerberosCredMessage;
@@ -903,39 +904,6 @@ class Krb5Context implements GSSContextSpi {
         }
     }
 
-    public final int wrap(byte[] inBuf, int inOffset, int len,
-                          byte[] outBuf, int outOffset,
-                          MessageProp msgProp) throws GSSException {
-
-        if (state != STATE_DONE)
-            throw new GSSException(GSSException.NO_CONTEXT, -1,
-                                   "Wrap called in invalid state!");
-
-        int retVal = 0;
-        try {
-            if (cipherHelper.getProto() == 0) {
-                WrapToken token =
-                        new WrapToken(this, msgProp, inBuf, inOffset, len);
-                retVal = token.encode(outBuf, outOffset);
-            } else if (cipherHelper.getProto() == 1) {
-                WrapToken_v2 token =
-                        new WrapToken_v2(this, msgProp, inBuf, inOffset, len);
-                retVal = token.encode(outBuf, outOffset);
-            }
-            if (DEBUG != null) {
-                DEBUG.println("Krb5Context.wrap: token=["
-                                   + getHexBytes(outBuf, outOffset, retVal)
-                                   + "]");
-            }
-            return retVal;
-        } catch (IOException e) {
-            GSSException gssException =
-                new GSSException(GSSException.FAILURE, -1, e.getMessage());
-            gssException.initCause(e);
-            throw gssException;
-        }
-    }
-
     public final void wrap(byte[] inBuf, int offset, int len,
                            OutputStream os, MessageProp msgProp)
         throws GSSException {
@@ -993,78 +961,34 @@ class Krb5Context implements GSSContextSpi {
 
     public final byte[] unwrap(byte[] inBuf, int offset, int len,
                                MessageProp msgProp)
-        throws GSSException {
+            throws GSSException {
 
-            if (DEBUG != null) {
-                DEBUG.println("Krb5Context.unwrap: token=["
-                                   + getHexBytes(inBuf, offset, len)
-                                   + "]");
-            }
-
-            if (state != STATE_DONE) {
-                throw new GSSException(GSSException.NO_CONTEXT, -1,
-                                       " Unwrap called in invalid state!");
-            }
-
-            byte[] data = null;
-            if (cipherHelper.getProto() == 0) {
-                WrapToken token =
-                        new WrapToken(this, inBuf, offset, len, msgProp);
-                data = token.getData();
-                setSequencingAndReplayProps(token, msgProp);
-            } else if (cipherHelper.getProto() == 1) {
-                WrapToken_v2 token =
-                        new WrapToken_v2(this, inBuf, offset, len, msgProp);
-                data = token.getData();
-                setSequencingAndReplayProps(token, msgProp);
-            }
-
-            return data;
+        if (DEBUG != null) {
+            DEBUG.println("Krb5Context.unwrap: token=["
+                    + getHexBytes(inBuf, offset, len)
+                    + "]");
         }
 
-    public final int unwrap(byte[] inBuf, int inOffset, int len,
-                             byte[] outBuf, int outOffset,
-                             MessageProp msgProp) throws GSSException {
-
-        if (state != STATE_DONE)
+        if (state != STATE_DONE) {
             throw new GSSException(GSSException.NO_CONTEXT, -1,
-                                   "Unwrap called in invalid state!");
+                    " Unwrap called in invalid state!");
+        }
 
+        byte[] data = null;
         if (cipherHelper.getProto() == 0) {
             WrapToken token =
-                        new WrapToken(this, inBuf, inOffset, len, msgProp);
-            len = token.getData(outBuf, outOffset);
+                    new WrapToken(this, inBuf, offset, len, msgProp);
+            data = token.getData();
             setSequencingAndReplayProps(token, msgProp);
         } else if (cipherHelper.getProto() == 1) {
             WrapToken_v2 token =
-                        new WrapToken_v2(this, inBuf, inOffset, len, msgProp);
-            len = token.getData(outBuf, outOffset);
+                    new WrapToken_v2(this, inBuf, offset, len, msgProp);
+            data = token.getData();
             setSequencingAndReplayProps(token, msgProp);
         }
-        return len;
+
+        return data;
     }
-
-    public final int unwrap(InputStream is,
-                            byte[] outBuf, int outOffset,
-                            MessageProp msgProp) throws GSSException {
-
-        if (state != STATE_DONE)
-            throw new GSSException(GSSException.NO_CONTEXT, -1,
-                                   "Unwrap called in invalid state!");
-
-        int len = 0;
-        if (cipherHelper.getProto() == 0) {
-            WrapToken token = new WrapToken(this, is, msgProp);
-            len = token.getData(outBuf, outOffset);
-            setSequencingAndReplayProps(token, msgProp);
-        } else if (cipherHelper.getProto() == 1) {
-            WrapToken_v2 token = new WrapToken_v2(this, is, msgProp);
-            len = token.getData(outBuf, outOffset);
-            setSequencingAndReplayProps(token, msgProp);
-        }
-        return len;
-    }
-
 
     public final void unwrap(InputStream is, OutputStream os,
                              MessageProp msgProp) throws GSSException {
@@ -1118,31 +1042,6 @@ class Krb5Context implements GSSContextSpi {
                 throw gssException;
             }
         }
-
-    private int getMIC(byte[] inMsg, int offset, int len,
-                       byte[] outBuf, int outOffset,
-                       MessageProp msgProp)
-        throws GSSException {
-
-        int retVal = 0;
-        try {
-            if (cipherHelper.getProto() == 0) {
-                MicToken token =
-                        new MicToken(this, msgProp, inMsg, offset, len);
-                retVal = token.encode(outBuf, outOffset);
-            } else if (cipherHelper.getProto() == 1) {
-                MicToken_v2 token =
-                        new MicToken_v2(this, msgProp, inMsg, offset, len);
-                retVal = token.encode(outBuf, outOffset);
-            }
-            return retVal;
-        } catch (IOException e) {
-            GSSException gssException =
-                new GSSException(GSSException.FAILURE, -1, e.getMessage());
-            gssException.initCause(e);
-            throw gssException;
-        }
-    }
 
     /*
      * Checksum calculation requires a byte[]. Hence, might as well pass
@@ -1332,6 +1231,7 @@ class Krb5Context implements GSSContextSpi {
      * The session key returned by inquireSecContext(KRB5_INQ_SSPI_SESSION_KEY)
      */
     static class KerberosSessionKey implements Key {
+        @Serial
         private static final long serialVersionUID = 699307378954123869L;
 
         @SuppressWarnings("serial") // Not statically typed as Serializable
@@ -1369,7 +1269,7 @@ class Krb5Context implements GSSContextSpi {
          * @throws IOException if an I/O error occurs
          * @throws ClassNotFoundException if a serialized class cannot be loaded
          */
-        @java.io.Serial
+        @Serial
         private void readObject(ObjectInputStream stream)
                 throws IOException, ClassNotFoundException {
             throw new InvalidObjectException

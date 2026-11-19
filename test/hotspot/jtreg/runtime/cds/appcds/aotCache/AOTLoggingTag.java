@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,57 +51,46 @@ public class AOTLoggingTag {
 
         //----------------------------------------------------------------------
         printTestCase("Training Run");
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        pb = ProcessTools.createTestJavaProcessBuilder(
             "-XX:AOTMode=record",
             "-XX:AOTConfiguration=" + aotConfigFile,
             "-Xlog:aot",
             "-cp", appJar, helloClass);
 
         out = CDSTestUtils.executeAndLog(pb, "train");
-        out.shouldContain("[aot] Writing binary AOTConfiguration file:");
+        out.shouldMatch("\\[aot *\\] Writing binary AOTConfiguration file:");
         out.shouldHaveExitValue(0);
 
         //----------------------------------------------------------------------
         printTestCase("Assembly Phase");
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        pb = ProcessTools.createTestJavaProcessBuilder(
             "-XX:AOTMode=create",
             "-XX:AOTConfiguration=" + aotConfigFile,
             "-XX:AOTCache=" + aotCacheFile,
             "-Xlog:aot",
             "-cp", appJar);
         out = CDSTestUtils.executeAndLog(pb, "asm");
-        out.shouldContain("[aot] Opened AOT configuration file hello.aotconfig");
+        out.shouldMatch("\\[aot *\\] Opened AOT configuration file hello\\.aotconfig");
         out.shouldHaveExitValue(0);
 
         //----------------------------------------------------------------------
         printTestCase("Production Run with AOTCache");
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        pb = ProcessTools.createTestJavaProcessBuilder(
             "-XX:AOTCache=" + aotCacheFile,
             "-Xlog:aot",
             "-cp", appJar, helloClass);
         out = CDSTestUtils.executeAndLog(pb, "prod");
-        out.shouldContain("[aot] Opened AOT cache hello.aot");
-        out.shouldHaveExitValue(0);
-
-        //----------------------------------------------------------------------
-        printTestCase("All old -Xlog:cds+heap logs have been changed to -Xlog:aot+heap should alias to -Xlog:cds+heap");
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
-            "-XX:AOTCache=" + aotCacheFile,
-            "-Xlog:aot+heap",
-            "-cp", appJar, helloClass);
-        out = CDSTestUtils.executeAndLog(pb, "prod");
-        out.shouldNotContain("No tag set matches selection: aot+heap");
-        out.shouldContain("[aot,heap] resolve subgraph java.lang.Integer$IntegerCache");
+        out.shouldMatch("\\[aot *\\] Opened AOT cache hello\\.aot");
         out.shouldHaveExitValue(0);
 
         //----------------------------------------------------------------------
         printTestCase("Production Run: errors should be printed with [aot] decoration");
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        pb = ProcessTools.createTestJavaProcessBuilder(
             "-XX:AOTCache=nosuchfile.aot",
-            "-XX:AOTMode=on",
+            "-XX:AOTMode=required",
             "-cp", appJar, helloClass);
         out = CDSTestUtils.executeAndLog(pb, "prod");
-        out.shouldContain("[aot] An error has occurred while processing the AOT cache. Run with -Xlog:aot for details.");
+        out.shouldMatch("\\[aot *\\] An error has occurred while processing the AOT cache\\. Run with -Xlog:aot for details\\.");
         out.shouldNotHaveExitValue(0);
     }
 

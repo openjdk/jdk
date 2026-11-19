@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "asm/assembler.inline.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/vtableStubs.hpp"
+#include "cppstdlib/cstdlib.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jvm.h"
 #include "memory/allocation.inline.hpp"
@@ -57,7 +58,6 @@
 # include <signal.h>
 # include <errno.h>
 # include <dlfcn.h>
-# include <stdlib.h>
 # include <stdio.h>
 # include <unistd.h>
 # include <sys/resource.h>
@@ -209,8 +209,16 @@ frame os::fetch_compiled_frame_from_context(const void* ucVoid) {
 }
 
 intptr_t* os::fetch_bcp_from_context(const void* ucVoid) {
-  Unimplemented();
-  return nullptr;
+  assert(ucVoid != nullptr, "invariant");
+  const ucontext_t* uc = (const ucontext_t*)ucVoid;
+  assert(os::Posix::ucontext_is_interpreter(uc), "invariant");
+#if (FP_REG_NUM == 11)
+  assert(Rbcp == R7, "expected FP=R11, Rbcp=R7");
+  return (intptr_t*)uc->uc_mcontext.arm_r7;
+#else
+  assert(Rbcp == R11, "expected FP=R7, Rbcp=R11");
+  return (intptr_t*)uc->uc_mcontext.arm_fp; // r11
+#endif
 }
 
 frame os::get_sender_for_C_frame(frame* fr) {
@@ -368,7 +376,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
 
     // jni_fast_Get<Primitive>Field can trap at certain pc's if a GC kicks in
     // and the heap gets shrunk before the field access.
-    if (sig == SIGSEGV || sig == SIGBUS) {
+    if (stub == nullptr && ((sig == SIGSEGV) || (sig == SIGBUS))) {
       address addr = JNI_FastGetField::find_slowcase_pc(pc);
       if (addr != (address)-1) {
         stub = addr;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -926,7 +926,7 @@ extends AbstractDOMParser implements LSParser, DOMConfiguration {
             parse (source);
             fBusy = false;
             if (abortNow && currentThread.isInterrupted()) {
-                //reset interrupt state
+                //reset interrupted state
                 abortNow = false;
                 Thread.interrupted();
             }
@@ -983,7 +983,7 @@ extends AbstractDOMParser implements LSParser, DOMConfiguration {
             parse (xmlInputSource);
             fBusy = false;
             if (abortNow && currentThread.isInterrupted()) {
-                //reset interrupt state
+                //reset interrupted state
                 abortNow = false;
                 Thread.interrupted();
             }

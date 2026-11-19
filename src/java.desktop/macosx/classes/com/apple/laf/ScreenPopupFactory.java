@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import javax.swing.*;
 import sun.lwawt.macosx.CPlatformWindow;
 import sun.swing.SwingAccessor;
 
-class ScreenPopupFactory extends PopupFactory {
+final class ScreenPopupFactory extends PopupFactory {
     static final Float TRANSLUCENT = 248f/255f;
     static final Float OPAQUE = 1.0f;
 
@@ -50,6 +50,7 @@ class ScreenPopupFactory extends PopupFactory {
         return (Window)w;
     }
 
+    @Override
     public Popup getPopup(final Component comp, final Component invoker, final int x, final int y) {
         if (invoker == null) throw new IllegalArgumentException("Popup.getPopup must be passed non-null contents");
 
@@ -75,6 +76,9 @@ class ScreenPopupFactory extends PopupFactory {
             popupRootPane.putClientProperty(CPlatformWindow.WINDOW_ALPHA, TRANSLUCENT);
             popupRootPane.putClientProperty(CPlatformWindow.WINDOW_SHADOW, Boolean.TRUE);
             popupRootPane.putClientProperty(CPlatformWindow.WINDOW_FADE_DELEGATE, invoker);
+            popupRootPane.putClientProperty(
+                    CPlatformWindow.WINDOW_ACCESSIBILITY_ELEMENT,
+                    !(invoker instanceof JToolTip) );
 
             w.setBackground(UIManager.getColor("PopupMenu.translucentBackground"));
             popupRootPane.putClientProperty(CPlatformWindow.WINDOW_DRAGGABLE_BACKGROUND, Boolean.FALSE);

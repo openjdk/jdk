@@ -37,6 +37,5 @@ public interface Http2Handler {
      *      client and used to send the response
      * @throws NullPointerException if exchange is <code>null</code>
      */
-    void handle (Http2TestExchange exchange) throws IOException;
+    void handle(Http2TestExchange exchange) throws IOException;
 }
-

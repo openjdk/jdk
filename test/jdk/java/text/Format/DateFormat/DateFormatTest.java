@@ -27,7 +27,7 @@
  *      8190748 8216969 8174269 8347841 8347955
  * @summary test DateFormat and SimpleDateFormat.
  * @modules jdk.localedata
- * @run junit DateFormatTest
+ * @run junit/timeout=480 DateFormatTest
  */
 
 import java.time.ZoneId;

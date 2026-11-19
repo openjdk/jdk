@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,16 +91,12 @@ class ConstantPoolCache: public MetaspaceObj {
     };
 
   // Constructor
-  ConstantPoolCache(const intStack& invokedynamic_references_map,
-                    Array<ResolvedIndyEntry>* indy_info,
+  ConstantPoolCache(Array<ResolvedIndyEntry>* indy_info,
                     Array<ResolvedFieldEntry>* field_entries,
                     Array<ResolvedMethodEntry>* mehtod_entries);
 
-  // Initialization
-  void initialize(const intArray& invokedynamic_references_map);
  public:
   static ConstantPoolCache* allocate(ClassLoaderData* loader_data,
-                                     const intStack& invokedynamic_references_map,
                                      const GrowableArray<ResolvedIndyEntry> indy_entries,
                                      const GrowableArray<ResolvedFieldEntry> field_entries,
                                      const GrowableArray<ResolvedMethodEntry> method_entries,
@@ -111,8 +107,9 @@ class ConstantPoolCache: public MetaspaceObj {
 
   oop  archived_references() NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
   void clear_archived_references() NOT_CDS_JAVA_HEAP_RETURN;
+  CDS_JAVA_HEAP_ONLY(int archived_references_index() { return _archived_references_index; })
 
-  inline objArrayOop resolved_references();
+  inline refArrayOop resolved_references();
   void set_resolved_references(OopHandle s) { _resolved_references = s; }
   Array<u2>* reference_map() const        { return _reference_map; }
   void set_reference_map(Array<u2>* o)    { _reference_map = o; }
@@ -195,7 +192,7 @@ class ConstantPoolCache: public MetaspaceObj {
 #endif
 
  public:
-  static int size() { return align_metadata_size(sizeof(ConstantPoolCache) / wordSize); }
+  static int size() { return align_metadata_size(sizeof_auto(ConstantPoolCache) / wordSize); }
 
  private:
   // Helpers
@@ -222,10 +219,21 @@ class ConstantPoolCache: public MetaspaceObj {
 #endif // INCLUDE_JVMTI
 
 #if INCLUDE_CDS
-  void remove_resolved_field_entries_if_non_deterministic();
-  void remove_resolved_indy_entries_if_non_deterministic();
-  void remove_resolved_method_entries_if_non_deterministic();
-  bool can_archive_resolved_method(ConstantPool* src_cp, ResolvedMethodEntry* method_entry);
+ private:
+  template <typename FUNC> void iterate_resolved_field_entries_with_archivability_check(FUNC f);
+  template <typename FUNC> void iterate_resolved_indy_entries_with_archivability_check(FUNC f);
+  template <typename FUNC> void iterate_resolved_method_entries_with_archivability_check(FUNC f);
+
+  void record_classes_in_archivable_field_entries();
+  void record_classes_in_archivable_indy_entries();
+  void record_classes_in_archivable_method_entries();
+
+  void remove_resolved_field_entries_if_non_archivable();
+  void remove_resolved_indy_entries_if_non_archivable();
+  void remove_resolved_method_entries_if_non_archivable();
+ public:
+  void record_classes_in_archivable_entries();
+  bool can_archive_resolved_method(ConstantPool* src_cp, ResolvedMethodEntry* method_entry, const char*& rejection_reason);
 #endif
 
   // RedefineClasses support

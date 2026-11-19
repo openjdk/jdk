@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -39,7 +39,7 @@ import jdk.xml.internal.SecuritySupport;
 
 /**
  * @author Morten Jorgensen
- * @LastModified: Sept 2021
+ * @LastModified: July 2026
  */
 public final class LoadDocument {
 
@@ -197,12 +197,7 @@ public final class LoadDocument {
                 throw new TransletException(e);
             }
         } else {
-            String accessError = SecuritySupport.checkAccess(uri, translet.getAllowedProtocols(), JdkConstants.ACCESS_EXTERNAL_ALL);
-            if (accessError != null) {
-                ErrorMsg msg = new ErrorMsg(ErrorMsg.ACCESSING_XSLT_TARGET_ERR,
-                        SecuritySupport.sanitizePath(uri), accessError);
-                throw new Exception(msg.toString());
-            }
+            translet.verifyAccess(uri);
 
             // Parse the input document and construct DOM object
             // Trust the DTMManager to pick the right parser and

@@ -26,5 +26,10 @@ package com.sun.org.apache.bcel.internal.classfile;
  */
 public interface Node {
 
-    void accept(Visitor obj);
+    /**
+     * Accepts a visitor.
+     *
+     * @param visitor The visitor.
+     */
+    void accept(Visitor visitor);
 }

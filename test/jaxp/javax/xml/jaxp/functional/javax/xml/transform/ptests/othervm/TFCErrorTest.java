@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,14 +22,13 @@
  */
 package javax.xml.transform.ptests.othervm;
 
-import static jaxp.library.JAXPTestUtilities.setSystemProperty;
-
-import static org.testng.Assert.fail;
+import org.junit.jupiter.api.Test;
 
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.TransformerFactoryConfigurationError;
 
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Negative test for set invalid TransformerFactory property.
@@ -37,17 +36,21 @@ import org.testng.annotations.Test;
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm javax.xml.transform.ptests.othervm.TFCErrorTest
+ * @run junit/othervm javax.xml.transform.ptests.othervm.TFCErrorTest
  */
 public class TFCErrorTest {
-    @Test(expectedExceptions = ClassNotFoundException.class)
-    public void tfce01() throws Exception {
-        try{
-            setSystemProperty("javax.xml.transform.TransformerFactory","xx");
-            TransformerFactory.newInstance();
-            fail("Expect TransformerFactoryConfigurationError here");
-        } catch (TransformerFactoryConfigurationError expected) {
-            throw expected.getException();
+    private static final String TRANSFORMER_FACTORY = "javax.xml.transform.TransformerFactory";
+
+    @Test
+    public void tfce01() {
+        System.setProperty(TRANSFORMER_FACTORY, "xx");
+        try {
+            TransformerFactoryConfigurationError e = assertThrows(
+                    TransformerFactoryConfigurationError.class,
+                    TransformerFactory::newInstance);
+            assertInstanceOf(ClassNotFoundException.class, e.getException());
+        } finally {
+            System.clearProperty(TRANSFORMER_FACTORY);
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 /**
  * @test Level2RecompilationTest
+ * @key stress
  * @summary Test downgrading mechanism from level 3 to level 2 for those profiled methods.
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
@@ -33,11 +34,11 @@
  *
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+TieredCompilation
+ * @run main/othervm/timeout=960 -Xbootclasspath/a:. -XX:+TieredCompilation
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   -XX:CompileCommand=compileonly,compiler.whitebox.SimpleTestCaseHelper::*
  *                   -XX:CompileCommand=print,compiler.whitebox.SimpleTestCaseHelper::*
- *                   compiler.tiered.Level2RecompilationTest
+ *                   ${test.main.class}
  */
 
 package compiler.tiered;
@@ -101,4 +102,3 @@ public class Level2RecompilationTest extends CompLevelsTest {
         super.checkLevel(expected, actual);
     }
 }
-

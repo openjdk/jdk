@@ -1,0 +1,18 @@
+        $type$[] a = fa.apply(SPECIES.length());
+        $type$[] b = fb.apply(SPECIES.length());
+        $type$[] c = fc.apply(SPECIES.length());
+        boolean[] mask = fm.apply(SPECIES.length());
+        $type$[] rl = fr.apply(SPECIES.length());
+        $type$[] rr = fr.apply(SPECIES.length());
+
+        VectorMask<$Wideboxtype$> vmask = VectorMask.fromArray(SPECIES, mask, 0);
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                $abstractvectortype$ av = $abstractvectortype$.fromArray(SPECIES, a, i);
+                $abstractvectortype$ bv = $abstractvectortype$.fromArray(SPECIES, b, i);
+                $abstractvectortype$ cv = $abstractvectortype$.fromArray(SPECIES, c, i);
+                av.lanewise(VectorOperators.SUADD, bv, vmask).lanewise(VectorOperators.SUADD, cv, vmask).intoArray(rl, i);
+                av.lanewise(VectorOperators.SUADD, bv.lanewise(VectorOperators.SUADD, cv, vmask), vmask).intoArray(rr, i);
+            }
+        }

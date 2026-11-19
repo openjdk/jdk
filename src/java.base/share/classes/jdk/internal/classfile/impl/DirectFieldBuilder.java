@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ import static java.util.Objects.requireNonNull;
 
 public final class DirectFieldBuilder
         extends AbstractDirectBuilder<FieldModel>
-        implements TerminalFieldBuilder, Util.Writable {
+        implements TerminalFieldBuilder, WritableField {
     private final Utf8Entry name;
     private final Utf8Entry desc;
     private int flags;
@@ -51,7 +51,7 @@ public final class DirectFieldBuilder
         setOriginal(original);
         this.name = requireNonNull(name);
         this.desc = requireNonNull(type);
-        this.flags = flags;
+        this.flags = Util.checkFlags(flags);
     }
 
     @Override
@@ -71,7 +71,7 @@ public final class DirectFieldBuilder
 
     @Override
     public FieldBuilder withFlags(int flags) {
-        setFlags(flags);
+        setFlags(Util.checkFlags(flags));
         return this;
     }
 
@@ -83,5 +83,21 @@ public final class DirectFieldBuilder
     public void writeTo(BufWriterImpl buf) {
         buf.writeU2U2U2(flags, buf.cpIndex(name), buf.cpIndex(desc));
         attributes.writeTo(buf);
+    }
+
+    // These values must only be accessed after the field is definitely configured
+    @Override
+    public Utf8Entry fieldName() {
+        return name;
+    }
+
+    @Override
+    public Utf8Entry fieldType() {
+        return desc;
+    }
+
+    @Override
+    public int fieldFlags() {
+        return flags;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,14 @@
 package com.sun.crypto.provider;
 
 import java.security.Provider;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import static sun.security.util.SecurityConstants.PROVIDER_VER;
 import static sun.security.util.SecurityProviderConstants.*;
+import sun.security.ssl.Hybrid;
 
 /*
  * The "SunJCE" Cryptographic Service Provider.
@@ -78,6 +81,9 @@ import static sun.security.util.SecurityProviderConstants.*;
  *
  * - ML-KEM
  *
+ * - TLS 1.3 hybrid KEMs for X25519MLKEM768, SecP256r1MLKEM768,
+ *   and SecP384r1MLKEM1024
+ *
  * - HKDF-SHA256, HKDF-SHA384, and HKDF-SHA512
  */
 
@@ -88,7 +94,8 @@ public final class SunJCE extends Provider {
 
     private static final String info = "SunJCE Provider " +
     "(implements RSA, DES, Triple DES, AES, Blowfish, ARCFOUR, RC2, PBE, "
-    + "Diffie-Hellman, HMAC, ChaCha20, DHKEM, ML-KEM, and HKDF)";
+    + "Diffie-Hellman, HMAC, ChaCha20, DHKEM, ML-KEM, X25519MLKEM768, "
+    + "SecP256r1MLKEM768, SecP384r1MLKEM1024, and HKDF)";
 
     /* Are we debugging? -- for developers */
     static final boolean debug = false;
@@ -122,6 +129,11 @@ public final class SunJCE extends Provider {
                    attrs));
     }
 
+    private void psHybrid(String type, String algo, String cn,
+            HashMap<String, String> attrs) {
+        putService(new HybridService(this, type, algo, cn, attrs));
+    }
+
     public SunJCE() {
         /* We are the "SunJCE" provider */
         super("SunJCE", PROVIDER_VER, info);
@@ -136,6 +148,12 @@ public final class SunJCE extends Provider {
     void putEntries() {
         // reuse attribute map and reset before each reuse
         HashMap<String, String> attrs = new HashMap<>(3);
+        attrs.put("SupportedKeyClasses",
+                "java.security.interfaces.RSAPublicKey" +
+                "|java.security.interfaces.RSAPrivateKey");
+        ps("Signature", "NONEwithRSA",
+                "com.sun.crypto.provider.RSACipherAdaptor", null, attrs);
+        // continue adding cipher specific attributes
         attrs.put("SupportedModes", "ECB");
         attrs.put("SupportedPaddings", "NOPADDING|PKCS1PADDING|OAEPPADDING"
                 + "|OAEPWITHMD5ANDMGF1PADDING"
@@ -147,9 +165,6 @@ public final class SunJCE extends Provider {
                 + "|OAEPWITHSHA-512ANDMGF1PADDING"
                 + "|OAEPWITHSHA-512/224ANDMGF1PADDING"
                 + "|OAEPWITHSHA-512/256ANDMGF1PADDING");
-        attrs.put("SupportedKeyClasses",
-                "java.security.interfaces.RSAPublicKey" +
-                "|java.security.interfaces.RSAPrivateKey");
         ps("Cipher", "RSA",
                 "com.sun.crypto.provider.RSACipher", null, attrs);
 
@@ -367,6 +382,8 @@ public final class SunJCE extends Provider {
 
         ps("Cipher", "PBEWithHmacSHA512/256AndAES_256",
                 "com.sun.crypto.provider.PBES2Core$HmacSHA512_256AndAES_256");
+
+        ps("Cipher", "HPKE", "com.sun.crypto.provider.HPKE");
 
         /*
          * Key(pair) Generator engines
@@ -773,6 +790,43 @@ public final class SunJCE extends Provider {
         psA("KeyFactory", "ML-KEM-1024", "com.sun.crypto.provider.ML_KEM_Impls$KF5", attrs);
 
         /*
+         * TLS 1.3 hybrid key exchange algorithms: X25519MLKEM768,
+         * SecP256r1MLKEM768, and SecP384r1MLKEM1024.
+         *
+         * These JCA services for hybrid key exchange algorithms exist for
+         * use by SunJSSE only. They are not general purpose KEM algorithms.
+         * Their public keys use the RAW TLS key_share encoding, not X.509
+         * SubjectPublicKeyInfo encoding, and the algorithms do not have
+         * formal object identifiers.
+         */
+        attrs = new HashMap<>(Map.of(
+                "ImplementedIn", "Software",
+                "left", "ML-KEM-768",
+                "right", "X25519"));
+        psHybrid("KeyPairGenerator", "X25519MLKEM768",
+                "sun.security.ssl.Hybrid$KeyPairGeneratorImpl", attrs);
+        psHybrid("KEM", "X25519MLKEM768",
+                "sun.security.ssl.Hybrid$KEMImpl", attrs);
+
+        attrs = new HashMap<>(Map.of(
+                "ImplementedIn", "Software",
+                "left", "secp256r1",
+                "right", "ML-KEM-768"));
+        psHybrid("KeyPairGenerator", "SecP256r1MLKEM768",
+                "sun.security.ssl.Hybrid$KeyPairGeneratorImpl", attrs);
+        psHybrid("KEM", "SecP256r1MLKEM768",
+                "sun.security.ssl.Hybrid$KEMImpl", attrs);
+
+        attrs = new HashMap<>(Map.of(
+                "ImplementedIn", "Software",
+                "left", "secp384r1",
+                "right", "ML-KEM-1024"));
+        psHybrid("KeyPairGenerator", "SecP384r1MLKEM1024",
+                "sun.security.ssl.Hybrid$KeyPairGeneratorImpl", attrs);
+        psHybrid("KEM", "SecP384r1MLKEM1024",
+                "sun.security.ssl.Hybrid$KEMImpl", attrs);
+
+        /*
          * SSL/TLS mechanisms
          *
          * These are strictly internal implementations and may
@@ -787,7 +841,7 @@ public final class SunJCE extends Provider {
 
         ps("KeyGenerator", "SunTlsMasterSecret",
                 "com.sun.crypto.provider.TlsMasterSecretGenerator",
-                List.of("SunTls12MasterSecret", "SunTlsExtendedMasterSecret"),
+                List.of("SunTls12MasterSecret", "SunTlsExtendedMasterSecret", "SunTls12ExtendedMasterSecret"),
                 null);
 
         ps("KeyGenerator", "SunTlsKeyMaterial",
@@ -805,5 +859,27 @@ public final class SunJCE extends Provider {
             return new SunJCE();
         }
         return instance;
+    }
+
+    private static final class HybridService extends Provider.Service {
+        HybridService(Provider p, String type, String algo, String cn,
+                HashMap<String, String> attrs) {
+            super(p, type, algo, cn, null, attrs);
+        }
+
+        @Override
+        public Object newInstance(Object ctrParamObj)
+                throws NoSuchAlgorithmException {
+            return switch (getType()) {
+                case "KeyPairGenerator" -> new Hybrid.KeyPairGeneratorImpl(
+                        getAlgorithm(), getAttribute("left"),
+                        getAttribute("right"));
+                case "KEM" -> new Hybrid.KEMImpl(
+                        getAlgorithm(), getAttribute("left"),
+                        getAttribute("right"));
+                default -> throw new NoSuchAlgorithmException(
+                        "Unexpected value: " + getType());
+            };
+        }
     }
 }

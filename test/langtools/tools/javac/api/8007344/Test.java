@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -225,8 +225,8 @@ public class Test {
         }
 
         void checkEndPos(CompilationUnitTree unit, Tree tree) {
-            long sp = srcPosns.getStartPosition(unit, tree);
-            long ep = srcPosns.getEndPosition(unit, tree);
+            long sp = srcPosns.getStartPosition(tree);
+            long ep = srcPosns.getEndPosition(tree);
             if (sp >= 0 && ep == Position.NOPOS) {
                 error("endpos not set for " + tree.getKind()
                         + " " + Pretty.toSimpleString(((JCTree) tree))

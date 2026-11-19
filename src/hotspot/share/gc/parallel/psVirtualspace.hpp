@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,9 @@ class PSVirtualSpace : public CHeapObj<mtGC> {
   // ReservedSpace passed to initialize() must be aligned to this value.
   const size_t _alignment;
 
+  // OS page size used. If using Transparent Huge Pages, it's the desired large page-size.
+  const size_t _page_size;
+
   // Reserved area
   char* _reserved_low_addr;
   char* _reserved_high_addr;
@@ -68,6 +71,7 @@ class PSVirtualSpace : public CHeapObj<mtGC> {
 
   // Accessors (all sizes are bytes).
   size_t alignment()          const { return _alignment; }
+  size_t page_size()          const { return _page_size; }
   char* reserved_low_addr()   const { return _reserved_low_addr; }
   char* reserved_high_addr()  const { return _reserved_high_addr; }
   char* committed_low_addr()  const { return _committed_low_addr; }
@@ -133,6 +137,8 @@ inline size_t PSVirtualSpace::uncommitted_size() const {
 }
 
 inline void PSVirtualSpace::set_reserved(char* low_addr, char* high_addr, bool special) {
+  assert(low_addr <= high_addr, "precondition");
+
   _reserved_low_addr = low_addr;
   _reserved_high_addr = high_addr;
   _special = special;
@@ -143,6 +149,9 @@ inline void PSVirtualSpace::set_reserved(ReservedSpace rs) {
 }
 
 inline void PSVirtualSpace::set_committed(char* low_addr, char* high_addr) {
+  assert(low_addr <= high_addr, "precondition");
+  assert(low_addr == _reserved_low_addr, "precondition");
+
   _committed_low_addr = low_addr;
   _committed_high_addr = high_addr;
 }

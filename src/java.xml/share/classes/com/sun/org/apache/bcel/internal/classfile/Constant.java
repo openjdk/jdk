@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -28,44 +28,42 @@ import com.sun.org.apache.bcel.internal.Const;
 import com.sun.org.apache.bcel.internal.util.BCELComparator;
 
 /**
- * Abstract superclass for classes to represent the different constant types
- * in the constant pool of a class file. The classes keep closely to
- * the JVM specification.
- *
- * @LastModified: May 2021
+ * Abstract superclass for classes to represent the different constant types in the constant pool of a class file. The
+ * classes keep closely to the JVM specification.
  */
 public abstract class Constant implements Cloneable, Node {
 
-    private static BCELComparator bcelComparator = new BCELComparator() {
+    static final Constant[] EMPTY_ARRAY = {};
+
+    private static BCELComparator<Constant> bcelComparator = new BCELComparator<Constant>() {
 
         @Override
-        public boolean equals(final Object o1, final Object o2) {
-            final Constant THIS = (Constant) o1;
-            final Constant THAT = (Constant) o2;
-            return Objects.equals(THIS.toString(), THAT.toString());
+        public boolean equals(final Constant a, final Constant b) {
+            return a == b || a != null && b != null && Objects.equals(a.toString(), b.toString());
         }
 
         @Override
-        public int hashCode(final Object o) {
-            final Constant THIS = (Constant) o;
-            return THIS.toString().hashCode();
+        public int hashCode(final Constant o) {
+            return o != null ? Objects.hashCode(o.toString()) : 0;
         }
     };
 
     /**
-     * @return Comparison strategy object
+     * Gets the comparison strategy object.
+     *
+     * @return Comparison strategy object.
      */
-    public static BCELComparator getComparator() {
+    public static BCELComparator<Constant> getComparator() {
         return bcelComparator;
     }
 
     /**
      * Reads one constant from the given input, the type depends on a tag byte.
      *
-     * @param dataInput Input stream
-     * @return Constant object
-     * @throws IOException if an I/O error occurs reading from the given {@code dataInput}.
-     * @throws ClassFormatException if the next byte is not recognized
+     * @param dataInput Input stream.
+     * @return Constant object.
+     * @throws IOException Thrown if an I/O error occurs reading from the given {@code dataInput}.
+     * @throws ClassFormatException Thrown if the next byte is not recognized
      * @since 6.0 made public
      */
     public static Constant readConstant(final DataInput dataInput) throws IOException, ClassFormatException {
@@ -111,21 +109,24 @@ public abstract class Constant implements Cloneable, Node {
     }
 
     /**
-     * @param comparator Comparison strategy object
+     * Sets the comparison strategy object.
+     *
+     * @param comparator Comparison strategy object.
      */
-    public static void setComparator(final BCELComparator comparator) {
+    public static void setComparator(final BCELComparator<Constant> comparator) {
         bcelComparator = comparator;
     }
 
     /*
-     * In fact this tag is redundant since we can distinguish different 'Constant' objects by their type, i.e., via
+     * In fact this tag is redundant since we can distinguish different 'Constant' objects by their type, that is, via
      * 'instanceof'. In some places we will use the tag for switch()es anyway.
      *
      * First, we want match the specification as closely as possible. Second we need the tag as an index to select the
      * corresponding class name from the 'CONSTANT_NAMES' array.
      */
+
     /**
-     * @deprecated (since 6.0) will be made private; do not access directly, use getter/setter
+     * @deprecated (since 6.0) will be made private; do not access directly, use getter/setter.
      */
     @java.lang.Deprecated
     protected byte tag; // TODO should be private & final
@@ -138,7 +139,7 @@ public abstract class Constant implements Cloneable, Node {
      * Called by objects that are traversing the nodes of the tree implicitly defined by the contents of a Java class.
      * I.e., the hierarchy of methods, fields, attributes, etc. spawns a tree of objects.
      *
-     * @param v Visitor object
+     * @param v Visitor object.
      */
     @Override
     public abstract void accept(Visitor v);
@@ -148,12 +149,14 @@ public abstract class Constant implements Cloneable, Node {
         try {
             return super.clone();
         } catch (final CloneNotSupportedException e) {
-            throw new Error("Clone Not Supported"); // never happens
+            throw new UnsupportedOperationException("Clone Not Supported", e); // never happens
         }
     }
 
     /**
-     * @return deep copy of this constant
+     * Creates a deep copy of this constant.
+     *
+     * @return deep copy of this constant.
      */
     public Constant copy() {
         try {
@@ -164,6 +167,12 @@ public abstract class Constant implements Cloneable, Node {
         return null;
     }
 
+    /**
+     * Dumps constant to file stream in binary format.
+     *
+     * @param file The output stream.
+     * @throws IOException Thrown if an I/O error occurs.
+     */
     public abstract void dump(DataOutputStream file) throws IOException;
 
     /**
@@ -174,18 +183,20 @@ public abstract class Constant implements Cloneable, Node {
      */
     @Override
     public boolean equals(final Object obj) {
-        return bcelComparator.equals(this, obj);
+        return obj instanceof Constant && bcelComparator.equals(this, (Constant) obj);
     }
 
     /**
-     * @return Tag of constant, i.e., its type. No setTag() method to avoid confusion.
+     * Gets the tag of constant.
+     *
+     * @return Tag of constant, that is, its type. No setTag() method to avoid confusion.
      */
     public final byte getTag() {
         return tag;
     }
 
     /**
-     * Returns value as defined by given BCELComparator strategy. By default return the hashcode of the result of
+     * Returns value as defined by given BCELComparator strategy. By default return the hash code of the result of
      * toString().
      *
      * @see Object#hashCode()

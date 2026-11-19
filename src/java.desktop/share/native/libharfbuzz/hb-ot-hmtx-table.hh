@@ -28,6 +28,7 @@
 #define HB_OT_HMTX_TABLE_HH
 
 #include "hb-open-type.hh"
+#include "hb-ot-dual.hh"
 #include "hb-ot-maxp-table.hh"
 #include "hb-ot-hhea-table.hh"
 #include "hb-ot-os2-table.hh"
@@ -42,17 +43,9 @@
  * https://docs.microsoft.com/en-us/typography/opentype/spec/vmtx
  */
 #define HB_OT_TAG_hmtx HB_TAG('h','m','t','x')
+#define HB_OT_TAG_HMTX HB_TAG('H','M','T','X')
 #define HB_OT_TAG_vmtx HB_TAG('v','m','t','x')
-
-
-HB_INTERNAL bool
-_glyf_get_leading_bearing_with_var_unscaled (hb_font_t *font, hb_codepoint_t glyph, bool is_vertical, int *lsb);
-
-HB_INTERNAL unsigned
-_glyf_get_advance_with_var_unscaled (hb_font_t *font, hb_codepoint_t glyph, bool is_vertical);
-
-HB_INTERNAL bool
-_glyf_get_leading_bearing_without_var_unscaled (hb_face_t *face, hb_codepoint_t gid, bool is_vertical, int *lsb);
+#define HB_OT_TAG_VMTX HB_TAG('V','M','T','X')
 
 
 namespace OT {
@@ -203,11 +196,8 @@ struct hmtxvmtx
         lm.advance = mtx.first;
         lm.sb = mtx.second;
       }
-      // TODO(beyond-64k): This assumes that maxp.numGlyphs is 0xFFFF.
-      else if (gid < 0x10000u)
-        short_metrics[gid] = mtx.second;
       else
-        ((UFWORD*) short_metrics)[gid] = mtx.first;
+        short_metrics[gid] = mtx.second;
     }
   }
 
@@ -226,7 +216,7 @@ struct hmtxvmtx
 
       // TODO Don't consider retaingid holes here.
 
-      num_long_metrics = hb_min (plan->num_output_glyphs (), 0xFFFFu);
+      num_long_metrics = hb_min (plan->num_output_glyphs (), H::long_metric_count_max ());
       unsigned int last_advance = get_new_gid_advance_unscaled (plan, mtx_map, num_long_metrics - 1, _mtx);
       while (num_long_metrics > 1 &&
              last_advance == get_new_gid_advance_unscaled (plan, mtx_map, num_long_metrics - 2, _mtx))
@@ -237,7 +227,7 @@ struct hmtxvmtx
 
     auto it =
     + hb_iter (c->plan->new_to_old_gid_list)
-    | hb_map ([c, &_mtx, mtx_map] (hb_codepoint_pair_t _)
+    | hb_map ([&_mtx, mtx_map] (hb_codepoint_pair_t _)
               {
                 hb_codepoint_t new_gid = _.first;
                 hb_codepoint_t old_gid = _.second;
@@ -246,8 +236,7 @@ struct hmtxvmtx
                 if (!mtx_map->has (new_gid, &v))
                 {
                   int lsb = 0;
-                  if (!_mtx.get_leading_bearing_without_var_unscaled (old_gid, &lsb))
-                    (void) _glyf_get_leading_bearing_without_var_unscaled (c->plan->source, old_gid, !T::is_horizontal, &lsb);
+                  _mtx.get_leading_bearing_without_var_unscaled (old_gid, &lsb);
                   return hb_pair (_mtx.get_advance_without_var_unscaled (old_gid), +lsb);
                 }
                 return *v;
@@ -275,9 +264,13 @@ struct hmtxvmtx
   {
     friend struct hmtxvmtx;
 
-    accelerator_t (hb_face_t *face)
+    accelerator_t (hb_face_t *face) :
+      accelerator_t (face, T::tableTag, get_num_long_metrics (face))
+    {}
+
+    accelerator_t (hb_face_t *face, hb_tag_t tableTag, unsigned num_long_metrics_)
     {
-      table = hb_sanitize_context_t ().reference_table<hmtxvmtx> (face, T::tableTag);
+      table = hb_sanitize_context_t ().reference_table<hmtxvmtx> (face, tableTag);
       var_table = hb_sanitize_context_t ().reference_table<V> (face, T::variationsTag);
 
       default_advance = T::is_horizontal ? hb_face_get_upem (face) / 2 : hb_face_get_upem (face);
@@ -288,15 +281,8 @@ struct hmtxvmtx
       if (len & 1)
         len--;
 
-      num_long_metrics = T::is_horizontal ?
-                         face->table.hhea->numberOfLongMetrics :
-#ifndef HB_NO_VERTICAL
-                         face->table.vhea->numberOfLongMetrics
-#else
-                         0
-#endif
-                         ;
-      if (unlikely (num_long_metrics * 4 > len))
+      num_long_metrics = num_long_metrics_;
+      if (unlikely (num_long_metrics > len / 4))
         num_long_metrics = len / 4;
       len -= num_long_metrics * 4;
 
@@ -326,103 +312,49 @@ struct hmtxvmtx
 
     bool has_data () const { return (bool) num_bearings; }
 
-    bool get_leading_bearing_without_var_unscaled (hb_codepoint_t glyph,
+    void get_leading_bearing_without_var_unscaled (hb_codepoint_t glyph,
                                                    int *lsb) const
     {
       if (glyph < num_long_metrics)
       {
         *lsb = table->longMetricZ[glyph].sb;
-        return true;
+        return;
       }
 
       if (unlikely (glyph >= num_bearings))
-        return false;
+      {
+        *lsb = 0;
+        return;
+      }
 
       const FWORD *bearings = (const FWORD *) &table->longMetricZ[num_long_metrics];
       *lsb = bearings[glyph - num_long_metrics];
-      return true;
-    }
-
-    bool get_leading_bearing_with_var_unscaled (hb_font_t *font,
-                                                hb_codepoint_t glyph,
-                                                int *lsb) const
-    {
-      if (!font->num_coords)
-        return get_leading_bearing_without_var_unscaled (glyph, lsb);
-
-#ifndef HB_NO_VAR
-      float delta;
-      if (var_table->get_lsb_delta_unscaled (glyph, font->coords, font->num_coords, &delta) &&
-          get_leading_bearing_without_var_unscaled (glyph, lsb))
-      {
-        *lsb += roundf (delta);
-        return true;
-      }
-
-      // If there's no vmtx data, the phantom points from glyf table are not accurate,
-      // so we cannot take the next path.
-      bool is_vertical = T::tableTag == HB_OT_TAG_vmtx;
-      if (is_vertical && !has_data ())
-        return false;
-
-      return _glyf_get_leading_bearing_with_var_unscaled (font, glyph, is_vertical, lsb);
-#else
-      return false;
-#endif
     }
 
     unsigned int get_advance_without_var_unscaled (hb_codepoint_t glyph) const
     {
-      /* OpenType case. */
       if (glyph < num_bearings)
         return table->longMetricZ[hb_min (glyph, (uint32_t) num_long_metrics - 1)].advance;
 
       /* If num_advances is zero, it means we don't have the metrics table
-       * for this direction: return default advance.  Otherwise, there's a
-       * well-defined answer. */
+       * for this direction: return default advance. */
       if (unlikely (!num_advances))
         return default_advance;
 
-#ifdef HB_NO_BEYOND_64K
       return 0;
-#endif
-
-      if (unlikely (glyph >= num_glyphs))
-        return 0;
-
-      /* num_bearings <= glyph < num_glyphs;
-       * num_bearings <= num_advances */
-
-      if (num_bearings == num_advances)
-        return get_advance_without_var_unscaled (num_bearings - 1);
-
-      const FWORD *bearings = (const FWORD *) &table->longMetricZ[num_long_metrics];
-      const UFWORD *advances = (const UFWORD *) &bearings[num_bearings - num_long_metrics];
-
-      return advances[hb_min (glyph - num_bearings, num_advances - num_bearings - 1)];
     }
-
-    unsigned get_advance_with_var_unscaled (hb_codepoint_t  glyph,
-                                            hb_font_t      *font,
-                                            ItemVariationStore::cache_t *store_cache = nullptr) const
-    {
-      unsigned int advance = get_advance_without_var_unscaled (glyph);
 
 #ifndef HB_NO_VAR
-      if (unlikely (glyph >= num_bearings) || !font->num_coords)
-        return advance;
-
-      if (var_table.get_length ())
-        return advance + roundf (var_table->get_advance_delta_unscaled (glyph,
-                                                                        font->coords, font->num_coords,
-                                                                        store_cache));
-
-      unsigned glyf_advance = _glyf_get_advance_with_var_unscaled (font, glyph, T::tableTag == HB_OT_TAG_vmtx);
-      return glyf_advance ? glyf_advance : advance;
-#else
-      return advance;
-#endif
+    unsigned get_advance_with_var_unscaled (hb_codepoint_t     glyph,
+                                            hb_font_t         *font,
+                                            hb_scalar_cache_t *store_cache = nullptr) const
+    {
+      unsigned int advance = get_advance_without_var_unscaled (glyph);
+      return hb_clamp_to<unsigned> (advance + roundf (var_table->get_advance_delta_unscaled (glyph,
+                                                                      font->coords, font->num_coords,
+                                                                      store_cache)));
     }
+#endif
 
     protected:
     // 0 <= num_long_metrics <= num_bearings <= num_advances <= num_glyphs
@@ -436,6 +368,15 @@ struct hmtxvmtx
     public:
     hb_blob_ptr_t<hmtxvmtx> table;
     hb_blob_ptr_t<V> var_table;
+
+    private:
+    static unsigned get_num_long_metrics (hb_face_t *face)
+    {
+      hb_blob_ptr_t<H> hea = hb_sanitize_context_t ().reference_table<H> (face);
+      unsigned ret = hea->numberOfLongMetrics;
+      hea.destroy ();
+      return ret;
+    }
   };
 
   /* get advance: when no variations, call get_advance_without_var_unscaled.
@@ -489,18 +430,107 @@ struct hmtx : hmtxvmtx<hmtx, hhea, HVAR> {
   static constexpr hb_tag_t variationsTag = HB_OT_TAG_HVAR;
   static constexpr bool is_horizontal = true;
 };
+struct HMTX : hmtxvmtx<HMTX, HHEA, HVAR> {
+  static constexpr hb_tag_t tableTag = HB_OT_TAG_HMTX;
+  static constexpr hb_tag_t variationsTag = HB_OT_TAG_HVAR;
+  static constexpr bool is_horizontal = true;
+};
 struct vmtx : hmtxvmtx<vmtx, vhea, VVAR> {
   static constexpr hb_tag_t tableTag = HB_OT_TAG_vmtx;
   static constexpr hb_tag_t variationsTag = HB_OT_TAG_VVAR;
   static constexpr bool is_horizontal = false;
 };
-
-struct hmtx_accelerator_t : hmtx::accelerator_t {
-  hmtx_accelerator_t (hb_face_t *face) : hmtx::accelerator_t (face) {}
+struct VMTX : hmtxvmtx<VMTX, VHEA, VVAR> {
+  static constexpr hb_tag_t tableTag = HB_OT_TAG_VMTX;
+  static constexpr hb_tag_t variationsTag = HB_OT_TAG_VVAR;
+  static constexpr bool is_horizontal = false;
 };
+
+struct hmtx_accelerator_t : hb_dual_accelerator_t<hmtx::accelerator_t,
+                                                  HMTX::accelerator_t>
+{
+  hmtx_accelerator_t (hb_face_t *face) :
+    hb_dual_accelerator_t<hmtx::accelerator_t, HMTX::accelerator_t> (face)
+  {
+    var_table = hb_sanitize_context_t ().reference_table<HVAR> (face);
+  }
+
+  ~hmtx_accelerator_t ()
+  {
+    var_table.destroy ();
+  }
+
+  void get_leading_bearing_without_var_unscaled (hb_codepoint_t glyph,
+                                                 int *lsb) const
+  {
+    HB_DUAL_GET (*this, get_leading_bearing_without_var_unscaled (glyph, lsb));
+  }
+
+  unsigned int get_advance_without_var_unscaled (hb_codepoint_t glyph) const
+  {
+    return HB_DUAL_GET (*this, get_advance_without_var_unscaled (glyph));
+  }
+
+#ifndef HB_NO_VAR
+  unsigned get_advance_with_var_unscaled (hb_codepoint_t     glyph,
+                                          hb_font_t         *font,
+                                          hb_scalar_cache_t *store_cache = nullptr) const
+  {
+    unsigned int advance = get_advance_without_var_unscaled (glyph);
+    return hb_clamp_to<unsigned> (advance + roundf (var_table->get_advance_delta_unscaled (glyph,
+                                                                    font->coords, font->num_coords,
+                                                                    store_cache)));
+  }
+#endif
+
+  hb_blob_ptr_t<HVAR> var_table;
+};
+
+#ifndef HB_NO_VERTICAL
+struct vmtx_accelerator_t : hb_dual_accelerator_t<vmtx::accelerator_t,
+                                                  VMTX::accelerator_t>
+{
+  vmtx_accelerator_t (hb_face_t *face) :
+    hb_dual_accelerator_t<vmtx::accelerator_t, VMTX::accelerator_t> (face)
+  {
+    var_table = hb_sanitize_context_t ().reference_table<VVAR> (face);
+  }
+
+  ~vmtx_accelerator_t ()
+  {
+    var_table.destroy ();
+  }
+
+  void get_leading_bearing_without_var_unscaled (hb_codepoint_t glyph,
+                                                 int *lsb) const
+  {
+    HB_DUAL_GET (*this, get_leading_bearing_without_var_unscaled (glyph, lsb));
+  }
+
+  unsigned int get_advance_without_var_unscaled (hb_codepoint_t glyph) const
+  {
+    return HB_DUAL_GET (*this, get_advance_without_var_unscaled (glyph));
+  }
+
+#ifndef HB_NO_VAR
+  unsigned get_advance_with_var_unscaled (hb_codepoint_t     glyph,
+                                          hb_font_t         *font,
+                                          hb_scalar_cache_t *store_cache = nullptr) const
+  {
+    unsigned int advance = get_advance_without_var_unscaled (glyph);
+    return hb_clamp_to<unsigned> (advance + roundf (var_table->get_advance_delta_unscaled (glyph,
+                                                                    font->coords, font->num_coords,
+                                                                    store_cache)));
+  }
+#endif
+
+  hb_blob_ptr_t<VVAR> var_table;
+};
+#else
 struct vmtx_accelerator_t : vmtx::accelerator_t {
   vmtx_accelerator_t (hb_face_t *face) : vmtx::accelerator_t (face) {}
 };
+#endif
 
 } /* namespace OT */
 

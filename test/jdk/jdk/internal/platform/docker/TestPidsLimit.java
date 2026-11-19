@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -30,8 +30,9 @@
  * @requires container.support
  * @requires !vm.asan
  * @library /test/lib
+ * @modules java.base/jdk.internal.platform
  * @build TestPidsLimit
- * @run driver TestPidsLimit
+ * @run driver/timeout=480 TestPidsLimit
  */
 import java.util.ArrayList;
 import java.util.List;
@@ -40,19 +41,14 @@ import jdk.test.lib.containers.docker.DockerRunOptions;
 import jdk.test.lib.containers.docker.DockerTestUtils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.Asserts;
-import jdk.test.lib.Container;
 
 public class TestPidsLimit {
     private static final String imageName = Common.imageName("pids");
-    private static final boolean IS_PODMAN = Container.ENGINE_COMMAND.contains("podman");
-    private static final int UNLIMITED_PIDS_PODMAN = 0;
-    private static final int UNLIMITED_PIDS_DOCKER = -1;
+    private static final int UNLIMITED_PIDS = -1;
 
     public static void main(String[] args) throws Exception {
-        if (!DockerTestUtils.canTestDocker()) {
-            return;
-        }
-
+        DockerTestUtils.checkCanTestDocker();
+        DockerTestUtils.checkCanUseResourceLimits();
         DockerTestUtils.buildJdkContainerImage(imageName);
 
         try {
@@ -60,9 +56,7 @@ public class TestPidsLimit {
             testPidsLimit("2000");
             testPidsLimit("Unlimited");
         } finally {
-            if (!DockerTestUtils.RETAIN_IMAGE_AFTER_TEST) {
-                DockerTestUtils.removeDockerImage(imageName);
-            }
+            DockerTestUtils.removeDockerImage(imageName);
         }
     }
 
@@ -112,10 +106,9 @@ public class TestPidsLimit {
         Common.logNewTestCase("testPidsLimit (limit: " + pidsLimit + ")");
         DockerRunOptions opts = Common.newOptsShowSettings(imageName);
         if (pidsLimit.equals("Unlimited")) {
-            int unlimited = IS_PODMAN ? UNLIMITED_PIDS_PODMAN : UNLIMITED_PIDS_DOCKER;
-            opts.addDockerOpts("--pids-limit=" + unlimited);
+            opts.addDockerOpts("--pids-limit=" + UNLIMITED_PIDS);
         } else {
-            opts.addDockerOpts("--pids-limit="+pidsLimit);
+            opts.addDockerOpts("--pids-limit=" + pidsLimit);
         }
 
         OutputAnalyzer out = DockerTestUtils.dockerRunJava(opts);

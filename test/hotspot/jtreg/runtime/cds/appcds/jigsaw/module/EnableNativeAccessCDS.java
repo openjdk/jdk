@@ -37,7 +37,7 @@ public class EnableNativeAccessCDS {
     public static void main(String[] args) throws Exception {
         final String module0 = "java.base";
         final String module1 = "jdk.httpserver";
-        final String disabledOptimizedModule = "Disabling optimized module handling";
+        final String disablingFMG = "Disabling full module graph";
         final String loggingOption = "-Xlog:cds=debug";
 
         String archiveName = TestCommon.getNewArchiveName("native-access");
@@ -66,7 +66,7 @@ public class EnableNativeAccessCDS {
             "-version");
         oa.shouldHaveExitValue(0)
           .shouldContain("Mismatched values for property jdk.module.enable.native.access: runtime jdk.httpserver dump time java.base")
-          .shouldContain(disabledOptimizedModule);
+          .shouldContain(disablingFMG);
 
         // no module specified during runtime
         oa = TestCommon.execCommon(
@@ -74,7 +74,7 @@ public class EnableNativeAccessCDS {
             "-version");
         oa.shouldHaveExitValue(0)
           .shouldContain("Mismatched values for property jdk.module.enable.native.access: java.base specified during dump time but not during runtime")
-          .shouldContain(disabledOptimizedModule);
+          .shouldContain(disablingFMG);
 
         // dump an archive without --enable-native-access option
         archiveName = TestCommon.getNewArchiveName("no-native-access-modules");
@@ -92,7 +92,7 @@ public class EnableNativeAccessCDS {
             "-version");
         oa.shouldHaveExitValue(0)
           .shouldContain("Mismatched values for property jdk.module.enable.native.access: java.base specified during runtime but not during dump time")
-          .shouldContain(disabledOptimizedModule);
+          .shouldContain(disablingFMG);
 
         // dump an archive with multiple modules with native access
         archiveName = TestCommon.getNewArchiveName("multiple-native-access-modules");
@@ -128,6 +128,6 @@ public class EnableNativeAccessCDS {
             "-version");
         oa.shouldHaveExitValue(0)
           .shouldContain("Mismatched values for property jdk.module.enable.native.access: runtime java.base dump time java.base,jdk.httpserver")
-          .shouldContain(disabledOptimizedModule);
+          .shouldContain(disablingFMG);
     }
 }

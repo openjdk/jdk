@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
  */
 package jdk.internal.constant;
 
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import jdk.internal.vm.annotation.Stable;
 import sun.invoke.util.Wrapper;
 
@@ -31,6 +32,8 @@ import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.constant.MethodTypeDesc;
+import java.lang.constant.ModuleDesc;
+import java.lang.constant.PackageDesc;
 import java.lang.invoke.MethodType;
 import java.util.Set;
 
@@ -41,6 +44,7 @@ import static jdk.internal.constant.PrimitiveClassDescImpl.*;
 /**
  * Helper methods for the implementation of {@code java.lang.constant}.
  */
+@AOTSafeClassInitializer // initialization dependency of PrimitiveClassDescImpl
 public final class ConstantUtils {
     private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 
@@ -247,7 +251,7 @@ public final class ConstantUtils {
     /**
      * Validates the correctness of a binary package name.
      * In particular checks for the presence of invalid characters, consecutive,
-     * leading, or trailing {@code .}.  Allows empty strings for the unnamed package.
+     * leading, or trailing {@code .}.  Allows empty strings for an unnamed package.
      *
      * @param name the package name
      * @return the package name passed if valid
@@ -261,7 +265,7 @@ public final class ConstantUtils {
     /**
      * Validates the correctness of an internal package name.
      * In particular checks for the presence of invalid characters, consecutive,
-     * leading, or trailing {@code /}.  Allows empty strings for the unnamed package.
+     * leading, or trailing {@code /}.  Allows empty strings for an unnamed package.
      *
      * @param name the package name
      * @return the package name passed if valid
@@ -270,6 +274,36 @@ public final class ConstantUtils {
      */
     public static String validateInternalPackageName(String name) {
         return validateClassOrPackageName(name, true, true);
+    }
+
+    /**
+     * Validates the correctness of a package descriptor for a PackageEntry,
+     * where an unnamed package is not allowed.
+     *
+     * @param desc the package descriptor
+     * @throws IllegalArgumentException if the package descriptor is empty
+     * @throws NullPointerException if the package descriptor is {@code null}
+     */
+    public static PackageDesc validateNamedPackage(PackageDesc desc) {
+        if (desc.internalName().isEmpty()) {
+            throw new IllegalArgumentException("Unnamed package not allowed");
+        }
+        return desc;
+    }
+
+    /**
+     * Validates the correctness of a module descriptor for a ModuleEntry,
+     * where an unnamed module is not allowed.
+     *
+     * @param desc the module descriptor
+     * @throws IllegalArgumentException if the module descriptor is empty
+     * @throws NullPointerException if the module descriptor is {@code null}
+     */
+    public static ModuleDesc validateNamedModule(ModuleDesc desc) {
+        if (desc.name().isEmpty()) {
+            throw new IllegalArgumentException("Unnamed module not allowed");
+        }
+        return desc;
     }
 
     /**

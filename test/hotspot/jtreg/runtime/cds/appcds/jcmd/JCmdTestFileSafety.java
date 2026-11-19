@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -140,6 +140,9 @@ public class JCmdTestFileSafety extends JCmdTestDumpBase {
             // Set dir to not accessible for write, we still can run the test
             // to create archive successfully which is not expected.
             throw new jtreg.SkippedException("Test skipped on Windows");
+        }
+        if (Platform.isRoot()) {
+            throw new jtreg.SkippedException("Test skipped when executed by root user.");
         }
         runTest(JCmdTestFileSafety::test);
     }

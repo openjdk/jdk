@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 #define SHARE_JFR_UTILITIES_JFRREFCOUNTPOINTER_HPP
 
 #include "jfr/utilities/jfrAllocation.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 
 template <typename T>
 class RefCountHandle {
@@ -112,11 +112,11 @@ class MultiThreadedRefCounter {
   MultiThreadedRefCounter() : _refs(0) {}
 
   void inc() const {
-    Atomic::inc(&_refs, memory_order_relaxed);
+    AtomicAccess::inc(&_refs, memory_order_relaxed);
   }
 
   bool dec() const {
-    if (0 == Atomic::sub(&_refs, 1, memory_order_release)) {
+    if (0 == AtomicAccess::sub(&_refs, 1, memory_order_release)) {
       OrderAccess::acquire();
       return true;
     }
@@ -124,7 +124,7 @@ class MultiThreadedRefCounter {
   }
 
   intptr_t current() const {
-    return Atomic::load(&_refs);
+    return AtomicAccess::load(&_refs);
   }
 };
 

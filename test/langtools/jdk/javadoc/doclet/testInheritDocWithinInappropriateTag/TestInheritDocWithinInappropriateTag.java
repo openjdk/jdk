@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8284299 8287379 8298525 6934301
+ * @bug 8284299 8287379 8298525 6934301 8361316
  * @library /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build toolbox.ToolBox javadoc.tester.*
@@ -198,22 +198,22 @@ public class TestInheritDocWithinInappropriateTag extends JavadocTester {
         new OutputChecker(Output.OUT).setExpectOrdered(false).check(
                 """
                         B.java:1: warning: Tag @inheritDoc cannot be used in class documentation.\
-                          It can only be used in the following types of documentation: method.
+                         It can only be used in the following types of documentation: method.
                         /** {@inheritDoc} */
                             ^
-                            """,
+                        """,
                 """
                         D.java:1: warning: Tag @inheritDoc cannot be used in class documentation.\
-                          It can only be used in the following types of documentation: method.
+                         It can only be used in the following types of documentation: method.
                         /** {@inheritDoc} */
                             ^
-                            """,
+                        """,
                 """
                         F.java:1: warning: Tag @inheritDoc cannot be used in class documentation.\
-                          It can only be used in the following types of documentation: method.
+                         It can only be used in the following types of documentation: method.
                         /** {@inheritDoc} */
                             ^
-                            """);
+                        """);
     }
 
     @Test
@@ -256,22 +256,22 @@ public class TestInheritDocWithinInappropriateTag extends JavadocTester {
         new OutputChecker(Output.OUT).setExpectOrdered(false).check(
                 """
                         B.java:1: warning: Tag @inheritDoc cannot be used in class documentation.\
-                          It can only be used in the following types of documentation: method.
+                         It can only be used in the following types of documentation: method.
                         /** @param <T> {@inheritDoc} */
                                        ^
-                                       """,
+                        """,
                 """
                         D.java:1: warning: Tag @inheritDoc cannot be used in class documentation.\
-                          It can only be used in the following types of documentation: method.
+                         It can only be used in the following types of documentation: method.
                         /** @param <T> {@inheritDoc} */
                                        ^
-                                       """,
+                        """,
                 """
                         F.java:1: warning: Tag @inheritDoc cannot be used in class documentation.\
-                          It can only be used in the following types of documentation: method.
+                         It can only be used in the following types of documentation: method.
                         /** @param <T> {@inheritDoc} */
                                        ^
-                                       """);
+                        """);
     }
 
     @Test
@@ -313,15 +313,84 @@ public class TestInheritDocWithinInappropriateTag extends JavadocTester {
         new OutputChecker(Output.OUT).setExpectOrdered(false).check(
                 """
                         overview.html:6: warning: Tag @inheritDoc cannot be used in overview documentation.\
-                          It can only be used in the following types of documentation: method.
+                         It can only be used in the following types of documentation: method.
                         {@inheritDoc}
                         ^
                         """,
                 """
                         example.html:6: warning: Tag @inheritDoc cannot be used in overview documentation.\
-                          It can only be used in the following types of documentation: method.
+                         It can only be used in the following types of documentation: method.
                         {@inheritDoc}
                         ^
                         """);
+    }
+
+    @Test
+    public void testUnsupportedElement(Path base) throws Exception {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src,
+                """
+                        /**
+                         * A simple class
+                         */
+                        public class A {
+                            /**
+                             * A constant {@inheritDoc} ...
+                             */
+                            public final static int C = 10;
+
+                            /**
+                             * A constructor {@inheritDoc} ...
+                             * @param p a parameter {@inheritDoc} ...
+                             * @throws Exception an exception {@inheritDoc} ...
+                             */
+                            public A(int p) throws Exception {
+                            }
+                        }
+                        """);
+        javadoc("-Xdoclint:none",
+                "--no-platform-links",
+                "-d", base.resolve("out").toString(),
+                src.resolve("A.java").toString());
+        checkExit(Exit.OK);
+        checkOutput(Output.OUT, true,
+                """
+                        A.java:6: warning: Tag @inheritDoc cannot be used in field documentation. \
+                        It can only be used in the following types of documentation: method.
+                             * A constant {@inheritDoc} ...
+                                          ^
+                        """,
+                """
+                        A.java:11: warning: Tag @inheritDoc cannot be used in constructor documentation. \
+                        It can only be used in the following types of documentation: method.
+                             * A constructor {@inheritDoc} ...
+                                             ^
+                        """,
+                """
+                        A.java:12: warning: Tag @inheritDoc cannot be used in constructor documentation. \
+                        It can only be used in the following types of documentation: method.
+                             * @param p a parameter {@inheritDoc} ...
+                                                    ^
+                        """,
+                """
+                        A.java:13: warning: Tag @inheritDoc cannot be used in constructor documentation. \
+                        It can only be used in the following types of documentation: method.
+                             * @throws Exception an exception {@inheritDoc} ...
+                                                              ^
+                        """);
+
+        checkOutput("A.html", true,
+                """
+                        <div class="member-signature"><span class="modifiers">public static final</span>&nbsp;\
+                        <span class="return-type">int</span>&nbsp;<span class="element-name">C</span></div>
+                        <div class="block">A constant  ...</div>""",
+                """
+                        <div class="block">A constructor  ...</div>
+                        <dl class="notes">
+                        <dt>Parameters:</dt>
+                        <dd><code>p</code> - a parameter  ...</dd>
+                        <dt>Throws:</dt>
+                        <dd><code>java.lang.Exception</code> - an exception  ...</dd>
+                        </dl>""");
     }
 }

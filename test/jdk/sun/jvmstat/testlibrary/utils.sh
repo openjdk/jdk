@@ -40,7 +40,7 @@ setup() {
 
     OS=`uname -s`
     case ${OS} in
-    Windows_* | CYGWIN*)
+    Windows_* | CYGWIN* | MSYS* | MINGW*)
         PS=";"
         FS="\\"
         ;;
@@ -54,7 +54,7 @@ setup() {
 verify_os() {
     OS=`uname -s`
     case ${OS} in
-    Windows_95 | Windows_98 | Windows_ME | CYGWIN* )
+    Windows_95 | Windows_98 | Windows_ME | CYGWIN* | MSYS* | MINGW* )
         echo "Test bypassed: jvmstat feature not supported on ${OS}"
         exit 0
         ;;

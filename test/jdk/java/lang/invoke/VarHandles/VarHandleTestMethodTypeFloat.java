@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,18 +21,16 @@
  * questions.
  */
 
+// -- This file was mechanically generated: Do not edit! -- //
+
 /*
  * @test
  * @bug 8156486
- * @run testng/othervm VarHandleTestMethodTypeFloat
- * @run testng/othervm -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=true -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=true VarHandleTestMethodTypeFloat
- * @run testng/othervm -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=false -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=false VarHandleTestMethodTypeFloat
- * @run testng/othervm -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=false -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=true VarHandleTestMethodTypeFloat
+ * @run junit/othervm VarHandleTestMethodTypeFloat
+ * @run junit/othervm -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=true -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=true VarHandleTestMethodTypeFloat
+ * @run junit/othervm -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=false -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=false VarHandleTestMethodTypeFloat
+ * @run junit/othervm -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=false -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=true VarHandleTestMethodTypeFloat
  */
-
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
@@ -40,18 +38,22 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.testng.Assert.*;
-
 import static java.lang.invoke.MethodType.*;
 
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class VarHandleTestMethodTypeFloat extends VarHandleBaseTest {
     static final float static_final_v = 1.0f;
 
     static float static_v = 1.0f;
 
-    final float final_v = 1.0f;
+    final float final_v;
 
-    float v = 1.0f;
+    float v;
 
     VarHandle vhFinalField;
 
@@ -63,7 +65,13 @@ public class VarHandleTestMethodTypeFloat extends VarHandleBaseTest {
 
     VarHandle vhArray;
 
-    @BeforeClass
+    public VarHandleTestMethodTypeFloat() {
+        final_v = 1.0f;
+        v = 1.0f;
+        super();
+    }
+
+    @BeforeAll
     public void setup() throws Exception {
         vhFinalField = MethodHandles.lookup().findVarHandle(
                 VarHandleTestMethodTypeFloat.class, "final_v", float.class);
@@ -80,7 +88,6 @@ public class VarHandleTestMethodTypeFloat extends VarHandleBaseTest {
         vhArray = MethodHandles.arrayElementVarHandle(float[].class);
     }
 
-    @DataProvider
     public Object[][] accessTestCaseProvider() throws Exception {
         List<AccessTestCase<?>> cases = new ArrayList<>();
 
@@ -115,7 +122,8 @@ public class VarHandleTestMethodTypeFloat extends VarHandleBaseTest {
         return cases.stream().map(tc -> new Object[]{tc.toString(), tc}).toArray(Object[][]::new);
     }
 
-    @Test(dataProvider = "accessTestCaseProvider")
+    @ParameterizedTest
+    @MethodSource("accessTestCaseProvider")
     public <T> void testAccess(String desc, AccessTestCase<T> atc) throws Throwable {
         T t = atc.get();
         int iters = atc.requiresLoop() ? ITERS : 1;
@@ -123,7 +131,6 @@ public class VarHandleTestMethodTypeFloat extends VarHandleBaseTest {
             atc.testAccess(t);
         }
     }
-
 
     static void testInstanceFieldWrongMethodType(VarHandleTestMethodTypeFloat recv, VarHandle vh) throws Throwable {
         // Get
@@ -470,7 +477,7 @@ public class VarHandleTestMethodTypeFloat extends VarHandleBaseTest {
         checkWMTE(() -> { // actual reference class
             float x = (float) vh.compareAndExchange(recv, 1.0f, Void.class);
         });
-        checkWMTE(() -> { // reciever primitive class
+        checkWMTE(() -> { // receiver primitive class
             float x = (float) vh.compareAndExchange(0, 1.0f, 1.0f);
         });
         // Incorrect return type
@@ -503,7 +510,7 @@ public class VarHandleTestMethodTypeFloat extends VarHandleBaseTest {
         checkWMTE(() -> { // actual reference class
             float x = (float) vh.compareAndExchangeAcquire(recv, 1.0f, Void.class);
         });
-        checkWMTE(() -> { // reciever primitive class
+        checkWMTE(() -> { // receiver primitive class
             float x = (float) vh.compareAndExchangeAcquire(0, 1.0f, 1.0f);
         });
         // Incorrect return type
@@ -536,7 +543,7 @@ public class VarHandleTestMethodTypeFloat extends VarHandleBaseTest {
         checkWMTE(() -> { // actual reference class
             float x = (float) vh.compareAndExchangeRelease(recv, 1.0f, Void.class);
         });
-        checkWMTE(() -> { // reciever primitive class
+        checkWMTE(() -> { // receiver primitive class
             float x = (float) vh.compareAndExchangeRelease(0, 1.0f, 1.0f);
         });
         // Incorrect return type
@@ -566,7 +573,7 @@ public class VarHandleTestMethodTypeFloat extends VarHandleBaseTest {
         checkWMTE(() -> { // value reference class
             float x = (float) vh.getAndSet(recv, Void.class);
         });
-        checkWMTE(() -> { // reciever primitive class
+        checkWMTE(() -> { // receiver primitive class
             float x = (float) vh.getAndSet(0, 1.0f);
         });
         // Incorrect return type
@@ -595,7 +602,7 @@ public class VarHandleTestMethodTypeFloat extends VarHandleBaseTest {
         checkWMTE(() -> { // value reference class
             float x = (float) vh.getAndSetAcquire(recv, Void.class);
         });
-        checkWMTE(() -> { // reciever primitive class
+        checkWMTE(() -> { // receiver primitive class
             float x = (float) vh.getAndSetAcquire(0, 1.0f);
         });
         // Incorrect return type
@@ -624,7 +631,7 @@ public class VarHandleTestMethodTypeFloat extends VarHandleBaseTest {
         checkWMTE(() -> { // value reference class
             float x = (float) vh.getAndSetRelease(recv, Void.class);
         });
-        checkWMTE(() -> { // reciever primitive class
+        checkWMTE(() -> { // receiver primitive class
             float x = (float) vh.getAndSetRelease(0, 1.0f);
         });
         // Incorrect return type
@@ -653,7 +660,7 @@ public class VarHandleTestMethodTypeFloat extends VarHandleBaseTest {
         checkWMTE(() -> { // value reference class
             float x = (float) vh.getAndAdd(recv, Void.class);
         });
-        checkWMTE(() -> { // reciever primitive class
+        checkWMTE(() -> { // receiver primitive class
             float x = (float) vh.getAndAdd(0, 1.0f);
         });
         // Incorrect return type
@@ -682,7 +689,7 @@ public class VarHandleTestMethodTypeFloat extends VarHandleBaseTest {
         checkWMTE(() -> { // value reference class
             float x = (float) vh.getAndAddAcquire(recv, Void.class);
         });
-        checkWMTE(() -> { // reciever primitive class
+        checkWMTE(() -> { // receiver primitive class
             float x = (float) vh.getAndAddAcquire(0, 1.0f);
         });
         // Incorrect return type
@@ -711,7 +718,7 @@ public class VarHandleTestMethodTypeFloat extends VarHandleBaseTest {
         checkWMTE(() -> { // value reference class
             float x = (float) vh.getAndAddRelease(recv, Void.class);
         });
-        checkWMTE(() -> { // reciever primitive class
+        checkWMTE(() -> { // receiver primitive class
             float x = (float) vh.getAndAddRelease(0, 1.0f);
         });
         // Incorrect return type
@@ -845,7 +852,7 @@ public class VarHandleTestMethodTypeFloat extends VarHandleBaseTest {
                 float x = (float) hs.get(am, methodType(float.class, VarHandleTestMethodTypeFloat.class, float.class, Class.class)).
                     invokeExact(recv, 1.0f, Void.class);
             });
-            checkWMTE(() -> { // reciever primitive class
+            checkWMTE(() -> { // receiver primitive class
                 float x = (float) hs.get(am, methodType(float.class, int.class , float.class, float.class)).
                     invokeExact(0, 1.0f, 1.0f);
             });
@@ -882,7 +889,7 @@ public class VarHandleTestMethodTypeFloat extends VarHandleBaseTest {
                 float x = (float) hs.get(am, methodType(float.class, VarHandleTestMethodTypeFloat.class, Class.class)).
                     invokeExact(recv, Void.class);
             });
-            checkWMTE(() -> { // reciever primitive class
+            checkWMTE(() -> { // receiver primitive class
                 float x = (float) hs.get(am, methodType(float.class, int.class, float.class)).
                     invokeExact(0, 1.0f);
             });
@@ -919,7 +926,7 @@ public class VarHandleTestMethodTypeFloat extends VarHandleBaseTest {
                 float x = (float) hs.get(am, methodType(float.class, VarHandleTestMethodTypeFloat.class, Class.class)).
                     invokeExact(recv, Void.class);
             });
-            checkWMTE(() -> { // reciever primitive class
+            checkWMTE(() -> { // receiver primitive class
                 float x = (float) hs.get(am, methodType(float.class, int.class, float.class)).
                     invokeExact(0, 1.0f);
             });
@@ -1972,7 +1979,7 @@ public class VarHandleTestMethodTypeFloat extends VarHandleBaseTest {
         checkWMTE(() -> { // value reference class
             float x = (float) vh.getAndSet(array, 0, Void.class);
         });
-        checkWMTE(() -> { // reciarrayever primitive class
+        checkWMTE(() -> { // array primitive class
             float x = (float) vh.getAndSet(0, 0, 1.0f);
         });
         checkWMTE(() -> { // index reference class
@@ -2005,7 +2012,7 @@ public class VarHandleTestMethodTypeFloat extends VarHandleBaseTest {
         checkWMTE(() -> { // value reference class
             float x = (float) vh.getAndSetAcquire(array, 0, Void.class);
         });
-        checkWMTE(() -> { // reciarrayever primitive class
+        checkWMTE(() -> { // array primitive class
             float x = (float) vh.getAndSetAcquire(0, 0, 1.0f);
         });
         checkWMTE(() -> { // index reference class
@@ -2038,7 +2045,7 @@ public class VarHandleTestMethodTypeFloat extends VarHandleBaseTest {
         checkWMTE(() -> { // value reference class
             float x = (float) vh.getAndSetRelease(array, 0, Void.class);
         });
-        checkWMTE(() -> { // reciarrayever primitive class
+        checkWMTE(() -> { // array primitive class
             float x = (float) vh.getAndSetRelease(0, 0, 1.0f);
         });
         checkWMTE(() -> { // index reference class

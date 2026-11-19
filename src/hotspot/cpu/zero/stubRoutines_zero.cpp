@@ -28,4 +28,11 @@
 #include "runtime/javaThread.hpp"
 #include "runtime/stubRoutines.hpp"
 
-// zero has no arch-specific stubs nor any associated entries
+address StubRoutines::crc_table_addr()    { ShouldNotCallThis(); return nullptr; }
+address StubRoutines::crc32c_table_addr() { ShouldNotCallThis(); return nullptr; }
+
+#if INCLUDE_CDS
+// nothing to do for zero
+void StubRoutines::init_AOTAddressTable() {
+}
+#endif // INCLUDE_CDS

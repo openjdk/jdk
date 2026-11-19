@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2025 Unicode, Inc.
+<!-- Copyright © 1991-2026 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -17,7 +17,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</localeDisplayPattern>
 		<languages>
 			<language type="ar">ꀊꇁꀨꉙ</language>
-			<language type="ar_001">ꀊꇁꀨꉙ（ꋧꃅ）</language>
 			<language type="de">ꄓꇩꉙ</language>
 			<language type="en">ꑱꇩꉙ</language>
 			<language type="es">ꑭꀠꑸꉙ</language>
@@ -95,6 +94,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<exemplarCharacters type="index" draft="contributed">[A B {BB} C {CH} D {DD} E F G {GG} H {HL} {HM} {HN} {HX} I {IE} J {JJ} K L M {MG} N {NB} {ND} {NG} {NJ} {NR} {NY} {NZ} O P Q R {RR} S {SH} {SS} T {UO} V W X Y Z {ZH} {ZZ}]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\- ‑ , . {\\\-} % ‰ + 0 1 2 3 4 5 6 7 8 9 {ꋍꑍꌕꇖꉬꃘꏃꉆꈬ}]</exemplarCharacters>
 		<exemplarCharacters type="punctuation" draft="contributed">[﹉﹊﹋﹌ _＿﹍﹎﹏︳︴ \-－﹣ ‐‑ – —︱ ― ,，﹐ 、﹑ ;；﹔ \:：﹕ !！﹗ ?？﹖ .．﹒ ‥︰ … 。 · ＇‘’ ＂“”〝〞 (（﹙︵ )）﹚︶ \[［ \]］ \{｛﹛︷ \}｝﹜︸ 〈︿ 〉﹀ 《︽ 》︾ 「﹁ 」﹂ 『﹃ 』﹄ 【︻ 】︼ 〔﹝︹ 〕﹞︺ 〖 〗 ‖ § @＠﹫ *＊﹡ /／ \\＼﹨ \&amp;＆﹠ #＃﹟ %％﹪ ‰ ′ ″ ‵ 〃 ※]</exemplarCharacters>
+		<exemplarCharacters type="punctuation-person" draft="contributed">[\- ‐‑ ・ . · ⸱]</exemplarCharacters>
 	</characters>
 	<dates>
 		<calendars>
@@ -312,6 +312,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yMMMEd">y MMM dꑍ,E</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="mixed" draft="provisional">{0} – {1}</intervalFormatRange>
+							<intervalFormatRange type="non-numeric" draft="provisional">{0}–{1}</intervalFormatRange>
+							<intervalFormatRange type="numeric" draft="provisional">{0}–{1}</intervalFormatRange>
+						</intervalFormatRanges>
 						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="MMMd">
 							<greatestDifference id="d">MMM dꑍ–dꑍ</greatestDifference>
@@ -394,7 +399,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</fields>
 		<timeZoneNames>
 			<gmtFormat>ꋧꃅꎕꏦꄮꈉ{0}</gmtFormat>
-			<gmtZeroFormat>ꋧꃅꎕꏦꄮꈉ</gmtZeroFormat>
 			<regionFormat>{0}ꄮꈉ</regionFormat>
 			<regionFormat type="daylight">{0}ꃅꎸꄮꈉ</regionFormat>
 			<regionFormat type="standard">{0}ꎕꏦꄮꈉ</regionFormat>

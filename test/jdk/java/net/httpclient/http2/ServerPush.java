@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,9 +29,9 @@
  * @build jdk.httpclient.test.lib.http2.Http2TestServer
  *        jdk.httpclient.test.lib.http2.PushHandler
  *        jdk.test.lib.Utils
- * @run testng/othervm
+ * @run junit/othervm
  *      -Djdk.httpclient.HttpClient.log=errors,requests,responses
- *      ServerPush
+ *      ${test.main.class}
  */
 
 import java.io.*;
@@ -48,13 +48,14 @@ import java.util.concurrent.*;
 import java.util.function.Consumer;
 import jdk.httpclient.test.lib.http2.Http2TestServer;
 import jdk.httpclient.test.lib.http2.PushHandler;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.Test;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static jdk.test.lib.Utils.createTempFileOfSize;
-import static org.testng.Assert.*;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class ServerPush {
 
@@ -66,11 +67,11 @@ public class ServerPush {
 
     static Path tempFile;
 
-    Http2TestServer server;
-    URI uri;
+    private static Http2TestServer server;
+    private static URI uri;
 
-    @BeforeTest
-    public void setup() throws Exception {
+    @BeforeAll
+    public static void setup() throws Exception {
         tempFile = createTempFileOfSize(TEMP_FILE_PREFIX, null, FILE_SIZE);
         server = new Http2TestServer(false, 0);
         server.addHandler(new PushHandler(tempFile, LOOPS), "/");
@@ -82,8 +83,8 @@ public class ServerPush {
         uri = new URI("http://localhost:" + port + "/foo/a/b/c");
     }
 
-    @AfterTest
-    public void teardown() {
+    @AfterAll
+    public static void teardown() {
         server.stop();
     }
 
@@ -109,10 +110,10 @@ public class ServerPush {
         System.err.println("results.size: " + resultMap.size());
         for (HttpRequest r : resultMap.keySet()) {
             HttpResponse<String> response = resultMap.get(r).join();
-            assertEquals(response.statusCode(), 200);
-            assertEquals(response.body(), tempFileAsString);
+            assertEquals(200, response.statusCode());
+            assertEquals(tempFileAsString, response.body());
         }
-        assertEquals(resultMap.size(), LOOPS + 1);
+        assertEquals(LOOPS + 1, resultMap.size());
     }
 
     // Test 2 - of(...) populating the given Map, everything as a String
@@ -135,10 +136,10 @@ public class ServerPush {
         System.err.println("results.size: " + resultMap.size());
         for (HttpRequest r : resultMap.keySet()) {
             HttpResponse<String> response = resultMap.get(r).join();
-            assertEquals(response.statusCode(), 200);
-            assertEquals(response.body(), tempFileAsString);
+            assertEquals(200, response.statusCode());
+            assertEquals(tempFileAsString, response.body());
         }
-        assertEquals(resultMap.size(), LOOPS + 1);
+        assertEquals(LOOPS + 1, resultMap.size());
     }
 
     // --- Path ---
@@ -177,11 +178,11 @@ public class ServerPush {
 
         for (HttpRequest r : resultsMap.keySet()) {
             HttpResponse<Path> response = resultsMap.get(r).join();
-            assertEquals(response.statusCode(), 200);
+            assertEquals(200, response.statusCode());
             String fileAsString = new String(Files.readAllBytes(response.body()), UTF_8);
-            assertEquals(fileAsString, tempFileAsString);
+            assertEquals(tempFileAsString, fileAsString);
         }
-        assertEquals(resultsMap.size(),  LOOPS + 1);
+        assertEquals(LOOPS + 1, resultsMap.size());
     }
 
     // Test 4 - of(...) populating the given Map, everything as a Path
@@ -204,11 +205,11 @@ public class ServerPush {
 
         for (HttpRequest r : resultsMap.keySet()) {
             HttpResponse<Path> response = resultsMap.get(r).join();
-            assertEquals(response.statusCode(), 200);
+            assertEquals(200, response.statusCode());
             String fileAsString = new String(Files.readAllBytes(response.body()), UTF_8);
-            assertEquals(fileAsString, tempFileAsString);
+            assertEquals(tempFileAsString, fileAsString);
         }
-        assertEquals(resultsMap.size(),  LOOPS + 1);
+        assertEquals(LOOPS + 1, resultsMap.size());
     }
 
     // ---  Consumer<byte[]> ---
@@ -263,12 +264,12 @@ public class ServerPush {
 
         for (HttpRequest r : resultsMap.keySet()) {
             HttpResponse<Void> response = resultsMap.get(r).join();
-            assertEquals(response.statusCode(), 200);
+            assertEquals(200, response.statusCode());
             byte[] ba = byteArrayConsumerMap.get(r).getAccumulatedBytes();
             String result = new String(ba, UTF_8);
-            assertEquals(result, tempFileAsString);
+            assertEquals(tempFileAsString, result);
         }
-        assertEquals(resultsMap.size(), LOOPS + 1);
+        assertEquals(LOOPS + 1, resultsMap.size());
     }
 
     // Test 6 - of(...) populating the given Map, everything as a consumer of optional byte[]
@@ -301,11 +302,11 @@ public class ServerPush {
 
         for (HttpRequest r : resultsMap.keySet()) {
             HttpResponse<Void> response = resultsMap.get(r).join();
-            assertEquals(response.statusCode(), 200);
+            assertEquals(200, response.statusCode());
             byte[] ba = byteArrayConsumerMap.get(r).getAccumulatedBytes();
             String result = new String(ba, UTF_8);
-            assertEquals(result, tempFileAsString);
+            assertEquals(tempFileAsString, result);
         }
-        assertEquals(resultsMap.size(), LOOPS + 1);
+        assertEquals(LOOPS + 1, resultsMap.size());
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,23 +59,23 @@
  */
 package tck.java.time.serial;
 
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
 import tck.java.time.AbstractTCKTest;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.time.LocalDate;
 
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
 /**
  * Test LocalDate serialization.
  */
-@Test
 public class TCKLocalDateSerialization extends AbstractTCKTest {
 
     private LocalDate TEST_2007_07_15;
 
-    @BeforeMethod
+    @BeforeEach
     public void setUp() {
         TEST_2007_07_15 = LocalDate.of(2007, 7, 15);
     }

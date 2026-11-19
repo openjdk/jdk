@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,10 @@
 
 package jdk.test.lib.security;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import jdk.test.lib.Platform;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.artifacts.Artifact;
@@ -32,7 +35,7 @@ import jtreg.SkippedException;
 
 public class OpensslArtifactFetcher {
 
-    private static final String OPENSSL_BUNDLE_VERSION = "3.0.14";
+    private static final String OPENSSL_BUNDLE_VERSION = "3.5.4";
     private static final String OPENSSL_ORG = "jpg.tests.jdk.openssl";
 
     /**
@@ -49,42 +52,40 @@ public class OpensslArtifactFetcher {
      *
      * @return openssl binary path of the current version
      * @throws SkippedException if a valid version of OpenSSL cannot be found
+     *         or if OpenSSL is not available on the target platform
      */
     public static String getOpensslPath() {
         String path = getOpensslFromSystemProp(OPENSSL_BUNDLE_VERSION);
         if (path != null) {
+            System.out.println("Using OpenSSL from system property.");
             return path;
         }
+
         path = getDefaultSystemOpensslPath(OPENSSL_BUNDLE_VERSION);
         if (path != null) {
+            System.out.println("Using OpenSSL from system.");
             return path;
         }
+
         if (Platform.isX64()) {
             if (Platform.isLinux()) {
-                path = fetchOpenssl(LINUX_X64.class);
+                return fetchOpenssl(LINUX_X64.class);
             } else if (Platform.isOSX()) {
-                path = fetchOpenssl(MACOSX_X64.class);
+                return fetchOpenssl(MACOSX_X64.class);
             } else if (Platform.isWindows()) {
-                path = fetchOpenssl(WINDOWS_X64.class);
+                return fetchOpenssl(WINDOWS_X64.class);
             }
         } else if (Platform.isAArch64()) {
             if (Platform.isLinux()) {
-                path = fetchOpenssl(LINUX_AARCH64.class);
+                return fetchOpenssl(LINUX_AARCH64.class);
             }
             if (Platform.isOSX()) {
-                path = fetchOpenssl(MACOSX_AARCH64.class);
+                return fetchOpenssl(MACOSX_AARCH64.class);
             }
         }
 
-        if (!verifyOpensslVersion(path, OPENSSL_BUNDLE_VERSION)) {
-            String exMsg = "Can't find the version: "
-                    + OpensslArtifactFetcher.getTestOpensslBundleVersion()
-                    + " of openssl binary on this machine, please install"
-                    + " and set openssl path with property 'test.openssl.path'";
-            throw new SkippedException(exMsg);
-        } else {
-            return path;
-        }
+        throw new SkippedException(String.format("No OpenSSL %s found for %s/%s",
+                OPENSSL_BUNDLE_VERSION, Platform.getOsName(), Platform.getOsArch()));
     }
 
     private static String getOpensslFromSystemProp(String version) {
@@ -120,19 +121,61 @@ public class OpensslArtifactFetcher {
     }
 
     private static String fetchOpenssl(Class<?> clazz) {
-        return ArtifactResolver.fetchOne(clazz)
-                .resolve("openssl", "bin", "openssl")
-                .toString();
+        try {
+            return ArtifactResolver.fetchOne(clazz)
+                    .resolve("openssl", "bin", "openssl")
+                    .toString();
+        } catch (IOException exc) {
+            throw new SkippedException("Could not find openssl", exc);
+        }
     }
 
     // retrieve the provider directory path from <OPENSSL_HOME>/bin/openssl
     public static Path getProviderPath(String opensslPath) {
-        Path openSslRootPath = Path.of(opensslPath).getParent().getParent();
-        String libDir = "lib";
-        if (Platform.isX64() && (Platform.isLinux() || Platform.isWindows())) {
-            libDir = "lib64";
+        Path modules = null;
+
+        // Prefer the modules dir next to the binary: the downloaded bundle is
+        // relocatable, so "info -modulesdir" reports a stale build-time path.
+        Path bin = Path.of(opensslPath).getParent();
+        if (bin != null && bin.getParent() != null) {
+            Path root = bin.getParent();
+            for (String lib : List.of("lib", "lib64")) {
+                Path candidate = root.resolve(lib).resolve("ossl-modules");
+                if (Files.isDirectory(candidate)) {
+                    modules = candidate;
+                    break;
+                }
+            }
         }
-        return openSslRootPath.resolve(libDir, "ossl-modules");
+
+        // System installs (e.g. distro multiarch) don't keep modules next to
+        // the binary; fall back to "openssl info -modulesdir".
+        if (modules == null) {
+            try {
+                String dir = ProcessTools.executeCommand(opensslPath, "info", "-modulesdir")
+                        .shouldHaveExitValue(0)
+                        .getStdout().trim();
+                modules = Path.of(dir);
+            } catch (Exception e) {
+                throw new SkippedException("Could not determine OpenSSL modules directory", e);
+            }
+        }
+
+        // This test uses -legacy (RC4/SHA1 PBE). Skip if the legacy provider
+        // module is missing. Check the module file rather than
+        // "openssl list -providers", which only lists loaded providers.
+        if (!hasLegacyProvider(modules)) {
+            throw new SkippedException("OpenSSL legacy provider not available in " + modules);
+        }
+
+        return modules;
+    }
+
+    // Provider module file name differs per platform.
+    private static boolean hasLegacyProvider(Path modulesDir) {
+        return Files.isRegularFile(modulesDir.resolve("legacy.so"))
+                || Files.isRegularFile(modulesDir.resolve("legacy.dylib"))
+                || Files.isRegularFile(modulesDir.resolve("legacy.dll"));
     }
 
     public static String getTestOpensslBundleVersion() {

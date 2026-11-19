@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ import jdk.test.lib.JDKToolFinder;
  */
 class Compile {
     private static final int COMPILE_TIMEOUT = 60;
+    private static final float timeoutFactor = Float.parseFloat(System.getProperty("test.timeout.factor", "1.0"));
 
     private static final String JAVA_PATH = JDKToolFinder.getJDKTool("java");
     private static final String JAVAC_PATH = JDKToolFinder.getJDKTool("javac");
@@ -182,7 +183,8 @@ class Compile {
         int exitCode;
         try {
             Process process = builder.start();
-            boolean exited = process.waitFor(COMPILE_TIMEOUT, TimeUnit.SECONDS);
+            long timeout = COMPILE_TIMEOUT * (long)timeoutFactor;
+            boolean exited = process.waitFor(timeout, TimeUnit.SECONDS);
             if (!exited) {
                 process.destroyForcibly();
                 System.out.println("Timeout: compile command: " + String.join(" ", command));

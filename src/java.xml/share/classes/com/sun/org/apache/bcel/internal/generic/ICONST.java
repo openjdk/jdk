@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -22,10 +22,9 @@ package com.sun.org.apache.bcel.internal.generic;
 /**
  * ICONST - Push value between -1, ..., 5, other values cause an exception
  *
- * <PRE>
+ * <pre>
  * Stack: ... -&gt; ...,
- * </PRE>
- *
+ * </pre>
  */
 public class ICONST extends Instruction implements ConstantPushInstruction {
 
@@ -38,6 +37,11 @@ public class ICONST extends Instruction implements ConstantPushInstruction {
         this(0);
     }
 
+    /**
+     * Constructs an ICONST instruction.
+     *
+     * @param i The integer value.
+     */
     public ICONST(final int i) {
         super(com.sun.org.apache.bcel.internal.Const.ICONST_0, (short) 1);
         if (i < -1 || i > 5) {
@@ -49,9 +53,9 @@ public class ICONST extends Instruction implements ConstantPushInstruction {
 
     /**
      * Call corresponding visitor method(s). The order is: Call visitor methods of implemented interfaces first, then call
-     * methods according to the class hierarchy in descending order, i.e., the most specific visitXXX() call comes last.
+     * methods according to the class hierarchy in descending order, that is, the most specific visitXXX() call comes last.
      *
-     * @param v Visitor object
+     * @param v Visitor object.
      */
     @Override
     public void accept(final Visitor v) {
@@ -63,7 +67,7 @@ public class ICONST extends Instruction implements ConstantPushInstruction {
     }
 
     /**
-     * @return Type.INT
+     * @return Type.INT.
      */
     @Override
     public Type getType(final ConstantPoolGen cp) {

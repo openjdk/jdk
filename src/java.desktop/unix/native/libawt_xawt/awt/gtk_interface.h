@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,9 +37,6 @@
 #define FALSE           (0)
 #define TRUE            (!FALSE)
 #endif
-
-#define GTHREAD_LIB_VERSIONED VERSIONED_JNI_LIB_NAME("gthread-2.0", "0")
-#define GTHREAD_LIB JNI_LIB_NAME("gthread-2.0")
 
 #define _G_TYPE_CIC(ip, gt, ct)       ((ct*) ip)
 #define G_TYPE_CHECK_INSTANCE_CAST(instance, g_type, c_type)  \
@@ -544,6 +541,8 @@ typedef struct GtkApi {
                                 guint required_micro);
     jobject (*get_setting)(JNIEnv *env, Setting property);
 
+    gboolean (*apply_theme_if_needed)();
+
     void (*paint_arrow)(WidgetType widget_type, GtkStateType state_type,
         GtkShadowType shadow_type, const gchar *detail,
         gint x, gint y, gint width, gint height,
@@ -685,6 +684,8 @@ typedef struct GtkApi {
                                     ...);
     const gchar *(*g_variant_get_string)(GVariant *value, gsize *length);
     guint32 (*g_variant_get_uint32)(GVariant *value);
+    const gchar *(*g_variant_get_type_string)(GVariant *value);
+    gboolean (*g_variant_is_of_type)(GVariant *value, const GVariantType *type);
 
     gboolean (*g_variant_lookup)(GVariant *dictionary,
                                            const gchar *key,
@@ -804,6 +805,9 @@ typedef struct GtkApi {
                                gint index_,
                                GError **error);
 
+    gint (*g_unix_fd_list_get_length)(GUnixFDList* list);
+
+
     GdkPixbuf *(*gdk_pixbuf_new)(GdkColorspace colorspace,
                                  gboolean has_alpha,
                                  int bits_per_sample,
@@ -850,9 +854,6 @@ typedef struct GtkApi {
 gboolean gtk_load(JNIEnv *env, GtkVersion version, gboolean verbose);
 gboolean gtk_check_version(GtkVersion version);
 
-typedef struct _GThreadFunctions GThreadFunctions;
-static gboolean (*fp_g_thread_get_initialized)(void);
-static void (*fp_g_thread_init)(GThreadFunctions *vtable);
 static void (*fp_gdk_threads_init)(void);
 static void (*fp_gdk_threads_enter)(void);
 static void (*fp_gdk_threads_leave)(void);

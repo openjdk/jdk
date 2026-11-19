@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package sun.security.pkcs;
 import java.io.*;
 import java.math.BigInteger;
 import java.net.URI;
+import java.time.Instant;
 import java.util.*;
 import java.security.cert.X509Certificate;
 import java.security.cert.CertificateException;
@@ -530,8 +531,23 @@ public class PKCS7 {
      * @exception SignatureException on signature handling errors.
      */
     public SignerInfo verify(SignerInfo info, byte[] bytes)
-    throws NoSuchAlgorithmException, SignatureException {
-        return info.verify(this, bytes);
+            throws NoSuchAlgorithmException, SignatureException {
+        return info.verify(this, bytes, null);
+    }
+
+    /**
+     * This verifies a given SignerInfo.
+     *
+     * @param info the signer information.
+     * @param bytes the DER encoded content information.
+     * @param cert certificate used to verify; find one inside the block if null
+     *
+     * @exception NoSuchAlgorithmException on unrecognized algorithms.
+     * @exception SignatureException on signature handling errors.
+     */
+    public SignerInfo verify(SignerInfo info, byte[] bytes, X509Certificate cert)
+            throws NoSuchAlgorithmException, SignatureException {
+        return info.verify(this, bytes, cert);
     }
 
     /**
@@ -715,6 +731,19 @@ public class PKCS7 {
         return this.oldStyle;
     }
 
+    // Generate signed data without a specified digAlgID.
+    public static byte[] generateSignedData(
+            String sigalg, Provider sigProvider,
+            PrivateKey privateKey, X509Certificate[] signerChain,
+            byte[] content, boolean internalsf, boolean directsign,
+            Function<byte[], PKCS9Attributes> ts)
+            throws SignatureException, InvalidKeyException, IOException,
+            NoSuchAlgorithmException {
+        return generateSignedData(sigalg, sigProvider, privateKey, signerChain,
+                content, internalsf, directsign,
+                null, ts);
+    }
+
     /**
      * Generate a PKCS7 data block.
      *
@@ -725,6 +754,7 @@ public class PKCS7 {
      * @param content the content to sign
      * @param internalsf whether the content should be included in output
      * @param directsign if the content is signed directly or through authattrs
+     * @param digAlgID digest alg to use; derive from other arguments if null
      * @param ts (optional) timestamper
      * @return the pkcs7 output in an array
      * @throws SignatureException if signing failed
@@ -736,14 +766,17 @@ public class PKCS7 {
             String sigalg, Provider sigProvider,
             PrivateKey privateKey, X509Certificate[] signerChain,
             byte[] content, boolean internalsf, boolean directsign,
+            AlgorithmId digAlgID,
             Function<byte[], PKCS9Attributes> ts)
                 throws SignatureException, InvalidKeyException, IOException,
                     NoSuchAlgorithmException {
 
         Signature signer = SignatureUtil.fromKey(sigalg, privateKey, sigProvider);
 
-        AlgorithmId digAlgID = SignatureUtil.getDigestAlgInPkcs7SignerInfo(
-                signer, sigalg, privateKey, signerChain[0].getPublicKey(), directsign);
+        if (digAlgID == null) {
+            digAlgID = SignatureUtil.getDigestAlgInPkcs7SignerInfo(
+                    signer, sigalg, privateKey, signerChain[0].getPublicKey(), directsign);
+        }
         AlgorithmId sigAlgID = SignatureUtil.fromSignature(signer, privateKey);
 
         PKCS9Attributes authAttrs = null;
@@ -751,8 +784,9 @@ public class PKCS7 {
             // MessageDigest
             byte[] md;
             String digAlgName = digAlgID.getName();
-            if (digAlgName.equals("SHAKE256") || digAlgName.equals("SHAKE256-LEN")) {
-                // No MessageDigest impl for SHAKE256 yet
+            if (digAlgName.equals("SHAKE256-LEN")) {
+                // We don't check the LEN here. Usually it is returned
+                // by SignatureUtil.getDigestAlgInPkcs7SignerInfo
                 var shaker = new SHAKE256(64);
                 shaker.update(content, 0, content.length);
                 md = shaker.digest();
@@ -772,7 +806,7 @@ public class PKCS7 {
                     new PKCS9Attribute(PKCS9Attribute.CONTENT_TYPE_OID,
                             ContentInfo.DATA_OID),
                     new PKCS9Attribute(PKCS9Attribute.SIGNING_TIME_OID,
-                            new Date()),
+                            Instant.now()),
                     new PKCS9Attribute(PKCS9Attribute.CMS_ALGORITHM_PROTECTION_OID,
                             derAp.toByteArray()),
                     new PKCS9Attribute(PKCS9Attribute.MESSAGE_DIGEST_OID,

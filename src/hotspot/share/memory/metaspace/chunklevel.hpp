@@ -111,9 +111,9 @@ static const chunklevel_t CHUNK_LEVEL_4K =    (ROOT_CHUNK_LEVEL + 12);
 static const chunklevel_t CHUNK_LEVEL_2K =    (ROOT_CHUNK_LEVEL + 13);
 static const chunklevel_t CHUNK_LEVEL_1K =    (ROOT_CHUNK_LEVEL + 14);
 
-STATIC_ASSERT(CHUNK_LEVEL_1K == HIGHEST_CHUNK_LEVEL);
-STATIC_ASSERT(CHUNK_LEVEL_16M == LOWEST_CHUNK_LEVEL);
-STATIC_ASSERT(ROOT_CHUNK_LEVEL == LOWEST_CHUNK_LEVEL);
+static_assert(CHUNK_LEVEL_1K == HIGHEST_CHUNK_LEVEL);
+static_assert(CHUNK_LEVEL_16M == LOWEST_CHUNK_LEVEL);
+static_assert(ROOT_CHUNK_LEVEL == LOWEST_CHUNK_LEVEL);
 
 /////////////////////////////////////////////////////////
 // print helpers

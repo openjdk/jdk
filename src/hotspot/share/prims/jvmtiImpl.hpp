@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,9 @@
 #include "runtime/vmOperations.hpp"
 #include "utilities/ostream.hpp"
 
+// Forward Declaration
+
+class JvmtiEnv;
 
 ///////////////////////////////////////////////////////////////
 //
@@ -46,7 +49,7 @@
 
 typedef void (Method::*method_action)(int _bci);
 
-class JvmtiBreakpoint : public CHeapObj<mtInternal> {
+class JvmtiBreakpoint : public CHeapObj<mtServiceability> {
 private:
   Method*               _method;
   int                   _bci;
@@ -74,7 +77,7 @@ public:
 // All changes to the array occur at a safepoint.
 //
 
-class JvmtiBreakpoints : public CHeapObj<mtInternal> {
+class JvmtiBreakpoints : public CHeapObj<mtServiceability> {
 private:
   GrowableArray<JvmtiBreakpoint*> _elements;
 
@@ -180,6 +183,7 @@ class VM_BaseGetOrSetLocal : public VM_Operation {
   javaVFrame* _jvf;
   bool        _set;
   bool        _self;
+  bool        _need_clone; // THIS object is in a value object constructor
 
   static const jvalue _DEFAULT_VALUE;
 
@@ -192,6 +196,7 @@ class VM_BaseGetOrSetLocal : public VM_Operation {
   virtual javaVFrame* get_java_vframe() = 0;
   bool check_slot_type_lvt(javaVFrame* vf);
   bool check_slot_type_no_lvt(javaVFrame* vf);
+  void check_and_clone_this_value_object();
 
 public:
   VM_BaseGetOrSetLocal(JavaThread* calling_thread, jint depth, jint index,
@@ -201,6 +206,7 @@ public:
   jvmtiError result()    { return _result; }
 
   void doit();
+  void doit_epilogue();
   bool allow_nested_vm_operations() const;
   virtual const char* name() const = 0;
 
@@ -349,10 +355,10 @@ class JvmtiDeferredEvent {
  * and posts the events.  The Service_lock is required to be held
  * when operating on the queue.
  */
-class JvmtiDeferredEventQueue : public CHeapObj<mtInternal> {
+class JvmtiDeferredEventQueue : public CHeapObj<mtServiceability> {
   friend class JvmtiDeferredEvent;
  private:
-  class QueueNode : public CHeapObj<mtInternal> {
+  class QueueNode : public CHeapObj<mtServiceability> {
    private:
     JvmtiDeferredEvent _event;
     QueueNode* _next;

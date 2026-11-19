@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2013, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -35,7 +35,7 @@ class os::Aix {
 
  private:
 
-  static julong _physical_memory;
+  static physical_memory_size_type _physical_memory;
   static pthread_t _main_thread;
 
   // 0 = uninitialized, otherwise 16 bit number:
@@ -49,14 +49,9 @@ class os::Aix {
   //  1 - SPEC1170 requested (XPG_SUS_ENV is ON)
   static int _xpg_sus_mode;
 
-  // -1 = uninitialized,
-  //  0 - EXTSHM=OFF or not set
-  //  1 - EXTSHM=ON
-  static int _extshm;
-
-  static julong available_memory();
-  static julong free_memory();
-  static julong physical_memory() { return _physical_memory; }
+  static bool available_memory(physical_memory_size_type& value);
+  static bool free_memory(physical_memory_size_type& value);
+  static physical_memory_size_type physical_memory() { return _physical_memory; }
   static void initialize_system_info();
 
   // OS recognitions (AIX OS level) call this before calling Aix::os_version().
@@ -109,12 +104,6 @@ class os::Aix {
   static bool xpg_sus_mode() {
     assert(_xpg_sus_mode != -1, "not initialized");
     return _xpg_sus_mode;
-  }
-
-  // Returns true if EXTSHM=ON.
-  static bool extshm() {
-    assert(_extshm != -1, "not initialized");
-    return _extshm;
   }
 
   // result struct for get_meminfo()

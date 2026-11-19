@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_JFR_RECORDER_CHECKPOINT_TYPES_TRACEID_JFRTRACEIDBARRIER_INLINE_HPP
-#define SHARE_JFR_RECORDER_CHECKPOINT_TYPES_TRACEID_JFRTRACEIDBARRIER_INLINE_HPP
+#ifndef SHARE_JFR_RECORDER_CHECKPOINT_TYPES_TRACEID_JFRTRACEIDLOADBARRIER_INLINE_HPP
+#define SHARE_JFR_RECORDER_CHECKPOINT_TYPES_TRACEID_JFRTRACEIDLOADBARRIER_INLINE_HPP
 
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceIdLoadBarrier.hpp"
 
@@ -86,6 +86,27 @@ inline traceid JfrTraceIdLoadBarrier::load(const Klass* klass) {
   return TRACE_ID(klass);
 }
 
+inline const Method* latest_version(const Klass* klass, const Method* method) {
+  assert(klass != nullptr, "invariant");
+  assert(method != nullptr, "invariant");
+  assert(klass == method->method_holder(), "invariant");
+  assert(method->is_old(), "invariant");
+  const InstanceKlass* const ik = InstanceKlass::cast(klass);
+  assert(ik->has_been_redefined(), "invariant");
+  const Method* const latest_version = ik->method_with_orig_idnum(method->orig_method_idnum());
+  if (latest_version == nullptr) {
+    assert(AllowRedefinitionToAddDeleteMethods, "invariant");
+    // method has been removed. Return old version.
+    return method;
+  }
+  assert(latest_version != nullptr, "invariant");
+  assert(latest_version != method, "invariant");
+  assert(!latest_version->is_old(), "invariant");
+  assert(latest_version->orig_method_idnum() == method->orig_method_idnum(), "invariant");
+  assert(latest_version->name() == method->name() && latest_version->signature() == method->signature(), "invariant");
+  return latest_version;
+}
+
 inline traceid JfrTraceIdLoadBarrier::load(const Method* method) {
   return load(method->method_holder(), method);
 }
@@ -93,6 +114,9 @@ inline traceid JfrTraceIdLoadBarrier::load(const Method* method) {
 inline traceid JfrTraceIdLoadBarrier::load(const Klass* klass, const Method* method) {
    assert(klass != nullptr, "invariant");
    assert(method != nullptr, "invariant");
+   if (method->is_old()) {
+     method = latest_version(klass, method);
+   }
    if (should_tag(method)) {
      SET_METHOD_AND_CLASS_USED_THIS_EPOCH(klass);
      SET_METHOD_FLAG_USED_THIS_EPOCH(method);
@@ -111,6 +135,9 @@ inline traceid JfrTraceIdLoadBarrier::load_no_enqueue(const Method* method) {
 inline traceid JfrTraceIdLoadBarrier::load_no_enqueue(const Klass* klass, const Method* method) {
   assert(klass != nullptr, "invariant");
   assert(method != nullptr, "invariant");
+  if (method->is_old()) {
+    method = latest_version(klass, method);
+  }
   SET_METHOD_AND_CLASS_USED_THIS_EPOCH(klass);
   SET_METHOD_FLAG_USED_THIS_EPOCH(method);
   assert(METHOD_AND_CLASS_USED_THIS_EPOCH(klass), "invariant");
@@ -158,6 +185,7 @@ inline traceid JfrTraceIdLoadBarrier::load_leakp(const Klass* klass) {
 inline traceid JfrTraceIdLoadBarrier::load_leakp(const Klass* klass, const Method* method) {
   assert(klass != nullptr, "invariant");
   assert(method != nullptr, "invariant");
+  assert(!method->is_old(), "invariant");
   assert(klass == method->method_holder(), "invariant");
   assert(METHOD_AND_CLASS_USED_THIS_EPOCH(klass), "invariant");
   if (should_tag(method)) {
@@ -175,6 +203,7 @@ inline traceid JfrTraceIdLoadBarrier::load_leakp(const Klass* klass, const Metho
 inline traceid JfrTraceIdLoadBarrier::load_leakp_previous_epoch(const Klass* klass, const Method* method) {
   assert(klass != nullptr, "invariant");
   assert(method != nullptr, "invariant");
+  assert(!method->is_old(), "invariant");
   assert(klass == method->method_holder(), "invariant");
   assert(METHOD_AND_CLASS_USED_PREVIOUS_EPOCH(klass), "invariant");
   if (METHOD_FLAG_NOT_USED_PREVIOUS_EPOCH(method)) {
@@ -186,4 +215,4 @@ inline traceid JfrTraceIdLoadBarrier::load_leakp_previous_epoch(const Klass* kla
   return (METHOD_ID(klass, method));
 }
 
-#endif // SHARE_JFR_RECORDER_CHECKPOINT_TYPES_TRACEID_JFRTRACEIDBARRIER_INLINE_HPP
+#endif // SHARE_JFR_RECORDER_CHECKPOINT_TYPES_TRACEID_JFRTRACEIDLOADBARRIER_INLINE_HPP

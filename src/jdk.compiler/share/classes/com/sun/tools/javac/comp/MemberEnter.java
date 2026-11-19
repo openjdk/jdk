@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@ import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Scope.WriteableScope;
 import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.util.*;
-import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.JCDiagnostic.Error;
 import com.sun.tools.javac.code.Source.Feature;
 
@@ -66,7 +65,8 @@ public class MemberEnter extends JCTree.Visitor {
     private final Annotate annotate;
     private final Types types;
     private final Names names;
-    private final DeferredLintHandler deferredLintHandler;
+    private final Preview preview;
+    private final boolean allowValueClasses;
 
     public static MemberEnter instance(Context context) {
         MemberEnter instance = context.get(memberEnterKey);
@@ -87,7 +87,8 @@ public class MemberEnter extends JCTree.Visitor {
         types = Types.instance(context);
         source = Source.instance(context);
         names = Names.instance(context);
-        deferredLintHandler = DeferredLintHandler.instance(context);
+        preview = Preview.instance(context);
+        allowValueClasses = preview.isEnabled() && Feature.VALUE_CLASSES.allowedInSource(source);
     }
 
     /** Construct method type from method signature.
@@ -116,7 +117,7 @@ public class MemberEnter extends JCTree.Visitor {
         ListBuffer<Type> argbuf = new ListBuffer<>();
         for (List<JCVariableDecl> l = params; l.nonEmpty(); l = l.tail) {
             memberEnter(l.head, env);
-            argbuf.append(l.head.vartype.type);
+            argbuf.append(l.head.sym.type);
         }
 
         // Attribute result type, if one is given.
@@ -194,16 +195,11 @@ public class MemberEnter extends JCTree.Visitor {
         }
 
         Env<AttrContext> localEnv = methodEnv(tree, env);
-        deferredLintHandler.push(tree);
-        try {
-            // Compute the method type
-            m.type = signature(m, tree.typarams, tree.params,
-                               tree.restype, tree.recvparam,
-                               tree.thrown,
-                               localEnv);
-        } finally {
-            deferredLintHandler.pop();
-        }
+        // Compute the method type
+        m.type = signature(m, tree.typarams, tree.params,
+                           tree.restype, tree.recvparam,
+                           tree.thrown,
+                           localEnv);
 
         if (types.isSignaturePolymorphic(m)) {
             m.flags_field |= SIGNATURE_POLYMORPHIC;
@@ -227,14 +223,14 @@ public class MemberEnter extends JCTree.Visitor {
         enclScope.enter(m);
         }
 
-        annotate.annotateLater(tree.mods.annotations, localEnv, m, tree);
+        annotate.annotateLater(tree.mods.annotations, localEnv, m);
         // Visit the signature of the method. Note that
         // TypeAnnotate doesn't descend into the body.
-        annotate.queueScanTreeAndTypeAnnotate(tree, localEnv, m, tree);
+        annotate.queueScanTreeAndTypeAnnotate(tree, localEnv, m);
 
         if (tree.defaultValue != null) {
             m.defaultValue = annotate.unfinishedDefaultValue(); // set it to temporary sentinel for now
-            annotate.annotateDefaultValueLater(tree.defaultValue, localEnv, m, tree);
+            annotate.annotateDefaultValueLater(tree.defaultValue, localEnv, m);
         }
     }
 
@@ -263,18 +259,13 @@ public class MemberEnter extends JCTree.Visitor {
             localEnv = env.dup(tree, env.info.dup());
             localEnv.info.staticLevel++;
         }
-        deferredLintHandler.push(tree);
 
-        try {
-            if (TreeInfo.isEnumInit(tree)) {
-                attr.attribIdentAsEnumType(localEnv, (JCIdent)tree.vartype);
-            } else if (!tree.isImplicitlyTyped()) {
-                attr.attribType(tree.vartype, localEnv);
-                if (TreeInfo.isReceiverParam(tree))
-                    checkReceiver(tree, localEnv);
-            }
-        } finally {
-            deferredLintHandler.pop();
+        if (TreeInfo.isEnumInit(tree)) {
+            attr.attribIdentAsEnumType(localEnv, (JCIdent)tree.vartype);
+        } else if (!tree.isImplicitlyTyped()) {
+            attr.attribType(tree.vartype, localEnv);
+            if (TreeInfo.isReceiverParam(tree))
+                checkReceiver(tree, localEnv);
         }
 
         if ((tree.mods.flags & VARARGS) != 0) {
@@ -288,12 +279,16 @@ public class MemberEnter extends JCTree.Visitor {
             tree.vartype.type = atype.makeVarargs();
         }
         WriteableScope enclScope = enter.enterScope(env);
-        Type vartype = tree.isImplicitlyTyped()
-                ? env.info.scope.owner.kind == MTH ? Type.noType : syms.errType
-                : tree.vartype.type;
+        Type vartype = switch (tree.declKind) {
+            case IMPLICIT -> tree.type;
+            case EXPLICIT -> tree.vartype.type;
+            case VAR -> tree.type != null ? tree.type
+                                          : env.info.scope.owner.kind == MTH ? Type.noType
+                                                                             : syms.errType;
+        };
         Name name = tree.name;
         VarSymbol v = new VarSymbol(0, name, vartype, enclScope.owner);
-        v.flags_field = chk.checkFlags(tree.mods.flags, v, tree);
+        v.flags_field = chk.checkFlags(tree.mods.flags | tree.declKind.additionalSymbolFlags, v, tree);
         tree.sym = v;
         if (tree.init != null) {
             v.flags_field |= HASINIT;
@@ -301,6 +296,10 @@ public class MemberEnter extends JCTree.Visitor {
                 needsLazyConstValue(tree.init)) {
                 Env<AttrContext> initEnv = getInitEnv(tree, env);
                 initEnv.info.enclVar = v;
+                initEnv = initEnv(tree, initEnv);
+                if (v.isStrictInstance() && allowValueClasses) {
+                    initEnv.info.earlyContext = EarlyConstructionContext.of((ClassSymbol)v.owner, false);
+                }
                 v.setLazyConstValue(initEnv(tree, initEnv), env, attr, tree);
             }
         }
@@ -315,9 +314,9 @@ public class MemberEnter extends JCTree.Visitor {
             }
         }
 
-        annotate.annotateLater(tree.mods.annotations, localEnv, v, tree);
+        annotate.annotateLater(tree.mods.annotations, localEnv, v);
         if (!tree.isImplicitlyTyped()) {
-            annotate.queueScanTreeAndTypeAnnotate(tree.vartype, localEnv, v, tree);
+            annotate.queueScanTreeAndTypeAnnotate(tree.vartype, localEnv, v);
         }
 
         v.pos = tree.pos;

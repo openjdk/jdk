@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ bool JfrConcurrentQueue<NodeType, AllocPolicy>::initialize() {
 
 template <typename NodeType, typename AllocPolicy>
 inline bool JfrConcurrentQueue<NodeType, AllocPolicy>::is_empty() const {
-  return Atomic::load_acquire(&_head._next) == &_tail;
+  return AtomicAccess::load_acquire(&_head._next) == &_tail;
 }
 
 template <typename NodeType, typename AllocPolicy>

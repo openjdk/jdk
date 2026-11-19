@@ -29,31 +29,54 @@ import java.io.ObjectOutput;
 import java.io.ObjectInput;
 
 /**
- * Only the identity of the class of an Externalizable instance is
+ * A {@code Serializable} class that fully implements its own protocol
+ * for reading and writing to a serialization stream.
+ * <p>
+ * Only the identity of the class of an {@code Externalizable} instance is
  * written in the serialization stream and it is the responsibility
  * of the class to save and restore the contents of its instances.
- *
- * The writeExternal and readExternal methods of the Externalizable
- * interface are implemented by a class to give the class complete
- * control over the format and contents of the stream for an object
- * and its supertypes. These methods must explicitly
+ * The {@code writeExternal} and {@code readExternal} methods give the
+ * class complete control over the format and contents of the stream
+ * for an object and its supertypes. These methods must explicitly
  * coordinate with the supertype to save its state. These methods supersede
- * customized implementations of writeObject and readObject methods.<br>
- *
- * Object Serialization uses the Serializable and Externalizable
+ * customized implementations of {@code writeObject} and {@code readObject}
+ * methods.
+ * <p>
+ * Object Serialization uses the {@code Serializable} and {@code Externalizable}
  * interfaces.  Object persistence mechanisms can use them as well.  Each
- * object to be stored is tested for the Externalizable interface. If
- * the object supports Externalizable, the writeExternal method is called. If the
- * object does not support Externalizable and does implement
- * Serializable, the object is saved using
- * ObjectOutputStream. <br> When an Externalizable object is
- * reconstructed, an instance is created using the public no-arg
- * constructor, then the readExternal method called.  Serializable
- * objects are restored by reading them from an ObjectInputStream.<br>
+ * object to be stored is tested for the {@code Externalizable} interface. If
+ * the object supports {@code Externalizable}, the {@code writeExternal} method
+ * is called. If the object does not support {@code Externalizable} and does
+ * implement {@code Serializable}, the object is saved using
+ * {@code ObjectOutputStream}.
+ * <p>
+ * When an {@code Externalizable} object is reconstructed, an instance is
+ * created using the public no-arg constructor, then the
+ * {@code readExternal} method called.
+ * <p>
+ * An {@code Externalizable} instance can designate a substitution object via
+ * the {@code writeReplace} and {@code readResolve} methods documented in the
+ * {@link Serializable} interface.
+ * <p>
+ * Record classes can implement {@code Externalizable}, but it is ignored:
+ * instances will receive the same treatment as other {@code Serializable}
+ * instances, as defined by the
+ * <a href="{@docRoot}/../specs/serialization/serial-arch.html#serialization-of-records">
+ * <cite>Java Object Serialization Specification,</cite> Section 1.13,
+ * "Serialization of Records"</a>.
  *
- * An Externalizable instance can designate a substitution object via
- * the writeReplace and readResolve methods documented in the Serializable
- * interface.<br>
+ * <div class="preview-block">
+ *      <div class="preview-comment">
+ *          <p>{@linkplain Class#isValue Value classes} that are not records are
+ *          permitted to implement {@code Externalizable}, but the class has no
+ *          mutable fields, and so is unlikely to be able to properly implement
+ *          the {@code readExternal} method. Instead, the {@code writeReplace}
+ *          method should be used to designate an alternative object for
+ *          serialization. At deserialization time, the alternative object can
+ *          implement {@code readResolve} to construct the expected value class
+ *          instance.
+ *      </div>
+ * </div>
  *
  * @see java.io.ObjectOutputStream
  * @see java.io.ObjectInputStream

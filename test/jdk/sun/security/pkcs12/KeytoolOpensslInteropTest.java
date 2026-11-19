@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test id=GenerateOpensslPKCS12
- * @bug 8076190 8242151 8153005 8266182
+ * @bug 8076190 8242151 8153005 8266182 8362894
  * @summary This is java keytool <-> openssl interop test. This test generates
  *          some openssl keystores on the fly, java operates on it and
  *          vice versa.
@@ -36,7 +36,7 @@
  * @modules java.base/sun.security.pkcs
  *          java.base/sun.security.util
  * @library /test/lib /sun/security/pkcs11/
- * @run main/othervm KeytoolOpensslInteropTest true
+ * @run main/othervm/timeout=480 KeytoolOpensslInteropTest true
  */
 
 /*
@@ -48,7 +48,7 @@
  * @modules java.base/sun.security.pkcs
  *          java.base/sun.security.util
  * @library /test/lib /sun/security/pkcs11/
- * @run main/othervm KeytoolOpensslInteropTest false
+ * @run main/othervm/timeout=480 KeytoolOpensslInteropTest false
  */
 
 import jdk.test.lib.Asserts;
@@ -138,6 +138,11 @@ public class KeytoolOpensslInteropTest {
                 "pass:changeit", "-certpbe", "AES-256-CBC", "-keypbe",
                 "AES-256-CBC", "-macalg", "SHA512")
                 .shouldHaveExitValue(0);
+
+        ProcessTools.executeCommand(opensslPath, "pkcs12", "-export", "-in",
+                        "kandc", "-out", "os6", "-name", "a", "-passout",
+                        "pass:changeit", "-pbmac1_pbkdf2", "-macalg", "sha256")
+                .shouldHaveExitValue(0);
     }
 
     private static void testWithJavaCommands() throws Throwable {
@@ -168,6 +173,8 @@ public class KeytoolOpensslInteropTest {
         // no storepass no cert
         check("os5", "a", null, "changeit", true, false, true);
 
+        check("os6", "a", "changeit", "changeit", true, true, true);
+
         // keytool
 
         // Current default pkcs12 setting
@@ -175,8 +182,8 @@ public class KeytoolOpensslInteropTest {
                 + "-destkeystore ksnormal -deststorepass changeit");
 
         data = Files.readAllBytes(Path.of("ksnormal"));
-        checkInt(data, "22", 10000); // Mac ic
-        checkAlg(data, "2000", SHA_256); // Mac alg
+        checkInt(data, "2001011", 10000); // Mac ic
+        checkAlg(data, "2000", PBMAC1); // Mac alg
         checkAlg(data, "110c010c01000", PBES2); // key alg
         checkInt(data, "110c010c01001011", 10000); // key ic
         checkAlg(data, "110c10", ENCRYPTED_DATA_OID);
@@ -203,8 +210,8 @@ public class KeytoolOpensslInteropTest {
                 + "-J-Dkeystore.pkcs12.certProtectionAlgorithm=NONE "
                 + "-J-Dkeystore.pkcs12.macAlgorithm=NONE");
         data = Files.readAllBytes(Path.of("ksnormal"));
-        checkInt(data, "22", 10000); // Mac ic
-        checkAlg(data, "2000", SHA_256); // Mac alg
+        checkInt(data, "2001011", 10000); // Mac ic
+        checkAlg(data, "2000", PBMAC1); // Mac alg
         checkAlg(data, "110c010c01000", PBES2); // key alg
         checkInt(data, "110c010c01001011", 10000); // key ic
         checkAlg(data, "110c010c11000", PBES2); // new key alg
@@ -248,8 +255,8 @@ public class KeytoolOpensslInteropTest {
                 + "-J-Dkeystore.pkcs12.certPbeIterationCount=6666 "
                 + "-J-Dkeystore.pkcs12.keyPbeIterationCount=7777");
         data = Files.readAllBytes(Path.of("ksnewic"));
-        checkInt(data, "22", 5555); // Mac ic
-        checkAlg(data, "2000", SHA_256); // Mac alg
+        checkInt(data, "2001011", 5555); // Mac ic
+        checkAlg(data, "2000", PBMAC1); // Mac alg
         checkAlg(data, "110c010c01000", PBES2); // key alg
         checkInt(data, "110c010c01001011", 7777); // key ic
         checkAlg(data, "110c110110", PBES2); // cert alg
@@ -267,8 +274,8 @@ public class KeytoolOpensslInteropTest {
                 + "-storepass changeit -alias b -dname CN=B "
                 + "-J-Dkeystore.pkcs12.keyProtectionAlgorithm=PBEWithSHA1AndRC4_128");
         data = Files.readAllBytes(Path.of("ksnewic"));
-        checkInt(data, "22", 5555); // Mac ic
-        checkAlg(data, "2000", SHA_256); // Mac alg
+        checkInt(data, "2001011", 5555); // Mac ic
+        checkAlg(data, "2000", PBMAC1); // Mac alg
         checkAlg(data, "110c010c01000", PBES2); // key alg
         checkInt(data, "110c010c01001011", 7777); // key ic
         checkAlg(data, "110c010c11000", PBEWithSHA1AndRC4_128); // new key alg
@@ -284,8 +291,8 @@ public class KeytoolOpensslInteropTest {
             ks.store(fos, "changeit".toCharArray());
         }
         data = Files.readAllBytes(Path.of("ksnormaldup"));
-        checkInt(data, "22", 10000); // Mac ic
-        checkAlg(data, "2000", SHA_256); // Mac alg
+        checkInt(data, "2001011", 10000); // Mac ic
+        checkAlg(data, "2000", PBMAC1); // Mac alg
         checkAlg(data, "110c010c01000", PBES2); // key alg
         checkInt(data, "110c010c01001011", 10000); // key ic
         checkAlg(data, "110c010c11000", PBES2); // new key alg
@@ -313,8 +320,8 @@ public class KeytoolOpensslInteropTest {
             ks.store(fos, "changeit".toCharArray());
         }
         data = Files.readAllBytes(Path.of("ksnewicdup"));
-        checkInt(data, "22", 5555); // Mac ic
-        checkAlg(data, "2000", SHA_256); // Mac alg
+        checkInt(data, "2001011", 5555); // Mac ic
+        checkAlg(data, "2000", PBMAC1); // Mac alg
         checkAlg(data, "110c010c01000", PBES2); // key alg
         checkInt(data, "110c010c01001011", 7777); // key ic
         checkAlg(data, "110c010c11000", PBEWithSHA1AndRC4_128); // new key alg
@@ -469,7 +476,7 @@ public class KeytoolOpensslInteropTest {
                 "pkcs12", "-in", "ksnormal", "-passin", "pass:changeit",
                 "-info", "-nokeys", "-nocerts");
         output1.shouldHaveExitValue(0)
-            .shouldMatch("MAC:.*sha256.*Iteration 10000")
+            .shouldMatch("MAC:.*PBMAC1.*Iteration 10000")
             .shouldContain("Shrouded Keybag: PBES2, PBKDF2, AES-256-CBC,"
                     + " Iteration 10000, PRF hmacWithSHA256")
             .shouldContain("PKCS7 Encrypted data: PBES2, PBKDF2, AES-256-CBC,"
@@ -514,7 +521,7 @@ public class KeytoolOpensslInteropTest {
                 "ksnewic", "-passin", "pass:changeit", "-info", "-nokeys",
                 "-nocerts");
         output1.shouldHaveExitValue(0)
-            .shouldMatch("MAC:.*sha256.*Iteration 5555")
+            .shouldMatch("MAC:.*PBMAC1.*Iteration 5555")
             .shouldContain("Shrouded Keybag: PBES2, PBKDF2, AES-256-CBC,"
                     + " Iteration 7777, PRF hmacWithSHA256")
             .shouldContain("Shrouded Keybag: pbeWithSHA1And128BitRC4,"

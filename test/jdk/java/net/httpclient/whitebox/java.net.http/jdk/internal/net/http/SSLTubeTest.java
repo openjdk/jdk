@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,7 @@
 package jdk.internal.net.http;
 
 import jdk.internal.net.http.common.FlowTube;
-import jdk.internal.net.http.common.SSLFlowDelegate;
 import jdk.internal.net.http.common.Utils;
-import org.testng.annotations.Test;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
@@ -51,7 +49,8 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.SubmissionPublisher;
 import java.util.concurrent.atomic.AtomicInteger;
 
-@Test
+import org.junit.jupiter.api.Test;
+
 public class SSLTubeTest extends AbstractSSLTubeTest {
 
     @Test
@@ -61,7 +60,7 @@ public class SSLTubeTest extends AbstractSSLTubeTest {
         /* Start of wiring */
         /* Emulates an echo server */
         SSLLoopbackSubscriber server =
-                new SSLLoopbackSubscriber((new SimpleSSLContext()).get(),
+                new SSLLoopbackSubscriber(SimpleSSLContextWhiteboxAdapter.findSSLContext(),
                         sslExecutor,
                         allBytesReceived);
         server.start();
@@ -104,7 +103,6 @@ public class SSLTubeTest extends AbstractSSLTubeTest {
             thread3 = new Thread(this::clientReader, "clientReader");
             publisher = new SubmissionPublisher<>(exec, Flow.defaultBufferSize(),
                     this::handlePublisherException);
-            SSLFlowDelegate.Monitor.add(this::monitor);
         }
 
         public void start() {
@@ -125,7 +123,7 @@ public class SSLTubeTest extends AbstractSSLTubeTest {
         private void clientReader() {
             try {
                 InputStream is = clientSock.getInputStream();
-                final int bufsize = randomRange(512, 16 * 1024);
+                final int bufsize = AbstractRandomTest.randomRange(512, 16 * 1024);
                 System.out.println("clientReader: bufsize = " + bufsize);
                 while (true) {
                     byte[] buf = new byte[bufsize];
@@ -137,7 +135,7 @@ public class SSLTubeTest extends AbstractSSLTubeTest {
                         allBytesReceived.await();
                         System.out.println("clientReader: closing publisher");
                         publisher.close();
-                        sleep(2000);
+                        AbstractSSLTubeTest.sleep(2000);
                         Utils.close(is, clientSock);
                         return;
                     }
@@ -196,23 +194,18 @@ public class SSLTubeTest extends AbstractSSLTubeTest {
 
         private final AtomicInteger loopCount = new AtomicInteger();
 
-        public String monitor() {
-            return "serverLoopback: loopcount = " + loopCount.toString()
-                    + " clientRead: count = " + readCount.toString();
-        }
-
         // thread2
         private void serverLoopback() {
             try {
                 InputStream is = serverSock.getInputStream();
                 OutputStream os = serverSock.getOutputStream();
-                final int bufsize = randomRange(512, 16 * 1024);
+                final int bufsize = AbstractRandomTest.randomRange(512, 16 * 1024);
                 System.out.println("serverLoopback: bufsize = " + bufsize);
                 byte[] bb = new byte[bufsize];
                 while (true) {
                     int n = is.read(bb);
                     if (n == -1) {
-                        sleep(2000);
+                        AbstractSSLTubeTest.sleep(2000);
                         is.close();
                         os.close();
                         serverSock.close();

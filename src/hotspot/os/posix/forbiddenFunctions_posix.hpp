@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,29 +36,26 @@
 #include <unistd.h>
 #endif
 
-// If needed, add os::strndup and use that instead.
-FORBID_C_FUNCTION(char* strndup(const char*, size_t), "don't use");
+// POSIX puts _exit in <unistd.h>.
+FORBID_IMPORTED_NORETURN_C_FUNCTION(void _exit(int), /* not noexcept */, "use os::exit")
 
-// These are unimplementable for Windows, and they aren't useful for a
-// POSIX implementation of NMT either.
-// https://stackoverflow.com/questions/62962839/stdaligned-alloc-missing-from-visual-studio-2019
-FORBID_C_FUNCTION(int posix_memalign(void**, size_t, size_t), "don't use");
-FORBID_C_FUNCTION(void* aligned_alloc(size_t, size_t), "don't use");
+// If needed, add os::strndup and use that instead.
+FORBID_C_FUNCTION(char* strndup(const char*, size_t), noexcept, "don't use");
 
 // realpath with a null second argument mallocs a string for the result.
 // With a non-null second argument, there is a risk of buffer overrun.
 PRAGMA_DIAG_PUSH
 FORBIDDEN_FUNCTION_IGNORE_CLANG_FORTIFY_WARNING
-FORBID_C_FUNCTION(char* realpath(const char*, char*), "use os::realpath");
+FORBID_C_FUNCTION(char* realpath(const char*, char*), noexcept, "use os::realpath");
 PRAGMA_DIAG_POP
 
 // Returns a malloc'ed string.
-FORBID_C_FUNCTION(char* get_current_dir_name(), "use os::get_current_directory");
+FORBID_C_FUNCTION(char* get_current_dir_name(), noexcept, "use os::get_current_directory");
 
 // Problematic API that should never be used.
-FORBID_C_FUNCTION(char* getwd(char*), "use os::get_current_directory");
+FORBID_C_FUNCTION(char* getwd(char*), noexcept, "use os::get_current_directory");
 
 // BSD utility that is subtly different from realloc.
-FORBID_C_FUNCTION(void* reallocf(void*, size_t), "use os::realloc");
+FORBID_C_FUNCTION(void* reallocf(void*, size_t), /* not noexcept */, "use os::realloc");
 
 #endif // OS_POSIX_FORBIDDENFUNCTIONS_POSIX_HPP

@@ -35,12 +35,15 @@
 
 #define RUNTIME_CONSTRAINTS(f)                        \
   f(ccstr,  AOTCacheConstraintFunc)                   \
+  f(ccstr,  AOTCacheOutputConstraintFunc)             \
   f(ccstr,  AOTConfigurationConstraintFunc)           \
   f(ccstr,  AOTModeConstraintFunc)                    \
   f(int,    ObjectAlignmentInBytesConstraintFunc)     \
   f(int,    ContendedPaddingWidthConstraintFunc)      \
   f(size_t, VMPageSizeConstraintFunc)                 \
-  f(size_t, NUMAInterleaveGranularityConstraintFunc)
+  f(size_t, NUMAInterleaveGranularityConstraintFunc)  \
+  f(size_t, LargePageSizeInBytesConstraintFunc)       \
+  f(ccstr,  OnSpinWaitInstNameConstraintFunc)
 
 RUNTIME_CONSTRAINTS(DECLARE_CONSTRAINT)
 

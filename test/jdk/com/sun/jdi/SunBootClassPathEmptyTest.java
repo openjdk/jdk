@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,6 +61,12 @@ public class SunBootClassPathEmptyTest {
         }
 
         PathSearchingVirtualMachine launchVm(String cmdLine, String options) throws Exception {
+            String testOpts = System.getProperty("test.vm.opts", "") + " " + System.getProperty("test.java.opts", "");
+            if (options != null) {
+                options = testOpts + " " + options;
+            } else {
+                options = testOpts;
+            }
             Map<String, Connector.Argument> vmArgs = lc.defaultArguments();
             vmArgs.get("main").setValue(cmdLine);
             if (options != null) {

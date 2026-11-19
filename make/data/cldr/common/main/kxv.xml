@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2025 Unicode, Inc.
+<!-- Copyright © 1991-2026 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -434,8 +434,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="collation" type="phonebook">pnbhi baga lẽ</type>
 			<type key="collation" type="search">samani udesya parin</type>
 			<type key="collation" type="standard">mānānka baga lẽ</type>
+			<type key="hc" type="c12">12 gṇṭati pddti</type>
+			<type key="hc" type="c24">24 gṇṭati pddti</type>
 			<type key="hc" type="h11">12 gṇṭati pddti (0 - 11)</type>
-			<type key="hc" type="h12">12 gṇṭati pddti (1–12)</type>
+			<type key="hc" type="h12">12 gṇṭati pddti (1 - 12)</type>
 			<type key="hc" type="h23">24 gṇṭati pddti (0 - 23)</type>
 			<type key="hc" type="h24">24 gṇṭati pddti (1 - 24)</type>
 			<type key="ms" type="metric">meṭrik pddti</type>
@@ -860,6 +862,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yw" count="other">Y 'tã' 'vara' w</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="mixed" draft="provisional">{0} – {1}</intervalFormatRange>
+							<intervalFormatRange type="non-numeric" draft="provisional">{0}–{1}</intervalFormatRange>
+							<intervalFormatRange type="numeric" draft="provisional">{0}–{1}</intervalFormatRange>
+						</intervalFormatRanges>
 						<intervalFormatItem id="M">
 							<greatestDifference id="M">M–M</greatestDifference>
 						</intervalFormatItem>
@@ -1452,9 +1459,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>librevill</exemplarCity>
 			</zone>
 			<zone type="Europe/London">
-				<long>
-					<daylight>briṭis karã masa belā</daylight>
-				</long>
 				<exemplarCity>lnḍn</exemplarCity>
 			</zone>
 			<zone type="America/Grenada">
@@ -1545,9 +1549,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>jayapura</exemplarCity>
 			</zone>
 			<zone type="Europe/Dublin">
-				<long>
-					<daylight>aairis manaka belā</daylight>
-				</long>
 				<exemplarCity>ḍblin</exemplarCity>
 			</zone>
 			<zone type="Asia/Jerusalem">
@@ -1595,7 +1596,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Asia/Phnom_Penh">
 				<exemplarCity>pnom penh</exemplarCity>
 			</zone>
-			<zone type="Pacific/Kanton">
+			<zone type="Pacific/Enderbury">
 				<exemplarCity>kanṭon</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
@@ -2262,9 +2263,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Africa_Western">
 				<long>
-					<generic>veḍakuṇpu aaprika belā</generic>
-					<standard>veḍa kuṇpu aaprika mananka belā</standard>
-					<daylight>veḍa kuṇpu aaprika karã belā</daylight>
+					<standard>veḍakuṇpu aaprika belā</standard>
 				</long>
 			</metazone>
 			<metazone type="Alaska">
@@ -2415,6 +2414,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>brājiliā belā</generic>
 					<standard>brājiliā mānānka belā</standard>
 					<daylight>brājiliā kār~ā belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="British">
+				<long>
+					<daylight>briṭis karã masa belā</daylight>
 				</long>
 			</metazone>
 			<metazone type="Brunei">
@@ -2614,6 +2618,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>guyān belā</standard>
 				</long>
 			</metazone>
+			<metazone type="Hawaii">
+				<long>
+					<standard>hāwāe- aalūsān mānānka belā</standard>
+				</long>
+			</metazone>
 			<metazone type="Hawaii_Aleutian">
 				<long>
 					<generic>hāwāe- aalūsān belā</generic>
@@ -2670,6 +2679,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>irān belā</generic>
 					<standard>irān mānānka belā</standard>
 					<daylight>irān ḍelāiṭ belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="Irish">
+				<long>
+					<daylight>aairis manaka belā</daylight>
 				</long>
 			</metazone>
 			<metazone type="Irkutsk">
@@ -2957,9 +2971,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Samoa">
 				<long>
-					<generic>saāmoa belā</generic>
 					<standard>saāmoa mānānka belā</standard>
-					<daylight>saāmoa ḍelāiṭ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">
@@ -3149,30 +3161,56 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</decimalFormat>
 			</decimalFormatLength>
 		</decimalFormats>
+		<currencyFormats numberSystem="deva">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">¤ #,##,##0.00</pattern>
+					<pattern alt="noCurrency">#,##,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;(¤ #,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>¤#,##,##0.00</pattern>
+					<pattern alt="alphaNextToNumber">¤ #,##,##0.00</pattern>
+					<pattern alt="noCurrency">#,##,##0.00</pattern>
 				</currencyFormat>
 				<currencyFormat type="accounting">
 					<pattern>¤#,##0.00;(¤#,##0.00)</pattern>
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;(¤ #,##0.00)</pattern>
 					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
 				<currencyFormat type="standard">
-					<pattern type="1000" count="other">¤0h</pattern>
-					<pattern type="10000" count="other">¤00h</pattern>
-					<pattern type="100000" count="other">¤000h</pattern>
-					<pattern type="1000000" count="other">¤0mi</pattern>
-					<pattern type="10000000" count="other">¤00mi</pattern>
-					<pattern type="100000000" count="other">¤000mi</pattern>
-					<pattern type="1000000000" count="other">¤0bi</pattern>
-					<pattern type="10000000000" count="other">¤00bi</pattern>
-					<pattern type="100000000000" count="other">¤000bi</pattern>
-					<pattern type="1000000000000" count="other">¤0tri</pattern>
-					<pattern type="10000000000000" count="other">¤00tri</pattern>
-					<pattern type="100000000000000" count="other">¤000tri</pattern>
+					<pattern type="1000" count="other">¤0 h</pattern>
+					<pattern type="1000" count="other" alt="alphaNextToNumber">¤ 0 h</pattern>
+					<pattern type="10000" count="other">¤00 h</pattern>
+					<pattern type="10000" count="other" alt="alphaNextToNumber">¤ 00 h</pattern>
+					<pattern type="100000" count="other">¤000 h</pattern>
+					<pattern type="100000" count="other" alt="alphaNextToNumber">¤ 000 h</pattern>
+					<pattern type="1000000" count="other">¤0 mi</pattern>
+					<pattern type="1000000" count="other" alt="alphaNextToNumber">¤ 0 mi</pattern>
+					<pattern type="10000000" count="other">¤00 mi</pattern>
+					<pattern type="10000000" count="other" alt="alphaNextToNumber">¤ 00 mi</pattern>
+					<pattern type="100000000" count="other">¤000 mi</pattern>
+					<pattern type="100000000" count="other" alt="alphaNextToNumber">¤ 000 mi</pattern>
+					<pattern type="1000000000" count="other">¤0 bi</pattern>
+					<pattern type="1000000000" count="other" alt="alphaNextToNumber">¤ 0 bi</pattern>
+					<pattern type="10000000000" count="other">¤00 bi</pattern>
+					<pattern type="10000000000" count="other" alt="alphaNextToNumber">¤ 00 bi</pattern>
+					<pattern type="100000000000" count="other">¤000 bi</pattern>
+					<pattern type="100000000000" count="other" alt="alphaNextToNumber">¤ 000 bi</pattern>
+					<pattern type="1000000000000" count="other">¤0 tri</pattern>
+					<pattern type="1000000000000" count="other" alt="alphaNextToNumber">¤ 0 tri</pattern>
+					<pattern type="10000000000000" count="other">¤00 tri</pattern>
+					<pattern type="10000000000000" count="other" alt="alphaNextToNumber">¤ 00 tri</pattern>
+					<pattern type="100000000000000" count="other">¤000 tri</pattern>
+					<pattern type="100000000000000" count="other" alt="alphaNextToNumber">¤ 000 tri</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>

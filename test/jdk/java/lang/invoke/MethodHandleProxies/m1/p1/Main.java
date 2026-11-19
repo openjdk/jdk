@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,9 +32,8 @@ import java.util.stream.Collectors;
 
 import p2.TestIntf;
 
-import org.testng.annotations.Test;
-
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
 
 public class Main {
     public interface A {
@@ -57,24 +56,24 @@ public class Main {
      * Test the invocation of default methods with varargs
      */
     @Test
-    public static void testVarargsMethods() throws Throwable {
+    public void testVarargsMethods() throws Throwable {
         MethodHandle target = MethodHandles.lookup().findStatic(Main.class,
                 "concat", MethodType.methodType(String.class, Object[].class));
         C proxy = MethodHandleProxies.asInterfaceInstance(C.class, target);
 
-        assertEquals(proxy.c("a", "b", "c"), "abc");
-        assertEquals(proxy.aConcat("a", "b", "c"), "[a, b, c]");
-        assertEquals(proxy.aConcat(new Object[] { "a", "b", "c" }), "[a, b, c]");
-        assertEquals(proxy.bConcat(new Object[] { "a", "b", "c" }), "[a, b, c]");
+        assertEquals("abc", proxy.c("a", "b", "c"));
+        assertEquals("[a, b, c]", proxy.aConcat("a", "b", "c"));
+        assertEquals("[a, b, c]", proxy.aConcat(new Object[] { "a", "b", "c" }));
+        assertEquals("[a, b, c]", proxy.bConcat(new Object[] { "a", "b", "c" }));
     }
 
     /*
      * Test the invocation of a default method of an accessible interface
      */
     @Test
-    public static void modulePrivateInterface() {
+    public void modulePrivateInterface() {
         MethodHandle target = MethodHandles.constant(String.class, "test");
         TestIntf t = MethodHandleProxies.asInterfaceInstance(TestIntf.class, target);
-        assertEquals(t.test(), "test");
+        assertEquals("test", t.test());
     }
 }

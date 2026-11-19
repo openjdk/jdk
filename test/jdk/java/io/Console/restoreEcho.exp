@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -54,5 +54,8 @@ test "$rlprompt" "$rlinput" "$initialEcho" "$rlexpected"
 # readPassword() - input is not displayed
 test "$rpprompt" "$rpinput" "-echo" "$rpexpected"
 # See if the initialEcho is restored with `stty -a`
-expect -- " $initialEcho "
+# Depending on the platform, initialEcho may appear on a single line,
+# separated by either a space or a semicolon.
+set initialEchoRE [format {(^|[[:space:];])%s([[:space:];]|$)} $initialEcho]
+expect -re $initialEchoRE
 expect eof

@@ -28,6 +28,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import com.sun.org.apache.bcel.internal.util.Args;
+
 /**
  * represents one parameter annotation in the parameter annotation table
  *
@@ -37,32 +39,45 @@ public class ParameterAnnotationEntry implements Node {
 
     static final ParameterAnnotationEntry[] EMPTY_ARRAY = {};
 
-    public static ParameterAnnotationEntry[] createParameterAnnotationEntries(final Attribute[] attrs) {
+    /**
+     * Creates parameter annotation entries from attributes.
+     *
+     * @param attributes The attributes.
+     * @return The parameter annotation entries.
+     */
+    public static ParameterAnnotationEntry[] createParameterAnnotationEntries(final Attribute[] attributes) {
+        if (attributes == null) {
+            return EMPTY_ARRAY;
+        }
         // Find attributes that contain parameter annotation data
-        final List<ParameterAnnotationEntry> accumulatedAnnotations = new ArrayList<>(attrs.length);
-        for (final Attribute attribute : attrs) {
+        final List<ParameterAnnotationEntry> accumulatedAnnotations = new ArrayList<>(attributes.length);
+        for (final Attribute attribute : attributes) {
             if (attribute instanceof ParameterAnnotations) {
                 final ParameterAnnotations runtimeAnnotations = (ParameterAnnotations) attribute;
-                Collections.addAll(accumulatedAnnotations, runtimeAnnotations.getParameterAnnotationEntries());
+                final ParameterAnnotationEntry[] parameterAnnotationEntries = runtimeAnnotations.getParameterAnnotationEntries();
+                if (parameterAnnotationEntries != null) {
+                    Collections.addAll(accumulatedAnnotations, parameterAnnotationEntries);
+                }
             }
         }
-        return accumulatedAnnotations.toArray(ParameterAnnotationEntry.EMPTY_ARRAY);
+        return accumulatedAnnotations.toArray(EMPTY_ARRAY);
     }
 
     private final AnnotationEntry[] annotationTable;
 
     /**
-     * Construct object from input stream.
+     * Constructs object from input stream.
      *
-     * @param input Input stream
-     * @throws IOException if an I/O error occurs.
+     * @param input Input stream.
+     * @param constantPool The constant pool.
+     * @param isRuntimeVisible whether the contained annotations are runtime visible.
+     * @throws IOException Thrown if an I/O error occurs.
      */
-    ParameterAnnotationEntry(final DataInput input, final ConstantPool constantPool) throws IOException {
+    ParameterAnnotationEntry(final DataInput input, final ConstantPool constantPool, final boolean isRuntimeVisible) throws IOException {
         final int annotationTableLength = input.readUnsignedShort();
         annotationTable = new AnnotationEntry[annotationTableLength];
         for (int i = 0; i < annotationTableLength; i++) {
-            // TODO isRuntimeVisible
-            annotationTable[i] = AnnotationEntry.read(input, constantPool, false);
+            annotationTable[i] = AnnotationEntry.read(input, constantPool, isRuntimeVisible);
         }
     }
 
@@ -70,22 +85,30 @@ public class ParameterAnnotationEntry implements Node {
      * Called by objects that are traversing the nodes of the tree implicitly defined by the contents of a Java class.
      * I.e., the hierarchy of methods, fields, attributes, etc. spawns a tree of objects.
      *
-     * @param v Visitor object
+     * @param v Visitor object.
      */
     @Override
     public void accept(final Visitor v) {
         v.visitParameterAnnotationEntry(this);
     }
 
+    /**
+     * Dumps parameter annotation entry to file stream.
+     *
+     * @param dos Output file stream.
+     * @throws IOException Thrown if an I/O error occurs.
+     */
     public void dump(final DataOutputStream dos) throws IOException {
-        dos.writeShort(annotationTable.length);
+        dos.writeShort(Args.requireU2(annotationTable.length, "annotationTable.length"));
         for (final AnnotationEntry entry : annotationTable) {
             entry.dump(dos);
         }
     }
 
     /**
-     * returns the array of annotation entries in this annotation
+     * Gets the annotation entries.
+     *
+     * @return The array of annotation entries in this annotation.
      */
     public AnnotationEntry[] getAnnotationEntries() {
         return annotationTable;

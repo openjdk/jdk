@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@ package jdk.internal.classfile.impl;
 
 import java.lang.classfile.constantpool.*;
 import java.lang.constant.*;
+import java.lang.invoke.MethodHandleInfo;
 import java.lang.invoke.TypeDescriptor;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -33,8 +34,10 @@ import java.util.Arrays;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.constant.ClassOrInterfaceDescImpl;
+import jdk.internal.constant.ConstantUtils;
 import jdk.internal.constant.PrimitiveClassDescImpl;
 import jdk.internal.util.ArraysSupport;
+import jdk.internal.util.ModifiedUtf;
 import jdk.internal.vm.annotation.Stable;
 
 import static java.util.Objects.requireNonNull;
@@ -141,7 +144,7 @@ public abstract sealed class AbstractPoolEntry {
         @Stable TypeDescriptor typeSym;
 
         Utf8EntryImpl(ConstantPool cpm, int index,
-                          byte[] rawBytes, int offset, int rawLen) {
+                      byte[] rawBytes, int offset, int rawLen) {
             super(cpm, index, 0);
             this.rawBytes = rawBytes;
             this.offset = offset;
@@ -154,6 +157,10 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         Utf8EntryImpl(ConstantPool cpm, int index, String s, int contentHash) {
+            // Prevent creation of unwritable entries
+            if (!ModifiedUtf.isValidLengthInConstantPool(s)) {
+                throw new IllegalArgumentException("utf8 length out of range of u2: " + ModifiedUtf.utfLen(s));
+            }
             super(cpm, index, 0);
             this.rawBytes = null;
             this.offset = 0;
@@ -442,6 +449,7 @@ public abstract sealed class AbstractPoolEntry {
 
         @Override
         public boolean isFieldType(ClassDesc desc) {
+            requireNonNull(desc);
             var sym = typeSym;
             if (sym != null) {
                 return sym instanceof ClassDesc cd && cd.equals(desc);
@@ -484,6 +492,7 @@ public abstract sealed class AbstractPoolEntry {
 
         @Override
         public boolean isMethodType(MethodTypeDesc desc) {
+            requireNonNull(desc);
             var sym = typeSym;
             if (sym != null) {
                 return sym instanceof MethodTypeDesc mtd && mtd.equals(desc);
@@ -622,6 +631,7 @@ public abstract sealed class AbstractPoolEntry {
 
         @Override
         public boolean matches(ClassDesc desc) {
+            requireNonNull(desc);
             var sym = this.sym;
             if (sym != null) {
                 return sym.equals(desc);
@@ -689,11 +699,14 @@ public abstract sealed class AbstractPoolEntry {
 
         @Override
         public PackageDesc asSymbol() {
-            return PackageDesc.ofInternalName(asInternalName());
+            return ConstantUtils.validateNamedPackage(PackageDesc.ofInternalName(asInternalName()));
         }
 
         @Override
         public boolean matches(PackageDesc desc) {
+            if (desc.internalName().isEmpty()) {
+                return false; // The unnamed package is not representable
+            }
             return ref1.equalsString(desc.internalName());
         }
 
@@ -725,11 +738,14 @@ public abstract sealed class AbstractPoolEntry {
 
         @Override
         public ModuleDesc asSymbol() {
-            return ModuleDesc.of(asInternalName());
+            return ConstantUtils.validateNamedModule(ModuleDesc.of(asInternalName()));
         }
 
         @Override
         public boolean matches(ModuleDesc desc) {
+            if (desc.name().isEmpty()) {
+                return false;
+            }
             return ref1.equalsString(desc.name());
         }
 
@@ -1063,11 +1079,16 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         private DirectMethodHandleDesc computeSymbol() {
+            MemberRefEntry ref = reference();
+            // MethodHandleDesc factory ignores name if type is newInvokeSpecial, we must manually validate
+            if (kind() == MethodHandleInfo.REF_newInvokeSpecial && !ref.name().equalsString(ConstantDescs.INIT_NAME)) {
+                throw new IllegalArgumentException("Expected name <init> for constructor, found " + ref.name());
+            }
             return this.sym = MethodHandleDesc.of(
-                    DirectMethodHandleDesc.Kind.valueOf(kind(), reference() instanceof InterfaceMethodRefEntry),
-                    ((MemberRefEntry) reference()).owner().asSymbol(),
-                    ((MemberRefEntry) reference()).nameAndType().name().stringValue(),
-                    ((MemberRefEntry) reference()).nameAndType().type().stringValue());
+                    DirectMethodHandleDesc.Kind.valueOf(kind(), ref instanceof InterfaceMethodRefEntry),
+                    ref.owner().asSymbol(),
+                    ref.name().stringValue(),
+                    ref.type().stringValue());
         }
 
         @Override

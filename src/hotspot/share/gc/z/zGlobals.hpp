@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,5 +88,17 @@ const size_t      ZMarkProactiveFlushMax        = 10;
 
 // Try complete mark timeout
 const uint64_t    ZMarkCompleteTimeout          = 200; // us
+
+// How much CPU resources concurrent workers should use by default
+const double      ZConcurrentWorkersCPUShare    = 0.25;
+
+// How much memory reserve we prefer to have on the machine
+const double      ZMemoryConcerningThreshold    = 0.2;
+
+// How much memory reserve we fight to have on the machine
+const double      ZMemoryHighThreshold          = 0.1;
+
+// How much memory reserve we enforce to have on the machine
+const double      ZMemoryCriticalThreshold      = 0.05;
 
 #endif // SHARE_GC_Z_ZGLOBALS_HPP

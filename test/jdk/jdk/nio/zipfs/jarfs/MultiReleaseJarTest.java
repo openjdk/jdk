@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@
  * @build CreateMultiReleaseTestJars
  *        jdk.test.lib.util.JarBuilder
  *        jdk.test.lib.compiler.Compiler
- * @run testng MultiReleaseJarTest
+ * @run junit MultiReleaseJarTest
  */
 
 import java.io.IOException;
@@ -46,11 +46,22 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Stream;
 
-import org.testng.Assert;
-import org.testng.annotations.*;
 import jdk.test.lib.util.JarBuilder;
 
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class MultiReleaseJarTest {
     final private int MAJOR_VERSION = Runtime.version().feature();
     private static final String PROPERTY_RELEASE_VERSION = "releaseVersion";
@@ -69,7 +80,7 @@ public class MultiReleaseJarTest {
     private URI mruri;
     private URI smruri;
 
-    @BeforeClass
+    @BeforeAll
     public void initialize() throws Exception {
         creator.compileEntries();
         creator.buildUnversionedJar();
@@ -90,55 +101,51 @@ public class MultiReleaseJarTest {
         Files.delete(Paths.get(userdir, "short-multi-release.jar"));
     }
 
-    @DataProvider(name="strings")
-    public Object[][] createStrings() {
-        return new Object[][]{
-                {"runtime", MAJOR_VERSION, "8"},
-                {null, 8, Integer.toString(MAJOR_VERSION)},
-                {"8", 8, "9"},
-                {"9", 9, null},
-                {Integer.toString(MAJOR_VERSION), MAJOR_VERSION, "8"},
-                {Integer.toString(MAJOR_VERSION+1), MAJOR_VERSION, "8"},
-                {"50", MAJOR_VERSION, "9"}
-        };
+    public Stream<Arguments> createStrings() {
+        return Stream.of(
+                Arguments.of("runtime", MAJOR_VERSION, "8"),
+                Arguments.of(null, 8, Integer.toString(MAJOR_VERSION)),
+                Arguments.of("8", 8, "9"),
+                Arguments.of("9", 9, null),
+                Arguments.of(Integer.toString(MAJOR_VERSION), MAJOR_VERSION, "8"),
+                Arguments.of(Integer.toString(MAJOR_VERSION+1), MAJOR_VERSION, "8"),
+                Arguments.of("50", MAJOR_VERSION, "9")
+        );
     }
 
-    @DataProvider(name="integers")
-    public Object[][] createIntegers() {
-        return new Object[][] {
-                {null, 8, Integer.valueOf(9)},
-                {Integer.valueOf(8), 8, Integer.valueOf(9)},
-                {Integer.valueOf(9), 9, Integer.valueOf(MAJOR_VERSION)},
-                {Integer.valueOf(MAJOR_VERSION), MAJOR_VERSION, Integer.valueOf(8)},
-                {Integer.valueOf(MAJOR_VERSION + 1), MAJOR_VERSION, null},
-                {Integer.valueOf(100), MAJOR_VERSION, Integer.valueOf(8)}
-        };
+    public Stream<Arguments> createIntegers() {
+        return Stream.of(
+                Arguments.of(null, 8, Integer.valueOf(9)),
+                Arguments.of(Integer.valueOf(8), 8, Integer.valueOf(9)),
+                Arguments.of(Integer.valueOf(9), 9, Integer.valueOf(MAJOR_VERSION)),
+                Arguments.of(Integer.valueOf(MAJOR_VERSION), MAJOR_VERSION, Integer.valueOf(8)),
+                Arguments.of(Integer.valueOf(MAJOR_VERSION + 1), MAJOR_VERSION, null),
+                Arguments.of(Integer.valueOf(100), MAJOR_VERSION, Integer.valueOf(8))
+        );
     }
 
-    @DataProvider(name="versions")
-    public Object[][] createVersions() {
-        return new Object[][] {
-                {null, 8, Version.parse("14")},
-                {Version.parse("8"), 8, Version.parse("7")},
-                {Version.parse("9"), 9, null},
-                {Version.parse(Integer.toString(MAJOR_VERSION)), MAJOR_VERSION, Version.parse("8")},
-                {Version.parse(Integer.toString(MAJOR_VERSION) + 1), MAJOR_VERSION, Version.parse("9")},
-                {Version.parse("100"), MAJOR_VERSION, Version.parse("14")}
-        };
+    public Stream<Arguments> createVersions() {
+        return Stream.of(
+                Arguments.of(null, 8, Version.parse("14")),
+                Arguments.of(Version.parse("8"), 8, Version.parse("7")),
+                Arguments.of(Version.parse("9"), 9, null),
+                Arguments.of(Version.parse(Integer.toString(MAJOR_VERSION)), MAJOR_VERSION, Version.parse("8")),
+                Arguments.of(Version.parse(Integer.toString(MAJOR_VERSION) + 1), MAJOR_VERSION, Version.parse("9")),
+                Arguments.of(Version.parse("100"), MAJOR_VERSION, Version.parse("14"))
+        );
     }
 
-    @DataProvider(name="invalidVersions")
-    public Object[][] invalidVersions() {
-        return new Object[][] {
-                {Map.of(PROPERTY_RELEASE_VERSION, "")},
-                {Map.of(PROPERTY_RELEASE_VERSION, "invalid")},
-                {Map.of(PROPERTY_RELEASE_VERSION, "0")},
-                {Map.of(PROPERTY_RELEASE_VERSION, "-1")},
-                {Map.of(PROPERTY_RELEASE_VERSION, "11.0.1")},
-                {Map.of(PROPERTY_RELEASE_VERSION, new ArrayList<Long>())},
-                {Map.of(PROPERTY_RELEASE_VERSION, Integer.valueOf(0))},
-                {Map.of(PROPERTY_RELEASE_VERSION, Integer.valueOf(-1))}
-        };
+    public Stream<Arguments> invalidVersions() {
+        return Stream.of(
+                Arguments.of(Map.of(PROPERTY_RELEASE_VERSION, "")),
+                Arguments.of(Map.of(PROPERTY_RELEASE_VERSION, "invalid")),
+                Arguments.of(Map.of(PROPERTY_RELEASE_VERSION, "0")),
+                Arguments.of(Map.of(PROPERTY_RELEASE_VERSION, "-1")),
+                Arguments.of(Map.of(PROPERTY_RELEASE_VERSION, "11.0.1")),
+                Arguments.of(Map.of(PROPERTY_RELEASE_VERSION, new ArrayList<Long>())),
+                Arguments.of(Map.of(PROPERTY_RELEASE_VERSION, Integer.valueOf(0))),
+                Arguments.of(Map.of(PROPERTY_RELEASE_VERSION, Integer.valueOf(-1)))
+        );
     }
 
     // Not the best test but all I can do since ZipFileSystem
@@ -148,16 +155,16 @@ public class MultiReleaseJarTest {
         Map<String,String> env = new HashMap<>();
         // no configuration, treat multi-release jar as unversioned
         try (FileSystem fs = FileSystems.newFileSystem(mruri, env)) {
-            Assert.assertTrue(readAndCompare(fs, 8));
+            assertTrue(readAndCompare(fs, 8));
         }
         env.put(PROPERTY_RELEASE_VERSION, "runtime");
         // a configuration and jar file is multi-release
         try (FileSystem fs = FileSystems.newFileSystem(mruri, env)) {
-            Assert.assertTrue(readAndCompare(fs, MAJOR_VERSION));
+            assertTrue(readAndCompare(fs, MAJOR_VERSION));
         }
         // a configuration but jar file is unversioned
         try (FileSystem fs = FileSystems.newFileSystem(uvuri, env)) {
-            Assert.assertTrue(readAndCompare(fs, 8));
+            assertTrue(readAndCompare(fs, 8));
         }
     }
 
@@ -167,7 +174,8 @@ public class MultiReleaseJarTest {
         return src.contains("return " + expected);
     }
 
-    @Test(dataProvider="strings")
+    @ParameterizedTest
+    @MethodSource("createStrings")
     public void testStrings(String value, int expected, String ignorable) throws Throwable {
         stringEnv.clear();
         stringEnv.put(PROPERTY_RELEASE_VERSION, value);
@@ -176,7 +184,8 @@ public class MultiReleaseJarTest {
         runTest(stringEnv, expected);
     }
 
-    @Test(dataProvider="integers")
+    @ParameterizedTest
+    @MethodSource("createIntegers")
     public void testIntegers(Integer value, int expected, Integer ignorable) throws Throwable {
         integerEnv.clear();
         integerEnv.put(PROPERTY_RELEASE_VERSION, value);
@@ -185,7 +194,8 @@ public class MultiReleaseJarTest {
         runTest(integerEnv, expected);
     }
 
-    @Test(dataProvider="versions")
+    @ParameterizedTest
+    @MethodSource("createVersions")
     public void testVersions(Version value, int expected, Version ignorable) throws Throwable {
         versionEnv.clear();
         versionEnv.put(PROPERTY_RELEASE_VERSION, value);
@@ -210,30 +220,34 @@ public class MultiReleaseJarTest {
      * @throws Throwable  Exception thrown for anything other than the expected
      * IllegalArgumentException
      */
-    @Test(dataProvider="invalidVersions")
+    @ParameterizedTest
+    @MethodSource("invalidVersions")
     public void testInvalidVersions(Map<String,?> env) throws Throwable {
-        Assert.assertThrows(IllegalArgumentException.class, () ->
+        assertThrows(IllegalArgumentException.class, () ->
                 FileSystems.newFileSystem(Path.of(userdir,
                         "multi-release.jar"), env));
     }
 
     // The following tests are for backwards compatibility to validate that
     // the original property still works
-    @Test(dataProvider="strings")
+    @ParameterizedTest
+    @MethodSource("createStrings")
     public void testMRStrings(String value, int expected, String ignorable) throws Throwable {
         stringEnv.clear();
         stringEnv.put(PROPERTY_MULTI_RELEASE, value);
         runTest(stringEnv, expected);
     }
 
-    @Test(dataProvider="integers")
+    @ParameterizedTest
+    @MethodSource("createIntegers")
     public void testMRIntegers(Integer value, int expected, Integer ignorable) throws Throwable {
         integerEnv.clear();
         integerEnv.put(PROPERTY_MULTI_RELEASE, value);
         runTest(integerEnv, expected);
     }
 
-    @Test(dataProvider="versions")
+    @ParameterizedTest
+    @MethodSource("createVersions")
     public void testMRVersions(Version value, int expected, Version ignorable) throws Throwable {
         versionEnv.clear();
         versionEnv.put(PROPERTY_MULTI_RELEASE, value);
@@ -250,7 +264,7 @@ public class MultiReleaseJarTest {
             byte [] bytes = Files.readAllBytes(version);
             Class<?> vcls = (new ByteArrayClassLoader(fs)).defineClass(className, bytes);
             MethodHandle mh = MethodHandles.lookup().findVirtual(vcls, "getVersion", mt);
-            Assert.assertEquals((int)mh.invoke(vcls.getDeclaredConstructor().newInstance()), expected);
+            assertEquals(expected, (int)mh.invoke(vcls.getDeclaredConstructor().newInstance()));
         }
     }
 
@@ -281,7 +295,7 @@ public class MultiReleaseJarTest {
         jb.build();
         Map<String,String> env = Map.of(PROPERTY_RELEASE_VERSION, "runtime");
         try (FileSystem fs = FileSystems.newFileSystem(uri, env)) {
-            Assert.assertTrue(true);
+            assertTrue(true);
         }
         Files.delete(jfpath);
     }
@@ -300,9 +314,9 @@ public class MultiReleaseJarTest {
         URI customJar = new URI("jar", ssp , null);
         try (FileSystem fs = FileSystems.newFileSystem(customJar, env)) {
             if (expected) {
-                Assert.assertTrue(readAndCompare(fs, MAJOR_VERSION));
+                assertTrue(readAndCompare(fs, MAJOR_VERSION));
             } else {
-                Assert.assertTrue(readAndCompare(fs, 8));
+                assertTrue(readAndCompare(fs, 8));
             }
         }
         Files.delete(filePath);

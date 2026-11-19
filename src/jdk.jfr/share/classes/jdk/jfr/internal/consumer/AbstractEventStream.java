@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -165,7 +165,21 @@ public abstract class AbstractEventStream implements EventStream {
     @Override
     public final void onClose(Runnable action) {
         Objects.requireNonNull(action, "action");
-        streamConfiguration.addCloseAction(action);
+        if (!addClose(action)) {
+            action.run();
+        }
+    }
+
+    private boolean addClose(Runnable action) {
+        // Lock ensures action registration is serialized with
+        // the closed state change in EventStream::close implementations.
+        synchronized (parserState) {
+            if (!parserState.isClosed()) {
+                streamConfiguration.addCloseAction(action);
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
@@ -209,8 +223,8 @@ public abstract class AbstractEventStream implements EventStream {
 
     protected abstract boolean isRecordingStream();
 
-    protected final void closeParser() {
-        parserState.close();
+    protected final boolean closeParser() {
+        return parserState.close();
     }
 
     protected final boolean isClosed() {

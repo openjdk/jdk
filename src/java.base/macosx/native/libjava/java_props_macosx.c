@@ -23,7 +23,6 @@
  * questions.
  */
 
-#include <stdbool.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -230,50 +229,33 @@ void setOSNameAndVersion(java_props_t *sprops) {
     NSString *nsVerStr = NULL;
     char* osVersionCStr = NULL;
     NSOperatingSystemVersion osVer = [[NSProcessInfo processInfo] operatingSystemVersion];
-    // Some macOS versions require special handling. For example,
-    // when the NSOperatingSystemVersion reports 10.16 as the version
-    // then it should be treated as 11. Similarly, when it reports 16.0
-    // as the version then it should be treated as 26.
-    // If the SYSTEM_VERSION_COMPAT environment variable (a macOS construct)
-    // is set to 1, then we don't do any special handling for any versions
-    // and just literally use the value that NSOperatingSystemVersion reports.
-    const char* envVal = getenv("SYSTEM_VERSION_COMPAT");
-    const bool versionCompatEnabled = envVal != NULL
-                                      && strncmp(envVal, "1", 1) == 0;
-    const bool requiresSpecialHandling =
-            ((long) osVer.majorVersion == 10 && (long) osVer.minorVersion >= 16)
-            || ((long) osVer.majorVersion == 16 && (long) osVer.minorVersion >= 0);
-    if (!requiresSpecialHandling || versionCompatEnabled) {
-        // no special handling - just use the version reported
-        // by NSOperatingSystemVersion
-        if (osVer.patchVersion == 0) {
-            // Omit trailing ".0"
+    // Copy out the char* if running on version other than 10.16 Mac OS (10.16 == 11.x)
+    // or explicitly requesting version compatibility
+    if (!((long)osVer.majorVersion == 10 && (long)osVer.minorVersion >= 16) ||
+            (getenv("SYSTEM_VERSION_COMPAT") != NULL)) {
+        if (osVer.patchVersion == 0) { // Omit trailing ".0"
             nsVerStr = [NSString stringWithFormat:@"%ld.%ld",
                     (long)osVer.majorVersion, (long)osVer.minorVersion];
         } else {
             nsVerStr = [NSString stringWithFormat:@"%ld.%ld.%ld",
-                    (long)osVer.majorVersion, (long)osVer.minorVersion,
-                    (long)osVer.patchVersion];
+                    (long)osVer.majorVersion, (long)osVer.minorVersion, (long)osVer.patchVersion];
         }
     } else {
-        // Requires special handling. We ignore the version reported
-        // by the NSOperatingSystemVersion API and instead read the
-        // *real* ProductVersion from
-        // /System/Library/CoreServices/.SystemVersionPlatform.plist.
-        // If not found there, then as a last resort we fallback to
-        // /System/Library/CoreServices/SystemVersion.plist
-        NSDictionary *version = [NSDictionary dictionaryWithContentsOfFile:
-            @"/System/Library/CoreServices/.SystemVersionPlatform.plist"];
+        // Version 10.16, without explicit env setting of SYSTEM_VERSION_COMPAT
+        // AKA 11+ Read the *real* ProductVersion from the hidden link to avoid SYSTEM_VERSION_COMPAT
+        // If not found, fallback below to the SystemVersion.plist
+        NSDictionary *version = [NSDictionary dictionaryWithContentsOfFile :
+                         @"/System/Library/CoreServices/.SystemVersionPlatform.plist"];
         if (version != NULL) {
-            nsVerStr = [version objectForKey: @"ProductVersion"];
+            nsVerStr = [version objectForKey : @"ProductVersion"];
         }
     }
-    // Last resort - fallback to reading the SystemVersion.plist
+    // Fallback to reading the SystemVersion.plist
     if (nsVerStr == NULL) {
-        NSDictionary *version = [NSDictionary dictionaryWithContentsOfFile:
-            @"/System/Library/CoreServices/SystemVersion.plist"];
+        NSDictionary *version = [NSDictionary dictionaryWithContentsOfFile :
+                                 @"/System/Library/CoreServices/SystemVersion.plist"];
         if (version != NULL) {
-            nsVerStr = [version objectForKey: @"ProductVersion"];
+            nsVerStr = [version objectForKey : @"ProductVersion"];
         }
     }
 

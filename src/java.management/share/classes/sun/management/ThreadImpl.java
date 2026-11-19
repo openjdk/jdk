@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -308,7 +308,7 @@ public class ThreadImpl implements ThreadMXBean {
                 long id = ids[0];
                 Thread thread = Thread.currentThread();
                 if (id == thread.threadId()) {
-                    times[0] = thread.isVirtual() ? -1L : getThreadTotalCpuTime0(0);
+                    times[0] = thread.isVirtual() ? -1L : getThreadUserCpuTime0(0);
                 } else {
                     times[0] = getThreadUserCpuTime0(id);
                 }

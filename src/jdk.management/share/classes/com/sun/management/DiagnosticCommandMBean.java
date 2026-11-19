@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -135,7 +135,7 @@ import javax.management.DynamicMBean;
  *   </tr>
  *   <tr>
  *     <th scope="row">dcmd.enabled</th><td>boolean</td>
- *     <td>True if the diagnostic command is enabled, false otherwise</td>
+ *     <td>This field is always true -- diagnostic commands cannot be disabled.</td>
  *   </tr>
  *   <tr>
  *     <th scope="row">dcmd.arguments</th><td>Descriptor</td>

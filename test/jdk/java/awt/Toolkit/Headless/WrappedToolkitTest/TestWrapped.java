@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,55 +22,52 @@
  */
 
 /*
- * test
+ * @test
  * @bug 6282388
- * @summary Tests that AWT use correct toolkit to be wrapped into HeadlessToolkit
- * @author artem.ananiev@sun.com: area=awt.headless
- * @run shell WrappedToolkitTest.sh
+ * @summary Tests that AWT uses correct toolkit wrapped into HeadlessToolkit
+ * @modules java.desktop/sun.awt:open
+ * @library /test/lib
+ * @run main/othervm -Djava.awt.headless=true TestWrapped
  */
 
-import java.awt.*;
+import java.awt.Toolkit;
+import java.lang.Class;
+import java.lang.reflect.Field;
 
-import java.lang.reflect.*;
+import jdk.test.lib.Platform;
 
-import sun.awt.*;
+public final class TestWrapped {
 
-public class TestWrapped
-{
-    public static void main(String[] args)
-    {
-        try
-        {
-        if (args.length != 1) {
-            System.err.println("No correct toolkit class name is specified, test is not run");
-            System.exit(0);
+    private static final String HEADLESS_TOOLKIT = "sun.awt.HeadlessToolkit";
+    private static final String MACOSX_TOOLKIT = "sun.lwawt.macosx.LWCToolkit";
+    private static final String UNIX_TOOLKIT = "sun.awt.X11.XToolkit";
+    private static final String WINDOWS_TOOLKIT = "sun.awt.windows.WToolkit";
+
+    public static void main(String[] args) throws Exception {
+        String expectedToolkitClassName;
+        if (Platform.isWindows()) {
+            expectedToolkitClassName = WINDOWS_TOOLKIT;
+        } else if (Platform.isOSX()) {
+            expectedToolkitClassName = MACOSX_TOOLKIT;
+        } else {
+            expectedToolkitClassName = UNIX_TOOLKIT;
         }
 
-        String correctToolkitClassName = args[0];
         Toolkit tk = Toolkit.getDefaultToolkit();
-        Class tkClass = tk.getClass();
-        if (!tkClass.getName().equals("sun.awt.HeadlessToolkit"))
-        {
-            System.err.println(tkClass.getName());
-            System.err.println("Error: default toolkit is not an instance of HeadlessToolkit");
-            System.exit(-1);
+        Class<?> tkClass = tk.getClass();
+        if (!tkClass.getName().equals(HEADLESS_TOOLKIT)) {
+            System.err.println("Expected: " + HEADLESS_TOOLKIT);
+            System.err.println("Actual: " + tkClass.getName());
+            throw new RuntimeException("Wrong default toolkit");
         }
 
         Field f = tkClass.getDeclaredField("tk");
         f.setAccessible(true);
-        Class wrappedClass = f.get(tk).getClass();
-        if (!wrappedClass.getName().equals(correctToolkitClassName)) {
-            System.err.println(wrappedClass.getName());
-            System.err.println("Error: wrapped toolkit is not an instance of " + correctToolkitClassName);
-            System.exit(-1);
+        Class<?> wrappedClass = f.get(tk).getClass();
+        if (!wrappedClass.getName().equals(expectedToolkitClassName)) {
+            System.err.println("Expected: " + expectedToolkitClassName);
+            System.err.println("Actual: " + wrappedClass.getName());
+            throw new RuntimeException("Wrong wrapped toolkit");
         }
-        }
-        catch (Exception z)
-        {
-            z.printStackTrace(System.err);
-            System.exit(-1);
-        }
-
-        System.exit(0);
     }
 }

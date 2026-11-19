@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,27 +26,28 @@
  * @bug 8248157
  * @summary test Unicode characters in Snippets
  * @build KullaTesting TestingInputStream
- * @run testng UnicodeTest
+ * @run junit UnicodeTest
  */
 
 import jdk.jshell.Snippet;
 import jdk.jshell.DeclarationSnippet;
-import org.testng.annotations.Test;
 
 import jdk.jshell.Snippet.Status;
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static jdk.jshell.Snippet.Status.VALID;
 import static jdk.jshell.Snippet.SubKind.*;
+import org.junit.jupiter.api.Test;
 
-@Test
 public class UnicodeTest extends KullaTesting {
 
+    @Test
     public void testVarDeclarationKey() {
         assertVarKeyMatch("int \\u00aa;", true, "\u00aa", VAR_DECLARATION_SUBKIND, "int", added(VALID));
         assertEval("\\u00aa", "0");
     }
 
+    @Test
     public void testVarDeclarationWithInitializerKey() {
         assertVarKeyMatch("double \\u00ba\\u0044\\u0577 = 9.4;", true, "\u00ba\u0044\u0577",
                           VAR_DECLARATION_WITH_INITIALIZER_SUBKIND, "double", added(VALID));

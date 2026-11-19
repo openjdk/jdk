@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,44 +25,50 @@
 // program to generate rsakeys.ks. does not need to run during testing
 // checked into the workspace so that the keystore file can be recreated
 // in the future if needed.
+//
+// To run:
+//   java --add-exports java.base/sun.security.x509=ALL-UNNAMED GenKeyStore.java
 
 // @author Andreas Sterbenz
 
-import java.io.*;
-import java.math.BigInteger;
-import java.util.*;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.KeyStore;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.cert.X509Certificate;
+import java.time.Instant;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
 
-import java.security.*;
-import java.security.cert.*;
-import java.security.interfaces.*;
-import java.security.spec.*;
-
-import sun.security.x509.*;
+import sun.security.x509.CertificateSerialNumber;
+import sun.security.x509.CertificateValidity;
+import sun.security.x509.CertificateVersion;
+import sun.security.x509.CertificateX509Key;
+import sun.security.x509.X500Name;
+import sun.security.x509.X509CertImpl;
+import sun.security.x509.X509CertInfo;
 
 public class GenKeyStore {
 
     static final char[] password = "test12".toCharArray();
 
-    private static X509Certificate getCertificate(String suffix, PublicKey publicKey, PrivateKey privateKey) throws Exception {
+    private static X509Certificate getCertificate(String suffix,
+                                                    PublicKey publicKey,
+                                                    PrivateKey privateKey) throws Exception {
         X500Name name = new X500Name("CN=Dummy Certificate " + suffix);
         String algorithm = "SHA1with" + publicKey.getAlgorithm();
-        Date date = new Date();
-        AlgorithmId algID = AlgorithmId.getAlgorithmId(algorithm);
+        Instant instant = Instant.now();
 
         X509CertInfo certInfo = new X509CertInfo();
+        certInfo.setVersion(new CertificateVersion(CertificateVersion.V1));
+        certInfo.setSerialNumber(new CertificateSerialNumber(1));
+        certInfo.setSubject(name);
+        certInfo.setIssuer(name);
+        certInfo.setKey(new CertificateX509Key(publicKey));
+        certInfo.setValidity(new CertificateValidity(instant, instant));
 
-        certInfo.set(X509CertInfo.VERSION, new CertificateVersion(CertificateVersion.V1));
-        certInfo.set(X509CertInfo.SERIAL_NUMBER, new CertificateSerialNumber(1));
-        certInfo.set(X509CertInfo.ALGORITHM_ID, new CertificateAlgorithmId(algID));
-        certInfo.set(X509CertInfo.SUBJECT, name);
-        certInfo.set(X509CertInfo.ISSUER, name);
-        certInfo.set(X509CertInfo.KEY, new CertificateX509Key(publicKey));
-        certInfo.set(X509CertInfo.VALIDITY, new CertificateValidity(date, date));
-
-        X509CertImpl cert = new X509CertImpl(certInfo);
-        cert.sign(privateKey, algorithm);
-
-        return cert;
+        return X509CertImpl.newSigned(certInfo, privateKey, algorithm);
     }
 
     private static void addToKeyStore(KeyStore ks, KeyPair kp, String name) throws Exception {

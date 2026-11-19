@@ -40,7 +40,6 @@ import jdk.jpackage.test.TKit;
  * @test
  * @summary jpackage with installer exe from the resource directory
  * @library /test/jdk/tools/jpackage/helpers
- * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
  * @compile -Xlint:all -Werror WinInstallerResourceTest.java
  * @requires (os.family == "windows")

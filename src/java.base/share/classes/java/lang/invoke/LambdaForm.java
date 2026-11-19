@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package java.lang.invoke;
 
 import java.lang.classfile.TypeKind;
 import jdk.internal.perf.PerfCounter;
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.Hidden;
 import jdk.internal.vm.annotation.Stable;
@@ -122,6 +123,7 @@ import static java.lang.invoke.MethodHandleStatics.*;
  * <p>
  * @author John Rose, JSR 292 EG
  */
+@AOTSafeClassInitializer
 class LambdaForm {
     final int arity;
     final int result;
@@ -137,13 +139,16 @@ class LambdaForm {
 
     public static final int VOID_RESULT = -1, LAST_RESULT = -2;
 
+    /// Represents the "basic" types that exist in the JVM linkage and stack/locals.
+    /// All objects are erased to a reference.
+    /// All subwords (boolean, byte, char, short) are promoted to int.
     enum BasicType {
-        L_TYPE('L', Object.class, Wrapper.OBJECT, TypeKind.REFERENCE), // all reference types
+        L_TYPE('L', Object.class, Wrapper.OBJECT, TypeKind.REFERENCE),
         I_TYPE('I', int.class,    Wrapper.INT,    TypeKind.INT),
         J_TYPE('J', long.class,   Wrapper.LONG,   TypeKind.LONG),
         F_TYPE('F', float.class,  Wrapper.FLOAT,  TypeKind.FLOAT),
-        D_TYPE('D', double.class, Wrapper.DOUBLE, TypeKind.DOUBLE),  // all primitive types
-        V_TYPE('V', void.class,   Wrapper.VOID,   TypeKind.VOID);    // not valid in all contexts
+        D_TYPE('D', double.class, Wrapper.DOUBLE, TypeKind.DOUBLE),  // end arg types
+        V_TYPE('V', void.class,   Wrapper.VOID,   TypeKind.VOID);    // only valid in method return
 
         static final @Stable BasicType[] ALL_TYPES = BasicType.values();
         static final @Stable BasicType[] ARG_TYPES = Arrays.copyOf(ALL_TYPES, ALL_TYPES.length-1);
@@ -263,10 +268,14 @@ class LambdaForm {
         DIRECT_NEW_INVOKE_SPECIAL("DMH.newInvokeSpecial", "newInvokeSpecial"),
         DIRECT_INVOKE_INTERFACE("DMH.invokeInterface", "invokeInterface"),
         DIRECT_INVOKE_STATIC_INIT("DMH.invokeStaticInit", "invokeStaticInit"),
+        // Start field forms
+        // IJFDL, instance/static differ in method type, can share form
+        // init form only applicable to static
         FIELD_ACCESS("fieldAccess"),
         FIELD_ACCESS_INIT("fieldAccessInit"),
         VOLATILE_FIELD_ACCESS("volatileFieldAccess"),
         VOLATILE_FIELD_ACCESS_INIT("volatileFieldAccessInit"),
+        // BCSZ need own forms to avoid clashing with basic type I, +-init/volatile
         FIELD_ACCESS_B("fieldAccessB"),
         FIELD_ACCESS_INIT_B("fieldAccessInitB"),
         VOLATILE_FIELD_ACCESS_B("volatileFieldAccessB"),
@@ -283,12 +292,33 @@ class LambdaForm {
         FIELD_ACCESS_INIT_Z("fieldAccessInitZ"),
         VOLATILE_FIELD_ACCESS_Z("volatileFieldAccessZ"),
         VOLATILE_FIELD_ACCESS_INIT_Z("volatileFieldAccessInitZ"),
+        // cast, nr, flat need their own forms to avoid clashing with L
         FIELD_ACCESS_CAST("fieldAccessCast"),
         FIELD_ACCESS_INIT_CAST("fieldAccessInitCast"),
         VOLATILE_FIELD_ACCESS_CAST("volatileFieldAccessCast"),
         VOLATILE_FIELD_ACCESS_INIT_CAST("volatileFieldAccessInitCast"),
+        // null-check and put reference, +-cast, +-init/volatile
+        // non-cast forms serve bytecode emulation purpose, which always enforces null checks
+        PUT_NULL_RESTRICTED_REFERENCE("putNullRestrictedReference"),
+        PUT_NULL_RESTRICTED_REFERENCE_INIT("putNullRestrictedReferenceInit"),
+        VOLATILE_PUT_NULL_RESTRICTED_REFERENCE("volatilePutNullRestrictedReference"),
+        VOLATILE_PUT_NULL_RESTRICTED_REFERENCE_INIT("volatilePutNullRestrictedReferenceInit"),
+        PUT_NULL_RESTRICTED_REFERENCE_CAST("putNullRestrictedReferenceCast"),
+        PUT_NULL_RESTRICTED_REFERENCE_CAST_INIT("putNullRestrictedReferenceInitCast"),
+        VOLATILE_PUT_NULL_RESTRICTED_REFERENCE_CAST("volatilePutNullRestrictedReferenceCast"),
+        VOLATILE_PUT_NULL_RESTRICTED_REFERENCE_CAST_INIT("volatilePutNullRestrictedReferenceCastInit"),
+        // flat implies cast, +-init/volatile
+        FIELD_ACCESS_FLAT("fieldAccessFlat"),
+        FIELD_ACCESS_INIT_FLAT("fieldAccessInitFlat"),
+        VOLATILE_FIELD_ACCESS_FLAT("volatileFieldAccessFlat"),
+        VOLATILE_FIELD_ACCESS_INIT_FLAT("volatileFieldAccessInitFlat"),
+        // write guard NR flat, implies cast; +-volatile; no init forms - no flat in static fields yet
+        PUT_NULL_RESTRICTED_FLAT_VALUE("putNullRestrictedFlatValue"),
+        VOLATILE_PUT_NULL_RESTRICTED_FLAT_VALUE("volatilePutNullRestrictedFlatValue"),
+        // End fields
         TRY_FINALLY("tryFinally"),
         TABLE_SWITCH("tableSwitch"),
+        SYNCHRONIZE("synchronize"),
         COLLECTOR("collector"),
         LOOP("loop"),
         GUARD("guard"),
@@ -679,6 +709,32 @@ class LambdaForm {
     }
 
     /**
+     * Check if i-th name is a start of the synchronize idiom.
+     */
+    boolean isSynchronize(int pos) {
+        // synchronize idiom:
+        //   t_{n}:L=MethodHandle.invokeBasic(...)     // args
+        //   t_{n+1}:L=MethodHandleImpl.synchronize(*, *, *, t_{n})
+        //   t_{n+2}:?=MethodHandle.invokeBasic(*, t_{n+1})
+        if (pos + 2 >= names.length)  return false;
+
+        final int POS_COLLECT_ARGS = pos;
+        final int POS_SYNCHRONIZE = pos + 1;
+        final int POS_UNBOX_RESULT = pos + 2;
+
+        Name collectArgs = names[POS_COLLECT_ARGS];
+        Name synchronize = names[POS_SYNCHRONIZE];
+        Name unboxResult = names[POS_UNBOX_RESULT];
+        return synchronize.refersTo(MethodHandleImpl.class, "synchronize") &&
+                collectArgs.isInvokeBasic() &&
+                unboxResult.isInvokeBasic() &&
+                synchronize.lastUseIndex(collectArgs) == 2 &&     // t_{n+1}:L=MethodHandleImpl.<invoker>(*, *, *, t_{n});
+                lastUseIndex(collectArgs) == POS_SYNCHRONIZE &&  // t_{n} is local: used only in t_{n+1}
+                unboxResult.lastUseIndex(synchronize) == 1 &&     // t_{n+2}:?=MethodHandle.invokeBasic(*, t_{n+1})
+                lastUseIndex(synchronize) == POS_UNBOX_RESULT;    // t_{n+1} is local: used only in t_{n+2}
+    }
+
+    /**
      * Check if i-th name is a start of the loop idiom.
      */
     boolean isLoop(int pos) {
@@ -1032,6 +1088,7 @@ class LambdaForm {
         return false;
     }
 
+    @AOTSafeClassInitializer
     static class NamedFunction {
         final MemberName member;
         private @Stable MethodHandle resolvedHandle;
@@ -1727,7 +1784,14 @@ class LambdaForm {
         UNSAFE.ensureClassInitialized(Holder.class);
     }
 
-    /* Placeholder class for identity and constant forms generated ahead of time */
+    /// Holds pre-generated bytecode for common lambda forms.
+    ///
+    /// This class may be substituted in the JDK's modules image, or in an AOT
+    /// cache, by a version generated by [GenerateJLIClassesHelper].
+    ///
+    /// The method names of this class are internal tokens recognized by
+    /// [InvokerBytecodeGenerator#lookupPregenerated] and are subject to change.
+    @AOTSafeClassInitializer
     final class Holder {}
 
     // The following hack is necessary in order to suppress TRACE_INTERPRETER

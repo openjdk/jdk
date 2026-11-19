@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,10 +81,10 @@ import java.time.DateTimeException;
  * The second is to use {@link TemporalAccessor#query(TemporalQuery)}:
  * <pre>
  *   // these two lines are equivalent, but the second approach is recommended
- *   temporal = thisQuery.queryFrom(temporal);
- *   temporal = temporal.query(thisQuery);
+ *   result = thisQuery.queryFrom(temporal);
+ *   result = temporal.query(thisQuery);
  * </pre>
- * It is recommended to use the second approach, {@code query(TemporalQuery)},
+ * It is recommended to use the second approach, {@code query(thisQuery)},
  * as it is a lot clearer to read in code.
  * <p>
  * The most common implementations are method references, such as
@@ -115,10 +115,10 @@ public interface TemporalQuery<R> {
      * The second is to use {@link TemporalAccessor#query(TemporalQuery)}:
      * <pre>
      *   // these two lines are equivalent, but the second approach is recommended
-     *   temporal = thisQuery.queryFrom(temporal);
-     *   temporal = temporal.query(thisQuery);
+     *   result = thisQuery.queryFrom(temporal);
+     *   result = temporal.query(thisQuery);
      * </pre>
-     * It is recommended to use the second approach, {@code query(TemporalQuery)},
+     * It is recommended to use the second approach, {@code query(thisQuery)},
      * as it is a lot clearer to read in code.
      *
      * @implSpec

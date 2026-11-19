@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,11 +32,14 @@
 #include "jvm_io.h"
 #include "logging/log.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
+#include "runtime/thread.inline.hpp"
+#include "runtime/vmOperations.hpp"
+#include "runtime/vmThread.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/ostream.hpp"
 
@@ -450,25 +453,14 @@ const char* JfrEmergencyDump::chunk_path(const char* repository_path) {
 *
 * If we end up deadlocking in the attempt of dumping out jfr data,
 * we rely on the WatcherThread task "is_error_reported()",
-* to exit the VM after a hard-coded timeout (disallow WatcherThread to emergency dump).
+* to exit the VM after a hard-coded timeout (the reason
+* for disallowing the WatcherThread to issue an emergency dump).
 * This "safety net" somewhat explains the aggressiveness in this attempt.
 *
 */
-static bool prepare_for_emergency_dump(Thread* thread) {
+static void release_locks(Thread* thread) {
   assert(thread != nullptr, "invariant");
-  if (thread->is_Watcher_thread()) {
-    // need WatcherThread as a safeguard against potential deadlocks
-    return false;
-  }
-
-#ifdef ASSERT
-  Mutex* owned_lock = thread->owned_locks();
-  while (owned_lock != nullptr) {
-    Mutex* next = owned_lock->next();
-    owned_lock->unlock();
-    owned_lock = next;
-  }
-#endif // ASSERT
+  assert(!thread->is_Java_thread() || JavaThread::cast(thread)->thread_state() == _thread_in_vm, "invariant");
 
   if (Threads_lock->owned_by_self()) {
     Threads_lock->unlock();
@@ -517,24 +509,18 @@ static bool prepare_for_emergency_dump(Thread* thread) {
   if (JfrStacktrace_lock->owned_by_self()) {
     JfrStacktrace_lock->unlock();
   }
-  return true;
-}
-
-static volatile int jfr_shutdown_lock = 0;
-
-static bool guard_reentrancy() {
-  return Atomic::cmpxchg(&jfr_shutdown_lock, 0, 1) == 0;
 }
 
 class JavaThreadInVMAndNative : public StackObj {
  private:
-  JavaThread* const _jt;
+  JavaThread* _jt;
   JavaThreadState _original_state;
  public:
 
-  JavaThreadInVMAndNative(Thread* t) : _jt(t->is_Java_thread() ? JavaThread::cast(t) : nullptr),
+  JavaThreadInVMAndNative(Thread* t) : _jt(nullptr),
                                        _original_state(_thread_max_state) {
-    if (_jt != nullptr) {
+    if (t != nullptr && t->is_Java_thread()) {
+      _jt = JavaThread::cast(t);
       _original_state = _jt->thread_state();
       if (_original_state != _thread_in_vm) {
         _jt->set_thread_state(_thread_in_vm);
@@ -544,6 +530,7 @@ class JavaThreadInVMAndNative : public StackObj {
 
   ~JavaThreadInVMAndNative() {
     if (_original_state != _thread_max_state) {
+      assert(_jt != nullptr, "invariant");
       _jt->set_thread_state(_original_state);
     }
   }
@@ -556,35 +543,82 @@ class JavaThreadInVMAndNative : public StackObj {
   }
 };
 
-static void post_events(bool exception_handler, Thread* thread) {
+static void post_events(bool exception_handler, bool oom, Thread * thread) {
   if (exception_handler) {
     EventShutdown e;
-    e.set_reason("VM Error");
+    e.set_reason(oom ? "CrashOnOutOfMemoryError" : "VM Error");
     e.commit();
-  } else {
-    // OOM
-    LeakProfiler::emit_events(max_jlong, false, false);
   }
   EventDumpReason event;
-  event.set_reason(exception_handler ? "Crash" : "Out of Memory");
+  event.set_reason(exception_handler && oom ? "CrashOnOutOfMemoryError" : exception_handler ? "Crash" : "Out of Memory");
   event.set_recordingId(-1);
   event.commit();
 }
 
-void JfrEmergencyDump::on_vm_shutdown(bool exception_handler) {
+static volatile traceid _jfr_shutdown_tid = 0;
+
+static bool guard_reentrancy() {
+  const traceid shutdown_tid = AtomicAccess::load(&_jfr_shutdown_tid);
+  if (shutdown_tid == max_julong) {
+    // Someone tried but did not have a proper thread for the purpose.
+    return false;
+  }
+  if (shutdown_tid == 0) {
+    Thread* const thread = Thread::current_or_null_safe();
+    const traceid tid = thread != nullptr ? JFR_JVM_THREAD_ID(thread) : max_julong;
+    if (AtomicAccess::cmpxchg(&_jfr_shutdown_tid, shutdown_tid, tid) != shutdown_tid) {
+      JavaThreadInVMAndNative jtivm(thread);
+      if (thread != nullptr) {
+        release_locks(thread);
+      }
+      log_info(jfr, system)("A jfr emergency dump is already in progress, waiting for thread id " UINT64_FORMAT_X, AtomicAccess::load(&_jfr_shutdown_tid));
+      // Transition to a safe safepoint state for the infinite sleep. A nop for non-java threads.
+      jtivm.transition_to_native();
+      os::infinite_sleep(); // stay here until we exit normally or crash.
+      ShouldNotReachHere();
+    }
+    return tid != max_julong;
+  }
+  // Recursive case
+  assert(JFR_JVM_THREAD_ID(Thread::current_or_null_safe()) == shutdown_tid, "invariant");
+  return false;
+}
+
+void JfrEmergencyDump::on_vm_shutdown(bool exception_handler, bool oom) {
   if (!guard_reentrancy()) {
     return;
   }
-  Thread* thread = Thread::current_or_null_safe();
-  if (thread == nullptr) {
-    return;
-  }
+
+  Thread* const thread = Thread::current_or_null_safe();
+  assert(thread != nullptr, "invariant");
+
   // Ensure a JavaThread is _thread_in_vm when we make this call
   JavaThreadInVMAndNative jtivm(thread);
-  if (!prepare_for_emergency_dump(thread)) {
+  post_events(exception_handler, oom, thread);
+
+  if (thread->is_Watcher_thread()) {
+    // We cannot attempt an emergency dump using the Watcher thread
+    // because we rely on the WatcherThread task "is_error_reported()",
+    // to exit the VM after a hardcoded timeout, should the relatively
+    // risky operation of an emergency dump fail (deadlock, livelock).
+    log_warning(jfr, system)
+      ("The Watcher thread crashed so no jfr emergency dump will be generated.");
     return;
   }
-  post_events(exception_handler, thread);
+
+  if (thread->is_VM_thread()) {
+    const VM_Operation* const operation = VMThread::vm_operation();
+    if (operation != nullptr && operation->type() == VM_Operation::VMOp_JFROldObject) {
+      // We will not be able to issue a rotation because the rotation lock
+      // is held by the JFR Recorder Thread that issued the VM_Operation.
+      log_warning(jfr, system)
+        ("The VM Thread crashed as part of emitting leak profiler events so no jfr emergency dump will be generated.");
+      return;
+    }
+  }
+
+  release_locks(thread);
+
   // if JavaThread, transition to _thread_in_native to issue a final flushpoint
   NoHandleMark nhm;
   jtivm.transition_to_native();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,7 +92,7 @@ public abstract class BaseFileManager implements JavaFileManager {
         options = Options.instance(context);
 
         // Initialize locations
-        locations.update(log, lint, FSInfo.instance(context));
+        locations.update(log, FSInfo.instance(context));
 
         // Apply options
         options.whenReady(this::applyOptions);
@@ -274,6 +274,7 @@ public abstract class BaseFileManager implements JavaFileManager {
     }
 
     protected String multiReleaseValue;
+    protected boolean previewMode;
 
     /**
      * Common back end for OptionHelper handleFileManagerOption.
@@ -290,6 +291,17 @@ public abstract class BaseFileManager implements JavaFileManager {
             case MULTIRELEASE:
                 multiReleaseValue = value;
                 locations.setMultiReleaseValue(value);
+                return true;
+
+            case PREVIEWMODE:
+                if ("true".equals(value)) {
+                    previewMode = true;
+                } else if ("false".equals(value)) {
+                    previewMode = false;
+                } else {
+                    throw new IllegalArgumentException("Must be \"true\" or \"false\", got: " + value);
+                }
+                locations.setPreviewMode(previewMode);
                 return true;
 
             default:

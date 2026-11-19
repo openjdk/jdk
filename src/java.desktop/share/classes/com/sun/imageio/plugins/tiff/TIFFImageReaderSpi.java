@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,10 +56,12 @@ public class TIFFImageReaderSpi extends ImageReaderSpi {
               );
     }
 
+    @Override
     public String getDescription(Locale locale) {
         return "Standard TIFF image reader";
     }
 
+    @Override
     public boolean canDecodeInput(Object input) throws IOException {
         if (!(input instanceof ImageInputStream)) {
             return false;
@@ -78,10 +80,12 @@ public class TIFFImageReaderSpi extends ImageReaderSpi {
                  b[2] == (byte)0x00 && b[3] == (byte)0x2a));
     }
 
+    @Override
     public ImageReader createReaderInstance(Object extension) {
         return new TIFFImageReader(this);
     }
 
+    @Override
     public void onRegistration(ServiceRegistry registry,
                                Class<?> category) {
         if (registered) {

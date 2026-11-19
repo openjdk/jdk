@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,17 @@
  */
 package org.openjdk.bench.javax.crypto.full;
 
+import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Setup;
 
+import java.security.GeneralSecurityException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
+import java.security.Provider;
+import java.security.Security;
 
 public class KeyPairGeneratorBench extends CryptoBase {
 
@@ -45,9 +49,19 @@ public class KeyPairGeneratorBench extends CryptoBase {
         setupProvider();
         generator = (prov == null) ? KeyPairGenerator.getInstance(algorithm)
                                 : KeyPairGenerator.getInstance(algorithm, prov);
-        if (keyLength > 0) { // not all key pair generators allow the use of key length
+        // not all key pair generators allow the use of key length
+        if (keyLength > 0) {
             generator.initialize(keyLength);
         }
+    }
+
+    private static Provider getSunJCE() {
+        Provider provider = Security.getProvider("SunJCE");
+        if (provider == null) {
+            throw new RuntimeException("SunJCE provider not found");
+        }
+
+        return provider;
     }
 
     @Benchmark
@@ -118,4 +132,23 @@ public class KeyPairGeneratorBench extends CryptoBase {
         private int keyLength;
     }
 
+    @Fork(value = 5, jvmArgs = {"-XX:+AlwaysPreTouch", "--add-opens",
+            "java.base/sun.security.ssl=ALL-UNNAMED"})
+    public static class JSSE_Hybrid extends KeyPairGeneratorBench {
+        @Setup
+        public void init() {
+            try {
+                prov = getSunJCE();
+                super.setup();
+            } catch (GeneralSecurityException gse) {
+                throw new RuntimeException(gse);
+            }
+        }
+
+        @Param({"X25519MLKEM768", "SecP256r1MLKEM768", "SecP384r1MLKEM1024"})
+        private String algorithm;
+
+        @Param({"0"})       // Hybrid KPGs don't need key lengths
+        private int keyLength;
+    }
 }

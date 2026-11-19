@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,12 +24,10 @@
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 import jdk.test.lib.process.ProcessTools;
-import jdk.test.lib.Utils;
 
 /**
  * @test
@@ -48,7 +46,6 @@ import jdk.test.lib.Utils;
  * @run main/othervm/timeout=300 LocalManagementTest
  */
 public class LocalManagementTest {
-    private static final String TEST_CLASSPATH = System.getProperty("test.class.path");
 
     public static void main(String[] args) throws Exception {
         int failures = 0;
@@ -99,16 +96,13 @@ public class LocalManagementTest {
     private static boolean doTest(String testId, String arg) throws Exception {
         List<String> args = new ArrayList<>();
         args.add("-XX:+UsePerfData");
-        Collections.addAll(args, Utils.getTestJavaOpts());
-        args.add("-cp");
-        args.add(TEST_CLASSPATH);
 
         if (arg != null) {
             args.add(arg);
         }
         args.add("TestApplication");
         ProcessBuilder server = ProcessTools.createTestJavaProcessBuilder(
-            args.toArray(new String[args.size()])
+            args.toArray(new String[0])
         );
 
         Process serverPrc = null, clientPrc = null;
@@ -134,8 +128,6 @@ public class LocalManagementTest {
             System.out.println("  shutdown port : " + port.get());
 
             ProcessBuilder client = ProcessTools.createTestJavaProcessBuilder(
-                "-cp",
-                TEST_CLASSPATH,
                 "--add-exports", "jdk.management.agent/jdk.internal.agent=ALL-UNNAMED",
                 "TestManager",
                 String.valueOf(serverPrc.pid()),

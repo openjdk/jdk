@@ -163,7 +163,7 @@ public class TestJcmdView {
         // Verify verbose heading
         output.shouldContain("(longestPause)");
         // Verify row contents
-        output.shouldContain("Old Garbage Collection");
+        output.shouldContain("G1");
         // Verify verbose query
         output.shouldContain("SELECT");
     }

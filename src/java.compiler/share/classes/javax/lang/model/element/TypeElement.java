@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,7 +80,16 @@ import javax.lang.model.util.*;
  * javax.lang.model.util.Elements#getAllTypeElements(CharSequence)
  * queried for} in the configured environment
  * </ul>
+ *
  * @see DeclaredType
+ * @jls 8.1 Class Declarations
+ * @jls 8.5 Member Class and Interface Declarations
+ * @jls 8.9 Enum Classes
+ * @jls 8.10 Record Classes
+ * @jls 9.1 Interface Declarations
+ * @jls 9.5 Member Class and Interface Declarations
+ * @jls 9.6 Annotation Interfaces
+ *
  * @since 1.6
  */
 public interface TypeElement extends Element, Parameterizable, QualifiedNameable {

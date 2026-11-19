@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -26,12 +26,14 @@ import java.util.Objects;
 
 import com.sun.org.apache.bcel.internal.Const;
 import com.sun.org.apache.bcel.internal.classfile.ClassFormatException;
+import com.sun.org.apache.bcel.internal.classfile.InvalidMethodSignatureException;
 import com.sun.org.apache.bcel.internal.classfile.Utility;
+import jdk.xml.internal.Utils;
 
 /**
- * Abstract super class for all possible java types, namely basic types such as int, object types like String and array
- * types, e.g. int[]
- * @LastModified: May 2021
+ * Abstract super class for all possible Java types, namely basic types such as int, object types like String and array
+ * types, for example int[]
+ * @LastModified: Nov 2026
  */
 public abstract class Type {
 
@@ -40,27 +42,54 @@ public abstract class Type {
      */
     public static final BasicType VOID = new BasicType(Const.T_VOID);
 
+    /** Predefined constant for boolean type. */
     public static final BasicType BOOLEAN = new BasicType(Const.T_BOOLEAN);
+
+    /** Predefined constant for int type. */
     public static final BasicType INT = new BasicType(Const.T_INT);
+
+    /** Predefined constant for short type. */
     public static final BasicType SHORT = new BasicType(Const.T_SHORT);
+
+    /** Predefined constant for byte type. */
     public static final BasicType BYTE = new BasicType(Const.T_BYTE);
+
+    /** Predefined constant for long type. */
     public static final BasicType LONG = new BasicType(Const.T_LONG);
+
+    /** Predefined constant for double type. */
     public static final BasicType DOUBLE = new BasicType(Const.T_DOUBLE);
+
+    /** Predefined constant for float type. */
     public static final BasicType FLOAT = new BasicType(Const.T_FLOAT);
+
+    /** Predefined constant for char type. */
     public static final BasicType CHAR = new BasicType(Const.T_CHAR);
+
+    /** Predefined constant for Object type. */
     public static final ObjectType OBJECT = new ObjectType("java.lang.Object");
+
+    /** Predefined constant for Class type. */
     public static final ObjectType CLASS = new ObjectType("java.lang.Class");
+
+    /** Predefined constant for String type. */
     public static final ObjectType STRING = new ObjectType("java.lang.String");
+
+    /** Predefined constant for StringBuffer type. */
     public static final ObjectType STRINGBUFFER = new ObjectType("java.lang.StringBuffer");
+
+    /** Predefined constant for Throwable type. */
     public static final ObjectType THROWABLE = new ObjectType("java.lang.Throwable");
 
     /**
      * Empty array.
      */
     public static final Type[] NO_ARGS = {};
+    /** Predefined constant for null type. */
     public static final ReferenceType NULL = new ReferenceType() {
     };
 
+    /** Predefined constant for unknown type. */
     public static final Type UNKNOWN = new Type(Const.T_UNKNOWN, "<unknown object>") {
     };
 
@@ -78,8 +107,8 @@ public abstract class Type {
     /**
      * Convert arguments of a method (signature) to an array of Type objects.
      *
-     * @param signature signature string such as (Ljava/lang/String;)V
-     * @return array of argument types
+     * @param signature signature string such as (Ljava/lang/String;)V.
+     * @return array of argument types.
      */
     public static Type[] getArgumentTypes(final String signature) {
         final List<Type> vec = new ArrayList<>();
@@ -88,15 +117,15 @@ public abstract class Type {
             // Skip any type arguments to read argument declarations between '(' and ')'
             index = signature.indexOf('(') + 1;
             if (index <= 0) {
-                throw new ClassFormatException("Invalid method signature: " + signature);
+                throw new InvalidMethodSignatureException(signature);
             }
             while (signature.charAt(index) != ')') {
                 vec.add(getType(signature.substring(index)));
-                // corrected concurrent private static field acess
+                // corrected concurrent private static field access
                 index += unwrap(CONSUMED_CHARS); // update position
             }
         } catch (final StringIndexOutOfBoundsException e) { // Should never occur
-            throw new ClassFormatException("Invalid method signature: " + signature, e);
+            throw new InvalidMethodSignatureException(signature, e);
         }
         final Type[] types = new Type[vec.size()];
         vec.toArray(types);
@@ -110,7 +139,7 @@ public abstract class Type {
             // Skip any type arguments to read argument declarations between '(' and ')'
             index = signature.indexOf('(') + 1;
             if (index <= 0) {
-                throw new ClassFormatException("Invalid method signature: " + signature);
+                throw new InvalidMethodSignatureException(signature);
             }
             while (signature.charAt(index) != ')') {
                 final int coded = getTypeSize(signature.substring(index));
@@ -118,16 +147,16 @@ public abstract class Type {
                 index += consumed(coded);
             }
         } catch (final StringIndexOutOfBoundsException e) { // Should never occur
-            throw new ClassFormatException("Invalid method signature: " + signature, e);
+            throw new InvalidMethodSignatureException(signature, e);
         }
         return res;
     }
 
     /**
-     * Convert type to Java method signature, e.g. int[] f(java.lang.String x) becomes (Ljava/lang/String;)[I
+     * Convert type to Java method signature, for example int[] f(java.lang.String x) becomes (Ljava/lang/String;)[I
      *
-     * @param returnType what the method returns
-     * @param argTypes what are the argument types
+     * @param returnType what the method returns.
+     * @param argTypes what are the argument types.
      * @return method signature for given type(s).
      */
     public static String getMethodSignature(final Type returnType, final Type[] argTypes) {
@@ -145,8 +174,8 @@ public abstract class Type {
     /**
      * Convert return value of a method (signature) to a Type object.
      *
-     * @param signature signature string such as (Ljava/lang/String;)V
-     * @return return type
+     * @param signature signature string such as (Ljava/lang/String;)V.
+     * @return return type.
      */
     public static Type getReturnType(final String signature) {
         try {
@@ -154,15 +183,21 @@ public abstract class Type {
             final int index = signature.lastIndexOf(')') + 1;
             return getType(signature.substring(index));
         } catch (final StringIndexOutOfBoundsException e) { // Should never occur
-            throw new ClassFormatException("Invalid method signature: " + signature, e);
+            throw new InvalidMethodSignatureException(signature, e);
         }
     }
 
     static int getReturnTypeSize(final String signature) {
         final int index = signature.lastIndexOf(')') + 1;
-        return Type.size(getTypeSize(signature.substring(index)));
+        return size(getTypeSize(signature.substring(index)));
     }
 
+    /**
+     * Gets the signature for a method.
+     *
+     * @param meth The method.
+     * @return The method signature.
+     */
     public static String getSignature(final java.lang.reflect.Method meth) {
         final StringBuilder sb = new StringBuilder("(");
         final Class<?>[] params = meth.getParameterTypes(); // avoid clone
@@ -175,15 +210,15 @@ public abstract class Type {
     }
 
     /**
-     * Convert runtime java.lang.Class to BCEL Type object.
+     * Convert runtime {@link Class} to BCEL Type object.
      *
-     * @param cls Java class
-     * @return corresponding Type object
+     * @param cls Java class.
+     * @return corresponding Type object.
      */
     public static Type getType(final Class<?> cls) {
         Objects.requireNonNull(cls, "cls");
         /*
-         * That's an amzingly easy case, because getName() returns the signature. That's what we would have liked anyway.
+         * That's an amazingly easy case, because getName() returns the signature. That's what we would have liked anyway.
          */
         if (cls.isArray()) {
             return getType(cls.getName());
@@ -224,13 +259,13 @@ public abstract class Type {
     /**
      * Convert signature to a Type object.
      *
-     * @param signature signature string such as Ljava/lang/String;
-     * @return type object
+     * @param signature signature string such as Ljava/lang/String;.
+     * @return type object.
      */
     public static Type getType(final String signature) throws StringIndexOutOfBoundsException {
         final byte type = Utility.typeOfSignature(signature);
         if (type <= Const.T_VOID) {
-            // corrected concurrent private static field acess
+            // corrected concurrent private static field access
             wrap(CONSUMED_CHARS, 1);
             return BasicType.getType(type);
         }
@@ -246,7 +281,7 @@ public abstract class Type {
         } while (signature.charAt(dim) == '[');
         // Recurse, but just once, if the signature is ok
         final Type t = getType(signature.substring(dim));
-        // corrected concurrent private static field acess
+        // corrected concurrent private static field access
         // consumed_chars += dim; // update counter - is replaced by
         final int temp = unwrap(CONSUMED_CHARS) + dim;
         wrap(CONSUMED_CHARS, temp);
@@ -254,10 +289,10 @@ public abstract class Type {
     }
 
     /**
-     * Convert runtime java.lang.Class[] to BCEL Type objects.
+     * Convert runtime {@code java.lang.Class[]} to BCEL Type objects.
      *
-     * @param classes an array of runtime class objects
-     * @return array of corresponding Type objects
+     * @param classes An array of runtime class objects.
+     * @return array of corresponding Type objects.
      */
     public static Type[] getTypes(final Class<?>[] classes) {
         final Type[] ret = new Type[classes.length];
@@ -286,6 +321,24 @@ public abstract class Type {
         return encode(1, index + 1);
     }
 
+    static String internalTypeNameToSignature(final String internalTypeName) {
+        if (Utils.isEmpty(internalTypeName) || Arrays.asList(Const.SHORT_TYPE_NAMES).contains(internalTypeName)) {
+            return internalTypeName;
+        }
+        switch (internalTypeName.charAt(0)) {
+            case '[':
+                return internalTypeName;
+            case 'L':
+            case 'T':
+                if (internalTypeName.charAt(internalTypeName.length() - 1) == ';') {
+                    return internalTypeName;
+                }
+                return 'L' + internalTypeName + ';';
+            default:
+                return 'L' + internalTypeName + ';';
+        }
+    }
+
     static int size(final int coded) {
         return coded & 3;
     }
@@ -310,13 +363,19 @@ public abstract class Type {
     @Deprecated
     protected String signature; // signature for the type TODO should be private
 
+    /**
+     * Constructs a Type.
+     *
+     * @param type The type constant.
+     * @param signature The type signature.
+     */
     protected Type(final byte type, final String signature) {
         this.type = type;
         this.signature = signature;
     }
 
     /**
-     * @return whether the Types are equal
+     * @return whether the Types are equal.
      */
     @Override
     public boolean equals(final Object o) {
@@ -327,11 +386,18 @@ public abstract class Type {
         return false;
     }
 
+    /**
+     * Gets the class name.
+     *
+     * @return The class name.
+     */
     public String getClassName() {
         return toString();
     }
 
     /**
+     * Gets the signature for this type.
+     *
      * @return signature for given type.
      */
     public String getSignature() {
@@ -339,7 +405,9 @@ public abstract class Type {
     }
 
     /**
-     * @return stack size of this type (2 for long and double, 0 for void, 1 otherwise)
+     * Gets the stack size of this type.
+     *
+     * @return stack size of this type (2 for long and double, 0 for void, 1 otherwise).
      */
     public int getSize() {
         switch (type) {
@@ -354,14 +422,18 @@ public abstract class Type {
     }
 
     /**
-     * @return type as defined in Constants
+     * Gets the type as defined in Constants.
+     *
+     * @return type as defined in Constants.
      */
     public byte getType() {
         return type;
     }
 
     /**
-     * @return hashcode of Type
+     * Gets the hash code of this Type.
+     *
+     * @return hash code of Type.
      */
     @Override
     public int hashCode() {
@@ -369,31 +441,24 @@ public abstract class Type {
     }
 
     /**
-     * boolean, short and char variable are considered as int in the stack or local variable area. Returns {@link Type#INT}
-     * for {@link Type#BOOLEAN}, {@link Type#SHORT} or {@link Type#CHAR}, otherwise returns the given type.
+     * boolean, short and char variable are considered as int in the stack or local variable area. Returns {@link #INT}
+     * for {@link #BOOLEAN}, {@link #SHORT} or {@link #CHAR}, otherwise returns the given type.
      *
+     * @return The normalized type.
      * @since 6.0
      */
     public Type normalizeForStackOrLocal() {
-        if (this == Type.BOOLEAN || this == Type.BYTE || this == Type.SHORT || this == Type.CHAR) {
-            return Type.INT;
+        if (this == BOOLEAN || this == BYTE || this == SHORT || this == CHAR) {
+            return INT;
         }
         return this;
     }
 
-    /*
-     * Currently only used by the ArrayType constructor. The signature has a complicated dependency on other parameter so
-     * it's tricky to do it in a call to the super ctor.
-     */
-    void setSignature(final String signature) {
-        this.signature = signature;
-    }
-
     /**
-     * @return Type string, e.g. 'int[]'
+     * @return Type string, for example 'int[]'.
      */
     @Override
     public String toString() {
-        return this.equals(Type.NULL) || type >= Const.T_UNKNOWN ? signature : Utility.signatureToString(signature, false);
+        return equals(NULL) || type >= Const.T_UNKNOWN ? signature : Utility.signatureToString(signature, false);
     }
 }

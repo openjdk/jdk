@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,11 @@
  * @test
  * @bug 8224477
  * @summary Ensures that IOException is thrown after the socket is closed
- * @run testng AfterClose
+ * @run junit ${test.main.class}
  */
 
 import java.io.IOException;
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.net.DatagramSocket;
 import java.net.MulticastSocket;
 import java.net.NetworkInterface;
@@ -48,11 +47,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 import static java.lang.Boolean.*;
 import static java.net.StandardSocketOptions.*;
-import static org.testng.Assert.expectThrows;
+
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class AfterClose {
 
@@ -117,8 +117,7 @@ public class AfterClose {
 
     // -- Socket
 
-    @DataProvider(name = "socketOptionValues")
-    public Object[][] socketOptionValues() throws Exception {
+    public static Object[][] socketOptionValues() throws Exception {
         try (Socket s = new Socket()) {
             return s.supportedOptions().stream()
                     .map(so -> new Object[] {so, OPTION_VALUES_MAP.get(so)})
@@ -126,49 +125,51 @@ public class AfterClose {
         }
     }
 
-    @Test(dataProvider = "socketOptionValues")
+    @ParameterizedTest
+    @MethodSource("socketOptionValues")
     public <T> void closedSocketImplUncreated(SocketOption<T> option, List<T> values)
         throws IOException
     {
         Socket socket = createClosedSocketImplUncreated();
         for (int i=0; i<3; i++); {
             for (T value : values) {
-                expectThrows(IOE, () -> socket.setOption(option, value));
-                expectThrows(IOE, () -> socket.getOption(option));
+                assertThrows(IOE, () -> socket.setOption(option, value));
+                assertThrows(IOE, () -> socket.getOption(option));
             }
         }
     }
 
-    @Test(dataProvider = "socketOptionValues")
+    @ParameterizedTest
+    @MethodSource("socketOptionValues")
     public <T> void closedSocketImplCreated(SocketOption<T> option, List<T> values)
         throws IOException
     {
         Socket socket = createClosedSocketImplCreated();
         for (int i=0; i<3; i++); {
             for (T value : values) {
-                expectThrows(IOE, () -> socket.setOption(option, value));
-                expectThrows(IOE, () -> socket.getOption(option));
+                assertThrows(IOE, () -> socket.setOption(option, value));
+                assertThrows(IOE, () -> socket.getOption(option));
             }
         }
     }
 
-    @Test(dataProvider = "socketOptionValues")
+    @ParameterizedTest
+    @MethodSource("socketOptionValues")
     public <T> void closedSocketAdapter(SocketOption<T> option, List<T> values)
         throws IOException
     {
         Socket socket = createClosedSocketFromAdapter();
         for (int i=0; i<3; i++); {
             for (T value : values) {
-                if (!RO.equals(value)) expectThrows(IOE, () -> socket.setOption(option, value));
-                expectThrows(IOE, () -> socket.getOption(option));
+                if (!RO.equals(value)) assertThrows(IOE, () -> socket.setOption(option, value));
+                assertThrows(IOE, () -> socket.getOption(option));
             }
         }
     }
 
     // -- ServerSocket
 
-    @DataProvider(name = "serverSocketOptionValues")
-    public Object[][] serverSocketOptionValues() throws Exception {
+    public static Object[][] serverSocketOptionValues() throws Exception {
         try (ServerSocket ss = new ServerSocket()) {
             return ss.supportedOptions().stream()
                      .map(so -> new Object[] {so, OPTION_VALUES_MAP.get(so)})
@@ -176,33 +177,36 @@ public class AfterClose {
         }
     }
 
-    @Test(dataProvider = "serverSocketOptionValues")
+    @ParameterizedTest
+    @MethodSource("serverSocketOptionValues")
     public <T> void closedServerSocketImplUncreated(SocketOption<T> option, List<T> values)
         throws IOException
     {
         ServerSocket serverSocket = createClosedServerSocketImplUncreated();
         for (int i=0; i<3; i++); {
             for (T value : values) {
-                expectThrows(IOE, () -> serverSocket.setOption(option, value));
-                expectThrows(IOE, () -> serverSocket.getOption(option));
+                assertThrows(IOE, () -> serverSocket.setOption(option, value));
+                assertThrows(IOE, () -> serverSocket.getOption(option));
             }
         }
     }
 
-    @Test(dataProvider = "serverSocketOptionValues")
+    @ParameterizedTest
+    @MethodSource("serverSocketOptionValues")
     public <T> void closedServerSocketImplCreated(SocketOption<T> option, List<T> values)
         throws IOException
     {
         ServerSocket serverSocket = createClosedServerSocketImplCreated();
         for (int i=0; i<3; i++); {
             for (T value : values) {
-                expectThrows(IOE, () -> serverSocket.setOption(option, value));
-                expectThrows(IOE, () -> serverSocket.getOption(option));
+                assertThrows(IOE, () -> serverSocket.setOption(option, value));
+                assertThrows(IOE, () -> serverSocket.getOption(option));
             }
         }
     }
 
-    @Test(dataProvider = "serverSocketOptionValues")
+    @ParameterizedTest
+    @MethodSource("serverSocketOptionValues")
     public <T> void closedServerSocketAdapter(SocketOption<T> option, List<T> values)
         throws IOException
     {
@@ -212,16 +216,15 @@ public class AfterClose {
         ServerSocket serverSocket = createClosedServerSocketFromAdapter();
         for (int i=0; i<3; i++); {
             for (T value : values) {
-                if (!RO.equals(value)) expectThrows(IOE, () -> serverSocket.setOption(option, value));
-                expectThrows(IOE, () -> serverSocket.getOption(option));
+                if (!RO.equals(value)) assertThrows(IOE, () -> serverSocket.setOption(option, value));
+                assertThrows(IOE, () -> serverSocket.getOption(option));
             }
         }
     }
 
     // -- DatagramSocket
 
-    @DataProvider(name = "datagramSocketOptionValues")
-    public Object[][] datagramSocketOptionValues() throws Exception {
+    public static Object[][] datagramSocketOptionValues() throws Exception {
         try (DatagramSocket ds = new DatagramSocket()) {
             return ds.supportedOptions().stream()
                      .map(so -> new Object[] {so, OPTION_VALUES_MAP.get(so)})
@@ -229,49 +232,51 @@ public class AfterClose {
         }
     }
 
-    @Test(dataProvider = "datagramSocketOptionValues")
+    @ParameterizedTest
+    @MethodSource("datagramSocketOptionValues")
     public <T> void closedUnboundDatagramSocket(SocketOption<T> option, List<T> values)
         throws IOException
     {
         DatagramSocket datagramSocket = createClosedUnboundDatagramSocket();
         for (int i=0; i<3; i++); {
             for (T value : values) {
-                if (!RO.equals(value)) expectThrows(IOE, () -> datagramSocket.setOption(option, value));
-                expectThrows(IOE, () -> datagramSocket.getOption(option));
+                if (!RO.equals(value)) assertThrows(IOE, () -> datagramSocket.setOption(option, value));
+                assertThrows(IOE, () -> datagramSocket.getOption(option));
             }
         }
     }
 
-    @Test(dataProvider = "datagramSocketOptionValues")
+    @ParameterizedTest
+    @MethodSource("datagramSocketOptionValues")
     public <T> void closedBoundDatagramSocket(SocketOption<T> option, List<T> values)
         throws IOException
     {
         DatagramSocket datagramSocket = createClosedBoundDatagramSocket();
         for (int i=0; i<3; i++); {
             for (T value : values) {
-                if (!RO.equals(value)) expectThrows(IOE, () -> datagramSocket.setOption(option, value));
-                expectThrows(IOE, () -> datagramSocket.getOption(option));
+                if (!RO.equals(value)) assertThrows(IOE, () -> datagramSocket.setOption(option, value));
+                assertThrows(IOE, () -> datagramSocket.getOption(option));
             }
         }
     }
 
-    @Test(dataProvider = "datagramSocketOptionValues")
+    @ParameterizedTest
+    @MethodSource("datagramSocketOptionValues")
     public <T> void closedDatagramAdapter(SocketOption<T> option, List<T> values)
         throws IOException
     {
         DatagramSocket datagramSocket = createClosedBoundDatagramSocket();
         for (int i=0; i<3; i++); {
             for (T value : values) {
-                if (!RO.equals(value)) expectThrows(IOE, () -> datagramSocket.setOption(option, value));
-                expectThrows(IOE, () -> datagramSocket.getOption(option));
+                if (!RO.equals(value)) assertThrows(IOE, () -> datagramSocket.setOption(option, value));
+                assertThrows(IOE, () -> datagramSocket.getOption(option));
             }
         }
     }
 
     // -- MulticastSocket
 
-    @DataProvider(name = "multicastSocketOptionValues")
-    public Object[][] multicastSocketOptionValues() throws Exception {
+    public static Object[][] multicastSocketOptionValues() throws Exception {
         try (MulticastSocket ms = new MulticastSocket()) {
             return ms.supportedOptions().stream()
                      .map(so -> new Object[] {so, OPTION_VALUES_MAP.get(so)})
@@ -279,28 +284,30 @@ public class AfterClose {
         }
     }
 
-    @Test(dataProvider = "multicastSocketOptionValues")
+    @ParameterizedTest
+    @MethodSource("multicastSocketOptionValues")
     public <T> void closedUnboundMulticastSocket(SocketOption<T> option, List<T> values)
         throws IOException
     {
         MulticastSocket multicastSocket = createClosedUnboundMulticastSocket();
         for (int i=0; i<3; i++); {
             for (T value : values) {
-                if (!RO.equals(value)) expectThrows(IOE, () -> multicastSocket.setOption(option, value));
-                expectThrows(IOE, () -> multicastSocket.getOption(option));
+                if (!RO.equals(value)) assertThrows(IOE, () -> multicastSocket.setOption(option, value));
+                assertThrows(IOE, () -> multicastSocket.getOption(option));
             }
         }
     }
 
-    @Test(dataProvider = "multicastSocketOptionValues")
+    @ParameterizedTest
+    @MethodSource("multicastSocketOptionValues")
     public <T> void closedBoundMulticastSocket(SocketOption<T> option, List<T> values)
         throws IOException
     {
         MulticastSocket multicastSocket = createClosedBoundMulticastSocket();
         for (int i=0; i<3; i++); {
             for (T value : values) {
-                if (!RO.equals(value)) expectThrows(IOE, () -> multicastSocket.setOption(option, value));
-                expectThrows(IOE, () -> multicastSocket.getOption(option));
+                if (!RO.equals(value)) assertThrows(IOE, () -> multicastSocket.setOption(option, value));
+                assertThrows(IOE, () -> multicastSocket.getOption(option));
             }
         }
     }

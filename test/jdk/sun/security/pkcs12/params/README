@@ -14,6 +14,8 @@ openssl pkcs12 -export -in kandc -out os4 -name a -passout pass:changeit \
         -certpbe PBE-SHA1-RC4-128 -keypbe PBE-SHA1-RC4-128 -macalg SHA224
 openssl pkcs12 -export -in kandc -out os5 -name a -passout pass:changeit \
         -certpbe AES-256-CBC -keypbe AES-256-CBC -macalg SHA512
+openssl pkcs12 -export -in kandc -out os6 -name a -passout pass:changeit \
+        -pbmac1_pbkdf2  -macalg sha256
 for a in *; do
     openssl base64 -in $a -out ../$a
 done

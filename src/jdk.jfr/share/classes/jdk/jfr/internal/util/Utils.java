@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,6 @@
 package jdk.jfr.internal.util;
 
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.RandomAccessFile;
 import java.lang.annotation.Annotation;
 import java.lang.annotation.Repeatable;
 import java.lang.reflect.Array;
@@ -135,11 +132,6 @@ public final class Utils {
         }
     }
 
-    public static void touch(Path dumpFile) throws IOException {
-        RandomAccessFile raf = new RandomAccessFile(dumpFile.toFile(), "rw");
-        raf.close();
-    }
-
     public static Class<?> unboxType(Class<?> t) {
         if (t == Integer.class) {
             return int.class;
@@ -211,13 +203,15 @@ public final class Utils {
         return sanitized;
     }
 
-    public static List<Field> getVisibleEventFields(Class<?> clazz) {
+    public static List<Field> getEventFields(Class<?> clazz) {
         List<Field> fields = new ArrayList<>();
         for (Class<?> c = clazz; !Utils.isEventBaseClass(c); c = c.getSuperclass()) {
             for (Field field : c.getDeclaredFields()) {
-                // skip private field in base classes
-                if (c == clazz || !Modifier.isPrivate(field.getModifiers())) {
-                    fields.add(field);
+                if (isSupportedField(field)) {
+                    // skip private field in base classes
+                    if (c == clazz || !Modifier.isPrivate(field.getModifiers())) {
+                        fields.add(field);
+                    }
                 }
             }
         }
@@ -311,48 +305,34 @@ public final class Utils {
     }
 
     public static void verifyMirror(Class<? extends MirrorEvent> mirror, Class<?> real) {
-        Class<?> cMirror = Objects.requireNonNull(mirror);
-        Class<?> cReal = Objects.requireNonNull(real);
-
         Map<String, Field> mirrorFields = new HashMap<>();
-        while (cMirror != null) {
-            for (Field f : cMirror.getDeclaredFields()) {
-                if (isSupportedType(f.getType())) {
-                    mirrorFields.put(f.getName(), f);
-                }
-            }
-            cMirror = cMirror.getSuperclass();
+        for (Field f : mirror.getDeclaredFields()) {
+            mirrorFields.put(f.getName(), f);
         }
-        while (cReal != null) {
-            for (Field realField : cReal.getDeclaredFields()) {
-                if (isSupportedType(realField.getType()) && !realField.isSynthetic()) {
-                    String fieldName = realField.getName();
-                    Field mirrorField = mirrorFields.get(fieldName);
-                    if (mirrorField == null) {
-                        throw new InternalError("Missing mirror field for " + cReal.getName() + "#" + fieldName);
-                    }
-                    if (realField.getType() != mirrorField.getType()) {
-                        throw new InternalError("Incorrect type for mirror field " + fieldName);
-                    }
-                    if (realField.getModifiers() != mirrorField.getModifiers()) {
-                        throw new InternalError("Incorrect modifier for mirror field " + fieldName);
-                    }
-                    mirrorFields.remove(fieldName);
-                }
+        for (Field realField : Utils.getEventFields(real)) {
+            String fieldName = realField.getName();
+            Field mirrorField = mirrorFields.remove(fieldName);
+            if (mirrorField == null) {
+                throw new InternalError("Missing mirror field for " + real.getName() + "#" + fieldName);
             }
-            cReal = cReal.getSuperclass();
+            if (realField.getType() != mirrorField.getType()) {
+                throw new InternalError("Incorrect type for mirror field " + fieldName);
+            }
+            if (realField.getModifiers() != mirrorField.getModifiers()) {
+                throw new InternalError("Incorrect modifier for mirror field " + fieldName);
+            }
         }
-
         if (!mirrorFields.isEmpty()) {
             throw new InternalError("Found additional fields in mirror class " + mirrorFields.keySet());
         }
     }
 
-    private static boolean isSupportedType(Class<?> type) {
-        if (Modifier.isTransient(type.getModifiers()) || Modifier.isStatic(type.getModifiers())) {
+    public static boolean isSupportedField(Field field) {
+        int modifiers = field.getModifiers();
+        if (Modifier.isTransient(modifiers) || Modifier.isStatic(modifiers)) {
             return false;
         }
-        return Type.isValidJavaFieldType(type.getName());
+        return Type.isKnownType(field.getType());
     }
 
     public static void notifyFlush() {

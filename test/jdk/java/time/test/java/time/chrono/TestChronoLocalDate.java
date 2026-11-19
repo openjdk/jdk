@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,8 +54,8 @@
  */
 package test.java.time.chrono;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -69,16 +69,16 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test chrono local date.
  */
-@Test
 public class TestChronoLocalDate {
     // this class primarily tests whether the generics work OK
 
     //-----------------------------------------------------------------------
+    @Test
     public void test_date_comparator_checkGenerics_ISO() {
         List<ChronoLocalDate> dates = new ArrayList<>();
         ChronoLocalDate date = LocalDate.of(2013, 1, 1);
@@ -99,10 +99,11 @@ public class TestChronoLocalDate {
         List<ChronoLocalDate> copy = new ArrayList<>(dates);
         Collections.shuffle(copy);
         Collections.sort(copy, ChronoLocalDate.timeLineOrder());
-        assertEquals(copy, dates);
+        assertEquals(dates, copy);
         assertTrue(ChronoLocalDate.timeLineOrder().compare(copy.get(0), copy.get(1)) < 0);
     }
 
+    @Test
     public void test_date_comparator_checkGenerics_LocalDate() {
         List<LocalDate> dates = new ArrayList<>();
         LocalDate date = LocalDate.of(2013, 1, 1);
@@ -123,11 +124,12 @@ public class TestChronoLocalDate {
         List<LocalDate> copy = new ArrayList<>(dates);
         Collections.shuffle(copy);
         Collections.sort(copy, ChronoLocalDate.timeLineOrder());
-        assertEquals(copy, dates);
+        assertEquals(dates, copy);
         assertTrue(ChronoLocalDate.timeLineOrder().compare(copy.get(0), copy.get(1)) < 0);
     }
 
     //-----------------------------------------------------------------------
+    @Test
     public void test_date_checkGenerics_genericsMethod() {
         Chronology chrono = ThaiBuddhistChronology.INSTANCE;
         ChronoLocalDate date = chrono.dateNow();
@@ -138,6 +140,7 @@ public class TestChronoLocalDate {
         date = processClassWeird(ThaiBuddhistDate.class);
     }
 
+    @Test
     public void test_date_checkGenerics_genericsMethod_concreteType() {
         ThaiBuddhistChronology chrono = ThaiBuddhistChronology.INSTANCE;
         ThaiBuddhistDate date = chrono.dateNow();
@@ -149,6 +152,7 @@ public class TestChronoLocalDate {
         // date = processClassWeird(ThaiBuddhistDate.class);  // does not compile (correct)
     }
 
+    @Test
     public <D extends ChronoLocalDate> void test_date_checkGenerics_genericsMethod_withType() {
         Chronology chrono = ThaiBuddhistChronology.INSTANCE;
         @SuppressWarnings("unchecked")
@@ -180,6 +184,7 @@ public class TestChronoLocalDate {
         return null;
     }
 
+    @Test
     public void test_date_checkGenerics_chronoLocalDateTime1() {
         LocalDateTime now = LocalDateTime.now();
         Chronology chrono = ThaiBuddhistChronology.INSTANCE;
@@ -187,6 +192,7 @@ public class TestChronoLocalDate {
         ldt = processCLDT(ldt);
     }
 
+    @Test
     public void test_date_checkGenerics_chronoLocalDateTime2() {
         LocalDateTime now = LocalDateTime.now();
         Chronology chrono = ThaiBuddhistChronology.INSTANCE;

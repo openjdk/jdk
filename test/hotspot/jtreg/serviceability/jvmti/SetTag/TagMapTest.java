@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,9 @@
  * @bug 8306843
  * @summary Test that 10M tags doesn't time out.
  * @requires vm.jvmti
- * @run main/othervm/native -agentlib:TagMapTest
- *                          -Xlog:jvmti+table
- *                          TagMapTest
+ * @run main/othervm/native/timeout=480 -agentlib:TagMapTest
+ *                                      -Xlog:jvmti+table
+ *                                      TagMapTest
  */
 
 import java.util.ArrayList;

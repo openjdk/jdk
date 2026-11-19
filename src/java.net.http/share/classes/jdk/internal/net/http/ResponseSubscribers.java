@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,6 @@ import jdk.internal.net.http.common.Logger;
 import jdk.internal.net.http.common.MinimalFuture;
 import jdk.internal.net.http.common.Utils;
 import jdk.internal.net.http.HttpClientImpl.DelegatingExecutor;
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class ResponseSubscribers {
 
@@ -526,7 +525,7 @@ public class ResponseSubscribers {
         @Override
         public void onError(Throwable thrwbl) {
             if (debug.on())
-                debug.log("onError called: " + thrwbl);
+                debug.log("onError called", thrwbl);
             subscription = null;
             failed = Objects.requireNonNull(thrwbl);
             // The client process that reads the input stream might
@@ -569,10 +568,6 @@ public class ResponseSubscribers {
             }
         }
 
-    }
-
-    public static BodySubscriber<Stream<String>> createLineStream() {
-        return createLineStream(UTF_8);
     }
 
     public static BodySubscriber<Stream<String>> createLineStream(Charset charset) {
@@ -1086,6 +1081,16 @@ public class ResponseSubscribers {
                     bs.getBody().whenComplete((r, t) -> {
                         if (t != null) {
                             cf.completeExceptionally(t);
+                            // if a user-provided BodySubscriber returns
+                            // a getBody() CF completed exceptionally, it's
+                            // the responsibility of that BodySubscriber to cancel
+                            // its subscription in order to cancel the request,
+                            // if operations are still in progress.
+                            // Calling the errorHandler here would ensure that the
+                            // request gets cancelled, but there me cases where that is
+                            // not what the caller wants. Therefore, it's better to
+                            // not call `errorHandler.accept(t);` here, but leave it
+                            // to the provided BodySubscriber implementation.
                         } else {
                             cf.complete(r);
                         }

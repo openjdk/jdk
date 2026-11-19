@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2024, Red Hat, Inc. All rights reserved.
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,20 +33,15 @@
 
 /* @test id=use-zero-based-encoding
  * @library /test/lib
+ * @requires vm.bits == "64"
  * @modules java.base/jdk.internal.misc
  *          java.xml
  * @run main/native GTestWrapper --gtest_filter=CompressedKlass* -XX:-UseCompactObjectHeaders -Xlog:metaspace* -Xmx6g -Xms128m -Xshare:off -XX:CompressedClassSpaceSize=128m
  */
 
-/* @test id=ccp_off
- * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.xml
- * @run main/native GTestWrapper --gtest_filter=CompressedKlass* -XX:-UseCompressedClassPointers -Xlog:metaspace* -Xmx6g -Xms128m
- */
-
 /* @test id=use-zero-based-encoding-coh
  * @library /test/lib
+ * @requires vm.bits == "64"
  * @modules java.base/jdk.internal.misc
  *          java.xml
  * @run main/native GTestWrapper --gtest_filter=CompressedKlass* -XX:+UseCompactObjectHeaders -Xlog:metaspace* -Xmx6g -Xms128m -Xshare:off -XX:CompressedClassSpaceSize=128m
@@ -54,7 +49,20 @@
 
 /* @test id=use-zero-based-encoding-coh-large-class-space
  * @library /test/lib
+ * @requires vm.bits == "64"
  * @modules java.base/jdk.internal.misc
  *          java.xml
  * @run main/native GTestWrapper --gtest_filter=CompressedKlass* -XX:+UseCompactObjectHeaders -Xlog:metaspace* -Xmx6g -Xms128m -Xshare:off -XX:CompressedClassSpaceSize=4g
+ */
+
+/* Very basic test on 32-bit, where we only support a pro-forma Compressed Class Pointers implementation without
+ * class space.
+ */
+
+/* @test id=32-bit
+ * @library /test/lib
+ * @requires vm.bits == "32"
+ * @modules java.base/jdk.internal.misc
+ *          java.xml
+ * @run main/native GTestWrapper --gtest_filter=CompressedKlass* -Xlog:metaspace* -Xmx128m -Xms128m -Xshare:off
  */

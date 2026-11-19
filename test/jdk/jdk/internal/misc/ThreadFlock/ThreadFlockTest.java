@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -530,7 +530,7 @@ class ThreadFlockTest {
     }
 
     /**
-     * Test awaitAll with interrupt status set, should interrupt thread.
+     * Test awaitAll with interrupted status set, should interrupt thread.
      */
     @ParameterizedTest
     @MethodSource("factories")
@@ -550,17 +550,17 @@ class ThreadFlockTest {
             Thread thread = factory.newThread(awaitLatch);
             flock.start(thread);
 
-            // invoke awaitAll with interrupt status set.
+            // invoke awaitAll with interrupted status set.
             Thread.currentThread().interrupt();
             try {
                 flock.awaitAll();
                 fail("awaitAll did not throw");
             } catch (InterruptedException e) {
-                // interrupt status should be clear
+                // interrupted status should be clear
                 assertFalse(Thread.currentThread().isInterrupted());
             }
 
-            // invoke awaitAll(Duration) with interrupt status set.
+            // invoke awaitAll(Duration) with interrupted status set.
             Thread.currentThread().interrupt();
             try {
                 flock.awaitAll(Duration.ofSeconds(30));
@@ -568,7 +568,7 @@ class ThreadFlockTest {
             } catch (TimeoutException e) {
                 fail("TimeoutException not expected");
             } catch (InterruptedException e) {
-                // interrupt status should be clear
+                // interrupted status should be clear
                 assertFalse(Thread.currentThread().isInterrupted());
             }
 
@@ -609,7 +609,7 @@ class ThreadFlockTest {
                 flock.awaitAll();
                 fail("awaitAll did not throw");
             } catch (InterruptedException e) {
-                // interrupt status should be clear
+                // interrupted status should be clear
                 assertFalse(Thread.currentThread().isInterrupted());
             }
 
@@ -620,7 +620,7 @@ class ThreadFlockTest {
             } catch (TimeoutException e) {
                 fail("TimeoutException not expected");
             } catch (InterruptedException e) {
-                // interrupt status should be clear
+                // interrupted status should be clear
                 assertFalse(Thread.currentThread().isInterrupted());
             }
 
@@ -841,7 +841,7 @@ class ThreadFlockTest {
     }
 
     /**
-     * Test close with interrupt status set, should not interrupt threads.
+     * Test close with interrupted status set, should not interrupt threads.
      */
     @ParameterizedTest
     @MethodSource("factories")
@@ -895,12 +895,7 @@ class ThreadFlockTest {
     void testStructureViolation() {
         try (var flock1 = ThreadFlock.open("flock1")) {
             try (var flock2 = ThreadFlock.open("flock2")) {
-                try {
-                    flock1.close();
-                    fail("close did not throw");
-                } catch (RuntimeException e) {
-                    assertTrue(e.toString().contains("Structure"));
-                }
+                assertThrows(StructureViolationException.class, flock1::close);
                 assertTrue(flock1.isClosed());
                 assertTrue(flock2.isClosed());
             }

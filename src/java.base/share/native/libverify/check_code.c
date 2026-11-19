@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -172,9 +172,7 @@ enum {
 #define UNKNOWN_RET_INSTRUCTION -1
 
 #undef MAX
-#undef MIN
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
-#define MIN(a, b) ((a) < (b) ? (a) : (b))
 
 #define BITS_PER_INT   (CHAR_BIT * sizeof(int)/sizeof(char))
 #define SET_BIT(flags, i)  (flags[(i)/BITS_PER_INT] |= \
@@ -395,7 +393,8 @@ static jboolean is_superclass(context_type *, fullinfo_type);
 
 static void initialize_exception_table(context_type *);
 static int instruction_length(unsigned char *iptr, unsigned char *end);
-static jboolean isLegalTarget(context_type *, int offset);
+static jboolean isLegalOffset(context_type *, int bci, int offset);
+static jboolean isLegalTarget(context_type *, int target);
 static void verify_constant_pool_type(context_type *, int, unsigned);
 
 static void initialize_dataflow(context_type *);
@@ -446,14 +445,12 @@ static jclass object_fullinfo_to_classclass(context_type *, fullinfo_type);
 
 
 #define NEW(type, count) \
-        ((type *)CCalloc(context, (count)*(sizeof(type)), JNI_FALSE))
-#define ZNEW(type, count) \
-        ((type *)CCalloc(context, (count)*(sizeof(type)), JNI_TRUE))
+        ((type *)CCalloc(context, (count)*(sizeof(type))))
 
 static void CCinit(context_type *context);
 static void CCreinit(context_type *context);
 static void CCdestroy(context_type *context);
-static void *CCalloc(context_type *context, int size, jboolean zero);
+static void *CCalloc(context_type *context, int size);
 
 static fullinfo_type cp_index_to_class_fullinfo(context_type *, int, int);
 
@@ -1154,9 +1151,9 @@ verify_opcode_operands(context_type *context, unsigned int inumber, int offset)
     case JVM_OPC_goto: {
         /* Set the ->operand to be the instruction number of the target. */
         int jump = (((signed char)(code[offset+1])) << 8) + code[offset+2];
-        int target = offset + jump;
-        if (!isLegalTarget(context, target))
+        if (!isLegalOffset(context, offset, jump))
             CCerror(context, "Illegal target of jump or branch");
+        int target = offset + jump;
         this_idata->operand.i = code_data[target];
         break;
     }
@@ -1170,9 +1167,9 @@ verify_opcode_operands(context_type *context, unsigned int inumber, int offset)
         int jump = (((signed char)(code[offset+1])) << 24) +
                      (code[offset+2] << 16) + (code[offset+3] << 8) +
                      (code[offset + 4]);
-        int target = offset + jump;
-        if (!isLegalTarget(context, target))
+        if (!isLegalOffset(context, offset, jump))
             CCerror(context, "Illegal target of jump or branch");
+        int target = offset + jump;
         this_idata->operand.i = code_data[target];
         break;
     }
@@ -1211,13 +1208,16 @@ verify_opcode_operands(context_type *context, unsigned int inumber, int offset)
             }
         }
         saved_operand = NEW(int, keys + 2);
-        if (!isLegalTarget(context, offset + _ck_ntohl(lpc[0])))
+        int jump = _ck_ntohl(lpc[0]);
+        if (!isLegalOffset(context, offset, jump))
             CCerror(context, "Illegal default target in switch");
-        saved_operand[keys + 1] = code_data[offset + _ck_ntohl(lpc[0])];
+        int target = offset + jump;
+        saved_operand[keys + 1] = code_data[target];
         for (k = keys, lptr = &lpc[3]; --k >= 0; lptr += delta) {
-            int target = offset + _ck_ntohl(lptr[0]);
-            if (!isLegalTarget(context, target))
+            jump = _ck_ntohl(lptr[0]);
+            if (!isLegalOffset(context, offset, jump))
                 CCerror(context, "Illegal branch in tableswitch");
+            target = offset + jump;
             saved_operand[k + 1] = code_data[target];
         }
         saved_operand[0] = keys + 1; /* number of successors */
@@ -1746,11 +1746,24 @@ static int instruction_length(unsigned char *iptr, unsigned char *end)
 
 /* Given the target of a branch, make sure that it's a legal target. */
 static jboolean
-isLegalTarget(context_type *context, int offset)
+isLegalTarget(context_type *context, int target)
 {
     int code_length = context->code_length;
     int *code_data = context->code_data;
-    return (offset >= 0 && offset < code_length && code_data[offset] >= 0);
+    return (target >= 0 && target < code_length && code_data[target] >= 0);
+}
+
+/* Given a bci and offset, make sure the offset is valid and the target is legal */
+static jboolean
+isLegalOffset(context_type *context, int bci, int offset)
+{
+    int code_length = context->code_length;
+    int *code_data = context->code_data;
+    int max_offset = 65535; // JVMS 4.11
+    int min_offset = -65535;
+    if (offset < min_offset || offset > max_offset) return JNI_FALSE;
+    int target = bci + offset;
+    return (target >= 0 && target < code_length && code_data[target] >= 0);
 }
 
 
@@ -2145,8 +2158,7 @@ pop_stack(context_type *context, unsigned int inumber, stack_info_type *new_stac
                         break;
                     if (   (GET_ITEM_TYPE(top_type) == ITEM_NewObject
                             || (GET_ITEM_TYPE(top_type) == ITEM_InitObject))
-                        && ((opcode == JVM_OPC_astore) || (opcode == JVM_OPC_aload)
-                            || (opcode == JVM_OPC_ifnull) || (opcode == JVM_OPC_ifnonnull)))
+                        && ((opcode == JVM_OPC_astore) || (opcode == JVM_OPC_aload)))
                         break;
                     /* The 2nd edition VM of the specification allows field
                      * initializations before the superclass initializer,
@@ -3550,10 +3562,8 @@ static void CCdestroy(context_type *context)
 }
 
 /* Allocate an object of the given size from the context's heap. */
-static void *
-CCalloc(context_type *context, int size, jboolean zero)
+static void* CCalloc(context_type *context, int size)
 {
-
     register char *p;
     /* Round CC to the size of a pointer */
     size = (size + (sizeof(void *) - 1)) & ~(sizeof(void *) - 1);
@@ -3589,8 +3599,6 @@ CCalloc(context_type *context, int size, jboolean zero)
     p = context->CCfree_ptr;
     context->CCfree_ptr += size;
     context->CCfree_size -= size;
-    if (zero)
-        memset(p, 0, size);
     return p;
 }
 
@@ -3689,7 +3697,7 @@ CCerror (context_type *context, char *format, ...)
 static void
 CCout_of_memory(context_type *context)
 {
-    int n = print_CCerror_info(context);
+    print_CCerror_info(context);
     context->err_code = CC_OutOfMemory;
     longjmp(context->jump_buffer, 1);
 }
@@ -3815,7 +3823,7 @@ signature_to_fieldtype(context_type *context,
             case JVM_SIGNATURE_CLASS: {
                 char buffer_space[256];
                 char *buffer = buffer_space;
-                char *finish = strchr(p, JVM_SIGNATURE_ENDCLASS);
+                const char* finish = strchr(p, JVM_SIGNATURE_ENDCLASS);
                 int length;
                 if (finish == NULL) {
                     /* Signature must have ';' after the class name.

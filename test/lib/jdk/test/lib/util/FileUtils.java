@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 package jdk.test.lib.util;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
@@ -33,6 +34,7 @@ import java.lang.management.ManagementFactory;
 import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
@@ -63,6 +65,14 @@ public final class FileUtils {
     private static final int RETRY_DELETE_MILLIS = IS_WINDOWS ? 500 : 0;
     private static final int MAX_RETRY_DELETE_TIMES = IS_WINDOWS ? 15 : 0;
     private static volatile boolean nativeLibLoaded;
+
+    @SuppressWarnings("restricted")
+    private static void loadNativeLib() {
+        if (!nativeLibLoaded) {
+            System.loadLibrary("FileUtils");
+            nativeLibLoaded = true;
+        }
+    }
 
     /**
      * Deletes a file, retrying if necessary.
@@ -253,7 +263,7 @@ public final class FileUtils {
      * File systems are considered to be accessible if this process completes
      * successfully before a given fixed duration has elapsed.
      *
-     * @implNote On Unix this executes the {@code df} command in a separate
+     * @implNote On Unix this executes the {@code df -a} command in a separate
      * process and on Windows always returns {@code true}.
      *
      * @return whether file systems appear to be accessible and duplicate-free
@@ -264,7 +274,7 @@ public final class FileUtils {
         final AtomicBoolean areMountPointsOK = new AtomicBoolean(true);
         Thread thr = new Thread(() -> {
             try {
-                Process proc = new ProcessBuilder("df").start();
+                Process proc = new ProcessBuilder("df", "-a").start();
                 BufferedReader reader = new BufferedReader
                     (new InputStreamReader(proc.getInputStream()));
                 // Skip the first line as it is the "df" output header.
@@ -382,7 +392,11 @@ public final class FileUtils {
             stream.forEach(sourcePath -> {
                 try {
                     Path destPath = dst.resolve(src.relativize(sourcePath));
-                    Files.copy(sourcePath, destPath, StandardCopyOption.REPLACE_EXISTING);
+                    if (Files.isDirectory(sourcePath, LinkOption.NOFOLLOW_LINKS)) {
+                        Files.createDirectories(destPath);
+                    } else {
+                        Files.copy(sourcePath, destPath, StandardCopyOption.REPLACE_EXISTING);
+                    }
                     destPath.toFile().setWritable(true);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
@@ -392,14 +406,10 @@ public final class FileUtils {
     }
 
     // Return the current process handle count
-    @SuppressWarnings("restricted")
     public static long getProcessHandleCount() {
         if (IS_WINDOWS) {
-            if (!nativeLibLoaded) {
-                System.loadLibrary("FileUtils");
-                nativeLibLoaded = true;
-            }
-            return getWinProcessHandleCount();
+            loadNativeLib();
+            return getWinProcessHandleCount0();
         } else {
             return ((UnixOperatingSystemMXBean)ManagementFactory.getOperatingSystemMXBean()).getOpenFileDescriptorCount();
         }
@@ -443,7 +453,23 @@ public final class FileUtils {
         Files.write(path, lines);
     }
 
-    private static native long getWinProcessHandleCount();
+    // Create a directory junction with the specified target
+    public static boolean createWinDirectoryJunction(Path junction, Path target)
+        throws IOException
+    {
+        assert IS_WINDOWS;
+
+        // Convert "target" to its real path
+        target = target.toRealPath();
+
+        // Create a directory junction
+        loadNativeLib();
+        return createWinDirectoryJunction0(junction.toString(), target.toString());
+    }
+
+    private static native long getWinProcessHandleCount0();
+    private static native boolean createWinDirectoryJunction0(String junction,
+        String target) throws IOException;
 
     // Possible command locations and arguments
     static String[][] lsCommands = new String[][] {
@@ -453,4 +479,11 @@ public final class FileUtils {
             {"/sbin/lsof", "-p"},
             {"/usr/local/bin/lsof", "-p"},
     };
+
+    public static String powerShellPath() {
+        String systemRoot = System.getenv("SystemRoot");
+        String suffix = "\\System32\\WindowsPowerShell\\v1.0\\powershell.exe";
+        String fullPath = systemRoot == null ? null : systemRoot + suffix;
+        return (fullPath != null && Files.exists(Path.of(fullPath))) ? fullPath : "powershell";
+    }
 }

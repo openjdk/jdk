@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.util.Arrays;
 
 import com.sun.org.apache.bcel.internal.Const;
+import com.sun.org.apache.bcel.internal.util.Args;
 
 /**
  * This class is derived from <em>Attribute</em> and represents the list of modules required, exported, opened or
@@ -44,61 +45,66 @@ public final class Module extends Attribute {
      */
     public static final String EXTENSION = ".jmod";
 
+    private static String getClassNameAtIndex(final ConstantPool cp, final int index, final boolean compactClassName) {
+        final String className = cp.getConstantString(index, Const.CONSTANT_Class);
+        if (compactClassName) {
+            return Utility.compactClassName(className, false);
+        }
+        return className;
+    }
     private final int moduleNameIndex;
     private final int moduleFlags;
-    private final int moduleVersionIndex;
 
+    private final int moduleVersionIndex;
     private ModuleRequires[] requiresTable;
     private ModuleExports[] exportsTable;
     private ModuleOpens[] opensTable;
     private final int usesCount;
     private final int[] usesIndex;
+
     private ModuleProvides[] providesTable;
 
     /**
-     * Construct object from input stream.
+     * Constructs object from input stream.
      *
-     * @param nameIndex Index in constant pool
-     * @param length Content length in bytes
-     * @param input Input stream
-     * @param constantPool Array of constants
-     * @throws IOException if an I/O error occurs.
+     * @param nameIndex Index in constant pool.
+     * @param length Content length in bytes.
+     * @param dataInput Input stream.
+     * @param constantPool Array of constants.
+     * @throws IOException Thrown if an I/O error occurs.
      */
-    Module(final int nameIndex, final int length, final DataInput input, final ConstantPool constantPool) throws IOException {
+    Module(final int nameIndex, final int length, final DataInput dataInput, final ConstantPool constantPool) throws IOException {
         super(Const.ATTR_MODULE, nameIndex, length, constantPool);
 
-        moduleNameIndex = input.readUnsignedShort();
-        moduleFlags = input.readUnsignedShort();
-        moduleVersionIndex = input.readUnsignedShort();
+        moduleNameIndex = dataInput.readUnsignedShort();
+        moduleFlags = dataInput.readUnsignedShort();
+        moduleVersionIndex = dataInput.readUnsignedShort();
 
-        final int requiresCount = input.readUnsignedShort();
+        final int requiresCount = dataInput.readUnsignedShort();
         requiresTable = new ModuleRequires[requiresCount];
         for (int i = 0; i < requiresCount; i++) {
-            requiresTable[i] = new ModuleRequires(input);
+            requiresTable[i] = new ModuleRequires(dataInput);
         }
 
-        final int exportsCount = input.readUnsignedShort();
+        final int exportsCount = dataInput.readUnsignedShort();
         exportsTable = new ModuleExports[exportsCount];
         for (int i = 0; i < exportsCount; i++) {
-            exportsTable[i] = new ModuleExports(input);
+            exportsTable[i] = new ModuleExports(dataInput);
         }
 
-        final int opensCount = input.readUnsignedShort();
+        final int opensCount = dataInput.readUnsignedShort();
         opensTable = new ModuleOpens[opensCount];
         for (int i = 0; i < opensCount; i++) {
-            opensTable[i] = new ModuleOpens(input);
+            opensTable[i] = new ModuleOpens(dataInput);
         }
 
-        usesCount = input.readUnsignedShort();
-        usesIndex = new int[usesCount];
-        for (int i = 0; i < usesCount; i++) {
-            usesIndex[i] = input.readUnsignedShort();
-        }
+        usesIndex = ClassParser.readU2U2Table(dataInput);
+        usesCount = usesIndex.length;
 
-        final int providesCount = input.readUnsignedShort();
+        final int providesCount = dataInput.readUnsignedShort();
         providesTable = new ModuleProvides[providesCount];
         for (int i = 0; i < providesCount; i++) {
-            providesTable[i] = new ModuleProvides(input);
+            providesTable[i] = new ModuleProvides(dataInput);
         }
     }
 
@@ -106,17 +112,15 @@ public final class Module extends Attribute {
      * Called by objects that are traversing the nodes of the tree implicitly defined by the contents of a Java class.
      * I.e., the hierarchy of methods, fields, attributes, etc. spawns a tree of objects.
      *
-     * @param v Visitor object
+     * @param v Visitor object.
      */
     @Override
     public void accept(final Visitor v) {
         v.visitModule(this);
     }
 
-    // TODO add more getters and setters?
-
     /**
-     * @return deep copy of this attribute
+     * @return deep copy of this attribute.
      */
     @Override
     public Attribute copy(final ConstantPool constantPool) {
@@ -139,10 +143,10 @@ public final class Module extends Attribute {
     }
 
     /**
-     * Dump Module attribute to file stream in binary format.
+     * Dumps Module attribute to file stream in binary format.
      *
-     * @param file Output file stream
-     * @throws IOException if an I/O error occurs.
+     * @param file Output file stream.
+     * @throws IOException Thrown if an I/O error occurs.
      */
     @Override
     public void dump(final DataOutputStream file) throws IOException {
@@ -152,34 +156,36 @@ public final class Module extends Attribute {
         file.writeShort(moduleFlags);
         file.writeShort(moduleVersionIndex);
 
-        file.writeShort(requiresTable.length);
+        file.writeShort(Args.requireU2(requiresTable.length, "requiresTable.length"));
         for (final ModuleRequires entry : requiresTable) {
             entry.dump(file);
         }
 
-        file.writeShort(exportsTable.length);
+        file.writeShort(Args.requireU2(exportsTable.length, "exportsTable.length"));
         for (final ModuleExports entry : exportsTable) {
             entry.dump(file);
         }
 
-        file.writeShort(opensTable.length);
+        file.writeShort(Args.requireU2(opensTable.length, "opensTable.length"));
         for (final ModuleOpens entry : opensTable) {
             entry.dump(file);
         }
 
-        file.writeShort(usesIndex.length);
+        file.writeShort(Args.requireU2(usesIndex.length, "usesIndex.length"));
         for (final int entry : usesIndex) {
             file.writeShort(entry);
         }
 
-        file.writeShort(providesTable.length);
+        file.writeShort(Args.requireU2(providesTable.length, "providesTable.length"));
         for (final ModuleProvides entry : providesTable) {
             entry.dump(file);
         }
     }
 
     /**
-     * @return table of exported interfaces
+     * Gets the table of exported interfaces.
+     *
+     * @return table of exported interfaces.
      * @see ModuleExports
      */
     public ModuleExports[] getExportsTable() {
@@ -187,7 +193,30 @@ public final class Module extends Attribute {
     }
 
     /**
-     * @return table of provided interfaces
+     * Gets flags for this module.
+     *
+     * @return module flags.
+     * @since 6.10.0
+     */
+    public int getModuleFlags() {
+        return moduleFlags;
+    }
+
+    /**
+     * Gets module name.
+     *
+     * @param cp Array of constants.
+     * @return module name.
+     * @since 6.10.0
+     */
+    public String getModuleName(final ConstantPool cp) {
+        return cp.getConstantString(moduleNameIndex, Const.CONSTANT_Module);
+    }
+
+    /**
+     * Gets the table of open interfaces.
+     *
+     * @return table of provided interfaces.
      * @see ModuleOpens
      */
     public ModuleOpens[] getOpensTable() {
@@ -195,7 +224,9 @@ public final class Module extends Attribute {
     }
 
     /**
-     * @return table of provided interfaces
+     * Gets the table of provided interfaces.
+     *
+     * @return table of provided interfaces.
      * @see ModuleProvides
      */
     public ModuleProvides[] getProvidesTable() {
@@ -203,7 +234,9 @@ public final class Module extends Attribute {
     }
 
     /**
-     * @return table of required modules
+     * Gets the table of required modules.
+     *
+     * @return table of required modules.
      * @see ModuleRequires
      */
     public ModuleRequires[] getRequiresTable() {
@@ -211,16 +244,43 @@ public final class Module extends Attribute {
     }
 
     /**
-     * @return String representation, i.e., a list of packages.
+     * Gets the array of class names for this module's uses.
+     *
+     * @param constantPool Array of constants usually obtained from the ClassFile object.
+     * @param compactClassName false for original constant pool value, true to replace '/' with '.'.
+     * @return array of used class names.
+     * @since 6.10.0
+     */
+    public String[] getUsedClassNames(final ConstantPool constantPool, final boolean compactClassName) {
+        final String[] usedClassNames = new String[usesCount];
+        for (int i = 0; i < usesCount; i++) {
+            usedClassNames[i] = getClassNameAtIndex(constantPool, usesIndex[i], compactClassName);
+        }
+        return usedClassNames;
+    }
+
+    /**
+     * Gets version for this module.
+     *
+     * @param cp Array of constants.
+     * @return version from constant pool, "0" if version index is 0.
+     * @since 6.10.0
+     */
+    public String getVersion(final ConstantPool cp) {
+        return moduleVersionIndex == 0 ? "0" : cp.getConstantString(moduleVersionIndex, Const.CONSTANT_Utf8);
+    }
+
+    /**
+     * @return String representation, that is, a list of packages.
      */
     @Override
     public String toString() {
         final ConstantPool cp = super.getConstantPool();
         final StringBuilder buf = new StringBuilder();
         buf.append("Module:\n");
-        buf.append("  name:    ").append(Utility.pathToPackage(cp.getConstantString(moduleNameIndex, Const.CONSTANT_Module))).append("\n");
+        buf.append("  name:    ").append(Utility.pathToPackage(getModuleName(cp))).append("\n");
         buf.append("  flags:   ").append(String.format("%04x", moduleFlags)).append("\n");
-        final String version = moduleVersionIndex == 0 ? "0" : cp.getConstantString(moduleVersionIndex, Const.CONSTANT_Utf8);
+        final String version = getVersion(cp);
         buf.append("  version: ").append(version).append("\n");
 
         buf.append("  requires(").append(requiresTable.length).append("):\n");
@@ -240,8 +300,8 @@ public final class Module extends Attribute {
 
         buf.append("  uses(").append(usesIndex.length).append("):\n");
         for (final int index : usesIndex) {
-            final String className = cp.getConstantString(index, Const.CONSTANT_Class);
-            buf.append("    ").append(Utility.compactClassName(className, false)).append("\n");
+            final String className = getClassNameAtIndex(cp, index, true);
+            buf.append("    ").append(className).append("\n");
         }
 
         buf.append("  provides(").append(providesTable.length).append("):\n");

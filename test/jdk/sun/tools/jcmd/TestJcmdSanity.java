@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@ import java.util.List;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.Platform;
-import jdk.test.lib.Utils;
 
 /*
  * @test
@@ -43,7 +42,7 @@ import jdk.test.lib.Utils;
  *
  * @library /test/lib
  *
- * @run main/othervm -XX:+UsePerfData TestJcmdSanity
+ * @run main/othervm/timeout=480 -XX:+UsePerfData TestJcmdSanity
  */
 public class TestJcmdSanity {
 
@@ -181,6 +180,11 @@ public class TestJcmdSanity {
           output.shouldNotContain(" handler modified!"); // e.g. Warning: SIGILL handler modified!
           output.shouldNotContain("*** Handler was modified!");
           output.shouldNotContain("*** Expected: "); // e.g. *** Expected: javaSignalHandler in ...
+        }
+
+        // Should find file descriptor counting on Mac and Linux
+        if (Platform.isLinux() || Platform.isOSX()) {
+            output.shouldMatch("Open File Descriptors: \\d+");
         }
     }
 }

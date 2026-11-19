@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceIdBits.hpp"
 
 #include "oops/method.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/macros.hpp"
 
 #ifdef VM_LITTLE_ENDIAN
@@ -78,7 +78,7 @@ inline uint8_t* traceid_meta_byte(const T* ptr) {
 template <>
 inline uint8_t* traceid_meta_byte<Method>(const Method* ptr) {
   assert(ptr != nullptr, "invariant");
-  return ptr->trace_meta_addr();
+  return ptr->trace_flags_meta_addr();
 }
 
 inline uint8_t traceid_and(uint8_t bits, uint8_t current) {
@@ -106,7 +106,7 @@ inline void set_cas_form(uint8_t bits, uint8_t volatile* dest) {
   do {
     const uint8_t current = *dest;
     const uint8_t new_value = op(bits, current);
-    if (current == new_value || Atomic::cmpxchg(dest, current, new_value) == current) {
+    if (current == new_value || AtomicAccess::cmpxchg(dest, current, new_value) == current) {
       return;
     }
   } while (true);

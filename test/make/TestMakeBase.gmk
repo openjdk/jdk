@@ -114,6 +114,63 @@ ifneq ($(call equals, $(EQUALS_VALUE2), $(EQUALS_EMPTY)), )
 endif
 
 ################################################################################
+# Test string manipulation
+
+$(call AssertEquals, \
+    $(call uppercase, foo bar), \
+    FOO BAR, \
+    uppercase "foo bar" failed, \
+)
+
+$(call AssertEquals, \
+    $(call uppercase, Foo BaR 123), \
+    FOO BAR 123, \
+    uppercase "Foo BaR 123" failed, \
+)
+
+$(call AssertEquals, \
+    $(call lowercase, FOO BAR), \
+    foo bar, \
+    lowercase "FOO BAR" failed, \
+)
+
+$(call AssertEquals, \
+    $(call lowercase, Foo BaR 123), \
+    foo bar 123, \
+    lowercase "Foo BaR 123" failed, \
+)
+
+$(call AssertEquals, \
+    $(call titlecase, foo bar), \
+    Foo Bar, \
+    titlecase "foo bar" failed, \
+)
+
+$(call AssertEquals, \
+    $(call titlecase, FOO BAR), \
+    Foo Bar, \
+    titlecase "FOO BAR" failed, \
+)
+
+$(call AssertEquals, \
+    $(call titlecase, Foo BaR 123), \
+    Foo Bar 123, \
+    titlecase "Foo BaR 123" failed, \
+)
+
+$(call AssertEquals, \
+    $(call firstchar, foo bar), \
+    f, \
+    firstchar "foo bar" failed, \
+)
+
+$(call AssertEquals, \
+    $(call firstchar, Foo Bar), \
+    F, \
+    firstchar "Foo Bar" failed, \
+)
+
+################################################################################
 # Test boolean operators
 
 $(eval $(call assert-equals, $(call And,  true  true  true ), true))

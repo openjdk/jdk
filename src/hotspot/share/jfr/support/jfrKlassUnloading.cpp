@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,10 +30,10 @@
 #include "runtime/mutexLocker.hpp"
 #include "utilities/macros.hpp"
 
-static const int initial_size = 1009;
+static const int initial_size = 1024;
 
 static JfrCHeapTraceIdSet* c_heap_allocate_set(int size = initial_size) {
-  return new JfrCHeapTraceIdSet(size);
+  return new (mtTracing) JfrCHeapTraceIdSet(size);
 }
 
 // Track the set of unloaded klasses during a chunk / epoch.
@@ -68,25 +68,18 @@ static JfrCHeapTraceIdSet* get_unload_set_previous_epoch() {
   return get_unload_set(JfrTraceIdEpoch::previous());
 }
 
-static bool is_nonempty_set(u1 epoch) {
-  if (epoch == 0) {
-    return _unload_set_epoch_0 != nullptr && _unload_set_epoch_0->is_nonempty();
-  }
-  return _unload_set_epoch_1 != nullptr && _unload_set_epoch_1->is_nonempty();
-}
-
 void JfrKlassUnloading::clear() {
   assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
-  if (is_nonempty_set(JfrTraceIdEpoch::previous())) {
-    get_unload_set_previous_epoch()->clear();
-  }
+  get_unload_set_previous_epoch()->clear();
 }
 
-static void add_to_unloaded_klass_set(traceid klass_id) {
+void JfrKlassUnloading::add_to_unloaded_set(const Klass* k) {
+  assert(k != nullptr, "invariant");
   assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
+  assert(USED_ANY_EPOCH(k), "invariant");
   JfrCHeapTraceIdSet* const unload_set = get_unload_set();
   assert(unload_set != nullptr, "invariant");
-  unload_set->add(klass_id);
+  unload_set->add(JfrTraceId::load_raw(k));
 }
 
 #if INCLUDE_MANAGEMENT
@@ -108,8 +101,11 @@ bool JfrKlassUnloading::on_unload(const Klass* k) {
   if (IS_JDK_JFR_EVENT_SUBKLASS(k)) {
     ++event_klass_unloaded_count;
   }
-  add_to_unloaded_klass_set(JfrTraceId::load_raw(k));
-  return USED_THIS_EPOCH(k);
+  if (USED_ANY_EPOCH(k)) {
+    add_to_unloaded_set(k);
+    return true;
+  }
+  return false;
 }
 
 static inline bool is_unloaded(const JfrCHeapTraceIdSet* set, const traceid& id) {

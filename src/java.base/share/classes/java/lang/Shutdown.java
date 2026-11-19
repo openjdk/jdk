@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,8 @@ class Shutdown {
     // (0) Console restore hook
     // (1) ApplicationShutdownHooks that invokes all registered application
     //     shutdown hooks and waits until they finish
-    // (2) DeleteOnExit hook
+    // (2) I/O poller threads supporting virtual threads doing blocking I/O
+    // (3) DeleteOnExit hook
     private static final int MAX_SYSTEM_HOOKS = 10;
     private static final Runnable[] hooks = new Runnable[MAX_SYSTEM_HOOKS];
 
@@ -55,20 +56,19 @@ class Shutdown {
     private static int currentRunningHook = -1;
 
     /* The preceding static fields are protected by this lock */
-    private static class Lock { };
-    private static Object lock = new Lock();
+    private static final Object lock = new Object();
 
     /* Lock object for the native halt method */
-    private static Object haltLock = new Lock();
+    private static final Object haltLock = new Object();
 
     /**
      * Add a new system shutdown hook.  Checks the shutdown state and
      * the hook itself, but does not do any security checks.
      *
-     * The registerShutdownInProgress parameter should be false except
-     * registering the DeleteOnExitHook since the first file may
-     * be added to the delete on exit list by the application shutdown
-     * hooks.
+     * It is expected that registerShutdownInProgress is false for the hook
+     * that runs application shutdown hooks. It may be true for other hooks,
+     * e.g. DeleteOnExitHook, as the first invocation of File.deleteOnExit
+     * may occur in an application shutdown hook.
      *
      * @param slot  the slot in the shutdown hook array, whose element
      *              will be invoked in order during shutdown
@@ -157,8 +157,10 @@ class Shutdown {
      * which should pass a nonzero status code.
      */
     static void exit(int status) {
-        logRuntimeExit(status);         // Log without holding the lock;
-
+        // log only if VM is fully initialized
+        if (VM.isBooted()) {
+            logRuntimeExit(status);         // Log without holding the lock;
+        }
         synchronized (Shutdown.class) {
             /* Synchronize on the class object, causing any other thread
              * that attempts to initiate shutdown to stall indefinitely

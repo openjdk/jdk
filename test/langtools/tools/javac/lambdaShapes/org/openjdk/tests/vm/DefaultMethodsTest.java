@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@ package org.openjdk.tests.vm;
 
 import org.openjdk.tests.separate.Compiler;
 import org.openjdk.tests.separate.TestHarness;
-import org.testng.annotations.Test;
 
 import static org.openjdk.tests.separate.SourceModel.AbstractMethod;
 import static org.openjdk.tests.separate.SourceModel.AccessFlag;
@@ -36,11 +35,11 @@ import static org.openjdk.tests.separate.SourceModel.Extends;
 import static org.openjdk.tests.separate.SourceModel.Interface;
 import static org.openjdk.tests.separate.SourceModel.MethodParameter;
 import static org.openjdk.tests.separate.SourceModel.TypeParameter;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.fail;
+import org.junit.jupiter.api.Test;
 
-@Test(groups = "vm")
 public class DefaultMethodsTest extends TestHarness {
     public DefaultMethodsTest() {
         super(false, false);
@@ -51,6 +50,7 @@ public class DefaultMethodsTest extends TestHarness {
      *
      * TEST: C c = new C(); c.m() == 22
      */
+    @Test
     public void testHarnessInvokeVirtual() {
         Class C = new Class("C", ConcreteMethod.std("22"));
         assertInvokeVirtualEquals(22, C);
@@ -62,6 +62,7 @@ public class DefaultMethodsTest extends TestHarness {
      *
      * TEST: I i = new C(); i.m() == 33;
      */
+    @Test
     public void testHarnessInvokeInterface() {
         Interface I = new Interface("I", AbstractMethod.std());
         Class C = new Class("C", I, ConcreteMethod.std("33"));
@@ -73,6 +74,7 @@ public class DefaultMethodsTest extends TestHarness {
      *
      * TEST: C c = new C(); c.m() throws NoSuchMethod
      */
+    @Test
     public void testHarnessThrows() {
         Class C = new Class("C");
         assertThrows(NoSuchMethodError.class, C);
@@ -85,6 +87,7 @@ public class DefaultMethodsTest extends TestHarness {
      * TEST: C c = new C(); c.m() == 44;
      * TEST: I i = new C(); i.m() == 44;
      */
+    @Test
     public void testBasicDefault() {
         Interface I = new Interface("I", DefaultMethod.std("44"));
         Class C = new Class("C", I);
@@ -102,6 +105,7 @@ public class DefaultMethodsTest extends TestHarness {
      * TEST: C c = new C(); c.m() == 44;
      * TEST: I i = new C(); i.m() == 44;
      */
+    @Test
     public void testFarDefault() {
         Interface I = new Interface("I", DefaultMethod.std("44"));
         Interface J = new Interface("J", I);
@@ -121,6 +125,7 @@ public class DefaultMethodsTest extends TestHarness {
      * TEST: C c = new C(); c.m() == 44;
      * TEST: K k = new C(); k.m() == 44;
      */
+    @Test
     public void testOverrideAbstract() {
         Interface I = new Interface("I", AbstractMethod.std());
         Interface J = new Interface("J", I, DefaultMethod.std("44"));
@@ -138,6 +143,7 @@ public class DefaultMethodsTest extends TestHarness {
      * TEST: C c = new C(); c.m() == 55;
      * TEST: I i = new C(); i.m() == 55;
      */
+    @Test
     public void testExisting() {
         Interface I = new Interface("I", DefaultMethod.std("44"));
         Class C = new Class("C", I, ConcreteMethod.std("55"));
@@ -154,6 +160,7 @@ public class DefaultMethodsTest extends TestHarness {
      * TEST: C c = new C(); c.m() == 99;
      * TEST: I i = new C(); i.m() == 99;
      */
+    @Test
     public void testInherited() {
         Interface I = new Interface("I", DefaultMethod.std("99"));
         Class B = new Class("B", I);
@@ -171,6 +178,7 @@ public class DefaultMethodsTest extends TestHarness {
      * TEST: D d = new D(); d.m() == 11;
      * TEST: I i = new D(); i.m() == 11;
      */
+    @Test
     public void testExistingInherited() {
         Interface I = new Interface("I", DefaultMethod.std("99"));
         Class C = new Class("C", ConcreteMethod.std("11"));
@@ -188,6 +196,7 @@ public class DefaultMethodsTest extends TestHarness {
      * TEST: D d = new D(); d.m() == 22;
      * TEST: I i = new D(); i.m() == 22;
      */
+    @Test
     public void testExistingInheritedOverride() {
         Interface I = new Interface("I", DefaultMethod.std("99"));
         Class C = new Class("C", I, ConcreteMethod.std("11"));
@@ -207,6 +216,7 @@ public class DefaultMethodsTest extends TestHarness {
      * TEST: E e = new E(); e.m() == 22;
      * TEST: J j = new E(); j.m() == 22;
      */
+    @Test
     public void testExistingInheritedPlusDefault() {
         Interface I = new Interface("I", DefaultMethod.std("99"));
         Interface J = new Interface("J", DefaultMethod.std("88"));
@@ -226,6 +236,7 @@ public class DefaultMethodsTest extends TestHarness {
      * TEST: C c = new C(); c.m() == 77;
      * TEST: I i = new C(); i.m() == 77;
      */
+    @Test
     public void testInheritedWithConcrete() {
         Interface I = new Interface("I", DefaultMethod.std("99"));
         Class B = new Class("B", I);
@@ -243,6 +254,7 @@ public class DefaultMethodsTest extends TestHarness {
      * TEST: C c = new C(); c.m() == 66;
      * TEST: I i = new C(); i.m() == 66;
      */
+    @Test
     public void testInheritedWithConcreteAndImpl() {
         Interface I = new Interface("I", DefaultMethod.std("99"));
         Class B = new Class("B", I);
@@ -259,6 +271,7 @@ public class DefaultMethodsTest extends TestHarness {
      *
      * TEST: C c = new C(); c.m() throws ICCE
      */
+    @Test
     public void testConflict() {
         Interface I = new Interface("I", DefaultMethod.std("99"));
         Interface J = new Interface("J", DefaultMethod.std("88"));
@@ -274,6 +287,7 @@ public class DefaultMethodsTest extends TestHarness {
      *
      * TEST: C c = new C(); c.m() == 88
      */
+    @Test
     public void testAmbiguousReabstract() {
         Interface I = new Interface("I", AbstractMethod.std());
         Interface J = new Interface("J", DefaultMethod.std("88"));
@@ -293,6 +307,7 @@ public class DefaultMethodsTest extends TestHarness {
      * TEST: K k = new C(); k.m() == 99
      * TEST: I i = new C(); i.m() == 99
      */
+    @Test
     public void testDiamond() {
         Interface I = new Interface("I", DefaultMethod.std("99"));
         Interface J = new Interface("J", I);
@@ -320,6 +335,7 @@ public class DefaultMethodsTest extends TestHarness {
      * TEST: L l = new C(); l.m() == 99
      * TEST: M m = new C(); m.m() == 99
      */
+    @Test
     public void testExpandedDiamond() {
         Interface I = new Interface("I", DefaultMethod.std("99"));
         Interface J = new Interface("J", I);
@@ -343,6 +359,7 @@ public class DefaultMethodsTest extends TestHarness {
      *
      * TEST: C c = new C(); c.m() throws AME
      */
+    @Test
     public void testReabstract() {
         Interface I = new Interface("I", DefaultMethod.std("99"));
         Interface J = new Interface("J", I, AbstractMethod.std());
@@ -360,6 +377,7 @@ public class DefaultMethodsTest extends TestHarness {
      * TEST: J j = new C(); j.m() == 99;
      * TEST: I i = new C(); i.m() == 99;
      */
+    @Test
     public void testShadow() {
         Interface I = new Interface("I", DefaultMethod.std("88"));
         Interface J = new Interface("J", I, DefaultMethod.std("99"));
@@ -379,6 +397,7 @@ public class DefaultMethodsTest extends TestHarness {
      * TEST: J j = new C(); j.m() == 99;
      * TEST: I i = new C(); i.m() == 99;
      */
+    @Test
     public void testDisqualified() {
         Interface I = new Interface("I", DefaultMethod.std("88"));
         Interface J = new Interface("J", I, DefaultMethod.std("99"));
@@ -396,6 +415,7 @@ public class DefaultMethodsTest extends TestHarness {
      * TEST: C c = new C(); c.m("string") == 88;
      * TEST: I i = new C(); i.m("string") == 88;
      */
+    @Test
     public void testSelfFill() {
         // This test ensures that a concrete method overrides a default method
         // that matches at the language-level, but has a different method
@@ -426,6 +446,7 @@ public class DefaultMethodsTest extends TestHarness {
      *
      * TEST: C.class.getMethod("m").invoke(new C()) == 99
      */
+    @Test
     public void testReflectCall() {
         Interface I = new Interface("I", DefaultMethod.std("99"));
         //workaround accessibility issue when loading C with DirectedClassLoader
@@ -468,7 +489,7 @@ public class DefaultMethodsTest extends TestHarness {
         }
         assertNotNull(res);
 
-        assertEquals(res.intValue(), 99);
+        assertEquals(99, res.intValue());
 
         compiler.cleanup();
     }
@@ -485,6 +506,7 @@ public class DefaultMethodsTest extends TestHarness {
      * TEST: J<String,String> j = new C(); j.m("A","B","C") == 88;
      * TEST: K<String> k = new C(); k.m("A","B","C") == 88;
      */
+    @Test
     public void testBridges() {
         DefaultMethod dm = new DefaultMethod("int", stdMethodName, "return 99;",
             new MethodParameter("T", "t"), new MethodParameter("V", "v"),
@@ -538,6 +560,7 @@ public class DefaultMethodsTest extends TestHarness {
      * TEST: C c = new C(); c.m() == 88;
      * TEST: I i = new C(); i.m() == 88;
      */
+    @Test
     public void testSuperBasic() {
         Interface J = new Interface("J", DefaultMethod.std("88"));
         Interface I = new Interface("I", J, new DefaultMethod(
@@ -559,6 +582,7 @@ public class DefaultMethodsTest extends TestHarness {
      * TEST: C c = new C(); c.m() throws ICCE
      * TODO: add case for K k = new C(); k.m() throws ICCE
      */
+    @Test
     public void testSuperConflict() {
         Interface K = new Interface("K", DefaultMethod.std("99"));
         Interface L = new Interface("L", DefaultMethod.std("101"));
@@ -581,6 +605,7 @@ public class DefaultMethodsTest extends TestHarness {
      * TEST: C c = new C(); c.m() == 99
      * TODO: add case for J j = new C(); j.m() == ???
      */
+    @Test
     public void testSuperDisqual() {
         Interface I = new Interface("I", DefaultMethod.std("99"));
         Interface J = new Interface("J", I, DefaultMethod.std("55"));
@@ -600,6 +625,7 @@ public class DefaultMethodsTest extends TestHarness {
      * TEST: C c = new C(); c.m() throws AME
      * TODO: add case for I i = new C(); i.m() throws AME
      */
+    @Test
     public void testSuperNull() {
         Interface J = new Interface("J", AbstractMethod.std());
         Interface I = new Interface("I", J, new DefaultMethod(
@@ -621,6 +647,7 @@ public class DefaultMethodsTest extends TestHarness {
      *
      * TEST: I i = new C(); i.m("") == 88;
      */
+    @Test
     public void testSuperGeneric() {
         Interface J = new Interface("J", new TypeParameter("T"),
             new DefaultMethod("int", stdMethodName, "return 88;",
@@ -646,6 +673,7 @@ public class DefaultMethodsTest extends TestHarness {
      *
      * TEST: C c = new C(); c.m("string") == 44
      */
+    @Test
     public void testSuperGenericDisqual() {
         MethodParameter t = new MethodParameter("T", "t");
         MethodParameter s = new MethodParameter("String", "s");
@@ -672,6 +700,7 @@ public class DefaultMethodsTest extends TestHarness {
      * class S { Object foo() { return (new D()).m(); } // link sig: ()LInteger;
      * TEST: S s = new S(); s.foo() == new Integer(99)
      */
+    @Test
     public void testCovarBridge() {
         Interface I = new Interface("I", new DefaultMethod(
             "Integer", "m", "return new Integer(88);"));
@@ -700,6 +729,7 @@ public class DefaultMethodsTest extends TestHarness {
      * class S { Object foo() { return (new D()).m(); } // link sig: ()LInteger;
      * TEST: S s = new S(); s.foo() == new Integer(88)
      */
+    @Test
     public void testNoCovarNoBridge() {
         Interface I = new Interface("I", new DefaultMethod(
             "Integer", "m", "return new Integer(88);"));
@@ -732,6 +762,7 @@ public class DefaultMethodsTest extends TestHarness {
      * It verifies that default method analysis occurs when mirandas have been
      * inherited and the supertypes don't have any overpass methods.
      */
+    @Test
     public void testNoNewMiranda() {
         Interface J = new Interface("J", AbstractMethod.std());
         Interface I = new Interface("I", J, DefaultMethod.std("99"));
@@ -755,6 +786,7 @@ public class DefaultMethodsTest extends TestHarness {
      * Test that a erased-signature-matching method does not implement
      * non-language-level matching methods
      */
+    @Test
     public void testNonConcreteFill() {
         AbstractMethod ipm = new AbstractMethod("int", "m",
             new MethodParameter("T", "t"),
@@ -809,6 +841,7 @@ public class DefaultMethodsTest extends TestHarness {
         assertInvokeInterfaceEquals(99, C, I.with("String", "String", "String"), ipm, a, a, a);
     }
 
+    @Test
     public void testStrictfpDefault() {
         try {
             java.lang.Class.forName("org.openjdk.tests.vm.StrictfpDefault");

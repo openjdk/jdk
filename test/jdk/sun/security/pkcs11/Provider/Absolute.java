@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@
  * @summary load DLLs and launch executables using fully qualified path
  */
 
+import jtreg.SkippedException;
+
 import java.security.InvalidParameterException;
 import java.security.Provider;
 
@@ -40,12 +42,11 @@ public class Absolute {
         try {
             Provider p = PKCS11Test.getSunPKCS11(config);
             if (p == null) {
-                System.out.println("Skipping test - no PKCS11 provider available");
+                throw new SkippedException("Skipping test - no PKCS11 provider available");
             }
         } catch (InvalidParameterException ipe) {
             Throwable ex = ipe.getCause();
-            if (ex.getMessage().indexOf(
-                    "Absolute path required for library value:") != -1) {
+            if (ex.getMessage().contains("Absolute path required for library value:")) {
                 System.out.println("Test Passed: expected exception thrown");
             } else {
                 // rethrow

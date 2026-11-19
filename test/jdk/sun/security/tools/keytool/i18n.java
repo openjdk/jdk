@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,37 +23,37 @@
 
 /*
  * @test
- * @bug 4348369 8076069 8294994
+ * @bug 4348369 8076069 8294994 8360400
  * @summary keytool i18n compliant
  * @author charlie lai
  * @modules java.base/sun.security.tools.keytool
  * @library /test/lib
- * @run main/manual/othervm -Duser.language=en i18n
+ * @run main/manual/othervm -Duser.language=en -Duser.country=USA i18n
  */
 
 /*
  * @test
- * @bug 4348369 8076069 8294994
+ * @bug 4348369 8076069 8294994 8360400
  * @summary keytool i18n compliant
  * @author charlie lai
  * @modules java.base/sun.security.tools.keytool
  * @library /test/lib
- * @run main/manual/othervm -Duser.language=de i18n
+ * @run main/manual/othervm -Duser.language=de -Duser.country=DE i18n
  */
 
 /*
  * @test
- * @bug 4348369 8076069 8294994
+ * @bug 4348369 8076069 8294994 8360400
  * @summary keytool i18n compliant
  * @author charlie lai
  * @modules java.base/sun.security.tools.keytool
  * @library /test/lib
- * @run main/manual/othervm -Duser.language=ja i18n
+ * @run main/manual/othervm -Duser.language=ja -Duser.country=JP i18n
  */
 
 /*
  * @test
- * @bug 4348369 8076069 8294994
+ * @bug 4348369 8076069 8294994 8360400
  * @summary keytool i18n compliant
  * @author charlie lai
  * @modules java.base/sun.security.tools.keytool
@@ -63,10 +63,20 @@
 
 import jdk.test.lib.UIBuilder;
 
-import javax.swing.*;
+import javax.swing.JDialog;
+import javax.swing.SwingUtilities;
+import javax.swing.JTextArea;
+import javax.swing.JButton;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JFrame;
+import java.awt.FlowLayout;
+import java.awt.BorderLayout;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.util.Locale;
+
+import static javax.swing.BorderFactory.createEmptyBorder;
 
 public class i18n {
     private static final String[][] TABLE = new String[][]{
@@ -94,10 +104,6 @@ public class i18n {
                     "Output in ${LANG}. Check: contains 1 keystore entry with "
                             + "512-bit DSA key algorithm for CN=Name, OU=Java, "
                             + "O=Oracle, L=City, ST=State C=Country."},
-
-            {"-list -v -storepass a -keystore ./i18n.keystore",
-                    "Output in ${LANG}. Check keytool error:java.io.IOException: "
-                            + "keystore password was incorrect."},
 
             {"-genkey -keyalg DSA -v -keysize 512 "
                     + "-storepass password "
@@ -238,11 +244,12 @@ public class i18n {
                     "Output in ${LANG}. Check keytool error: java.lang"
                             + ".IllegalArgumentException: if -protected is "
                             + "specified, then -storepass, -keypass, and -new "
-                            + "must not be specified."},
+                            + "must not be specified."}
     };
     private static String TEST_SRC = System.getProperty("test.src");
     private static int TIMEOUT_MS = 120000;
     private volatile boolean failed = false;
+    private volatile String failureReason = "";
     private volatile boolean aborted = false;
     private Thread currentThread = null;
 
@@ -334,6 +341,7 @@ public class i18n {
 
             if (failed) {
                 System.out.println(command + ": TEST FAILED");
+                System.out.println("REASON: " + failureReason);
                 System.out.println(message);
             } else {
                 System.out.println(command + ": TEST PASSED");
@@ -352,11 +360,41 @@ public class i18n {
 
     public void fail() {
         failed = true;
+        failureReason = requestFailDescription();
         currentThread.interrupt();
     }
 
     public void abort() {
         aborted = true;
         currentThread.interrupt();
+    }
+
+    /**
+     * Opens a prompt to enter a failure reason to be filled by the tester
+     */
+     public static String requestFailDescription() {
+
+        final JDialog dialogWindow = new JDialog(new JFrame(), "Failure Description", true);
+        final JTextArea reasonTextArea = new JTextArea(5, 20);
+
+        final JButton okButton = new JButton("OK");
+        okButton.addActionListener(_ -> dialogWindow.setVisible(false));
+
+        final JPanel okayBtnPanel = new JPanel(
+                new FlowLayout(FlowLayout.CENTER, 4, 0));
+        okayBtnPanel.setBorder(createEmptyBorder(4, 0, 0, 0));
+        okayBtnPanel.add(okButton);
+
+        final JPanel mainPanel = new JPanel(new BorderLayout());
+        mainPanel.add(new JScrollPane(reasonTextArea), BorderLayout.CENTER);
+        mainPanel.add(okayBtnPanel, BorderLayout.SOUTH);
+
+        dialogWindow.add(mainPanel);
+        dialogWindow.pack();
+        dialogWindow.setVisible(true);
+
+        dialogWindow.dispose();
+
+        return reasonTextArea.getText();
     }
 }

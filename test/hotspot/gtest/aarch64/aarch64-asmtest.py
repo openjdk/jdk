@@ -95,7 +95,7 @@ class LowFloatRegister(Register):
         return self
 
     def nextReg(self):
-        next = FloatRegister()
+        next = LowFloatRegister()
         next.number = (self.number + 1) % 16
         return next
 
@@ -391,6 +391,11 @@ class SystemRegOp(Instruction):
             self.CRn = 0b0100
             self.CRm = 0b0010
             self.op2 = 0b000
+        elif self.system_reg == 'cntvctss_el0':
+            self.op1 = 0b011
+            self.CRn = 0b1110
+            self.CRm = 0b0000
+            self.op2 = 0b110
 
     def generate(self):
         self.reg = [GeneralRegister().generate()]
@@ -969,6 +974,7 @@ class LoadStoreOp(InstructionWithModes):
 
     def __init__(self, args):
         name, self.asmname, self.kind, mode = args
+        assert ((mode != 'd') & (mode != 's'))
         InstructionWithModes.__init__(self, name, mode)
 
     def generate(self):
@@ -980,18 +986,15 @@ class LoadStoreOp(InstructionWithModes):
             shift = 0
         elif (self.mode == 'h') | (self.asmname.endswith("h")):
             shift = 1
-        elif (self.mode == 'w') | (self.asmname.endswith("w")) \
-                | (self.mode == 's') :
+        elif (self.mode == 'w') | (self.asmname.endswith("w")):
             shift = 2
 
         self.adr = Address().generate(self.kind, shift)
 
-        isFloat = (self.mode == 'd') | (self.mode == 's')
-
-        regMode = FloatRegister if isFloat else GeneralRegister
+        regMode = GeneralRegister
         self.reg = regMode().generate()
         kindStr = Address.kindToStr(self.kind);
-        if (not isFloat) and (kindStr is "pre" or kindStr is "post"):
+        if (kindStr is "pre" or kindStr is "post"):
             (self.reg.number, self.adr.base.number) = random.sample(list(set(range(31)) - set([18])), 2)
         return self
 
@@ -1015,6 +1018,28 @@ class LoadStoreOp(InstructionWithModes):
          #      result = result.replace("ld", "ldu", 1)
          #      result = result.replace("st", "stu", 1)
          return result
+
+class LoadStoreFPOp(Instruction):
+
+    def __init__(self, args):
+        name, self._type, self.kind= args
+        assert ((self._type == 's') | (self._type == 'd'))
+        self._size = 2 if (self._type == 's') else 3
+        self._width = RegVariant(self._size, self._size)
+        Instruction.__init__(self, name)
+
+    def generate(self):
+        self.adr = Address().generate(self.kind, self._size)
+        self.reg = FloatRegister().generate()
+        kindStr = Address.kindToStr(self.kind);
+        return self
+
+    def cstr(self):
+        return "%s%s, %s, %s);" % (Instruction.cstr(self), str(self.reg), self._width.cstr(), str(self.adr))
+
+    def astr(self):
+        return "%s\t%s, %s" % (self.aname(), self.reg.astr(self._type),
+                                     self.adr.astr("x"))
 
 class LoadStorePairOp(InstructionWithModes):
 
@@ -1116,7 +1141,9 @@ class SVEVectorOp(Instruction):
         self._bitwiseop = False
         if name[0] == 'f':
             self._width = RegVariant(2, 3)
-        elif not self._isPredicated and (name in ["and", "eor", "orr", "bic", "eor3"]):
+        elif name in ["sdiv", "udiv"]:
+            self._width = RegVariant(2, 3)
+        elif not self._isPredicated and (name in ["and", "bic", "bsl", "eor", "eor3", "orr"]):
             self._width = RegVariant(3, 3)
             self._bitwiseop = True
         elif name == "revb":
@@ -1145,7 +1172,7 @@ class SVEVectorOp(Instruction):
                         width +
                         [str(self.reg[i]) for i in range(1, self.numRegs)]))
     def astr(self):
-        firstArg = 0 if self._name == "eor3" else 1
+        firstArg = 0 if self._name in ["bsl", "eor3"] else 1
         formatStr = "%s%s" + ''.join([", %s" for i in range(firstArg, self.numRegs)])
         if self._dnm == 'dn':
             formatStr += ", %s"
@@ -1599,13 +1626,14 @@ generate (ExtractOp, ["extrw", "extr"])
 generate (CondBranchOp, ["EQ", "NE", "HS", "CS", "LO", "CC", "MI", "PL", "VS", "VC",
                         "HI", "LS", "GE", "LT", "GT", "LE", "AL", "NV" ])
 
-generate (ImmOp, ["svc", "hvc", "smc", "brk", "hlt", # "dcps1",  "dcps2",  "dcps3"
-               ])
+generate (ImmOp, ["svc", "hvc", "smc", "brk", "hlt", "udf"])
 
 generate (Op, ["nop", "yield", "wfe", "sev", "sevl",
                "autia1716", "autiasp", "autiaz", "autib1716", "autibsp", "autibz",
                "pacia1716", "paciasp", "paciaz", "pacib1716", "pacibsp", "pacibz",
                "eret", "drps", "isb", "sb",])
+
+generate (OneRegOp, ["wfet"])
 
 # Ensure the "i" is not stripped off the end of the instruction
 generate (PostfixExceptionOp, ["wfi", "xpaclri"])
@@ -1623,7 +1651,7 @@ generate (OneRegOp, ["br", "blr",
 for system_reg in ["fpsr", "nzcv"]:
     generate (SystemOneRegOp, [ ["msr", system_reg] ])
 
-for system_reg in ["fpsr", "nzcv", "dczid_el0", "ctr_el0"]:
+for system_reg in ["fpsr", "nzcv", "dczid_el0", "ctr_el0", "cntvctss_el0"]:
     generate (OneRegSystemOp, [ ["mrs", system_reg] ])
 
 # Ensure the "i" is not stripped off the end of the instruction
@@ -1648,8 +1676,6 @@ for kind in range(6):
                    ["ldr", "ldrb", kind, "b"], ["ldr", "ldrh", kind, "h"],
                    ["ldrsb", "ldrsb", kind, "x"], ["ldrsh", "ldrsh", kind, "x"],
                    ["ldrsh", "ldrsh", kind, "w"], ["ldrsw", "ldrsw", kind, "x"],
-                   ["ldr", "ldr", kind, "d"], ["ldr", "ldr", kind, "s"],
-                   ["str", "str", kind, "d"], ["str", "str", kind, "s"],
                    ])
     else:
         generate (LoadStoreOp,
@@ -1660,6 +1686,14 @@ for kind in (Address.base_plus_unscaled_offset, Address.pcrel, Address.base_plus
                  Address.base_plus_scaled_offset):
     generate (LoadStoreOp,
               [["prfm", "prfm\tPLDL1KEEP,", kind, "x"]])
+
+for kind in (Address.base_plus_unscaled_offset, Address.pre, Address.post, \
+             Address.base_plus_reg, Address.base_plus_scaled_offset):
+    sys.stdout.write("\n// " + Address.kindToStr(kind))
+    generate (LoadStoreFPOp,
+              [["ldr", "s", kind], ["ldr", "d", kind],
+               ["str", "s", kind], ["str", "d", kind],
+              ])
 
 generate(AddSubCarryOp, ["adcw", "adcsw", "sbcw", "sbcsw", "adc", "adcs", "sbc", "sbcs"])
 
@@ -1871,6 +1905,12 @@ generate(ThreeRegNEONOp,
           ["sminp", "sminp", "8B"], ["sminp", "sminp", "16B"],
           ["sminp", "sminp", "4H"], ["sminp", "sminp", "8H"],
           ["sminp", "sminp", "2S"], ["sminp", "sminp", "4S"],
+          ["uminp", "uminp", "8B"], ["uminp", "uminp", "16B"],
+          ["uminp", "uminp", "4H"], ["uminp", "uminp", "8H"],
+          ["uminp", "uminp", "2S"], ["uminp", "uminp", "4S"],
+          ["umaxp", "umaxp", "8B"], ["umaxp", "umaxp", "16B"],
+          ["umaxp", "umaxp", "4H"], ["umaxp", "umaxp", "8H"],
+          ["umaxp", "umaxp", "2S"], ["umaxp", "umaxp", "4S"],
           ["sqdmulh", "sqdmulh", "4H"], ["sqdmulh", "sqdmulh", "8H"],
           ["sqdmulh", "sqdmulh", "2S"], ["sqdmulh", "sqdmulh", "4S"],
           ["shsubv", "shsub", "8B"], ["shsubv", "shsub", "16B"],
@@ -1958,6 +1998,8 @@ generate(SpecialCases, [["ccmn",   "__ ccmn(zr, zr, 3u, Assembler::LE);",       
                         ["cpy",      "__ sve_cpy(z5, __ D, p0, -32768, false);",           "mov\tz5.d, p0/z, -32768"],
                         ["cpy",      "__ sve_cpy(z10, __ B, p0, -1, false);",              "mov\tz10.b, p0/z, -1"],
                         ["cpy",      "__ sve_cpy(z11, __ S, p0, -1, false);",              "mov\tz11.s, p0/z, -1"],
+                        ["fcpy",     "__ sve_cpy(z11, __ S, p0, 0.5);",                    "fcpy\tz11.s, p0/m, #0.5"],
+                        ["fcpy",     "__ sve_cpy(z11, __ S, p0, -1.0);",                   "fcpy\tz11.s, p0/m, #-1.0"],
                         ["inc",      "__ sve_inc(r0, __ S);",                              "incw\tx0"],
                         ["dec",      "__ sve_dec(r1, __ H);",                              "dech\tx1"],
                         ["lsl",      "__ sve_lsl(z0, __ B, z1, 7);",                       "lsl\tz0.b, z1.b, #7"],
@@ -2087,6 +2129,10 @@ generate(SpecialCases, [["ccmn",   "__ ccmn(zr, zr, 3u, Assembler::LE);",       
                         ["index",    "__ sve_index(z7, __ D, r5, 5);",                     "index\tz7.d, x5, #5"],
                         ["cpy",      "__ sve_cpy(z7, __ H, p3, r5);",                      "cpy\tz7.h, p3/m, w5"],
                         ["tbl",      "__ sve_tbl(z16, __ S, z17, z18);",                   "tbl\tz16.s, {z17.s}, z18.s"],
+                        ["tbl",      "__ sve_tbl(z16, __ B, z17, z18, z16);",              "tbl\tz16.b, {z17.b, z18.b}, z16.b"],
+                        ["tbl",      "__ sve_tbl(z16, __ H, z17, z18, z16);",              "tbl\tz16.h, {z17.h, z18.h}, z16.h"],
+                        ["tbl",      "__ sve_tbl(z16, __ S, z17, z18, z16);",              "tbl\tz16.s, {z17.s, z18.s}, z16.s"],
+                        ["tbl",      "__ sve_tbl(z16, __ D, z17, z18, z16);",              "tbl\tz16.d, {z17.d, z18.d}, z16.d"],
                         ["ld1w",     "__ sve_ld1w_gather(z15, p0, r5, z16);",              "ld1w\t{z15.s}, p0/z, [x5, z16.s, uxtw #2]"],
                         ["ld1d",     "__ sve_ld1d_gather(z15, p0, r5, z16);",              "ld1d\t{z15.d}, p0/z, [x5, z16.d, uxtw #3]"],
                         ["st1w",     "__ sve_st1w_scatter(z15, p0, r5, z16);",             "st1w\t{z15.s}, p0, [x5, z16.s, uxtw #2]"],
@@ -2129,6 +2175,7 @@ generate(SpecialCases, [["ccmn",   "__ ccmn(zr, zr, 3u, Assembler::LE);",       
                         ["punpkhi",  "__ sve_punpkhi(p1, p0);",                            "punpkhi\tp1.h, p0.b"],
                         ["compact",  "__ sve_compact(z16, __ S, z16, p1);",                "compact\tz16.s, p1, z16.s"],
                         ["compact",  "__ sve_compact(z16, __ D, z16, p1);",                "compact\tz16.d, p1, z16.d"],
+                        ["movprfx",  "__ sve_movprfx(z17, z1);",                           "movprfx\tz17, z1"],
                         ["ext",      "__ sve_ext(z17, z16, 63);",                          "ext\tz17.b, z17.b, z16.b, #63"],
                         ["facgt",    "__ sve_fac(Assembler::GT, p1, __ H, p2, z4, z5);",   "facgt\tp1.h, p2/z, z4.h, z5.h"],
                         ["facgt",    "__ sve_fac(Assembler::GT, p1, __ S, p2, z4, z5);",   "facgt\tp1.s, p2/z, z4.s, z5.s"],
@@ -2136,9 +2183,17 @@ generate(SpecialCases, [["ccmn",   "__ ccmn(zr, zr, 3u, Assembler::LE);",       
                         ["facge",    "__ sve_fac(Assembler::GE, p1, __ H, p2, z4, z5);",   "facge\tp1.h, p2/z, z4.h, z5.h"],
                         ["facge",    "__ sve_fac(Assembler::GE, p1, __ S, p2, z4, z5);",   "facge\tp1.s, p2/z, z4.s, z5.s"],
                         ["facge",    "__ sve_fac(Assembler::GE, p1, __ D, p2, z4, z5);",   "facge\tp1.d, p2/z, z4.d, z5.d"],
+                        ["splice",   "__ sve_splice(z0, __ B, p0, z1);",                   "splice\tz0.b, p0, z0.b, z1.b"],
+                        ["splice",   "__ sve_splice(z0, __ H, p0, z1);",                   "splice\tz0.h, p0, z0.h, z1.h"],
+                        ["splice",   "__ sve_splice(z0, __ S, p0, z1);",                   "splice\tz0.s, p0, z0.s, z1.s"],
+                        ["splice",   "__ sve_splice(z0, __ D, p0, z1);",                   "splice\tz0.d, p0, z0.d, z1.d"],
                         # SVE2 instructions
                         ["histcnt",  "__ sve_histcnt(z16, __ S, p0, z16, z16);",           "histcnt\tz16.s, p0/z, z16.s, z16.s"],
                         ["histcnt",  "__ sve_histcnt(z17, __ D, p0, z17, z17);",           "histcnt\tz17.d, p0/z, z17.d, z17.d"],
+                        ["umullb",   "__ sve_umullb(z16, __ H, z17, z18);",                "umullb\tz16.h, z17.b, z18.b"],
+                        ["umullt",   "__ sve_umullt(z19, __ S, z20, z21);",                "umullt\tz19.s, z20.h, z21.h"],
+                        ["smullb",   "__ sve_smullb(z22, __ D, z23, z24);",                "smullb\tz22.d, z23.s, z24.s"],
+                        ["smullt",   "__ sve_smullt(z25, __ H, z26, z27);",                "smullt\tz25.h, z26.b, z27.b"],
 ])
 
 print "\n// FloatImmediateOp"
@@ -2192,6 +2247,8 @@ generate(SVEVectorOp, [["add", "ZZZ"],
                        ["lsl", "ZPZ", "m", "dn"],
                        ["lsr", "ZPZ", "m", "dn"],
                        ["mul", "ZPZ", "m", "dn"],
+                       ["sdiv", "ZPZ", "m", "dn"],
+                       ["udiv", "ZPZ", "m", "dn"],
                        ["neg", "ZPZ", "m"],
                        ["not", "ZPZ", "m"],
                        ["orr", "ZPZ", "m", "dn"],
@@ -2234,6 +2291,7 @@ generate(SVEVectorOp, [["add", "ZZZ"],
                        # SVE2 instructions
                        ["bext", "ZZZ"],
                        ["bdep", "ZZZ"],
+                       ["bsl", "ZZZ"],
                        ["eor3", "ZZZ"],
                        ["sqadd", "ZPZ", "m", "dn"],
                        ["sqsub", "ZPZ", "m", "dn"],
@@ -2241,7 +2299,7 @@ generate(SVEVectorOp, [["add", "ZZZ"],
                        ["uqsub", "ZPZ", "m", "dn"],
                       ])
 
-generate(SVEReductionOp, [["andv", 0], ["orv", 0], ["eorv", 0], ["smaxv", 0], ["sminv", 0],
+generate(SVEReductionOp, [["andv", 0], ["orv", 0], ["eorv", 0], ["smaxv", 0], ["sminv", 0], ["umaxv", 0], ["uminv", 0],
                           ["fminv", 2], ["fmaxv", 2], ["fadda", 2], ["uaddv", 0]])
 
 generate(AddWideNEONOp,
@@ -2258,9 +2316,9 @@ outfile.write("forth:\n")
 
 outfile.close()
 
-# compile for sve with armv9-a+sha3+sve2-bitperm because of SHA3 crypto extension and SVE2 bitperm instructions.
+# compile for sve with armv9.2-a+sha3+sve2-bitperm because of SHA3 crypto extension and SVE2 bitperm instructions.
 # armv9-a enables sve and sve2 by default.
-subprocess.check_call([AARCH64_AS, "-march=armv9-a+sha3+sve2-bitperm", "aarch64ops.s", "-o", "aarch64ops.o"])
+subprocess.check_call([AARCH64_AS, "-march=armv9.2-a+sha3+sve2-bitperm", "aarch64ops.s", "-o", "aarch64ops.o"])
 
 print
 print "/*"

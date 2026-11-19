@@ -77,7 +77,7 @@ public class TestHiddenTag extends JavadocTester {
                     g1">A</a></h3>
                     <code><a href="A.VisibleInner.html" title="class in pkg1">A.VisibleInner</a>, <a\
                      href="A.VisibleInnerExtendsInvisibleInner.html" title="class in pkg1">A.Visible\
-                    InnerExtendsInvisibleInner</a></code></div>
+                    InnerExtendsInvisibleInner</a></code>
                     """);
 
         checkOutput("pkg1/A.VisibleInner.html", false,

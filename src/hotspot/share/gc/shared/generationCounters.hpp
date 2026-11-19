@@ -32,8 +32,6 @@
 // that track a generation
 
 class GenerationCounters: public CHeapObj<mtGC> {
-  friend class VMStructs;
-
   PerfVariable*      _current_size;
 
   // Constant PerfData types don't need to retain a reference.

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2022, 2023, Arm Limited. All rights reserved.
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,18 +26,10 @@
  * @test
  * @summary Vectorization test on array index fill
  * @library /test/lib /
- *
- * @build jdk.test.whitebox.WhiteBox
- *        compiler.vectorization.runner.VectorizationTestRunner
- *
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:.
- *                   -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+WhiteBoxAPI
- *                   compiler.vectorization.runner.ArrayIndexFillTest
- *
  * @requires (os.simpleArch == "x64") | (os.simpleArch == "aarch64") | (os.simpleArch == "riscv64")
  * @requires vm.compiler2.enabled
+ *
+ * @run driver ${test.main.class}
  */
 
 package compiler.vectorization.runner;
@@ -106,7 +98,7 @@ public class ArrayIndexFillTest extends VectorizationTestRunner {
     @Test
     @IR(applyIfCPUFeatureOr = {"sve", "true", "avx2", "true", "rvv", "true"},
         counts = {IRNode.POPULATE_INDEX, "=0"})
-    // The ConvI2L can be split through the AddI, creating a mix of
+    // The ConvI2L can be pushed through the AddI, creating a mix of
     // ConvI2L(AddI) and AddL(ConvI2L) cases, which do not vectorize.
     // See: JDK-8332878
     public long[] fillLongArray() {
@@ -132,8 +124,7 @@ public class ArrayIndexFillTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"sve", "true", "avx2", "true", "rvv", "true"},
-        counts = {IRNode.POPULATE_INDEX, "=0"})
-    // See: JDK-8332878
+        counts = {IRNode.POPULATE_INDEX, ">0"})
     public float[] fillFloatArray() {
         float[] res = new float[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -155,8 +146,7 @@ public class ArrayIndexFillTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"sve", "true", "avx2", "true", "rvv", "true"},
-        counts = {IRNode.POPULATE_INDEX, "=0"})
-    // See: JDK-8332878
+        counts = {IRNode.POPULATE_INDEX, ">0"})
     public double[] fillDoubleArray() {
         double[] res = new double[SIZE];
         for (int i = 0; i < SIZE; i++) {

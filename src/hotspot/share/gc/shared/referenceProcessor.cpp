@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 
 #include "classfile/javaClasses.inline.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
-#include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/gcTimer.hpp"
@@ -61,7 +60,7 @@ void ReferenceProcessor::init_statics() {
   java_lang_ref_SoftReference::set_clock(_soft_ref_timestamp_clock);
 
   _always_clear_soft_ref_policy = new AlwaysClearPolicy();
-  if (CompilerConfig::is_c2_or_jvmci_compiler_enabled()) {
+  if (CompilerConfig::is_c2_enabled()) {
     _default_soft_ref_policy = new LRUMaxHeapPolicy();
   } else {
     _default_soft_ref_policy = new LRUCurrentHeapPolicy();
@@ -123,7 +122,7 @@ void ReferenceProcessor::verify_no_references_recorded() {
 #endif
 
 bool ReferenceProcessor::processing_is_mt() const {
-  return ParallelRefProcEnabled && _num_queues > 1;
+  return _num_queues > 1;
 }
 
 void ReferenceProcessor::weak_oops_do(OopClosure* f) {
@@ -179,6 +178,7 @@ void ReferenceProcessor::verify_total_count_zero(DiscoveredList lists[], const c
 #endif
 
 ReferenceProcessorStats ReferenceProcessor::process_discovered_references(RefProcProxyTask& proxy_task,
+                                                                          WorkerThreads* workers,
                                                                           ReferenceProcessorPhaseTimes& phase_times) {
 
   double start_time = os::elapsedTime();
@@ -197,17 +197,17 @@ ReferenceProcessorStats ReferenceProcessor::process_discovered_references(RefPro
 
   {
     RefProcTotalPhaseTimesTracker tt(SoftWeakFinalRefsPhase, &phase_times);
-    process_soft_weak_final_refs(proxy_task, phase_times);
+    process_soft_weak_final_refs(proxy_task, workers, phase_times);
   }
 
   {
     RefProcTotalPhaseTimesTracker tt(KeepAliveFinalRefsPhase, &phase_times);
-    process_final_keep_alive(proxy_task, phase_times);
+    process_final_keep_alive(proxy_task, workers, phase_times);
   }
 
   {
     RefProcTotalPhaseTimesTracker tt(PhantomRefsPhase, &phase_times);
-    process_phantom_refs(proxy_task, phase_times);
+    process_phantom_refs(proxy_task, workers, phase_times);
   }
 
   phase_times.set_total_time_ms((os::elapsedTime() - start_time) * 1000);
@@ -586,33 +586,9 @@ void ReferenceProcessor::set_active_mt_degree(uint v) {
   _next_id = 0;
 }
 
-bool ReferenceProcessor::need_balance_queues(DiscoveredList refs_lists[]) {
-  assert(processing_is_mt(), "why balance non-mt processing?");
-  // _num_queues is the processing degree.  Only list entries up to
-  // _num_queues will be processed, so any non-empty lists beyond
-  // that must be redistributed to lists in that range.  Even if not
-  // needed for that, balancing may be desirable to eliminate poor
-  // distribution of references among the lists.
-  if (ParallelRefProcBalancingEnabled) {
-    return true;                // Configuration says do it.
-  } else {
-    // Configuration says don't balance, but if there are non-empty
-    // lists beyond the processing degree, then must ignore the
-    // configuration and balance anyway.
-    for (uint i = _num_queues; i < _max_num_queues; ++i) {
-      if (!refs_lists[i].is_empty()) {
-        return true;            // Must balance despite configuration.
-      }
-    }
-    return false;               // Safe to obey configuration and not balance.
-  }
-}
-
 void ReferenceProcessor::maybe_balance_queues(DiscoveredList refs_lists[]) {
   assert(processing_is_mt(), "Should not call this otherwise");
-  if (need_balance_queues(refs_lists)) {
-    balance_queues(refs_lists);
-  }
+  balance_queues(refs_lists);
 }
 
 // Balances reference queues.
@@ -698,7 +674,7 @@ void ReferenceProcessor::balance_queues(DiscoveredList ref_lists[]) {
 #endif
 }
 
-void ReferenceProcessor::run_task(RefProcTask& task, RefProcProxyTask& proxy_task, bool marks_oops_alive) {
+void ReferenceProcessor::run_task(RefProcTask& task, RefProcProxyTask& proxy_task, WorkerThreads* workers, bool marks_oops_alive) {
   log_debug(gc, ref)("ReferenceProcessor::execute queues: %d, %s, marks_oops_alive: %s",
                      num_queues(),
                      processing_is_mt() ? "RefProcThreadModel::Multi" : "RefProcThreadModel::Single",
@@ -706,7 +682,6 @@ void ReferenceProcessor::run_task(RefProcTask& task, RefProcProxyTask& proxy_tas
 
   proxy_task.prepare_run_task(task, num_queues(), processing_is_mt() ? RefProcThreadModel::Multi : RefProcThreadModel::Single, marks_oops_alive);
   if (processing_is_mt()) {
-    WorkerThreads* workers = Universe::heap()->safepoint_workers();
     assert(workers != nullptr, "can not dispatch multi threaded without workers");
     assert(workers->active_workers() >= num_queues(),
            "Ergonomically chosen workers(%u) should be less than or equal to active workers(%u)",
@@ -719,7 +694,12 @@ void ReferenceProcessor::run_task(RefProcTask& task, RefProcProxyTask& proxy_tas
   }
 }
 
+static uint num_active_workers(WorkerThreads* workers) {
+  return workers != nullptr ? workers->active_workers() : 1;
+}
+
 void ReferenceProcessor::process_soft_weak_final_refs(RefProcProxyTask& proxy_task,
+                                                      WorkerThreads* workers,
                                                       ReferenceProcessorPhaseTimes& phase_times) {
 
   size_t const num_soft_refs = phase_times.ref_discovered(REF_SOFT);
@@ -732,7 +712,7 @@ void ReferenceProcessor::process_soft_weak_final_refs(RefProcProxyTask& proxy_ta
     return;
   }
 
-  RefProcMTDegreeAdjuster a(this, SoftWeakFinalRefsPhase, num_total_refs);
+  RefProcMTDegreeAdjuster a(this, SoftWeakFinalRefsPhase, num_active_workers(workers), num_total_refs);
 
   if (processing_is_mt()) {
     RefProcBalanceQueuesTimeTracker tt(SoftWeakFinalRefsPhase, &phase_times);
@@ -746,7 +726,7 @@ void ReferenceProcessor::process_soft_weak_final_refs(RefProcProxyTask& proxy_ta
   log_reflist("SoftWeakFinalRefsPhase Final before", _discoveredFinalRefs, _max_num_queues);
 
   RefProcSoftWeakFinalPhaseTask phase_task(*this, &phase_times);
-  run_task(phase_task, proxy_task, false);
+  run_task(phase_task, proxy_task, workers, false);
 
   verify_total_count_zero(_discoveredSoftRefs, "SoftReference");
   verify_total_count_zero(_discoveredWeakRefs, "WeakReference");
@@ -754,6 +734,7 @@ void ReferenceProcessor::process_soft_weak_final_refs(RefProcProxyTask& proxy_ta
 }
 
 void ReferenceProcessor::process_final_keep_alive(RefProcProxyTask& proxy_task,
+                                                  WorkerThreads* workers,
                                                   ReferenceProcessorPhaseTimes& phase_times) {
 
   size_t const num_final_refs = phase_times.ref_discovered(REF_FINAL);
@@ -763,7 +744,7 @@ void ReferenceProcessor::process_final_keep_alive(RefProcProxyTask& proxy_task,
     return;
   }
 
-  RefProcMTDegreeAdjuster a(this, KeepAliveFinalRefsPhase, num_final_refs);
+  RefProcMTDegreeAdjuster a(this, KeepAliveFinalRefsPhase, num_active_workers(workers), num_final_refs);
 
   if (processing_is_mt()) {
     RefProcBalanceQueuesTimeTracker tt(KeepAliveFinalRefsPhase, &phase_times);
@@ -772,12 +753,13 @@ void ReferenceProcessor::process_final_keep_alive(RefProcProxyTask& proxy_task,
 
   // Traverse referents of final references and keep them and followers alive.
   RefProcKeepAliveFinalPhaseTask phase_task(*this, &phase_times);
-  run_task(phase_task, proxy_task, true);
+  run_task(phase_task, proxy_task, workers, true);
 
   verify_total_count_zero(_discoveredFinalRefs, "FinalReference");
 }
 
 void ReferenceProcessor::process_phantom_refs(RefProcProxyTask& proxy_task,
+                                              WorkerThreads* workers,
                                               ReferenceProcessorPhaseTimes& phase_times) {
 
   size_t const num_phantom_refs = phase_times.ref_discovered(REF_PHANTOM);
@@ -787,7 +769,7 @@ void ReferenceProcessor::process_phantom_refs(RefProcProxyTask& proxy_task,
     return;
   }
 
-  RefProcMTDegreeAdjuster a(this, PhantomRefsPhase, num_phantom_refs);
+  RefProcMTDegreeAdjuster a(this, PhantomRefsPhase, num_active_workers(workers), num_phantom_refs);
 
   if (processing_is_mt()) {
     RefProcBalanceQueuesTimeTracker tt(PhantomRefsPhase, &phase_times);
@@ -797,7 +779,7 @@ void ReferenceProcessor::process_phantom_refs(RefProcProxyTask& proxy_task,
   log_reflist("PhantomRefsPhase Phantom before", _discoveredPhantomRefs, _max_num_queues);
 
   RefProcPhantomPhaseTask phase_task(*this, &phase_times);
-  run_task(phase_task, proxy_task, false);
+  run_task(phase_task, proxy_task, workers, false);
 
   verify_total_count_zero(_discoveredPhantomRefs, "PhantomReference");
 }
@@ -1136,10 +1118,11 @@ bool RefProcMTDegreeAdjuster::use_max_threads(RefProcPhases phase) const {
 
 RefProcMTDegreeAdjuster::RefProcMTDegreeAdjuster(ReferenceProcessor* rp,
                                                  RefProcPhases phase,
+                                                 uint num_active_workers,
                                                  size_t ref_count):
     _rp(rp),
     _saved_num_queues(_rp->num_queues()) {
-  uint workers = ergo_proc_thread_count(ref_count, _rp->num_queues(), phase);
+  uint workers = ergo_proc_thread_count(ref_count, num_active_workers, phase);
   _rp->set_active_mt_degree(workers);
 }
 

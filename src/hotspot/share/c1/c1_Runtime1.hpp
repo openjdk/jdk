@@ -30,6 +30,7 @@
 #include "interpreter/interpreter.hpp"
 #include "memory/allStatic.hpp"
 #include "runtime/stubDeclarations.hpp"
+#include "runtime/stubInfo.hpp"
 
 class StubAssembler;
 
@@ -41,16 +42,6 @@ class StubAssemblerCodeGenClosure: public Closure {
  public:
   virtual OopMapSet* generate_code(StubAssembler* sasm) = 0;
 };
-
-// define C1StubId enum tags: unwind_exception_id etc
-
-#define C1_STUB_ID_ENUM_DECLARE(name) STUB_ID_NAME(name),
-enum class C1StubId :int {
-  NO_STUBID = -1,
-  C1_STUBS_DO(C1_STUB_ID_ENUM_DECLARE)
-  NUM_STUBIDS
-};
-#undef C1_STUB_ID_ENUM_DECLARE
 
 class Runtime1: public AllStatic {
   friend class ArrayCopyStub;
@@ -65,8 +56,14 @@ public:
   static uint _arraycopy_checkcast_attempt_cnt;
   static uint _new_type_array_slowcase_cnt;
   static uint _new_object_array_slowcase_cnt;
+  static uint _new_null_free_array_slowcase_cnt;
   static uint _new_instance_slowcase_cnt;
   static uint _new_multi_array_slowcase_cnt;
+  static uint _load_flat_array_slowcase_cnt;
+  static uint _store_flat_array_slowcase_cnt;
+  static uint _substitutability_check_slowcase_cnt;
+  static uint _buffer_value_args_slowcase_cnt;
+  static uint _buffer_value_args_no_receiver_slowcase_cnt;
   static uint _monitorenter_slowcase_cnt;
   static uint _monitorexit_slowcase_cnt;
   static uint _patch_code_slowcase_cnt;
@@ -76,21 +73,30 @@ public:
   static uint _throw_null_pointer_exception_count;
   static uint _throw_class_cast_exception_count;
   static uint _throw_incompatible_class_change_error_count;
+  static uint _throw_illegal_monitor_state_exception_count;
+  static uint _throw_identity_exception_count;
   static uint _throw_count;
+
+  static address arraycopy_count_address(BasicType type);
+  static void increment_throw_count();
+#endif
+
+#if INCLUDE_CDS
+static void init_AOTAddressTable(GrowableArray<address>& external_addresses);
 #endif
 
  private:
-  static CodeBlob* _blobs[(int)C1StubId::NUM_STUBIDS];
-  static const char* _blob_names[];
+  static CodeBlob* _blobs[(int)StubInfo::C1_STUB_COUNT];
+  static void buffer_value_args_impl(JavaThread* current, Method* m, bool allocate_receiver);
 
   // stub generation
  public:
-  static CodeBlob*  generate_blob(BufferBlob* buffer_blob, C1StubId id, const char* name, bool expect_oop_map, StubAssemblerCodeGenClosure *cl);
-  static bool       generate_blob_for(BufferBlob* blob, C1StubId id);
-  static OopMapSet* generate_code_for(C1StubId id, StubAssembler* sasm);
+  static CodeBlob*  generate_blob(BufferBlob* buffer_blob, StubId id, const char* name, bool expect_oop_map, StubAssemblerCodeGenClosure *cl);
+  static bool       generate_blob_for(BufferBlob* blob, StubId id);
+  static OopMapSet* generate_code_for(StubId id, StubAssembler* sasm);
  private:
   static OopMapSet* generate_exception_throw(StubAssembler* sasm, address target, bool has_argument);
-  static OopMapSet* generate_handle_exception(C1StubId id, StubAssembler* sasm);
+  static OopMapSet* generate_handle_exception(StubId id, StubAssembler* sasm);
   static void       generate_unwind_exception(StubAssembler *sasm);
   static OopMapSet* generate_patching(StubAssembler* sasm, address target);
 
@@ -101,11 +107,17 @@ public:
   static void new_instance    (JavaThread* current, Klass* klass);
   static void new_type_array  (JavaThread* current, Klass* klass, jint length);
   static void new_object_array(JavaThread* current, Klass* klass, jint length);
+  static void new_null_free_array(JavaThread* current, Klass* klass, jint length);
   static void new_multi_array (JavaThread* current, Klass* klass, int rank, jint* dims);
+  static void load_flat_array(JavaThread* current, flatArrayOopDesc* array, int index);
+  static void store_flat_array(JavaThread* current, flatArrayOopDesc* array, int index, oopDesc* value);
+  static int  substitutability_check(JavaThread* current, oopDesc* left, oopDesc* right);
+  static void buffer_value_args(JavaThread* current, Method* method);
+  static void buffer_value_args_no_receiver(JavaThread* current, Method* method);
 
   static address counter_overflow(JavaThread* current, int bci, Method* method);
 
-  static void unimplemented_entry(JavaThread* current, C1StubId id);
+  static void unimplemented_entry(JavaThread* current, StubId id);
 
   static address exception_handler_for_pc(JavaThread* current);
 
@@ -115,6 +127,8 @@ public:
   static void throw_null_pointer_exception(JavaThread* current);
   static void throw_class_cast_exception(JavaThread* current, oopDesc* object);
   static void throw_incompatible_class_change_error(JavaThread* current);
+  static void throw_illegal_monitor_state_exception(JavaThread* current);
+  static void throw_identity_exception(JavaThread* current, oopDesc* object);
   static void throw_array_store_exception(JavaThread* current, oopDesc* object);
 
   static void monitorenter(JavaThread* current, oopDesc* obj, BasicObjectLock* lock);
@@ -127,7 +141,7 @@ public:
   static int move_mirror_patching(JavaThread* current);
   static int move_appendix_patching(JavaThread* current);
 
-  static void patch_code(JavaThread* current, C1StubId stub_id);
+  static void patch_code(JavaThread* current, StubId stub_id);
 
  public:
   // initialization
@@ -138,9 +152,9 @@ public:
   static uint runtime_blob_current_thread_offset(frame f);
 
   // stubs
-  static CodeBlob* blob_for (C1StubId id);
-  static address   entry_for(C1StubId id)          { return blob_for(id)->code_begin(); }
-  static const char* name_for (C1StubId id);
+  static CodeBlob* blob_for (StubId id);
+  static address   entry_for(StubId id)          { return blob_for(id)->code_begin(); }
+  static const char* name_for (StubId id);
   static const char* name_for_address(address entry);
 
   // platform might add runtime names.
@@ -148,11 +162,6 @@ public:
 
   // method tracing
   static void trace_block_entry(jint block_id);
-
-#ifndef PRODUCT
-  static address throw_count_address()               { return (address)&_throw_count;             }
-  static address arraycopy_count_address(BasicType type);
-#endif
 
   // directly accessible leaf routine
   static int  is_instance_of(oopDesc* mirror, oopDesc* obj);

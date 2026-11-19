@@ -309,8 +309,6 @@ public:
 };
 
 class ZGlobalsPointers : public AllStatic {
-  friend class ZAddressTest;
-
 private:
   static void set_good_masks();
   static void pd_set_good_masks();

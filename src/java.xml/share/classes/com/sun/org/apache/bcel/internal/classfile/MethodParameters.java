@@ -29,6 +29,7 @@ import java.util.Iterator;
 import java.util.stream.Stream;
 
 import com.sun.org.apache.bcel.internal.Const;
+import com.sun.org.apache.bcel.internal.util.Args;
 
 /**
  * This class represents a MethodParameters attribute.
@@ -42,13 +43,12 @@ public class MethodParameters extends Attribute implements Iterable<MethodParame
     /**
      * Empty array.
      */
-    private static final MethodParameter[] EMPTY_METHOD_PARAMETER_ARRAY = {};
+    private static final MethodParameter[] EMPTY_ARRAY = {};
 
-    private MethodParameter[] parameters = EMPTY_METHOD_PARAMETER_ARRAY;
+    private MethodParameter[] parameters = EMPTY_ARRAY;
 
     MethodParameters(final int nameIndex, final int length, final DataInput input, final ConstantPool constantPool) throws IOException {
         super(Const.ATTR_METHOD_PARAMETERS, nameIndex, length, constantPool);
-
         final int parameterCount = input.readUnsignedByte();
         parameters = new MethodParameter[parameterCount];
         for (int i = 0; i < parameterCount; i++) {
@@ -65,27 +65,31 @@ public class MethodParameters extends Attribute implements Iterable<MethodParame
     public Attribute copy(final ConstantPool constantPool) {
         final MethodParameters c = (MethodParameters) clone();
         c.parameters = new MethodParameter[parameters.length];
-
         Arrays.setAll(c.parameters, i -> parameters[i].copy());
         c.setConstantPool(constantPool);
         return c;
     }
 
     /**
-     * Dump method parameters attribute to file stream in binary format.
+     * Dumps method parameters attribute to file stream in binary format.
      *
-     * @param file Output file stream
-     * @throws IOException if an I/O error occurs.
+     * @param file Output file stream.
+     * @throws IOException Thrown if an I/O error occurs.
      */
     @Override
     public void dump(final DataOutputStream file) throws IOException {
         super.dump(file);
-        file.writeByte(parameters.length);
+        file.writeByte(Args.requireU1(parameters.length, "parameters.length"));
         for (final MethodParameter parameter : parameters) {
             parameter.dump(file);
         }
     }
 
+    /**
+     * Gets the method parameters.
+     *
+     * @return The method parameters.
+     */
     public MethodParameter[] getParameters() {
         return parameters;
     }
@@ -95,7 +99,12 @@ public class MethodParameters extends Attribute implements Iterable<MethodParame
         return Stream.of(parameters).iterator();
     }
 
+    /**
+     * Sets the method parameters.
+     *
+     * @param parameters The method parameters to set.
+     */
     public void setParameters(final MethodParameter[] parameters) {
-        this.parameters = parameters;
+        this.parameters = parameters != null ? parameters : EMPTY_ARRAY;
     }
 }

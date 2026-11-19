@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,18 +32,12 @@ import java.util.List;
 import jdk.jfr.Event;
 import jdk.jfr.FlightRecorder;
 import jdk.jfr.Recording;
-import jdk.vm.ci.meta.MetaAccessProvider;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
-import jdk.vm.ci.meta.ConstantPool;
-import jdk.vm.ci.runtime.JVMCI;
 
 /**
  * @test id=default
  * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib
- * @modules jdk.internal.vm.ci/jdk.vm.ci.meta
- *          jdk.internal.vm.ci/jdk.vm.ci.runtime
  *
  * @compile PlaceholderEventWriter.java
  * @compile E.java
@@ -66,28 +60,6 @@ import jdk.vm.ci.runtime.JVMCI;
  *      jdk.jfr.jvm.TestGetEventWriter
  *
  * @run main/othervm/timeout=300 -Xcomp -XX:TieredStopAtLevel=4 -XX:-TieredCompilation -XX:-UseInterpreter -Dinterpreted=false
- *      jdk.jfr.jvm.TestGetEventWriter
- */
-
-/**
- * @test id=jvmci
- * @requires vm.flagless
- * @requires vm.hasJFR
- * @requires vm.jvmci
- * @library /test/lib
- * @modules jdk.internal.vm.ci/jdk.vm.ci.meta
- *          jdk.internal.vm.ci/jdk.vm.ci.runtime
- *
- * @compile PlaceholderEventWriter.java
- * @compile E.java
- * @compile NonEvent.java
- * @compile RegisteredTrueEvent.java
- * @compile RegisteredFalseEvent.java
- * @compile MyCommitRegisteredTrueEvent.java
- * @compile MyCommitRegisteredFalseEvent.java
- * @compile StaticCommitEvent.java
- *
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -Dtest.jvmci=true --add-exports=jdk.jfr/jdk.jfr.internal.event=ALL-UNNAMED
  *      jdk.jfr.jvm.TestGetEventWriter
  */
 
@@ -129,7 +101,6 @@ public class TestGetEventWriter {
             throw new RuntimeException("Should not reach here");
         } catch (IllegalAccessError iae) {
             // OK, as expected
-            maybeCheckJVMCI(e.getClass(), "commit");
             return;
         }
     }
@@ -144,7 +115,6 @@ public class TestGetEventWriter {
             throw new RuntimeException("Should not reach here");
         } catch (IllegalAccessError iae) {
             // OK, as expected
-            maybeCheckJVMCI(e.getClass(), "commit");
             return;
         }
     }
@@ -164,7 +134,6 @@ public class TestGetEventWriter {
             throw new RuntimeException("Should not reach here");
         } catch (IllegalAccessError iae) {
             // OK, as expected
-            maybeCheckJVMCI(e.getClass(), "commit");
         }
         try {
             FlightRecorder.register(e.getClass());
@@ -185,7 +154,6 @@ public class TestGetEventWriter {
             throw new RuntimeException("Should not reach here");
         } catch (IllegalAccessError iae) {
             // OK, as expected
-            maybeCheckJVMCI(e.getClass(), "myCommit");
             return;
         }
     }
@@ -202,7 +170,6 @@ public class TestGetEventWriter {
             throw new RuntimeException("Should not reach here");
         } catch (IllegalAccessError iae) {
             // OK, as expected
-            maybeCheckJVMCI(e.getClass(), "myCommit");
         }
         // Instrumentation added.
         FlightRecorder.register(e.getClass().asSubclass(Event.class));
@@ -220,7 +187,6 @@ public class TestGetEventWriter {
             throw new RuntimeException("Should not reach here");
         } catch (IllegalAccessError iae) {
             // OK, as expected
-            maybeCheckJVMCI(e.getClass(), "commit");
         }
     }
 
@@ -348,57 +314,5 @@ public class TestGetEventWriter {
         Constructor<?> constructor = clazz.getConstructor(new Class[0]);
         System.out.println("About to invoke " + fullName + ".commit()");
         return (T) constructor.newInstance();
-    }
-
-    private static ResolvedJavaMethod findCommitMethod(MetaAccessProvider metaAccess, Class<?> eventClass, String commitName) {
-        for (Method m : eventClass.getMethods()) {
-            if (m.getName().equals(commitName)) {
-                return metaAccess.lookupJavaMethod(m);
-            }
-        }
-        throw new AssertionError("could not find " + commitName + " method in " + eventClass);
-    }
-
-    // Factor out test.jvmci system property check to reduce unecessary work in -Xcomp.
-    private static void maybeCheckJVMCI(Class<?> eventClass, String commitName) throws Throwable {
-        if (!Boolean.getBoolean("test.jvmci")) {
-            return;
-        }
-        checkJVMCI(eventClass, commitName);
-    }
-
-    /**
-     * Checks that JVMCI prevents unblessed access to {@code EventWriter.getEventWriter()}.
-     */
-    private static void checkJVMCI(Class<?> eventClass, String commitName) throws Throwable {
-        MetaAccessProvider metaAccess = JVMCI.getRuntime().getHostJVMCIBackend().getMetaAccess();
-        ResolvedJavaMethod commit = findCommitMethod(metaAccess, eventClass, commitName);
-        ConstantPool cp = commit.getConstantPool();
-
-        // Search for first INVOKESTATIC instruction in commit method which is expected
-        // to be the call to jdk.jfr.internal.event.EventWriter.getEventWriter().
-        final int INVOKESTATIC = 184;
-        byte[] code = commit.getCode();
-        for (int bci = 0; bci < code.length; bci++) {
-            int b = code[bci] & 0xff;
-            if (b == INVOKESTATIC) {
-                int cpi = ((code[bci + 1] & 0xff) << 8) | (code[bci + 2] & 0xff);
-                try {
-                    cp.lookupMethod(cpi, 184, commit);
-                    throw new AssertionError("Expected IllegalAccessError");
-                } catch (IllegalAccessError e) {
-                }
-                try {
-                    // Test looking up with null caller
-                    cp.lookupMethod(cpi, 184, null);
-                    throw new AssertionError("Expected IllegalAccessError");
-                } catch (IllegalAccessError e) {
-                }
-
-                // Ignore all subsequent instructions
-                return;
-            }
-        }
-        throw new AssertionError(eventClass + ": did not find INVOKESTATIC in " + commit.format("%H.%n(%p)"));
     }
 }

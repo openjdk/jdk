@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package com.sun.tools.javap;
 
+import java.lang.classfile.constantpool.NameAndTypeEntry;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -98,8 +99,27 @@ public class StackMapWriter extends InstructionDetailWriter {
         if (m != null) {
             print("StackMap locals: ", m.locals(), true);
             print("StackMap stack: ", m.stack(), false);
+            if (m.locals().contains(StackMapFrameInfo.SimpleVerificationTypeInfo.UNINITIALIZED_THIS)) {
+                printFields("StackMap unset fields: ", m.unsetFields());
+            }
         }
 
+    }
+
+    void printFields(String label, List<NameAndTypeEntry> entries) {
+        print(label);
+        boolean first = true;
+        for (var e : entries) {
+            if (!first) {
+                print(", ");
+            } else {
+                first = false;
+            }
+            print(e::name);
+            print(":");
+            print(e::type);
+        }
+        println();
     }
 
     void print(String label, List<StackMapFrameInfo.VerificationTypeInfo> entries,

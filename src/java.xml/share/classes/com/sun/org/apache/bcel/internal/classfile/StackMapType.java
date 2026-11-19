@@ -34,17 +34,23 @@ import com.sun.org.apache.bcel.internal.Const;
  * @see StackMap
  * @see Const
  */
-public final class StackMapType implements Cloneable {
+public final class StackMapType implements Node, Cloneable {
 
-    public static final StackMapType[] EMPTY_ARRAY = {}; // must be public because BCELifier code generator writes calls to it
+    /**
+     * Empty array constant.
+     */
+    public static final StackMapType[] EMPTY_ARRAY = {}; // BCELifier code generator writes calls to constructor translating null to EMPTY_ARRAY
 
     private byte type;
     private int index = -1; // Index to CONSTANT_Class or offset
     private ConstantPool constantPool;
 
     /**
-     * @param type type tag as defined in the Constants interface
-     * @param index index to constant pool, or byte code offset
+     * Constructs a StackMapType.
+     *
+     * @param type type tag as defined in the Constants interface.
+     * @param index index to constant pool, or byte code offset.
+     * @param constantPool The constant pool.
      */
     public StackMapType(final byte type, final int index, final ConstantPool constantPool) {
         this.type = checkType(type);
@@ -53,10 +59,11 @@ public final class StackMapType implements Cloneable {
     }
 
     /**
-     * Construct object from file stream.
+     * Constructs object from file stream.
      *
-     * @param file Input stream
-     * @throws IOException if an I/O error occurs.
+     * @param file Input stream.
+     * @param constantPool The constant pool.
+     * @throws IOException Thrown if an I/O error occurs.
      */
     StackMapType(final DataInput file, final ConstantPool constantPool) throws IOException {
         this(file.readByte(), -1, constantPool);
@@ -64,6 +71,18 @@ public final class StackMapType implements Cloneable {
             this.index = file.readUnsignedShort();
         }
         this.constantPool = constantPool;
+    }
+
+    /**
+     * Called by objects that are traversing the nodes of the tree implicitly defined by the contents of a Java class.
+     * I.e., the hierarchy of methods, fields, attributes, etc. spawns a tree of objects.
+     *
+     * @param v Visitor object.
+     * @since 6.8.0
+     */
+    @Override
+    public void accept(final Visitor v) {
+        v.visitStackMapType(this);
     }
 
     private byte checkType(final byte type) {
@@ -74,7 +93,9 @@ public final class StackMapType implements Cloneable {
     }
 
     /**
-     * @return deep copy of this object
+     * Creates a deep copy of this object.
+     *
+     * @return deep copy of this object.
      */
     public StackMapType copy() {
         try {
@@ -86,10 +107,10 @@ public final class StackMapType implements Cloneable {
     }
 
     /**
-     * Dump type entries to file.
+     * Dumps type entries to file.
      *
-     * @param file Output file stream
-     * @throws IOException if an I/O error occurs.
+     * @param file Output file stream.
+     * @throws IOException Thrown if an I/O error occurs.
      */
     public void dump(final DataOutputStream file) throws IOException {
         file.writeByte(type);
@@ -99,6 +120,18 @@ public final class StackMapType implements Cloneable {
     }
 
     /**
+     * Gets the class name of this StackMapType from the constant pool at index position.
+     *
+     * @return The fully qualified name of the class for this StackMapType.
+     * @since 6.8.0
+     */
+    public String getClassName() {
+        return constantPool.constantToString(index, Const.CONSTANT_Class);
+    }
+
+    /**
+     * Gets the constant pool.
+     *
      * @return Constant pool used by this object.
      */
     public ConstantPool getConstantPool() {
@@ -106,19 +139,28 @@ public final class StackMapType implements Cloneable {
     }
 
     /**
+     * Gets the index.
+     *
      * @return index to constant pool if type == ITEM_Object, or offset in byte code, if type == ITEM_NewObject, and -1
-     *         otherwise
+     *         otherwise.
      */
     public int getIndex() {
         return index;
     }
 
+    /**
+     * Gets the type.
+     *
+     * @return The type.
+     */
     public byte getType() {
         return type;
     }
 
     /**
-     * @return true, if type is either ITEM_Object or ITEM_NewObject
+     * Checks if this type has an index.
+     *
+     * @return true, if type is either ITEM_Object or ITEM_NewObject.
      */
     public boolean hasIndex() {
         return type == Const.ITEM_Object || type == Const.ITEM_NewObject;
@@ -129,7 +171,7 @@ public final class StackMapType implements Cloneable {
             if (index < 0) {
                 return ", class=<unknown>";
             }
-            return ", class=" + constantPool.constantToString(index, Const.CONSTANT_Class);
+            return ", class=" + getClassName();
         }
         if (type == Const.ITEM_NewObject) {
             return ", offset=" + index;
@@ -138,22 +180,34 @@ public final class StackMapType implements Cloneable {
     }
 
     /**
+     * Sets the constant pool.
+     *
      * @param constantPool Constant pool to be used for this object.
      */
     public void setConstantPool(final ConstantPool constantPool) {
         this.constantPool = constantPool;
     }
 
+    /**
+     * Sets the index.
+     *
+     * @param index The index.
+     */
     public void setIndex(final int index) {
         this.index = index;
     }
 
+    /**
+     * Sets the type.
+     *
+     * @param type The type.
+     */
     public void setType(final byte type) {
         this.type = checkType(type);
     }
 
     /**
-     * @return String representation
+     * @return String representation.
      */
     @Override
     public String toString() {

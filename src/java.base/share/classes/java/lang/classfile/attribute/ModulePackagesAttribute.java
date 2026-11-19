@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ import java.util.List;
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.UnboundAttribute;
+import jdk.internal.classfile.impl.Util;
 
 /**
  * Models the {@link Attributes#modulePackages() ModulePackages} attribute (JVMS
@@ -74,6 +75,8 @@ public sealed interface ModulePackagesAttribute
     /**
      * {@return a {@code ModulePackages} attribute}
      * @param packages the packages
+     * @throws IllegalArgumentException if the number of packages exceeds the
+     *         limit of {@link java.lang.classfile##u2 u2}
      */
     static ModulePackagesAttribute of(List<PackageEntry> packages) {
         return new UnboundAttribute.UnboundModulePackagesAttribute(packages);
@@ -82,6 +85,8 @@ public sealed interface ModulePackagesAttribute
     /**
      * {@return a {@code ModulePackages} attribute}
      * @param packages the packages
+     * @throws IllegalArgumentException if the number of packages exceeds the
+     *         limit of {@link java.lang.classfile##u2 u2}
      */
     static ModulePackagesAttribute of(PackageEntry... packages) {
         return of(List.of(packages));
@@ -90,18 +95,20 @@ public sealed interface ModulePackagesAttribute
     /**
      * {@return a {@code ModulePackages} attribute}
      * @param packages the packages
+     * @throws IllegalArgumentException if any of {@code packages} represents an
+     *         unnamed package; or if the number of packages exceeds the
+     *         limit of {@link java.lang.classfile##u2 u2}
      */
     static ModulePackagesAttribute ofNames(List<PackageDesc> packages) {
-        var p = new PackageEntry[packages.size()];
-        for (int i = 0; i < packages.size(); i++) {
-            p[i] = TemporaryConstantPool.INSTANCE.packageEntry(TemporaryConstantPool.INSTANCE.utf8Entry(packages.get(i).internalName()));
-        }
-        return of(p);
+        return of(Util.packageEntryList(packages));
     }
 
     /**
      * {@return a {@code ModulePackages} attribute}
      * @param packages the packages
+     * @throws IllegalArgumentException if any of {@code packages} represents an
+     *         unnamed package; or if the number of packages exceeds the
+     *         limit of {@link java.lang.classfile##u2 u2}
      */
     static ModulePackagesAttribute ofNames(PackageDesc... packages) {
         // List view, since ref to packages is temporary

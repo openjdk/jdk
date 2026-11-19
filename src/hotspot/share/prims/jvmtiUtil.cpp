@@ -23,7 +23,6 @@
  */
 
 #include "prims/jvmtiUtil.hpp"
-#include "runtime/handles.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/vmOperations.hpp"
@@ -38,7 +37,7 @@ ResourceArea* JvmtiUtil::_single_threaded_resource_area = nullptr;
 ResourceArea* JvmtiUtil::single_threaded_resource_area() {
   if (_single_threaded_resource_area == nullptr) {
     // lazily create the single threaded resource area
-    _single_threaded_resource_area = new (mtInternal) ResourceArea();
+    _single_threaded_resource_area = new (mtServiceability) ResourceArea();
   }
   return _single_threaded_resource_area;
 }

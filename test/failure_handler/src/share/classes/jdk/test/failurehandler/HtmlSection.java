@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@ package jdk.test.failurehandler;
 import java.io.FilterWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.HashSet;
+import java.util.Set;
 
 public class HtmlSection {
     protected final HtmlSection rootSection;
@@ -39,6 +41,7 @@ public class HtmlSection {
     protected final PrintWriter pw;
     protected final PrintWriter textWriter;
     protected boolean closed;
+    private final Set<String> sectionIds;
 
     private HtmlSection child;
 
@@ -56,44 +59,20 @@ public class HtmlSection {
         // main
         if (rootSection == null) {
             this.rootSection = this;
+            this.sectionIds = new HashSet<>();
             this.pw.println("<html>");
-            this.pw.println("<style>\n"
-                    + "div { display:none;}\n"
-                    + "</style>\n"
-                    + "\n"
-                    + "<script>\n"
-                    + "function show(e) {\n"
-                    + "  while (e != null) {\n"
-                    + "    if (e.tagName == 'DIV') {\n"
-                    + "      e.style.display = 'block';\n"
-                    + "    }\n"
-                    + "    e = e.parentNode;\n"
-                    + "  }\n"
-                    + "}\n"
-                    + "\n"
-                    + "function toggle(id) {\n"
-                    + "  e = document.getElementById(id);\n"
-                    + "  d = e.style.display;\n"
-                    + "  if (d == 'block') {\n"
-                    + "    e.style.display = 'none';\n"
-                    + "  } else {\n"
-                    + "    show(e);\n"
-                    + "  }\n"
-                    + "}\n"
-                    + "\n"
-                    + "function main() {\n"
-                    + "  index = location.href.indexOf(\"#\");"
-                    + "  if (index != -1) {\n"
-                    + "    show(document.getElementById(location.href.substring(index + 1)));\n"
-                    + "  }\n"
-                    + "}\n"
-                    + "\n"
-                    + "</script>\n"
-                    + "</head>");
 
-            this.pw.println("<body onload='main()'>");
+            this.pw.println("<head>");
+            this.pw.println(
+                    "<link href=\"" + HtmlPage.STYLE_SHEET_FILENAME + "\" rel=\"stylesheet\" type=\"text/css\" />");
+            this.pw.println(
+                    "<script src=\"" + HtmlPage.SCRIPT_FILENAME + "\" type=\"text/javascript\" ></script>");
+            this.pw.println("</head>");
+
+            this.pw.println("<body>");
         } else {
             this.rootSection = rootSection;
+            this.sectionIds = new HashSet<>();
             this.pw.print("<ul>");
         }
     }
@@ -146,7 +125,7 @@ public class HtmlSection {
         } else if (child != null) {
             path = String.format("%s.%s", path, child);
         }
-        pw.printf("<a href=\"#%1$s\" onclick=\"show(document.getElementById('%1$s')); return true;\">%2$s</a>%n",
+        pw.printf("<a href=\"#%1$s\" data-show=\"%1$s\" >%2$s</a>%n",
                 path, name);
     }
 
@@ -177,18 +156,34 @@ public class HtmlSection {
         return current;
     }
 
+    /**
+     * Returns {@code base} if no section has used it as an id yet, otherwise
+     * {@code base} with the first free numeric suffix ("-2", "-3", ...), and
+     * records the returned id as used. Keeps every section id unique so that
+     * anchors, {@code data-toggle} and {@code data-show} references resolve to
+     * the right occurrence when a command name is repeated.
+     */
+    private static String uniqueId(HtmlSection root, String base) {
+        String id = base;
+        for (int i = 2; !root.sectionIds.add(id); i++) {
+            id = base + "-" + i;
+        }
+        return id;
+    }
+
     private static class SubSection extends HtmlSection {
         private final HtmlSection parent;
 
         public SubSection(HtmlSection parent, String name,
                           HtmlSection rootSection) {
             super(parent.pw,
-                    parent.id.isEmpty()
-                            ? name
-                            : String.format("%s.%s", parent.id, name),
+                    uniqueId(rootSection,
+                            parent.id.isEmpty()
+                                    ? name
+                                    : String.format("%s.%s", parent.id, name)),
                     name, rootSection);
             this.parent = parent;
-            pw.printf("<li><a name='%1$s'/><a href='#%1$s' onclick=\"toggle('%1$s'); return false;\">%2$s</a><div id='%1$s'><code><pre>",
+            pw.printf("<li><a name='%1$s'/><a href='#%1$s' data-toggle=\"%1$s\" >%2$s</a><div id='%1$s'><code><pre>",
                     id, name);
         }
 

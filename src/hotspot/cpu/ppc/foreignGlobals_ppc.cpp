@@ -27,7 +27,7 @@
 #include "runtime/jniHandles.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
-#include "oops/oopCast.inline.hpp"
+#include "oops/oop.inline.hpp"
 #include "prims/foreignGlobals.hpp"
 #include "prims/foreignGlobals.inline.hpp"
 #include "prims/vmstorage.hpp"
@@ -44,11 +44,11 @@ const ABIDescriptor ForeignGlobals::parse_abi_descriptor(jobject jabi) {
   oop abi_oop = JNIHandles::resolve_non_null(jabi);
   ABIDescriptor abi;
 
-  objArrayOop inputStorage = jdk_internal_foreign_abi_ABIDescriptor::inputStorage(abi_oop);
+  refArrayOop inputStorage = jdk_internal_foreign_abi_ABIDescriptor::inputStorage(abi_oop);
   parse_register_array(inputStorage, StorageType::INTEGER, abi._integer_argument_registers, as_Register);
   parse_register_array(inputStorage, StorageType::FLOAT, abi._float_argument_registers, as_FloatRegister);
 
-  objArrayOop outputStorage = jdk_internal_foreign_abi_ABIDescriptor::outputStorage(abi_oop);
+  refArrayOop outputStorage = jdk_internal_foreign_abi_ABIDescriptor::outputStorage(abi_oop);
   parse_register_array(outputStorage, StorageType::INTEGER, abi._integer_return_registers, as_Register);
   parse_register_array(outputStorage, StorageType::FLOAT, abi._float_return_registers, as_FloatRegister);
 
@@ -109,8 +109,7 @@ static void move_reg64(MacroAssembler* masm, int out_stk_bias,
       // FP arguments can get passed in GP reg! (Only in Upcall with HFA usage.)
       assert(from_reg.segment_mask() == to_reg.segment_mask(), "sanity");
       if (to_reg.segment_mask() == REG32_MASK) {
-        __ stw(as_Register(from_reg), -8, R1_SP);
-        __ lfs(as_FloatRegister(to_reg), -8, R1_SP); // convert to double precision format
+        __ intBitsToFloat(as_FloatRegister(to_reg), as_Register(from_reg));
       } else {
         __ mtfprd(as_FloatRegister(to_reg), as_Register(from_reg));
       }
@@ -142,8 +141,7 @@ static void move_float(MacroAssembler* masm, int out_stk_bias,
       // FP arguments can get passed in GP reg! (Only for VarArgs for which we don't use FP regs.)
       assert(from_reg.segment_mask() == to_reg.segment_mask(), "sanity");
       if (from_reg.segment_mask() == REG32_MASK) {
-        __ stfs(as_FloatRegister(from_reg), -8, R1_SP); // convert to single precision format
-        __ lwa(as_Register(to_reg), -8, R1_SP);
+        __ floatToIntBits(as_Register(to_reg), as_FloatRegister(from_reg), F0_SCRATCH);
       } else {
         __ mffprd(as_Register(to_reg), as_FloatRegister(from_reg));
       }

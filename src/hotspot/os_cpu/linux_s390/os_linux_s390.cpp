@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -30,6 +30,7 @@
 #include "code/nativeInst.hpp"
 #include "code/vtableStubs.hpp"
 #include "compiler/disassembler.hpp"
+#include "cppstdlib/cstdlib.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jvm.h"
 #include "memory/allocation.inline.hpp"
@@ -62,7 +63,6 @@
 # include <signal.h>
 # include <errno.h>
 # include <dlfcn.h>
-# include <stdlib.h>
 # include <stdio.h>
 # include <unistd.h>
 # include <sys/resource.h>
@@ -145,14 +145,14 @@ frame os::fetch_frame_from_context(const void* ucVoid) {
     // compiled frame stack bang
     return fetch_compiled_frame_from_context(ucVoid);
   }
-  return frame(sp, epc);
+  return frame(sp, epc, frame::kind::unknown);
 }
 
 frame os::fetch_compiled_frame_from_context(const void* ucVoid) {
   const ucontext_t* uc = (const ucontext_t*)ucVoid;
   intptr_t* sp = os::Linux::ucontext_get_sp(uc);
   address lr = ucontext_get_lr(uc);
-  return frame(sp, lr);
+  return frame(sp, lr, frame::kind::unknown);
 }
 
 intptr_t* os::fetch_bcp_from_context(const void* ucVoid) {
@@ -171,23 +171,23 @@ frame os::get_sender_for_C_frame(frame* fr) {
   // of gpr10.
   if ((Interpreter::code() != nullptr && Interpreter::contains(fr->pc())) ||
       (CodeCache::contains(fr->pc()) && !StubRoutines::contains(fr->pc()))) {
-    return frame(fr->sender_sp(), fr->sender_pc());
+    return frame(fr->sender_sp(), fr->sender_pc(), frame::kind::unknown);
   } else {
     if (StubRoutines::contains(fr->pc())) {
       StubCodeDesc* desc = StubCodeDesc::desc_for(fr->pc());
       if (desc && !strcmp(desc->name(),"call_stub")) {
-        return frame(fr->sender_sp(), fr->callstub_sender_pc());
+        return frame(fr->sender_sp(), fr->callstub_sender_pc(), frame::kind::unknown);
       } else {
-        return frame(fr->sender_sp(), fr->sender_pc());
+        return frame(fr->sender_sp(), fr->sender_pc(), frame::kind::unknown);
       }
     } else {
       intptr_t* sender_sp = fr->sender_sp();
       address   sender_fp = (address)*sender_sp;
       ptrdiff_t entry_len = sender_fp - (address)sender_sp;
       if (entry_len < frame::z_abi_160_size) {
-        return frame(sender_sp, fr->sender_pc());
+        return frame(sender_sp, fr->sender_pc(), frame::kind::unknown);
       } else {
-        return frame(sender_sp, fr->native_sender_pc());
+        return frame(sender_sp, fr->native_sender_pc(), frame::kind::unknown);
       }
     }
   }
@@ -200,7 +200,7 @@ frame os::current_frame() {
   assert (csp != nullptr, "sp should not be null");
   // Pass a dummy pc. This way we don't have to load it from the
   // stack, since we don't know in which slot we can find it.
-  frame topframe(csp, (address)0x8);
+  frame topframe(csp, (address)0x8, frame::kind::unknown);
   if (os::is_first_C_frame(&topframe)) {
     // Stack is not walkable.
     return frame();
@@ -349,7 +349,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
 
     // jni_fast_Get<Primitive>Field can trap at certain pc's if a GC kicks in
     // and the heap gets shrunk before the field access.
-    if ((sig == SIGSEGV) || (sig == SIGBUS)) {
+    if (stub == nullptr && ((sig == SIGSEGV) || (sig == SIGBUS))) {
       address addr = JNI_FastGetField::find_slowcase_pc(pc);
       if (addr != (address)-1) {
         stub = addr;
@@ -477,3 +477,4 @@ int os::extra_bang_size_in_bytes() {
 }
 
 void os::setup_fpu() {}
+

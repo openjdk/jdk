@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,8 +49,9 @@ final class IndicConjunctBreak {
     }
 
     static boolean isConsonant(int cp) {
-        // fast check - Devanagari to Malayalam
-        if (cp < 0x0900 || cp > 0x0D7F) {
+        // fast check - return false for code points below
+        // the Devanagari range (lowest among Indic scripts)
+        if (cp < 0x0900) {
             return false;
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,15 +38,16 @@ import nsk.share.jdi.*;
  * The test checks that the JDI method:<br><code>com.sun.jdi.ThreadReference.stop()</code><br>
  * behaves properly in various situations. It consists of 5 subtests.
  *
- * TEST #1: Tests that stop() properly throws <i>InvalidTypeException</i> if
- * specified throwable is not an instance of java.lang.Throwable in the target VM.<p>
+ * TEST #1: Tests that stop() properly throws InvalidTypeException if
+ * specified throwable is not an instance of java.lang.Throwable in the target VM.
  *
  * TEST #2: Verify that stop() works when suspended at a breakpoint.
  *
  * TEST #3: Verify that stop() works when not suspended in a loop. For virtual threads
  * we expect an IncompatibleThreadStateException.
  *
- * TEST #4: Verify that stop() works when suspended in a loop.
+ * TEST #4: Verify that stop() works when suspended in a loop. For Virtual threads
+ * we may get OpaqueFrameException.
  *
  * TEST #5: Verify that stop() works when suspended in Thread.sleep(). For virtual
  * threads we expect an OpaqueFrameException.
@@ -65,9 +66,11 @@ public class stop002 {
     // debuggee fields used to indicate to exit infinite loops
     static final String DEBUGGEE_STOP_LOOP1_FIELD = "stopLooping1";
     static final String DEBUGGEE_STOP_LOOP2_FIELD = "stopLooping2";
+    // debuggee field used to indicate that debugger got OpaqueFrameException
+    static final String DEBUGGEE_GOT_OFE_FIELD = "gotOpaqueFrameException";
 
     // debuggee source line where it should be stopped
-    static final int DEBUGGEE_STOPATLINE = 90;
+    static final int DEBUGGEE_STOPATLINE = 91;
 
     static final int DELAY = 500; // in milliseconds
 
@@ -117,6 +120,7 @@ public class stop002 {
 
         Field stopLoop1 = null;
         Field stopLoop2 = null;
+        Field gotOpaqueFrameException = null;
         ObjectReference objRef = null;
         ObjectReference throwableRef = null;
 
@@ -141,6 +145,11 @@ public class stop002 {
             stopLoop2 = mainClass.fieldByName(DEBUGGEE_STOP_LOOP2_FIELD);
             if (stopLoop1 == null || stopLoop2 == null) {
                 throw new RuntimeException("Failed to find a \"stop loop\" field");
+            }
+
+            gotOpaqueFrameException = mainClass.fieldByName(DEBUGGEE_GOT_OFE_FIELD);
+            if (gotOpaqueFrameException == null) {
+                throw new RuntimeException("Failed to find a \"gotOpaqueFrameException\" field");
             }
 
             log.display("non-throwable object: \"" + objRef + "\"");
@@ -205,8 +214,7 @@ public class stop002 {
                     tot_res = Consts.TEST_FAILED;
                 }
             } finally {
-                // Force the debuggee out of the loop. Not really needed if the stop() call
-                // successfully threw the async exception, but it's easier to just always do this.
+                // Make sure the debuggee exits the loop even if the async exception was not thrown.
                 log.display("TEST #3: clearing loop flag.");
                 objRef.setValue(stopLoop1, vm.mirrorOf(true));
             }
@@ -222,15 +230,25 @@ public class stop002 {
                 log.display("TEST #4: thread is suspended.");
                 thrRef.stop(throwableRef);
                 log.display("TEST #4 PASSED: stop() call succeeded.");
+                objRef.setValue(gotOpaqueFrameException, vm.mirrorOf(false));
+            } catch (OpaqueFrameException ofe) {
+                if (vthreadMode) {
+                    log.display("TEST #4 PASSED: stop() call resulted in OpaqueFrameException while in vthread mode.");
+                } else {
+                    ofe.printStackTrace();
+                    log.complain("TEST #4 FAILED: caught unexpected " + ofe);
+                    tot_res = Consts.TEST_FAILED;
+                }
+                objRef.setValue(gotOpaqueFrameException, vm.mirrorOf(true));
             } catch (Throwable ue) {
                 ue.printStackTrace();
                 log.complain("TEST #4 FAILED: caught unexpected " + ue);
                 tot_res = Consts.TEST_FAILED;
+                objRef.setValue(gotOpaqueFrameException, vm.mirrorOf(false));
             } finally {
                 log.display("TEST #4: resuming thread.");
                 thrRef.resume();
-                // Force the debuggee out of the loop. Not really needed if the stop() call
-                // successfully threw the async exception, but it's easier to just always do this.
+                // Make sure the debuggee exits the loop even if the async exception was not thrown.
                 log.display("TEST #4: clearing loop flag.");
                 objRef.setValue(stopLoop2, vm.mirrorOf(true));
             }

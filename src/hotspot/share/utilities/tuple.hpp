@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #ifndef SHARE_UTILITIES_TUPLE_HPP
 #define SHARE_UTILITIES_TUPLE_HPP
 
-#include <type_traits>
+#include "cppstdlib/type_traits.hpp"
 
 template <class... Ts>
 class Tuple;
@@ -40,6 +40,8 @@ private:
   Tuple<Ts...> _remaining;
 
 public:
+  constexpr explicit Tuple() noexcept : _first(), _remaining() {}
+
   constexpr Tuple(const T& first, const Ts&... remaining) noexcept
     : _first(first), _remaining(remaining...) {}
 

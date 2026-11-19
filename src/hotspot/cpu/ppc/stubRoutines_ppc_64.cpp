@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2019 SAP SE. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,10 +74,26 @@ static julong compute_inverse_poly(julong long_poly) {
   return div;
 }
 
+static address _crc_table_addr    = nullptr;
+static address _crc32c_table_addr = nullptr;
+
+address StubRoutines::crc_table_addr() {
+  if (_crc_table_addr == nullptr) {
+    _crc_table_addr = StubRoutines::ppc::generate_crc_constants(REVERSE_CRC32_POLY);
+  }
+  return _crc_table_addr;
+}
+address StubRoutines::crc32c_table_addr() {
+  if (_crc32c_table_addr == nullptr) {
+    _crc32c_table_addr = StubRoutines::ppc::generate_crc_constants(REVERSE_CRC32C_POLY);
+  }
+  return _crc32c_table_addr;
+}
+
 // Constants to fold n words as needed by macroAssembler.
 address StubRoutines::ppc::generate_crc_constants(juint reverse_poly) {
   // Layout of constant table:
-  // >= Power8: 1 table for single byte folding + constants for fast vector implementation
+  // 1 table for single byte folding + constants for fast vector implementation
   const int vector_size = 16 * (CRC32_UNROLL_FACTOR2 + CRC32_UNROLL_FACTOR / CRC32_UNROLL_FACTOR2);
 
   const int size = CRC32_TABLE_SIZE + vector_size;
@@ -92,7 +108,7 @@ address StubRoutines::ppc::generate_crc_constants(juint reverse_poly) {
     ptr[i] = fold_byte(i, reverse_poly);
   }
 
-  // >= Power8: vector constants
+  // vector constants
   juint* ptr1 = (juint*)(consts + CRC32_TABLE_SIZE);
   guarantee(((intptr_t)ptr1 & 0xF) == 0, "16-byte alignment needed");
 
@@ -167,3 +183,9 @@ address StubRoutines::ppc::generate_crc_constants(juint reverse_poly) {
 
   return consts;
 }
+
+#if INCLUDE_CDS
+// nothing to do for ppc
+void StubRoutines::init_AOTAddressTable() {
+}
+#endif // INCLUDE_CDS

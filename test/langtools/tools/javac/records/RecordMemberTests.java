@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 8246774
  * @summary test several assertions on record classes members
- * @run testng RecordMemberTests
+ * @run junit RecordMemberTests
  */
 
 import java.lang.reflect.Constructor;
@@ -36,10 +36,9 @@ import java.lang.reflect.Parameter;
 import java.util.List;
 import java.util.function.Supplier;
 
-import org.testng.annotations.*;
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
 
-@Test
 public class RecordMemberTests {
     public record R1(int i, int j) {}
 
@@ -63,43 +62,47 @@ public class RecordMemberTests {
     R3 r3 = new R3(1, 2);
     R4 r4 = new R4(1, 2);
 
+    @Test
     public void testConstruction() {
         for (int i : new int[] { r1.i, r2.i, r3.i,
                                  r1.i(), r2.i(), r3.i() })
-            assertEquals(i, 1);
+            assertEquals(1, i);
 
         for (int j : new int[] { r1.j, r2.j, r3.j,
                                  r1.j(), r2.j(), r3.j() })
-            assertEquals(j, 2);
+            assertEquals(2, j);
 
-        assertEquals(r4.i, 0);
-        assertEquals(r4.j, 0);
+        assertEquals(0, r4.i);
+        assertEquals(0, r4.j);
     }
 
+    @Test
     public void testConstructorParameterNames() throws ReflectiveOperationException {
         for (Class cl : List.of(R1.class, R2.class, R3.class, R4.class)) {
             Constructor c = cl.getConstructor(int.class, int.class);
             assertNotNull(c);
             Parameter[] parameters = c.getParameters();
-            assertEquals(parameters.length, 2);
-            assertEquals(parameters[0].getName(), "i");
-            assertEquals(parameters[1].getName(), "j");
+            assertEquals(2, parameters.length);
+            assertEquals("i", parameters[0].getName());
+            assertEquals("j", parameters[1].getName());
         }
     }
 
+    @Test
     public void testSuperclass() {
-        assertEquals(R1.class.getSuperclass(), Record.class);
+        assertEquals(Record.class, R1.class.getSuperclass());
         // class is final
         assertTrue((R1.class.getModifiers() & Modifier.FINAL) != 0);
     }
 
+    @Test
     public void testMandatedMembersPresent() throws ReflectiveOperationException {
         // fields are present, of the right type, final and private
-        assertEquals(R1.class.getDeclaredFields().length, 2);
+        assertEquals(2, R1.class.getDeclaredFields().length);
         for (String s : List.of("i", "j")) {
             Field iField = R1.class.getDeclaredField(s);
-            assertEquals(iField.getType(), int.class);
-            assertEquals((iField.getModifiers() & Modifier.STATIC), 0);
+            assertEquals(int.class, iField.getType());
+            assertEquals(0, (iField.getModifiers() & Modifier.STATIC));
             assertTrue((iField.getModifiers() & Modifier.PRIVATE) != 0);
             assertTrue((iField.getModifiers() & Modifier.FINAL) != 0);
         }
@@ -107,15 +110,15 @@ public class RecordMemberTests {
         // methods are present, of the right descriptor, and public/instance/concrete
         for (String s : List.of("i", "j")) {
             Method iMethod = R1.class.getDeclaredMethod(s);
-            assertEquals(iMethod.getReturnType(), int.class);
-            assertEquals(iMethod.getParameterCount(), 0);
-            assertEquals((iMethod.getModifiers() & (Modifier.PRIVATE | Modifier.PROTECTED | Modifier.STATIC | Modifier.ABSTRACT)), 0);
+            assertEquals(int.class, iMethod.getReturnType());
+            assertEquals(0, iMethod.getParameterCount());
+            assertEquals(0, (iMethod.getModifiers() & (Modifier.PRIVATE | Modifier.PROTECTED | Modifier.STATIC | Modifier.ABSTRACT)));
         }
 
         Constructor c = R1.class.getConstructor(int.class, int.class);
         R1 r1 = (R1) c.newInstance(1, 2);
-        assertEquals(r1.i(), 1);
-        assertEquals(r1.j(), 2);
+        assertEquals(1, r1.i());
+        assertEquals(2, r1.j());
     }
 
     record OrdinaryMembers(int x) {
@@ -124,21 +127,23 @@ public class RecordMemberTests {
         public String sf () { return "instance"; }
     }
 
+    @Test
     public void testOrdinaryMembers() {
         OrdinaryMembers.ss = "foo";
-        assertEquals(OrdinaryMembers.ssf(), "foo");
+        assertEquals("foo", OrdinaryMembers.ssf());
         OrdinaryMembers o = new OrdinaryMembers(3);
-        assertEquals(o.sf(), "instance");
+        assertEquals("instance", o.sf());
     }
 
     class LocalRecordHelper {
         Class<?> m(int x) {
             record R (int x) { }
-            assertEquals(new R(x).x(), x);
+            assertEquals(x, new R(x).x());
             return R.class;
         }
     }
 
+    @Test
     public void testLocalRecordsStatic() {
         Class<?> c = new LocalRecordHelper().m(3);
         String message = c.toGenericString();
@@ -181,6 +186,7 @@ public class RecordMemberTests {
         }
     }
 
+    @Test
     public void testNestedRecordsStatic() {
         NestedRecordHelper n = new NestedRecordHelper();
         for (Class<?> c : List.of(NestedRecordHelper.R1.class,

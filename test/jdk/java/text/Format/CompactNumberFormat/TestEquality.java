@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,25 +20,26 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 /*
  * @test
  * @bug 8177552 8222756 8327640
  * @summary Checks the equals and hashCode method of CompactNumberFormat
  * @modules jdk.localedata
- * @run testng/othervm TestEquality
- *
+ * @run junit/othervm TestEquality
  */
+
+import org.junit.jupiter.api.Test;
 
 import java.text.CompactNumberFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
 import java.util.Locale;
-import org.testng.annotations.Test;
 
 public class TestEquality {
 
     @Test
-    public void testEquality() {
+    void testEquality() {
         CompactNumberFormat cnf1 = (CompactNumberFormat) NumberFormat
                 .getCompactNumberInstance(Locale.US, NumberFormat.Style.SHORT);
 
@@ -160,7 +161,7 @@ public class TestEquality {
     }
 
     @Test
-    public void testHashCode() {
+    void testHashCode() {
         NumberFormat cnf1 = NumberFormat
                 .getCompactNumberInstance(Locale.JAPAN, NumberFormat.Style.SHORT);
         NumberFormat cnf2 = NumberFormat
@@ -175,7 +176,7 @@ public class TestEquality {
     // Test the property of equals and hashCode i.e. two equal object must
     // always have the same hashCode
     @Test
-    public void testEqualsAndHashCode() {
+    void testEqualsAndHashCode() {
         NumberFormat cnf1 = NumberFormat
                 .getCompactNumberInstance(Locale.of("hi", "IN"), NumberFormat.Style.SHORT);
         cnf1.setMinimumIntegerDigits(5);

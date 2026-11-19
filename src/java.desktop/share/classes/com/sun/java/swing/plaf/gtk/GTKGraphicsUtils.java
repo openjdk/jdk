@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ import sun.swing.MnemonicHandler;
  * @author Joshua Outwater
  */
 class GTKGraphicsUtils extends SynthGraphicsUtils {
+    @Override
     public void paintText(SynthContext context, Graphics g, String text,
                           int x, int y, int mnemonicIndex) {
         if (text == null || text.length() <= 0) {
@@ -83,6 +84,7 @@ class GTKGraphicsUtils extends SynthGraphicsUtils {
      * @param bounds Bounds of the text to be drawn.
      * @param mnemonicIndex Index to draw string at.
      */
+    @Override
     public void paintText(SynthContext context, Graphics g, String text,
                           Rectangle bounds, int mnemonicIndex) {
         if (text == null || text.length() <= 0) {

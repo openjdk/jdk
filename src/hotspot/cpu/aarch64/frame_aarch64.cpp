@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -106,6 +106,13 @@ bool frame::safe_for_sender(JavaThread *thread) {
       if (_cb->is_nmethod() || _cb->is_adapter_blob() || _cb->is_runtime_stub()) {
         return false;
       }
+
+      if (_cb->is_uncommon_trap_stub() &&
+          !(thread->has_last_Java_frame() && thread->frame_anchor()->walkable())) {
+        // The frame might not be safe to walk when the frame anchor is missing.
+        // For example, RegisterSaver adjusts the stack pointer as it spills the registers.
+        return false;
+      }
     }
 
     // Could just be some random pointer within the codeBlob
@@ -153,14 +160,17 @@ bool frame::safe_for_sender(JavaThread *thread) {
       if (!thread->is_in_full_stack_checked((address)sender_sp)) {
         return false;
       }
-      sender_unextended_sp = sender_sp;
       // Note: frame::sender_sp_offset is only valid for compiled frame
-      saved_fp = (intptr_t*) *(sender_sp - frame::sender_sp_offset);
+      intptr_t **saved_fp_addr = (intptr_t**) (sender_sp - frame::sender_sp_offset);
+      saved_fp = *saved_fp_addr;
       // Note: PAC authentication may fail in case broken frame is passed in.
       // Just strip it for now.
       sender_pc = pauth_strip_pointer((address) *(sender_sp - 1));
-    }
 
+      // Repair the sender sp if this is a method with scalarized value type args
+      sender_sp = repair_sender_sp(sender_sp, saved_fp_addr);
+      sender_unextended_sp = sender_sp;
+    }
     if (Continuation::is_return_barrier_entry(sender_pc)) {
       // sender_pc might be invalid so check that the frame
       // actually belongs to a Continuation.
@@ -228,8 +238,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
 
     nmethod* nm = sender_blob->as_nmethod_or_null();
     if (nm != nullptr) {
-      if (nm->is_deopt_mh_entry(sender_pc) || nm->is_deopt_entry(sender_pc) ||
-          nm->method()->is_method_handle_intrinsic()) {
+      if (nm->is_deopt_entry(sender_pc) || nm->method()->is_method_handle_intrinsic()) {
         return false;
       }
     }
@@ -264,6 +273,13 @@ bool frame::safe_for_sender(JavaThread *thread) {
   // linkages it must be safe
 
   if (!fp_safe) {
+    return false;
+  }
+
+  // sender_fp must be within the stack and above (but not equal) to
+  // current frame's fp.
+  address sender_fp = (address)this->link();
+  if (!thread->is_in_stack_range_excl(sender_fp, fp)) {
     return false;
   }
 
@@ -441,8 +457,8 @@ JavaThread** frame::saved_thread_address(const frame& f) {
 
   JavaThread** thread_addr;
 #ifdef COMPILER1
-  if (cb == Runtime1::blob_for(C1StubId::monitorenter_id) ||
-      cb == Runtime1::blob_for(C1StubId::monitorenter_nofpu_id)) {
+  if (cb == Runtime1::blob_for(StubId::c1_monitorenter_id) ||
+      cb == Runtime1::blob_for(StubId::c1_monitorenter_nofpu_id)) {
     thread_addr = (JavaThread**)(f.sp() + Runtime1::runtime_blob_current_thread_offset(f));
   } else
 #endif
@@ -455,48 +471,6 @@ JavaThread** frame::saved_thread_address(const frame& f) {
 }
 
 //------------------------------------------------------------------------------
-// frame::verify_deopt_original_pc
-//
-// Verifies the calculated original PC of a deoptimization PC for the
-// given unextended SP.
-#ifdef ASSERT
-void frame::verify_deopt_original_pc(nmethod* nm, intptr_t* unextended_sp) {
-  frame fr;
-
-  // This is ugly but it's better than to change {get,set}_original_pc
-  // to take an SP value as argument.  And it's only a debugging
-  // method anyway.
-  fr._unextended_sp = unextended_sp;
-
-  address original_pc = nm->get_original_pc(&fr);
-  assert(nm->insts_contains_inclusive(original_pc),
-         "original PC must be in the main code section of the compiled method (or must be immediately following it)");
-}
-#endif
-
-//------------------------------------------------------------------------------
-// frame::adjust_unextended_sp
-#ifdef ASSERT
-void frame::adjust_unextended_sp() {
-  // On aarch64, sites calling method handle intrinsics and lambda forms are treated
-  // as any other call site. Therefore, no special action is needed when we are
-  // returning to any of these call sites.
-
-  if (_cb != nullptr) {
-    nmethod* sender_nm = _cb->as_nmethod_or_null();
-    if (sender_nm != nullptr) {
-      // If the sender PC is a deoptimization point, get the original PC.
-      if (sender_nm->is_deopt_entry(_pc) ||
-          sender_nm->is_deopt_mh_entry(_pc)) {
-        verify_deopt_original_pc(sender_nm, _unextended_sp);
-      }
-    }
-  }
-}
-#endif
-
-
-//------------------------------------------------------------------------------
 // frame::sender_for_interpreter_frame
 frame frame::sender_for_interpreter_frame(RegisterMap* map) const {
   // SP is the raw SP from the sender after adapter or interpreter
@@ -507,11 +481,11 @@ frame frame::sender_for_interpreter_frame(RegisterMap* map) const {
   intptr_t* unextended_sp = interpreter_frame_sender_sp();
   intptr_t* sender_fp = link();
 
-#if defined(COMPILER1) || COMPILER2_OR_JVMCI
+#if COMPILER1_OR_COMPILER2
   if (map->update_map()) {
     update_map_with_saved_link(map, (intptr_t**) addr_at(link_offset));
   }
-#endif // defined(COMPILER1) || COMPILER1_OR_COMPILER2
+#endif // COMPILER1_OR_COMPILER2
 
   // For ROP protection, Interpreter will have signed the sender_pc,
   // but there is no requirement to authenticate it here.
@@ -665,13 +639,26 @@ void frame::describe_pd(FrameValues& values, int frame_no) {
       ret_pc_loc = fp() + return_addr_offset;
       fp_loc = fp();
     } else {
-      ret_pc_loc = real_fp() - return_addr_offset;
-      fp_loc = real_fp() - sender_sp_offset;
+      if (cb()->is_nmethod() && cb()->as_nmethod()->needs_stack_repair()) {
+        values.describe(frame_no, real_fp() - sender_sp_offset - 1, err_msg("fsize for #%d", frame_no), 1);
+      }
+      frame::CompiledFramePointers cfp = compiled_frame_details();
+      ret_pc_loc = (intptr_t*)cfp.sender_pc_addr;
+      fp_loc = (intptr_t*)cfp.saved_fp_addr;
     }
-    address ret_pc = *(address*)ret_pc_loc;
+    // Strip without authenticating: describe may see unsigned or broken LRs,
+    // and is_return_barrier_entry() compares against a raw stub address.
+    address ret_pc = pauth_strip_pointer(*(address*)ret_pc_loc);
     values.describe(frame_no, ret_pc_loc,
       Continuation::is_return_barrier_entry(ret_pc) ? "return address (return barrier)" : "return address");
     values.describe(-1, fp_loc, "saved fp", 0); // "unowned" as value belongs to sender
+
+    intptr_t* ret_pc_loc2 = real_fp() - return_addr_offset;
+    if (ret_pc_loc2 != ret_pc_loc) {
+      intptr_t* fp_loc2 = real_fp() - sender_sp_offset;
+      values.describe(frame_no, ret_pc_loc2, "return address copy #2");
+      values.describe(-1, fp_loc2, "saved fp copy #2", 0);
+    }
   }
 }
 #endif
@@ -702,10 +689,10 @@ static void printbc(Method *m, intptr_t bcx) {
   if (m->validate_bci_from_bcp((address)bcx) < 0
       || !m->contains((address)bcx)) {
     name = "???";
-    snprintf(buf, sizeof buf, "(bad)");
+    os::snprintf_checked(buf, sizeof buf, "(bad)");
   } else {
     int bci = m->bci_from((address)bcx);
-    snprintf(buf, sizeof buf, "%d", bci);
+    os::snprintf_checked(buf, sizeof buf, "%d", bci);
     name = Bytecodes::name(m->code_at(bci));
   }
   ResourceMark rm;
@@ -821,6 +808,32 @@ frame::frame(void* sp, void* fp, void* pc) {
 }
 
 #endif
+
+intptr_t* frame::repair_sender_sp(nmethod* nm, intptr_t* sp, intptr_t** saved_fp_addr) {
+  assert(nm != nullptr && nm->needs_stack_repair(), "");
+  // The stack increment resides just below the saved FP on the stack and
+  // records the total frame size excluding the two words for saving FP and LR
+  // (see MacroAssembler::remove_frame).
+  intptr_t* real_frame_size_addr = (intptr_t*) (saved_fp_addr - 1);
+  int real_frame_size = (*real_frame_size_addr / wordSize) + metadata_words_at_bottom;
+  assert(real_frame_size >= nm->frame_size() && real_frame_size <= 1000000, "invalid frame size");
+  return sp + real_frame_size;
+}
+
+bool frame::was_augmented_on_entry(int& real_size) const {
+  assert(_cb != nullptr && _cb->is_nmethod(), "");
+  if (_cb->as_nmethod()->needs_stack_repair()) {
+    // The stack increment resides just below the saved FP on the stack and
+    // records the total frame size excluding the two words for saving FP and LR
+    // (see MacroAssembler::remove_frame).
+    intptr_t* real_frame_size_addr = unextended_sp() + _cb->frame_size() - sender_sp_offset - 1;
+    log_trace(continuations)("real_frame_size is addr is " INTPTR_FORMAT, p2i(real_frame_size_addr));
+    real_size = (*real_frame_size_addr / wordSize) + metadata_words_at_bottom;
+    return real_size != _cb->frame_size();
+  }
+  real_size = _cb->frame_size();
+  return false;
+}
 
 void JavaFrameAnchor::make_walkable() {
   // last frame set?

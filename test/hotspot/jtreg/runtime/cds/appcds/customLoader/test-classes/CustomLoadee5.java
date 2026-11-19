@@ -21,7 +21,7 @@
  * questions.
  */
 
-class CustomLoadee5 {
+public class CustomLoadee5 {
     public String toString() {
         return "this is CustomLoadee5";
     }

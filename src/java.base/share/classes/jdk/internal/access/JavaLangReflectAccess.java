@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,16 @@ public interface JavaLangReflectAccess {
     /** Tests if this is a trusted final field */
     public boolean isTrustedFinalField(Field f);
 
+    /** Tests if this is a null-restricted field */
+    public boolean isNullRestrictedField(Field f);
+
     /** Returns a new instance created by the given constructor with access check */
     public <T> T newInstance(Constructor<T> ctor, Object[] args, Class<?> caller)
         throws IllegalAccessException, InstantiationException, InvocationTargetException;
+
+    /**
+     * Check that the caller is allowed to unreflect for mutation a final instance field
+     * in a class that is not a record or hidden class.
+     */
+    void checkAllowedToUnreflectFinalSetter(Class<?> caller, Field f) throws IllegalAccessException;
 }

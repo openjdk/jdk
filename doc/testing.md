@@ -198,8 +198,8 @@ use a fully qualified test descriptor, add `jtreg:`, e.g.
 
 **Note:** To be able to run the Gtest suite, you need to configure your build
 to be able to find a proper version of the gtest source. For details, see the
-section ["Running Tests" in the build
-documentation](building.html#running-tests).
+section **"Running Tests" in the build
+documentation** ([html](building.html#running-tests), [markdown](building.md#running-tests)).
 
 Since the Hotspot Gtest suite is so quick, the default is to run all tests.
 This is specified by just `gtest`, or as a fully qualified test descriptor
@@ -324,7 +324,7 @@ Currently only applies to JTReg.
 
 #### TIMEOUT_FACTOR
 
-Currently only applies to JTReg.
+Currently only applies to [JTReg -timeoutFactor](#timeout_factor-1).
 
 #### JAVA_OPTIONS
 
@@ -353,11 +353,33 @@ For more fine-grained control, you can pass arbitrary filters to JCov using
 `--with-jcov-filters`, and you can specify a specific JDK to instrument
 using `--with-jcov-input-jdk`.
 
+The resulting coverage is written into
+`build/$BUILD/test-results/jcov-output/result.xml`.
+
 The JCov report is stored in `build/$BUILD/test-results/jcov-output/report`.
 
 Please note that running with JCov reporting can be very memory intensive.
 
-#### JCOV_DIFF_CHANGESET
+##### JCov scales
+
+JCov scales make it possible to record which tests cover each part of the
+instrumented code. To collect coverage with scales, set `JCOV_SCALES=true`,
+for example:
+
+    $ make jcov-test TEST=jdk_lang TEST_OPTS="JCOV_SCALES=true"
+
+The resulting coverage data contains the association between covered code and
+the tests that covered it. A corresponding `testlist.txt` file, which contains
+the test names, is generated in the same directory.
+
+The JCov report displays the names of the tests that cover each class.
+
+Collecting coverage scales forces jtreg tests to be run in `othervm` mode,
+which takes longer than ordinary JCov collection. The coverage data is also
+larger because it includes scale information, and the generated report is
+larger because it includes test names.
+
+##### JCOV_DIFF_CHANGESET
 
 While collecting code coverage with JCov, it is also possible to find coverage
 for only recently changed code. JCOV_DIFF_CHANGESET specifies a source
@@ -366,6 +388,10 @@ between the specified revision and the repository tip.
 
 The report is stored in
 `build/$BUILD/test-results/jcov-output/diff_coverage_report` file.
+
+#### AOT_JDK
+
+See [Testing Ahead-of-time optimizations](#testing-ahead-of-time-optimizations).
 
 ### JTReg keywords
 
@@ -379,9 +405,11 @@ never more than *memory size in GB/2*.
 
 #### TIMEOUT_FACTOR
 
-The timeout factor (`-timeoutFactor`).
-
-Defaults to 4.
+The `TIMEOUT_FACTOR` is forwarded to JTReg framework itself
+(`-timeoutFactor`). Also, some test cases that programmatically wait a
+certain amount of time will apply this factor. If we run in forced
+compilation mode (`-Xcomp`), the build system will automatically
+adjust this factor to compensate for less performance. Defaults to 4.
 
 #### FAILURE_HANDLER_TIMEOUT
 
@@ -396,6 +424,49 @@ such implementation class, named Virtual, is currently part of the JDK build in
 the `test/jtreg_test_thread_factory/` directory. This class gets compiled
 during the test image build. The implementation of the Virtual class creates a
 new virtual thread for executing each test class.
+
+#### VALUE_CLASS_PLUGIN
+
+Enables the `ValueClassPlugin` javac plugin when compiling and running JTReg
+tests. This is a **temporary mode** intended for use while value classes
+(JEP 401) are a preview feature. The long-term plan is to replace classes
+annotated with `@jdk.test.lib.valueclass.AsValueClass` with plain
+`value class` declarations once value classes are finalized.
+
+In the meantime, this mode allows test sources to compile and run as either
+value classes or regular identity classes without source-level changes.
+
+When set to any non-empty value, the following options are appended to every
+JTReg invocation:
+
+* `-cpa:<valueClassPlugin.jar>` — appends the plugin JAR to the compile-time
+  classpath (only when the JAR is present in the test image under
+  `jtreg_value_class_plugin/valueClassPlugin.jar`).
+* `-vmoption:--enable-preview` — enables JVM preview features at runtime.
+* `-javacoption:-XDaccessInternalAPI` — grants the compiler access to internal
+  APIs required by the plugin.
+* `-javacoption:--source <version> --enable-preview` — enables preview language
+  features at compile time.
+* `-javacoption:-Xplugin:ValueClassPlugin` — activates the plugin.
+
+The plugin scans each compilation unit after parsing and converts any class
+annotated with `@jdk.test.lib.valueclass.AsValueClass` into a value class by
+setting the internal `VALUE_CLASS` modifier flag and clearing the
+`IDENTITY_TYPE` flag. This transformation only takes effect when
+`--enable-preview` is active; without it the annotation is a no-op and the
+class compiles as an ordinary identity class, so the same test source can
+exercise both code paths.
+
+Example:
+
+    $ make test TEST=jdk_lang JTREG="VALUE_CLASS_PLUGIN=true"
+
+#### JVMTI_STRESS_AGENT
+
+Executes JTReg tests with JVM TI stress agent. The stress agent is the part of
+test library and located in `test/lib/jdk/test/lib/jvmti/libJvmtiStressAgent.cpp`.
+The value of this argument is set as JVM TI agent options.
+This mode uses ProblemList-jvmti-stress-agent.txt as an additional exclude list.
 
 #### TEST_MODE
 
@@ -499,6 +570,10 @@ helps to reproduce intermittent test failures. Defaults to 0.
 Use this report style when reporting test results (sent to JTReg as `-report`).
 Defaults to `files`.
 
+#### MANUAL
+
+Set to `true` to execute manual tests only.
+
 ### Gtest keywords
 
 #### REPEAT
@@ -544,6 +619,18 @@ Amount of time to spend in each warmup iteration. Same as specifying `-w
 
 Specify to have the test run save a log of the values. Accepts the same values
 as `-rff`, i.e., `text`, `csv`, `scsv`, `json`, or `latex`.
+
+#### TEST_JDK
+
+The path to the JDK that will be used to run the benchmarks.
+
+Defaults to `build/<CONF-NAME>/jdk`.
+
+#### BENCHMARKS_JAR
+
+The path to the JAR containing the benchmarks.
+
+Defaults to `test/micro/benchmarks.jar`.
 
 #### VM_OPTIONS
 
@@ -611,8 +698,34 @@ $ make test TEST="jtreg:sun/security/pkcs11/Secmod/AddTrustedCert.java" \
 For more notes about the PKCS11 tests, please refer to
 test/jdk/sun/security/pkcs11/README.
 
+
+### SCTP Tests
+
+The SCTP tests require the SCTP runtime library, which is often not installed
+by default in popular Linux distributions. Without this library, the SCTP tests
+will be skipped. If you want to enable the SCTP tests, you should install the
+SCTP library before running the tests.
+
+For distributions using the .deb packaging format and the apt tool
+(such as Debian, Ubuntu, etc.), try this:
+
+```
+sudo apt install libsctp1
+sudo modprobe sctp
+lsmod | grep sctp
+```
+
+For distributions using the .rpm packaging format and the dnf tool
+(such as Fedora, Red Hat, etc.), try this:
+
+```
+sudo dnf install -y lksctp-tools
+sudo modprobe sctp
+lsmod | grep sctp
+```
+
 ### Testing Ahead-of-time Optimizations
--------------------------------------------------------------------------------
+
 One way to improve test coverage of ahead-of-time (AOT) optimizations in
 the JDK is to run existing jtreg test cases in a special "AOT_JDK" mode.
 Example:

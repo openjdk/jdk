@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -30,11 +30,11 @@
 #include "asm/assembler.hpp"
 #include "asm/register.hpp"
 #include "code/codeCache.hpp"
+#include "cppstdlib/type_traits.hpp"
 #include "metaprogramming/enableIf.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
-#include <type_traits>
 
 #define XLEN 64
 
@@ -243,8 +243,8 @@ class Address {
   // Verify the value is trivially destructible regardless of mode, so our
   // destructor can also be trivial, and so our assignment operator doesn't
   // need to destruct the old value before copying over it.
-  static_assert(std::is_trivially_destructible<Literal>::value, "must be");
-  static_assert(std::is_trivially_destructible<Nonliteral>::value, "must be");
+  static_assert(std::is_trivially_destructible<Literal>::value);
+  static_assert(std::is_trivially_destructible<Nonliteral>::value);
 
   Address& operator=(const Address& a) {
     _mode = a._mode;
@@ -514,20 +514,138 @@ protected:
     rdy = 0b111,     // in instruction's rm field, selects dynamic rounding mode.In Rounding Mode register, Invalid.
   };
 
+  // Efficient reading and writing of unaligned data in platform-specific byte ordering
+  // RISC-V needs to check for alignment.
+
+  static inline u2 get_native_u2(address p) {
+    if ((intptr_t(p) & 1) == 0) {
+      return *(u2*)p;
+    } else {
+      return ((u2)(p[1]) << 8) |
+             ((u2)(p[0]));
+    }
+  }
+
+  static inline u4 get_native_u4(address p) {
+    switch (intptr_t(p) & 3) {
+      case 0:
+        return *(u4*)p;
+
+      case 2:
+        return ((u4)(((u2*)p)[1]) << 16) |
+               ((u4)(((u2*)p)[0]));
+
+      default:
+        return ((u4)(p[3]) << 24) |
+               ((u4)(p[2]) << 16) |
+               ((u4)(p[1]) <<  8) |
+               ((u4)(p[0]));
+    }
+  }
+
+  static inline u8 get_native_u8(address p) {
+    switch (intptr_t(p) & 7) {
+      case 0:
+        return *(u8*)p;
+
+      case 4:
+        return ((u8)(((u4*)p)[1]) << 32) |
+               ((u8)(((u4*)p)[0]));
+
+      case 2:
+      case 6:
+        return ((u8)(((u2*)p)[3]) << 48) |
+               ((u8)(((u2*)p)[2]) << 32) |
+               ((u8)(((u2*)p)[1]) << 16) |
+               ((u8)(((u2*)p)[0]));
+
+      default:
+        return ((u8)(p[7]) << 56) |
+               ((u8)(p[6]) << 48) |
+               ((u8)(p[5]) << 40) |
+               ((u8)(p[4]) << 32) |
+               ((u8)(p[3]) << 24) |
+               ((u8)(p[2]) << 16) |
+               ((u8)(p[1]) <<  8) |
+               ((u8)(p[0]));
+    }
+  }
+
+  static inline void put_native_u2(address p, u2 x) {
+    if ((intptr_t(p) & 1) == 0) {
+      *(u2*)p = x;
+    } else {
+      p[1] = x >> 8;
+      p[0] = x;
+    }
+  }
+
+  static inline void put_native_u4(address p, u4 x) {
+    switch (intptr_t(p) & 3) {
+      case 0:
+        *(u4*)p = x;
+        break;
+
+      case 2:
+        ((u2*)p)[1] = x >> 16;
+        ((u2*)p)[0] = x;
+        break;
+
+      default:
+        ((u1*)p)[3] = x >> 24;
+        ((u1*)p)[2] = x >> 16;
+        ((u1*)p)[1] = x >>  8;
+        ((u1*)p)[0] = x;
+        break;
+    }
+  }
+
+  static inline void put_native_u8(address p, u8 x) {
+    switch (intptr_t(p) & 7) {
+      case 0:
+        *(u8*)p = x;
+        break;
+
+      case 4:
+        ((u4*)p)[1] = x >> 32;
+        ((u4*)p)[0] = x;
+        break;
+
+      case 2:
+      case 6:
+        ((u2*)p)[3] = x >> 48;
+        ((u2*)p)[2] = x >> 32;
+        ((u2*)p)[1] = x >> 16;
+        ((u2*)p)[0] = x;
+        break;
+
+      default:
+        ((u1*)p)[7] = x >> 56;
+        ((u1*)p)[6] = x >> 48;
+        ((u1*)p)[5] = x >> 40;
+        ((u1*)p)[4] = x >> 32;
+        ((u1*)p)[3] = x >> 24;
+        ((u1*)p)[2] = x >> 16;
+        ((u1*)p)[1] = x >>  8;
+        ((u1*)p)[0] = x;
+        break;
+    }
+  }
+
   // handle unaligned access
   static inline uint16_t ld_c_instr(address addr) {
-    return Bytes::get_native_u2(addr);
+    return get_native_u2(addr);
   }
   static inline void sd_c_instr(address addr, uint16_t c_instr) {
-    Bytes::put_native_u2(addr, c_instr);
+    put_native_u2(addr, c_instr);
   }
 
   // handle unaligned access
   static inline uint32_t ld_instr(address addr) {
-    return Bytes::get_native_u4(addr);
+    return get_native_u4(addr);
   }
   static inline void sd_instr(address addr, uint32_t instr) {
-    Bytes::put_native_u4(addr, instr);
+    put_native_u4(addr, instr);
   }
 
   static inline uint32_t extract(uint32_t val, unsigned msb, unsigned lsb) {
@@ -912,6 +1030,43 @@ protected:
     emit(insn);
   }
 
+ public:
+
+  static uint32_t encode_csrrw(Register Rd, const uint32_t csr, Register Rs1) {
+    guarantee(is_uimm12(csr), "csr is invalid");
+    uint32_t insn = 0;
+    patch((address)&insn, 6, 0, 0b1110011);
+    patch((address)&insn, 14, 12, 0b001);
+    patch_reg((address)&insn, 7, Rd);
+    patch_reg((address)&insn, 15, Rs1);
+    patch((address)&insn, 31, 20, csr);
+    return insn;
+  }
+
+  static uint32_t encode_jal(Register Rd, const int32_t offset) {
+    guarantee(is_simm21(offset) && ((offset % 2) == 0), "offset is invalid.");
+    uint32_t insn = 0;
+    patch((address)&insn, 6, 0, 0b1101111);
+    patch_reg((address)&insn, 7, Rd);
+    patch((address)&insn, 19, 12, (uint32_t)((offset >> 12) & 0xff));
+    patch((address)&insn, 20, (uint32_t)((offset >> 11) & 0x1));
+    patch((address)&insn, 30, 21, (uint32_t)((offset >> 1) & 0x3ff));
+    patch((address)&insn, 31, (uint32_t)((offset >> 20) & 0x1));
+    return insn;
+  }
+
+  static uint32_t encode_jalr(Register Rd, Register Rs, const int32_t offset) {
+    guarantee(is_simm12(offset), "offset is invalid.");
+    uint32_t insn = 0;
+    patch((address)&insn, 6, 0, 0b1100111);
+    patch_reg((address)&insn, 7, Rd);
+    patch((address)&insn, 14, 12, 0b000);
+    patch_reg((address)&insn, 15, Rs);
+    int32_t val = offset & 0xfff;
+    patch((address)&insn, 31, 20, val);
+    return insn;
+  }
+
  protected:
 
   enum barrier {
@@ -945,19 +1100,20 @@ protected:
 
  public:
 
-#define INSN(NAME, op, funct3, funct7)                      \
+#define INSN(NAME, op, funct3, funct12)                     \
   void NAME() {                                             \
     unsigned insn = 0;                                      \
     patch((address)&insn, 6, 0, op);                        \
     patch((address)&insn, 11, 7, 0b00000);                  \
     patch((address)&insn, 14, 12, funct3);                  \
     patch((address)&insn, 19, 15, 0b00000);                 \
-    patch((address)&insn, 31, 20, funct7);                  \
+    patch((address)&insn, 31, 20, funct12);                 \
     emit(insn);                                             \
   }
 
   INSN(ecall,   0b1110011, 0b000, 0b000000000000);
   INSN(_ebreak, 0b1110011, 0b000, 0b000000000001);
+  INSN(wrs_sto, 0b1110011, 0b000, 0b000000011101);
 
 #undef INSN
 
@@ -1011,7 +1167,75 @@ protected:
     amo_base<funct5, width>(Rd, Rs1, Rs2->raw_encoding(), memory_order);
   }
 
+  // ====================================
+  // RISC-V Zalasr (Atomic, Load-Acquire Store-Release) extension
+  // ====================================
+
+  enum ZalasrWidthFunct3 : uint8_t {
+    ZALASR_WIDTH_BYTE       = 0b000,
+    ZALASR_WIDTH_HALFWORD   = 0b001,
+    ZALASR_WIDTH_WORD       = 0b010,
+    ZALASR_WIDTH_DOUBLEWORD = 0b011,
+  };
+
+  enum ZalasrOperationFunct5 : uint8_t {
+    ZALASR_LOAD_ACQUIRE  = 0b00110,
+    ZALASR_STORE_RELEASE = 0b00111,
+  };
+
+  template <ZalasrOperationFunct5 funct5, ZalasrWidthFunct3 width>
+  void zalasr_base(Register Rd, Register Rs1, uint8_t Rs2, Aqrl memory_order) {
+    assert_cond(UseZalasr);
+
+    if constexpr (funct5 == ZALASR_LOAD_ACQUIRE) {
+      assert(Rs2 == 0, "Zalasr load-acquire requires rs2 = x0");
+      assert(memory_order == aq || memory_order == aqrl,
+             "Zalasr load-acquire requires aq or aqrl encoding");
+      // aq is mandatory for load-acquire; rl is optional (aqrl).
+      // In product builds, this also prevents emitting RESERVED encodings.
+      memory_order = (memory_order == aqrl) ? aqrl : aq;
+    } else {
+      static_assert(funct5 == ZALASR_STORE_RELEASE,
+                    "unsupported Zalasr operation");
+      assert(Rd == zr, "Zalasr store-release requires rd = x0");
+      assert(memory_order == rl || memory_order == aqrl,
+             "Zalasr store-release requires rl or aqrl encoding");
+      // rl is mandatory for store-release; aq is optional (aqrl).
+      // In product builds, this also prevents emitting RESERVED encodings.
+      memory_order = (memory_order == aqrl) ? aqrl : rl;
+    }
+
+    unsigned insn = 0;
+    patch((address)&insn,  6,  0, OP_AMO_MAJOR);
+    patch_reg((address)&insn,  7, Rd);
+    patch((address)&insn, 14, 12, width);
+    patch_reg((address)&insn, 15, Rs1);
+    patch((address)&insn, 24, 20, Rs2);
+    patch((address)&insn, 26, 25, memory_order);
+    patch((address)&insn, 31, 27, funct5);
+    emit(insn);
+  }
+
  public:
+  // Load-acquire: aq is mandatory, rl is optional (aqrl).
+  void lb_aq  (Register Rd, Register Rs1) { zalasr_base<ZALASR_LOAD_ACQUIRE,  ZALASR_WIDTH_BYTE      >(Rd, Rs1, (uint8_t)0, aq);   }
+  void lb_aqrl(Register Rd, Register Rs1) { zalasr_base<ZALASR_LOAD_ACQUIRE,  ZALASR_WIDTH_BYTE      >(Rd, Rs1, (uint8_t)0, aqrl); }
+  void lh_aq  (Register Rd, Register Rs1) { zalasr_base<ZALASR_LOAD_ACQUIRE,  ZALASR_WIDTH_HALFWORD  >(Rd, Rs1, (uint8_t)0, aq);   }
+  void lh_aqrl(Register Rd, Register Rs1) { zalasr_base<ZALASR_LOAD_ACQUIRE,  ZALASR_WIDTH_HALFWORD  >(Rd, Rs1, (uint8_t)0, aqrl); }
+  void lw_aq  (Register Rd, Register Rs1) { zalasr_base<ZALASR_LOAD_ACQUIRE,  ZALASR_WIDTH_WORD      >(Rd, Rs1, (uint8_t)0, aq);   }
+  void lw_aqrl(Register Rd, Register Rs1) { zalasr_base<ZALASR_LOAD_ACQUIRE,  ZALASR_WIDTH_WORD      >(Rd, Rs1, (uint8_t)0, aqrl); }
+  void ld_aq  (Register Rd, Register Rs1) { zalasr_base<ZALASR_LOAD_ACQUIRE,  ZALASR_WIDTH_DOUBLEWORD>(Rd, Rs1, (uint8_t)0, aq);   }
+  void ld_aqrl(Register Rd, Register Rs1) { zalasr_base<ZALASR_LOAD_ACQUIRE,  ZALASR_WIDTH_DOUBLEWORD>(Rd, Rs1, (uint8_t)0, aqrl); }
+
+  // Store-release: rl is mandatory, aq is optional (aqrl).
+  void sb_rl  (Register Rs2, Register Rs1) { zalasr_base<ZALASR_STORE_RELEASE, ZALASR_WIDTH_BYTE      >(zr, Rs1, Rs2->raw_encoding(), rl);   }
+  void sb_aqrl(Register Rs2, Register Rs1) { zalasr_base<ZALASR_STORE_RELEASE, ZALASR_WIDTH_BYTE      >(zr, Rs1, Rs2->raw_encoding(), aqrl); }
+  void sh_rl  (Register Rs2, Register Rs1) { zalasr_base<ZALASR_STORE_RELEASE, ZALASR_WIDTH_HALFWORD  >(zr, Rs1, Rs2->raw_encoding(), rl);   }
+  void sh_aqrl(Register Rs2, Register Rs1) { zalasr_base<ZALASR_STORE_RELEASE, ZALASR_WIDTH_HALFWORD  >(zr, Rs1, Rs2->raw_encoding(), aqrl); }
+  void sw_rl  (Register Rs2, Register Rs1) { zalasr_base<ZALASR_STORE_RELEASE, ZALASR_WIDTH_WORD      >(zr, Rs1, Rs2->raw_encoding(), rl);   }
+  void sw_aqrl(Register Rs2, Register Rs1) { zalasr_base<ZALASR_STORE_RELEASE, ZALASR_WIDTH_WORD      >(zr, Rs1, Rs2->raw_encoding(), aqrl); }
+  void sd_rl  (Register Rs2, Register Rs1) { zalasr_base<ZALASR_STORE_RELEASE, ZALASR_WIDTH_DOUBLEWORD>(zr, Rs1, Rs2->raw_encoding(), rl);   }
+  void sd_aqrl(Register Rs2, Register Rs1) { zalasr_base<ZALASR_STORE_RELEASE, ZALASR_WIDTH_DOUBLEWORD>(zr, Rs1, Rs2->raw_encoding(), aqrl); }
 
   void amoadd_b(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
     amo_base<AMO_ADD, AMO_WIDTH_BYTE>(Rd, Rs1, Rs2, memory_order);
@@ -1988,6 +2212,10 @@ enum VectorMask {
 
   // Vector Narrowing Integer Right Shift Instructions
   INSN(vnsra_wi, 0b1010111, 0b011, 0b101101);
+  INSN(vnsrl_wi, 0b1010111, 0b011, 0b101100);
+
+  // Vector Widening Shift Left Logical (Zvbb) Extension
+  INSN(vwsll_vi, 0b1010111, 0b011, 0b110101);
 
 #undef INSN
 
@@ -2209,6 +2437,7 @@ enum VectorMask {
   INSN(vrsub_vx, 0b1010111, 0b100, 0b000011);
 
   // Vector Slide Instructions
+  INSN(vslideup_vx,   0b1010111, 0b100, 0b001110);
   INSN(vslidedown_vx, 0b1010111, 0b100, 0b001111);
 
 #undef INSN
@@ -2567,22 +2796,22 @@ enum Nf {
 
 #undef INSN
 
-#define patch_VArith_imm6(op, Reg, funct3, Reg_or_Imm5, I5, Vs2, vm, funct6)   \
+#define patch_VArith_imm6(op, Reg, funct3, Reg_or_Imm5, I5, Vs2, vm, funct5)   \
     unsigned insn = 0;                                                         \
     patch((address)&insn, 6, 0, op);                                           \
     patch((address)&insn, 14, 12, funct3);                                     \
     patch((address)&insn, 19, 15, Reg_or_Imm5);                                \
     patch((address)&insn, 25, vm);                                             \
     patch((address)&insn, 26, I5);                                             \
-    patch((address)&insn, 31, 27, funct6);                                     \
+    patch((address)&insn, 31, 27, funct5);                                     \
     patch_reg((address)&insn, 7, Reg);                                         \
     patch_reg((address)&insn, 20, Vs2);                                        \
     emit(insn)
 
-#define INSN(NAME, op, funct3, funct6)                                                             \
+#define INSN(NAME, op, funct3, funct5)                                                             \
   void NAME(VectorRegister Vd, VectorRegister Vs2, uint32_t imm, VectorMask vm = unmasked) {       \
     guarantee(is_uimm6(imm), "uimm is invalid");                                                   \
-    patch_VArith_imm6(op, Vd, funct3, (uint32_t)(imm & 0x1f), (uint32_t)((imm >> 5) & 0x1), Vs2, vm, funct6);  \
+    patch_VArith_imm6(op, Vd, funct3, (uint32_t)(imm & 0x1f), (uint32_t)((imm >> 5) & 0x1), Vs2, vm, funct5);  \
   }
 
   // Vector Bit-manipulation used in Cryptography (Zvbb) Extension
@@ -2609,6 +2838,16 @@ enum Nf {
   INSN(vaesdm_vv,   0b1110111, 0b010, 0b00000, 0b101000);
   INSN(vaesdf_vv,   0b1110111, 0b010, 0b00001, 0b101000);
 
+  // Vector AES instructions - scalar form (Zvkned extension)
+  // .vs broadcasts vs2 element group 0 to all element groups in vd,
+  // allowing an m1 round key to be applied to a VL>4 data group
+  // without key splat.
+  INSN(vaesz_vs,   0b1110111, 0b010, 0b00111, 0b101001);
+  INSN(vaesem_vs,  0b1110111, 0b010, 0b00010, 0b101001);
+  INSN(vaesef_vs,  0b1110111, 0b010, 0b00011, 0b101001);
+  INSN(vaesdm_vs,  0b1110111, 0b010, 0b00000, 0b101001);
+  INSN(vaesdf_vs,  0b1110111, 0b010, 0b00001, 0b101001);
+
   INSN(vclz_v,  0b1010111, 0b010, 0b01100, 0b010010); // count leading zeros
   INSN(vctz_v,  0b1010111, 0b010, 0b01101, 0b010010); // count trailing zeros
 
@@ -2623,6 +2862,9 @@ enum Nf {
   INSN(vsha2ms_vv,  0b1110111, 0b010, 0b1, 0b101101);
   INSN(vsha2ch_vv,  0b1110111, 0b010, 0b1, 0b101110);
   INSN(vsha2cl_vv,  0b1110111, 0b010, 0b1, 0b101111);
+
+  // Vector GHASH (Zvkg) Extension
+  INSN(vghsh_vv,    0b1110111, 0b010, 0b1, 0b101100);
 
 #undef INSN
 
@@ -2668,10 +2910,16 @@ enum Nf {
   INSN(andn,      0b0110011, 0b111, 0b0100000);
   INSN(orn,       0b0110011, 0b110, 0b0100000);
   INSN(xnor,      0b0110011, 0b100, 0b0100000);
+  INSN(bset,      0b0110011, 0b001, 0b0010100);
+  INSN(bclr,      0b0110011, 0b001, 0b0100100);
+  INSN(binv,      0b0110011, 0b001, 0b0110100);
+  INSN(bext,      0b0110011, 0b101, 0b0100100);
   INSN(max,       0b0110011, 0b110, 0b0000101);
   INSN(maxu,      0b0110011, 0b111, 0b0000101);
   INSN(min,       0b0110011, 0b100, 0b0000101);
   INSN(minu,      0b0110011, 0b101, 0b0000101);
+  INSN(clmul,     0b0110011, 0b001, 0b0000101);
+  INSN(clmulh,    0b0110011, 0b011, 0b0000101);
 
 #undef INSN
 
@@ -2716,6 +2964,9 @@ enum Nf {
 
   INSN(rori,    0b0010011, 0b101, 0b011000);
   INSN(slli_uw, 0b0011011, 0b001, 0b000010);
+  INSN(bseti,   0b0010011, 0b001, 0b001010);
+  INSN(bclri,   0b0010011, 0b001, 0b010010);
+  INSN(binvi,   0b0010011, 0b001, 0b011010);
   INSN(bexti,   0b0010011, 0b101, 0b010010);
 
 #undef INSN
@@ -3666,50 +3917,15 @@ public:
 // --------------------------
 // Upper Immediate Instruction
 // --------------------------
-#define INSN(NAME)                                                                           \
-  void NAME(Register Rd, int32_t imm) {                                                      \
-    /* lui -> c.lui */                                                                       \
-    if (do_compress() && (Rd != x0 && Rd != x2 && imm != 0 && is_simm18(imm))) {             \
-      c_lui(Rd, imm);                                                                        \
-      return;                                                                                \
-    }                                                                                        \
-    _lui(Rd, imm);                                                                           \
+  void lui(Register Rd, int32_t imm) {
+    /* lui -> c.lui */
+    if (do_compress() && (Rd != x0 && Rd != x2 && imm != 0 && is_simm18(imm))) {
+      c_lui(Rd, imm);
+      return;
+    }
+    _lui(Rd, imm);
   }
 
-  INSN(lui);
-
-#undef INSN
-
-// Cache Management Operations
-// These instruction may be turned off for user space.
- private:
-  enum CBO_FUNCT : unsigned int {
-    CBO_INVAL = 0b0000000000000,
-    CBO_CLEAN = 0b0000000000001,
-    CBO_FLUSH = 0b0000000000010,
-    CBO_ZERO  = 0b0000000000100
-  };
-
-  template <CBO_FUNCT FUNCT>
-  void cbo_base(Register Rs1) {
-    assert((UseZicbom && FUNCT != CBO_ZERO) || UseZicboz, "sanity");
-    unsigned insn = 0;
-    patch((address)&insn, 6,  0, 0b0001111);
-    patch((address)&insn, 14, 12, 0b010);
-    patch_reg((address)&insn, 15, Rs1);
-    patch((address)&insn, 31, 20, FUNCT);
-    emit(insn);
-  }
-
-  // This instruction have some security implication.
-  // At this time it's not likely to be enabled for user mode.
-  void cbo_inval(Register Rs1) { cbo_base<CBO_INVAL>(Rs1); }
- public:
-  // Zicbom
-  void cbo_clean(Register Rs1) { cbo_base<CBO_CLEAN>(Rs1); }
-  void cbo_flush(Register Rs1) { cbo_base<CBO_FLUSH>(Rs1); }
-  // Zicboz
-  void cbo_zero(Register Rs1)  { cbo_base<CBO_ZERO>(Rs1); }
 
  private:
   enum PREFETCH_FUNCT : unsigned int {

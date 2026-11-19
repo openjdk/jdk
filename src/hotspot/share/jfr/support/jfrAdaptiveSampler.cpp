@@ -25,13 +25,14 @@
 
 #include "jfr/support/jfrAdaptiveSampler.hpp"
 #include "jfr/utilities/jfrRandom.inline.hpp"
-#include "jfr/utilities/jfrSpinlockHelper.hpp"
 #include "jfr/utilities/jfrTime.hpp"
 #include "jfr/utilities/jfrTimeConverter.hpp"
 #include "jfr/utilities/jfrTryLock.hpp"
 #include "logging/log.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/spinCriticalSection.hpp"
+
 #include <cmath>
 
 JfrSamplerWindow::JfrSamplerWindow() :
@@ -88,7 +89,7 @@ bool JfrAdaptiveSampler::sample(int64_t timestamp) {
 }
 
 inline const JfrSamplerWindow* JfrAdaptiveSampler::active_window() const {
-  return Atomic::load_acquire(&_active_window);
+  return AtomicAccess::load_acquire(&_active_window);
 }
 
 inline int64_t now() {
@@ -96,7 +97,7 @@ inline int64_t now() {
 }
 
 inline bool JfrSamplerWindow::is_expired(int64_t timestamp) const {
-  const int64_t end_ticks = Atomic::load(&_end_ticks);
+  const int64_t end_ticks = AtomicAccess::load(&_end_ticks);
   return timestamp == 0 ? now() >= end_ticks : timestamp >= end_ticks;
 }
 
@@ -107,7 +108,7 @@ bool JfrSamplerWindow::sample(int64_t timestamp, bool* expired_window) const {
 }
 
 inline bool JfrSamplerWindow::sample() const {
-  const size_t ordinal = Atomic::add(&_measured_population_size, static_cast<size_t>(1));
+  const size_t ordinal = AtomicAccess::add(&_measured_population_size, static_cast<size_t>(1));
   return ordinal <= _projected_population_size && ordinal % _sampling_interval == 0;
 }
 
@@ -138,7 +139,7 @@ void JfrAdaptiveSampler::rotate(const JfrSamplerWindow* expired) {
 
 inline void JfrAdaptiveSampler::install(const JfrSamplerWindow* next) {
   assert(next != active_window(), "invariant");
-  Atomic::release_store(&_active_window, next);
+  AtomicAccess::release_store(&_active_window, next);
 }
 
 const JfrSamplerWindow* JfrAdaptiveSampler::configure(const JfrSamplerParams& params, const JfrSamplerWindow* expired) {
@@ -196,12 +197,12 @@ inline int64_t millis_to_countertime(int64_t millis) {
 void JfrSamplerWindow::initialize(const JfrSamplerParams& params) {
   assert(_sampling_interval >= 1, "invariant");
   if (params.window_duration_ms == 0) {
-    Atomic::store(&_end_ticks, static_cast<int64_t>(0));
+    AtomicAccess::store(&_end_ticks, static_cast<int64_t>(0));
     return;
   }
-  Atomic::store(&_measured_population_size, static_cast<size_t>(0));
+  AtomicAccess::store(&_measured_population_size, static_cast<size_t>(0));
   const int64_t end_ticks = now() + millis_to_countertime(params.window_duration_ms);
-  Atomic::store(&_end_ticks, end_ticks);
+  AtomicAccess::store(&_end_ticks, end_ticks);
 }
 
 /*
@@ -278,7 +279,7 @@ size_t JfrSamplerWindow::sample_size() const {
 }
 
 size_t JfrSamplerWindow::population_size() const {
-  return Atomic::load(&_measured_population_size);
+  return AtomicAccess::load(&_measured_population_size);
 }
 
 intptr_t JfrSamplerWindow::accumulated_debt() const {
@@ -341,7 +342,7 @@ JfrGTestFixedRateSampler::JfrGTestFixedRateSampler(size_t sample_points_per_wind
 
 bool JfrGTestFixedRateSampler::initialize() {
   const bool result = JfrAdaptiveSampler::initialize();
-  JfrSpinlockHelper mutex(&_lock);
+  SpinCriticalSection scs(&_lock);
   reconfigure();
   return result;
 }

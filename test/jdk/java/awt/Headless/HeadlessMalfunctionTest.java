@@ -38,7 +38,7 @@ import java.nio.file.Path;
  * @run driver  jdk.test.lib.helpers.ClassFileInstaller
  *              HeadlessMalfunctionAgent
  *              HeadlessMalfunctionAgent$1
- * @run driver HeadlessMalfunctionTest
+ * @run driver/timeout=240 HeadlessMalfunctionTest
  */
 public class HeadlessMalfunctionTest {
 

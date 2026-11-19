@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,18 +22,22 @@
  *
  */
 
+#include "cds/aotMetaspace.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/classListWriter.hpp"
 #include "cds/dynamicArchive.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
-#include "classfile/javaClasses.hpp"
+#include "classfile/classPrinter.hpp"
+#include "classfile/javaStackTraceClasses.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "code/aotCodeCache.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/compilationMemoryStatistic.hpp"
+#include "compiler/compilationPolicy.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "gc/shared/collectedHeap.hpp"
@@ -69,15 +73,16 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaThread.hpp"
+#include "runtime/os.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/task.hpp"
 #include "runtime/threads.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/trimNativeHeap.hpp"
+#include "runtime/vm_version.hpp"
 #include "runtime/vmOperations.hpp"
 #include "runtime/vmThread.hpp"
-#include "runtime/vm_version.hpp"
 #include "sanitizers/leak.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
@@ -97,9 +102,6 @@
 #if INCLUDE_JFR
 #include "jfr/jfr.hpp"
 #endif
-#if INCLUDE_JVMCI
-#include "jvmci/jvmci.hpp"
-#endif
 
 GrowableArray<Method*>* collected_profiled_methods;
 
@@ -111,11 +113,16 @@ static int compare_methods(Method** a, Method** b) {
   return (diff < 0) ? -1 : (diff > 0) ? 1 : 0;
 }
 
+inline CompLevel method_code_comp_level(const Method* m) {
+  const nmethod* code = m->code();
+  return code != nullptr ? static_cast<CompLevel>(code->comp_level()) : CompLevel_any;
+}
+
 static void collect_profiled_methods(Method* m) {
   Thread* thread = Thread::current();
   methodHandle mh(thread, m);
   if ((m->method_data() != nullptr) &&
-      (PrintMethodData || CompilerOracle::should_print(mh))) {
+      (PrintMethodData || CompilerOracle::should_print(mh, method_code_comp_level(m)))) {
     collected_profiled_methods->push(m);
   }
 }
@@ -148,7 +155,8 @@ static void print_method_profiling_data() {
           ss.fill_to(2);
           m->method_data()->parameters_type_data()->print_data_on(&ss);
         }
-        m->print_codes_on(&ss);
+        // Buffering to a stringStream, disable internal buffering so it's not done twice.
+        m->print_codes_on(&ss, ClassPrinter::PRINT_METHOD_DATA, false);
         tty->print("%s", ss.as_string()); // print all at once
         total_size += m->method_data()->size_in_bytes();
       }
@@ -243,9 +251,12 @@ static void print_bytecode_count() {}
 
 
 // General statistics printing (profiling ...)
-void print_statistics() {
+void print_statistics_before_exit() {
+  LogStreamHandle(Info, aot, codecache, stats) aot_log;
   if (CITime) {
     CompileBroker::print_times();
+  } else if (aot_log.is_enabled()) {
+    AOTCodeCache::print_timers_on(&aot_log);
   }
 
 #ifdef COMPILER1
@@ -274,20 +285,13 @@ void print_statistics() {
     IndexSet::print_statistics();
   }
 #endif // ASSERT
-#else // COMPILER2
-#if INCLUDE_JVMCI
-#ifndef COMPILER1
-  if ((TraceDeoptimization || LogVMOutput || LogCompilation) && UseCompiler) {
-    FlagSetting fs(DisplayVMOutput, DisplayVMOutput && TraceDeoptimization);
-    Deoptimization::print_statistics();
-    SharedRuntime::print_statistics();
-  }
-#endif // COMPILER1
-#endif // INCLUDE_JVMCI
 #endif // COMPILER2
 
   if (PrintNMethodStatistics) {
     nmethod::print_statistics();
+    AOTCodeCache::print_statistics_on(tty);
+  } else if (aot_log.is_enabled()) {
+    AOTCodeCache::print_statistics_on(&aot_log);
   }
   if (CountCompiledCalls) {
     print_method_invocation_histogram();
@@ -383,6 +387,12 @@ void before_exit(JavaThread* thread, bool halt) {
 
   Events::log(thread, "Before exit entered");
 
+  // A GC requested after we shut down the heap blocks that requesting Java thread.
+  // Suppress GC-a-lot for threads entering shutdown as Monitor::lock() calls in the
+  // remainder of the shutdown sequence could otherwise block when executing a
+  // GC-a-lot caused collection.
+  NOT_PRODUCT(thread->set_skip_gcalot(true);)
+
   // Note: don't use a Mutex to guard the entire before_exit(), as
   // JVMTI post_thread_end_event and post_vm_death_event will run native code.
   // A CAS or OSMutex would work just fine but then we need to manipulate
@@ -438,17 +448,11 @@ void before_exit(JavaThread* thread, bool halt) {
 
   // Actual shutdown logic begins here.
 
-#if INCLUDE_JVMCI
-  if (EnableJVMCI) {
-    JVMCI::shutdown(thread);
-  }
-#endif
-
 #if INCLUDE_CDS
   ClassListWriter::write_resolved_constants();
 
-  if (CDSConfig::is_dumping_preimage_static_archive()) {
-    MetaspaceShared::preload_and_dump(thread);
+  if (CDSConfig::is_dumping_aot_configuration()) {
+    AOTMetaspace::dump_static_archive(thread);
   }
 #endif
 
@@ -471,20 +475,19 @@ void before_exit(JavaThread* thread, bool halt) {
 
   NativeHeapTrimmer::cleanup();
 
-  // Stop concurrent GC threads
-  Universe::heap()->stop();
-
-  // Print GC/heap related information.
-  Log(gc, exit) log;
-  if (log.is_info()) {
-    LogStream ls_info(log.info());
-    Universe::print_on(&ls_info);
-    if (log.is_trace()) {
-      LogStream ls_trace(log.trace());
-      MutexLocker mcld(ClassLoaderDataGraph_lock);
-      ClassLoaderDataGraph::print_on(&ls_trace);
-    }
+  if (JvmtiExport::should_post_thread_life()) {
+    JvmtiExport::post_thread_end(thread);
   }
+
+  // Always call even when there are not JVMTI environments yet, since environments
+  // may be attached late and JVMTI must track phases of VM execution.
+  JvmtiExport::post_vm_death();
+  JvmtiAgentList::unload_agents();
+
+  // No user code can be executed in the current thread after this point.
+
+  // Run before exit and then stop concurrent GC threads.
+  Universe::before_exit();
 
   if (PrintBytecodeHistogram) {
     BytecodeHistogram::print();
@@ -499,21 +502,17 @@ void before_exit(JavaThread* thread, bool halt) {
   }
 #endif
 
-  if (JvmtiExport::should_post_thread_life()) {
-    JvmtiExport::post_thread_end(thread);
-  }
-
-  // Always call even when there are not JVMTI environments yet, since environments
-  // may be attached late and JVMTI must track phases of VM execution
-  JvmtiExport::post_vm_death();
-  JvmtiAgentList::unload_agents();
-
   // Terminate the signal thread
   // Note: we don't wait until it actually dies.
   os::terminate_signal_thread();
 
-  print_statistics();
-  Universe::heap()->print_tracing_info();
+  #if INCLUDE_CDS
+  if (AOTVerifyTrainingData) {
+    TrainingData::verify();
+  }
+  #endif
+
+  print_statistics_before_exit();
 
   { MutexLocker ml(BeforeExit_lock);
     _before_exit_status = BEFORE_EXIT_DONE;
@@ -749,29 +748,39 @@ int JDK_Version::compare(const JDK_Version& other) const {
 
 /* See JEP 223 */
 void JDK_Version::to_string(char* buffer, size_t buflen) const {
-  assert(buffer && buflen > 0, "call with useful buffer");
-  size_t index = 0;
-
+  assert((buffer != nullptr) && (buflen > 0), "call with useful buffer");
+  stringStream ss{buffer, buflen};
   if (!is_valid()) {
-    jio_snprintf(buffer, buflen, "%s", "(uninitialized)");
+    ss.print_raw("(uninitialized)");
   } else {
-    int rc = jio_snprintf(
-        &buffer[index], buflen - index, "%d.%d", _major, _minor);
-    if (rc == -1) return;
-    index += rc;
+    ss.print("%d.%d", _major, _minor);
     if (_patch > 0) {
-      rc = jio_snprintf(&buffer[index], buflen - index, ".%d.%d", _security, _patch);
-      if (rc == -1) return;
-      index += rc;
+      ss.print(".%d.%d", _security, _patch);
     } else if (_security > 0) {
-      rc = jio_snprintf(&buffer[index], buflen - index, ".%d", _security);
-      if (rc == -1) return;
-      index += rc;
+      ss.print(".%d", _security);
     }
     if (_build > 0) {
-      rc = jio_snprintf(&buffer[index], buflen - index, "+%d", _build);
-      if (rc == -1) return;
-      index += rc;
+      ss.print("+%d", _build);
     }
   }
+}
+
+void JDK_Version::set_java_version(const char* version) {
+  _java_version = os::strdup(version, mtInternal);
+}
+
+void JDK_Version::set_runtime_name(const char* name) {
+  _runtime_name = os::strdup(name, mtInternal);
+}
+
+void JDK_Version::set_runtime_version(const char* version) {
+  _runtime_version = os::strdup(version, mtInternal);
+}
+
+void JDK_Version::set_runtime_vendor_version(const char* vendor_version) {
+  _runtime_vendor_version = os::strdup(vendor_version, mtInternal);
+}
+
+void JDK_Version::set_runtime_vendor_vm_bug_url(const char* vendor_vm_bug_url) {
+  _runtime_vendor_vm_bug_url = os::strdup(vendor_vm_bug_url, mtInternal);
 }

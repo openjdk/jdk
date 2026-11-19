@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2025 Unicode, Inc.
+<!-- Copyright © 1991-2026 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -279,6 +279,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ksf">bafia</language>
 			<language type="ksh">kelnski</language>
 			<language type="ku">kurdski</language>
+			<language type="ku" menu="core">kurdski</language>
+			<language type="ku" menu="extension">kurmanji</language>
 			<language type="kum">kumik</language>
 			<language type="kut">kutenai</language>
 			<language type="kv">komi</language>
@@ -410,6 +412,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="pi">pali</language>
 			<language type="pis">pidžin</language>
 			<language type="pl">poljski</language>
+			<language type="pms">pijemontski</language>
 			<language type="pon">ponpejski</language>
 			<language type="pqm">malisit-pasamakvodi</language>
 			<language type="prg">pruski</language>
@@ -872,6 +875,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="CN">Kina</territory>
 			<territory type="CO">Kolumbija</territory>
 			<territory type="CP">Ostrvo Clipperton</territory>
+			<territory type="CQ">Sark</territory>
 			<territory type="CR">Kostarika</territory>
 			<territory type="CU">Kuba</territory>
 			<territory type="CV">Zelenortska Ostrva</territory>
@@ -938,7 +942,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="IM">Ostrvo Man</territory>
 			<territory type="IN">Indija</territory>
 			<territory type="IO">Britanska Teritorija u Indijskom Okeanu</territory>
-			<territory type="IO" alt="chagos">arhipelag Chagos</territory>
+			<territory type="IO" alt="chagos">Arhipelag Chagos</territory>
 			<territory type="IQ">Irak</territory>
 			<territory type="IR">Iran</territory>
 			<territory type="IS">Island</territory>
@@ -1222,154 +1226,270 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<key type="collation">Sortiranje</key>
 			<key type="colNormalization">Normalizirano sortiranje</key>
 			<key type="colNumeric">Numeričko sortiranje</key>
+			<key type="colReorder">Promjena redoslijeda pisma/bloka</key>
 			<key type="colStrength">Jačina sortiranja</key>
 			<key type="currency">Valuta</key>
+			<key type="d0">Transformacija odredišta</key>
+			<key type="dx">Izuzeci od pretraživanja rječnika</key>
+			<key type="em">Prezentacija emojija</key>
+			<key type="fw">Prvi dan u sedmici</key>
+			<key type="h0">Mješovito</key>
 			<key type="hc">Format vremena (12 ili 24)</key>
-			<key type="lb">Stil prijeloma reda</key>
+			<key type="i0">Način unosa</key>
+			<key type="k0">Tastatura</key>
+			<key type="kv">Najviše ignorirano</key>
+			<key type="lb">Stil preloma reda</key>
+			<key type="lw">Prelom reda u riječi</key>
+			<key type="m0">Transformacija pravila</key>
 			<key type="ms">Mjerni sistem</key>
+			<key type="mu">Mjerna jedinica</key>
 			<key type="numbers">Brojevi</key>
+			<key type="rg">Područje za dodatne podatke</key>
+			<key type="s0">Transformacija izvora</key>
+			<key type="sd">Pododjeljak područja</key>
+			<key type="ss">Prelom rečenice nakon skraćenice</key>
+			<key type="t">Transformacija</key>
+			<key type="t0">Mašinski prevedeno</key>
 			<key type="timezone">Vremenska zona</key>
 			<key type="va">Varijanta zemlje/jezika</key>
 			<key type="x">Privatna upotreba</key>
+			<key type="x0">Transformacija za privatnu upotrebu</key>
 		</keys>
 		<types>
 			<type key="calendar" type="buddhist">budistički kalendar</type>
+			<type key="calendar" type="buddhist" scope="core">budistički</type>
 			<type key="calendar" type="chinese">kineski kalendar</type>
+			<type key="calendar" type="chinese" scope="core">kineski</type>
 			<type key="calendar" type="coptic">koptski kalendar</type>
+			<type key="calendar" type="coptic" scope="core">koptski</type>
 			<type key="calendar" type="dangi">dangi kalendar</type>
+			<type key="calendar" type="dangi" scope="core">dangi</type>
 			<type key="calendar" type="ethiopic">etiopski kalendar</type>
-			<type key="calendar" type="ethiopic-amete-alem">etiopski kalendar &quot;Amete Alem&quot;</type>
+			<type key="calendar" type="ethiopic" scope="core">etiopski</type>
+			<type key="calendar" type="ethiopic-amete-alem">etiopski kalendar Amete Alem</type>
+			<type key="calendar" type="ethiopic-amete-alem" scope="core">etiopski Amete Alem</type>
 			<type key="calendar" type="gregorian">gregorijanski kalendar</type>
+			<type key="calendar" type="gregorian" scope="core">gregorijanski</type>
 			<type key="calendar" type="hebrew">hebrejski kalendar</type>
+			<type key="calendar" type="hebrew" scope="core">hebrejski</type>
 			<type key="calendar" type="indian">indijski nacionalni kalendar</type>
-			<type key="calendar" type="islamic">islamski kalendar</type>
-			<type key="calendar" type="islamic-civil">islamski građanski kalendar, tabelarni</type>
+			<type key="calendar" type="indian" scope="core">indijski nacionalni</type>
+			<type key="calendar" type="islamic">hidžretski kalendar</type>
+			<type key="calendar" type="islamic" scope="core">hidžretski</type>
+			<type key="calendar" type="islamic-civil">hidžretski kalendar (tabularni, građanska epoha)</type>
+			<type key="calendar" type="islamic-civil" scope="core">hidžretski (tabularni, građanska epoha)</type>
 			<type key="calendar" type="islamic-rgsa">islamski kalendar za Saudijsku Arabiju</type>
+			<type key="calendar" type="islamic-rgsa" scope="core">hidžretski, Saudijska Arabija</type>
 			<type key="calendar" type="islamic-tbla">islamski kalendar, tabelarni, astronomska epoha</type>
-			<type key="calendar" type="islamic-umalqura">islamski kalendar, Umm al-Qura</type>
+			<type key="calendar" type="islamic-tbla" scope="core">hidžretski (tabularni, astronomska epoha)</type>
+			<type key="calendar" type="islamic-umalqura">hidžretski kalendar (Umm al-Qura)</type>
+			<type key="calendar" type="islamic-umalqura" scope="core">hidžretski (Umm al-Qura)</type>
 			<type key="calendar" type="iso8601">kalendar ISO-8601</type>
+			<type key="calendar" type="iso8601" scope="core">gregorijanski</type>
 			<type key="calendar" type="japanese">japanski kalendar</type>
+			<type key="calendar" type="japanese" scope="core">japanski</type>
 			<type key="calendar" type="persian">perzijski kalendar</type>
-			<type key="calendar" type="roc">kalendar Republike Kine</type>
+			<type key="calendar" type="persian" scope="core">perzijski</type>
+			<type key="calendar" type="roc">minguo kalendar</type>
+			<type key="calendar" type="roc" scope="core">minguo</type>
 			<type key="cf" type="account">računovodstveni format valute</type>
+			<type key="cf" type="account" scope="core">računovodstveni</type>
 			<type key="cf" type="standard">standardni format valute</type>
+			<type key="cf" type="standard" scope="core">standardni</type>
 			<type key="colAlternate" type="non-ignorable">Poredaj simbole</type>
 			<type key="colAlternate" type="shifted">Poredaj zanemarujući simbole</type>
 			<type key="colBackwards" type="no">Poredaj naglaske normalno</type>
 			<type key="colBackwards" type="yes">Poredaj naglaske obrnuto</type>
 			<type key="colCaseFirst" type="lower">Prvo poredaj mala slova</type>
+			<type key="colCaseFirst" type="lower" scope="core">mala slova</type>
 			<type key="colCaseFirst" type="no">Poredaj po normalnom poretku veličine slova</type>
+			<type key="colCaseFirst" type="no" scope="core">mala slova</type>
 			<type key="colCaseFirst" type="upper">Poredaj prvo velika slova</type>
+			<type key="colCaseFirst" type="upper" scope="core">velika slova</type>
 			<type key="colCaseLevel" type="no">Poredaj zanemarujući veličinu</type>
 			<type key="colCaseLevel" type="yes">Poredaj u skladu s veličinom slova</type>
-			<type key="collation" type="big5han">Tradicionalno kinesko sortiranje</type>
 			<type key="collation" type="compat">Prethodno sortiranje radi usklađenosti</type>
+			<type key="collation" type="compat" scope="core">kompatibilnost</type>
 			<type key="collation" type="dictionary">Rječničko sortiranje</type>
+			<type key="collation" type="dictionary" scope="core">rječnik</type>
 			<type key="collation" type="ducet">standardno Unicode sortiranje</type>
+			<type key="collation" type="ducet" scope="core">standardni Unicode</type>
 			<type key="collation" type="emoji">Sortiranje po emoji sličicama</type>
+			<type key="collation" type="emoji" scope="core">emodži</type>
 			<type key="collation" type="eor">Evropska pravila sortiranja</type>
-			<type key="collation" type="gb2312han">Pojednostavljeno kinesko sortiranje - GB2312</type>
+			<type key="collation" type="eor" scope="core">evropska pravila</type>
 			<type key="collation" type="phonebook">Sortiranje kao telefonski imenik</type>
+			<type key="collation" type="phonebook" scope="core">telefonski imenik</type>
 			<type key="collation" type="phonetic">Fonetsko sortiranje</type>
+			<type key="collation" type="phonetic" scope="core">fonetski</type>
 			<type key="collation" type="pinyin">Pinjin sortiranje</type>
+			<type key="collation" type="pinyin" scope="core">pinyin</type>
 			<type key="collation" type="search">općenito pretraživanje</type>
+			<type key="collation" type="search" scope="core">pretraživanje</type>
 			<type key="collation" type="searchjl">Pretraživanje po početnom suglasniku hangula</type>
+			<type key="collation" type="searchjl" scope="core">korejski početni suglasnik</type>
 			<type key="collation" type="standard">standardno sortiranje</type>
+			<type key="collation" type="standard" scope="core">standardno</type>
 			<type key="collation" type="stroke">Sortiranje po broju crta</type>
+			<type key="collation" type="stroke" scope="core">potez</type>
 			<type key="collation" type="traditional">Tradicionalno sortiranje</type>
+			<type key="collation" type="traditional" scope="core">tradicionalno</type>
 			<type key="collation" type="unihan">sortiranje prema korijenu i potezu</type>
+			<type key="collation" type="unihan" scope="core">korijen i potez</type>
 			<type key="collation" type="zhuyin">zhuyin sortiranje</type>
+			<type key="collation" type="zhuyin" scope="core">zhuyin</type>
 			<type key="colNormalization" type="no">Poredaj bez normalizacije</type>
 			<type key="colNormalization" type="yes">Poredaj unikod normalizirano</type>
 			<type key="colNumeric" type="no">Poredaj cifre pojedinačno</type>
 			<type key="colNumeric" type="yes">Poredaj cifre numerički</type>
+			<type key="colReorder" type="currency" scope="core">valuta</type>
+			<type key="colReorder" type="digit" scope="core">znamenke</type>
+			<type key="colReorder" type="punct" scope="core">interpunkcija</type>
+			<type key="colReorder" type="space" scope="core">bjelina</type>
+			<type key="colReorder" type="symbol" scope="core">simbol</type>
 			<type key="colStrength" type="identical">Poredaj sve</type>
+			<type key="colStrength" type="identical" scope="core">sve</type>
 			<type key="colStrength" type="primary">Poredaj samo po osnovnim slovima</type>
+			<type key="colStrength" type="primary" scope="core">samo osnovna slova</type>
 			<type key="colStrength" type="quaternary">Poredaj po naglascima/veličini/širini/pismu kana</type>
+			<type key="colStrength" type="quaternary" scope="core">osnova, naglasci, veličina, varijante, kana</type>
 			<type key="colStrength" type="secondary">Poredaj po naglasku</type>
+			<type key="colStrength" type="secondary" scope="core">osnova, naglasci</type>
 			<type key="colStrength" type="tertiary">Poredaj po naglascima/veličini/širini</type>
+			<type key="colStrength" type="tertiary" scope="core">osnova, naglasci, veličina, varijante</type>
 			<type key="d0" type="fwidth">Široki</type>
 			<type key="d0" type="hwidth">Uski</type>
 			<type key="d0" type="npinyin">Numerički</type>
+			<type key="em" type="default" scope="core">Zadano</type>
+			<type key="em" type="emoji" scope="core">Emoji</type>
+			<type key="em" type="text" scope="core">Tekst</type>
+			<type key="hc" type="c12">12-satni format</type>
+			<type key="hc" type="c12" scope="core">12</type>
+			<type key="hc" type="c24">24-satni format</type>
+			<type key="hc" type="c24" scope="core">24</type>
 			<type key="hc" type="h11">12-satni format (0–11)</type>
+			<type key="hc" type="h11" scope="core">12 (0–11)</type>
 			<type key="hc" type="h12">12-satni format (1–12)</type>
+			<type key="hc" type="h12" scope="core">12 (1–12)</type>
 			<type key="hc" type="h23">24-satni format (0–23)</type>
+			<type key="hc" type="h23" scope="core">24 (0–23)</type>
 			<type key="hc" type="h24">24-satni format (1–24)</type>
-			<type key="lb" type="loose">Slobodni stil prijeloma reda</type>
-			<type key="lb" type="normal">Normalni stil prijeloma reda</type>
-			<type key="lb" type="strict">Strogi stil prijeloma reda</type>
+			<type key="hc" type="h24" scope="core">24 (1–24)</type>
+			<type key="kv" type="currency" scope="core">Prebacivanje praznina, interpunkcija, svi simboli</type>
+			<type key="kv" type="punct" scope="core">Prebacivanje praznina, interpunkcija</type>
+			<type key="kv" type="space" scope="core">Prebacivanje praznina, interpunkcija</type>
+			<type key="kv" type="symbol" scope="core">Prebacivanje praznina, interpunkcija, simboli koji nisu valute</type>
+			<type key="lb" type="loose">Slobodni stil preloma reda</type>
+			<type key="lb" type="loose" scope="core">Slobodni</type>
+			<type key="lb" type="normal">Normalni stil preloma reda</type>
+			<type key="lb" type="normal" scope="core">Normalni</type>
+			<type key="lb" type="strict">Strogi stil preloma reda</type>
+			<type key="lb" type="strict" scope="core">Strogi</type>
+			<type key="lw" type="breakall" scope="core">Prelomi sve</type>
+			<type key="lw" type="keepall" scope="core">Zadrži sve</type>
+			<type key="lw" type="normal" scope="core">Normalno</type>
+			<type key="lw" type="phrase" scope="core">Zadrži u frazama</type>
 			<type key="m0" type="bgn">US BGN transliteracija</type>
 			<type key="m0" type="ungegn">UN GEGN transliteracija</type>
-			<type key="ms" type="metric">metrički sistem</type>
-			<type key="ms" type="uksystem">britanski mjerni sistem</type>
-			<type key="ms" type="ussystem">američki mjerni sistem</type>
+			<type key="ms" type="metric">Metrički sistem</type>
+			<type key="ms" type="metric" scope="core">Metrički</type>
+			<type key="ms" type="uksystem">Imperijalni mjerni sistem</type>
+			<type key="ms" type="uksystem" scope="core">UK</type>
+			<type key="ms" type="ussystem">Američki mjerni sistem</type>
+			<type key="ms" type="ussystem" scope="core">Američki</type>
 			<type key="numbers" type="ahom">ahom cifre</type>
-			<type key="numbers" type="arab">arapsko-indijski brojevi</type>
-			<type key="numbers" type="arabext">prošireni arapsko-indijski brojevi</type>
+			<type key="numbers" type="arab">arapsko-indijske cifre</type>
+			<type key="numbers" type="arabext">proširene arapsko-indijske cifre</type>
+			<type key="numbers" type="arabext" scope="core">prošireno arapsko-indijski</type>
 			<type key="numbers" type="armn">armenski brojevi</type>
 			<type key="numbers" type="armnlow">mali armenski brojevi</type>
+			<type key="numbers" type="armnlow" scope="core">armenski mali</type>
 			<type key="numbers" type="bali">balijske cifre</type>
-			<type key="numbers" type="beng">bengalski brojevi</type>
+			<type key="numbers" type="beng">bengalske cifre</type>
 			<type key="numbers" type="brah">brahmi cifre</type>
 			<type key="numbers" type="cakm">čakma cifre</type>
 			<type key="numbers" type="cham">čam cifre</type>
 			<type key="numbers" type="cyrl">ćirilični brojevi</type>
-			<type key="numbers" type="deva">brojevi pisma devanagari</type>
+			<type key="numbers" type="deva">devanagari cifre</type>
 			<type key="numbers" type="diak">dives akuru cifre</type>
 			<type key="numbers" type="ethi">etiopski brojevi</type>
 			<type key="numbers" type="finance">Finansijski brojevi</type>
-			<type key="numbers" type="fullwide">široki brojevi</type>
+			<type key="numbers" type="finance" scope="core">finansijski</type>
+			<type key="numbers" type="fullwide">široke cifre</type>
+			<type key="numbers" type="fullwide" scope="core">puna širina</type>
 			<type key="numbers" type="geor">gruzijski brojevi</type>
 			<type key="numbers" type="gong">gundžala bondi cifre</type>
 			<type key="numbers" type="gonm">masaram gondi cifre</type>
 			<type key="numbers" type="grek">grčki brojevi</type>
 			<type key="numbers" type="greklow">mali grčki brojevi</type>
-			<type key="numbers" type="gujr">brojevi pisma gudžarati</type>
-			<type key="numbers" type="guru">brojevi pisma gurmuki</type>
+			<type key="numbers" type="greklow" scope="core">mali grčki</type>
+			<type key="numbers" type="gujr">gudžarati cifre</type>
+			<type key="numbers" type="guru">gurmuki cifre</type>
+			<type key="numbers" type="hanidays" scope="core">numeracija han znakova dana u mjesecu za tradicionalne kalendare</type>
 			<type key="numbers" type="hanidec">kineski decimalni brojevi</type>
+			<type key="numbers" type="hanidec" scope="core">pozicijski decimalni sistem koji koristi ideografe kineskih brojeva kao cifre</type>
 			<type key="numbers" type="hans">pojednostavljeni kineski brojevi</type>
 			<type key="numbers" type="hansfin">pojednostavljeni kineski finansijski brojevi</type>
+			<type key="numbers" type="hansfin" scope="core">pojednostavljeni kineski finansijski</type>
 			<type key="numbers" type="hant">tradicionalni kineski brojevi</type>
 			<type key="numbers" type="hantfin">tradicionalni kineski finansijski brojevi</type>
+			<type key="numbers" type="hantfin" scope="core">tradicionalni kineski finansijski</type>
 			<type key="numbers" type="hebr">hebrejski brojevi</type>
 			<type key="numbers" type="hmng">pahav hmong brojevi</type>
 			<type key="numbers" type="hmnp">nijakeng punču hmnog brojevi</type>
 			<type key="numbers" type="java">javanski brojevi</type>
 			<type key="numbers" type="jpan">japanski brojevi</type>
 			<type key="numbers" type="jpanfin">japanski finansijski brojevi</type>
+			<type key="numbers" type="jpanfin" scope="core">japanski finansijski</type>
+			<type key="numbers" type="jpanyear" scope="core">japanska numeracija prve godine (Gannen)</type>
 			<type key="numbers" type="kali">kajah li brojevi</type>
 			<type key="numbers" type="kawi">kawi cifre</type>
-			<type key="numbers" type="khmr">kmerski brojevi</type>
-			<type key="numbers" type="knda">brojevi pisma kanada</type>
+			<type key="numbers" type="khmr">kmerske cifre</type>
+			<type key="numbers" type="knda">kanada cifre</type>
 			<type key="numbers" type="lana">tai tam hora brojevi</type>
 			<type key="numbers" type="lanatham">tai tam tam brojevi</type>
-			<type key="numbers" type="laoo">laoski brojevi</type>
-			<type key="numbers" type="latn">arapski brojevi</type>
+			<type key="numbers" type="lanatham" scope="core">Tai Tham (liturgijsko pismo)</type>
+			<type key="numbers" type="laoo">laoske cifre</type>
+			<type key="numbers" type="latn">arapske cifre</type>
 			<type key="numbers" type="lepc">lepča brojevi</type>
 			<type key="numbers" type="limb">limbu brojevi</type>
 			<type key="numbers" type="mathbold">matematički podebljani brojevi</type>
+			<type key="numbers" type="mathbold" scope="core">matematički podebljano</type>
 			<type key="numbers" type="mathdbl">matematički dvostruko podebljani brojevi</type>
+			<type key="numbers" type="mathdbl" scope="core">matematički s dvostrukim crtama</type>
 			<type key="numbers" type="mathmono">matematičke monospace cifre</type>
+			<type key="numbers" type="mathmono" scope="core">matematički fiksne širine</type>
 			<type key="numbers" type="mathsanb">matematičke sans-serif podebljane cifre</type>
+			<type key="numbers" type="mathsanb" scope="core">matematički podebljani sans-serif</type>
 			<type key="numbers" type="mathsans">matematičke sans-serif cifre</type>
-			<type key="numbers" type="mlym">malajalamski brojevi</type>
+			<type key="numbers" type="mathsans" scope="core">matematički sans-serif</type>
+			<type key="numbers" type="mlym">malajalamske cifre</type>
 			<type key="numbers" type="modi">modi cifre</type>
 			<type key="numbers" type="mong">Mongolske cifre</type>
 			<type key="numbers" type="mroo">mro cifre</type>
 			<type key="numbers" type="mtei">mitei majek cifre</type>
-			<type key="numbers" type="mymr">mijanmarski brojevi</type>
+			<type key="numbers" type="mymr">mjanmarske cifre</type>
+			<type key="numbers" type="mymrepka" scope="core">mjanmarski istočni Pwo Karen</type>
+			<type key="numbers" type="mymrpao" scope="core">mjanmarski Pao</type>
 			<type key="numbers" type="mymrshan">mijanmarske šan cifre</type>
+			<type key="numbers" type="mymrshan" scope="core">mjanmarski Shan</type>
 			<type key="numbers" type="mymrtlng">mijanmarske tai laing cifre</type>
+			<type key="numbers" type="mymrtlng" scope="core">mjanmarski Tai Laing</type>
 			<type key="numbers" type="nagm">nag mundari cifre</type>
-			<type key="numbers" type="native">izvorni brojevi</type>
+			<type key="numbers" type="native">izvorne cifre</type>
+			<type key="numbers" type="native" scope="core">izvorne cifre</type>
 			<type key="numbers" type="nkoo">n’ko cifre</type>
 			<type key="numbers" type="olck">ol čiki cifre</type>
-			<type key="numbers" type="orya">orijski brojevi</type>
+			<type key="numbers" type="orya">orijske cifre</type>
 			<type key="numbers" type="osma">osmanjske cifre</type>
+			<type key="numbers" type="outlined" scope="core">obrubljeno</type>
 			<type key="numbers" type="rohg">hanifi rohingaja cifre</type>
 			<type key="numbers" type="roman">rimski brojevi</type>
+			<type key="numbers" type="roman" scope="core">rimski veliki</type>
 			<type key="numbers" type="romanlow">mali rimski brojevi</type>
+			<type key="numbers" type="romanlow" scope="core">mali rimski</type>
 			<type key="numbers" type="saur">sauraštra cifre</type>
+			<type key="numbers" type="segment" scope="core">segmentirano</type>
 			<type key="numbers" type="shrd">šarada cifre</type>
 			<type key="numbers" type="sind">kudavade cifre</type>
 			<type key="numbers" type="sinh">sinhala lit cifre</type>
@@ -1378,17 +1498,27 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="takr">takri cifre</type>
 			<type key="numbers" type="talu">nove tai lue cifre</type>
 			<type key="numbers" type="taml">tradicionalni tamilski brojevi</type>
-			<type key="numbers" type="tamldec">tamilski brojevi</type>
-			<type key="numbers" type="telu">brojevi pisma telugu</type>
-			<type key="numbers" type="thai">tajlandski brojevi</type>
-			<type key="numbers" type="tibt">tibetanski brojevi</type>
+			<type key="numbers" type="tamldec">tamilske cifre</type>
+			<type key="numbers" type="tamldec" scope="core">moderni tamilski</type>
+			<type key="numbers" type="telu">telugu cifre</type>
+			<type key="numbers" type="thai">tajlandske cifre</type>
+			<type key="numbers" type="tibt">tibetanske cifre</type>
 			<type key="numbers" type="tirh">tirhutanske cifre</type>
 			<type key="numbers" type="tnsa">tangsa cifre</type>
 			<type key="numbers" type="traditional">Tradicionalni brojevi</type>
-			<type key="numbers" type="vaii">Vai cifre</type>
+			<type key="numbers" type="traditional" scope="core">tradicionalni brojevi</type>
+			<type key="numbers" type="vaii">vai cifre</type>
 			<type key="numbers" type="wara">warang citi cifre</type>
 			<type key="numbers" type="wcho">vančo cifre</type>
+			<type key="ss" type="none" scope="core">Uključeno</type>
+			<type key="ss" type="standard" scope="core">Isključeno</type>
+			<type key="t0" type="und">Neodređeni mašinski prevod</type>
+			<type key="va" type="posix" scope="core">Varijanta POSIX-a</type>
 		</types>
+		<typeValues>
+			<typeValue type="no">isključeno</typeValue>
+			<typeValue type="yes">uključeno</typeValue>
+		</typeValues>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">metrički</measurementSystemName>
 			<measurementSystemName type="UK">britanski</measurementSystemName>
@@ -1578,16 +1708,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<calendar type="dangi">
 				<dateTimeFormats>
 					<intervalFormats>
-						<intervalFormatItem id="Bh">
-							<greatestDifference id="B">h B – h B</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Bhm">
-							<greatestDifference id="B">h:mm B – h:mm B</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="h">
-							<greatestDifference id="a">h a – h a</greatestDifference>
-							<greatestDifference id="h">h–h a</greatestDifference>
-						</intervalFormatItem>
 						<intervalFormatItem id="hm">
 							<greatestDifference id="a">h:mm a – h:mm a</greatestDifference>
 							<greatestDifference id="h">h:mm–h:mm a</greatestDifference>
@@ -1597,54 +1717,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="a">h:mm a – h:mm a v</greatestDifference>
 							<greatestDifference id="h">h:mm–h:mm a v</greatestDifference>
 							<greatestDifference id="m">h:mm–h:mm a v</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="hv">
-							<greatestDifference id="a">h a – h a v</greatestDifference>
-							<greatestDifference id="h">h–h a v</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Md">
-							<greatestDifference id="d">MM-dd – MM-dd</greatestDifference>
-							<greatestDifference id="M">MM-dd – MM-dd</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="MEd">
-							<greatestDifference id="d">MM-dd, E – MM-dd, E</greatestDifference>
-							<greatestDifference id="M">MM-dd, E – MM-dd, E</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="MMMd">
-							<greatestDifference id="M">MMM d – MMM d</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="MMMEd">
-							<greatestDifference id="d">MMM d, E – MMM d, E</greatestDifference>
-							<greatestDifference id="M">MMM d, E – MMM d, E</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="yM">
-							<greatestDifference id="M">y-MM – y-MM</greatestDifference>
-							<greatestDifference id="y">y-MM – y-MM</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="yMd">
-							<greatestDifference id="d">y-MM-dd – y-MM-dd</greatestDifference>
-							<greatestDifference id="M">y-MM-dd – y-MM-dd</greatestDifference>
-							<greatestDifference id="y">y-MM-dd – y-MM-dd</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d">y-MM-dd, E – y-MM-dd, E</greatestDifference>
-							<greatestDifference id="M">y-MM-dd, E – y-MM-dd, E</greatestDifference>
-							<greatestDifference id="y">y-MM-dd, E – y-MM-dd, E</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="yMMM">
-							<greatestDifference id="y">U MMM – U MMM</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="yMMMd">
-							<greatestDifference id="M">U MMM d – MMM d</greatestDifference>
-							<greatestDifference id="y">U MMM d – U MMM d</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d">U MMM d, E – MMM d, E</greatestDifference>
-							<greatestDifference id="M">U MMM d, E – MMM d, E</greatestDifference>
-							<greatestDifference id="y">U MMM d, E – U MMM d, E</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="yMMMM">
-							<greatestDifference id="y">U MMMM – U MMMM</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
 				</dateTimeFormats>
@@ -1683,12 +1755,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateTimeFormat type="atTime">
 							<pattern>{1} 'u' {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="relative">
+							<pattern>{1} 'u' {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 						<dateTimeFormat type="atTime">
+							<pattern>{1} 'u' {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="relative">
 							<pattern>{1} 'u' {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -1711,7 +1789,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="GyMMM">MMM y. G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d. MMM y. G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, d. MMM y. G</dateFormatItem>
-						<dateFormatItem id="h">h a</dateFormatItem>
 						<dateFormatItem id="H">H</dateFormatItem>
 						<dateFormatItem id="hm">hh:mm a</dateFormatItem>
 						<dateFormatItem id="hms">hh:mm:ss a</dateFormatItem>
@@ -1732,55 +1809,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yyyyMMMM">LLLL y. G</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="non-numeric">{0} – {1}</intervalFormatRange>
+						</intervalFormatRanges>
 						<intervalFormatItem id="Bh">
-							<greatestDifference id="B">h B – h B</greatestDifference>
 							<greatestDifference id="h">h – h B</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Bhm">
-							<greatestDifference id="B">h:mm B – h:mm B</greatestDifference>
 							<greatestDifference id="h">h:mm – h:mm B</greatestDifference>
 							<greatestDifference id="m">h:mm – h:mm B</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d">d. – d.</greatestDifference>
 						</intervalFormatItem>
-						<intervalFormatItem id="Gy">
-							<greatestDifference id="G">G y – G y</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="GyM">
-							<greatestDifference id="G">GGGGG y-MM – GGGGG y-MM</greatestDifference>
-							<greatestDifference id="M">GGGGG y-MM – y-MM</greatestDifference>
-							<greatestDifference id="y">GGGGG y-MM – y-MM</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="GyMd">
-							<greatestDifference id="d">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
-							<greatestDifference id="G">GGGGG y-MM-dd – GGGGG y-MM-dd</greatestDifference>
-							<greatestDifference id="M">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
-							<greatestDifference id="y">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="GyMEd">
-							<greatestDifference id="d">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
-							<greatestDifference id="G">GGGGG y-MM-dd, E – GGGGG y-MM-dd, E</greatestDifference>
-							<greatestDifference id="M">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
-							<greatestDifference id="y">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="GyMMM">
-							<greatestDifference id="G">G y MMM – G y MMM</greatestDifference>
-							<greatestDifference id="y">G y MMM – y MMM</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="GyMMMd">
-							<greatestDifference id="G">G y MMM d – G y MMM d</greatestDifference>
-							<greatestDifference id="M">G y MMM d – MMM d</greatestDifference>
-							<greatestDifference id="y">G y MMM d – y MMM d</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="GyMMMEd">
-							<greatestDifference id="d">G y MMM d, E – MMM d, E</greatestDifference>
-							<greatestDifference id="G">G y MMM d, E – G y MMM d, E</greatestDifference>
-							<greatestDifference id="M">G y MMM d, E – MMM d, E</greatestDifference>
-							<greatestDifference id="y">G y MMM d, E – y MMM d, E</greatestDifference>
-						</intervalFormatItem>
 						<intervalFormatItem id="h">
-							<greatestDifference id="a">h a – h a</greatestDifference>
 							<greatestDifference id="h">h – h'h' a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="H">
@@ -1797,7 +1839,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="m">h:mm–h:mm a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hv">
-							<greatestDifference id="a">h a – h a v</greatestDifference>
 							<greatestDifference id="h">h – h 'h' a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hv">
@@ -1821,6 +1862,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<intervalFormatItem id="MMMEd">
 							<greatestDifference id="d">E, dd. – E, dd. MMM</greatestDifference>
 							<greatestDifference id="M">E, dd. MMM – E, dd. MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMMd">
+							<greatestDifference id="d">d–d. MMMM</greatestDifference>
+							<greatestDifference id="M">d. MMMM – d. MMMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="y">
 							<greatestDifference id="y">y. – y. G</greatestDifference>
@@ -1846,7 +1891,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<intervalFormatItem id="yMMMd">
 							<greatestDifference id="d">d. – d. MMM y. G</greatestDifference>
 							<greatestDifference id="M">d. MMM – d. MMM y. G</greatestDifference>
-							<greatestDifference id="y">G y MMM d – y MMM d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
 							<greatestDifference id="d">E, dd. – E, dd. MMM y. G</greatestDifference>
@@ -1864,6 +1908,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<months>
 					<monthContext type="format">
 						<monthWidth type="abbreviated">
+							<month type="1">jan</month>
+							<month type="2">feb</month>
+							<month type="3">mar</month>
+							<month type="4">apr</month>
+							<month type="5">maj</month>
+							<month type="6">jun</month>
+							<month type="7">jul</month>
+							<month type="8">aug</month>
+							<month type="9">sep</month>
+							<month type="10">okt</month>
+							<month type="11">nov</month>
+							<month type="12">dec</month>
+						</monthWidth>
+						<monthWidth type="narrow">
 							<month type="1">jan</month>
 							<month type="2">feb</month>
 							<month type="3">mar</month>
@@ -1987,23 +2045,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<dayPeriod type="evening1">navečer</dayPeriod>
 							<dayPeriod type="night1">po noći</dayPeriod>
 						</dayPeriodWidth>
-						<dayPeriodWidth type="narrow">
-							<dayPeriod type="am">a. m.</dayPeriod>
-							<dayPeriod type="pm">p. m.</dayPeriod>
-						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
 							<dayPeriod type="am">prijepodne</dayPeriod>
 							<dayPeriod type="pm">popodne</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 					<dayPeriodContext type="stand-alone">
-						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="am">a. m.</dayPeriod>
-							<dayPeriod type="pm">p. m.</dayPeriod>
-						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
-							<dayPeriod type="am">prijepodne</dayPeriod>
-							<dayPeriod type="pm">popodne</dayPeriod>
+							<dayPeriod type="am">AM</dayPeriod>
+							<dayPeriod type="pm">PM</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
 							<dayPeriod type="am">prijepodne</dayPeriod>
@@ -2071,11 +2121,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</timeFormatLength>
 				</timeFormats>
 				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator>.</numericDateSeparator>
+					</numericSeparators>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 						<dateTimeFormat type="atTime">
+							<pattern>{1} 'u' {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="relative">
 							<pattern>{1} 'u' {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -2084,6 +2140,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 						<dateTimeFormat type="atTime">
+							<pattern>{1} 'u' {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="relative">
 							<pattern>{1} 'u' {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -2109,17 +2168,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
 						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="Gy">y. G</dateFormatItem>
+						<dateFormatItem id="GyM">MM. y. G</dateFormatItem>
 						<dateFormatItem id="GyMd">d. M. y. G</dateFormatItem>
+						<dateFormatItem id="GyMEd">E, d. M. y. G</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y. G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d. MMM y. G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, d. MMM y. G</dateFormatItem>
-						<dateFormatItem id="h">h a</dateFormatItem>
-						<dateFormatItem id="hm">hh:mm a</dateFormatItem>
-						<dateFormatItem id="hms">hh:mm:ss a</dateFormatItem>
-						<dateFormatItem id="hmsv">h:mm:ss a (v)</dateFormatItem>
-						<dateFormatItem id="Hmsv">HH:mm:ss (v)</dateFormatItem>
-						<dateFormatItem id="hmv">h:mm a (v)</dateFormatItem>
-						<dateFormatItem id="Hmv">HH:mm (v)</dateFormatItem>
+						<dateFormatItem id="GyMMMM">MMMM y. G</dateFormatItem>
+						<dateFormatItem id="GyMMMMd">d. MMMM y. G</dateFormatItem>
+						<dateFormatItem id="GyMMMMEd">E, d. MMMM y. G</dateFormatItem>
 						<dateFormatItem id="Md">d. M.</dateFormatItem>
 						<dateFormatItem id="MEd">E, d. M.</dateFormatItem>
 						<dateFormatItem id="MMdd">d. M.</dateFormatItem>
@@ -2131,7 +2188,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="MMMMW" count="few">W. 'sedmica' 'mjesec' MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="other">W. 'sedmica' 'mjesec' MMMM</dateFormatItem>
 						<dateFormatItem id="y">y.</dateFormatItem>
-						<dateFormatItem id="yM">MM/y</dateFormatItem>
+						<dateFormatItem id="yM">MM. y.</dateFormatItem>
 						<dateFormatItem id="yMd">d. M. y.</dateFormatItem>
 						<dateFormatItem id="yMEd">E, d. M. y.</dateFormatItem>
 						<dateFormatItem id="yMM">M. y.</dateFormatItem>
@@ -2139,6 +2196,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yMMMd">d. MMM y.</dateFormatItem>
 						<dateFormatItem id="yMMMEd">E, d. MMM y.</dateFormatItem>
 						<dateFormatItem id="yMMMM">LLLL y.</dateFormatItem>
+						<dateFormatItem id="yMMMMd">d. MMMM y.</dateFormatItem>
+						<dateFormatItem id="yMMMMEd">E, d MMMM y.</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ y.</dateFormatItem>
 						<dateFormatItem id="yQQQQ">QQQQ y.</dateFormatItem>
 						<dateFormatItem id="yw" count="one">w. 'sedmica' 'u' Y.</dateFormatItem>
@@ -2146,12 +2205,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yw" count="other">w. 'sedmica' 'u' Y.</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="non-numeric">{0} – {1}</intervalFormatRange>
+						</intervalFormatRanges>
 						<intervalFormatItem id="Bh">
-							<greatestDifference id="B">h B – h B</greatestDifference>
 							<greatestDifference id="h">h – h B</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Bhm">
-							<greatestDifference id="B">h:mm B – h:mm B</greatestDifference>
 							<greatestDifference id="h">h:mm – h:mm B</greatestDifference>
 							<greatestDifference id="m">h:mm – h:mm B</greatestDifference>
 						</intervalFormatItem>
@@ -2192,12 +2252,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMMEd">
 							<greatestDifference id="d">E, d. MMM – E, d. MMM y. G</greatestDifference>
-							<greatestDifference id="G">G y MMM d, E – G y MMM d, E</greatestDifference>
-							<greatestDifference id="M">G y MMM d, E – MMM d, E</greatestDifference>
-							<greatestDifference id="y">G y MMM d, E – y MMM d, E</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="h">
-							<greatestDifference id="a">h a – h a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="H">
 							<greatestDifference id="H">HH – HH'h'</greatestDifference>
@@ -2221,7 +2275,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="m">HH:mm – HH:mm v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hv">
-							<greatestDifference id="a">h a – h a v</greatestDifference>
 							<greatestDifference id="h">h – h 'h' a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hv">
@@ -2238,6 +2291,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="d">E, d. M – E, d. M.</greatestDifference>
 							<greatestDifference id="M">E, d. M – E, d. M.</greatestDifference>
 						</intervalFormatItem>
+						<intervalFormatItem id="MMM">
+							<greatestDifference id="M">LLL – LLL</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="MMMd">
 							<greatestDifference id="d">d–d. MMM</greatestDifference>
 							<greatestDifference id="M">d. MMM – d. MMM</greatestDifference>
@@ -2245,6 +2301,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<intervalFormatItem id="MMMEd">
 							<greatestDifference id="d">E, d – E, d. MMM</greatestDifference>
 							<greatestDifference id="M">E, d. MMM – E, d. MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMMd">
+							<greatestDifference id="d">d–d. MMMM</greatestDifference>
+							<greatestDifference id="M">d. MMMM – d. MMMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="y">
+							<greatestDifference id="y">y–y.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
 							<greatestDifference id="M">M. y – M. y.</greatestDifference>
@@ -2499,6 +2562,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 			<field type="month-short">
 				<displayName>mj.</displayName>
+				<relative type="-1">prošli mj.</relative>
+				<relative type="0">ovaj mj.</relative>
+				<relative type="1">sljedeći mj.</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">za {0} mj.</relativeTimePattern>
 					<relativeTimePattern count="few">za {0} mj.</relativeTimePattern>
@@ -2528,26 +2594,26 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relativePeriod>sedmica u kojoj je {0}</relativePeriod>
 			</field>
 			<field type="week-short">
-				<displayName>sed.</displayName>
+				<displayName>sedm.</displayName>
+				<relative type="-1">prošle sedm.</relative>
+				<relative type="0">ove sedm.</relative>
+				<relative type="1">sljedeće sedm.</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">za {0} sed.</relativeTimePattern>
-					<relativeTimePattern count="few">za {0} sed.</relativeTimePattern>
-					<relativeTimePattern count="other">za {0} sed.</relativeTimePattern>
+					<relativeTimePattern count="one">za {0} sedm.</relativeTimePattern>
+					<relativeTimePattern count="few">za {0} sedm.</relativeTimePattern>
+					<relativeTimePattern count="other">za {0} sedm.</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">prije {0} sed.</relativeTimePattern>
-					<relativeTimePattern count="few">prije {0} sed.</relativeTimePattern>
-					<relativeTimePattern count="other">prije {0} sed.</relativeTimePattern>
+					<relativeTimePattern count="one">prije {0} sedm.</relativeTimePattern>
+					<relativeTimePattern count="few">prije {0} sedm.</relativeTimePattern>
+					<relativeTimePattern count="other">prije {0} sedm.</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="weekOfMonth">
 				<displayName>sedmica u mjesecu</displayName>
 			</field>
 			<field type="weekOfMonth-short">
-				<displayName>sed. u mj.</displayName>
-			</field>
-			<field type="weekOfMonth-narrow">
-				<displayName>s. u mj.</displayName>
+				<displayName>sedm. u mj.</displayName>
 			</field>
 			<field type="day">
 				<displayName>dan</displayName>
@@ -2565,18 +2631,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<relativeTimePattern count="one">prije {0} dan</relativeTimePattern>
 					<relativeTimePattern count="few">prije {0} dana</relativeTimePattern>
 					<relativeTimePattern count="other">prije {0} dana</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="day-short">
-				<relativeTime type="future">
-					<relativeTimePattern count="one">za {0} d.</relativeTimePattern>
-					<relativeTimePattern count="few">za {0} d.</relativeTimePattern>
-					<relativeTimePattern count="other">za {0} d.</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">prije {0} d.</relativeTimePattern>
-					<relativeTimePattern count="few">prije {0} d.</relativeTimePattern>
-					<relativeTimePattern count="other">prije {0} d.</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="dayOfYear">
@@ -2600,9 +2654,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<field type="weekdayOfMonth-short">
 				<displayName>dan u mj.</displayName>
 			</field>
-			<field type="weekdayOfMonth-narrow">
-				<displayName>d. u mj.</displayName>
-			</field>
 			<field type="sun">
 				<relative type="-1">prošla nedjelja</relative>
 				<relative type="0">ova nedjelja</relative>
@@ -2619,9 +2670,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</relativeTime>
 			</field>
 			<field type="sun-short">
-				<relative type="-1">prošla ned.</relative>
-				<relative type="0">ova ned.</relative>
-				<relative type="1">sljedeća ned.</relative>
+				<relative type="-1">prošla ned</relative>
+				<relative type="0">ova ned</relative>
+				<relative type="1">sljedeća ned</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">za {0} ned</relativeTimePattern>
+					<relativeTimePattern count="few">za {0} ned</relativeTimePattern>
+					<relativeTimePattern count="other">za {0} ned</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">prije {0} ned</relativeTimePattern>
+					<relativeTimePattern count="few">prije {0} ned</relativeTimePattern>
+					<relativeTimePattern count="other">prije {0} ned</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="mon">
 				<relative type="-1">prošli ponedjeljak</relative>
@@ -2639,24 +2700,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</relativeTime>
 			</field>
 			<field type="mon-short">
-				<relative type="-1">prošli pon.</relative>
+				<relative type="-1">prošli pon</relative>
 				<relative type="0">ovaj pon.</relative>
 				<relative type="1">sljedeći pon</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">za {0} pon</relativeTimePattern>
-					<relativeTimePattern count="few">za {0} pon</relativeTimePattern>
-					<relativeTimePattern count="other">za {0} pon</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">prije {0} pon</relativeTimePattern>
-					<relativeTimePattern count="few">prije {0} pon</relativeTimePattern>
-					<relativeTimePattern count="other">prije {0} pon</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="mon-narrow">
-				<relative type="-1">prošli pon.</relative>
-				<relative type="0">ovaj pon.</relative>
-				<relative type="1">sljedeći pon.</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">za {0} pon</relativeTimePattern>
 					<relativeTimePattern count="few">za {0} pon</relativeTimePattern>
@@ -2684,14 +2730,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</relativeTime>
 			</field>
 			<field type="tue-short">
-				<relative type="-1">prošli uto.</relative>
-				<relative type="0">ovaj uto.</relative>
-				<relative type="1">sljedeći uto.</relative>
-			</field>
-			<field type="tue-narrow">
 				<relative type="-1">prošli uto</relative>
 				<relative type="0">ovaj uto</relative>
 				<relative type="1">sljedeći uto</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">za {0} uto</relativeTimePattern>
+					<relativeTimePattern count="few">za {0} uto</relativeTimePattern>
+					<relativeTimePattern count="other">za {0} uto</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">prije {0} uto</relativeTimePattern>
+					<relativeTimePattern count="few">prije {0} uto</relativeTimePattern>
+					<relativeTimePattern count="other">prije {0} uto</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="wed">
 				<relative type="-1">prošla srijeda</relative>
@@ -2709,14 +2760,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</relativeTime>
 			</field>
 			<field type="wed-short">
-				<relative type="-1">prošla sri.</relative>
-				<relative type="0">ova sri.</relative>
-				<relative type="1">sljedeća sri.</relative>
-			</field>
-			<field type="wed-narrow">
 				<relative type="-1">prošla sri</relative>
 				<relative type="0">ova sri</relative>
 				<relative type="1">sljedeća sri</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">za {0} sri</relativeTimePattern>
+					<relativeTimePattern count="few">za {0} sri</relativeTimePattern>
+					<relativeTimePattern count="other">za {0} sri</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">prije {0} sri</relativeTimePattern>
+					<relativeTimePattern count="few">prije {0} sri</relativeTimePattern>
+					<relativeTimePattern count="other">prije {0} sri</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="thu">
 				<relative type="-1">prošli četvrtak</relative>
@@ -2734,14 +2790,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</relativeTime>
 			</field>
 			<field type="thu-short">
-				<relative type="-1">prošli čet.</relative>
-				<relative type="0">ovaj čet.</relative>
-				<relative type="1">sljedeći čet.</relative>
-			</field>
-			<field type="thu-narrow">
 				<relative type="-1">prošli čet</relative>
 				<relative type="0">ovaj čet</relative>
 				<relative type="1">sljedeći čet</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">za {0} čet</relativeTimePattern>
+					<relativeTimePattern count="few">za {0} čet</relativeTimePattern>
+					<relativeTimePattern count="other">za {0} čet</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">prije {0} čet</relativeTimePattern>
+					<relativeTimePattern count="few">prije {0} čet</relativeTimePattern>
+					<relativeTimePattern count="other">prije {0} čet</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="fri">
 				<relative type="-1">prošli petak</relative>
@@ -2759,9 +2820,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</relativeTime>
 			</field>
 			<field type="fri-short">
-				<relative type="-1">prošli pet.</relative>
-				<relative type="0">ovaj pet.</relative>
-				<relative type="1">sljedeći pet.</relative>
+				<relative type="-1">prošli pet</relative>
+				<relative type="0">ovaj pet</relative>
+				<relative type="1">sljedeći pet</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">za {0} pet</relativeTimePattern>
+					<relativeTimePattern count="few">za {0} pet</relativeTimePattern>
+					<relativeTimePattern count="other">za {0} pet</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">prije {0} pet</relativeTimePattern>
+					<relativeTimePattern count="few">prije {0} pet</relativeTimePattern>
+					<relativeTimePattern count="other">prije {0} pet</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sat">
 				<relative type="-1">prošla subota</relative>
@@ -2779,9 +2850,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</relativeTime>
 			</field>
 			<field type="sat-short">
-				<relative type="-1">prošla sub.</relative>
-				<relative type="0">ova sub.</relative>
-				<relative type="1">sljedeća sub.</relative>
+				<relative type="-1">prošla sub</relative>
+				<relative type="0">ova sub</relative>
+				<relative type="1">sljedeća sub</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">za {0} sub</relativeTimePattern>
+					<relativeTimePattern count="few">za {0} sub</relativeTimePattern>
+					<relativeTimePattern count="other">za {0} sub</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">prije {0} sub</relativeTimePattern>
+					<relativeTimePattern count="few">prije {0} sub</relativeTimePattern>
+					<relativeTimePattern count="other">prije {0} sub</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="dayperiod">
 				<displayName>prijepodne/poslijepodne</displayName>
@@ -2821,13 +2902,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>min</displayName>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">za {0} min</relativeTimePattern>
-					<relativeTimePattern count="few">za {0} min.</relativeTimePattern>
-					<relativeTimePattern count="other">za {0} min.</relativeTimePattern>
+					<relativeTimePattern count="few">za {0} min</relativeTimePattern>
+					<relativeTimePattern count="other">za {0} min</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">prije {0} min.</relativeTimePattern>
-					<relativeTimePattern count="few">prije {0} min.</relativeTimePattern>
-					<relativeTimePattern count="other">prije {0} min.</relativeTimePattern>
+					<relativeTimePattern count="one">prije {0} min</relativeTimePattern>
+					<relativeTimePattern count="few">prije {0} min</relativeTimePattern>
+					<relativeTimePattern count="other">prije {0} min</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="second">
@@ -2856,9 +2937,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<relativeTimePattern count="few">prije {0} sek.</relativeTimePattern>
 					<relativeTimePattern count="other">prije {0} sek.</relativeTimePattern>
 				</relativeTime>
-			</field>
-			<field type="second-narrow">
-				<displayName>s</displayName>
 			</field>
 			<field type="zone">
 				<displayName>vremenska zona</displayName>
@@ -2891,9 +2969,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="America/Anguilla">
 				<exemplarCity>Angvila</exemplarCity>
-			</zone>
-			<zone type="Europe/Tirane">
-				<exemplarCity>Tirana</exemplarCity>
 			</zone>
 			<zone type="Asia/Yerevan">
 				<exemplarCity>Jerevan</exemplarCity>
@@ -2982,11 +3057,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Europe/Paris">
 				<exemplarCity>Pariz</exemplarCity>
 			</zone>
-			<zone type="Europe/London">
-				<long>
-					<daylight>Britansko ljetno vrijeme</daylight>
-				</long>
-			</zone>
 			<zone type="Europe/Guernsey">
 				<exemplarCity>Gernzi</exemplarCity>
 			</zone>
@@ -3012,9 +3082,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>Džajapura</exemplarCity>
 			</zone>
 			<zone type="Europe/Dublin">
-				<long>
-					<daylight>Irsko standardno vrijeme</daylight>
-				</long>
 				<exemplarCity>Dablin</exemplarCity>
 			</zone>
 			<zone type="Asia/Jerusalem">
@@ -3049,9 +3116,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Asia/Phnom_Penh">
 				<exemplarCity>Pnom Pen</exemplarCity>
-			</zone>
-			<zone type="Pacific/Enderbury">
-				<exemplarCity>Enderbury</exemplarCity>
 			</zone>
 			<zone type="Asia/Pyongyang">
 				<exemplarCity>Pjongjang</exemplarCity>
@@ -3289,9 +3353,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Africa_Western">
 				<long>
-					<generic>Zapadnoafričko vrijeme</generic>
-					<standard>Zapadnoafričko standardno vrijeme</standard>
-					<daylight>Zapadnoafričko ljetno vrijeme</daylight>
+					<standard>Zapadnoafričko vrijeme</standard>
 				</long>
 			</metazone>
 			<metazone type="Alaska">
@@ -3299,13 +3361,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Aljaskansko vrijeme</generic>
 					<standard>Aljaskansko standardno vrijeme</standard>
 					<daylight>Aljaskansko ljetno vrijeme</daylight>
-				</long>
-			</metazone>
-			<metazone type="Almaty">
-				<long>
-					<generic>Almatu vreme</generic>
-					<standard>Almatu standardno vreme</standard>
-					<daylight>Almatu letnje računanje vremena</daylight>
 				</long>
 			</metazone>
 			<metazone type="Amazon">
@@ -3355,20 +3410,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Apijsko vrijeme</generic>
 					<standard>Apijsko standardno vrijeme</standard>
 					<daylight>Apijsko ljetno vrijeme</daylight>
-				</long>
-			</metazone>
-			<metazone type="Aqtau">
-				<long>
-					<generic>Akvtau vreme</generic>
-					<standard>Akvtau standardno vreme</standard>
-					<daylight>Akvtau letnje računanje vremena</daylight>
-				</long>
-			</metazone>
-			<metazone type="Aqtobe">
-				<long>
-					<generic>Akvtobe vreme</generic>
-					<standard>Akvtobe standardno vreme</standard>
-					<daylight>Akvtobe letnje računanje vremena</daylight>
 				</long>
 			</metazone>
 			<metazone type="Arabian">
@@ -3470,6 +3511,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Brazilijsko vrijeme</generic>
 					<standard>Brazilijsko standardno vrijeme</standard>
 					<daylight>Brazilijsko ljetno vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="British">
+				<long>
+					<generic>Britansko vrijeme</generic>
+					<daylight>Britansko ljetno vrijeme</daylight>
 				</long>
 			</metazone>
 			<metazone type="Brunei">
@@ -3663,6 +3710,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard draft="contributed">GMT</standard>
 				</short>
 			</metazone>
+			<metazone type="Greenland">
+				<long>
+					<generic>Grenlandsko vrijeme</generic>
+					<standard>Grenlandsko standardno vrijeme</standard>
+					<daylight>Grenlandsko ljetno vrijeme</daylight>
+				</long>
+			</metazone>
 			<metazone type="Greenland_Eastern">
 				<long>
 					<generic>Istočnogrenlandsko vrijeme</generic>
@@ -3677,11 +3731,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Zapadnogrenlandsko ljetno vrijeme</daylight>
 				</long>
 			</metazone>
-			<metazone type="Guam">
-				<long>
-					<standard>Guam standardno vreme</standard>
-				</long>
-			</metazone>
 			<metazone type="Gulf">
 				<long>
 					<standard>Zalivsko standardno vrijeme</standard>
@@ -3690,6 +3739,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Guyana">
 				<long>
 					<standard>Gvajansko vrijeme</standard>
+				</long>
+			</metazone>
+			<metazone type="Hawaii">
+				<long>
+					<standard>Havajsko vrijeme</standard>
 				</long>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
@@ -3748,6 +3802,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Iransko vrijeme</generic>
 					<standard>Iransko standardno vrijeme</standard>
 					<daylight>Iransko ljetno vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="Irish">
+				<long>
+					<generic>Irsko vrijeme</generic>
+					<daylight>Irsko standardno vrijeme</daylight>
 				</long>
 			</metazone>
 			<metazone type="Irkutsk">
@@ -3817,11 +3877,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>kirgistansko vrijeme</standard>
 				</long>
 			</metazone>
-			<metazone type="Lanka">
-				<long>
-					<standard>Lanka vreme</standard>
-				</long>
-			</metazone>
 			<metazone type="Line_Islands">
 				<long>
 					<standard>Vrijeme na Ostrvima Lajn</standard>
@@ -3832,13 +3887,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Vrijeme na Ostrvu Lord Hau</generic>
 					<standard>Standardno vrijeme na Ostrvu Lord Hau</standard>
 					<daylight>Ljetno vrijeme na Ostrvu Lord Hau</daylight>
-				</long>
-			</metazone>
-			<metazone type="Macau">
-				<long>
-					<generic>Makao vreme</generic>
-					<standard>Makao standardno vreme</standard>
-					<daylight>Makao letnje računanje vremena</daylight>
 				</long>
 			</metazone>
 			<metazone type="Magadan">
@@ -3956,11 +4004,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Ljetno vrijeme na ostrvu Fernando di Noronja</daylight>
 				</long>
 			</metazone>
-			<metazone type="North_Mariana">
-				<long>
-					<standard>Severna Marijanska Ostrva vreme</standard>
-				</long>
-			</metazone>
 			<metazone type="Novosibirsk">
 				<long>
 					<generic>Novosibirsko vrijeme</generic>
@@ -4040,13 +4083,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>Pjongjanško vrijeme</standard>
 				</long>
 			</metazone>
-			<metazone type="Qyzylorda">
-				<long>
-					<generic>Kizilorda vreme</generic>
-					<standard>Kizilorda standardno vreme</standard>
-					<daylight>Kizilorda letnje računanje vremena</daylight>
-				</long>
-			</metazone>
 			<metazone type="Reunion">
 				<long>
 					<standard>Reunionsko vrijeme</standard>
@@ -4073,9 +4109,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Samoa">
 				<long>
-					<generic>Samoansko vrijeme</generic>
 					<standard>Samoansko standardno vrijeme</standard>
-					<daylight>Samoansko ljetno vrijeme</daylight>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">
@@ -4142,6 +4176,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>Čučko vrijeme</standard>
 				</long>
 			</metazone>
+			<metazone type="Turkey">
+				<long>
+					<generic>Turska vreme</generic>
+					<standard>Turska standardno vreme</standard>
+					<daylight>Turska letnje računanje vremena</daylight>
+				</long>
+			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
 					<generic>turkmenistansko vrijeme</generic>
@@ -4159,6 +4200,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Urugvajsko vrijeme</generic>
 					<standard>Urugvajsko standardno vrijeme</standard>
 					<daylight>Urugvajsko ljetno vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="Urumqi">
+				<long>
+					<standard>Urumčijsko vrijeme</standard>
 				</long>
 			</metazone>
 			<metazone type="Uzbekistan">
@@ -4280,28 +4326,40 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<decimalFormatLength type="short">
 				<decimalFormat>
 					<pattern type="1000" count="one">0 hilj'.'</pattern>
+					<pattern type="1000" count="few">0 hilj'.'</pattern>
 					<pattern type="1000" count="other">0 hilj'.'</pattern>
 					<pattern type="10000" count="one">00 hilj'.'</pattern>
+					<pattern type="10000" count="few">00 hilj'.'</pattern>
 					<pattern type="10000" count="other">00 hilj'.'</pattern>
 					<pattern type="100000" count="one">000 hilj'.'</pattern>
+					<pattern type="100000" count="few">000 hilj'.'</pattern>
 					<pattern type="100000" count="other">000 hilj'.'</pattern>
 					<pattern type="1000000" count="one">0 mil'.'</pattern>
+					<pattern type="1000000" count="few">0 mil'.'</pattern>
 					<pattern type="1000000" count="other">0 mil'.'</pattern>
 					<pattern type="10000000" count="one">00 mil'.'</pattern>
+					<pattern type="10000000" count="few">00 mil'.'</pattern>
 					<pattern type="10000000" count="other">00 mil'.'</pattern>
 					<pattern type="100000000" count="one">000 mil'.'</pattern>
+					<pattern type="100000000" count="few">000 mil'.'</pattern>
 					<pattern type="100000000" count="other">000 mil'.'</pattern>
 					<pattern type="1000000000" count="one">0 mlrd'.'</pattern>
+					<pattern type="1000000000" count="few">0 mlrd'.'</pattern>
 					<pattern type="1000000000" count="other">0 mlrd'.'</pattern>
 					<pattern type="10000000000" count="one">00 mlrd'.'</pattern>
+					<pattern type="10000000000" count="few">00 mlrd'.'</pattern>
 					<pattern type="10000000000" count="other">00 mlrd'.'</pattern>
 					<pattern type="100000000000" count="one">000 mlrd'.'</pattern>
+					<pattern type="100000000000" count="few">000 mlrd'.'</pattern>
 					<pattern type="100000000000" count="other">000 mlrd'.'</pattern>
 					<pattern type="1000000000000" count="one">0 bil'.'</pattern>
+					<pattern type="1000000000000" count="few">0 bil'.'</pattern>
 					<pattern type="1000000000000" count="other">0 bil'.'</pattern>
 					<pattern type="10000000000000" count="one">00 bil'.'</pattern>
+					<pattern type="10000000000000" count="few">00 bil'.'</pattern>
 					<pattern type="10000000000000" count="other">00 bil'.'</pattern>
 					<pattern type="100000000000000" count="one">000 bil'.'</pattern>
+					<pattern type="100000000000000" count="few">000 bil'.'</pattern>
 					<pattern type="100000000000000" count="other">000 bil'.'</pattern>
 				</decimalFormat>
 			</decimalFormatLength>
@@ -4614,10 +4672,224 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</percentFormat>
 			</percentFormatLength>
 		</percentFormats>
+		<currencyFormats numberSystem="adlm">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="arabext">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="bali">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="beng">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="brah">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="cakm">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="cham">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="deva">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="fullwide">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="gong">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="gonm">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="gujr">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="guru">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="hanidec">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="java">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="kali">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="khmr">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="knda">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="lana">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="lanatham">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="laoo">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>#,##0.00 ¤</pattern>
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
@@ -4658,6 +4930,236 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<pattern type="100000000000000" count="one">000 bil'.' ¤</pattern>
 					<pattern type="100000000000000" count="few">000 bil'.' ¤</pattern>
 					<pattern type="100000000000000" count="other">000 bil'.' ¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="lepc">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="limb">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="mlym">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="mong">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="mtei">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="mymr">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="mymrshan">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="nkoo">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="olck">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="orya">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="osma">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="rohg">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="saur">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="shrd">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="sora">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="sund">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="takr">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="talu">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="tamldec">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="telu">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="thai">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="tibt">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="vaii">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
@@ -5060,12 +5562,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">kineski juan (izvanteritorijalni)</displayName>
 				<displayName count="few">kineska juana (izvanteritorijalni)</displayName>
 				<displayName count="other">kineskih juana (izvanteritorijalni)</displayName>
-			</currency>
-			<currency type="CNX">
-				<displayName>Dolar kineske narodne banke</displayName>
-				<displayName count="one">dolar kineske narodne banke</displayName>
-				<displayName count="few">dolara kineske narodne banke</displayName>
-				<displayName count="other">dolara kineske narodne banke</displayName>
 			</currency>
 			<currency type="CNY">
 				<displayName>Kineski juan</displayName>
@@ -6008,13 +6504,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="other">slovačkih kuna</displayName>
 			</currency>
 			<currency type="SLE">
-				<displayName>Sijeraleonski leone</displayName>
+				<displayName>sijeraleonski leone</displayName>
 				<displayName count="one">sijeraleonski leone</displayName>
 				<displayName count="few">sijeraleonska leona</displayName>
 				<displayName count="other">sijeraleonskih leona</displayName>
 			</currency>
 			<currency type="SLL">
-				<displayName>Sijeraleonski leone (1964—2022)</displayName>
+				<displayName>sijeraleonski leone (1964—2022)</displayName>
 				<displayName count="one">sijeraleonski leone (1964—2022)</displayName>
 				<displayName count="few">sijeraleonska leona (1964—2022)</displayName>
 				<displayName count="other">sijeraleonskih leona (1964—2022)</displayName>
@@ -6317,6 +6813,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="other">istočnokaripskih dolara</displayName>
 				<symbol>XCD</symbol>
 			</currency>
+			<currency type="XCG">
+				<displayName>karipski gulden</displayName>
+				<displayName count="one">karipski gulden</displayName>
+				<displayName count="few">karipska guldena</displayName>
+				<displayName count="other">karipskih guldena</displayName>
+			</currency>
 			<currency type="XDR">
 				<displayName>Posebna prava</displayName>
 				<displayName count="one">posebno crtaće pravo</displayName>
@@ -6462,6 +6964,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">zimbabvejska dolara (1980–2008)</displayName>
 				<displayName count="other">zimbabvejski dolari (1980–2008)</displayName>
 			</currency>
+			<currency type="ZWG">
+				<displayName>zimbabveansko zlato</displayName>
+				<displayName count="one">zimbabveansko zlato</displayName>
+				<displayName count="few">zimbabveanska zlata</displayName>
+				<displayName count="other">zimbabveanskih zlata</displayName>
+			</currency>
 			<currency type="ZWL">
 				<displayName>Zimbabvejski dolar (2009)</displayName>
 				<displayName count="one">zimbabvejski dolaz (2009)</displayName>
@@ -6488,17 +6996,41 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	</numbers>
 	<units>
 		<unitLength type="long">
+			<compoundUnit type="10p-15">
+				<unitPrefixPattern>femto{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-18">
+				<unitPrefixPattern>ato{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-21">
+				<unitPrefixPattern>zepto{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-24">
+				<unitPrefixPattern>jokto{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="10p-27">
 				<unitPrefixPattern>ronto{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p-30">
-				<unitPrefixPattern>kuekto{0}</unitPrefixPattern>
+				<unitPrefixPattern>kvekto{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p1">
+				<unitPrefixPattern>deka{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p18">
+				<unitPrefixPattern>eksa{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p21">
+				<unitPrefixPattern>zeta{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p24">
+				<unitPrefixPattern>jota{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p27">
-				<unitPrefixPattern>ronna{0}</unitPrefixPattern>
+				<unitPrefixPattern>rona{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p30">
-				<unitPrefixPattern>quetta{0}</unitPrefixPattern>
+				<unitPrefixPattern>kveta{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="1024p1">
 				<unitPrefixPattern>kibi{0}</unitPrefixPattern>
@@ -6516,13 +7048,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPrefixPattern>pebi{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="1024p6">
-				<unitPrefixPattern>exbi{0}</unitPrefixPattern>
+				<unitPrefixPattern>eksbi{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="1024p7">
 				<unitPrefixPattern>zebi{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="1024p8">
-				<unitPrefixPattern>yobe{0}</unitPrefixPattern>
+				<unitPrefixPattern>jobi{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="power2">
 				<compoundUnitPattern1 count="one">kvadratni {0}</compoundUnitPattern1>
@@ -6640,7 +7172,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few">{0} milimola po litru</unitPattern>
 				<unitPattern count="other">{0} milimola po litru</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part">
+				<displayName>dijelovi</displayName>
+			</unit>
+			<unit type="concentr-part-per-1e6">
 				<displayName>dijelovi na milion</displayName>
 				<unitPattern count="one">{0} dio na milion</unitPattern>
 				<unitPattern count="few">{0} dijela na milion</unitPattern>
@@ -6669,6 +7204,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} mol</unitPattern>
 				<unitPattern count="few">{0} mola</unitPattern>
 				<unitPattern count="other">{0} mola</unitPattern>
+			</unit>
+			<unit type="concentr-ofglucose">
+				<displayName>glukoze</displayName>
+				<unitPattern count="one">{0} glukoze</unitPattern>
+				<unitPattern count="few">{0} glukoze</unitPattern>
+				<unitPattern count="other">{0} glukoze</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>litri po kilometru</displayName>
@@ -6983,6 +7524,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<perUnitPattern>{0} po kilometru</perUnitPattern>
 			</unit>
 			<unit type="length-meter">
+				<displayName>metri</displayName>
 				<unitPattern count="one">{0} metar</unitPattern>
 				<unitPattern count="few">{0} metra</unitPattern>
 				<unitPattern count="other">{0} metara</unitPattern>
@@ -7237,6 +7779,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few">{0} milimetra živinog stuba</unitPattern>
 				<unitPattern count="other">{0} milimetara živinog stuba</unitPattern>
 			</unit>
+			<unit type="pressure-ofhg">
+				<displayName>žive</displayName>
+				<unitPattern count="one">{0} žive</unitPattern>
+				<unitPattern count="few">{0} žive</unitPattern>
+				<unitPattern count="other">{0} žive</unitPattern>
+			</unit>
 			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>funte po kvadratnom inču</displayName>
 				<unitPattern count="one">{0} funta po kvadratnom inču</unitPattern>
@@ -7317,7 +7865,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="speed-beaufort">
 				<displayName>Beafort</displayName>
 				<unitPattern count="one">Beafort {0}</unitPattern>
-				<unitPattern count="few">B {0}</unitPattern>
+				<unitPattern count="few">Beafort {0}</unitPattern>
 				<unitPattern count="other">Beafort {0}</unitPattern>
 			</unit>
 			<unit type="temperature-celsius">
@@ -7442,6 +7990,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few">{0} metričke šolje</unitPattern>
 				<unitPattern count="other">{0} metričkih šolja</unitPattern>
 			</unit>
+			<unit type="volume-fluid-ounce-metric">
+				<displayName>tekuće unce</displayName>
+				<unitPattern count="one">{0} tekuća unca</unitPattern>
+				<unitPattern count="few">{0} tekuće unce</unitPattern>
+				<unitPattern count="other">{0} tekućih unci</unitPattern>
+			</unit>
 			<unit type="volume-acre-foot">
 				<displayName>jutar-stope</displayName>
 				<unitPattern count="one">{0} jutar-stopa</unitPattern>
@@ -7497,7 +8051,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} imp. tekućih unci</unitPattern>
 			</unit>
 			<unit type="volume-tablespoon">
-				<displayName>kašike</displayName>
 				<unitPattern count="one">{0} kašika</unitPattern>
 				<unitPattern count="few">{0} kašike</unitPattern>
 				<unitPattern count="other">{0} kašika</unitPattern>
@@ -7538,11 +8091,91 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few">{0} imperijalna kvarca</unitPattern>
 				<unitPattern count="other">{0} imperijalnih kvarca</unitPattern>
 			</unit>
+			<unit type="angle-steradian">
+				<displayName>steradijani</displayName>
+				<unitPattern count="one">{0} steradijan</unitPattern>
+				<unitPattern count="few">{0} steradijana</unitPattern>
+				<unitPattern count="other">{0} steradijana</unitPattern>
+			</unit>
+			<unit type="concentr-katal">
+				<displayName>katali</displayName>
+				<unitPattern count="one">{0} katal</unitPattern>
+				<unitPattern count="few">{0} katala</unitPattern>
+				<unitPattern count="other">{0} katala</unitPattern>
+			</unit>
+			<unit type="electric-coulomb">
+				<displayName>kuloni</displayName>
+				<unitPattern count="one">{0} kulon</unitPattern>
+				<unitPattern count="few">{0} kulona</unitPattern>
+				<unitPattern count="other">{0} kulona</unitPattern>
+			</unit>
+			<unit type="electric-farad">
+				<displayName>faradi</displayName>
+				<unitPattern count="one">{0} farad</unitPattern>
+				<unitPattern count="few">{0} farada</unitPattern>
+				<unitPattern count="other">{0} farada</unitPattern>
+			</unit>
+			<unit type="electric-henry">
+				<displayName>henriji</displayName>
+				<unitPattern count="one">{0} henri</unitPattern>
+				<unitPattern count="few">{0} henrija</unitPattern>
+				<unitPattern count="other">{0} henrija</unitPattern>
+			</unit>
+			<unit type="electric-siemens">
+				<displayName>simensi</displayName>
+				<unitPattern count="one">{0} simens</unitPattern>
+				<unitPattern count="few">{0} simensa</unitPattern>
+				<unitPattern count="other">{0} simensa</unitPattern>
+			</unit>
+			<unit type="energy-calorie-it">
+				<displayName>kalorije [IT]</displayName>
+				<unitPattern count="one">{0} kalorija [IT]</unitPattern>
+				<unitPattern count="few">{0} kalorije [IT]</unitPattern>
+				<unitPattern count="other">{0} kalorija [IT]</unitPattern>
+			</unit>
+			<unit type="energy-becquerel">
+				<displayName>bekereli</displayName>
+				<unitPattern count="one">{0} bekerel</unitPattern>
+				<unitPattern count="few">{0} bekerela</unitPattern>
+				<unitPattern count="other">{0} bekerela</unitPattern>
+			</unit>
+			<unit type="energy-sievert">
+				<displayName>siverti</displayName>
+				<unitPattern count="one">{0} sivert</unitPattern>
+				<unitPattern count="few">{0} siverta</unitPattern>
+				<unitPattern count="other">{0} siverta</unitPattern>
+			</unit>
+			<unit type="energy-gray">
+				<displayName>greji</displayName>
+				<unitPattern count="one">{0} grej</unitPattern>
+				<unitPattern count="few">{0} greja</unitPattern>
+				<unitPattern count="other">{0} grejeva</unitPattern>
+			</unit>
+			<unit type="force-kilogram-force">
+				<displayName>kilogram-sile</displayName>
+				<unitPattern count="one">{0} kilogram-sila</unitPattern>
+				<unitPattern count="few">{0} kilogram-sile</unitPattern>
+				<unitPattern count="other">{0} kilogram-sila</unitPattern>
+			</unit>
+			<unit type="magnetic-tesla">
+				<displayName>tesle</displayName>
+				<unitPattern count="one">{0} tesla</unitPattern>
+				<unitPattern count="few">{0} tesle</unitPattern>
+				<unitPattern count="other">{0} tesle</unitPattern>
+			</unit>
+			<unit type="magnetic-weber">
+				<displayName>veberi</displayName>
+				<unitPattern count="one">{0} veber</unitPattern>
+				<unitPattern count="few">{0} vebera</unitPattern>
+				<unitPattern count="other">{0} vebera</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-1e9">
+				<displayName>dijelovi na milijardu</displayName>
+				<unitPattern count="one">{0} dio na milijardu</unitPattern>
+				<unitPattern count="few">{0} dijela na milijardu</unitPattern>
+				<unitPattern count="other">{0} dijelova na milijardu</unitPattern>
+			</unit>
 			<unit type="duration-night">
-				<displayName>noći</displayName>
-				<unitPattern count="one">{0} noć</unitPattern>
-				<unitPattern count="few">{0} noći</unitPattern>
-				<unitPattern count="other">{0} noći</unitPattern>
 				<perUnitPattern>{0} po noći</perUnitPattern>
 			</unit>
 			<coordinateUnit>
@@ -7580,9 +8213,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="area-acre">
 				<displayName>katastarska jutra</displayName>
-				<unitPattern count="one">{0} ac</unitPattern>
-				<unitPattern count="few">{0} ac</unitPattern>
-				<unitPattern count="other">{0} ac</unitPattern>
 			</unit>
 			<unit type="area-dunam">
 				<displayName>dunumi</displayName>
@@ -7602,8 +8232,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few">{0} stavke</unitPattern>
 				<unitPattern count="other">{0} stavki</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part">
+				<displayName>dio</displayName>
+				<unitPattern count="one">{0} dio</unitPattern>
+				<unitPattern count="few">{0} dijela</unitPattern>
+				<unitPattern count="other">{0} dijelova</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-1e6">
 				<displayName>dijelovi/milion</displayName>
+			</unit>
+			<unit type="concentr-ofglucose">
+				<displayName>Glc</displayName>
+				<unitPattern count="one">{0} Glc</unitPattern>
+				<unitPattern count="few">{0} Glc</unitPattern>
+				<unitPattern count="other">{0} Glc</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>L/100 km</displayName>
@@ -7722,9 +8364,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="energy-joule">
 				<displayName>džuli</displayName>
 			</unit>
-			<unit type="energy-kilowatt-hour">
-				<displayName>kW-sat</displayName>
-			</unit>
 			<unit type="energy-british-thermal-unit">
 				<displayName>BTU</displayName>
 				<unitPattern count="one">{0} BTU</unitPattern>
@@ -7837,6 +8476,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} mmHg</unitPattern>
 				<unitPattern count="few">{0} mmHg</unitPattern>
 				<unitPattern count="other">{0} mmHg</unitPattern>
+			</unit>
+			<unit type="pressure-ofhg">
+				<unitPattern count="one">{0} Hg</unitPattern>
+				<unitPattern count="few">{0} Hg</unitPattern>
+				<unitPattern count="other">{0} Hg</unitPattern>
 			</unit>
 			<unit type="speed-knot">
 				<displayName>čv</displayName>
@@ -7979,6 +8623,63 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few">{0} imp. kvarta</unitPattern>
 				<unitPattern count="other">{0} imp. kvarata</unitPattern>
 			</unit>
+			<unit type="angle-steradian">
+				<unitPattern count="one">{0} sr</unitPattern>
+				<unitPattern count="few">{0} sr</unitPattern>
+				<unitPattern count="other">{0} sr</unitPattern>
+			</unit>
+			<unit type="concentr-katal">
+				<unitPattern count="one">{0} kat</unitPattern>
+				<unitPattern count="few">{0} kat</unitPattern>
+				<unitPattern count="other">{0} kat</unitPattern>
+			</unit>
+			<unit type="electric-coulomb">
+				<unitPattern count="one">{0} C</unitPattern>
+				<unitPattern count="few">{0} C</unitPattern>
+				<unitPattern count="other">{0} C</unitPattern>
+			</unit>
+			<unit type="electric-farad">
+				<unitPattern count="one">{0} F</unitPattern>
+				<unitPattern count="few">{0} F</unitPattern>
+				<unitPattern count="other">{0} F</unitPattern>
+			</unit>
+			<unit type="electric-siemens">
+				<unitPattern count="one">{0} S</unitPattern>
+				<unitPattern count="few">{0} S</unitPattern>
+				<unitPattern count="other">{0} S</unitPattern>
+			</unit>
+			<unit type="energy-calorie-it">
+				<displayName>cal [IT]</displayName>
+				<unitPattern count="one">{0} cal IT</unitPattern>
+				<unitPattern count="few">{0} cal IT</unitPattern>
+				<unitPattern count="other">{0} cal IT</unitPattern>
+			</unit>
+			<unit type="energy-becquerel">
+				<unitPattern count="one">{0} Bq</unitPattern>
+				<unitPattern count="few">{0} Bq</unitPattern>
+				<unitPattern count="other">{0} Bq</unitPattern>
+			</unit>
+			<unit type="force-kilogram-force">
+				<unitPattern count="one">{0} kgf</unitPattern>
+				<unitPattern count="few">{0} kgf</unitPattern>
+				<unitPattern count="other">{0} kgf</unitPattern>
+			</unit>
+			<unit type="magnetic-tesla">
+				<unitPattern count="one">{0} T</unitPattern>
+				<unitPattern count="few">{0} T</unitPattern>
+				<unitPattern count="other">{0} T</unitPattern>
+			</unit>
+			<unit type="magnetic-weber">
+				<unitPattern count="one">{0} Wb</unitPattern>
+				<unitPattern count="few">{0} Wb</unitPattern>
+				<unitPattern count="other">{0} Wb</unitPattern>
+			</unit>
+			<unit type="speed-light-speed">
+				<displayName>svjetlo</displayName>
+				<unitPattern count="one">{0} svjetlo</unitPattern>
+				<unitPattern count="few">{0} svjetla</unitPattern>
+				<unitPattern count="other">{0} svjetala</unitPattern>
+			</unit>
 			<unit type="duration-night">
 				<displayName>noći</displayName>
 				<unitPattern count="one">{0} noć</unitPattern>
@@ -7997,11 +8698,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<unitLength type="narrow">
 			<unit type="area-acre">
 				<displayName>aker</displayName>
-				<unitPattern count="one">{0} ac</unitPattern>
-				<unitPattern count="few">{0} ac</unitPattern>
-				<unitPattern count="other">{0} ac</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part">
+				<unitPattern count="one">{0} dio</unitPattern>
+				<unitPattern count="few">{0} dijela</unitPattern>
+				<unitPattern count="other">{0} dijelova</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-1e6">
 				<displayName>ppm</displayName>
 			</unit>
 			<unit type="digital-byte">
@@ -8068,11 +8771,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few">{0} kWh/100 km</unitPattern>
 				<unitPattern count="other">{0}kWh/100 km</unitPattern>
 			</unit>
-			<unit type="graphics-pixel-per-centimeter">
-				<unitPattern count="one">{0}ppcm</unitPattern>
-				<unitPattern count="few">{0} ppcm</unitPattern>
-				<unitPattern count="other">{0}ppcm</unitPattern>
-			</unit>
 			<unit type="graphics-pixel-per-inch">
 				<unitPattern count="one">{0}ppi</unitPattern>
 				<unitPattern count="few">{0} ppi</unitPattern>
@@ -8090,9 +8788,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="graphics-dot">
 				<displayName>tačka</displayName>
-			</unit>
-			<unit type="length-meter">
-				<displayName>m</displayName>
 			</unit>
 			<unit type="length-mile">
 				<displayName>mi</displayName>
@@ -8139,65 +8834,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few">{0}°</unitPattern>
 				<unitPattern count="other">{0}°</unitPattern>
 			</unit>
-			<unit type="temperature-fahrenheit">
-				<unitPattern count="one">{0}°F</unitPattern>
-				<unitPattern count="few">{0} °F</unitPattern>
-				<unitPattern count="other">{0}°F</unitPattern>
-			</unit>
-			<unit type="volume-megaliter">
-				<displayName>Ml</displayName>
-			</unit>
-			<unit type="volume-hectoliter">
-				<displayName>hl</displayName>
-			</unit>
 			<unit type="volume-liter">
 				<displayName>litar</displayName>
 				<unitPattern count="one">{0}l</unitPattern>
 				<unitPattern count="few">{0}l</unitPattern>
 				<unitPattern count="other">{0}l</unitPattern>
 			</unit>
-			<unit type="volume-deciliter">
-				<displayName>dl</displayName>
-				<unitPattern count="one">{0} dl</unitPattern>
-				<unitPattern count="few">{0} dl</unitPattern>
-				<unitPattern count="other">{0} dl</unitPattern>
-			</unit>
-			<unit type="volume-centiliter">
-				<displayName>cl</displayName>
-				<unitPattern count="one">{0} cl</unitPattern>
-				<unitPattern count="few">{0} cl</unitPattern>
-				<unitPattern count="other">{0} cl</unitPattern>
-			</unit>
-			<unit type="volume-milliliter">
-				<displayName>ml</displayName>
-				<unitPattern count="one">{0} ml</unitPattern>
-				<unitPattern count="few">{0} ml</unitPattern>
-				<unitPattern count="other">{0} ml</unitPattern>
-			</unit>
 			<unit type="volume-tablespoon">
 				<displayName>kšk.</displayName>
-				<unitPattern count="one">{0} kšk.</unitPattern>
-				<unitPattern count="few">{0} kšk.</unitPattern>
-				<unitPattern count="other">{0} kšk.</unitPattern>
-			</unit>
-			<unit type="volume-teaspoon">
-				<displayName>kšč.</displayName>
-				<unitPattern count="one">{0} kšč.</unitPattern>
-				<unitPattern count="few">{0} kšč.</unitPattern>
-				<unitPattern count="other">{0} kšč.</unitPattern>
 			</unit>
 			<unit type="volume-quart-imperial">
 				<displayName>imp. kvart</displayName>
-				<unitPattern count="one">{0} imp. kvart</unitPattern>
-				<unitPattern count="few">{0} imp. kvarta</unitPattern>
-				<unitPattern count="other">{0} imp. kvarata</unitPattern>
-			</unit>
-			<unit type="duration-night">
-				<displayName>noći</displayName>
-				<unitPattern count="one">{0} noć</unitPattern>
-				<unitPattern count="few">{0} noći</unitPattern>
-				<unitPattern count="other">{0} noći</unitPattern>
-				<perUnitPattern>{0}/noć</perUnitPattern>
 			</unit>
 			<coordinateUnit>
 				<coordinateUnitPattern type="east">{0}I</coordinateUnitPattern>

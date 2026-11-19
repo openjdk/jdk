@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,9 +31,6 @@
 #include "runtime/synchronizer.hpp"
 #include "services/threadService.hpp"
 #include "utilities/chunkedList.hpp"
-#if INCLUDE_JVMCI
-#include "jvmci/jvmci.hpp"
-#endif
 
 MetadataOnStackBuffer* MetadataOnStackMark::_used_buffers = nullptr;
 MetadataOnStackBuffer* MetadataOnStackMark::_free_buffers = nullptr;
@@ -70,9 +67,6 @@ MetadataOnStackMark::MetadataOnStackMark(bool walk_all_metadata, bool redefiniti
     }
     CompileBroker::mark_on_stack();
     ThreadService::metadata_do(Metadata::mark_on_stack);
-#if INCLUDE_JVMCI
-    JVMCI::metadata_do(Metadata::mark_on_stack);
-#endif
   }
 }
 

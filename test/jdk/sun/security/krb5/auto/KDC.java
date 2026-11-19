@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -366,11 +366,12 @@ public class KDC {
                         name.indexOf('/') < 0 ?
                                 PrincipalName.KRB_NT_UNKNOWN :
                                 PrincipalName.KRB_NT_SRV_HST);
-                ktab.addEntry(pn,
-                        getSalt(pn),
-                        pass,
-                        kvno,
-                        true);
+                int[] etypes = EType.getDefaults("default_tkt_enctypes");
+                EncryptionKey[] keys = new EncryptionKey[etypes.length];
+                for (int i = 0; i < etypes.length; i++) {
+                    keys[i] = keyForUser(pn, etypes[i], false);
+                }
+                ktab.addEntry(pn, keys, kvno, true);
             } else {
                 nativeKdc.ktadd(name, tab);
             }
@@ -671,10 +672,7 @@ public class KDC {
      */
     private char[] getPassword(PrincipalName p, boolean server)
             throws KrbException {
-        String pn = p.toString();
-        if (p.getRealmString() == null) {
-            pn = pn + "@" + getRealm();
-        }
+        String pn = nameOf(p);
         char[] pass = passwords.get(pn);
         if (pass == null) {
             throw new KrbException(server?
@@ -690,10 +688,7 @@ public class KDC {
      * @return the salt
      */
     protected String getSalt(PrincipalName p) {
-        String pn = p.toString();
-        if (p.getRealmString() == null) {
-            pn = pn + "@" + getRealm();
-        }
+        String pn = nameOf(p);
         if (salts.containsKey(pn)) {
             return salts.get(pn);
         }
@@ -725,10 +720,7 @@ public class KDC {
             case EncryptedData.ETYPE_AES256_CTS_HMAC_SHA1_96:
             case EncryptedData.ETYPE_AES128_CTS_HMAC_SHA256_128:
             case EncryptedData.ETYPE_AES256_CTS_HMAC_SHA384_192:
-                String pn = p.toString();
-                if (p.getRealmString() == null) {
-                    pn = pn + "@" + getRealm();
-                }
+                String pn = nameOf(p);
                 if (s2kparamses.containsKey(pn)) {
                     return s2kparamses.get(pn);
                 }
@@ -740,6 +732,23 @@ public class KDC {
             default:
                 return null;
         }
+    }
+
+    /**
+     * Returns the name of a PrincipalName inside KDC dbs.
+     * @param p the principal name
+     * @return the name
+     */
+    private String nameOf(PrincipalName p) {
+        String pn = p.toString();
+        if (p.getRealmString() == null) {
+            pn = pn + "@" + getRealm();
+        }
+        if (pn.startsWith("krbtgt/")) {
+            // We always register krbtgt using REALM
+            pn = "krbtgt/" + pn.substring(7).toUpperCase(Locale.ROOT);
+        }
+        return pn;
     }
 
     /**
@@ -1021,6 +1030,9 @@ public class KDC {
                     body.addresses != null ? body.addresses
                             : etp.caddr,
                     null);
+
+            enc = modifyEncTicketPart(1, enc);
+
             EncryptionKey skey = keyForUser(service, e3, true);
             if (skey == null) {
                 throw new KrbException(Krb5.KDC_ERR_SUMTYPE_NOSUPP); // TODO
@@ -1079,6 +1091,12 @@ public class KDC {
             }
             return kerr.asn1Encode();
         }
+    }
+
+    // Overridable by subclass to modify a ticket before encryption.
+    // type is 0 for AS-REQ and 1 for TGS-REQ.
+    protected EncTicketPart modifyEncTicketPart(int type, EncTicketPart enc) {
+        return enc;
     }
 
     /**
@@ -1366,6 +1384,9 @@ public class KDC {
                     till, rtime,
                     body.addresses,
                     null);
+
+            enc = modifyEncTicketPart(0, enc);
+
             Ticket t = new Ticket(
                     service,
                     new EncryptedData(skey, enc.asn1Encode(), KeyUsage.KU_TICKET)
@@ -1547,65 +1568,65 @@ public class KDC {
         this.port = port;
 
         // The UDP consumer
-        thread1 = new Thread() {
-            public void run() {
-                udpConsumerReady = true;
-                while (true) {
-                    try {
-                        byte[] inbuf = new byte[8192];
-                        DatagramPacket p = new DatagramPacket(inbuf, inbuf.length);
-                        udp.receive(p);
-                        System.out.println("-----------------------------------------------");
-                        System.out.println(">>>>> UDP packet received");
-                        q.put(new Job(processMessage(Arrays.copyOf(inbuf, p.getLength())), udp, p));
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
+        thread1 = new Thread(() -> {
+            udpConsumerReady = true;
+            while (true) {
+                try {
+                    byte[] inbuf = new byte[8192];
+                    DatagramPacket p = new DatagramPacket(inbuf, inbuf.length);
+                    udp.receive(p);
+                    System.out.println("-----------------------------------------------");
+                    System.out.println(">>>>> UDP packet received");
+                    q.put(new Job(processMessage(Arrays.copyOf(inbuf, p.getLength())), udp, p));
+                } catch (InterruptedException e){
+                    break; // Thread was stopped, so stopping the loop
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
             }
-        };
+        });
         thread1.setDaemon(asDaemon);
         thread1.start();
 
         // The TCP consumer
-        thread2 = new Thread() {
-            public void run() {
-                tcpConsumerReady = true;
-                while (true) {
-                    try {
-                        Socket socket = tcp.accept();
-                        System.out.println("-----------------------------------------------");
-                        System.out.println(">>>>> TCP connection established");
-                        DataInputStream in = new DataInputStream(socket.getInputStream());
-                        DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-                        int len = in.readInt();
-                        if (len > 65535) {
-                            throw new Exception("Huge request not supported");
-                        }
-                        byte[] token = new byte[len];
-                        in.readFully(token);
-                        q.put(new Job(processMessage(token), socket, out));
-                    } catch (Exception e) {
-                        e.printStackTrace();
+        thread2 = new Thread(() -> {
+            tcpConsumerReady = true;
+            while (true) {
+                try {
+                    Socket socket = tcp.accept();
+                    System.out.println("-----------------------------------------------");
+                    System.out.println(">>>>> TCP connection established");
+                    DataInputStream in = new DataInputStream(socket.getInputStream());
+                    DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+                    int len = in.readInt();
+                    if (len > 65535) {
+                        throw new Exception("Huge request not supported");
                     }
+                    byte[] token = new byte[len];
+                    in.readFully(token);
+                    q.put(new Job(processMessage(token), socket, out));
+                } catch (InterruptedException e){
+                    break; // Thread was stopped, so stopping the loop
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
             }
-        };
+        });
         thread2.setDaemon(asDaemon);
         thread2.start();
 
         // The dispatcher
-        thread3 = new Thread() {
-            public void run() {
-                dispatcherReady = true;
-                while (true) {
-                    try {
-                        q.take().send();
-                    } catch (Exception e) {
-                    }
+        thread3 = new Thread(() -> {
+            dispatcherReady = true;
+            while (true) {
+                try {
+                    q.take().send();
+                } catch (InterruptedException e){
+                    break; // Thread was stopped, so stopping the loop
+                } catch (Exception e) {
                 }
             }
-        };
+        });
         thread3.setDaemon(true);
         thread3.start();
 
@@ -1646,9 +1667,9 @@ public class KDC {
             System.out.println("Done");
         } else {
             try {
-                thread1.stop();
-                thread2.stop();
-                thread3.stop();
+                thread1.interrupt();
+                thread2.interrupt();
+                thread3.interrupt();
                 u1.close();
                 t1.close();
             } catch (Exception e) {

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2022, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,11 +31,11 @@
 
 #include "memory/iterator.hpp"
 #include "runtime/javaThread.hpp"
-#include "runtime/lightweightSynchronizer.hpp"
 #include "runtime/objectMonitor.inline.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/stackWatermark.hpp"
 #include "runtime/stackWatermarkSet.inline.hpp"
+#include "runtime/synchronizer.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -87,7 +87,7 @@ inline bool LockStack::is_empty() const {
 }
 
 inline bool LockStack::is_recursive(oop o) const {
-  if (!VM_Version::supports_recursive_lightweight_locking()) {
+  if (!VM_Version::supports_recursive_fast_locking()) {
     return false;
   }
   verify("pre-is_recursive");
@@ -119,7 +119,7 @@ inline bool LockStack::is_recursive(oop o) const {
 }
 
 inline bool LockStack::try_recursive_enter(oop o) {
-  if (!VM_Version::supports_recursive_lightweight_locking()) {
+  if (!VM_Version::supports_recursive_fast_locking()) {
     return false;
   }
   verify("pre-try_recursive_enter");
@@ -145,7 +145,7 @@ inline bool LockStack::try_recursive_enter(oop o) {
 }
 
 inline bool LockStack::try_recursive_exit(oop o) {
-  if (!VM_Version::supports_recursive_lightweight_locking()) {
+  if (!VM_Version::supports_recursive_fast_locking()) {
     return false;
   }
   verify("pre-try_recursive_exit");
@@ -250,53 +250,30 @@ inline void LockStack::oops_do(OopClosure* cl) {
 }
 
 inline void OMCache::set_monitor(ObjectMonitor *monitor) {
-  const int end = OMCache::CAPACITY - 1;
-
   oop obj = monitor->object_peek();
   assert(obj != nullptr, "must be alive");
-  assert(monitor == LightweightSynchronizer::get_monitor_from_table(JavaThread::current(), obj), "must exist in table");
+  assert(monitor == ObjectSynchronizer::get_monitor_from_table(obj), "must exist in table");
 
-  OMCacheEntry to_insert = {obj, monitor};
-
-  for (int i = 0; i < end; ++i) {
-    if (_entries[i]._oop == obj ||
-        _entries[i]._monitor == nullptr ||
-        _entries[i]._monitor->is_being_async_deflated()) {
-      // Use stale slot.
-      _entries[i] = to_insert;
-      return;
-    }
-    // Swap with the most recent value.
-    ::swap(to_insert, _entries[i]);
-  }
-  _entries[end] = to_insert;
+  _monitor = monitor;
+  _obj     = obj;
 }
 
 inline ObjectMonitor* OMCache::get_monitor(oop o) {
-  for (int i = 0; i < CAPACITY; ++i) {
-    if (_entries[i]._oop == o) {
-      assert(_entries[i]._monitor != nullptr, "monitor must exist");
-      if (_entries[i]._monitor->is_being_async_deflated()) {
-        // Bad monitor
-        // Shift down rest
-        for (; i < CAPACITY - 1; ++i) {
-          _entries[i] = _entries[i + 1];
-        }
-        // Clear end
-        _entries[i] = {};
-        return nullptr;
-      }
-      return _entries[i]._monitor;
+  if (_obj == o) {
+    assert(_monitor != nullptr, "monitor must exist");
+    if (!_monitor->is_being_async_deflated()) {
+      return _monitor;
     }
+    // Bad monitor, so clear the cache.
+    _obj     = nullptr;
+    _monitor = nullptr;
   }
   return nullptr;
 }
 
 inline void OMCache::clear() {
-  for (size_t i = 0; i < CAPACITY; ++i) {
-    // Clear
-    _entries[i] = {};
-  }
+  _obj     = nullptr;
+  _monitor = nullptr;
 }
 
 #endif // SHARE_RUNTIME_LOCKSTACK_INLINE_HPP

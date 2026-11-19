@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,7 @@
 #ifndef SHARE_GC_SHARED_PARTIALARRAYTASKSTEPPER_HPP
 #define SHARE_GC_SHARED_PARTIALARRAYTASKSTEPPER_HPP
 
-#include "oops/arrayOop.hpp"
 #include "utilities/globalDefinitions.hpp"
-
-class PartialArrayState;
 
 // Helper for partial array chunking tasks.
 //
@@ -39,41 +36,19 @@ class PartialArrayState;
 // substantially expand the task queues.
 class PartialArrayTaskStepper {
 public:
-  PartialArrayTaskStepper(uint n_workers, size_t chunk_size);
+  explicit PartialArrayTaskStepper(uint num_workers);
 
-  struct Step {
-    size_t _index;              // Array index for the step.
-    uint _ncreate;              // Number of new tasks to create.
-  };
-
-  // Called with the length of the array to be processed.  Returns a Step with
-  // _index being the end of the initial chunk, which the caller should
-  // process.  This is also the starting index for the next chunk to process.
-  // The _ncreate is the number of tasks to enqueue to continue processing the
-  // array.  If _ncreate is zero then _index will be length.
-  inline Step start(size_t length) const;
-
-  // Atomically increment state's index by chunk_size() to claim the next
-  // chunk.  Returns a Step with _index being the starting index of the
-  // claimed chunk and _ncreate being the number of additional partial tasks
-  // to enqueue.
-  inline Step next(PartialArrayState* state) const;
-
-  // The size of chunks to claim for each task.
-  inline size_t chunk_size() const;
-
-  class TestSupport;            // For unit tests
+  // Number of continuation tasks to publish after claiming the full-sized
+  // chunk starting at start.  Initially there is one queued task.  Every claim
+  // must publish the count returned here, even if other claims have advanced
+  // the shared index in the meantime.
+  inline uint continuation_tasks(size_t start, size_t length, size_t chunk_size) const;
 
 private:
-  // Size (number of elements) of a chunk to process.
-  size_t _chunk_size;
-  // Limit on the number of partial array tasks to create for a given array.
+  // Limit on pending tasks for one array.
   uint _task_limit;
   // Maximum number of new tasks to create when processing an existing task.
   uint _task_fanout;
-
-  // For unit tests.
-  inline Step next_impl(size_t length, volatile size_t* index_addr) const;
 };
 
 #endif // SHARE_GC_SHARED_PARTIALARRAYTASKSTEPPER_HPP

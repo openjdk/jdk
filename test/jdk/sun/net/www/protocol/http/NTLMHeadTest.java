@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,9 @@
  */
 
 /*
- * @test
+ * @test id=default
  * @bug 8270290
+ * @requires os.family != "windows"
  * @library /test/lib
  * @run main/othervm NTLMHeadTest SERVER
  * @run main/othervm NTLMHeadTest PROXY
@@ -48,6 +49,17 @@
  *      include the body.
  */
 
+/*
+ * @test id=windows
+ * @bug 8270290
+ * @comment Only run on specific Windows OS versions because NTLMv1 is no longer supported starting Windows 11 and Windows Server 2025
+ * @requires os.family == "windows" & (os.name == "Windows 10" | os.name == "Windows Server 2016" | os.name == "Windows Server 2019" | os.name == "Windows Server 2022")
+ * @library /test/lib
+ * @run main/othervm NTLMHeadTest SERVER
+ * @run main/othervm NTLMHeadTest PROXY
+ * @run main/othervm NTLMHeadTest TUNNEL
+ */
+
 import java.net.*;
 import java.io.*;
 import java.util.*;
@@ -70,7 +82,9 @@ public class NTLMHeadTest {
 
     static final String RESP_SERVER_NTLM =
             "HTTP/1.1 401 Unauthorized\r\n" +
-            "WWW-Authenticate: NTLM TlRMTVNTUAACAAAAAAAAACgAAAABggAAU3J2Tm9uY2UAAAAAAAAAAA==\r\n" +
+            "WWW-Authenticate: NTLM TlRMTVNTUAACAAAAAgACADgAAAAVgoriXva3" +
+                    "eirBoiYAAAAAAAAAACgAKAA6AAAACgD0ZQAAAA9EAAIAAgBEAAE" +
+                    "AAgBEAAQAAgBkAAMAAgBkAAcACAAAAAAAAAAAAAAAAAA=\r\n" +
             "Connection: Keep-Alive\r\n" +
             "Content-Length: " + BODY_LEN + "\r\n" +
             "\r\n";
@@ -91,7 +105,9 @@ public class NTLMHeadTest {
 
     static final String RESP_PROXY_NTLM =
             "HTTP/1.1 407 Proxy Authentication Required\r\n" +
-            "Proxy-Authenticate: NTLM TlRMTVNTUAACAAAAAAAAACgAAAABggAAU3J2Tm9uY2UAAAAAAAAAAA==\r\n" +
+            "Proxy-Authenticate: NTLM TlRMTVNTUAACAAAAAgACADgAAAAVgoriXva3" +
+                    "eirBoiYAAAAAAAAAACgAKAA6AAAACgD0ZQAAAA9EAAIAAgBEAAEAA" +
+                    "gBEAAQAAgBkAAMAAgBkAAcACAAAAAAAAAAAAAAAAAA=\r\n" +
             "Proxy-Connection: Keep-Alive\r\n" +
             "Connection: Keep-Alive\r\n" +
             "Content-Length: " + BODY_LEN + "\r\n" +
@@ -108,7 +124,9 @@ public class NTLMHeadTest {
 
     static final String RESP_TUNNEL_NTLM =
             "HTTP/1.1 407 Proxy Authentication Required\r\n" +
-            "Proxy-Authenticate: NTLM TlRMTVNTUAACAAAAAAAAACgAAAABggAAU3J2Tm9uY2UAAAAAAAAAAA==\r\n" +
+            "Proxy-Authenticate: NTLM TlRMTVNTUAACAAAAAgACADgAAAAVgoriXva3" +
+                    "eirBoiYAAAAAAAAAACgAKAA6AAAACgD0ZQAAAA9EAAIAAgBEAAEAA" +
+                    "gBEAAQAAgBkAAMAAgBkAAcACAAAAAAAAAAAAAAAAAA=\r\n" +
             "Proxy-Connection: Keep-Alive\r\n" +
             "Connection: Keep-Alive\r\n" +
             "Content-Length: " + BODY_LEN + "\r\n" +

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,7 +63,7 @@ import jdk.internal.classfile.impl.UnboundAttribute;
  * attribute to be present.
  *
  * @see Attributes#localVariableTable()
- * @jvms 4.7.13 The {@code LocalVaribleTable} Attribute
+ * @jvms 4.7.13 The {@code LocalVariableTable} Attribute
  * @since 24
  */
 public sealed interface LocalVariableTableAttribute
@@ -83,6 +83,8 @@ public sealed interface LocalVariableTableAttribute
      * {@link CodeBuilder#localVariable CodeBuilder::localVariable} instead.
      *
      * @param locals the local variable descriptions
+     * @throws IllegalArgumentException if the number of descriptions exceeds
+     *         the limit of {@link java.lang.classfile##u2 u2}
      */
     static LocalVariableTableAttribute of(List<LocalVariableInfo> locals) {
         return new UnboundAttribute.UnboundLocalVariableTableAttribute(locals);

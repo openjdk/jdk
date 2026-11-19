@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,16 +38,15 @@ extern size_t OldSize;
 class GenArguments : public GCArguments {
   friend class TestGenCollectorPolicy; // Testing
 private:
-  virtual void initialize_alignments();
   virtual void initialize_size_info();
-
-  // Return the (conservative) maximum heap alignment
-  virtual size_t conservative_max_heap_alignment();
 
   DEBUG_ONLY(void assert_flags();)
   DEBUG_ONLY(void assert_size_info();)
 
   static size_t scale_by_NewRatio_aligned(size_t base_size, size_t alignment);
+
+  virtual size_t young_gen_size_lower_bound() = 0;
+  virtual size_t old_gen_size_lower_bound() = 0;
 
 protected:
   virtual void initialize_heap_flags_and_sizes();

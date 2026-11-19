@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,12 +37,11 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.net.ssl.SSLContext;
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
-import jdk.httpclient.test.lib.http2.Http2TestServer;
 import jdk.test.lib.net.SimpleSSLContext;
 
 import static java.lang.System.out;
 
-/**
+/*
  * @test
  * @bug 8262027
  * @summary Verify that it's possible to handle proxy authentication manually
@@ -56,13 +55,13 @@ import static java.lang.System.out;
  *                   -Djdk.http.auth.tunneling.disabledSchemes
  *                   -Djdk.httpclient.allowRestrictedHeaders=connection
  *                   -Djdk.internal.httpclient.debug=true
- *                   HttpsTunnelAuthTest
+ *                   ${test.main.class}
  *
  */
 //-Djdk.internal.httpclient.debug=true -Dtest.debug=true
 public class HttpsTunnelAuthTest implements HttpServerAdapters, AutoCloseable {
 
-    static final String data[] = {
+    static final String[] data = {
         "Lorem ipsum",
         "dolor sit amet",
         "consectetur adipiscing elit, sed do eiusmod tempor",
@@ -75,14 +74,9 @@ public class HttpsTunnelAuthTest implements HttpServerAdapters, AutoCloseable {
         "Excepteur sint occaecat cupidatat non proident."
     };
 
-    static final SSLContext context;
+    private static final SSLContext context = SimpleSSLContext.findSSLContext();
     static {
-        try {
-            context = new SimpleSSLContext().get();
-            SSLContext.setDefault(context);
-        } catch (Exception x) {
-            throw new ExceptionInInitializerError(x);
-        }
+        SSLContext.setDefault(context);
     }
 
     final String realm = "earth";
@@ -150,7 +144,7 @@ public class HttpsTunnelAuthTest implements HttpServerAdapters, AutoCloseable {
 
     @Override
     public void close() throws Exception {
-        if (proxy != null) close(proxy::stop);
+        if (proxy != null) close(proxy);
         if (http1Server != null) close(http1Server::stop);
         if (https1Server != null) close(https1Server::stop);
         if (https2Server != null) close(https2Server::stop);
@@ -160,7 +154,8 @@ public class HttpsTunnelAuthTest implements HttpServerAdapters, AutoCloseable {
         try {
             closeable.close();
         } catch (Exception x) {
-            // OK.
+            // OK to ignore and just log
+            System.err.println("ignoring failure during close() of " + closeable + " due to: " + x);
         }
     }
 

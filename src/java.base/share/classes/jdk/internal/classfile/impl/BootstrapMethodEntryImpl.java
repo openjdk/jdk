@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,13 +41,13 @@ public final class BootstrapMethodEntryImpl implements BootstrapMethodEntry {
     private final List<LoadableConstantEntry> arguments;
 
     BootstrapMethodEntryImpl(ConstantPool constantPool, int bsmIndex, int hash,
-                                 MethodHandleEntryImpl handle,
-                                 List<LoadableConstantEntry> arguments) {
+                             MethodHandleEntryImpl handle,
+                             List<LoadableConstantEntry> arguments) {
         this.index = bsmIndex;
         this.hash = hash;
         this.constantPool = constantPool;
         this.handle = handle;
-        this.arguments = List.copyOf(arguments);
+        this.arguments = Util.sanitizeU2List(arguments);
     }
 
     @Override

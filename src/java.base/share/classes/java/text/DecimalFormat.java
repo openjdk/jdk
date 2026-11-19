@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,12 +114,6 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * pattern} or using one of the appropriate {@code DecimalFormat} setter methods,
  * for example, {@link #setMinimumFractionDigits(int)}. These limits have no impact
  * on parsing behavior.
- * @implSpec
- * When formatting a {@code Number} other than {@code BigInteger} and
- * {@code BigDecimal}, {@code 309} is used as the upper limit for integer digits,
- * and {@code 340} as the upper limit for fraction digits. This occurs, even if
- * one of the {@code DecimalFormat} getter methods, for example, {@link #getMinimumFractionDigits()}
- * returns a numerically greater value.
  *
  * <h3>Special Values</h3>
  * <ul>
@@ -256,7 +250,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *          <td>{@link DecimalFormatSymbols#getExponentSeparator()}
  *          <td>Number
  *          <td>Separates mantissa and exponent in scientific notation. This value
- *              is case sensistive. <em>Need not be quoted in prefix or suffix.</em>
+ *              is case sensitive. <em>Need not be quoted in prefix or suffix.</em>
  *     <tr>
  *          <th scope="row">{@code ;}
  *          <td>{@link DecimalFormatSymbols#getPatternSeparator()}
@@ -302,7 +296,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * #setMaximumIntegerDigits(int)} can be used to manually adjust the maximum
  * integer digits.
  *
- * <h3>Negative Subpatterns</h3>
+ * <h3><a id="negative_subpatterns">Negative Subpatterns</a></h3>
  * A {@code DecimalFormat} pattern contains a positive and negative
  * subpattern, for example, {@code "#,##0.00;(#,##0.00)"}.  Each
  * subpattern has a prefix, numeric part, and suffix. The negative subpattern
@@ -313,7 +307,11 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * serves only to specify the negative prefix and suffix; the number of digits,
  * minimal digits, and other characteristics are all the same as the positive
  * pattern. That means that {@code "#,##0.0#;(#)"} produces precisely
- * the same behavior as {@code "#,##0.0#;(#,##0.0#)"}.
+ * the same behavior as {@code "#,##0.0#;(#,##0.0#)"}. In
+ * {@link NumberFormat##leniency lenient parsing} mode, loose matching of the
+ * minus sign pattern is enabled, following the LDML’s
+ * <a href="https://unicode.org/reports/tr35/#Loose_Matching">
+ * loose matching</a> specification.
  *
  * <p>The prefixes, suffixes, and various symbols used for infinity, digits,
  * grouping separators, decimal separators, etc. may be set to arbitrary
@@ -417,8 +415,15 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * <li>Exponential patterns may not contain grouping separators.
  * </ul>
  *
+ * @implSpec
+ * When formatting a {@code Number} other than {@code BigInteger} and
+ * {@code BigDecimal}, {@code 309} is used as the upper limit for integer digits,
+ * and {@code 340} as the upper limit for fraction digits. This occurs, even if
+ * one of the {@code DecimalFormat} getter methods, for example, {@link #getMinimumFractionDigits()}
+ * returns a numerically greater value.
+ *
  * @spec         https://www.unicode.org/reports/tr35
- *               Unicode Locale Data Markup Language (LDML)
+ *               Unicode Common Locale Data {@literal &} Rules (CLDR)
  * @see          <a href="http://docs.oracle.com/javase/tutorial/i18n/format/decimalFormat.html">Java Tutorial</a>
  * @see          NumberFormat
  * @see          DecimalFormatSymbols
@@ -651,17 +656,10 @@ public class DecimalFormat extends NumberFormat {
             return result;
         }
 
-        /* Detecting whether a double is negative is easy with the exception of
-         * the value -0.0.  This is a double which has a zero mantissa (and
-         * exponent), but a negative sign bit.  It is semantically distinct from
-         * a zero with a positive sign bit, and this distinction is important
-         * to certain kinds of computations.  However, it's a little tricky to
-         * detect, since (-0.0 == 0.0) and !(-0.0 < 0.0).  How then, you may
-         * ask, does it behave distinctly from +0.0?  Well, 1/(-0.0) ==
-         * -Infinity.  Proper detection of -0.0 is needed to deal with the
+        /* Proper detection of -0.0 is needed to deal with the
          * issues raised by bugs 4106658, 4106667, and 4147706.  Liu 7/6/98.
          */
-        boolean isNegative = ((number < 0.0) || (number == 0.0 && 1/number < 0.0)) ^ (multiplier < 0);
+        boolean isNegative = Double.doubleToRawLongBits(number) < 0 ^ multiplier < 0;
 
         if (multiplier != 1) {
             number *= multiplier;
@@ -2061,8 +2059,7 @@ public class DecimalFormat extends NumberFormat {
                 // Output grouping separator if necessary.  Don't output a
                 // grouping separator if i==0 though; that's at the end of
                 // the integer part.
-                if (isGroupingUsed() && i>0 && (groupingSize != 0) &&
-                        (i % groupingSize == 0)) {
+                if (isGroupingEnabled() && i > 0 && i % groupingSize == 0) {
                     int gStart = result.length();
                     result.append(grouping);
                     delegate.formatted(Field.GROUPING_SEPARATOR,
@@ -2195,6 +2192,9 @@ public class DecimalFormat extends NumberFormat {
      *   and are not digits that occur within the numerical portion
      * </ul>
      * <p>
+     * When lenient, the minus sign in the {@link ##negative_subpatterns
+     * negative subpatterns} is loosely matched against lenient minus sign characters.
+     * <p>
      * The subclass returned depends on the value of {@link #isParseBigDecimal}
      * as well as on the string being parsed.
      * <ul>
@@ -2241,8 +2241,14 @@ public class DecimalFormat extends NumberFormat {
     public Number parse(String text, ParsePosition pos) {
         // special case NaN
         if (text.regionMatches(pos.index, symbols.getNaN(), 0, symbols.getNaN().length())) {
-            pos.index = pos.index + symbols.getNaN().length();
-            return Double.valueOf(Double.NaN);
+            var nanEnd = pos.index + symbols.getNaN().length();
+            // When strict, parsing NaN must be exact
+            if (parseStrict && nanEnd != text.length()) {
+                pos.errorIndex = nanEnd;
+                return null;
+            }
+            pos.index = nanEnd;
+            return Double.NaN;
         }
 
         boolean[] status = new boolean[STATUS_LENGTH];
@@ -2334,9 +2340,10 @@ public class DecimalFormat extends NumberFormat {
             // (bug 4162852).
             if (multiplier != 1 && gotDouble) {
                 longResult = (long)doubleResult;
-                gotDouble = ((doubleResult != (double)longResult) ||
-                            (doubleResult == 0.0 && 1/doubleResult < 0.0)) &&
-                            !isParseIntegerOnly();
+                gotDouble = ((doubleResult >= Long.MAX_VALUE || doubleResult <= Long.MIN_VALUE) ||
+                        (doubleResult != (double)longResult) ||
+                        (doubleResult == 0.0 && 1/doubleResult < 0.0)) &&
+                        !isParseIntegerOnly();
             }
 
             // cast inside of ?: because of binary numeric promotion, JLS 15.25
@@ -2391,10 +2398,8 @@ public class DecimalFormat extends NumberFormat {
         boolean gotPositive, gotNegative;
 
         // check for positivePrefix; take longest
-        gotPositive = text.regionMatches(position, positivePrefix, 0,
-                positivePrefix.length());
-        gotNegative = text.regionMatches(position, negativePrefix, 0,
-                negativePrefix.length());
+        gotPositive = matchAffix(text, position, positivePrefix);
+        gotNegative = matchAffix(text, position, negativePrefix);
 
         if (gotPositive && gotNegative) {
             if (positivePrefix.length() > negativePrefix.length()) {
@@ -2430,15 +2435,13 @@ public class DecimalFormat extends NumberFormat {
         // When lenient, text only needs to contain the suffix.
         if (!isExponent) {
             if (gotPositive) {
-                boolean containsPosSuffix =
-                        text.regionMatches(position, positiveSuffix, 0, positiveSuffix.length());
+                boolean containsPosSuffix = matchAffix(text, position, positiveSuffix);
                 boolean endsWithPosSuffix =
                         containsPosSuffix && text.length() == position + positiveSuffix.length();
                 gotPositive = parseStrict ? endsWithPosSuffix : containsPosSuffix;
             }
             if (gotNegative) {
-                boolean containsNegSuffix =
-                        text.regionMatches(position, negativeSuffix, 0, negativeSuffix.length());
+                boolean containsNegSuffix = matchAffix(text, position, negativeSuffix);
                 boolean endsWithNegSuffix =
                         containsNegSuffix && text.length() == position + negativeSuffix.length();
                 gotNegative = parseStrict ? endsWithNegSuffix : containsNegSuffix;
@@ -2570,7 +2573,8 @@ public class DecimalFormat extends NumberFormat {
                 }
 
                 // Enforce the grouping size on the first group
-                if (parseStrict && isGroupingUsed() && position == startPos + groupingSize
+                if (parseStrict && isGroupingEnabled()
+                        && position == startPos + groupingSize
                         && prevSeparatorIndex == -groupingSize && !sawDecimal
                         && digit >= 0 && digit <= 9) {
                     return new NumericPosition(position, intIndex);
@@ -2614,7 +2618,8 @@ public class DecimalFormat extends NumberFormat {
                         return new NumericPosition(-1, intIndex);
                     }
                     // Check grouping size on decimal separator
-                    if (parseStrict && isGroupingViolation(position, prevSeparatorIndex)) {
+                    if (parseStrict && isGroupingEnabled()
+                            && isGroupingViolation(position, prevSeparatorIndex)) {
                         return new NumericPosition(
                                 groupingViolationIndex(position, prevSeparatorIndex), intIndex);
                     }
@@ -2626,7 +2631,8 @@ public class DecimalFormat extends NumberFormat {
                     intIndex = position;
                     digits.decimalAt = digitCount; // Not digits.count!
                     sawDecimal = true;
-                } else if (!isExponent && ch == grouping && isGroupingUsed()) {
+                } else if (!isExponent && ch == grouping &&
+                        (parseStrict ? isGroupingEnabled() : isGroupingUsed())) {
                     if (parseStrict) {
                         // text should not start with grouping when strict
                         if (position == startPos) {
@@ -2681,10 +2687,11 @@ public class DecimalFormat extends NumberFormat {
             // (When strict), within the loop we enforce grouping when encountering
             // decimal/grouping symbols. Once outside loop, we need to check
             // the final grouping, ex: "1,234". Only check the final grouping
-            // if we have not seen a decimal separator, to prevent a non needed check,
-            // for ex: "1,234.", "1,234.12"
+            // if we have not seen a decimal separator, to prevent a grouping check in the
+            // fraction portion for ex: "1,234.", "1,234.12"
             if (parseStrict) {
-                if (!sawDecimal && isGroupingViolation(position, prevSeparatorIndex)) {
+                if (!sawDecimal && isGroupingEnabled()
+                        && isGroupingViolation(position, prevSeparatorIndex)) {
                     // -1, since position is incremented by one too many when loop is finished
                     // "1,234%" and "1,234" both end with pos = 5, since '%' breaks
                     // the loop before incrementing position. In both cases, check
@@ -2745,12 +2752,23 @@ public class DecimalFormat extends NumberFormat {
         return decimalAt;
     }
 
+    /*
+     * DecimalFormat defines both setGroupingUsed(boolean) and setGroupingSize(int).
+     * These operate independently, and setting a grouping size of 0 does not mean that
+     * isGroupingUsed() returns false. As a result, to effectively check whether grouping is used
+     * for strict parsing, both values need to be verified. Lenient parsing, which preserves the
+     * legacy parsing behavior, does not require this exhaustive check because grouping size positioning
+     * is not checked.
+     */
+    private boolean isGroupingEnabled() {
+        return isGroupingUsed() && groupingSize > 0;
+    }
+
     // Checks to make sure grouping size is not violated. Used when strict.
     private boolean isGroupingViolation(int pos, int prevGroupingPos) {
         assert parseStrict : "Grouping violations should only occur when strict";
-        return isGroupingUsed() && // Only violates if using grouping
-                // Checks if a previous grouping symbol was seen.
-                prevGroupingPos != -groupingSize &&
+        // Checks if a previous grouping symbol was seen.
+        return prevGroupingPos != -groupingSize &&
                 // The check itself, - 1 to account for grouping/decimal symbol
                 pos - 1 != prevGroupingPos + groupingSize;
     }
@@ -3508,6 +3526,55 @@ public class DecimalFormat extends NumberFormat {
     }
 
     /**
+     * {@return true if the text matches the affix}
+     * In lenient mode, lenient minus signs also match the hyphen-minus
+     * (U+002D). Package-private access, as this is called from
+     * CompactNumberFormat.
+     *
+     * Note: Minus signs in the supplementary character range or normalization
+     * equivalents are not matched, as they may alter the affix length.
+     */
+    boolean matchAffix(String text, int position, String affix) {
+        var alen = affix.length();
+        var tlen = text.length();
+
+        // Verify position can fit length wise before checking char by char
+        if (position + alen > tlen || position < 0) {
+            return false;
+        }
+        if (alen == 0) {
+            // always match with an empty affix, as affix is optional
+            return true;
+        }
+        if (parseStrict) {
+            return text.regionMatches(position, affix, 0, alen);
+        }
+
+        var lms = symbols.getLenientMinusSigns();
+        int i = 0;
+        int limit = Math.min(tlen, position + alen);
+        for (; position + i < limit; i++) {
+            char t = text.charAt(position + i);
+            char a = affix.charAt(i);
+            int tIndex = lms.indexOf(t);
+            int aIndex = lms.indexOf(a);
+            // Non LMS. Match direct
+            if (tIndex < 0 && aIndex < 0) {
+                if (t != a) {
+                    return false;
+                }
+            } else {
+                // By here, at least one LMS. Ensure both LMS.
+                if (tIndex < 0 || aIndex < 0) {
+                    return false;
+                }
+            }
+        }
+        // Return true if entire affix was matched
+        return i == alen;
+    }
+
+    /**
      * Implementation of producing a pattern. This method returns a positive and
      * negative (if needed), pattern string in the form of : Prefix (optional)
      * Number Suffix (optional). A NegativePattern is only produced if the
@@ -3539,7 +3606,7 @@ public class DecimalFormat extends NumberFormat {
             int digitCount = useExponentialNotation ? getMaximumIntegerDigits() :
                     Math.max(groupingSize, getMinimumIntegerDigits()) + 1;
             for (int i = digitCount; i > 0; --i) {
-                if (i != digitCount && isGroupingUsed() && groupingSize != 0 &&
+                if (i != digitCount && isGroupingEnabled() &&
                         i % groupingSize == 0) {
                     result.append(groupingSymbol);
                 }

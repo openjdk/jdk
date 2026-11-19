@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 
 #include "gc/z/zPage.hpp"
 
+#include "cppstdlib/limits.hpp"
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zGeneration.inline.hpp"
 #include "gc/z/zGlobals.hpp"
@@ -33,7 +34,7 @@
 #include "gc/z/zRememberedSet.inline.hpp"
 #include "gc/z/zVirtualMemory.inline.hpp"
 #include "logging/logStream.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
@@ -157,6 +158,7 @@ inline const ZVirtualMemory& ZPage::virtual_memory() const {
 }
 
 inline uint32_t ZPage::single_partition_id() const {
+  assert(!is_multi_partition(), "Don't fetch single partition id if page is multi-partition");
   return _single_partition_id;
 }
 
@@ -170,6 +172,20 @@ inline ZMultiPartitionTracker* ZPage::multi_partition_tracker() const {
 
 inline ZPageAge ZPage::age() const {
   return _age;
+}
+
+inline void ZPage::inc_relocation_target_ref_count() {
+  assert(_relocation_target_ref_count < std::numeric_limits<uint32_t>::max(), "Relocation target ref count overflow");
+
+  _relocation_target_ref_count++;
+}
+
+inline bool ZPage::dec_relocation_target_ref_count() {
+  assert(_relocation_target_ref_count > 0, "Invalid ref count");
+
+  _relocation_target_ref_count--;
+
+  return _relocation_target_ref_count == 0;
 }
 
 inline uint32_t ZPage::seqnum() const {
@@ -367,7 +383,6 @@ inline bool ZPage::was_remembered(volatile zpointer* p) {
   return _remembered_set.at_previous(l_offset);
 }
 
-
 inline zaddress_unsafe ZPage::find_base_unsafe(volatile zpointer* p) {
   if (is_large()) {
     return ZOffset::address_unsafe(start());
@@ -467,7 +482,7 @@ inline zaddress ZPage::alloc_object_atomic(size_t size) {
       return zaddress::null;
     }
 
-    const zoffset_end prev_top = Atomic::cmpxchg(&_top, addr, new_top);
+    const zoffset_end prev_top = AtomicAccess::cmpxchg(&_top, addr, new_top);
     if (prev_top == addr) {
       // Success
       return ZOffset::address(to_zoffset(addr));
@@ -511,7 +526,7 @@ inline bool ZPage::undo_alloc_object_atomic(zaddress addr, size_t size) {
       return false;
     }
 
-    const zoffset_end prev_top = Atomic::cmpxchg(&_top, old_top, new_top);
+    const zoffset_end prev_top = AtomicAccess::cmpxchg(&_top, old_top, new_top);
     if (prev_top == old_top) {
       // Success
       return true;

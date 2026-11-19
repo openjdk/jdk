@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,8 @@ class UnixNativeDispatcher {
                 return buffer;
         }
         NativeBuffers.copyCStringToNativeBuffer(cstr, buffer);
-        buffer.setOwner(path);
+        if (!Thread.currentThread().isVirtual())
+            buffer.setOwner(path);
         return buffer;
     }
 
@@ -256,14 +257,14 @@ class UnixNativeDispatcher {
             }
         }
     }
+    private static native int stat0(long pathAddress, UnixFileAttributes attrs);
 
+    // Variant of stat() returning errno instead of throwing UnixException
     static int stat2(UnixPath path, UnixFileAttributes attrs) {
         try (NativeBuffer buffer = copyToNativeBuffer(path)) {
             return stat0(buffer.address(), attrs);
         }
     }
-
-    private static native int stat0(long pathAddress, UnixFileAttributes attrs);
 
     /**
      * lstat(const char* path, struct stat* buf)
@@ -288,15 +289,25 @@ class UnixNativeDispatcher {
     /**
      * fstatat(int filedes,const char* path,  struct stat* buf, int flag)
      */
-    static void fstatat(int dfd, byte[] path, int flag, UnixFileAttributes attrs)
+    static void fstatat(int dfd, UnixPath path, int flag, UnixFileAttributes attrs)
         throws UnixException
     {
-        try (NativeBuffer buffer = NativeBuffers.asNativeBuffer(path)) {
-            fstatat0(dfd, buffer.address(), flag, attrs);
+        try (NativeBuffer buffer = copyToNativeBuffer(path)) {
+            int errno = fstatat0(dfd, buffer.address(), flag, attrs);
+            if (errno != 0) {
+                throw new UnixException(errno);
+            }
         }
     }
-    private static native void fstatat0(int dfd, long pathAddress, int flag,
-        UnixFileAttributes attrs) throws UnixException;
+    private static native int fstatat0(int dfd, long pathAddress, int flag,
+        UnixFileAttributes attrs);
+
+    // Variant of fstatat() returning errno instead of throwing UnixException
+    static int fstatat2(int dfd, UnixPath path, int flag, UnixFileAttributes attrs) {
+        try (NativeBuffer buffer = copyToNativeBuffer(path)) {
+            return fstatat0(dfd, buffer.address(), flag, attrs);
+        }
+    }
 
     /**
      * chown(const char* path, uid_t owner, gid_t group)
@@ -544,9 +555,10 @@ class UnixNativeDispatcher {
     /**
      * Capabilities
      */
-    private static final int SUPPORTS_OPENAT        = 1 << 1;  // syscalls
-    private static final int SUPPORTS_XATTR         = 1 << 3;
-    private static final int SUPPORTS_BIRTHTIME     = 1 << 16; // other features
+    private static final int SUPPORTS_OPENAT            = 1 << 1;  // syscalls
+    private static final int SUPPORTS_FCHMODAT_NOFOLLOW = 1 << 2;
+    private static final int SUPPORTS_XATTR             = 1 << 3;
+    private static final int SUPPORTS_BIRTHTIME         = 1 << 16; // other features
     private static final int capabilities;
 
     /**
@@ -574,9 +586,8 @@ class UnixNativeDispatcher {
      * Supports fchmodat with AT_SYMLINK_NOFOLLOW flag
      */
     static boolean fchmodatNoFollowSupported() {
-        return fchmodatNoFollowSupported0();
+        return (capabilities & SUPPORTS_FCHMODAT_NOFOLLOW) != 0;
     }
-    private static native boolean fchmodatNoFollowSupported0();
 
     private static native int init();
     static {

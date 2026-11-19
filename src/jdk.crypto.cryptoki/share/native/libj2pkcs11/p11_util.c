@@ -1,8 +1,7 @@
 /*
  * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
- */
-
-/* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
+ * Copyright (c) 2026, IBM Corporation. All rights reserved.
+ * Copyright (c) 2002 Graz University of Technology. All rights reserved.
  *
  * Redistribution and use in  source and binary forms, with or without
  * modification, are permitted  provided that the following conditions are met:
@@ -318,6 +317,7 @@ void freeCKMechanismPtr(CK_MECHANISM_PTR mechPtr) {
      CK_SSL3_MASTER_KEY_DERIVE_PARAMS *sslMkdTmp;
      CK_SSL3_KEY_MAT_PARAMS* sslKmTmp;
      CK_TLS12_MASTER_KEY_DERIVE_PARAMS *tlsMkdTmp;
+     CK_TLS12_EXTENDED_MASTER_KEY_DERIVE_PARAMS *tlsExtMkdTmp;
      CK_TLS12_KEY_MAT_PARAMS* tlsKmTmp;
 
      if (mechPtr != NULL) {
@@ -394,6 +394,13 @@ void freeCKMechanismPtr(CK_MECHANISM_PTR mechPtr) {
                      free(tlsMkdTmp->RandomInfo.pClientRandom);
                      free(tlsMkdTmp->RandomInfo.pServerRandom);
                      free(tlsMkdTmp->pVersion);
+                     break;
+                 case CKM_TLS12_EXTENDED_MASTER_KEY_DERIVE:
+                 case CKM_TLS12_EXTENDED_MASTER_KEY_DERIVE_DH:
+                     tlsExtMkdTmp = tmp;
+                     TRACE0("[ CK_TLS12_EXTENDED_MASTER_KEY_DERIVE_PARAMS ]\n");
+                     free(tlsExtMkdTmp->pSessionHash);
+                     free(tlsExtMkdTmp->pVersion);
                      break;
                  case CKM_TLS12_KEY_AND_MAC_DERIVE:
                      tlsKmTmp = tmp;
@@ -481,6 +488,10 @@ CK_MECHANISM_PTR updateGCMParams(JNIEnv *env, CK_MECHANISM_PTR mechPtr) {
             // CK_GCM_PARAMS => CK_GCM_PARAMS_NO_IVBITS
             pParams = (CK_GCM_PARAMS*) mechPtr->pParameter;
             pParamsNoIvBits = calloc(1, sizeof(CK_GCM_PARAMS_NO_IVBITS));
+            if (pParamsNoIvBits == NULL) {
+                p11ThrowOutOfMemoryError(env, 0);
+                return NULL;
+            }
             pParamsNoIvBits->pIv = pParams->pIv;
             pParamsNoIvBits->ulIvLen = pParams->ulIvLen;
             pParamsNoIvBits->pAAD = pParams->pAAD;
@@ -495,6 +506,10 @@ CK_MECHANISM_PTR updateGCMParams(JNIEnv *env, CK_MECHANISM_PTR mechPtr) {
             // CK_GCM_PARAMS_NO_IVBITS => CK_GCM_PARAMS
             pParamsNoIvBits = (CK_GCM_PARAMS_NO_IVBITS*) mechPtr->pParameter;
             pParams = calloc(1, sizeof(CK_GCM_PARAMS));
+            if (pParams == NULL) {
+                p11ThrowOutOfMemoryError(env, 0);
+                return NULL;
+            }
             pParams->pIv = pParamsNoIvBits->pIv;
             pParams->ulIvLen = pParamsNoIvBits->ulIvLen;
             pParams->ulIvBits = pParamsNoIvBits->ulIvLen << 3;
@@ -1201,7 +1216,7 @@ CK_VOID_PTR jObjectToPrimitiveCKObjectPtr(JNIEnv *env, jobject jObject, CK_ULONG
     jclass jBooleanArrayClass, jIntArrayClass, jLongArrayClass;
     jclass jStringClass;
     jclass jObjectClass, jClassClass;
-    CK_VOID_PTR ckpObject;
+    CK_VOID_PTR ckpObject = NULL;
     jmethodID jMethod;
     jobject jClassObject;
     jstring jClassNameString;

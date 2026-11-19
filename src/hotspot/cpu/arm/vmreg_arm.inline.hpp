@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,11 @@
 #ifndef CPU_ARM_VMREG_ARM_INLINE_HPP
 #define CPU_ARM_VMREG_ARM_INLINE_HPP
 
-inline VMReg RegisterImpl::as_VMReg() {
-  return VMRegImpl::as_VMReg(encoding() << ConcreteRegisterImpl::log_vmregs_per_gpr);
+inline VMReg Register::RegisterImpl::as_VMReg() const {
+  return VMRegImpl::as_VMReg(encoding() * Register::max_slots_per_register);
 }
 
-inline VMReg FloatRegisterImpl::as_VMReg() {
-  return VMRegImpl::as_VMReg((encoding() << ConcreteRegisterImpl::log_vmregs_per_fpr) + ConcreteRegisterImpl::max_gpr);
+inline VMReg FloatRegister::FloatRegisterImpl::as_VMReg() const {
+  return VMRegImpl::as_VMReg((encoding() * FloatRegister::max_slots_per_register) + ConcreteRegisterImpl::max_gpr);
 }
 #endif // CPU_ARM_VMREG_ARM_INLINE_HPP

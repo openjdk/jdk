@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -183,7 +183,7 @@ public class BufferingSubscriber<T> implements TrustedSubscriber<T>
         }
 
         private final SequentialScheduler pushDemandedScheduler =
-                new SequentialScheduler(new PushDemandedTask());
+                SequentialScheduler.lockingScheduler(new PushDemandedTask());
 
         void pushDemanded() {
             if (cancelled.get())
@@ -191,7 +191,7 @@ public class BufferingSubscriber<T> implements TrustedSubscriber<T>
             pushDemandedScheduler.runOrSchedule();
         }
 
-        class PushDemandedTask extends SequentialScheduler.CompleteRestartableTask {
+        class PushDemandedTask implements Runnable {
             @Override
             public void run() {
                 try {

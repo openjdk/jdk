@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -174,6 +174,7 @@ public final class ErrorMsg {
     public static final String XPATH_GROUP_LIMIT = "XPATH_GROUP_LIMIT";
     public static final String XPATH_OPERATOR_LIMIT = "XPATH_OPERATOR_LIMIT";
     public static final String XPATH_TOTAL_OPERATOR_LIMIT = "XPATH_TOTAL_OPERATOR_LIMIT";
+    public static final String DESERIALIZE_TRANSLET_ERR = "DESERIALIZE_TEMPLATES_ERR";
 
     // All error messages are localized and are stored in resource bundles.
     // This array and the following 4 strings are read from that bundle.

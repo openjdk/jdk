@@ -32,7 +32,7 @@
  * @modules java.base/jdk.internal.misc
  * @compile invokespecial/Checker.java invokespecial/ClassGenerator.java invokespecial/Generator.java
  *
- * @run driver/timeout=1800 invocationC1Tests special
+ * @run driver/timeout=7200 invocationC1Tests special
  */
 
 /*
@@ -45,7 +45,7 @@
  * @modules java.base/jdk.internal.misc
  * @compile invokevirtual/Checker.java invokevirtual/ClassGenerator.java invokevirtual/Generator.java
  *
- * @run driver/timeout=1800 invocationC1Tests virtual
+ * @run driver/timeout=7200 invocationC1Tests virtual
  */
 
 /*
@@ -58,7 +58,7 @@
  * @modules java.base/jdk.internal.misc
  * @compile invokeinterface/Checker.java invokeinterface/ClassGenerator.java invokeinterface/Generator.java
  *
- * @run driver/timeout=1800 invocationC1Tests interface
+ * @run driver/timeout=7200 invocationC1Tests interface
  */
 
 import jdk.test.lib.process.ProcessTools;

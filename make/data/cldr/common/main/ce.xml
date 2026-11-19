@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2025 Unicode, Inc.
+<!-- Copyright © 1991-2026 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -1719,9 +1719,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Либревиль</exemplarCity>
 			</zone>
 			<zone type="Europe/London">
-				<long>
-					<daylight>Британин, аьхкенан хан</daylight>
-				</long>
 				<exemplarCity>Лондон</exemplarCity>
 			</zone>
 			<zone type="America/Grenada">
@@ -1812,9 +1809,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Джайпур</exemplarCity>
 			</zone>
 			<zone type="Europe/Dublin">
-				<long>
-					<daylight>Ирланди, аьхкенан хан</daylight>
-				</long>
 				<exemplarCity>Дублин</exemplarCity>
 			</zone>
 			<zone type="Asia/Jerusalem">
@@ -1861,9 +1855,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="Asia/Phnom_Penh">
 				<exemplarCity>Пномпень</exemplarCity>
-			</zone>
-			<zone type="Pacific/Enderbury">
-				<exemplarCity>Эндерберин, гӀ-е</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
 				<exemplarCity>Киритимати</exemplarCity>
@@ -2526,9 +2517,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Africa_Western">
 				<long>
-					<generic>Малхбузен Африка</generic>
-					<standard>Малхбузен Африка, стандартан хан</standard>
-					<daylight>Малхбузен Африка, аьхкенан хан</daylight>
+					<standard>Малхбузен Африка</standard>
 				</long>
 			</metazone>
 			<metazone type="Alaska">
@@ -2679,6 +2668,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Бразили</generic>
 					<standard>Бразили, стандартан хан</standard>
 					<daylight>Бразили, аьхкенан хан</daylight>
+				</long>
+			</metazone>
+			<metazone type="British">
+				<long>
+					<daylight>Британин, аьхкенан хан</daylight>
 				</long>
 			</metazone>
 			<metazone type="Brunei">
@@ -2878,6 +2872,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>Гайана</standard>
 				</long>
 			</metazone>
+			<metazone type="Hawaii">
+				<long>
+					<standard>Гавайн-алеутийн стандартан хан</standard>
+				</long>
+			</metazone>
 			<metazone type="Hawaii_Aleutian">
 				<long>
 					<generic>Гавайн-алеутийн хан</generic>
@@ -2934,6 +2933,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>ГӀажарийчоь</generic>
 					<standard>ГӀажарийчоь, стандартан хан</standard>
 					<daylight>ГӀажарийчоь, аьхкенан хан</daylight>
+				</long>
+			</metazone>
+			<metazone type="Irish">
+				<long>
+					<daylight>Ирланди, аьхкенан хан</daylight>
 				</long>
 			</metazone>
 			<metazone type="Irkutsk">
@@ -3216,9 +3220,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Samoa">
 				<long>
-					<generic>Самоа</generic>
 					<standard>Самоа, стандартан хан</standard>
-					<daylight>Самоа, аьхкенан хан</daylight>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">
@@ -3441,6 +3443,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>#,##0.00 ¤</pattern>
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import jtreg.SkippedException;
  * @bug 8191658
  * @summary Test clhsdb attach, detach, reattach commands
  * @requires vm.hasSA
+ * @requires vm.gc != "Z"
  * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @library /test/lib
  * @run main/othervm ClhsdbAttach
@@ -57,7 +58,7 @@ public class ClhsdbAttach {
                     "detach",
                     "universe",
                     "reattach",
-                    "longConstant markWord::locked_value");
+                    "longConstant markWord::fast_locked_value");
 
             Map<String, List<String>> expStrMap = new HashMap<>();
             expStrMap.put("where", List.of(
@@ -66,8 +67,8 @@ public class ClhsdbAttach {
                     "MaxJavaStackTraceDepth = "));
             expStrMap.put("universe", List.of(
                     "Command not valid until attached to a VM"));
-            expStrMap.put("longConstant markWord::locked_value", List.of(
-                    "longConstant markWord::locked_value"));
+            expStrMap.put("longConstant markWord::fast_locked_value", List.of(
+                    "longConstant markWord::fast_locked_value"));
 
             test.run(-1, cmds, expStrMap, null);
         } catch (SkippedException se) {

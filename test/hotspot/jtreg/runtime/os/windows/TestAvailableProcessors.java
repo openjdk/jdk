@@ -34,7 +34,10 @@
  * @run testng/othervm/native TestAvailableProcessors
  */
 
+
 import java.io.IOException;
+import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.HashSet;
 import java.util.Set;
@@ -58,7 +61,23 @@ public class TestAvailableProcessors {
     private static String getWindowsVersion() throws IOException {
         String systeminfoPath = "systeminfo.exe";
 
-        var processBuilder = new ProcessBuilder(systeminfoPath);
+        List<String> command = new ArrayList<>();
+
+        String systemRoot = System.getenv("SystemRoot");
+        if (systemRoot == null) {
+            systemRoot = System.getenv("WINDIR");
+            if (systemRoot == null) {
+                throw new RuntimeException("SystemRoot or WINDIR environment variable is not set.");
+            }
+        }
+        String system32 = Path.of(systemRoot, "System32").toString();
+
+        // It switches the active code page to cp437, the default code page for US english.
+        command.addAll(List.of("cmd.exe", "/c", "set", "PATH=%PATH%;" + system32 + ";" + system32 + "\\wbem", "&&"));
+        command.addAll(List.of("chcp", "437", ">nul", "2>&1", "&&"));
+        command.add(systeminfoPath);
+
+        var processBuilder = new ProcessBuilder(command);
         OutputAnalyzer outputAnalyzer = new OutputAnalyzer(processBuilder.start());
         outputAnalyzer.shouldHaveExitValue(0);
         outputAnalyzer.shouldContain(osVersionMessage);

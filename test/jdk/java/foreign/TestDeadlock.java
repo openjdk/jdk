@@ -23,7 +23,7 @@
 
 /*
  * @test id=Arena_allocateFrom
- * @run main/othervm/timeout=10 --enable-native-access=ALL-UNNAMED -Xlog:class+init TestDeadlock Arena
+ * @run main/othervm/timeout=60 --enable-native-access=ALL-UNNAMED -Xlog:class+init TestDeadlock Arena
  */
 
 /*

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -406,13 +406,6 @@ public final class Tools extends JPanel implements ActionListener,
             if (pDialogState) {
                 printJob.print(aset);
             }
-        } catch (@SuppressWarnings("removal") java.security.AccessControlException ace) {
-            String errmsg = "Applet access control exception; to allow "
-                    + "access to printer, set\n"
-                    + "permission for \"queuePrintJob\" in "
-                    + "RuntimePermission.";
-            JOptionPane.showMessageDialog(this, errmsg, "Printer Access Error",
-                    JOptionPane.ERROR_MESSAGE);
         } catch (Exception ex) {
             Logger.getLogger(Tools.class.getName()).log(Level.SEVERE,
                     null, ex);

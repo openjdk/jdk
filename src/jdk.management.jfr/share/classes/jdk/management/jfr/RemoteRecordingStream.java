@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,8 @@ package jdk.management.jfr;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -40,7 +37,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.Future;
 import java.util.function.Consumer;
 import javax.management.JMX;
 import javax.management.MBeanServerConnection;
@@ -50,15 +46,12 @@ import jdk.jfr.Configuration;
 import jdk.jfr.EventSettings;
 import jdk.jfr.EventType;
 import jdk.jfr.Recording;
-import jdk.jfr.RecordingState;
 import jdk.jfr.consumer.EventStream;
 import jdk.jfr.consumer.MetadataEvent;
 import jdk.jfr.consumer.RecordedEvent;
-import jdk.jfr.consumer.RecordingStream;
 import jdk.jfr.internal.management.EventSettingsModifier;
 import jdk.jfr.internal.management.ManagementSupport;
 import jdk.jfr.internal.management.StreamBarrier;
-import jdk.management.jfr.DiskRepository.DiskChunk;
 import jdk.jfr.internal.management.EventByteStream;
 
 /**
@@ -98,10 +91,12 @@ public final class RemoteRecordingStream implements EventStream {
 
         private final FlightRecorderMXBean mbean;
         private final long recordingId;
+        private final String identifier;
 
-        RemoteSettings(FlightRecorderMXBean mbean, long recordingId) {
+        RemoteSettings(FlightRecorderMXBean mbean, long recordingId, String identifier) {
             this.mbean = mbean;
             this.recordingId = recordingId;
+            this.identifier = identifier;
         }
 
         @Override
@@ -111,7 +106,7 @@ public final class RemoteRecordingStream implements EventStream {
             // FlightRecorderMXBean implementation always returns
             // new instance of Map so no need to create new here.
             Map<String, String> newSettings = getEventSettings();
-            newSettings.put(name, value);
+            newSettings.put(identifier + "#" + name, value);
             mbean.setRecordingSettings(recordingId, newSettings);
         }
 
@@ -340,9 +335,9 @@ public final class RemoteRecordingStream implements EventStream {
      */
     public EventSettings disable(String name) {
         Objects.requireNonNull(name, "name");
-        EventSettings s = ManagementSupport.newEventSettings(new RemoteSettings(mbean, recordingId));
+        EventSettings s = ManagementSupport.newEventSettings(new RemoteSettings(mbean, recordingId, name));
         try {
-            return s.with(name + "#" + ENABLED, "false");
+            return s.with(ENABLED, "false");
         } catch (Exception e) {
             ManagementSupport.logDebug(e.getMessage());
             close();
@@ -364,9 +359,9 @@ public final class RemoteRecordingStream implements EventStream {
      */
     public EventSettings enable(String name) {
         Objects.requireNonNull(name, "name");
-        EventSettings s = ManagementSupport.newEventSettings(new RemoteSettings(mbean, recordingId));
+        EventSettings s = ManagementSupport.newEventSettings(new RemoteSettings(mbean, recordingId, name));
         try {
-            return s.with(name + "#" + ENABLED, "true");
+            return s.with(ENABLED, "true");
         } catch (Exception e) {
             ManagementSupport.logDebug(e.getMessage());
             close();

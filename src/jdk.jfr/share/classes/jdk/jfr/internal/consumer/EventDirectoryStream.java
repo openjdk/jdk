@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,7 +78,9 @@ public final class EventDirectoryStream extends AbstractEventStream {
 
     @Override
     public void close() {
-        closeParser();
+        if (!closeParser()) {
+            return;
+        }
         dispatcher().runCloseActions();
         repositoryFiles.close();
         if (currentParser != null) {
@@ -257,6 +259,11 @@ public final class EventDirectoryStream extends AbstractEventStream {
         }
         for (int i = 0; i < index; i++) {
             c.dispatch(sortedCache[i]);
+            sortedCache[i] = null;
+        }
+        // Shrink array
+        if (index > 100_000 && 4 * index < sortedCache.length) {
+            sortedCache = new RecordedEvent[2 * index];
         }
         onFlush();
         return;

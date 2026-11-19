@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_RUNTIME_CONTINUATIONHELPER_HPP
-#define SHARE_VM_RUNTIME_CONTINUATIONHELPER_HPP
+#ifndef SHARE_RUNTIME_CONTINUATIONHELPER_HPP
+#define SHARE_RUNTIME_CONTINUATIONHELPER_HPP
 
 #include "code/scopeDesc.hpp"
 #include "compiler/oopMap.hpp"
@@ -65,6 +65,7 @@ public:
 class ContinuationHelper::Frame : public AllStatic {
 public:
   static const bool interpreted = false;
+  static const bool compiled = false;
   static const bool stub = false;
   static const bool native = false;
 
@@ -127,6 +128,8 @@ public:
 
 class ContinuationHelper::CompiledFrame : public ContinuationHelper::NonInterpretedFrame {
 public:
+  static const bool compiled = true;
+
   static bool is_instance(const frame& f);
 
 #ifdef ASSERT
@@ -156,4 +159,4 @@ public:
   static int stack_argsize(const frame& f) { return 0; }
 };
 
-#endif // SHARE_VM_RUNTIME_CONTINUATIONHELPER_HPP
+#endif // SHARE_RUNTIME_CONTINUATIONHELPER_HPP

@@ -25,9 +25,9 @@
 #define SHARE_GC_Z_ZHEAP_HPP
 
 #include "gc/z/zAllocationFlags.hpp"
-#include "gc/z/zAllocator.hpp"
 #include "gc/z/zArray.hpp"
 #include "gc/z/zGeneration.hpp"
+#include "gc/z/zObjectAllocator.hpp"
 #include "gc/z/zPageAge.hpp"
 #include "gc/z/zPageAllocator.hpp"
 #include "gc/z/zPageTable.hpp"
@@ -43,22 +43,21 @@ class ZHeap {
   friend class VMStructs;
 
 private:
-  static ZHeap*           _heap;
+  static ZHeap*    _heap;
 
-  ZPageAllocator          _page_allocator;
-  ZPageTable              _page_table;
+  ZPageAllocator   _page_allocator;
+  ZPageTable       _page_table;
 
-  ZAllocatorEden          _allocator_eden;
-  ZAllocatorForRelocation _allocator_relocation[ZAllocator::_relocation_allocators];
+  ZObjectAllocator _object_allocator;
 
-  ZServiceability         _serviceability;
+  ZServiceability  _serviceability;
 
-  ZGenerationOld          _old;
-  ZGenerationYoung        _young;
+  ZGenerationOld   _old;
+  ZGenerationYoung _young;
 
-  ZTLABUsage              _tlab_usage;
+  ZTLABUsage       _tlab_usage;
 
-  bool                    _initialized;
+  bool             _initialized;
 
   // Page allocation accounting
   void account_alloc_page(ZPage* page);
@@ -71,18 +70,22 @@ public:
 
   bool is_initialized() const;
 
-  void out_of_memory();
+  void out_of_memory() const;
 
   // Heap metrics
-  size_t min_capacity() const;
-  size_t max_capacity() const;
-  size_t soft_max_capacity() const;
+  size_t static_min_capacity() const;
+  size_t static_max_capacity() const;
+  size_t dynamic_max_capacity() const;
+  size_t current_max_capacity() const;
+  size_t heuristic_max_capacity() const;
   size_t capacity() const;
   size_t used() const;
   size_t used_generation(ZGenerationId id) const;
   size_t used_young() const;
   size_t used_old() const;
   size_t unused() const;
+  void adapt_heuristic_max_capacity(ZGenerationId generation);
+  void adjust_capacity(size_t used_soon);
 
   size_t tlab_capacity() const;
   size_t tlab_used() const;
@@ -109,12 +112,18 @@ public:
   void mark_flush(Thread* thread);
 
   // Page allocation
-  ZPage* alloc_page(ZPageType type, size_t size, ZAllocationFlags flags, ZPageAge age);
+  ZPage* alloc_page(ZPageType type, size_t size, ZAllocationFlags flags, ZPageAge age, uint32_t preferred_partition);
   void undo_alloc_page(ZPage* page);
   void free_page(ZPage* page);
   size_t free_empty_pages(ZGenerationId id, const ZArray<ZPage*>* pages);
+  void retire_allocating_pages(ZPageAgeRange range);
 
   // Object allocation
+  zaddress alloc_object(size_t size);
+  zaddress alloc_tlab(size_t size);
+  zaddress alloc_object_for_relocation(size_t size, ZPageAge age);
+  void undo_alloc_object_for_relocation(zaddress addr, size_t size);
+
   bool is_alloc_stalling() const;
   bool is_alloc_stalling_for_old() const;
   void handle_alloc_stalling_for_young();

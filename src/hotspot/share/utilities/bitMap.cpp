@@ -24,7 +24,7 @@
 
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/debug.hpp"
@@ -33,7 +33,7 @@
 using bm_word_t = BitMap::bm_word_t;
 using idx_t = BitMap::idx_t;
 
-STATIC_ASSERT(sizeof(bm_word_t) == BytesPerWord); // "Implementation assumption."
+static_assert(sizeof(bm_word_t) == BytesPerWord); // "Implementation assumption."
 
 // For the BitMaps with allocators that don't support reallocate
 template <class BitMapWithAllocator>
@@ -195,6 +195,13 @@ bm_word_t* CHeapBitMap::reallocate(bm_word_t* map, size_t old_size_in_words, siz
   return MallocArrayAllocator<bm_word_t>::reallocate(map, new_size_in_words, _mem_tag);
 }
 
+void CHeapBitMap::move(CHeapBitMap &other) {
+  free(map(), size_in_words());
+  update(other.map(), other.size());
+  other.update(nullptr, 0);
+}
+
+
 #ifdef ASSERT
 void BitMap::verify_index(idx_t bit) const {
   assert(bit < _size,
@@ -243,11 +250,11 @@ void BitMap::par_put_range_within_word(idx_t beg, idx_t end, bool value) {
   // required by inverted_bit_mask_for_range.  Also avoids an unnecessary write.
   if (beg != end) {
     volatile bm_word_t* pw = word_addr(beg);
-    bm_word_t w = Atomic::load(pw);
+    bm_word_t w = AtomicAccess::load(pw);
     bm_word_t mr = inverted_bit_mask_for_range(beg, end);
     bm_word_t nw = value ? (w | ~mr) : (w & mr);
     while (true) {
-      bm_word_t res = Atomic::cmpxchg(pw, w, nw);
+      bm_word_t res = AtomicAccess::cmpxchg(pw, w, nw);
       if (res == w) break;
       w  = res;
       nw = value ? (w | ~mr) : (w & mr);
@@ -299,7 +306,7 @@ bool BitMap::is_small_range_of_words(idx_t beg_full_word, idx_t end_full_word) {
   // because beg_full_word > end_full_word can occur when beg and end are in
   // the same word.
   // The threshold should be at least one word.
-  STATIC_ASSERT(small_range_words >= 1);
+  static_assert(small_range_words >= 1);
   return beg_full_word + small_range_words >= end_full_word;
 }
 

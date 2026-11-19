@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ inline Klass* CompressedKlassPointers::decode_not_null_without_asserts(narrowKla
   return (Klass*)((uintptr_t)narrow_base_base +((uintptr_t)v << shift));
 }
 
-inline narrowKlass CompressedKlassPointers::encode_not_null_without_asserts(Klass* k, address narrow_base, int shift) {
+inline narrowKlass CompressedKlassPointers::encode_not_null_without_asserts(const Klass* k, address narrow_base, int shift) {
   return (narrowKlass)(pointer_delta(k, narrow_base, 1) >> shift);
 }
 
@@ -60,7 +60,7 @@ inline Klass* CompressedKlassPointers::decode(narrowKlass v) {
   return is_null(v) ? nullptr : decode_not_null(v);
 }
 
-inline narrowKlass CompressedKlassPointers::encode_not_null(Klass* v) {
+inline narrowKlass CompressedKlassPointers::encode_not_null(const Klass* v) {
   assert(!is_null(v), "klass value can never be zero");
   DEBUG_ONLY(check_encodable(v);)
   const narrowKlass nk = encode_not_null_without_asserts(v, base(), shift());
@@ -69,13 +69,12 @@ inline narrowKlass CompressedKlassPointers::encode_not_null(Klass* v) {
   return nk;
 }
 
-inline narrowKlass CompressedKlassPointers::encode(Klass* v) {
+inline narrowKlass CompressedKlassPointers::encode(const Klass* v) {
   return is_null(v) ? (narrowKlass)0 : encode_not_null(v);
 }
 
 #ifdef ASSERT
 inline void CompressedKlassPointers::check_encodable(const void* addr) {
-  assert(UseCompressedClassPointers, "Only call for +UseCCP");
   assert(addr != nullptr, "Null Klass?");
   assert(is_encodable(addr),
          "Address " PTR_FORMAT " is not encodable (Klass range: " RANGEFMT ", klass alignment: %d)",
@@ -84,7 +83,6 @@ inline void CompressedKlassPointers::check_encodable(const void* addr) {
 
 inline void CompressedKlassPointers::check_valid_narrow_klass_id(narrowKlass nk) {
   check_init(_base);
-  assert(UseCompressedClassPointers, "Only call for +UseCCP");
   assert(nk > 0, "narrow Klass ID is 0");
   const uint64_t nk_mask = ~right_n_bits(narrow_klass_pointer_bits());
   assert(((uint64_t)nk & nk_mask) == 0, "narrow klass id bit spillover (%u)", nk);
@@ -93,9 +91,18 @@ inline void CompressedKlassPointers::check_valid_narrow_klass_id(narrowKlass nk)
 }
 #endif // ASSERT
 
+// Given a narrow Klass ID, returns true if it appears to be valid
+inline bool CompressedKlassPointers::is_valid_narrow_klass_id(narrowKlass nk) {
+  return nk >= _lowest_valid_narrow_klass_id && nk < _highest_valid_narrow_klass_id;
+}
+
 inline address CompressedKlassPointers::encoding_range_end() {
+#ifdef _LP64
   const int max_bits = narrow_klass_pointer_bits() + _shift;
   return (address)((uintptr_t)_base + nth_bit(max_bits));
+#else
+  return (address)SIZE_MAX;
+#endif
 }
 
 #endif // SHARE_OOPS_COMPRESSEDKLASS_INLINE_HPP

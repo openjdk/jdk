@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,11 @@ public final class XDHPublicKeyImpl extends X509Key implements XECPublicKey {
 
         this.paramSpec = new NamedParameterSpec(params.getName());
         this.algid = new AlgorithmId(params.getOid());
-        this.u = u.mod(params.getP());
+
+        // RFC 7748 Section 5 requires the MSB of `u` to be zeroed for X25519
+        this.u = (params == XECParameters.X448) ?
+            u.mod(params.getP()) :
+            u.clearBit(255).mod(params.getP());
 
         byte[] u_arr = this.u.toByteArray();
         reverse(u_arr);
@@ -72,6 +76,7 @@ public final class XDHPublicKeyImpl extends X509Key implements XECPublicKey {
         XECParameters params =
             XECParameters.get(InvalidKeyException::new, algid);
         this.paramSpec = new NamedParameterSpec(params.getName());
+
         // construct the BigInteger representation
         byte[] u_arr = getKey().toByteArray();
         reverse(u_arr);

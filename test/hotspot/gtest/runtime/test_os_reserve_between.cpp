@@ -27,8 +27,8 @@
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/hashTable.hpp"
 #include "utilities/macros.hpp"
-#include "utilities/resourceHash.hpp"
 
 // #define LOG_PLEASE
 #include "testutils.hpp"
@@ -206,7 +206,7 @@ static void test_attempt_reserve_memory_between_random_distribution(unsigned num
   // Allocate n times within that hole (with subsequent deletions) and remember unique addresses returned.
   constexpr unsigned num_tries_per_attach_point = 100;
   ResourceMark rm;
-  ResourceHashtable<char*, unsigned> ht;
+  HashTable<char*, unsigned> ht;
   const unsigned num_tries = expect_failure ? 3 : (num_possible_attach_points * num_tries_per_attach_point);
   unsigned num_uniq = 0; // Number of uniq addresses returned
 
@@ -335,6 +335,8 @@ TEST_VM(os, attempt_reserve_memory_randomization_cornercases) {
 
 // Test that, regardless where the hole is in the [min, max) range, if we probe nonrandomly, we will fill that hole
 // as long as the range size is smaller than the number of probe attempts
+// On AIX, the allocation granularity is too large and not well suited for 'small' holes, so we avoid the test
+#if !defined(_AIX)
 TEST_VM(os, attempt_reserve_memory_between_small_range_fill_hole) {
   const size_t ps = os::vm_page_size();
   const size_t ag = allocation_granularity();
@@ -348,3 +350,4 @@ TEST_VM(os, attempt_reserve_memory_between_small_range_fill_hole) {
     }
   }
 }
+#endif

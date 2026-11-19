@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2021, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -27,7 +27,7 @@
 #ifndef CPU_RISCV_ASSEMBLER_RISCV_INLINE_HPP
 #define CPU_RISCV_ASSEMBLER_RISCV_INLINE_HPP
 
-#include "asm/assembler.inline.hpp"
+#include "asm/assembler.hpp"
 #include "asm/codeBuffer.hpp"
 #include "code/codeCache.hpp"
 

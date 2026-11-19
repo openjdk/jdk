@@ -36,42 +36,43 @@ import com.sun.org.apache.bcel.internal.Const;
  */
 public final class ModuleOpens implements Cloneable, Node {
 
+    private static String getToModuleNameAtIndex(final ConstantPool constantPool, final int index) {
+        return constantPool.getConstantString(index, Const.CONSTANT_Module);
+    }
     private final int opensIndex; // points to CONSTANT_Package_info
     private final int opensFlags;
     private final int opensToCount;
+
     private final int[] opensToIndex; // points to CONSTANT_Module_info
 
     /**
-     * Construct object from file stream.
+     * Constructs object from file stream.
      *
-     * @param file Input stream
-     * @throws IOException if an I/O Exception occurs in readUnsignedShort
+     * @param dataInput Input stream.
+     * @throws IOException Thrown if an I/O Exception occurs in readUnsignedShort.
      */
-    ModuleOpens(final DataInput file) throws IOException {
-        opensIndex = file.readUnsignedShort();
-        opensFlags = file.readUnsignedShort();
-        opensToCount = file.readUnsignedShort();
-        opensToIndex = new int[opensToCount];
-        for (int i = 0; i < opensToCount; i++) {
-            opensToIndex[i] = file.readUnsignedShort();
-        }
+    ModuleOpens(final DataInput dataInput) throws IOException {
+        opensIndex = dataInput.readUnsignedShort();
+        opensFlags = dataInput.readUnsignedShort();
+        opensToIndex = ClassParser.readU2U2Table(dataInput);
+        opensToCount = opensToIndex.length;
     }
 
     /**
      * Called by objects that are traversing the nodes of the tree implicitly defined by the contents of a Java class.
      * I.e., the hierarchy of methods, fields, attributes, etc. spawns a tree of objects.
      *
-     * @param v Visitor object
+     * @param v Visitor object.
      */
     @Override
     public void accept(final Visitor v) {
         v.visitModuleOpens(this);
     }
 
-    // TODO add more getters and setters?
-
     /**
-     * @return deep copy of this object
+     * Creates a deep copy of this object.
+     *
+     * @return deep copy of this object.
      */
     public ModuleOpens copy() {
         try {
@@ -83,10 +84,10 @@ public final class ModuleOpens implements Cloneable, Node {
     }
 
     /**
-     * Dump table entry to file stream in binary format.
+     * Dumps table entry to file stream in binary format.
      *
-     * @param file Output file stream
-     * @throws IOException if an I/O Exception occurs in writeShort
+     * @param file Output file stream.
+     * @throws IOException Thrown if an I/O Exception occurs in writeShort.
      */
     public void dump(final DataOutputStream file) throws IOException {
         file.writeShort(opensIndex);
@@ -98,7 +99,43 @@ public final class ModuleOpens implements Cloneable, Node {
     }
 
     /**
-     * @return String representation
+     * Gets the flags for this ModuleOpens.
+     *
+     * @return The opensFlags.
+     * @since 6.10.0
+     */
+    public int getOpensFlags() {
+        return opensFlags;
+    }
+
+    /**
+     * Gets the opened package name.
+     *
+     * @param constantPool The constant pool from the ClassFile.
+     * @return The opened package name.
+     * @since 6.10.0
+     */
+    public String getPackageName(final ConstantPool constantPool) {
+        return constantPool.constantToString(opensIndex, Const.CONSTANT_Package);
+    }
+
+    /**
+     * Gets an array of module names for this ModuleOpens.
+     *
+     * @param constantPool Array of constants usually obtained from the ClassFile object.
+     * @return array of module names following 'opens to'.
+     * @since 6.10.0
+     */
+    public String[] getToModuleNames(final ConstantPool constantPool) {
+        final String[] toModuleNames = new String[opensToCount];
+        for (int i = 0; i < opensToCount; i++) {
+            toModuleNames[i] = getToModuleNameAtIndex(constantPool, opensToIndex[i]);
+        }
+        return toModuleNames;
+    }
+
+    /**
+     * @return String representation.
      */
     @Override
     public String toString() {
@@ -106,17 +143,20 @@ public final class ModuleOpens implements Cloneable, Node {
     }
 
     /**
-     * @return Resolved string representation
+     * Gets the resolved string representation.
+     *
+     * @param constantPool The constant pool.
+     * @return Resolved string representation.
      */
     public String toString(final ConstantPool constantPool) {
         final StringBuilder buf = new StringBuilder();
-        final String packageName = constantPool.constantToString(opensIndex, Const.CONSTANT_Package);
-        buf.append(Utility.compactClassName(packageName, false));
+        final String packageName = getPackageName(constantPool);
+        buf.append(packageName);
         buf.append(", ").append(String.format("%04x", opensFlags));
         buf.append(", to(").append(opensToCount).append("):\n");
         for (final int index : opensToIndex) {
-            final String moduleName = constantPool.getConstantString(index, Const.CONSTANT_Module);
-            buf.append("      ").append(Utility.compactClassName(moduleName, false)).append("\n");
+            final String moduleName = getToModuleNameAtIndex(constantPool, index);
+            buf.append("      ").append(moduleName).append("\n");
         }
         return buf.substring(0, buf.length() - 1); // remove the last newline
     }

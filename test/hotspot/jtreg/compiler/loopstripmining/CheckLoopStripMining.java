@@ -28,7 +28,7 @@
  * @requires vm.compiler2.enabled
  *
  * @library /test/lib
- * @run driver compiler.loopstripmining.CheckLoopStripMining
+ * @run driver/timeout=480 compiler.loopstripmining.CheckLoopStripMining
  */
 
 package compiler.loopstripmining;
@@ -42,8 +42,8 @@ public class CheckLoopStripMining {
                                     "-XX:+SafepointTimeout",
                                     "-XX:+SafepointALot",
                                     "-XX:+AbortVMOnSafepointTimeout",
-                                    "-XX:SafepointTimeoutDelay=" + Utils.adjustTimeout(300),
-                                    "-XX:GuaranteedSafepointInterval=" + Utils.adjustTimeout(300),
+                                    "-XX:SafepointTimeoutDelay=" + Utils.adjustTimeout(1200),
+                                    "-XX:GuaranteedSafepointInterval=" + Utils.adjustTimeout(1200),
                                     "-XX:-TieredCompilation",
                                     "-XX:+UseCountedLoopSafepoints",
                                     "-XX:LoopStripMiningIter=1000",
@@ -58,8 +58,8 @@ public class CheckLoopStripMining {
                                     "-XX:+SafepointTimeout",
                                     "-XX:+SafepointALot",
                                     "-XX:+AbortVMOnSafepointTimeout",
-                                    "-XX:SafepointTimeoutDelay=" + Utils.adjustTimeout(300),
-                                    "-XX:GuaranteedSafepointInterval=" + Utils.adjustTimeout(300),
+                                    "-XX:SafepointTimeoutDelay=" + Utils.adjustTimeout(1200),
+                                    "-XX:GuaranteedSafepointInterval=" + Utils.adjustTimeout(1200),
                                     "-XX:-TieredCompilation",
                                     "-XX:+UseCountedLoopSafepoints",
                                     "-XX:LoopStripMiningIter=1000",

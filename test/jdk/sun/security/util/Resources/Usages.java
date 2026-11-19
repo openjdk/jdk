@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,14 +23,17 @@
 
 /*
  * @test
- * @bug 8215937 8345940
+ * @bug 8215937 8345940 8354469
  * @modules java.base/sun.security.util
  *          java.base/sun.security.util.resources
  *          java.base/sun.security.tools.keytool.resources
  *          jdk.jartool/sun.security.tools.jarsigner.resources
  * @summary Check usages of security-related Resources files
+ * @library /test/lib/
  * @run main/othervm Usages
  */
+
+import jtreg.SkippedException;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -139,6 +142,8 @@ public class Usages {
                             List.of(MGR_GETSTRING)),
                     new Pair("java.base/share/classes/sun/security/provider/PolicyParser.java",
                             List.of(LOC_GETNONLOC, NEW_LOC)),
+                    new Pair("java.base/share/classes/sun/security/util/Password.java",
+                            List.of(MGR_GETSTRING)),
                     new Pair("java.base/share/classes/javax/security/auth/",
                             List.of(MGR_GETSTRING)))
     );
@@ -147,7 +152,7 @@ public class Usages {
         if (Files.exists(SRC)) {
             MAP.forEach(Usages::check);
         } else {
-            System.out.println("No src directory. Test skipped.");
+            throw new SkippedException("No src directory");
         }
     }
 

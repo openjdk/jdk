@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,36 +23,71 @@
 
 /**
  * @test
- * @bug 4394937 8051382
+ * @bug 4394937 8051382 8373125
  * @summary tests the toString method of reflect.Modifier
  */
 
 import java.lang.reflect.Modifier;
+import static java.lang.reflect.Modifier.*;
 
 public class toStringTest {
 
     static void testString(int test, String expected) {
-        if(!Modifier.toString(test).equals(expected))
-            throw new RuntimeException(test +
-                                          " yields incorrect toString result");
+        String result = Modifier.toString(test);
+        if(!expected.equals(result)) {
+            System.err.println("For input 0x" + Integer.toHexString(test));
+            System.err.println("expected:\t" + expected + "\ngot\t\t" + result);
+
+            throw new RuntimeException();
+        }
     }
 
-    public static void main(String [] argv) {
-        int allMods = Modifier.PUBLIC | Modifier.PROTECTED | Modifier.PRIVATE |
-            Modifier.ABSTRACT | Modifier.STATIC | Modifier.FINAL |
-            Modifier.TRANSIENT | Modifier.VOLATILE | Modifier.SYNCHRONIZED |
-            Modifier.NATIVE | Modifier.STRICT | Modifier.INTERFACE;
+    public static void main(String... argv) {
+        int allMods = PUBLIC    | PROTECTED | PRIVATE |
+                      ABSTRACT  | STATIC    | FINAL |
+                      TRANSIENT | VOLATILE  | SYNCHRONIZED |
+                      NATIVE    | STRICT    | INTERFACE;
 
         String allModsString = "public protected private abstract static " +
             "final transient volatile synchronized native strictfp interface";
 
-        /* zero should have an empty string */
+        final int ALL_ONES = ~0;
+
+        // zero should have an empty string
         testString(0, "");
 
-        /* test to make sure all modifiers print out in the proper order */
+        // test to make sure all modifiers print out in the proper order
         testString(allMods, allModsString);
 
-        /* verify no extraneous modifiers are printed */
-        testString(~0, allModsString);
+        // verify no extraneous modifiers are printed
+        testString(ALL_ONES, allModsString);
+
+        ModifierKindCase[] kindModifiers = {
+            new ModifierKindCase(classModifiers(),
+                                 "public protected private abstract " +
+                                 "static final strictfp"),
+
+            new ModifierKindCase(constructorModifiers(),"public protected private"),
+
+            new ModifierKindCase(fieldModifiers(),
+                                 "public protected private " +
+                                 "static final transient volatile"),
+
+            new ModifierKindCase(interfaceModifiers(),
+                                 "public protected private " +
+                                 "abstract static strictfp"),
+
+            new ModifierKindCase(methodModifiers(),
+                                 "public protected private abstract " +
+                                 "static final synchronized native strictfp"),
+
+            new ModifierKindCase(parameterModifiers(), "final"),
+        };
+
+        for (var modKindCase : kindModifiers) {
+            testString(ALL_ONES & modKindCase.mask(), modKindCase.expected());
+        }
     }
+
+    private record ModifierKindCase(int mask, String expected){}
 }

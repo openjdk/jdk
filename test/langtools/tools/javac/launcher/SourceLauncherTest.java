@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 8192920 8204588 8246774 8248843 8268869 8235876 8328339 8335896 8344706
+ *      8362237 8376534 8379083
  * @summary Test source launcher
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -76,7 +77,7 @@ public class SourceLauncherTest extends TestRunner {
         System.err.println("version: " + thisVersion);
     }
 
-    private final ToolBox tb;
+    final ToolBox tb;
     private static final String thisVersion = System.getProperty("java.specification.version");
 
     /*
@@ -157,6 +158,10 @@ public class SourceLauncherTest extends TestRunner {
             "    }\n" +
             "}");
         Files.copy(base.resolve("HelloWorld.java"), base.resolve("HelloWorld"));
+        testSuccess(base.resolve("HelloWorld"), "Hello World! [1, 2, 3]\n");
+
+        // Re-run with a "stray" module descriptor being ignored
+        Files.writeString(base.resolve("module-info.java"), "module stray {}");
         testSuccess(base.resolve("HelloWorld"), "Hello World! [1, 2, 3]\n");
     }
 
@@ -669,6 +674,7 @@ public class SourceLauncherTest extends TestRunner {
         tb.writeJavaFiles(base, "public class Main { public static void main(String... args) {}}");
         String log = new JavaTask(tb)
                 .vmOptions("--source", "21")
+                .includeStandardOptions(false) // Do not inherit --enable-preview
                 .className(base.resolve("Main.java").toString())
                 .run(Task.Expect.SUCCESS)
                 .getOutput(Task.OutputKind.STDERR);
@@ -712,6 +718,29 @@ public class SourceLauncherTest extends TestRunner {
                 "at Thrower.throwWhenZero(Thrower.java:8)",
                 "at Thrower.throwWhenZero(Thrower.java:8)",
                 "at Thrower.main(Thrower.java:4)");
+    }
+
+    /*
+     * Tests in which main throws a traceless exception.
+     */
+    @Test
+    public void testTracelessTargetException(Path base) throws IOException {
+        tb.writeJavaFiles(base, """
+            class TestLauncherException extends RuntimeException {
+                TestLauncherException() {
+                    super("No trace", null, true, false); // No writable trace
+                }
+
+                public static void main(String... args) {
+                    throw new TestLauncherException();
+                }
+            }
+            """);
+        Path file = base.resolve("TestLauncherException.java");
+        SourceLauncherTest.Result r = run(file, List.of(), List.of("3"));
+        checkEmpty("stdout", r.stdOut());
+        checkEmpty("stderr", r.stdErr());
+        checkTrace("exception", r.exception(), "TestLauncherException: No trace");
     }
 
     @Test
@@ -773,6 +802,22 @@ public class SourceLauncherTest extends TestRunner {
                 out.write(newBytes);
             }
         }
+
+    @Test
+    public void testPrivateConstructor(Path base) throws IOException {
+        tb.writeJavaFiles(base,
+                """
+                class PrivateConstructor {
+                    private PrivateConstructor() {}
+                    void main() {}
+                }
+                """);
+        testError(base.resolve("PrivateConstructor.java"), "",
+                """
+                error: no non-private zero argument constructor found in class PrivateConstructor
+                remove private from existing constructor or define as:
+                   public PrivateConstructor()""");
+    }
 
     @Test
     public void testAbstractClassInstanceMain(Path base) throws IOException {
@@ -850,6 +895,57 @@ public class SourceLauncherTest extends TestRunner {
                     "correct\n");
     }
 
+    @Test
+    public void testInheritedMain(Path base) throws IOException {
+        tb.writeJavaFiles(base,
+            """
+            class Sub extends Super {}
+            """,
+            """
+            class Super {
+                void main() {
+                    System.out.println(getClass().getName());
+                }
+            }
+            """);
+        testSuccess(base.resolve("Sub.java"),
+                    "Sub\n");
+    }
+
+    @Test
+    public void testInheritedMainFromAbstract(Path base) throws IOException {
+        tb.writeJavaFiles(base,
+            """
+            class Sub extends Super {}
+            """,
+            """
+            abstract class Super {
+                void main() {
+                    System.out.println(getClass().getName());
+                }
+            }
+            """);
+        testSuccess(base.resolve("Sub.java"),
+                    "Sub\n");
+    }
+
+    @Test
+    public void testInheritedMainFromInterface(Path base) throws IOException {
+        tb.writeJavaFiles(base,
+            """
+            public class Sub implements Super {}
+            """,
+            """
+            public interface Super {
+                default void main() {
+                    System.out.println(getClass().getName());
+                }
+            }
+            """);
+        testSuccess(base.resolve("Sub.java"),
+                    "Sub\n");
+    }
+
     Result run(Path file, List<String> runtimeArgs, List<String> appArgs) {
         List<String> args = new ArrayList<>();
         args.add(file.toString());
@@ -880,14 +976,6 @@ public class SourceLauncherTest extends TestRunner {
         }
     }
 
-    void checkContains(String name, String found, String expect) {
-        expect = expect.replace("\n", tb.lineSeparator);
-        out.println(name + ": " + found);
-        if (!found.contains(expect)) {
-            error("Expected output not found: " + expect);
-        }
-    }
-
     void checkEqual(String name, List<String> found, List<String> expect) {
         out.println(name + ": " + found);
         tb.checkEqual(expect, found);
@@ -915,7 +1003,6 @@ public class SourceLauncherTest extends TestRunner {
     }
 
     void checkFault(String name, Throwable found, String expect) {
-        expect = expect.replace("\n", tb.lineSeparator);
         out.println(name + ": " + found);
         if (found == null) {
             error("No exception thrown; expected Fault");
@@ -923,8 +1010,14 @@ public class SourceLauncherTest extends TestRunner {
             if (!(found instanceof Fault)) {
                 error("Unexpected exception; expected Fault");
             }
-            if (!(found.getMessage().equals(expect))) {
-                error("Unexpected detail message; expected: " + expect);
+            String actual = found.getMessage();
+            List<String> actualLines = actual.lines().toList();
+            List<String> expectLines = expect.lines().toList();
+            if (!(actualLines.equals(expectLines))) {
+                error("Unexpected detail message; expected: \n"
+                      + expect.indent(2)
+                      + "\nactual:\n"
+                      + actual.indent(2));
             }
         }
     }

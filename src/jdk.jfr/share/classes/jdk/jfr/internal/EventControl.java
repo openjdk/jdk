@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,6 @@ import jdk.jfr.internal.util.Utils;
 public final class EventControl {
     record NamedControl(String name, Control control) {
     }
-    static final String FIELD_SETTING_PREFIX = "setting";
     private static final Type TYPE_ENABLED = TypeLibrary.createType(EnabledSetting.class);
     private static final Type TYPE_THRESHOLD = TypeLibrary.createType(ThresholdSetting.class);
     private static final Type TYPE_STACK_TRACE = TypeLibrary.createType(StackTraceSetting.class);
@@ -97,7 +96,7 @@ public final class EventControl {
         }
         if (eventType.hasThrottle()) {
             addControl(Throttle.NAME, defineThrottle(eventType));
-            eventType.setThrottler(new Throttler(eventType));
+            eventType.setThrottler(new Throttler());
         }
         if (eventType.hasLevel()) {
             addControl(Level.NAME, defineLevel(eventType));
@@ -285,18 +284,23 @@ public final class EventControl {
 
     private SettingControl instantiateSettingControl(Class<? extends SettingControl> settingControlClass) throws IllegalAccessException, InstantiationException {
         SecuritySupport.makeVisibleToJFR(settingControlClass);
-        final Constructor<?> cc;
         try {
-            cc = settingControlClass.getDeclaredConstructors()[0];
-        } catch (Exception e) {
-            throw (Error) new InternalError("Could not get constructor for " + settingControlClass.getName()).initCause(e);
-        }
-        cc.setAccessible(true);
-        try {
+            Constructor<?> cc = findDefaultConstructor(settingControlClass);
+            cc.setAccessible(true);
             return (SettingControl) cc.newInstance();
         } catch (IllegalArgumentException | InvocationTargetException e) {
             throw new InternalError("Could not instantiate setting for class " + settingControlClass.getName());
         }
+    }
+
+    private Constructor<?> findDefaultConstructor(Class<? extends SettingControl> settingControlClass) {
+        for (Constructor<?> c : settingControlClass.getDeclaredConstructors()) {
+            if (c.getParameterCount() == 0) {
+                return c;
+            }
+        }
+        // Programming error by user, fail fast
+        throw new InstantiationError("Could not find default constructor for " + settingControlClass.getName());
     }
 
     private static Control defineEnabled(PlatformEventType type) {

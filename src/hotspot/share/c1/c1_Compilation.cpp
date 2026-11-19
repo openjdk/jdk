@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@
 #include "compiler/compilationMemoryStatistic.hpp"
 #include "compiler/compileLog.hpp"
 #include "compiler/compiler_globals.hpp"
+#include "compiler/compilerDefinitions.hpp"
 #include "compiler/compilerDirectives.hpp"
 #include "compiler/compileTask.hpp"
 #include "memory/resourceArea.hpp"
@@ -310,14 +311,6 @@ void Compilation::emit_code_epilog(LIR_Assembler* assembler) {
   code_offsets->set_value(CodeOffsets::Deopt, assembler->emit_deopt_handler());
   CHECK_BAILOUT();
 
-  // Emit the MethodHandle deopt handler code (if required).
-  if (has_method_handle_invokes()) {
-    // We can use the same code as for the normal deopt handler, we
-    // just need a different entry point address.
-    code_offsets->set_value(CodeOffsets::DeoptMH, assembler->emit_deopt_handler());
-    CHECK_BAILOUT();
-  }
-
   // Emit the handler to remove the activation from the stack and
   // dispatch to the caller.
   offsets()->set_value(CodeOffsets::UnwindHandler, assembler->emit_unwind_handler());
@@ -432,12 +425,16 @@ void Compilation::install_code(int frame_size) {
     debug_info_recorder()->_oopmaps,
     exception_handler_table(),
     implicit_exception_table(),
+    nullptr, // java_callees
     compiler(),
+    false, // has_clinit_barriers
+    false, // for_preload
     has_unsafe_access(),
     SharedRuntime::is_wide_vector(max_vector_size()),
     has_monitors(),
     has_scoped_access(),
-    _immediate_oops_patched
+    _immediate_oops_patched,
+    should_install_code()
   );
 }
 
@@ -482,8 +479,7 @@ void Compilation::compile_method() {
   // Note: make sure we mark the method as not compilable!
   CHECK_BAILOUT();
 
-  if (should_install_code()) {
-    // install code
+  { // install code
     PhaseTraceTime timeit(_t_codeinstall);
     install_code(frame_size);
   }
@@ -564,6 +560,7 @@ Compilation::Compilation(AbstractCompiler* compiler, ciEnv* env, ciMethod* metho
 , _directive(directive)
 , _env(env)
 , _log(env->log())
+, _stress(_directive, _log, compiler_c1)
 , _method(method)
 , _osr_bci(osr_bci)
 , _hir(nullptr)
@@ -574,7 +571,6 @@ Compilation::Compilation(AbstractCompiler* compiler, ciEnv* env, ciMethod* metho
 , _has_unsafe_access(false)
 , _has_irreducible_loops(false)
 , _would_profile(false)
-, _has_method_handle_invokes(false)
 , _has_reserved_stack_access(method->has_reserved_stack_access())
 , _has_monitors(method->is_synchronized() || method->has_monitor_bytecodes())
 , _has_scoped_access(method->is_scoped())

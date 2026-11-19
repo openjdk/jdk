@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,12 @@
  * @test 8080352
  * @summary Tests for hard errors, like syntax errors
  * @build KullaTesting
- * @run testng RejectedFailedTest
+ * @run junit RejectedFailedTest
  */
 
 import java.util.List;
 
 import jdk.jshell.Snippet.SubKind;
-import org.testng.annotations.Test;
 
 import jdk.jshell.Diag;
 import jdk.jshell.Snippet;
@@ -40,31 +39,31 @@ import jdk.jshell.Snippet.Status;
 
 import jdk.jshell.SnippetEvent;
 import static java.util.stream.Collectors.toList;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.Test;
 
-@Test
 public class RejectedFailedTest extends KullaTesting {
 
     private String bad(String input, Kind kind, String prevId) {
         List<SnippetEvent> events = assertEvalFail(input);
-        assertEquals(events.size(), 1, "Expected one event, got: " + events.size());
+        assertEquals(1, events.size(), "Expected one event, got: " + events.size());
         SnippetEvent e = events.get(0);
         List<Diag> diagnostics = getState().diagnostics(e.snippet()).collect(toList());
         assertTrue(diagnostics.size() > 0, "Expected diagnostics, got none");
-        assertEquals(e.exception(), null, "Expected exception to be null.");
-        assertEquals(e.value(), null, "Expected value to be null.");
+        assertEquals(null, e.exception(), "Expected exception to be null.");
+        assertEquals(null, e.value(), "Expected value to be null.");
 
         Snippet key = e.snippet();
         assertTrue(key != null, "key must be non-null, but was null.");
-        assertEquals(key.kind(), kind, "Expected kind: " + kind + ", got: " + key.kind());
+        assertEquals(kind, key.kind(), "Expected kind: " + kind + ", got: " + key.kind());
         SubKind expectedSubKind = kind == Kind.ERRONEOUS ? SubKind.UNKNOWN_SUBKIND : SubKind.METHOD_SUBKIND;
-        assertEquals(key.subKind(), expectedSubKind, "SubKind: ");
+        assertEquals(expectedSubKind, key.subKind(), "SubKind: ");
         assertTrue(key.id().compareTo(prevId) > 0, "Current id: " + key.id() + ", previous: " + prevId);
-        assertEquals(getState().diagnostics(key).collect(toList()), diagnostics, "Expected retrieved diagnostics to match, but didn't.");
-        assertEquals(key.source(), input, "Expected retrieved source: " +
+        assertEquals(diagnostics, getState().diagnostics(key).collect(toList()), "Expected retrieved diagnostics to match, but didn't.");
+        assertEquals(input, key.source(), "Expected retrieved source: " +
                 key.source() + " to match input: " + input);
-        assertEquals(getState().status(key), Status.REJECTED, "Expected status of REJECTED, got: " + getState().status(key));
+        assertEquals(Status.REJECTED, getState().status(key), "Expected status of REJECTED, got: " + getState().status(key));
         return key.id();
     }
 
@@ -75,6 +74,7 @@ public class RejectedFailedTest extends KullaTesting {
         }
     }
 
+    @Test
     public void testErroneous() {
         String[] inputsErroneous = {
                 "%&^%&",
@@ -86,6 +86,7 @@ public class RejectedFailedTest extends KullaTesting {
         checkByKind(inputsErroneous, Kind.ERRONEOUS);
     }
 
+    @Test
     public void testBadMethod() {
         String[] inputsMethod = {
                 "transient int m() { return x; }",

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -244,6 +244,15 @@ final class ECDHServerKeyExchange {
             }
 
             if (x509Credentials == null) {
+                // Only anonymous key exchange is unsigned. For any other
+                // cipher suite the server Certificate message must have been
+                // received before the ServerKeyExchange message.
+                if (!chc.negotiatedCipherSuite.isAnonymous()) {
+                    throw chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
+                        "No X.509 credentials negotiated for " +
+                        "ECDH ServerKeyExchange: missing Certificate");
+                }
+
                 // anonymous, no authentication, no signature
                 if (m.hasRemaining()) {
                     throw chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
@@ -489,7 +498,7 @@ final class ECDHServerKeyExchange {
             ServerHandshakeContext shc = (ServerHandshakeContext)context;
             ECDHServerKeyExchangeMessage skem =
                     new ECDHServerKeyExchangeMessage(shc);
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                 SSLLogger.fine(
                     "Produced ECDH ServerKeyExchange handshake message", skem);
             }
@@ -522,7 +531,7 @@ final class ECDHServerKeyExchange {
             // AlgorithmConstraints are checked during decoding
             ECDHServerKeyExchangeMessage skem =
                     new ECDHServerKeyExchangeMessage(chc, message);
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                 SSLLogger.fine(
                     "Consuming ECDH ServerKeyExchange handshake message", skem);
             }

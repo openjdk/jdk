@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,6 +73,7 @@ import sun.font.TrueTypeFont;
 
 import sun.print.PathGraphics;
 import sun.print.ProxyGraphics2D;
+import sun.print.RasterPrinterJob;
 
 final class WPathGraphics extends PathGraphics {
 
@@ -311,16 +312,6 @@ final class WPathGraphics extends PathGraphics {
         }
     }
 
-    private static boolean isXP() {
-        String osVersion = System.getProperty("os.version");
-        if (osVersion != null) {
-            float version = Float.parseFloat(osVersion);
-            return version >= 5.1f;
-        } else {
-            return false;
-        }
-    }
-
     /* In case GDI doesn't handle shaping or BIDI consistently with
      * 2D's TextLayout, we can detect these cases and redelegate up to
      * be drawn via TextLayout, which in is rendered as runs of
@@ -334,8 +325,7 @@ final class WPathGraphics extends PathGraphics {
         } else if (!useGDITextLayout) {
             return true;
         } else {
-            if (preferGDITextLayout ||
-                (isXP() && FontUtilities.textLayoutIsCompatible(font))) {
+            if (preferGDITextLayout || FontUtilities.textLayoutIsCompatible(font)) {
                 return false;
             } else {
                 return true;
@@ -847,7 +837,7 @@ final class WPathGraphics extends PathGraphics {
               * removed now so the string and positions are the same length.
               * For other cases we need to pass glyph codes to GDI.
               */
-             str = wPrinterJob.removeControlChars(str);
+             str = RasterPrinterJob.removeControlChars(str);
              char[] chars = str.toCharArray();
              int len = chars.length;
              GlyphVector gv = null;

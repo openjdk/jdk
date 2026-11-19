@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,12 @@
 # or visit www.oracle.com if you need additional information or have any
 # questions.
 #
+
+# Toggle Bash strict mode
+set -euo pipefail
+
+# Switch to the directory this script is located in
+cd "$(dirname "$0")"
 
 # For manual invocation.
 # You can regenerate the source files,
@@ -45,18 +51,12 @@ bash ./gen-template.sh $generate_perf_tests
 
 Log false "Generating Vector API tests, $(date)\n"
 
-# Compile SPP
-Log true "Compiling SPP... "
-compilation=$(${JAVAC} -d . "${JDK_SRC_HOME}/make/jdk/src/classes/build/tools/spp/Spp.java")
-Log false "$compilation\n"
-Log true "done\n"
-
 # For each type
-for type in byte short int long float double
+for type in byte short int long float double float16
 do
   Type="$(tr '[:lower:]' '[:upper:]' <<< ${type:0:1})${type:1}"
   TYPE="$(tr '[:lower:]' '[:upper:]' <<< ${type})"
-  args="-K$type -Dtype=$type -DType=$Type -DTYPE=$TYPE"
+  args="-K$type -DType=$Type -DTYPE=$TYPE"
 
   Boxtype=$Type
   Wideboxtype=$Boxtype
@@ -64,10 +64,12 @@ do
   MinValue=MIN_VALUE
 
   kind=BITWISE
+  fpkind=BITWISE
 
   bitstype=$type
   Bitstype=$Type
   Boxbitstype=$Boxtype
+  testtype=$type
 
   fptype=$type
   Fptype=$Type
@@ -99,6 +101,7 @@ do
       ;;
     float)
       kind=FP
+      fpkind=FP32
       bitstype=int
       Bitstype=Int
       Boxbitstype=Integer
@@ -108,6 +111,7 @@ do
       ;;
     double)
       kind=FP
+      fpkind=FP64
       bitstype=long
       Bitstype=Long
       Boxbitstype=Long
@@ -115,15 +119,26 @@ do
       MaxValue=POSITIVE_INFINITY
       MinValue=NEGATIVE_INFINITY
       ;;
+    float16)
+      kind=FP
+      fpkind=FP16
+      bitstype=short
+      type=short
+      Bitstype=Short
+      Boxbitstype=Short
+      Wideboxtype=Float16
+      MaxValue=POSITIVE_INFINITY
+      MinValue=NEGATIVE_INFINITY
+      Type=Float16
+      ;;
   esac
 
-  args="$args -K$kind -K$Type -DBoxtype=$Boxtype -DWideboxtype=$Wideboxtype -DMaxValue=$MaxValue -DMinValue=$MinValue"
+  args="$args -Dtype=$type -K$kind -K$Type -DBoxtype=$Boxtype -DWideboxtype=$Wideboxtype -DMaxValue=$MaxValue -DMinValue=$MinValue"
   args="$args -Dbitstype=$bitstype -DBitstype=$Bitstype -DBoxbitstype=$Boxbitstype"
-  args="$args -Dfptype=$fptype -DFptype=$Fptype -DBoxfptype=$Boxfptype"
+  args="$args -Dtesttype=$testtype -K$fpkind -Dfptype=$fptype -DFptype=$Fptype -DBoxfptype=$Boxfptype"
 
   abstractvectortype=${typeprefix}${Type}Vector
   abstractvectorteststype=${typeprefix}${Type}VectorTests
-  abstractbitsvectortype=${typeprefix}${Bitstype}Vector
   abstractfpvectortype=${typeprefix}${Fptype}Vector
   args="$args -Dabstractvectortype=$abstractvectortype -Dabstractvectorteststype=$abstractvectorteststype -Dabstractbitsvectortype=$abstractbitsvectortype -Dabstractfpvectortype=$abstractfpvectortype"
 
@@ -133,12 +148,12 @@ do
 
   for bits in 64 128 256 512 Max
   do
-    vectortype=${typeprefix}${Type}${bits}Vector
-    vectorteststype=${typeprefix}${Type}${bits}VectorTests
-    vectorbenchtype=${typeprefix}${Type}${bits}Vector
-    masktype=${typeprefix}${Type}${bits}Mask
-    bitsvectortype=${typeprefix}${Bitstype}${bits}Vector
-    fpvectortype=${typeprefix}${Fptype}${bits}Vector
+    vectortype=${typeprefix}${Type}Vector${bits}
+    vectorteststype=${typeprefix}${Type}Vector${bits}Tests
+    vectorbenchtype=${typeprefix}${Type}Vector${bits}
+    masktype=${typeprefix}${Type}Mask${bits}
+    bitsvectortype=${typeprefix}${Bitstype}Vector${bits}
+    fpvectortype=${typeprefix}${Fptype}Vector${bits}
     shape=S${bits}Bit
     Shape=S_${bits}_BIT
     if [[ "${vectortype}" == "ByteMaxVector" ]]; then
@@ -153,10 +168,10 @@ do
     case $vectorteststype in
     $CLASS_FILTER)
       Log true " ${bits}_jtreg $vectorteststype.java"
-      Log false "${JAVA} -cp . ${SPP_CLASSNAME} -nel $bitargs -i${TEMPLATE_FILE} -o$vectorteststype.java "
+      Log false "${JAVA} -cp . ${SPP} -nel $bitargs -i${TEMPLATE_FILE} -o${vectorteststype}.java "
       TEST_DEST_FILE="${vectorteststype}.java"
       rm -f ${TEST_DEST_FILE}
-      ${JAVA} -cp . ${SPP_CLASSNAME} -nel $bitargs \
+      ${JAVA} -cp . ${SPP} -nel $bitargs \
         -i${TEMPLATE_FILE} \
         -o${TEST_DEST_FILE}
       if [ VAR_OS_ENV==windows.cygwin ]; then
@@ -171,10 +186,10 @@ do
       case $vectorbenchtype in
       $CLASS_FILTER)
         Log true " ${bits}_jmh $vectorbenchtype.java"
-        Log false "${JAVA} -cp . ${SPP_CLASSNAME} -nel $bitargs -i${PERF_TEMPLATE_FILE} -o${vectorteststype}Perf.java "
+        Log false "${JAVA} -cp . ${SPP} -nel $bitargs -i${PERF_TEMPLATE_FILE} -o${vectorteststype}Perf.java "
         PERF_DEST_FILE="${PERF_DEST}/${vectorbenchtype}.java"
         rm -f ${PERF_DEST_FILE}
-        ${JAVA} -cp . ${SPP_CLASSNAME} -nel $bitargs \
+        ${JAVA} -cp . ${SPP} -nel $bitargs \
           -i${PERF_TEMPLATE_FILE} \
           -o${PERF_DEST_FILE}
         if [ VAR_OS_ENV==windows.cygwin ]; then
@@ -193,7 +208,7 @@ do
     Log true " scalar ${Type}Scalar.java"
     PERF_DEST_FILE="${PERF_DEST}/${Type}Scalar.java"
     rm -f ${PERF_DEST_FILE}
-    ${JAVA} -cp . ${SPP_CLASSNAME} -nel $args \
+    ${JAVA} -cp . ${SPP} -nel $args \
       -i${PERF_SCALAR_TEMPLATE_FILE} \
       -o${PERF_DEST_FILE}
     if [ VAR_OS_ENV==windows.cygwin ]; then
@@ -208,12 +223,12 @@ do
   # For each size
   for bits in 64 128 256 512 Max
   do
-    vectortype=${typeprefix}${Type}${bits}Vector
-    vectorteststype=${typeprefix}${Type}${bits}VectorLoadStoreTests
-    vectorbenchtype=${typeprefix}${Type}${bits}VectorLoadStore
-    masktype=${typeprefix}${Type}${bits}Mask
-    bitsvectortype=${typeprefix}${Bitstype}${bits}Vector
-    fpvectortype=${typeprefix}${Fptype}${bits}Vector
+    vectortype=${typeprefix}${Type}Vector${bits}
+    vectorteststype=${typeprefix}${Type}Vector${bits}LoadStoreTests
+    vectorbenchtype=${typeprefix}${Type}Vector${bits}LoadStore
+    masktype=${typeprefix}${Type}Mask${bits}
+    bitsvectortype=${typeprefix}${Bitstype}Vector${bits}
+    fpvectortype=${typeprefix}${Fptype}Vector${bits}
     shape=S${bits}Bit
     Shape=S_${bits}_BIT
     if [[ "${vectortype}" == "ByteMaxVector" ]]; then
@@ -228,10 +243,10 @@ do
     case $vectorteststype in
     $CLASS_FILTER)
       Log true " ${bits}_ls $vectorteststype.java"
-      Log false "${JAVA} -cp . ${SPP_CLASSNAME} -nel $bitargs -itemplates/X-LoadStoreTest.java.template -o$vectorteststype.java "
+      Log false "${JAVA} -cp . ${SPP} -nel $bitargs -itemplates/X-LoadStoreTest.java.template -o$vectorteststype.java "
       TEST_DEST_FILE="${vectorteststype}.java"
       rm -f ${TEST_DEST_FILE}
-      ${JAVA} -cp . ${SPP_CLASSNAME} -nel $bitargs \
+      ${JAVA} -cp . ${SPP} -nel $bitargs \
         -itemplates/X-LoadStoreTest.java.template \
         -o${TEST_DEST_FILE}
       if [ VAR_OS_ENV==windows.cygwin ]; then
@@ -244,8 +259,7 @@ do
     # TODO: Generate jmh performance tests for LoadStore variants
   done
 
-  Log true " done\n"
-
 done
 
-rm -fr build
+rm -f ${BUILDLOG_FILE}
+rm -f ${TEMPLATE_FILE}

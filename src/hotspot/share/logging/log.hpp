@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,8 @@
 
 #include "logging/logLevel.hpp"
 #include "logging/logPrefix.hpp"
-#include "logging/logTagSet.hpp"
 #include "logging/logTag.hpp"
+#include "logging/logTagSet.hpp"
 #include "utilities/debug.hpp"
 
 class LogMessageBuffer;
@@ -111,7 +111,7 @@ class LogImpl {
   // Make sure no more than the maximum number of tags have been given.
   // The GuardTag allows this to be detected if/when it happens. If the GuardTag
   // is not __NO_TAG, the number of tags given exceeds the maximum allowed.
-  STATIC_ASSERT(GuardTag == LogTag::__NO_TAG); // Number of logging tags exceeds maximum supported!
+  static_assert(GuardTag == LogTag::__NO_TAG); // Number of logging tags exceeds maximum supported!
 
   // Empty constructor to avoid warnings on MSVC about unused variables
   // when the log instance is only used for static functions.

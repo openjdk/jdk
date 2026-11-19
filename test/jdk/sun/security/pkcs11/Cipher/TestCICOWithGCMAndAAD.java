@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,8 @@
  * @summary Test CipherInputStream/OutputStream with AES GCM mode with AAD.
  * @key randomness
  */
+import jtreg.SkippedException;
+
 import java.io.*;
 import java.security.*;
 import java.util.*;
@@ -44,7 +46,6 @@ public class TestCICOWithGCMAndAAD extends PKCS11Test {
     @Override
     public void main(Provider p) throws Exception {
         test("GCM", p);
-//        test("CCM", p);
     }
 
     public void test(String mode, Provider p) throws Exception {
@@ -53,9 +54,8 @@ public class TestCICOWithGCMAndAAD extends PKCS11Test {
             String transformation = "AES/" + mode + "/NoPadding";
             c = Cipher.getInstance(transformation, p);
         } catch (GeneralSecurityException e) {
-            System.out.println("Skip testing " + p.getName() +
-                    ", no support for " + mode);
-            return;
+            throw new SkippedException("Skip testing " + p.getName() +
+                                       ", no support for " + mode);
         }
         SecretKey key = new SecretKeySpec(new byte[16], "AES");
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ import sun.awt.image.MultiResolutionCachedImage;
 
 import sun.awt.image.SunWritableRaster;
 
-public class CImage extends CFRetainedResource {
+public final class CImage extends CFRetainedResource {
     private static native long nativeCreateNSImageFromArray(int[] buffer, int w, int h);
     private static native long nativeCreateNSImageFromBytes(byte[] buffer);
     private static native long nativeCreateNSImageFromArrays(int[][] buffers, int[] w, int[] h);
@@ -82,8 +82,7 @@ public class CImage extends CFRetainedResource {
         return getCreator().createFromImage(image, observer);
     }
 
-    public static class Creator {
-        CTrayIcon.IconObserver observer;
+    public static final class Creator {
 
         Creator() { }
 
@@ -131,7 +130,7 @@ public class CImage extends CFRetainedResource {
             return createImageUsingNativeSize(nativeCreateNSImageFromImageName(name));
         }
 
-        private static int[] imageToArray(Image image, boolean prepareImage, CTrayIcon.IconObserver observer) {
+        private static BufferedImage getAsBufferedImage(Image image, boolean prepareImage, CTrayIcon.IconObserver observer) {
             if (image == null) return null;
 
             if (prepareImage && !(image instanceof BufferedImage)) {
@@ -163,17 +162,18 @@ public class CImage extends CFRetainedResource {
             g2.drawImage(image, 0, 0, observer);
             g2.dispose();
 
-            return ((DataBufferInt)bimg.getRaster().getDataBuffer()).getData();
+            return bimg;
         }
 
         public byte[] getPlatformImageBytes(final Image image) {
-            int[] buffer = imageToArray(image, false, null);
+            BufferedImage bimg = getAsBufferedImage(image, false, null);
 
-            if (buffer == null) {
+            if (bimg == null) {
                 return null;
             }
+            int[] buffer = ((DataBufferInt)bimg.getRaster().getDataBuffer()).getData();
 
-            return nativeGetPlatformImageBytes(buffer, image.getWidth(null), image.getHeight(null));
+            return nativeGetPlatformImageBytes(buffer, bimg.getWidth(), bimg.getHeight());
         }
 
         /**
@@ -205,11 +205,13 @@ public class CImage extends CFRetainedResource {
                 return createFromImages(resolutionVariants, prepareImage);
             }
 
-            int[] buffer = imageToArray(image, prepareImage, observer);
-            if (buffer == null) {
+            BufferedImage bimg = getAsBufferedImage(image, prepareImage, observer);
+
+            if (bimg == null) {
                 return null;
             }
-            return new CImage(nativeCreateNSImageFromArray(buffer, image.getWidth(null), image.getHeight(null)));
+            int[] buffer = ((DataBufferInt)bimg.getRaster().getDataBuffer()).getData();
+            return new CImage(nativeCreateNSImageFromArray(buffer, bimg.getWidth(), bimg.getHeight()));
         }
 
         public CImage createFromImages(final List<Image> images) {
@@ -230,13 +232,14 @@ public class CImage extends CFRetainedResource {
             num = 0;
 
             for (final Image img : images) {
-                buffers[num] = imageToArray(img, prepareImage, null);
-                if (buffers[num] == null) {
+                BufferedImage bimg = getAsBufferedImage(img, prepareImage, null);
+                if (bimg == null) {
                     // Unable to process the image
                     continue;
                 }
-                w[num] = img.getWidth(null);
-                h[num] = img.getHeight(null);
+                buffers[num] = ((DataBufferInt)bimg.getRaster().getDataBuffer()).getData();
+                w[num] = bimg.getWidth();
+                h[num] = bimg.getHeight();
                 num++;
             }
 

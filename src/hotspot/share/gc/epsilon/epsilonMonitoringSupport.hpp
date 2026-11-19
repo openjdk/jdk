@@ -26,6 +26,7 @@
 #define SHARE_GC_EPSILON_EPSILONMONITORINGSUPPORT_HPP
 
 #include "memory/allocation.hpp"
+#include "runtime/atomic.hpp"
 
 class EpsilonGenerationCounters;
 class EpsilonSpaceCounters;
@@ -35,9 +36,12 @@ class EpsilonMonitoringSupport : public CHeapObj<mtGC> {
 private:
   EpsilonGenerationCounters* _heap_counters;
   EpsilonSpaceCounters* _space_counters;
+  Atomic<bool> _ready;
 
 public:
   EpsilonMonitoringSupport(EpsilonHeap* heap);
+  bool is_ready();
+  void mark_ready();
   void update_counters();
 };
 

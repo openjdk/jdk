@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,7 @@ public class MotifPopupMenuSeparatorUI extends MotifSeparatorUI
         return new MotifPopupMenuSeparatorUI();
     }
 
+    @Override
     public void paint( Graphics g, JComponent c )
     {
         Dimension s = c.getSize();
@@ -58,6 +59,7 @@ public class MotifPopupMenuSeparatorUI extends MotifSeparatorUI
         g.drawLine( 0, 1, s.width, 1 );
     }
 
+    @Override
     public Dimension getPreferredSize( JComponent c )
     {
         return new Dimension( 0, 2 );

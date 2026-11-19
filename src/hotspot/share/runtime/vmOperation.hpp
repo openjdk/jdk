@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,6 @@
   template(Verify)                                \
   template(HeapDumper)                            \
   template(CollectForMetadataAllocation)          \
-  template(CollectForCodeCacheAllocation)         \
   template(GC_HeapInspection)                     \
   template(SerialCollectForAllocation)            \
   template(SerialGCCollect)                       \
@@ -59,6 +58,8 @@
   template(G1PauseRemark)                         \
   template(G1PauseCleanup)                        \
   template(G1TryInitiateConcMark)                 \
+  template(G1RendezvousGCThreads)                 \
+  template(G1StopMarking)                         \
   template(ZMarkEndOld)                           \
   template(ZMarkEndYoung)                         \
   template(ZMarkFlushOperation)                   \
@@ -68,10 +69,6 @@
   template(ZRelocateStartYoung)                   \
   template(ZRendezvousGCThreads)                  \
   template(ZVerifyOld)                            \
-  template(XMarkStart)                            \
-  template(XMarkEnd)                              \
-  template(XRelocateStart)                        \
-  template(XVerify)                               \
   template(HandshakeAllThreads)                   \
   template(PopulateDumpSharedSpace)               \
   template(JNIFunctionTableCopier)                \
@@ -92,14 +89,13 @@
   template(ShenandoahFullGC)                      \
   template(ShenandoahInitMark)                    \
   template(ShenandoahFinalMarkStartEvac)          \
+  template(ShenandoahFinalRoots)                  \
   template(ShenandoahInitUpdateRefs)              \
   template(ShenandoahFinalUpdateRefs)             \
-  template(ShenandoahFinalRoots)                  \
-  template(ShenandoahDegeneratedGC)               \
+  template(ShenandoahFinalVerify)                 \
   template(Exit)                                  \
   template(LinuxDllLoad)                          \
   template(WhiteBoxOperation)                     \
-  template(JVMCIResizeCounters)                   \
   template(ClassLoaderStatsOperation)             \
   template(ClassLoaderHierarchyOperation)         \
   template(DumpHashtable)                         \
@@ -113,11 +109,10 @@
   template(GTestExecuteAtSafepoint)               \
   template(GTestStopSafepoint)                    \
   template(JFROldObject)                          \
-  template(JvmtiPostObjectFree)                   \
+  template(ClassPrintLayout)                      \
   template(RendezvousGCThreads)                   \
-  template(JFRInitializeCPUTimeSampler)       \
-  template(JFRTerminateCPUTimeSampler)        \
-  template(ReinitializeMDO)
+  template(JFRInitializeCPUTimeSampler)           \
+  template(JFRTerminateCPUTimeSampler)            \
 
 class Thread;
 class outputStream;

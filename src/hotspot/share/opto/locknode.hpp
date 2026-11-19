@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,8 @@
 //------------------------------BoxLockNode------------------------------------
 class BoxLockNode : public Node {
 private:
-  const int     _slot; // stack slot
-  RegMask     _inmask; // OptoReg corresponding to stack slot
+  const int _slot;       // stack slot
+  const RegMask _inmask; // OptoReg corresponding to stack slot
   enum {
     Regular = 0,       // Normal locking region
     Local,             // EA found that local not escaping object is used for locking
@@ -93,7 +93,7 @@ public:
 
   void set_local()      {
     assert((_kind == Regular || _kind == Local || _kind == Coarsened),
-           "incorrect kind for Local transitioni: %s", _kind_name[(int)_kind]);
+           "incorrect kind for Local transition: %s", _kind_name[(int)_kind]);
     _kind = Local;
   }
   void set_nested()     {
@@ -131,44 +131,36 @@ public:
 //------------------------------FastLockNode-----------------------------------
 class FastLockNode: public CmpNode {
 public:
-  FastLockNode(Node *ctrl, Node *oop, Node *box) : CmpNode(oop,box) {
-    init_req(0,ctrl);
+  FastLockNode(Node* ctrl, Node* oop, Node* box) : CmpNode(oop, box) {
+    assert(ctrl != nullptr, "required");
+    init_req(0, ctrl);
     init_class_id(Class_FastLock);
   }
-  Node* obj_node() const { return in(1); }
-  Node* box_node() const { return in(2); }
-  void  set_box_node(Node* box) { set_req(2, box); }
 
-  // FastLock and FastUnlockNode do not hash, we need one for each corresponding
-  // LockNode/UnLockNode to avoid creating Phi's.
-  virtual uint hash() const ;                  // { return NO_HASH; }
-  virtual uint size_of() const;
-  virtual bool cmp( const Node &n ) const ;    // Always fail, except on self
   virtual int Opcode() const;
-  virtual const Type* Value(PhaseGVN* phase) const { return TypeInt::CC; }
-  const Type *sub(const Type *t1, const Type *t2) const { return TypeInt::CC;}
+  virtual const Type* Value(PhaseGVN* phase) const;
+  const Type* sub(const Type* t1, const Type* t2) const { return TypeInt::CC;}
+
+private:
+  virtual bool depends_only_on_test_impl() const { return false; }
 };
 
 
 //------------------------------FastUnlockNode---------------------------------
 class FastUnlockNode: public CmpNode {
 public:
-  FastUnlockNode(Node *ctrl, Node *oop, Node *box) : CmpNode(oop,box) {
-    init_req(0,ctrl);
+  FastUnlockNode(Node* ctrl, Node* oop, Node* box) : CmpNode(oop, box) {
+    assert(ctrl != nullptr, "required");
+    init_req(0, ctrl);
     init_class_id(Class_FastUnlock);
   }
-  Node* obj_node() const { return in(1); }
-  Node* box_node() const { return in(2); }
 
-
-  // FastLock and FastUnlockNode do not hash, we need one for each corresponding
-  // LockNode/UnLockNode to avoid creating Phi's.
-  virtual uint hash() const ;                  // { return NO_HASH; }
-  virtual bool cmp( const Node &n ) const ;    // Always fail, except on self
   virtual int Opcode() const;
   virtual const Type* Value(PhaseGVN* phase) const { return TypeInt::CC; }
-  const Type *sub(const Type *t1, const Type *t2) const { return TypeInt::CC;}
+  const Type* sub(const Type* t1, const Type* t2) const { return TypeInt::CC; }
 
+private:
+  virtual bool depends_only_on_test_impl() const { return false; }
 };
 
 #endif // SHARE_OPTO_LOCKNODE_HPP

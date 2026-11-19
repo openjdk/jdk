@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ import static com.sun.java.swing.plaf.windows.TMSchema.Part;
 import static com.sun.java.swing.plaf.windows.TMSchema.State;
 import static com.sun.java.swing.plaf.windows.XPStyle.Skin;
 
-public final class WindowsTableHeaderUI extends BasicTableHeaderUI {
+public class WindowsTableHeaderUI extends BasicTableHeaderUI {
     private TableCellRenderer originalHeaderRenderer;
 
     public static ComponentUI createUI(JComponent h) {
@@ -138,9 +138,7 @@ public final class WindowsTableHeaderUI extends BasicTableHeaderUI {
              * We use border to paint it.
              */
             Icon sortIcon;
-            if (WindowsLookAndFeel.isOnVista()
-                && ((sortIcon = getIcon()) instanceof javax.swing.plaf.UIResource
-                    || sortIcon == null)) {
+            if (((sortIcon = getIcon()) instanceof javax.swing.plaf.UIResource || sortIcon == null)) {
                 contentTop += 1;
                 setIcon(null);
                 sortIcon = null;
@@ -196,32 +194,31 @@ public final class WindowsTableHeaderUI extends BasicTableHeaderUI {
             } else if (isSelected || hasFocus || hasRollover) {
                 state = State.HOT;
             }
-            /* on Vista there are more states for sorted columns */
-            if (WindowsLookAndFeel.isOnVista()) {
-                SortOrder sortOrder = getColumnSortOrder(header.getTable(), column);
-                if (sortOrder != null) {
-                     switch(sortOrder) {
-                     case ASCENDING:
-                     case DESCENDING:
-                         switch (state) {
-                         case NORMAL:
-                             state = State.SORTEDNORMAL;
-                             break;
-                         case PRESSED:
-                             state = State.SORTEDPRESSED;
-                             break;
-                         case HOT:
-                             state = State.SORTEDHOT;
-                             break;
-                         default:
-                             /* do nothing */
-                         }
+
+            SortOrder sortOrder = getColumnSortOrder(header.getTable(), column);
+            if (sortOrder != null) {
+                 switch (sortOrder) {
+                 case ASCENDING:
+                 case DESCENDING:
+                     switch (state) {
+                     case NORMAL:
+                         state = State.SORTEDNORMAL;
                          break;
-                     default :
+                     case PRESSED:
+                         state = State.SORTEDPRESSED;
+                         break;
+                     case HOT:
+                         state = State.SORTEDHOT;
+                         break;
+                     default:
                          /* do nothing */
                      }
-                }
+                     break;
+                 default :
+                     /* do nothing */
+                 }
             }
+
             skin.paintSkin(g, 0, 0, size.width-1, size.height-1, state);
             super.paint(g);
         }

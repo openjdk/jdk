@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
+#include "oops/array.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
@@ -93,15 +94,10 @@ public:
   bool  is_empty() const        { return _len == 0; }
   bool  is_nonempty() const     { return _len != 0; }
   bool  is_full() const         { return _len == _capacity; }
-
-  void  clear()                 { _len = 0; }
-  void  trunc_to(int length)    {
-    assert(length <= _len,"cannot increase length");
-    _len = length;
-  }
 };
 
 template <typename E> class GrowableArrayIterator;
+template <typename E, typename UnaryPredicate> class GrowableArrayFilterIterator;
 
 // Extends GrowableArrayBase with a typed data array.
 //
@@ -189,11 +185,6 @@ public:
     return GrowableArrayIterator<E>(this, length());
   }
 
-  E pop() {
-    assert(_len > 0, "empty list");
-    return _data[--_len];
-  }
-
   void at_put(int i, const E& elem) {
     assert(0 <= i && i < _len, "illegal index %d for length %d", i, _len);
     _data[i] = elem;
@@ -245,59 +236,6 @@ public:
       if (predicate(_data[i])) return i;
     }
     return -1;
-  }
-
-  // Order preserving remove operations.
-
-  void remove(const E& elem) {
-    // Assuming that element does exist.
-    bool removed = remove_if_existing(elem);
-    if (removed) return;
-    ShouldNotReachHere();
-  }
-
-  bool remove_if_existing(const E& elem) {
-    // Returns TRUE if elem is removed.
-    for (int i = 0; i < _len; i++) {
-      if (_data[i] == elem) {
-        remove_at(i);
-        return true;
-      }
-    }
-    return false;
-  }
-
-  void remove_at(int index) {
-    assert(0 <= index && index < _len, "illegal index %d for length %d", index, _len);
-    for (int j = index + 1; j < _len; j++) {
-      _data[j-1] = _data[j];
-    }
-    _len--;
-  }
-
-  // Remove all elements up to the index (exclusive). The order is preserved.
-  void remove_till(int idx) {
-    remove_range(0, idx);
-  }
-
-  // Remove all elements in the range [start - end). The order is preserved.
-  void remove_range(int start, int end) {
-    assert(0 <= start, "illegal start index %d", start);
-    assert(start < end && end <= _len, "erase called with invalid range (%d, %d) for length %d", start, end, _len);
-
-    for (int i = start, j = end; j < length(); i++, j++) {
-      at_put(i, at(j));
-    }
-    trunc_to(length() - (end - start));
-  }
-
-  // The order is changed.
-  void delete_at(int index) {
-    assert(0 <= index && index < _len, "illegal index %d for length %d", index, _len);
-    if (index < --_len) {
-      // Replace removed element with last one.
-      _data[index] = _data[_len];
-    }
   }
 
   void sort(int f(E*, E*)) {
@@ -361,6 +299,11 @@ public:
     }
     tty->print("}\n");
   }
+
+  // MetaspaceClosure support
+  E** data_addr() {
+    return &_data;
+  }
 };
 
 template <typename E>
@@ -381,8 +324,6 @@ public:
 //  - void Derived::deallocate(E*) - member function responsible for deallocation
 template <typename E, typename Derived>
 class GrowableArrayWithAllocator : public GrowableArrayView<E> {
-  friend class VMStructs;
-
   void expand_to(int j);
   void grow(int j);
 
@@ -426,6 +367,11 @@ public:
   }
 
   void push(const E& elem) { append(elem); }
+
+  E pop() {
+    assert(this->_len > 0, "empty list");
+    return this->_data[--this->_len];
+  }
 
   E& at_grow(int i, const E& fill = E()) {
     assert(0 <= i, "negative index %d", i);
@@ -483,6 +429,12 @@ public:
     }
   }
 
+  void appendAll(const Array<E>* l) {
+    for (int i = 0; i < l->length(); i++) {
+      this->at_put_grow(this->_len, l->at(i), E());
+    }
+  }
+
   // Binary search and insertion utility.  Search array for element
   // matching key according to the static compare function.  Insert
   // that element if not already in the list.  Assumes the list is
@@ -514,9 +466,71 @@ public:
   // Ensure capacity is at least new_capacity.
   void reserve(int new_capacity);
 
+  void trunc_to(int length) {
+    assert(length <= this->_len,"cannot increase length");
+    this->_len = length;
+  }
+
+  // Order preserving remove operations.
+
+  void remove_at(int index) {
+    assert(0 <= index && index < this->_len,
+           "illegal index %d for length %d", index, this->_len);
+    for (int j = index + 1; j < this->_len; j++) {
+      this->_data[j-1] = this->_data[j];
+    }
+    this->_len--;
+  }
+
+  void remove(const E& elem) {
+    // Assuming that element does exist.
+    bool removed = this->remove_if_existing(elem);
+    if (removed) return;
+    ShouldNotReachHere();
+  }
+
+  bool remove_if_existing(const E& elem) {
+    // Returns TRUE if elem is removed.
+    for (int i = 0; i < this->_len; i++) {
+      if (this->_data[i] == elem) {
+        this->remove_at(i);
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // Remove all elements in the range [0; end). The order is preserved.
+  void remove_till(int end) {
+    remove_range(0, end);
+  }
+
+  // Remove all elements in the range [start; end). The order is preserved.
+  void remove_range(int start, int end) {
+    assert(0 <= start, "illegal start index %d", start);
+    assert(start <= end && end <= this->_len,
+           "erase called with invalid range [%d, %d) for length %d",
+           start, end, this->_len);
+
+    for (int i = start, j = end; j < this->length(); i++, j++) {
+      this->at_put(i, this->at(j));
+    }
+    this->_len -= (end - start);
+  }
+
+  // Replaces the designated element with the last element and shrinks by 1.
+  void delete_at(int index) {
+    assert(0 <= index && index < this->_len, "illegal index %d for length %d", index, this->_len);
+    if (index < --this->_len) {
+      // Replace removed element with last one.
+      this->_data[index] = this->_data[this->_len];
+    }
+  }
+
   // Reduce capacity to length.
   void shrink_to_fit();
 
+  void clear() { this->_len = 0; }
   void clear_and_deallocate();
 };
 
@@ -711,6 +725,7 @@ public:
 
 template <typename E>
 class GrowableArray : public GrowableArrayWithAllocator<E, GrowableArray<E>> {
+  friend class VMStructs;
   friend class GrowableArrayWithAllocator<E, GrowableArray>;
   friend class GrowableArrayTest;
 
@@ -813,6 +828,8 @@ public:
       this->clear_and_deallocate();
     }
   }
+
+  void assert_on_C_heap() { assert(on_C_heap(), "must be on C heap"); }
 };
 
 // Leaner GrowableArray for CHeap backed data arrays, with compile-time decided MemTag.
@@ -820,7 +837,7 @@ template <typename E, MemTag MT>
 class GrowableArrayCHeap : public GrowableArrayWithAllocator<E, GrowableArrayCHeap<E, MT> > {
   friend class GrowableArrayWithAllocator<E, GrowableArrayCHeap<E, MT> >;
 
-  STATIC_ASSERT(MT != mtNone);
+  static_assert(MT != mtNone);
 
   static E* allocate(int max, MemTag mem_tag) {
     return (E*)GrowableArrayCHeapAllocator::allocate(max, sizeof(E), mem_tag);
@@ -868,6 +885,7 @@ public:
 template <typename E>
 class GrowableArrayIterator : public StackObj {
   friend class GrowableArrayView<E>;
+  template <typename F, typename UnaryPredicate> friend class GrowableArrayFilterIterator;
 
  private:
   const GrowableArrayView<E>* _array; // GrowableArray we iterate over
@@ -891,6 +909,60 @@ class GrowableArrayIterator : public StackObj {
   bool operator!=(const GrowableArrayIterator& rhs)  {
     assert(_array == rhs._array, "iterator belongs to different array");
     return _position != rhs._position;
+  }
+};
+
+// Custom STL-style iterator to iterate over elements of a GrowableArray that satisfy a given predicate
+template <typename E, class UnaryPredicate>
+class GrowableArrayFilterIterator : public StackObj {
+  friend class GrowableArrayView<E>;
+
+ private:
+  const GrowableArrayView<E>* _array; // GrowableArray we iterate over
+  int _position;                      // Current position in the GrowableArray
+  UnaryPredicate _predicate;          // Unary predicate the elements of the GrowableArray should satisfy
+
+ public:
+  GrowableArrayFilterIterator(const GrowableArray<E>* array, UnaryPredicate filter_predicate) :
+      _array(array), _position(0), _predicate(filter_predicate) {
+    // Advance to first element satisfying the predicate
+    while(!at_end() && !_predicate(_array->at(_position))) {
+      ++_position;
+    }
+  }
+
+  GrowableArrayFilterIterator<E, UnaryPredicate>& operator++() {
+    do {
+      // Advance to next element satisfying the predicate
+      ++_position;
+    } while(!at_end() && !_predicate(_array->at(_position)));
+    return *this;
+  }
+
+  E operator*() { return _array->at(_position); }
+
+  bool operator==(const GrowableArrayIterator<E>& rhs)  {
+    assert(_array == rhs._array, "iterator belongs to different array");
+    return _position == rhs._position;
+  }
+
+  bool operator!=(const GrowableArrayIterator<E>& rhs)  {
+    assert(_array == rhs._array, "iterator belongs to different array");
+    return _position != rhs._position;
+  }
+
+  bool operator==(const GrowableArrayFilterIterator<E, UnaryPredicate>& rhs)  {
+    assert(_array == rhs._array, "iterator belongs to different array");
+    return _position == rhs._position;
+  }
+
+  bool operator!=(const GrowableArrayFilterIterator<E, UnaryPredicate>& rhs)  {
+    assert(_array == rhs._array, "iterator belongs to different array");
+    return _position != rhs._position;
+  }
+
+  bool at_end() const {
+    return _array == nullptr || _position == _array->end()._position;
   }
 };
 

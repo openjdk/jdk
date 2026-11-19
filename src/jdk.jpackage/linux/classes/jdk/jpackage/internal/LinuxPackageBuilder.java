@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,16 +26,22 @@ package jdk.jpackage.internal;
 
 import static jdk.jpackage.internal.I18N.buildConfigException;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Pattern;
 import jdk.jpackage.internal.model.AppImageLayout;
 import jdk.jpackage.internal.model.ApplicationLayout;
 import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.LinuxApplication;
 import jdk.jpackage.internal.model.LinuxPackage;
 import jdk.jpackage.internal.model.LinuxPackageMixin;
 import jdk.jpackage.internal.model.Package;
+import jdk.jpackage.internal.model.RuntimeLayout;
 import jdk.jpackage.internal.model.StandardPackageType;
 
 final class LinuxPackageBuilder {
@@ -44,37 +50,51 @@ final class LinuxPackageBuilder {
         this.pkgBuilder = Objects.requireNonNull(pkgBuilder);
     }
 
-    LinuxPackage create() throws ConfigException {
-        if (literalName != null) {
-            pkgBuilder.name(literalName);
-        } else {
+    LinuxPackage create() {
+        pkgBuilder.name(Optional.ofNullable(literalName).orElseGet(() -> {
             // Lower case and turn spaces/underscores into dashes
-            pkgBuilder.name(pkgBuilder.create().packageName().toLowerCase().replaceAll("[ _]", "-"));
+            return pkgBuilder.create().packageName().toLowerCase().replaceAll("[ _]", "-");
+        }));
+
+        final var tmpPkg = pkgBuilder.create();
+
+        tmpPkg.asStandardPackageType().ifPresent(stdPkgType -> {
+            validatePackageName(tmpPkg.packageName(), stdPkgType);
+        });
+
+        final AppImageLayout relativeInstalledLayout;
+        if (create(tmpPkg).isInstallDirInUsrTree()) {
+            final var usrTreeLayout = usrTreePackageLayout(tmpPkg.relativeInstallDir(), tmpPkg.packageName());
+            if (tmpPkg.isRuntimeInstaller()) {
+                relativeInstalledLayout = RuntimeLayout.create(usrTreeLayout.runtimeDirectory());
+            } else {
+                relativeInstalledLayout = usrTreeLayout;
+            }
+        } else {
+            relativeInstalledLayout = tmpPkg.appImageLayout().resolveAt(tmpPkg.relativeInstallDir()).resetRootDirectory();
         }
 
-        final var pkg = pkgBuilder.create();
+        final var app = ApplicationBuilder.overrideAppImageLayout(pkgBuilder.app(), relativeInstalledLayout);
 
-        final var stdPkgType = pkg.asStandardPackageType();
-        if (stdPkgType.isPresent()) {
-            validatePackageName(pkg.packageName(), stdPkgType.orElseThrow());
-        }
+        menuGroupName().filter(_ -> {
+            return desktopEntryFileValidator != null && probeMenuGroupNameFile != null;
+        }).ifPresent(v -> {
+            validateMenuGroupName(desktopEntryFileValidator, probeMenuGroupNameFile, v);
+        });
 
-        var reply = create(pkg, pkg.packageLayout());
-        if (reply.isInstallDirInUsrTree()) {
-            reply = create(pkg, usrTreePackageLayout(pkg.relativeInstallDir(), pkg.packageName()));
-        }
-
-        return reply;
+        return create(pkgBuilder
+                .app(LinuxApplication.create(app))
+                .installedPackageLayout(relativeInstalledLayout.resolveAt(Path.of("/")).resetRootDirectory())
+                .create());
     }
 
-    private LinuxPackage create(Package pkg, AppImageLayout pkgLayout) throws ConfigException {
+    private LinuxPackage create(Package pkg) {
         return LinuxPackage.create(pkg, new LinuxPackageMixin.Stub(
-                pkgLayout,
-                Optional.ofNullable(menuGroupName).orElseGet(DEFAULTS::menuGroupName),
-                Optional.ofNullable(category),
+                menuGroupName().orElseGet(DEFAULTS::menuGroupName),
+                category(),
                 Optional.ofNullable(additionalDependencies),
-                Optional.ofNullable(release),
-                pkg.asStandardPackageType().map(LinuxPackageArch::getValue).orElseThrow()));
+                release(),
+                arch.value()));
     }
 
     LinuxPackageBuilder literalName(String v) {
@@ -85,6 +105,10 @@ final class LinuxPackageBuilder {
     LinuxPackageBuilder menuGroupName(String v) {
         menuGroupName = v;
         return this;
+    }
+
+    Optional<String> menuGroupName() {
+        return Optional.ofNullable(menuGroupName);
     }
 
     LinuxPackageBuilder category(String v) {
@@ -110,6 +134,21 @@ final class LinuxPackageBuilder {
         return Optional.ofNullable(release);
     }
 
+    LinuxPackageBuilder arch(LinuxPackageArch v) {
+        arch = v;
+        return this;
+    }
+
+    LinuxPackageBuilder probeMenuGroupNameFile(Path v) {
+        probeMenuGroupNameFile = v;
+        return this;
+    }
+
+    LinuxPackageBuilder desktopEntryFileValidator(DesktopEntryFileValidator v) {
+        desktopEntryFileValidator = v;
+        return this;
+    }
+
     private static LinuxApplicationLayout usrTreePackageLayout(Path prefix, String packageName) {
         final var lib = prefix.resolve(Path.of("lib", packageName));
         return LinuxApplicationLayout.create(
@@ -120,12 +159,12 @@ final class LinuxPackageBuilder {
                         .desktopIntegrationDirectory(lib)
                         .appModsDirectory(lib.resolve("app/mods"))
                         .contentDirectory(lib)
+                        .resourcesDirectory(lib)
                         .create(),
                 lib.resolve("lib/libapplauncher.so"));
     }
 
-    private static void validatePackageName(String packageName,
-            StandardPackageType pkgType) throws ConfigException {
+    private static void validatePackageName(String packageName, StandardPackageType pkgType) {
         switch (pkgType) {
             case LINUX_DEB -> {
                 //
@@ -168,6 +207,35 @@ final class LinuxPackageBuilder {
         }
     }
 
+    private static void validateMenuGroupName(DesktopEntryFileValidator desktopEntryFileValidator, Path probeFile, String menuGroupName) {
+        Objects.requireNonNull(desktopEntryFileValidator);
+        Objects.requireNonNull(probeFile);
+        Objects.requireNonNull(menuGroupName);
+
+        try {
+            Files.createDirectories(probeFile.getParent());
+            Files.write(probeFile, List.of(
+                    "[Desktop Entry]",
+                    DesktopEntry.NAME.formatDesktopFileEntry("acme"),
+                    DesktopEntry.EXEC.formatDesktopFileEntry("foo"),
+                    DesktopEntry.TYPE.formatDesktopFileEntry("Application"),
+                    DesktopEntry.CATEGORIES.formatDesktopFileEntry(menuGroupName)));
+        } catch (IOException ex) {
+            // This is fatal if we can't create a probe file.
+            throw new UncheckedIOException(ex);
+        }
+
+        var result = desktopEntryFileValidator.validate(probeFile);
+        result.exitCode().ifPresent(exitCode -> {
+            if (exitCode != 0) {
+                // Validation failed as the command returned an unexpected exit code.
+                throw new ConfigException(
+                        I18N.format("error.parameter-invalid-value", menuGroupName, "--linux-menu-group"),
+                        I18N.format("error.invalid-desktop-category.advice"));
+            }
+        });
+    }
+
     private record Defaults(String menuGroupName) {
     }
 
@@ -176,10 +244,13 @@ final class LinuxPackageBuilder {
     private String category;
     private String additionalDependencies;
     private String release;
+    private Path probeMenuGroupNameFile;
+    private DesktopEntryFileValidator desktopEntryFileValidator;
+    private LinuxPackageArch arch;
 
     private final PackageBuilder pkgBuilder;
 
-    private static final Defaults DEFAULTS = new Defaults(I18N.getString(
-            "param.menu-group.default"));
-
+    // Should be one of https://specifications.freedesktop.org/menu/latest/category-registry.html#main-category-registry
+    // The category is an ID, not a localizable string
+    private static final Defaults DEFAULTS = new Defaults("Utility");
 }

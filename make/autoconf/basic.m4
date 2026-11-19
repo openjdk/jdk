@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -210,17 +210,8 @@ AC_DEFUN([BASIC_SETUP_XCODE_SYSROOT],
     if test $? -ne 0; then
       AC_MSG_ERROR([The xcodebuild tool in the devkit reports an error: $XCODEBUILD_OUTPUT])
     fi
-  elif test "x$TOOLCHAIN_PATH" != x; then
-    UTIL_LOOKUP_PROGS(XCODEBUILD, xcodebuild, $TOOLCHAIN_PATH)
-    if test "x$XCODEBUILD" != x; then
-      XCODEBUILD_OUTPUT=`"$XCODEBUILD" -version 2>&1`
-      if test $? -ne 0; then
-        AC_MSG_WARN([Ignoring the located xcodebuild tool $XCODEBUILD due to an error: $XCODEBUILD_OUTPUT])
-        XCODEBUILD=
-      fi
-    fi
   else
-    UTIL_LOOKUP_PROGS(XCODEBUILD, xcodebuild)
+    UTIL_LOOKUP_TOOLCHAIN_PROGS(XCODEBUILD, xcodebuild)
     if test "x$XCODEBUILD" != x; then
       XCODEBUILD_OUTPUT=`"$XCODEBUILD" -version 2>&1`
       if test $? -ne 0; then
@@ -336,31 +327,13 @@ AC_DEFUN_ONCE([BASIC_SETUP_DEVKIT],
     elif test -d "$DEVKIT_ROOT/$host/sys-root"; then
       SYSROOT="$DEVKIT_ROOT/$host/sys-root"
     fi
-
-    if test "x$DEVKIT_ROOT" != x; then
-      DEVKIT_LIB_DIR="$DEVKIT_ROOT/lib"
-      if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
-        DEVKIT_LIB_DIR="$DEVKIT_ROOT/lib64"
-      fi
-      AC_SUBST(DEVKIT_LIB_DIR)
-    fi
   fi
 
   # You can force the sysroot if the sysroot encoded into the compiler tools
   # is not correct.
-  AC_ARG_WITH(sys-root, [AS_HELP_STRING([--with-sys-root],
-      [alias for --with-sysroot for backwards compatibility])],
-      [SYSROOT=$with_sys_root]
-  )
-
   AC_ARG_WITH(sysroot, [AS_HELP_STRING([--with-sysroot],
       [use this directory as sysroot])],
       [SYSROOT=$with_sysroot]
-  )
-
-  AC_ARG_WITH([tools-dir], [AS_HELP_STRING([--with-tools-dir],
-      [alias for --with-toolchain-path for backwards compatibility])],
-      [UTIL_PREPEND_TO_PATH([TOOLCHAIN_PATH],$with_tools_dir)]
   )
 
   AC_ARG_WITH([toolchain-path], [AS_HELP_STRING([--with-toolchain-path],
@@ -370,6 +343,14 @@ AC_DEFUN_ONCE([BASIC_SETUP_DEVKIT],
 
   AC_ARG_WITH([xcode-path], [AS_HELP_STRING([--with-xcode-path],
       [set up toolchain on Mac OS using a path to an Xcode installation])])
+
+  UTIL_DEPRECATED_ARG_WITH(sys-root)
+
+  AC_ARG_WITH([tools-dir], [AS_HELP_STRING([--with-tools-dir],
+      [Point to a nonstandard Visual Studio installation location on Windows by
+      specifying any existing directory 2 or 3 levels below the installation
+      root.])]
+  )
 
   if test "x$with_xcode_path" != x; then
     if test "x$OPENJDK_BUILD_OS" = "xmacosx"; then

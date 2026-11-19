@@ -23,12 +23,13 @@
 
 /*
  * @test
- * @bug 7073631 7159445 7156633 8028235 8065753 8205418 8205913 8228451 8237041 8253584 8246774 8256411 8256149 8259050 8266436 8267221 8271928 8275097 8293897 8295401 8304671 8310326 8312093 8312204 8315452 8337976 8324859 8344706
+ * @bug 7073631 7159445 7156633 8028235 8065753 8205418 8205913 8228451 8237041 8253584 8246774 8256411 8256149 8259050 8266436 8267221 8271928 8275097 8293897 8295401 8304671 8310326 8312093 8312204 8315452 8337976 8324859 8344706 8351260 8370865 8369489 8392939
  * @summary tests error and diagnostics positions
  * @author  Jan Lahoda
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.javac.tree
+ * @run main JavacParserTest
  */
 
 import com.sun.source.tree.BinaryTree;
@@ -87,7 +88,9 @@ import javax.tools.ToolProvider;
 
 import com.sun.source.tree.CaseTree;
 import com.sun.source.tree.DefaultCaseLabelTree;
+import com.sun.source.tree.IdentifierTree;
 import com.sun.source.tree.ModuleTree;
+import com.sun.source.tree.VarTypeTree;
 import com.sun.source.util.TreePathScanner;
 import com.sun.tools.javac.api.JavacTaskPool;
 import com.sun.tools.javac.api.JavacTaskPool.Worker;
@@ -1070,8 +1073,8 @@ public class JavacParserTest extends TestCase {
         VariableTree stmt2 = (VariableTree) method.getBody().getStatements().get(1);
         Tree v1Type = stmt1.getType();
         Tree v2Type = stmt2.getType();
-        assertEquals("Implicit type for v1 is not correct: ", Kind.PRIMITIVE_TYPE, v1Type.getKind());
-        assertEquals("Implicit type for v2 is not correct: ", Kind.PRIMITIVE_TYPE, v2Type.getKind());
+        assertEquals("Implicit type for v1 is not correct: ", Kind.VAR_TYPE, v1Type.getKind());
+        assertEquals("Implicit type for v2 is not correct: ", Kind.VAR_TYPE, v2Type.getKind());
     }
 
     @Test
@@ -1655,6 +1658,51 @@ public class JavacParserTest extends TestCase {
                               \n\
                               @Deprecated
                               void t2() {
+                              }
+                          } """;
+        assertEquals("Unexpected AST, got:\n" + ast, expected, ast);
+        assertEquals("Unexpected errors, got:\n" + out.toString(),
+                     out.toString().replaceAll("\\R", "\n"),
+                     """
+                     Test.java:3:17: compiler.err.expected: token.identifier
+                     Test.java:7:21: compiler.err.expected: token.identifier
+                     """);
+    }
+
+    @Test
+    void testAtRecovery2() throws IOException {
+        //verify the errors and AST form produced for member selects which are
+        //missing the selected member name and are followed by an annotation:
+        String code = """
+                      package t;
+                      class Test {
+                          int i1 = "".
+                          @Deprecated
+                          void t1() {
+                          }
+                          int i2 = String.
+                          @Deprecated
+                          String[] t2() {
+                          }
+                      }
+                      """;
+        StringWriter out = new StringWriter();
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(out, fm, null, List.of("-XDrawDiagnostics"),
+                null, Arrays.asList(new MyFileObject(code)));
+        String ast = ct.parse().iterator().next().toString().replaceAll("\\R", "\n");
+        String expected = """
+                          package t;
+                          \n\
+                          class Test {
+                              int i1 = "".<error>;
+                              \n\
+                              @Deprecated
+                              void t1() {
+                              }
+                              int i2 = String.<error>;
+                              \n\
+                              @Deprecated
+                              String[] t2() {
                               }
                           } """;
         assertEquals("Unexpected AST, got:\n" + ast, expected, ast);
@@ -3009,6 +3057,333 @@ public class JavacParserTest extends TestCase {
                          \n\
                          public static boolean test2() {
                              return true;
+                         }
+                     }""");
+    }
+
+    @Test //JDK-8351260
+    void testVeryBrokenTypeWithAnnotations() throws IOException {
+        String code = """
+                      package tests;
+                      class ListUtilsTest {
+                          void test(List<@AlphaChars <@StringLength(int value = 5)String> s){
+                          }
+                      }
+                      """;
+        DiagnosticCollector<JavaFileObject> coll =
+                new DiagnosticCollector<>();
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, coll,
+                List.of("--enable-preview", "--source", SOURCE_VERSION),
+                null, Arrays.asList(new MyFileObject(code)));
+        CompilationUnitTree cut = ct.parse().iterator().next();
+
+        List<String> codes = new LinkedList<>();
+
+        for (Diagnostic<? extends JavaFileObject> d : coll.getDiagnostics()) {
+            codes.add(d.getLineNumber() + ":" + d.getColumnNumber() + ":" + d.getCode());
+        }
+
+        assertEquals("testVeryBrokenTypeWithAnnotations: " + codes,
+                     List.of("3:32:compiler.err.illegal.start.of.type",
+                             "3:51:compiler.err.dot.class.expected",
+                             "3:57:compiler.err.expected2",
+                             "3:60:compiler.err.expected2",
+                             "3:61:compiler.err.expected2",
+                             "3:67:compiler.err.not.stmt",
+                             "3:70:compiler.err.expected",
+                             "5:2:compiler.err.premature.eof"),
+                     codes);
+        String result = toStringWithErrors(cut).replaceAll("\\R", "\n");
+        System.out.println("RESULT\n" + result);
+        assertEquals("incorrect AST",
+                     result,
+                     """
+                     package tests;
+                     \n\
+                     class ListUtilsTest {
+                         \n\
+                         void test(List<@AlphaChars (ERROR: (ERROR)<@StringLength(int) value, (ERROR)> = 5), (ERROR: )> <error>) {
+                             (ERROR: String > s);
+                             {
+                             }
+                         }
+                     }""");
+    }
+
+    @Test //JDK-8351260
+    void testVeryBrokenTypeWithAnnotationsMinimal() throws IOException {
+        String code = """
+                      B<@C<@D(e f=
+                      """;
+        DiagnosticCollector<JavaFileObject> coll =
+                new DiagnosticCollector<>();
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, coll,
+                List.of("--enable-preview", "--source", SOURCE_VERSION),
+                null, Arrays.asList(new MyFileObject(code)));
+        //no exceptions:
+        ct.parse().iterator().next();
+    }
+
+    @Test //JDK-8370865
+    void testCompactSourceFileMultiField1() throws IOException {
+        String code = """
+                      int i, j, k;
+                      void main() {}
+                      """;
+        DiagnosticCollector<JavaFileObject> coll =
+                new DiagnosticCollector<>();
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, coll,
+                List.of("-XDrawDiagnostics"),
+                null, Arrays.asList(new MyFileObject(code)));
+        //no exceptions:
+        ct.parse().iterator().next();
+        List<String> codes = new LinkedList<>();
+
+        for (Diagnostic<? extends JavaFileObject> d : coll.getDiagnostics()) {
+            codes.add(d.getLineNumber() + ":" + d.getColumnNumber() + ":" + d.getCode());
+        }
+
+        assertEquals("testCompactSourceFileMultiField1: " + codes,
+                     List.of(),
+                     codes);
+    }
+
+    @Test //JDK-8370865
+    void testCompactSourceFileMultiField2() throws IOException {
+        String code = """
+                      int i, j = 0, k = 0;
+                      void main() {}
+                      """;
+        DiagnosticCollector<JavaFileObject> coll =
+                new DiagnosticCollector<>();
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, coll,
+                List.of("-XDrawDiagnostics"),
+                null, Arrays.asList(new MyFileObject(code)));
+        //no exceptions:
+        ct.parse().iterator().next();
+        List<String> codes = new LinkedList<>();
+
+        for (Diagnostic<? extends JavaFileObject> d : coll.getDiagnostics()) {
+            codes.add(d.getLineNumber() + ":" + d.getColumnNumber() + ":" + d.getCode());
+        }
+
+        assertEquals("testCompactSourceFileMultiField2: " + codes,
+                     List.of(),
+                     codes);
+    }
+
+    @Test //JDK-8369489
+    void testTypeAnnotationBrokenMethodRef() throws IOException {
+        String code = """
+                      public class Test {
+                          Object o1 = @Ann any()::test;
+                          Object o2 = @Ann any().field::test;
+                      }
+                      """;
+        DiagnosticCollector<JavaFileObject> coll =
+                new DiagnosticCollector<>();
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, coll,
+                null,
+                null, Arrays.asList(new MyFileObject(code)));
+        //no exceptions:
+        ct.parse().iterator().next();
+        List<String> codes = new LinkedList<>();
+
+        for (Diagnostic<? extends JavaFileObject> d : coll.getDiagnostics()) {
+            codes.add(d.getLineNumber() + ":" + d.getColumnNumber() + ":" + d.getCode());
+        }
+
+        assertEquals("testTypeAnnotationBrokenMethodRef: " + codes,
+                     List.of("2:22:compiler.err.illegal.start.of.type",
+                             "3:22:compiler.err.illegal.start.of.type"),
+                     codes);
+    }
+
+    @Test
+    void testVarPositions() throws IOException {
+        String code = """
+                      public class Test {
+                          void t() {
+                              var v =
+                          }
+                      }
+                      """;
+        DiagnosticCollector<JavaFileObject> coll =
+                new DiagnosticCollector<>();
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, coll,
+                null,
+                null, Arrays.asList(new MyFileObject(code)));
+        Trees trees = Trees.instance(ct);
+        SourcePositions sp = trees.getSourcePositions();
+        CompilationUnitTree cut = ct.parse().iterator().next();
+        new TreeScanner<Void, Void>() {
+            @Override
+            public Void visitVarType(VarTypeTree node, Void p) {
+                long start = sp.getStartPosition(cut, node);
+                long end = sp.getEndPosition(cut, node);
+                String text = code.substring((int) start, (int) end);
+                assertEquals("var start pos",
+                             "var",
+                             text);
+                return null;
+            }
+        };
+    }
+
+    @Test //JDK-8392939
+    void testParseMethodReferenceWithAnnotations() throws IOException {
+        String code = """
+                      package tests;
+
+                      import java.lang.annotation.*;
+                      import java.util.function.*;
+
+                      class Test<T1> {
+                          Supplier<String> m1 = Test.@Ann1 MethodReference::getString;
+                          Supplier<MethodReference> m2 = Test.@Ann1 MethodReference::new;
+                          IntFunction<MethodReference[]> m3 = Test.@Ann1 MethodReference @Ann1[]::new;
+                          Supplier<String> m4 = Test<String>.@Ann1 MethodReference::getString;
+                          Supplier<MethodReference> m5 = Test<String>.@Ann1 MethodReference::new;
+                          IntFunction<MethodReference[]> m6 = Test<String>.@Ann1 MethodReference @Ann1[]::new;
+                          Supplier<String> m7 = Test<String>.@Ann1 MethodReference<Integer>::getString;
+                          Supplier<MethodReference> m8 = Test<String>.@Ann1 MethodReference<Integer>::new;
+                          IntFunction<MethodReference[]> m9 = Test<String>.@Ann1 MethodReference<Integer> @Ann1[]::new;
+
+                          Supplier<String> p1 = Test.@Ann2("") MethodReference::getString;
+                          Supplier<MethodReference> p2 = Test.@Ann2("") MethodReference::new;
+                          IntFunction<MethodReference[]> p3 = Test.@Ann2("") MethodReference @Ann2("")[]::new;
+                          Supplier<String> p4 = Test<String>.@Ann2("") MethodReference::getString;
+                          Supplier<MethodReference> p5 = Test<String>.@Ann2("") MethodReference::new;
+                          IntFunction<MethodReference[]> p6 = Test<String>.@Ann2("") MethodReference @Ann2("")[]::new;
+                          Supplier<String> p7 = Test<String>.@Ann2("") MethodReference<Integer>::getString;
+                          Supplier<MethodReference> p8 = Test<String>.@Ann2("") MethodReference<Integer>::new;
+                          IntFunction<MethodReference[]> p9 = Test<String>.@Ann2(value = "") MethodReference<Integer> @Ann2(value = "")[]::new;
+
+                          Function<Test, String> e1 = tests.@Ann1 Test::getString;
+                          Function<Test, String> e2 = tests.@Ann1 Test::<String>parInstance;
+                          Supplier<String> e3 = tests.@Ann1 Test::<String>parStatic;
+                          IntFunction<Test[]> e4 = tests.@Ann1 Test @Ann1 []::new;
+
+                          Function<Test, String> e5 = tests.@Ann1 Test<String>::get;
+                          Supplier<Test<String>> e6 = tests.@Ann1 Test<String>::new;
+                          Supplier<MethodReference<String>> e7 = Test.@Ann1 MethodReference<String>::new;
+                          IntFunction<MethodReference<String>[]> e8 = Test.@Ann1 MethodReference<String> @Ann1 @Ann2(value = "") []::new;
+
+                          String getString() { return ""; }
+                          <T extends String> T parInstance() { return null; }
+                          static <T extends String> T parStatic() { return null; }
+                          T1 get() { return null; }
+
+                          static class MethodReference<T2> {
+                              static String getString() { return ""; }
+                          }
+                          @Target(ElementType.TYPE_USE)
+                          @interface Ann1 {}
+                          @Target(ElementType.TYPE_USE)
+                          @interface Ann2 {
+                              public String value();
+                          }
+                      }
+                      """;
+        DiagnosticCollector<JavaFileObject> coll =
+                new DiagnosticCollector<>();
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, coll,
+                List.of("-XDrawDiagnostics"),
+                null, Arrays.asList(new MyFileObject(code)));
+        CompilationUnitTree cut = ct.parse().iterator().next();
+
+        String astAsText = toStringWithErrors(cut).replaceAll("\\R", "\n");
+
+        ct.analyze();
+
+        List<String> codes = new LinkedList<>();
+
+        for (Diagnostic<? extends JavaFileObject> d : coll.getDiagnostics()) {
+            codes.add(d.getLineNumber() + ":" + d.getColumnNumber() + ":" + d.getCode());
+        }
+
+        assertEquals("testParseMethodReferenceWithAnnotations: " + codes,
+                     List.of("10:46:compiler.err.cant.select.static.class.from.param.type",
+                             "11:55:compiler.err.cant.select.static.class.from.param.type",
+                             "12:60:compiler.err.cant.select.static.class.from.param.type",
+                             "13:61:compiler.err.invalid.mref",
+                             "15:90:compiler.err.generic.array.creation",
+                             "20:50:compiler.err.cant.select.static.class.from.param.type",
+                             "21:59:compiler.err.cant.select.static.class.from.param.type",
+                             "22:64:compiler.err.cant.select.static.class.from.param.type",
+                             "23:65:compiler.err.invalid.mref",
+                             "25:114:compiler.err.generic.array.creation",
+                             "35:108:compiler.err.generic.array.creation"),
+                     codes);
+
+        System.out.println("RESULT\n" + astAsText);
+        assertEquals("incorrect AST",
+                     astAsText,
+                     """
+                     package tests;
+                     \n\
+                     import java.lang.annotation.*;
+                     import java.util.function.*;
+                     \n\
+                     class Test<T1> {
+                         Supplier<String> m1 = Test.@Ann1 MethodReference::getString;
+                         Supplier<MethodReference> m2 = Test.@Ann1 MethodReference::new;
+                         IntFunction<MethodReference[]> m3 = Test.@Ann1 MethodReference @Ann1 []::new;
+                         Supplier<String> m4 = Test<String>.@Ann1 MethodReference::getString;
+                         Supplier<MethodReference> m5 = Test<String>.@Ann1 MethodReference::new;
+                         IntFunction<MethodReference[]> m6 = Test<String>.@Ann1 MethodReference @Ann1 []::new;
+                         Supplier<String> m7 = Test<String>.@Ann1 MethodReference<Integer>::getString;
+                         Supplier<MethodReference> m8 = Test<String>.@Ann1 MethodReference<Integer>::new;
+                         IntFunction<MethodReference[]> m9 = Test<String>.@Ann1 MethodReference<Integer> @Ann1 []::new;
+                         Supplier<String> p1 = Test.@Ann2("") MethodReference::getString;
+                         Supplier<MethodReference> p2 = Test.@Ann2("") MethodReference::new;
+                         IntFunction<MethodReference[]> p3 = Test.@Ann2("") MethodReference @Ann2("") []::new;
+                         Supplier<String> p4 = Test<String>.@Ann2("") MethodReference::getString;
+                         Supplier<MethodReference> p5 = Test<String>.@Ann2("") MethodReference::new;
+                         IntFunction<MethodReference[]> p6 = Test<String>.@Ann2("") MethodReference @Ann2("") []::new;
+                         Supplier<String> p7 = Test<String>.@Ann2("") MethodReference<Integer>::getString;
+                         Supplier<MethodReference> p8 = Test<String>.@Ann2("") MethodReference<Integer>::new;
+                         IntFunction<MethodReference[]> p9 = Test<String>.@Ann2(value = "") MethodReference<Integer> @Ann2(value = "") []::new;
+                         Function<Test, String> e1 = tests.@Ann1 Test::getString;
+                         Function<Test, String> e2 = tests.@Ann1 Test::<String>parInstance;
+                         Supplier<String> e3 = tests.@Ann1 Test::<String>parStatic;
+                         IntFunction<Test[]> e4 = tests.@Ann1 Test @Ann1 []::new;
+                         Function<Test, String> e5 = tests.@Ann1 Test<String>::get;
+                         Supplier<Test<String>> e6 = tests.@Ann1 Test<String>::new;
+                         Supplier<MethodReference<String>> e7 = Test.@Ann1 MethodReference<String>::new;
+                         IntFunction<MethodReference<String>[]> e8 = Test.@Ann1 MethodReference<String> @Ann1 @Ann2(value = "") []::new;
+                         \n\
+                         String getString() {
+                             return "";
+                         }
+                         \n\
+                         <T extends String>T parInstance() {
+                             return null;
+                         }
+                         \n\
+                         static <T extends String>T parStatic() {
+                             return null;
+                         }
+                         \n\
+                         T1 get() {
+                             return null;
+                         }
+                         \n\
+                         static class MethodReference<T2> {
+                             \n\
+                             static String getString() {
+                                 return "";
+                             }
+                         }
+                         \n\
+                         @Target(ElementType.TYPE_USE)
+                         @interface Ann1 {
+                         }
+                         \n\
+                         @Target(ElementType.TYPE_USE)
+                         @interface Ann2 {
+                             \n\
+                             public String value();
                          }
                      }""");
     }

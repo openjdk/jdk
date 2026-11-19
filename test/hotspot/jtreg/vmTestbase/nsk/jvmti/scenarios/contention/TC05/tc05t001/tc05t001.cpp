@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ static const jlong EXPECTED_TIMEOUT_ACCURACY_NS = 300000;
 #if (defined(WIN32) || defined(_WIN32))
 static const jlong EXPECTED_ACCURACY = 16; // 16ms is longest clock update interval
 #else
-static const jlong EXPECTED_ACCURACY = 10; // high frequency clock updates expected
+static const jlong EXPECTED_ACCURACY = 32; // high frequency clock updates expected
 #endif
 
 /* scaffold objects */

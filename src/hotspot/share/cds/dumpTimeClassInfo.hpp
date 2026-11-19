@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,10 @@
 #ifndef SHARE_CDS_DUMPTIMECLASSINFO_HPP
 #define SHARE_CDS_DUMPTIMECLASSINFO_HPP
 
+#include "cds/aotMetaspace.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.hpp"
 #include "cds/cdsConfig.hpp"
-#include "cds/metaspaceShared.hpp"
 #include "classfile/compactHashtable.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "oops/instanceKlass.hpp"
@@ -41,7 +41,6 @@ class Symbol;
 class DumpTimeClassInfo: public CHeapObj<mtClass> {
   bool _excluded;
   bool _is_aot_tooling_class;
-  bool _is_early_klass;
   bool _has_checked_exclusion;
 
   class DTLoaderConstraint {
@@ -88,7 +87,7 @@ class DumpTimeClassInfo: public CHeapObj<mtClass> {
     Symbol* _from_name;
   public:
     DTVerifierConstraint() : _name(nullptr), _from_name(nullptr) {}
-    DTVerifierConstraint(Symbol* n, Symbol* fn) : _name(n), _from_name(fn) {
+    DTVerifierConstraint(Symbol* n, Symbol* fn = nullptr) : _name(n), _from_name(fn) {
       Symbol::maybe_increment_refcount(_name);
       Symbol::maybe_increment_refcount(_from_name);
     }
@@ -143,7 +142,6 @@ public:
     _clsfile_crc32 = -1;
     _excluded = false;
     _is_aot_tooling_class = false;
-    _is_early_klass = JvmtiExport::is_early_phase();
     _verifier_constraints = nullptr;
     _verifier_constraint_flags = nullptr;
     _loader_constraints = nullptr;
@@ -152,8 +150,9 @@ public:
   DumpTimeClassInfo& operator=(const DumpTimeClassInfo&) = delete;
   ~DumpTimeClassInfo();
 
-  void add_verification_constraint(InstanceKlass* k, Symbol* name,
-         Symbol* from_name, bool from_field_is_protected, bool from_is_array, bool from_is_object);
+  // For old verifier: only name is saved; all other fields are null/false.
+  void add_verification_constraint(Symbol* name,
+         Symbol* from_name = nullptr, bool from_field_is_protected = false, bool from_is_array = false, bool from_is_object = false);
   void record_linking_constraint(Symbol* name, Handle loader1, Handle loader2);
   void add_enum_klass_static_field(int archived_heap_root_index);
   int  enum_klass_static_field(int which_field);
@@ -173,6 +172,14 @@ public:
 
   int num_verifier_constraints() const {
     return array_length_or_zero(_verifier_constraint_flags);
+  }
+
+  Symbol* verifier_constraint_name_at(int i) const {
+    return _verifier_constraints->at(i).name();
+  }
+
+  Symbol* verifier_constraint_from_name_at(int i) const {
+    return _verifier_constraints->at(i).from_name();
   }
 
   int num_loader_constraints() const {
@@ -210,11 +217,6 @@ public:
     _is_aot_tooling_class = true;
   }
 
-  // Was this class loaded while JvmtiExport::is_early_phase()==true
-  bool is_early_klass() {
-    return _is_early_klass;
-  }
-
   // simple accessors
   void set_excluded()                               { _excluded = true; }
   bool has_checked_exclusion() const                { return _has_checked_exclusion; }
@@ -231,7 +233,7 @@ template <typename T>
 inline unsigned DumpTimeSharedClassTable_hash(T* const& k) {
   if (CDSConfig::is_dumping_static_archive()) {
     // Deterministic archive contents
-    uintx delta = k->name() - MetaspaceShared::symbol_rs_base();
+    uintx delta = k->name() - AOTMetaspace::symbol_rs_base();
     return primitive_hash<uintx>(delta);
   } else {
     // Deterministic archive is not possible because classes can be loaded
@@ -240,7 +242,7 @@ inline unsigned DumpTimeSharedClassTable_hash(T* const& k) {
   }
 }
 
-using DumpTimeSharedClassTableBaseType = ResourceHashtable<
+using DumpTimeSharedClassTableBaseType = HashTable<
   InstanceKlass*,
   DumpTimeClassInfo,
   15889, // prime number

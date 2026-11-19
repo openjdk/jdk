@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,10 +28,9 @@ import common.TmTool;
  * This tool executes "jstat -gccapacity <pid>" and returns the results as
  * JstatGcCapacityoolResults
  */
-public class JstatGcCapacityTool extends TmTool<JstatGcCapacityResults> {
+public class JstatGcCapacityTool extends JstatTool<JstatGcCapacityResults> {
 
     public JstatGcCapacityTool(long pid) {
         super(JstatGcCapacityResults.class, "jstat", "-gccapacity " + pid);
     }
-
 }

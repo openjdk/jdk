@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2009 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,7 +26,7 @@
 #ifndef CPU_ZERO_ASSEMBLER_ZERO_INLINE_HPP
 #define CPU_ZERO_ASSEMBLER_ZERO_INLINE_HPP
 
-#include "asm/assembler.inline.hpp"
+#include "asm/assembler.hpp"
 #include "asm/codeBuffer.hpp"
 #include "code/codeCache.hpp"
 #include "runtime/handles.inline.hpp"

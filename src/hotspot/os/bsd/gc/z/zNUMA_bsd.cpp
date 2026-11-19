@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@
 
 void ZNUMA::pd_initialize() {
   _enabled = false;
+  _node_count = 1;
+  _bound_node_count = 1;
   _count = !FLAG_IS_DEFAULT(ZFakeNUMA)
       ? ZFakeNUMA
       : 1;
@@ -45,4 +47,8 @@ uint32_t ZNUMA::id() {
 uint32_t ZNUMA::memory_id(uintptr_t addr) {
   // NUMA support not enabled, assume everything belongs to node zero
   return 0;
+}
+
+int ZNUMA::numa_id_to_node(uint32_t numa_id) {
+  ShouldNotCallThis();
 }

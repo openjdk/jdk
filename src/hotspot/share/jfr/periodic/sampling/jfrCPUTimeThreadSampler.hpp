@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2025 SAP SE. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,21 +43,34 @@ struct JfrCPUTimeSampleRequest {
 };
 
 // Fixed size async-signal-safe SPSC linear queue backed by an array.
-// Designed to be only used under lock and read linearly
+// All accesses to the queue, with the exception of the atomic
+// lost-samples counters, are guarded by a tri-state lock:
+// - ENQUEUE: locked for enqueuing by a signal handler
+// - DEQUEUE: locked for dequeuing, initialization, or deallocation
+// - UNLOCKED: no lock held
 class JfrCPUTimeTraceQueue {
+ private:
+  enum LockState {
+    UNLOCKED,
+    ENQUEUE,
+    DEQUEUE
+  };
 
-  // the default queue capacity, scaled if the sampling period is smaller than 10ms
-  // when the thread is started
-  static const u4 CPU_TIME_QUEUE_CAPACITY = 500;
-
+  volatile LockState _lock;
   JfrCPUTimeSampleRequest* _data;
   u4 _capacity;
   // next unfilled index
-  volatile u4 _head;
+  u4 _head;
 
   volatile u4 _lost_samples;
+  volatile u4 _lost_samples_due_to_queue_full;
 
-public:
+  static const u4 CPU_TIME_QUEUE_INITIAL_CAPACITY = 20;
+  static const u4 CPU_TIME_QUEUE_MAX_CAPACITY     = 2000;
+
+  LockState lock_state() const;
+
+ public:
   JfrCPUTimeTraceQueue(u4 capacity);
 
   ~JfrCPUTimeTraceQueue();
@@ -68,32 +82,41 @@ public:
 
   u4 size() const;
 
-  void set_size(u4 size);
-
-  u4 capacity() const;
-
   // deletes all samples in the queue
   void set_capacity(u4 capacity);
-
-  bool is_empty() const;
 
   u4 lost_samples() const;
 
   void increment_lost_samples();
 
+  void increment_lost_samples_due_to_queue_full();
+
   // returns the previous lost samples count
   u4 get_and_reset_lost_samples();
 
-  void resize(u4 capacity);
+  u4 get_and_reset_lost_samples_due_to_queue_full();
 
-  void resize_for_period(u4 period_millis);
+  void resize_if_needed();
+
+  // init the queue capacity
+  void init();
+
+  void deallocate();
 
   void clear();
 
+  // signal safe; fails if the lock is already held
+  bool try_acquire_enqueue_lock();
+  // waits while the lock is held for enqueue; fails if it is held for dequeue
+  bool try_acquire_dequeue_lock();
+  void acquire_dequeue_lock();
+  void release_lock();
 };
 
 
 class JfrCPUSamplerThread;
+
+class JfrCPUSamplerThrottle;
 
 class JfrCPUTimeThreadSampling : public JfrCHeapObj {
   friend class JfrRecorder;
@@ -101,8 +124,8 @@ class JfrCPUTimeThreadSampling : public JfrCHeapObj {
 
   JfrCPUSamplerThread* _sampler;
 
-  void create_sampler(double rate, bool auto_adapt);
-  void set_rate_value(double rate, bool auto_adapt);
+  void create_sampler(JfrCPUSamplerThrottle& throttle);
+  void set_throttle_value(JfrCPUSamplerThrottle& throttle);
 
   JfrCPUTimeThreadSampling();
   ~JfrCPUTimeThreadSampling();
@@ -111,20 +134,23 @@ class JfrCPUTimeThreadSampling : public JfrCHeapObj {
   static JfrCPUTimeThreadSampling* create();
   static void destroy();
 
-  void update_run_state(double rate, bool auto_adapt);
+  void update_run_state(JfrCPUSamplerThrottle& throttle);
 
  public:
-  static void set_rate(double rate, bool auto_adapt);
+  static void set_rate(double rate);
+  static void set_period(u8 nanos);
 
   static void on_javathread_create(JavaThread* thread);
   static void on_javathread_terminate(JavaThread* thread);
   void handle_timer_signal(siginfo_t* info, void* context);
 
-  static void send_empty_event(const JfrTicks& start_time, traceid tid, Tickspan cpu_time_period);
-  static void send_event(const JfrTicks& start_time, traceid sid, traceid tid, Tickspan cpu_time_period, bool biased);
-  static void send_lost_event(const JfrTicks& time, traceid tid, s4 lost_samples);
+  static void send_empty_event(const JfrTicks& start_time, Tickspan cpu_time_period);
+  static void send_event(const JfrTicks& start_time, traceid sid, Tickspan cpu_time_period, bool biased);
+  static void send_lost_event(const JfrTicks& time, s4 lost_samples);
 
   static void trigger_async_processing_of_cpu_time_jfr_requests();
+
+  DEBUG_ONLY(static bool set_out_of_stack_walking_enabled(bool runnable);)
 };
 
 #else
@@ -140,10 +166,12 @@ private:
   static void destroy();
 
  public:
-  static void set_rate(double rate, bool auto_adapt);
+  static void set_rate(double rate);
+  static void set_period(u8 nanos);
 
   static void on_javathread_create(JavaThread* thread);
   static void on_javathread_terminate(JavaThread* thread);
+  DEBUG_ONLY(static bool set_out_of_stack_walking_enabled(bool runnable));
 };
 
 #endif // defined(LINUX)

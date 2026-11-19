@@ -36,7 +36,7 @@ SamplePriorityQueue::SamplePriorityQueue(size_t size) :
 }
 
 SamplePriorityQueue::~SamplePriorityQueue() {
-  FREE_C_HEAP_ARRAY(ObjectSample*, _items);
+  FREE_C_HEAP_ARRAY(_items);
   _items = nullptr;
 }
 

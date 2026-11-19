@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2020 Microsoft Corporation. All rights reserved.
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,32 +23,35 @@
  *
  */
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.*;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.*;
-
-import static org.testng.Assert.*;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.Test;
-import org.testng.SkipException;
 
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
+
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /* @test
  * @summary Test Files' public APIs with drives created using the subst command on Windows.
  * @requires (os.family == "windows")
  * @library /test/lib ..
  * @build SubstDrive
- * @run testng SubstDrive
+ * @run junit SubstDrive
  */
 public class SubstDrive {
 
@@ -62,26 +65,24 @@ public class SubstDrive {
      *        deleted when the test finishes.
      *      + Find a drive that is available for use with subst.
      */
-    @BeforeClass
-    public void setup() throws IOException {
+    @BeforeAll
+    public static void setup() throws IOException {
         TEST_TEMP_DIRECTORY = Files.createTempDirectory("tmp");
-        System.out.printf("Test directory is at %s\n", TEST_TEMP_DIRECTORY);
+        System.err.printf("Test directory is at %s\n", TEST_TEMP_DIRECTORY);
 
         Optional<Path> substDrive = findAvailableDrive(TEST_TEMP_DIRECTORY);
-        if (!substDrive.isPresent()) {
-            throw new SkipException(
-                "Could not find any available drive to use with subst, skipping the tests");
-        }
+        Assumptions.assumeTrue(substDrive.isPresent(),
+                               "Could not find any available drive to use with subst");
         SUBST_DRIVE = substDrive.get();
-        System.out.printf("Using drive %s\n with subst", SUBST_DRIVE);
+        System.err.printf("Using drive %s\n with subst", SUBST_DRIVE);
     }
 
     /**
      * Delete the root temporary directory together with all of its contents
      * when all tests finish.
      */
-    @AfterClass
-    public void removeRootTempDirectory() throws IOException {
+    @AfterAll
+    public static void removeRootTempDirectory() throws IOException {
         TestUtil.removeAll(TEST_TEMP_DIRECTORY);
     }
 
@@ -90,7 +91,7 @@ public class SubstDrive {
      * unmap the drive after every test so that subsequent ones can reuse
      * the drive.
      */
-    @AfterMethod
+    @AfterEach
     public void deleteSubstDrive() throws IOException {
         Stream<String> substitutedDrives = substFindMappedDrives();
         // Only delete `SUBST_DRIVE` if it is currently being substituted
@@ -114,7 +115,7 @@ public class SubstDrive {
         assertTrue(Files.exists(p));
 
         Files.writeString(p, fileContents);
-        assertEquals(Files.readString(p), fileContents);
+        assertEquals(fileContents, Files.readString(p));
     }
 
     /**
@@ -193,7 +194,7 @@ public class SubstDrive {
 
         Map<String, Object> attr1 = Files.readAttributes(SUBST_DRIVE, "*");
         Map<String, Object> attr2 = Files.readAttributes(tempDirectory, "*");
-        assertEquals(attr1, attr2);
+        assertEquals(attr2, attr1);
     }
 
     /**
@@ -287,19 +288,19 @@ public class SubstDrive {
         Path tempFile = Path.of(SUBST_DRIVE.toString(), "test.txt");
         String contents = "Hello world!";
         Files.writeString(tempFile, contents);
-        assertEquals(Files.readString(tempFile), contents);
+        assertEquals(contents, Files.readString(tempFile));
 
         Path link = Path.of(SUBST_DRIVE.toString(), "link");
         Files.createSymbolicLink(link, tempFile);
 
-        assertEquals(Files.readString(link), contents);
-        assertEquals(Files.isExecutable(link), Files.isExecutable(tempFile));
-        assertEquals(Files.isReadable(link), Files.isReadable(tempFile));
-        assertEquals(Files.isDirectory(link), Files.isDirectory(tempFile));
-        assertEquals(Files.isHidden(link), Files.isHidden(tempFile));
-        assertEquals(Files.isRegularFile(link), Files.isRegularFile(tempFile));
-        assertEquals(Files.isWritable(link), Files.isWritable(tempFile));
-        assertEquals(Files.getOwner(link), Files.getOwner(tempFile));
+        assertEquals(contents, Files.readString(link));
+        assertEquals(Files.isExecutable(tempFile), Files.isExecutable(link));
+        assertEquals(Files.isReadable(tempFile), Files.isReadable(link));
+        assertEquals(Files.isDirectory(tempFile), Files.isDirectory(link));
+        assertEquals(Files.isHidden(tempFile), Files.isHidden(link));
+        assertEquals(Files.isRegularFile(tempFile), Files.isRegularFile(link));
+        assertEquals(Files.isWritable(tempFile), Files.isWritable(link));
+        assertEquals(Files.getOwner(tempFile), Files.getOwner(link));
     }
 
     /**
@@ -319,16 +320,15 @@ public class SubstDrive {
 
         substCreate(SUBST_DRIVE, tempLink);
 
-        assertEquals(
-            Files.readAttributes(SUBST_DRIVE, "*"),
-            Files.readAttributes(tempDirectory, "*"));
+        assertTrue(Files.readAttributes(tempDirectory, "*")
+                   .equals(Files.readAttributes(SUBST_DRIVE, "*")));
 
         assertTrue(Files.isWritable(SUBST_DRIVE));
 
         Path tempFile = Files.createTempFile(SUBST_DRIVE, "prefix", "suffix");
         String contents = "Hello world!";
         Files.writeString(tempFile, contents);
-        assertEquals(Files.readString(tempFile), contents);
+        assertEquals(contents, Files.readString(tempFile));
 
         Path tempDirectory2 = Files.createTempDirectory(TEST_TEMP_DIRECTORY, "tmp");
         Path copy = Path.of(tempDirectory2.toString(), "copied");
@@ -341,7 +341,7 @@ public class SubstDrive {
         Files.move(tempFile, cut);
         assertTrue(Files.notExists(tempFile));
         assertTrue(Files.exists(cut));
-        assertEquals(Files.readString(cut), contents);
+        assertEquals(contents, Files.readString(cut));
     }
 
     /**
@@ -361,9 +361,8 @@ public class SubstDrive {
 
         substCreate(SUBST_DRIVE, tempLink);
 
-        assertEquals(
-            Files.readAttributes(SUBST_DRIVE, "*"),
-            Files.readAttributes(tempDirectory, "*"));
+        assertTrue(Files.readAttributes(tempDirectory, "*")
+                   .equals(Files.readAttributes(SUBST_DRIVE, "*")));
 
         assertTrue(Files.isWritable(SUBST_DRIVE));
     }
@@ -372,7 +371,7 @@ public class SubstDrive {
      * Run a command and optionally prints stdout contents to
      * `customOutputStream`.
      */
-    private void runCmd(ProcessBuilder pb, PrintStream customOutputStream) {
+    private static void runCmd(ProcessBuilder pb, PrintStream customOutputStream) {
         try {
             PrintStream ps = customOutputStream != null ?
                                     customOutputStream :
@@ -383,8 +382,8 @@ public class SubstDrive {
 
             int exitCode = outputAnalyzer.getExitValue();
             assertEquals(
-                exitCode /* actual value */,
                 0        /* expected value */,
+                exitCode /* actual value */,
                 String.format(
                     "Command `%s` failed with exit code %d",
                     pb.command(),
@@ -402,7 +401,7 @@ public class SubstDrive {
      * For reference, see:
      * https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/subst
      */
-    private void substCreate(Path drive, Path path) {
+    private static void substCreate(Path drive, Path path) {
         runCmd(
             new ProcessBuilder(
                 "cmd", "/c", "subst", drive.toString(), path.toString()),
@@ -414,7 +413,7 @@ public class SubstDrive {
      * For reference, see:
      * https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/subst
      */
-    private void substDelete(Path drive) throws IOException {
+    private static void substDelete(Path drive) throws IOException {
         runCmd(
             new ProcessBuilder(
                 "cmd", "/c", "subst", drive.toString(), "/D"),
@@ -454,7 +453,7 @@ public class SubstDrive {
      * subst can fail if the drive to be mapped already exists. The method returns
      * a drive that is available.
      */
-    private Optional<Path> findAvailableDrive(Path tempDirectory) {
+    private static Optional<Path> findAvailableDrive(Path tempDirectory) {
         for (char letter = 'Z'; letter >= 'A'; letter--) {
             try {
                 Path p = Path.of(letter + ":");

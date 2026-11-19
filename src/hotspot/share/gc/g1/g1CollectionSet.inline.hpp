@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,24 +27,26 @@
 
 #include "gc/g1/g1CollectionSet.hpp"
 
-#include "gc/g1/g1HeapRegionRemSet.hpp"
+#include "gc/g1/g1CardSetGroup.inline.hpp"
 
 template <class CardOrRangeVisitor>
-inline void G1CollectionSet::merge_cardsets_for_collection_groups(CardOrRangeVisitor& cl, uint worker_id, uint num_workers) {
-  uint length = collection_groups_increment_length();
-  uint offset =  _selected_groups_inc_part_start;
-  if (length == 0) {
+inline void G1CollectionSet::merge_collection_set_card_set_groups(CardOrRangeVisitor& cl, uint worker_id, uint num_workers) {
+  uint offset = _selected_groups_inc_part_start;
+  if (offset == 0) {
+    young_regions_card_set_group()->iterate_for_merge(cl);
+  }
+
+  const uint next_selected_group_increment = num_selected_groups_in_increment();
+  if (next_selected_group_increment == 0) {
     return;
   }
 
-  uint start_pos = (worker_id * length) / num_workers;
+  uint start_pos = (uint)((uint64_t)worker_id * next_selected_group_increment / num_workers);
   uint cur_pos = start_pos;
-  uint count = 0;
   do {
-    G1HeapRegionRemSet::iterate_for_merge(collection_set_groups()->at(offset + cur_pos)->card_set(), cl);
+    _selected_groups.at(offset + cur_pos)->iterate_for_merge(cl);
     cur_pos++;
-    count++;
-    if (cur_pos == length) {
+    if (cur_pos == next_selected_group_increment) {
       cur_pos = 0;
     }
   } while (cur_pos != start_pos);

@@ -26,7 +26,7 @@ package jdk.jpackage.internal;
 
 import java.nio.file.Path;
 
-// Must be publc to allow access from AppImageLayout.toPathGroup()
+// Must be public to allow access from AppImageLayout.toPathGroup()
 public interface LinuxApplicationLayoutMixin {
 
     /**

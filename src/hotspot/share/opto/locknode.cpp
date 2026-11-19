@@ -24,6 +24,7 @@
 
 #include "opto/locknode.hpp"
 #include "opto/parse.hpp"
+#include "opto/regmask.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
 
@@ -38,16 +39,21 @@ const RegMask &BoxLockNode::out_RegMask() const {
 
 uint BoxLockNode::size_of() const { return sizeof(*this); }
 
-BoxLockNode::BoxLockNode( int slot ) : Node( Compile::current()->root() ),
-                                       _slot(slot), _kind(BoxLockNode::Regular) {
+BoxLockNode::BoxLockNode(int slot)
+    : Node(Compile::current()->root()),
+      _slot(slot),
+      // In debug mode, signal that the register mask is constant.
+      _inmask(OptoReg::stack2reg(_slot),
+              Compile::current()->comp_arena()
+              DEBUG_ONLY(COMMA /*read_only*/ true)),
+      _kind(BoxLockNode::Regular) {
   init_class_id(Class_BoxLock);
   init_flags(Flag_rematerialize);
-  OptoReg::Name reg = OptoReg::stack2reg(_slot);
-  if (!RegMask::can_represent(reg, Compile::current()->sync_stack_slots())) {
-    Compile::current()->record_method_not_compilable("must be able to represent all monitor slots in reg mask");
+  if (_slot > BoxLockNode_SLOT_LIMIT) {
+    Compile::current()->record_method_not_compilable(
+        "reached BoxLockNode slot limit");
     return;
   }
-  _inmask.Insert(reg);
 }
 
 uint BoxLockNode::hash() const {
@@ -151,22 +157,6 @@ bool BoxLockNode::is_simple_lock_region(LockNode** unique_lock, Node* obj, Node*
       }
     }
   }
-#ifdef ASSERT
-  // Verify that FastLock and Safepoint reference only this lock region.
-  for (uint i = 0; i < this->outcnt(); i++) {
-    Node* n = this->raw_out(i);
-    if (n->is_FastLock()) {
-      FastLockNode* flock = n->as_FastLock();
-      assert((flock->box_node() == this) && flock->obj_node()->eqv_uncast(obj),"");
-    }
-    // Don't check monitor info in safepoints since the referenced object could
-    // be different from the locked object. It could be Phi node of different
-    // cast nodes which point to this locked object.
-    // We assume that no other objects could be referenced in monitor info
-    // associated with this BoxLock node because all associated locks and
-    // unlocks are reference only this one object.
-  }
-#endif
   if (unique_lock != nullptr && has_one_lock) {
     *unique_lock = lock;
   }
@@ -174,23 +164,16 @@ bool BoxLockNode::is_simple_lock_region(LockNode** unique_lock, Node* obj, Node*
 }
 
 //=============================================================================
-//-----------------------------hash--------------------------------------------
-uint FastLockNode::hash() const { return NO_HASH; }
-
-uint FastLockNode::size_of() const { return sizeof(*this); }
-
-//------------------------------cmp--------------------------------------------
-bool FastLockNode::cmp( const Node &n ) const {
-  return (&n == this);                // Always fail except on self
-}
-
-//=============================================================================
-//-----------------------------hash--------------------------------------------
-uint FastUnlockNode::hash() const { return NO_HASH; }
-
-//------------------------------cmp--------------------------------------------
-bool FastUnlockNode::cmp( const Node &n ) const {
-  return (&n == this);                // Always fail except on self
+const Type* FastLockNode::Value(PhaseGVN* phase) const {
+  const Type* in1_t = phase->type(in(1));
+  if (in1_t == Type::TOP) {
+    return Type::TOP;
+  }
+  if (in1_t->is_valueklassptr()) {
+    // Locking on value types always fails
+    return TypeInt::CC_GT;
+  }
+  return TypeInt::CC;
 }
 
 //=============================================================================
@@ -203,10 +186,16 @@ void Parse::do_monitor_enter() {
   // Check for locking null object
   if (stopped()) return;
 
+  {
+    // Synchronizing on a value type is not allowed
+    BuildCutout unless(this, value_type_test(obj, /* is_value = */ false), PROB_MAX);
+    uncommon_trap_exact(Deoptimization::Reason_class_check, Deoptimization::Action_none);
+  }
+
   // the monitor object is not part of debug info expression stack
   pop();
 
-  // Insert a FastLockNode which takes as arguments the current thread pointer,
+  // Insert a LockNode which takes as arguments the current thread pointer,
   // the obj pointer & the address of the stack slot pair used for the lock.
   shared_lock(obj);
 }

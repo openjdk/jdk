@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,19 +68,21 @@ public class TestG1ClassUnloadingHWM {
   }
 
   public static void testWithoutG1ClassUnloading() throws Exception {
-    // -XX:-ClassUnloadingWithConcurrentMark is used, so we expect a full GC instead of a concurrent cycle.
+    // -XX:-ClassUnloadingWithConcurrentMark is used, so we expect a full GC due to Metadata GC Threshold
+    // instead of a concurrent cycle.
     OutputAnalyzer out = runWithoutG1ClassUnloading();
 
-    out.shouldMatch(".*Pause Full.*");
-    out.shouldNotMatch(".*Pause Young \\(Concurrent Start\\).*");
+    out.shouldMatch(".*Pause Full \\(Metadata GC Threshold\\).*");
+    out.shouldNotMatch(".*Pause Young \\(Concurrent Start\\) \\(Metadata GC Threshold\\).*");
   }
 
   public static void testWithG1ClassUnloading() throws Exception {
-    // -XX:+ClassUnloadingWithConcurrentMark is used, so we expect a concurrent cycle instead of a full GC.
+    // -XX:+ClassUnloadingWithConcurrentMark is used, so we expect a concurrent cycle due to Metadata GC Threshold
+    // instead of a full GC.
     OutputAnalyzer out = runWithG1ClassUnloading();
 
-    out.shouldMatch(".*Pause Young \\(Concurrent Start\\).*");
-    out.shouldNotMatch(".*Pause Full.*");
+    out.shouldMatch(".*Pause Young \\(Concurrent Start\\) \\(Metadata GC Threshold\\).*");
+    out.shouldNotMatch(".*Pause Full \\(Metadata GC Threshold\\).*");
   }
 
   public static void main(String args[]) throws Exception {

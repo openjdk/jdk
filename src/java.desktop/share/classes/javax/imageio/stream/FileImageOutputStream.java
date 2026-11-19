@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import com.sun.imageio.stream.CloseableDisposerRecord;
-import com.sun.imageio.stream.StreamFinalizer;
 import sun.java2d.Disposer;
 
 /**
@@ -44,7 +43,7 @@ public class FileImageOutputStream extends ImageOutputStreamImpl {
     private RandomAccessFile raf;
 
     /** The referent to be registered with the Disposer. */
-    private final Object disposerReferent;
+    private final Object disposerReferent = new Object();
 
     /** The DisposerRecord that closes the underlying RandomAccessFile. */
     private final CloseableDisposerRecord disposerRecord;
@@ -87,14 +86,10 @@ public class FileImageOutputStream extends ImageOutputStreamImpl {
         }
 
         disposerRecord = new CloseableDisposerRecord(raf);
-        if (getClass() == FileImageOutputStream.class) {
-            disposerReferent = new Object();
-            Disposer.addRecord(disposerReferent, disposerRecord);
-        } else {
-            disposerReferent = new StreamFinalizer(this);
-        }
+        Disposer.addRecord(disposerReferent, disposerRecord);
     }
 
+    @Override
     public int read() throws IOException {
         checkClosed();
         bitOffset = 0;
@@ -105,6 +100,7 @@ public class FileImageOutputStream extends ImageOutputStreamImpl {
         return val;
     }
 
+    @Override
     public int read(byte[] b, int off, int len) throws IOException {
         checkClosed();
         bitOffset = 0;
@@ -115,18 +111,21 @@ public class FileImageOutputStream extends ImageOutputStreamImpl {
         return nbytes;
     }
 
+    @Override
     public void write(int b) throws IOException {
         flushBits(); // this will call checkClosed() for us
         raf.write(b);
         ++streamPos;
     }
 
+    @Override
     public void write(byte[] b, int off, int len) throws IOException {
         flushBits(); // this will call checkClosed() for us
         raf.write(b, off, len);
         streamPos += len;
     }
 
+    @Override
     public long length() {
         try {
             checkClosed();
@@ -147,6 +146,7 @@ public class FileImageOutputStream extends ImageOutputStreamImpl {
      * than the flushed position.
      * @throws IOException if any other I/O error occurs.
      */
+    @Override
     public void seek(long pos) throws IOException {
         checkClosed();
         if (pos < flushedPos) {
@@ -157,24 +157,10 @@ public class FileImageOutputStream extends ImageOutputStreamImpl {
         streamPos = raf.getFilePointer();
     }
 
+    @Override
     public void close() throws IOException {
         super.close();
         disposerRecord.dispose(); // this closes the RandomAccessFile
         raf = null;
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * @deprecated Finalization has been deprecated for removal.  See
-     * {@link java.lang.Object#finalize} for background information and details
-     * about migration options.
-     */
-    @Deprecated(since="9", forRemoval=true)
-    @SuppressWarnings("removal")
-    protected void finalize() throws Throwable {
-        // Empty finalizer: for performance reasons we instead use the
-        // Disposer mechanism for ensuring that the underlying
-        // RandomAccessFile is closed prior to garbage collection
     }
 }

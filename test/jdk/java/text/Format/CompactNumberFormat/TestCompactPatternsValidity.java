@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,15 @@
  */
 /*
  * @test
- * @bug 8177552 8217254 8251499 8281317
+ * @bug 8177552 8217254 8251499 8281317 8384532
  * @summary Checks the validity of compact number patterns specified through
  *          CompactNumberFormat constructor
- * @run testng/othervm TestCompactPatternsValidity
+ * @run junit/othervm TestCompactPatternsValidity
  */
+
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -35,9 +39,10 @@ import java.text.DecimalFormatSymbols;
 import java.text.ParseException;
 import java.util.List;
 import java.util.Locale;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestCompactPatternsValidity {
 
     // Max range 10^4
@@ -73,8 +78,10 @@ public class TestCompactPatternsValidity {
     // A non empty pattern containing no 0s (min integer digits), with plural rules
     private static final String[] COMPACT_PATTERN14 =
         new String[]{"", "", "", "{one:Kun other:0' 'Kun}"}; // from Somali in CLDR 38
+    // Plural operands e/c acceptance (borrowed from French)
+    private static final String[] COMPACT_PATTERN15 =
+        new String[]{"", "", "", "", "", "", "{one:0' 'million other:0' 'millions}"};
 
-    @DataProvider(name = "invalidPatterns")
     Object[][] invalidCompactPatterns() {
         return new Object[][] {
             // compact patterns
@@ -90,7 +97,6 @@ public class TestCompactPatternsValidity {
         };
     }
 
-    @DataProvider(name = "validPatternsFormat")
     Object[][] validPatternsFormat() {
         return new Object[][] {
             // compact patterns, numbers, expected output
@@ -116,7 +122,6 @@ public class TestCompactPatternsValidity {
         };
     }
 
-    @DataProvider(name = "validPatternsParse")
     Object[][] validPatternsParse() {
         return new Object[][] {
             // compact patterns, parse string, expected output
@@ -136,31 +141,40 @@ public class TestCompactPatternsValidity {
         };
     }
 
-    @DataProvider(name = "validPatternsFormatWithPluralRules")
     Object[][] validPatternsFormatWithPluralRules() {
         return new Object[][] {
             // compact patterns, plural rules, numbers, expected output
             {COMPACT_PATTERN14, "one:n = 1", List.of(1000, 2345), List.of("Kun", "2 Kun")},
+            {COMPACT_PATTERN15, "one:i = 0,1; many:e = 0 and i != 0 and i % 1000000 = 0 and v = 0 or e != 0..5",
+                List.of(1_000_000, 2_000_000), List.of("1 million", "2 millions")},
+            {COMPACT_PATTERN15, "one:i = 0,1; many:c = 0 and i != 0 and i % 1000000 = 0 and v = 0 or c != 0..5",
+                List.of(1_000_000, 2_000_000), List.of("1 million", "2 millions")},
         };
     }
 
-    @DataProvider(name = "validPatternsParseWithPluralRules")
     Object[][] validPatternsParseWithPluralRules() {
         return new Object[][] {
             // compact patterns, plural rules, parse string, expected output
             {COMPACT_PATTERN14, "one:n = 1", List.of("Kun", "2 Kun"), List.of(1000L, 2000L)},
+            {COMPACT_PATTERN15, "one:i = 0,1; many:e = 0 and i != 0 and i % 1000000 = 0 and v = 0 or e != 0..5",
+                List.of("1 million", "2 millions"), List.of(1_000_000L, 2_000_000L)},
+            {COMPACT_PATTERN15, "one:i = 0,1; many:c = 0 and i != 0 and i % 1000000 = 0 and v = 0 or c != 0..5",
+                List.of("1 million", "2 millions"), List.of(1_000_000L, 2_000_000L)},
         };
     }
 
-    @Test(dataProvider = "invalidPatterns",
-            expectedExceptions = IllegalArgumentException.class)
-    public void testInvalidCompactPatterns(String[] compactPatterns) {
-        new CompactNumberFormat("#,##0.0#", DecimalFormatSymbols
-                .getInstance(Locale.US), compactPatterns);
+    @ParameterizedTest
+    @MethodSource("invalidCompactPatterns")
+    void testInvalidCompactPatterns(String[] compactPatterns) {
+        assertThrows(IllegalArgumentException.class, () -> {
+            new CompactNumberFormat("#,##0.0#", DecimalFormatSymbols
+                    .getInstance(Locale.US), compactPatterns);
+        });
     }
 
-    @Test(dataProvider = "validPatternsFormat")
-    public void testValidPatternsFormat(String[] compactPatterns,
+    @ParameterizedTest
+    @MethodSource("validPatternsFormat")
+    void testValidPatternsFormat(String[] compactPatterns,
             List<Object> numbers, List<String> expected) {
         CompactNumberFormat fmt = new CompactNumberFormat("#,##0.0#",
                 DecimalFormatSymbols.getInstance(Locale.US), compactPatterns);
@@ -170,8 +184,9 @@ public class TestCompactPatternsValidity {
         }
     }
 
-    @Test(dataProvider = "validPatternsParse")
-    public void testValidPatternsParse(String[] compactPatterns,
+    @ParameterizedTest
+    @MethodSource("validPatternsParse")
+    void testValidPatternsParse(String[] compactPatterns,
             List<String> parseString, List<Number> numbers) throws ParseException {
         CompactNumberFormat fmt = new CompactNumberFormat("#,##0.0#",
                     DecimalFormatSymbols.getInstance(Locale.US), compactPatterns);
@@ -181,8 +196,9 @@ public class TestCompactPatternsValidity {
         }
     }
 
-    @Test(dataProvider = "validPatternsFormatWithPluralRules")
-    public void testValidPatternsFormatWithPluralRules(String[] compactPatterns, String pluralRules,
+    @ParameterizedTest
+    @MethodSource("validPatternsFormatWithPluralRules")
+    void testValidPatternsFormatWithPluralRules(String[] compactPatterns, String pluralRules,
             List<Object> numbers, List<String> expected) {
         CompactNumberFormat fmt = new CompactNumberFormat("#,##0.0#",
                         DecimalFormatSymbols.getInstance(Locale.US), compactPatterns, pluralRules);
@@ -192,8 +208,9 @@ public class TestCompactPatternsValidity {
         }
     }
 
-    @Test(dataProvider = "validPatternsParseWithPluralRules")
-    public void testValidPatternsParsewithPluralRules(String[] compactPatterns, String pluralRules,
+    @ParameterizedTest
+    @MethodSource("validPatternsParseWithPluralRules")
+    void testValidPatternsParseWithPluralRules(String[] compactPatterns, String pluralRules,
             List<String> parseString, List<Number> numbers) throws ParseException {
         CompactNumberFormat fmt = new CompactNumberFormat("#,##0.0#",
                         DecimalFormatSymbols.getInstance(Locale.US), compactPatterns, pluralRules);

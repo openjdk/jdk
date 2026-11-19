@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ super class TestVerifyStackWithUnreachableBytecodeImpl version 49:0
     {
         // If A not loaded -> trap for TestVerifyStackWithUnreachableBytecodeA unloaded
         // If a loaded, but TestVerifyStackWithUnreachableBytecodeB not -> assume TestVerifyStackWithUnreachableBytecodeA.val null, else trap.
-        //   -> "null_assert_or_unreached0"
+        //   -> "null_assert"
         getstatic    Field compiler/interpreter/TestVerifyStackWithUnreachableBytecodeA.val:"Lcompiler/interpreter/TestVerifyStackWithUnreachableBytecodeB;";
         areturn;
 

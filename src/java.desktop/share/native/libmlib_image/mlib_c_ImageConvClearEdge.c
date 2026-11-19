@@ -164,7 +164,7 @@ mlib_status mlib_ImageConvZeroEdge(mlib_image *dst,
   mlib_type type = mlib_ImageGetType(dst);
 
   if (type == MLIB_FLOAT || type == MLIB_DOUBLE) {
-    return mlib_ImageConvClearEdge_Fp(dst, dx_l, dx_r, dy_t, dy_b, zero, cmask);
+    return MLIB_FAILURE;
   }
   else {
     return mlib_ImageConvClearEdge(dst, dx_l, dx_r, dy_t, dy_b, (mlib_s32 *) zero, cmask);

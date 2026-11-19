@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,16 +24,16 @@
 
 #include "cds/aotClassLinker.hpp"
 #include "cds/aotConstantPoolResolver.hpp"
+#include "cds/aotHeap.hpp"
 #include "cds/aotLinkedClassTable.hpp"
+#include "cds/aotSystemDictionary.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.inline.hpp"
 #include "cds/cdsConfig.hpp"
-#include "cds/heapShared.hpp"
 #include "cds/lambdaFormInvokers.inline.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/dictionary.hpp"
 #include "classfile/systemDictionary.hpp"
-#include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/constantPool.inline.hpp"
@@ -93,7 +93,7 @@ void AOTClassLinker::add_vm_class(InstanceKlass* ik) {
       bool v = try_add_candidate(ik);
       assert(v, "must succeed for VM class");
     }
-    InstanceKlass* super = ik->java_super();
+    InstanceKlass* super = ik->super();
     if (super != nullptr) {
       add_vm_class(super);
     }
@@ -127,7 +127,7 @@ bool AOTClassLinker::try_add_candidate(InstanceKlass* ik) {
   assert(is_initialized(), "sanity");
   assert(CDSConfig::is_dumping_aot_linked_classes(), "sanity");
 
-  if (!SystemDictionaryShared::is_builtin(ik)) {
+  if (!AOTSystemDictionary::is_builtin(ik)) {
     // not loaded by a class loader which we know about
     return false;
   }
@@ -136,12 +136,16 @@ bool AOTClassLinker::try_add_candidate(InstanceKlass* ik) {
     return true;
   }
 
+  if (!ik->is_linked() && AOTSystemDictionary::has_class_failed_verification(ik)) {
+    return false;
+  }
+
   if (ik->is_hidden()) {
     assert(!ik->defined_by_other_loaders(), "hidden classes are archived only for builtin loaders");
     if (!CDSConfig::is_dumping_method_handles()) {
       return false;
     }
-    if (HeapShared::is_lambda_proxy_klass(ik)) {
+    if (AOTHeap::is_lambda_proxy_klass(ik)) {
       InstanceKlass* nest_host = ik->nest_host_not_null();
       if (!try_add_candidate(nest_host)) {
         ResourceMark rm;
@@ -151,7 +155,7 @@ bool AOTClassLinker::try_add_candidate(InstanceKlass* ik) {
     }
   }
 
-  InstanceKlass* s = ik->java_super();
+  InstanceKlass* s = ik->super();
   if (s != nullptr && !try_add_candidate(s)) {
     return false;
   }
@@ -167,7 +171,7 @@ bool AOTClassLinker::try_add_candidate(InstanceKlass* ik) {
 
   // There are no loops in the class hierarchy, and this function is always called single-threaded, so
   // we know ik has not been added yet.
-  assert(CDSConfig::current_thread_is_vm_or_dumper(), "that's why we don't need locks");
+  assert(CDSConfig::in_dumper_thread_or_aot_safepoint(), "that's why we don't need locks");
   add_new_candidate(ik);
 
   return true;
@@ -191,8 +195,8 @@ void AOTClassLinker::write_to_archive() {
   assert_at_safepoint();
 
   if (CDSConfig::is_dumping_aot_linked_classes()) {
-    AOTLinkedClassTable* table = AOTLinkedClassTable::get(CDSConfig::is_dumping_static_archive());
-    table->set_boot(write_classes(nullptr, true));
+    AOTLinkedClassTable* table = AOTLinkedClassTable::get();
+    table->set_boot1(write_classes(nullptr, true));
     table->set_boot2(write_classes(nullptr, false));
     table->set_platform(write_classes(SystemDictionary::java_platform_loader(), false));
     table->set_app(write_classes(SystemDictionary::java_system_loader(), false));
@@ -212,16 +216,7 @@ Array<InstanceKlass*>* AOTClassLinker::write_classes(oop class_loader, bool is_j
       continue;
     }
 
-    if (ik->is_shared() && CDSConfig::is_dumping_dynamic_archive()) {
-      if (CDSConfig::is_using_aot_linked_classes()) {
-        // This class was recorded as AOT-linked for the base archive,
-        // so there's no need to do so again for the dynamic archive.
-      } else {
-        list.append(ik);
-      }
-    } else {
-      list.append(ArchiveBuilder::current()->get_buffered_addr(ik));
-    }
+    list.append(ArchiveBuilder::current()->get_buffered_addr(ik));
   }
 
   if (list.length() == 0) {

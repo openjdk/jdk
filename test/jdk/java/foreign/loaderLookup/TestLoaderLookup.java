@@ -25,7 +25,7 @@
  * @test
  * @compile lookup/Lookup.java
  * @compile invoker/Invoker.java
- * @run main/othervm/native --enable-native-access=ALL-UNNAMED TestLoaderLookup
+ * @run main/othervm/native/timeout=480 --enable-native-access=ALL-UNNAMED TestLoaderLookup
  */
 
 import java.lang.foreign.*;

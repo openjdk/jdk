@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
 
 #include "jfr/recorder/storage/jfrStorageUtils.hpp"
 
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/javaThread.hpp"
 
 template <typename T>
@@ -49,7 +49,7 @@ inline bool DefaultDiscarder<T>::discard(T* t, const u1* data, size_t size) {
 template <typename Type>
 inline size_t get_unflushed_size(const u1* top, Type* t) {
   assert(t != nullptr, "invariant");
-  return Atomic::load_acquire(t->pos_address()) - top;
+  return AtomicAccess::load_acquire(t->pos_address()) - top;
 }
 
 template <typename Operation>
@@ -60,9 +60,7 @@ inline bool ConcurrentWriteOp<Operation>::process(typename Operation::Type* t) {
   const size_t unflushed_size = get_unflushed_size(top, t);
   assert((intptr_t)unflushed_size >= 0, "invariant");
   if (unflushed_size == 0) {
-    if (is_retired) {
-      t->set_top(top);
-    } else {
+    if (!is_retired) {
       t->release_critical_section_top(top);
     }
     return true;
@@ -91,7 +89,7 @@ inline bool MutexedWriteOp<Operation>::process(typename Operation::Type* t) {
 }
 
 template <typename Type>
-static void retired_sensitive_acquire(Type* t, Thread* thread) {
+inline void retired_sensitive_acquire(Type* t, Thread* thread) {
   assert(t != nullptr, "invariant");
   assert(thread != nullptr, "invariant");
   assert(thread == Thread::current(), "invariant");
@@ -152,7 +150,7 @@ template <typename Operation>
 inline bool EpochDispatchOp<Operation>::process(typename Operation::Type* t) {
   assert(t != nullptr, "invariant");
   const u1* const current_top = _previous_epoch ? t->start() : t->top();
-  const size_t unflushed_size = Atomic::load_acquire(t->pos_address()) - current_top;
+  const size_t unflushed_size = AtomicAccess::load_acquire(t->pos_address()) - current_top;
   assert((intptr_t)unflushed_size >= 0, "invariant");
   if (unflushed_size == 0) {
     return true;

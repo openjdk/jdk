@@ -25,13 +25,13 @@
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/placeholders.hpp"
 #include "logging/log.hpp"
-#include "logging/logTag.hpp"
 #include "logging/logStream.hpp"
+#include "logging/logTag.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/symbolHandle.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "utilities/resourceHash.hpp"
+#include "utilities/hashTable.hpp"
 
 class PlaceholderKey {
   SymbolHandle _name;
@@ -49,7 +49,7 @@ class PlaceholderKey {
 };
 
 const int _placeholder_table_size = 503;   // Does this really have to be prime?
-using InternalPlaceholderTable = ResourceHashtable<PlaceholderKey, PlaceholderEntry, _placeholder_table_size, AnyObj::C_HEAP, mtClass,
+using InternalPlaceholderTable = HashTable<PlaceholderKey, PlaceholderEntry, _placeholder_table_size, AnyObj::C_HEAP, mtClass,
                   PlaceholderKey::hash, PlaceholderKey::equals>;
 static InternalPlaceholderTable* _placeholders;
 
@@ -61,6 +61,8 @@ static InternalPlaceholderTable* _placeholders;
 // For DEFINE_CLASS, the head of the queue owns the
 // define token and the rest of the threads wait to return the
 // result the first thread gets.
+// For DETECT_CIRCULARITY, set when loading super class, interfaces, or value type
+// fields for class circularity checking.
 class SeenThread: public CHeapObj<mtInternal> {
 private:
    JavaThread* _thread;

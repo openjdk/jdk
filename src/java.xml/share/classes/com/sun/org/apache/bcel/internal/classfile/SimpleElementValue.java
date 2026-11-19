@@ -27,11 +27,20 @@ import java.io.IOException;
 import com.sun.org.apache.bcel.internal.Const;
 
 /**
+ * Represents a simple element value in an annotation.
+ *
  * @since 6.0
  */
 public class SimpleElementValue extends ElementValue {
     private int index;
 
+    /**
+     * Constructs a SimpleElementValue.
+     *
+     * @param type The element value type.
+     * @param index The index into the constant pool.
+     * @param cpool The constant pool.
+     */
     public SimpleElementValue(final int type, final int index, final ConstantPool cpool) {
         super(type, cpool);
         this.index = index;
@@ -54,85 +63,137 @@ public class SimpleElementValue extends ElementValue {
             dos.writeShort(getIndex());
             break;
         default:
-            throw new ClassFormatException("SimpleElementValue doesnt know how to write out type " + type);
+            throw new ClassFormatException("SimpleElementValue doesn't know how to write out type " + type);
         }
     }
 
     /**
-     * @return Value entry index in the cpool
+     * Gets the value entry index in the constant pool.
+     *
+     * @return Value entry index in the constant pool.
      */
     public int getIndex() {
         return index;
     }
 
+    /**
+     * Gets the boolean value.
+     *
+     * @return The boolean value.
+     */
     public boolean getValueBoolean() {
         if (super.getType() != PRIMITIVE_BOOLEAN) {
-            throw new IllegalStateException("Dont call getValueBoolean() on a non BOOLEAN ElementValue");
+            throw new IllegalStateException("Don't call getValueBoolean() on a non BOOLEAN ElementValue");
         }
         final ConstantInteger bo = (ConstantInteger) super.getConstantPool().getConstant(getIndex());
         return bo.getBytes() != 0;
     }
 
+    /**
+     * Gets the byte value.
+     *
+     * @return The byte value.
+     */
     public byte getValueByte() {
         if (super.getType() != PRIMITIVE_BYTE) {
-            throw new IllegalStateException("Dont call getValueByte() on a non BYTE ElementValue");
+            throw new IllegalStateException("Don't call getValueByte() on a non BYTE ElementValue");
         }
         return (byte) super.getConstantPool().getConstantInteger(getIndex()).getBytes();
     }
 
+    /**
+     * Gets the char value.
+     *
+     * @return The char value.
+     */
     public char getValueChar() {
         if (super.getType() != PRIMITIVE_CHAR) {
-            throw new IllegalStateException("Dont call getValueChar() on a non CHAR ElementValue");
+            throw new IllegalStateException("Don't call getValueChar() on a non CHAR ElementValue");
         }
         return (char) super.getConstantPool().getConstantInteger(getIndex()).getBytes();
     }
 
+    /**
+     * Gets the double value.
+     *
+     * @return The double value.
+     */
     public double getValueDouble() {
         if (super.getType() != PRIMITIVE_DOUBLE) {
-            throw new IllegalStateException("Dont call getValueDouble() on a non DOUBLE ElementValue");
+            throw new IllegalStateException("Don't call getValueDouble() on a non DOUBLE ElementValue");
         }
         final ConstantDouble d = (ConstantDouble) super.getConstantPool().getConstant(getIndex());
         return d.getBytes();
     }
 
+    /**
+     * Gets the float value.
+     *
+     * @return The float value.
+     */
     public float getValueFloat() {
         if (super.getType() != PRIMITIVE_FLOAT) {
-            throw new IllegalStateException("Dont call getValueFloat() on a non FLOAT ElementValue");
+            throw new IllegalStateException("Don't call getValueFloat() on a non FLOAT ElementValue");
         }
         final ConstantFloat f = (ConstantFloat) super.getConstantPool().getConstant(getIndex());
         return f.getBytes();
     }
 
+    /**
+     * Gets the int value.
+     *
+     * @return The int value.
+     */
     public int getValueInt() {
         if (super.getType() != PRIMITIVE_INT) {
-            throw new IllegalStateException("Dont call getValueInt() on a non INT ElementValue");
+            throw new IllegalStateException("Don't call getValueInt() on a non INT ElementValue");
         }
         return super.getConstantPool().getConstantInteger(getIndex()).getBytes();
     }
 
+    /**
+     * Gets the long value.
+     *
+     * @return The long value.
+     */
     public long getValueLong() {
         if (super.getType() != PRIMITIVE_LONG) {
-            throw new IllegalStateException("Dont call getValueLong() on a non LONG ElementValue");
+            throw new IllegalStateException("Don't call getValueLong() on a non LONG ElementValue");
         }
         final ConstantLong j = (ConstantLong) super.getConstantPool().getConstant(getIndex());
         return j.getBytes();
     }
 
+    /**
+     * Gets the short value.
+     *
+     * @return The short value.
+     */
     public short getValueShort() {
         if (super.getType() != PRIMITIVE_SHORT) {
-            throw new IllegalStateException("Dont call getValueShort() on a non SHORT ElementValue");
+            throw new IllegalStateException("Don't call getValueShort() on a non SHORT ElementValue");
         }
         final ConstantInteger s = (ConstantInteger) super.getConstantPool().getConstant(getIndex());
         return (short) s.getBytes();
     }
 
+    /**
+     * Gets the string value.
+     *
+     * @return The string value.
+     */
     public String getValueString() {
         if (super.getType() != STRING) {
-            throw new IllegalStateException("Dont call getValueString() on a non STRING ElementValue");
+            throw new IllegalStateException("Don't call getValueString() on a non STRING ElementValue");
         }
         return super.getConstantPool().getConstantUtf8(getIndex()).getBytes();
     }
 
+    /**
+     * Sets the index into the constant pool.
+     *
+     * @param index The index.
+     */
     public void setIndex(final int index) {
         this.index = index;
     }

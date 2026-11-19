@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,12 @@
  */
 package jdk.jpackage.internal.model;
 
-import static jdk.jpackage.internal.util.PathUtils.resolveNullablePath;
+import static jdk.jpackage.internal.util.PathUtils.mapNullablePath;
 
 import java.nio.file.Path;
 import java.util.Objects;
+import java.util.function.Function;
+import java.util.function.UnaryOperator;
 import jdk.jpackage.internal.util.CompositeProxy;
 
 /**
@@ -40,9 +42,49 @@ import jdk.jpackage.internal.util.CompositeProxy;
  */
 public interface ApplicationLayout extends AppImageLayout, ApplicationLayoutMixin {
 
+    enum Directory implements DirectorySelector {
+        LAUNCHERS_DIR(ApplicationLayout::launchersDirectory),
+        APP_DIR(ApplicationLayout::appDirectory),
+        APP_MODULES_DIR(ApplicationLayout::appModsDirectory),
+        DESKTOP_INTEGRATION_DIR(ApplicationLayout::desktopIntegrationDirectory),
+        CONTENT_DIR(ApplicationLayout::contentDirectory),
+        RESOURCES_DIR(ApplicationLayout::resourcesDirectory),
+        ;
+
+        Directory(Function<ApplicationLayout, Path> func) {
+            this.func = Objects.requireNonNull(func);
+        }
+
+        @Override
+        public Path resolve(AppImageLayout target) {
+            return func.apply((ApplicationLayout)target);
+        }
+
+        private Function<ApplicationLayout, Path> func;
+    }
+
     @Override
     default ApplicationLayout resolveAt(Path root) {
-        return buildFrom(this).resolveAt(root).create();
+        return (ApplicationLayout)AppImageLayout.super.resolveAt(root);
+    }
+
+    @Override
+    default ApplicationLayout unresolve() {
+        return (ApplicationLayout)AppImageLayout.super.unresolve();
+    }
+
+    @Override
+    default ApplicationLayout resetRootDirectory() {
+        if (isResolved()) {
+            return buildFrom(this).rootDirectory("").create();
+        } else {
+            return this;
+        }
+    }
+
+    @Override
+    default ApplicationLayout map(UnaryOperator<Path> mapper) {
+        return buildFrom(this).mutate(mapper).create();
     }
 
     /**
@@ -80,6 +122,7 @@ public interface ApplicationLayout extends AppImageLayout, ApplicationLayoutMixi
             appModsDirectory = appLayout.appModsDirectory();
             desktopIntegrationDirectory = appLayout.desktopIntegrationDirectory();
             contentDirectory = appLayout.contentDirectory();
+            resourcesDirectory = appLayout.resourcesDirectory();
         }
 
         public ApplicationLayout create() {
@@ -91,11 +134,13 @@ public interface ApplicationLayout extends AppImageLayout, ApplicationLayoutMixi
             Objects.requireNonNull(appModsDirectory);
             Objects.requireNonNull(desktopIntegrationDirectory);
             Objects.requireNonNull(contentDirectory);
+            Objects.requireNonNull(resourcesDirectory);
 
             return ApplicationLayout.create(new AppImageLayout.Stub(
                     rootDirectory, runtimeDirectory), new ApplicationLayoutMixin.Stub(
                     launchersDirectory, appDirectory, appModsDirectory,
-                    desktopIntegrationDirectory, contentDirectory));
+                    desktopIntegrationDirectory, contentDirectory,
+                    resourcesDirectory));
         }
 
         public Builder setAll(String path) {
@@ -110,17 +155,19 @@ public interface ApplicationLayout extends AppImageLayout, ApplicationLayoutMixi
             appModsDirectory(path);
             desktopIntegrationDirectory(path);
             contentDirectory(path);
+            resourcesDirectory(path);
             return this;
         }
 
-        public Builder resolveAt(Path base) {
-            rootDirectory(resolveNullablePath(base, rootDirectory));
-            launchersDirectory(resolveNullablePath(base, launchersDirectory));
-            appDirectory(resolveNullablePath(base, appDirectory));
-            runtimeDirectory(resolveNullablePath(base, runtimeDirectory));
-            appModsDirectory(resolveNullablePath(base, appModsDirectory));
-            desktopIntegrationDirectory(resolveNullablePath(base, desktopIntegrationDirectory));
-            contentDirectory(resolveNullablePath(base, contentDirectory));
+        public Builder mutate(UnaryOperator<Path> mapper) {
+            rootDirectory(mapNullablePath(mapper, rootDirectory));
+            launchersDirectory(mapNullablePath(mapper, launchersDirectory));
+            appDirectory(mapNullablePath(mapper, appDirectory));
+            runtimeDirectory(mapNullablePath(mapper, runtimeDirectory));
+            appModsDirectory(mapNullablePath(mapper, appModsDirectory));
+            desktopIntegrationDirectory(mapNullablePath(mapper, desktopIntegrationDirectory));
+            contentDirectory(mapNullablePath(mapper, contentDirectory));
+            resourcesDirectory(mapNullablePath(mapper, resourcesDirectory));
             return this;
         }
 
@@ -187,6 +234,15 @@ public interface ApplicationLayout extends AppImageLayout, ApplicationLayoutMixi
             return this;
         }
 
+        public Builder resourcesDirectory(String v) {
+            return resourcesDirectory(Path.of(v));
+        }
+
+        public Builder resourcesDirectory(Path v) {
+            resourcesDirectory = v;
+            return this;
+        }
+
         private Path rootDirectory = Path.of("");
         private Path launchersDirectory;
         private Path appDirectory;
@@ -194,5 +250,6 @@ public interface ApplicationLayout extends AppImageLayout, ApplicationLayoutMixi
         private Path appModsDirectory;
         private Path desktopIntegrationDirectory;
         private Path contentDirectory;
+        private Path resourcesDirectory;
     }
 }

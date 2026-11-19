@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,10 @@ void* C2ParseAccess::barrier_set_state() const {
 
 PhaseGVN& C2ParseAccess::gvn() const { return _kit->gvn(); }
 
+Node* C2ParseAccess::control() const {
+  return _ctl == nullptr ? _kit->control() : _ctl;
+}
+
 bool C2Access::needs_cpu_membar() const {
   bool mismatched   = (_decorators & C2_MISMATCHED) != 0;
   bool is_unordered = (_decorators & MO_UNORDERED) != 0;
@@ -72,7 +76,7 @@ bool C2Access::needs_cpu_membar() const {
     // the barriers get omitted and the unsafe reference begins to "pollute"
     // the alias analysis of the rest of the graph, either Compile::can_alias
     // or Compile::must_alias will throw a diagnostic assert.)
-    if (is_mixed || !is_unordered || (mismatched && !_addr.type()->isa_aryptr())) {
+    if (is_mixed || !is_unordered || (mismatched && !_addr.type()->is_aryptr())) {
       return true;
     }
   } else {
@@ -115,7 +119,7 @@ uint8_t BarrierStubC2::barrier_data() const {
 void BarrierStubC2::preserve(Register r) {
   const VMReg vm_reg = r->as_VMReg();
   assert(vm_reg->is_Register(), "r must be a general-purpose register");
-  _preserve.Insert(OptoReg::as_OptoReg(vm_reg));
+  _preserve.insert(OptoReg::as_OptoReg(vm_reg));
 }
 
 void BarrierStubC2::dont_preserve(Register r) {
@@ -124,9 +128,15 @@ void BarrierStubC2::dont_preserve(Register r) {
   // Subtract the given register and all its sub-registers (e.g. {R11, R11_H}
   // for r11 in aarch64).
   do {
-    _preserve.Remove(OptoReg::as_OptoReg(vm_reg));
+    _preserve.remove(OptoReg::as_OptoReg(vm_reg));
     vm_reg = vm_reg->next();
   } while (vm_reg->is_Register() && !vm_reg->is_concrete());
+}
+
+bool BarrierStubC2::is_preserved(Register r) const {
+  const VMReg vm_reg = r->as_VMReg();
+  assert(vm_reg->is_Register(), "r must be a general-purpose register");
+  return _preserve.member(OptoReg::as_OptoReg(vm_reg));
 }
 
 const RegMask& BarrierStubC2::preserve_set() const {
@@ -139,6 +149,7 @@ Node* BarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue& val) cons
   bool mismatched = (decorators & C2_MISMATCHED) != 0;
   bool unaligned = (decorators & C2_UNALIGNED) != 0;
   bool unsafe = (decorators & C2_UNSAFE_ACCESS) != 0;
+  bool store_special = (decorators & C2_SPECIAL_ACCESS) != 0;
   bool requires_atomic_access = (decorators & MO_UNORDERED) == 0;
 
   MemNode::MemOrd mo = access.mem_node_mo();
@@ -151,7 +162,7 @@ Node* BarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue& val) cons
     GraphKit* kit = parse_access.kit();
     store = kit->store_to_memory(kit->control(), access.addr().node(), val.node(), bt,
                                  mo, requires_atomic_access, unaligned, mismatched,
-                                 unsafe, access.barrier_data());
+                                 unsafe, store_special, access.barrier_data());
   } else {
     assert(access.is_opt_access(), "either parse or opt access");
     C2OptAccess& opt_access = static_cast<C2OptAccess&>(access);
@@ -201,7 +212,7 @@ Node* BarrierSetC2::load_at_resolved(C2Access& access, const Type* val_type) con
   if (access.is_parse_access()) {
     C2ParseAccess& parse_access = static_cast<C2ParseAccess&>(access);
     GraphKit* kit = parse_access.kit();
-    Node* control = control_dependent ? kit->control() : nullptr;
+    Node* control = control_dependent ? parse_access.control() : nullptr;
 
     if (immutable) {
       Compile* C = Compile::current();
@@ -395,16 +406,10 @@ MemNode::MemOrd C2Access::mem_node_mo() const {
 
 void C2Access::fixup_decorators() {
   bool default_mo = (_decorators & MO_DECORATOR_MASK) == 0;
-  bool is_unordered = (_decorators & MO_UNORDERED) != 0 || default_mo;
   bool anonymous = (_decorators & C2_UNSAFE_ACCESS) != 0;
 
   bool is_read = (_decorators & C2_READ_ACCESS) != 0;
   bool is_write = (_decorators & C2_WRITE_ACCESS) != 0;
-
-  if (AlwaysAtomicAccesses && is_unordered) {
-    _decorators &= ~MO_DECORATOR_MASK; // clear the MO bits
-    _decorators |= MO_RELAXED; // Force the MO_RELAXED decorator with AlwaysAtomicAccess
-  }
 
   _decorators = AccessInternal::decorator_fixup(_decorators, _type);
 
@@ -415,12 +420,12 @@ void C2Access::fixup_decorators() {
     _decorators |= C2_UNKNOWN_CONTROL_LOAD;
     const TypePtr* adr_type = _addr.type();
     Node* adr = _addr.node();
-    if (!needs_cpu_membar() && adr_type->isa_instptr()) {
+    if (!needs_cpu_membar() && adr_type->is_instptr()) {
       assert(adr_type->meet(TypePtr::NULL_PTR) != adr_type->remove_speculative(), "should be not null");
       intptr_t offset = Type::OffsetBot;
       AddPNode::Ideal_base_and_offset(adr, &gvn(), offset);
       if (offset >= 0) {
-        int s = Klass::layout_helper_size_in_bytes(adr_type->isa_instptr()->instance_klass()->layout_helper());
+        int s = Klass::layout_helper_size_in_bytes(adr_type->as_instptr()->instance_klass()->layout_helper());
         if (offset < s) {
           // Guaranteed to be a valid access, no need to pin it
           _decorators ^= C2_CONTROL_DEPENDENT_LOAD;
@@ -462,6 +467,7 @@ Node* BarrierSetC2::atomic_cmpxchg_val_at_resolved(C2AtomicParseAccess& access, 
 
   Node* load_store = nullptr;
 
+  assert((access.decorators() & C2_SPECIAL_ACCESS) == 0, "access shouldn't be special");
   if (access.is_oop()) {
 #ifdef _LP64
     if (adr->bottom_type()->is_ptr_to_narrowoop()) {
@@ -471,7 +477,7 @@ Node* BarrierSetC2::atomic_cmpxchg_val_at_resolved(C2AtomicParseAccess& access, 
     } else
 #endif
     {
-      load_store = new CompareAndExchangePNode(kit->control(), mem, adr, new_val, expected_val, adr_type, value_type->is_oopptr(), mo);
+      load_store = new CompareAndExchangePNode(kit->control(), mem, adr, new_val, expected_val, adr_type, value_type->as_oopptr(), mo);
     }
   } else {
     switch (access.type()) {
@@ -503,6 +509,7 @@ Node* BarrierSetC2::atomic_cmpxchg_val_at_resolved(C2AtomicParseAccess& access, 
   pin_atomic_op(access);
 
 #ifdef _LP64
+  assert((access.decorators() & C2_SPECIAL_ACCESS) == 0, "access shouldn't be special");
   if (access.is_oop() && adr->bottom_type()->is_ptr_to_narrowoop()) {
     return kit->gvn().transform(new DecodeNNode(load_store, load_store->get_ptr_type()));
   }
@@ -521,6 +528,7 @@ Node* BarrierSetC2::atomic_cmpxchg_bool_at_resolved(C2AtomicParseAccess& access,
   Node* load_store = nullptr;
   Node* adr = access.addr().node();
 
+  assert((access.decorators() & C2_SPECIAL_ACCESS) == 0, "access shouldn't be special");
   if (access.is_oop()) {
 #ifdef _LP64
     if (adr->bottom_type()->is_ptr_to_narrowoop()) {
@@ -595,6 +603,7 @@ Node* BarrierSetC2::atomic_xchg_at_resolved(C2AtomicParseAccess& access, Node* n
   const TypePtr* adr_type = access.addr().type();
   Node* load_store = nullptr;
 
+  assert((access.decorators() & C2_SPECIAL_ACCESS) == 0, "access shouldn't be special");
   if (access.is_oop()) {
 #ifdef _LP64
     if (adr->bottom_type()->is_ptr_to_narrowoop()) {
@@ -603,7 +612,7 @@ Node* BarrierSetC2::atomic_xchg_at_resolved(C2AtomicParseAccess& access, Node* n
     } else
 #endif
     {
-      load_store = new GetAndSetPNode(kit->control(), mem, adr, new_val, adr_type, value_type->is_oopptr());
+      load_store = new GetAndSetPNode(kit->control(), mem, adr, new_val, adr_type, value_type->as_oopptr());
     }
   } else  {
     switch (access.type()) {
@@ -631,6 +640,7 @@ Node* BarrierSetC2::atomic_xchg_at_resolved(C2AtomicParseAccess& access, Node* n
   pin_atomic_op(access);
 
 #ifdef _LP64
+  assert((access.decorators() & C2_SPECIAL_ACCESS) == 0, "access shouldn't be special");
   if (access.is_oop() && adr->bottom_type()->is_ptr_to_narrowoop()) {
     return kit->gvn().transform(new DecodeNNode(load_store, load_store->get_ptr_type()));
   }
@@ -708,7 +718,6 @@ int BarrierSetC2::arraycopy_payload_base_offset(bool is_array) {
   // 12 - 64-bit VM, compressed klass
   // 16 - 64-bit VM, normal klass
   if (base_off % BytesPerLong != 0) {
-    assert(UseCompressedClassPointers, "");
     assert(!UseCompactObjectHeaders, "");
     if (is_array) {
       // Exclude length to copy by 8 bytes words.
@@ -744,7 +753,7 @@ void BarrierSetC2::clone(GraphKit* kit, Node* src_base, Node* dst_base, Node* si
   Node* n = kit->gvn().transform(ac);
   if (n == ac) {
     const TypePtr* raw_adr_type = TypeRawPtr::BOTTOM;
-    ac->set_adr_type(TypeRawPtr::BOTTOM);
+    ac->set_out_adr_type(TypeRawPtr::BOTTOM);
     kit->set_predefined_output_for_runtime_call(ac, ac->in(TypeFunc::Memory), raw_adr_type);
   } else {
     kit->set_all_memory(n);
@@ -758,8 +767,8 @@ Node* BarrierSetC2::obj_allocate(PhaseMacroExpand* macro, Node* mem, Node* toobi
   assert(UseTLAB, "Only for TLAB enabled allocations");
 
   Node* thread = macro->transform_later(new ThreadLocalNode());
-  Node* tlab_top_adr = macro->basic_plus_adr(macro->top()/*not oop*/, thread, in_bytes(JavaThread::tlab_top_offset()));
-  Node* tlab_end_adr = macro->basic_plus_adr(macro->top()/*not oop*/, thread, in_bytes(JavaThread::tlab_end_offset()));
+  Node* tlab_top_adr = macro->off_heap_plus_addr(thread, in_bytes(JavaThread::tlab_top_offset()));
+  Node* tlab_end_adr = macro->off_heap_plus_addr(thread, in_bytes(JavaThread::tlab_end_offset()));
 
   // Load TLAB end.
   //
@@ -771,14 +780,14 @@ Node* BarrierSetC2::obj_allocate(PhaseMacroExpand* macro, Node* mem, Node* toobi
   //       this will require extensive changes to the loop optimization in order to
   //       prevent a degradation of the optimization.
   //       See comment in memnode.hpp, around line 227 in class LoadPNode.
-  Node* tlab_end = macro->make_load(toobig_false, mem, tlab_end_adr, 0, TypeRawPtr::BOTTOM, T_ADDRESS);
+  Node* tlab_end = macro->make_load_raw(toobig_false, mem, tlab_end_adr, 0, TypeRawPtr::BOTTOM, T_ADDRESS);
 
   // Load the TLAB top.
   Node* old_tlab_top = new LoadPNode(toobig_false, mem, tlab_top_adr, TypeRawPtr::BOTTOM, TypeRawPtr::BOTTOM, MemNode::unordered);
   macro->transform_later(old_tlab_top);
 
   // Add to heap top to get a new TLAB top
-  Node* new_tlab_top = new AddPNode(macro->top(), old_tlab_top, size_in_bytes);
+  Node* new_tlab_top = AddPNode::make_off_heap(old_tlab_top, size_in_bytes);
   macro->transform_later(new_tlab_top);
 
   // Check against TLAB end
@@ -813,7 +822,10 @@ Node* BarrierSetC2::obj_allocate(PhaseMacroExpand* macro, Node* mem, Node* toobi
   return old_tlab_top;
 }
 
-static const TypeFunc* clone_type() {
+const TypeFunc* BarrierSetC2::_clone_type_Type = nullptr;
+
+void BarrierSetC2::make_clone_type() {
+  assert(BarrierSetC2::_clone_type_Type == nullptr, "should be");
   // Create input type (domain)
   int argcnt = NOT_LP64(3) LP64_ONLY(4);
   const Type** const domain_fields = TypeTuple::fields(argcnt);
@@ -829,7 +841,12 @@ static const TypeFunc* clone_type() {
   const Type** const range_fields = TypeTuple::fields(0);
   const TypeTuple* const range = TypeTuple::make(TypeFunc::Parms + 0, range_fields);
 
-  return TypeFunc::make(domain, range);
+  BarrierSetC2::_clone_type_Type = TypeFunc::make(domain, range);
+}
+
+inline const TypeFunc* BarrierSetC2::clone_type() {
+  assert(BarrierSetC2::_clone_type_Type != nullptr, "should be initialized");
+  return BarrierSetC2::_clone_type_Type;
 }
 
 #define XTOP LP64_ONLY(COMMA phase->top())
@@ -862,7 +879,7 @@ void BarrierSetC2::clone_in_runtime(PhaseMacroExpand* phase, ArrayCopyNode* ac,
                                            TypeRawPtr::BOTTOM,
                                            src, dst, full_size_in_heap_words XTOP);
   phase->transform_later(call);
-  phase->igvn().replace_node(ac, call);
+  phase->replace_node(ac, call);
 }
 
 void BarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* ac) const {
@@ -886,7 +903,7 @@ void BarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* ac
   Node* call = phase->make_leaf_call(ctrl, mem, call_type, copyfunc_addr, copyfunc_name, raw_adr_type, payload_src, payload_dst, length XTOP);
   phase->transform_later(call);
 
-  phase->igvn().replace_node(ac, call);
+  phase->replace_node(ac, call);
 }
 
 #undef XTOP
@@ -1000,12 +1017,12 @@ static bool is_array_allocation(const Node* phi) {
   while (true) {
     const Node* next = nullptr;
     for (DUIterator_Fast imax, i = current->fast_outs(imax); i < imax; i++) {
-      if (!current->fast_out(i)->isa_Mach()) {
+      if (!current->fast_out(i)->is_Mach()) {
         continue;
       }
       const MachNode* succ = current->fast_out(i)->as_Mach();
       if (succ->ideal_Opcode() == Op_CheckCastPP) {
-        if (succ->get_ptr_type()->isa_aryptr()) {
+        if (succ->get_ptr_type()->is_aryptr()) {
           // Cast to Java array pointer: phi corresponds to an array allocation.
           return true;
         }
@@ -1042,22 +1059,22 @@ bool BarrierSetC2::is_allocation(const Node* node) {
   }
   intptr_t offset;
   const Node* const base = get_base_and_offset(fast_mach, offset);
-  if (base == nullptr || !base->is_Mach() || !is_concrete(offset)) {
+  const MachNode* const base_mach = Node::isa<MachNode>(base);
+  if (base_mach == nullptr || !is_concrete(offset)) {
     return false;
   }
-  const MachNode* const base_mach = base->as_Mach();
   if (base_mach->ideal_Opcode() != Op_ThreadLocal) {
     return false;
   }
   return offset == in_bytes(Thread::tlab_top_offset());
 }
 
-void BarrierSetC2::elide_dominated_barriers(Node_List& accesses, Node_List& access_dominators) const {
+void BarrierSetC2::elide_dominated_barriers(const Node_List<MachNode>& accesses, const Node_List<Node>& access_dominators) const {
   Compile* const C = Compile::current();
   PhaseCFG* const cfg = C->cfg();
 
   for (uint i = 0; i < accesses.size(); i++) {
-    MachNode* const access = accesses.at(i)->as_Mach();
+    MachNode* const access = accesses.at(i);
     intptr_t access_offset;
     const Node* const access_obj = get_base_and_offset(access, access_offset);
     Block* const access_block = cfg->get_block_for_node(access);
@@ -1110,7 +1127,7 @@ void BarrierSetC2::elide_dominated_barriers(Node_List& accesses, Node_List& acce
       if (access_block == mem_block) {
         // Earlier accesses in the same block
         if (mem_index < access_index && !block_has_safepoint(mem_block, mem_index + 1, access_index)) {
-          elide_dominated_barrier(access);
+          elide_dominated_barrier(access, mem->isa_Mach());
         }
       } else if (mem_block->dominates(access_block)) {
         // Dominating block? Look around for safepoints
@@ -1140,7 +1157,7 @@ void BarrierSetC2::elide_dominated_barriers(Node_List& accesses, Node_List& acce
         }
 
         if (!safepoint_found) {
-          elide_dominated_barrier(access);
+          elide_dominated_barrier(access, mem->isa_Mach());
         }
       }
     }
@@ -1171,7 +1188,7 @@ void BarrierSetC2::compute_liveness_at_stubs() const {
     // Initialize to union of successors
     for (uint i = 0; i < block->_num_succs; i++) {
       const uint succ_id = block->_succs[i]->_pre_order;
-      new_live.OR(live[succ_id]);
+      new_live.or_with(live[succ_id]);
     }
 
     // Walk block backwards, computing liveness
@@ -1182,7 +1199,7 @@ void BarrierSetC2::compute_liveness_at_stubs() const {
       if (!bs_state->needs_livein_data()) {
         RegMask* const regs = bs_state->live(node);
         if (regs != nullptr) {
-          regs->OR(new_live);
+          regs->or_with(new_live);
         }
       }
 
@@ -1190,10 +1207,10 @@ void BarrierSetC2::compute_liveness_at_stubs() const {
       const OptoReg::Name first = bs->refine_register(node, regalloc->get_reg_first(node));
       const OptoReg::Name second = bs->refine_register(node, regalloc->get_reg_second(node));
       if (first != OptoReg::Bad) {
-        new_live.Remove(first);
+        new_live.remove(first);
       }
       if (second != OptoReg::Bad) {
-        new_live.Remove(second);
+        new_live.remove(second);
       }
 
       // Add use bits
@@ -1202,10 +1219,10 @@ void BarrierSetC2::compute_liveness_at_stubs() const {
         const OptoReg::Name first = bs->refine_register(use, regalloc->get_reg_first(use));
         const OptoReg::Name second = bs->refine_register(use, regalloc->get_reg_second(use));
         if (first != OptoReg::Bad) {
-          new_live.Insert(first);
+          new_live.insert(first);
         }
         if (second != OptoReg::Bad) {
-          new_live.Insert(second);
+          new_live.insert(second);
         }
       }
 
@@ -1213,16 +1230,16 @@ void BarrierSetC2::compute_liveness_at_stubs() const {
       if (bs_state->needs_livein_data()) {
         RegMask* const regs = bs_state->live(node);
         if (regs != nullptr) {
-          regs->OR(new_live);
+          regs->or_with(new_live);
         }
       }
     }
 
     // Now at block top, see if we have any changes
-    new_live.SUBTRACT(old_live);
-    if (new_live.is_NotEmpty()) {
+    new_live.subtract(old_live);
+    if (!new_live.is_empty()) {
       // Liveness has refined, update and propagate to prior blocks
-      old_live.OR(new_live);
+      old_live.or_with(new_live);
       for (uint i = 1; i < block->num_preds(); ++i) {
         Block* const pred = cfg->get_block_for_node(block->pred(i));
         worklist.push(pred);

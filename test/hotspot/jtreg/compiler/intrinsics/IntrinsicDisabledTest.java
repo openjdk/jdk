@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
  * @test
  * @bug 8138651
  *
- * @requires !vm.graal.enabled
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
  *
@@ -217,8 +216,7 @@ public class IntrinsicDisabledTest {
     }
 
     public static void main(String args[]) {
-        if (Platform.isServer() && !Platform.isEmulatedClient() &&
-                                   (TIERED_STOP_AT_LEVEL == CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION)) {
+        if (Platform.isServer() && (TIERED_STOP_AT_LEVEL == CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION)) {
             if (TIERED_COMPILATION) {
                 test(CompilerWhiteBoxTest.COMP_LEVEL_SIMPLE);
             }

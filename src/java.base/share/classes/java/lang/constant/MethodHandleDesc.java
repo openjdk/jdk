@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 
+import jdk.internal.constant.AsTypeMethodHandleDesc;
 import jdk.internal.constant.DirectMethodHandleDescImpl;
 
 import static java.lang.constant.ConstantDescs.CD_void;
@@ -81,15 +82,11 @@ public sealed interface MethodHandleDesc
                                      ClassDesc owner,
                                      String name,
                                      String lookupDescriptor) {
-        switch (kind) {
-            case GETTER:
-            case SETTER:
-            case STATIC_GETTER:
-            case STATIC_SETTER:
-                return ofField(kind, owner, name, ClassDesc.ofDescriptor(lookupDescriptor));
-            default:
-                return new DirectMethodHandleDescImpl(kind, owner, name, MethodTypeDesc.ofDescriptor(lookupDescriptor));
-        }
+        return switch (kind) {
+            case GETTER, SETTER, STATIC_GETTER, STATIC_SETTER
+                    -> ofField(kind, owner, name, ClassDesc.ofDescriptor(lookupDescriptor));
+            default -> new DirectMethodHandleDescImpl(kind, owner, name, MethodTypeDesc.ofDescriptor(lookupDescriptor));
+        };
     }
 
     /**
@@ -121,23 +118,13 @@ public sealed interface MethodHandleDesc
                                            ClassDesc owner,
                                            String name,
                                            MethodTypeDesc lookupMethodType) {
-        switch (kind) {
-            case GETTER:
-            case SETTER:
-            case STATIC_GETTER:
-            case STATIC_SETTER:
-                throw new IllegalArgumentException(kind.toString());
-            case VIRTUAL:
-            case SPECIAL:
-            case INTERFACE_VIRTUAL:
-            case INTERFACE_SPECIAL:
-            case INTERFACE_STATIC:
-            case STATIC:
-            case CONSTRUCTOR:
-                return new DirectMethodHandleDescImpl(kind, owner, name, lookupMethodType);
-            default:
-                throw new IllegalArgumentException(kind.toString());
-        }
+        return switch (kind) {
+            case GETTER, SETTER, STATIC_GETTER, STATIC_SETTER
+                    -> throw new IllegalArgumentException(kind.toString());
+            case VIRTUAL, SPECIAL, INTERFACE_VIRTUAL, INTERFACE_SPECIAL, INTERFACE_STATIC, STATIC, CONSTRUCTOR
+                    -> new DirectMethodHandleDescImpl(kind, owner, name, lookupMethodType);
+            default -> throw new IllegalArgumentException(kind.toString());
+        };
     }
 
     /**

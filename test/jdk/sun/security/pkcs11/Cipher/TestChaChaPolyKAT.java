@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,22 +26,25 @@
  * @bug 8255410
  * @library /test/lib ..
  * @modules jdk.crypto.cryptoki
- * @build jdk.test.lib.Convert
  * @run main/othervm TestChaChaPolyKAT
  * @summary ChaCha20-Poly1305 Cipher Implementation (KAT)
  */
 
-import java.util.*;
+import jtreg.SkippedException;
+
 import java.security.GeneralSecurityException;
 import java.security.Provider;
 import java.security.NoSuchAlgorithmException;
 import javax.crypto.Cipher;
-import javax.crypto.spec.ChaCha20ParameterSpec;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import javax.crypto.AEADBadTagException;
 import java.nio.ByteBuffer;
-import jdk.test.lib.Convert;
+import java.util.Arrays;
+import java.util.HexFormat;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Objects;
 
 public class TestChaChaPolyKAT extends PKCS11Test {
     public static class TestData {
@@ -126,8 +129,7 @@ public class TestChaChaPolyKAT extends PKCS11Test {
         try {
             Cipher.getInstance(ALGO, p);
         } catch (NoSuchAlgorithmException nsae) {
-            System.out.println("Skip; no support for " + ALGO);
-            return;
+            throw new SkippedException("Skip; no support for " + ALGO);
         }
 
         int testsPassed = 0;

@@ -37,7 +37,7 @@
 // - NativeInstruction
 // - - NativeCall
 // - - NativeMovConstReg
-// - - NativeMovRegMem
+// - - NativeMovRegMem - Unimplemented
 // - - NativeJump
 // - - NativeGeneralJump
 // - - NativeIllegalInstruction
@@ -78,22 +78,21 @@ class NativeInstruction {
 
  protected:
   address addr_at(int offset) const { return address(this) + offset; }
-  jint     int_at(int offset) const { return (jint)      Bytes::get_native_u4(addr_at(offset));  }
-  juint   uint_at(int offset) const { return             Bytes::get_native_u4(addr_at(offset));  }
-  address  ptr_at(int offset) const { return (address)   Bytes::get_native_u8(addr_at(offset));  }
-  oop      oop_at(int offset) const { return cast_to_oop(Bytes::get_native_u8(addr_at(offset))); }
+  jint     int_at(int offset) const { return (jint)      MacroAssembler::get_native_u4(addr_at(offset));  }
+  juint   uint_at(int offset) const { return             MacroAssembler::get_native_u4(addr_at(offset));  }
+  address  ptr_at(int offset) const { return (address)   MacroAssembler::get_native_u8(addr_at(offset));  }
+  oop      oop_at(int offset) const { return cast_to_oop(MacroAssembler::get_native_u8(addr_at(offset))); }
 
 
-  void  set_int_at(int offset, jint i)      { Bytes::put_native_u4(addr_at(offset), i); }
-  void set_uint_at(int offset, jint i)      { Bytes::put_native_u4(addr_at(offset), i); }
-  void  set_ptr_at(int offset, address ptr) { Bytes::put_native_u8(addr_at(offset), (u8)ptr); }
-  void  set_oop_at(int offset, oop o)       { Bytes::put_native_u8(addr_at(offset), cast_from_oop<u8>(o)); }
+  void  set_int_at(int offset, jint i)      { MacroAssembler::put_native_u4(addr_at(offset), i); }
+  void set_uint_at(int offset, juint i)     { MacroAssembler::put_native_u4(addr_at(offset), i); }
+  void  set_ptr_at(int offset, address ptr) { MacroAssembler::put_native_u8(addr_at(offset), (u8)ptr); }
+  void  set_oop_at(int offset, oop o)       { MacroAssembler::put_native_u8(addr_at(offset), cast_from_oop<u8>(o)); }
 
-  static void     set_data64_at(address dest, uint64_t data) { Bytes::put_native_u8(dest, (u8)data); }
-  static uint64_t get_data64_at(address src)                 { return Bytes::get_native_u8(src); }
+  static void     set_data64_at(address dest, uint64_t data) { MacroAssembler::put_native_u8(dest, (u8)data); }
+  static uint64_t get_data64_at(address src)                 { return MacroAssembler::get_native_u8(src); }
 
  public:
-
   inline friend NativeInstruction* nativeInstruction_at(address addr);
 
   static bool maybe_cpool_ref(address instr) {
@@ -111,6 +110,7 @@ NativeCall* nativeCall_before(address return_address);
 // The NativeCall is an abstraction for accessing/manipulating native
 // call instructions (used to manipulate inline caches, primitive &
 // DSO calls, etc.).
+// NativeCall is reloc call on RISC-V. See MacroAssembler::reloc_call.
 class NativeCall: private NativeInstruction {
  // private: when common code is using byte_size()
  private:
@@ -118,34 +118,47 @@ class NativeCall: private NativeInstruction {
     // Use byte_size() as it can be changed in runtime
     // Since instruction_size exists on NativeInstruction we need
     // to overload and hide it.
-    instruction_size = 3 * Assembler::instruction_size // auipc + ld + jalr
+    instruction_size = 3 * NativeInstruction::instruction_size // auipc + ld + jalr
   };
- public:
 
+ public:
   static int byte_size() {
-    return 3 * NativeInstruction::instruction_size; // auipc + ld + jalr
+    return NativeCall::instruction_size; // auipc + ld + jalr
   }
 
   // Creation
   friend NativeCall* nativeCall_at(address addr);
   friend NativeCall* nativeCall_before(address return_address);
 
-  address instruction_address() const;
-  address next_instruction_address() const;
-  address return_address() const;
+  address instruction_address() const      { return addr_at(0); }
+  address next_instruction_address() const { return addr_at(NativeCall::instruction_size); }
+  address return_address() const           { return addr_at(NativeCall::instruction_size); }
+  // return target address of the reloc call, read from its address stub
   address destination() const;
-  address reloc_destination(address orig_address);
 
   void verify_alignment() {} // do nothing on riscv
   void verify();
   void print();
 
+  // patch the address stub and link the reloc call to it
   void set_destination(address dest);
-  bool set_destination_mt_safe(address dest, bool assert_lock = true);
-  bool reloc_set_destination(address dest);
+  // patch stub to target address of the reloc call
+  bool set_destination_mt_safe(address dest);
 
   static bool is_at(address addr);
   static bool is_call_before(address return_address);
+
+ private:
+  // return the address stub of the reloc call, nullptr if there is none yet
+  address stub_address() const;
+  // set target address at stub
+  static void set_stub_address_destination_at(address dest, address value);
+  // return target address at stub
+  static address stub_address_destination_at(address src);
+  // We either have a jalr or jal depending on distance to old destination.
+  // This method emits a new jal if new destination is within jal reach.
+  // Otherwise restores the jalr which can reach any destination.
+  void optimize_call(address dest, bool mt_safe = true);
 };
 
 // An interface for accessing/manipulating native mov reg, imm instructions.
@@ -218,38 +231,18 @@ inline NativeMovConstReg* nativeMovConstReg_before(address addr) {
 // NativeMovRegMem to keep some compilers happy.
 class NativeMovRegMem: public NativeInstruction {
  public:
-  enum RISCV_specific_constants {
-    instruction_size            =    NativeInstruction::instruction_size,
-    instruction_offset          =    0,
-    data_offset                 =    0,
-    next_instruction_offset     =    NativeInstruction::instruction_size
-  };
+  int num_bytes_to_end_of_patch() const { Unimplemented(); return 0; }
 
-  int instruction_start() const { return instruction_offset; }
+  int offset() const { Unimplemented(); return 0; }
 
-  address instruction_address() const { return addr_at(instruction_offset); }
+  void set_offset(int x) { Unimplemented(); }
 
-  int num_bytes_to_end_of_patch() const { return instruction_offset + instruction_size; }
-
-  int offset() const;
-
-  void set_offset(int x);
-
-  void add_offset_in_bytes(int add_offset) {
-    set_offset(offset() + add_offset);
-  }
-
-  void verify();
-  void print();
-
- private:
-  inline friend NativeMovRegMem* nativeMovRegMem_at(address addr);
+  void add_offset_in_bytes(int add_offset) { Unimplemented(); }
 };
 
 inline NativeMovRegMem* nativeMovRegMem_at(address addr) {
-  NativeMovRegMem* test = (NativeMovRegMem*)(addr - NativeMovRegMem::instruction_offset);
-  DEBUG_ONLY(test->verify());
-  return test;
+  Unimplemented();
+  return (NativeMovRegMem*)nullptr;
 }
 
 class NativeJump: public NativeInstruction {
@@ -300,12 +293,6 @@ inline NativeGeneralJump* nativeGeneralJump_at(address addr) {
   return jump;
 }
 
-class NativeIllegalInstruction: public NativeInstruction {
- public:
-  // Insert illegal opcode as specific address
-  static void insert(address code_pos);
-};
-
 inline bool NativeInstruction::is_nop() const {
   uint32_t insn = Assembler::ld_instr(addr_at(0));
   return insn == 0x13;
@@ -323,12 +310,19 @@ inline bool NativeInstruction::is_jump_or_nop() {
 // can store an offset from the initial nop to the nmethod.
 class NativePostCallNop: public NativeInstruction {
 public:
+  enum RISCV_specific_constants {
+    // The two parts should be checked separately to prevent out of bounds access in
+    // case the return address points to the deopt handler stub code entry point
+    // which could be at the end of page.
+    first_check_size = instruction_size
+  };
+
   bool check() const {
     // Check for two instructions: nop; lui zr, hi20
     // These instructions only ever appear together in a post-call
     // NOP, so it's unnecessary to check that the third instruction is
     // an addiw as well.
-    return is_nop() && MacroAssembler::is_lui_to_zr_at(addr_at(4));
+    return is_nop() && MacroAssembler::is_lui_to_zr_at(addr_at(first_check_size));
   }
   bool decode(int32_t& oopmap_slot, int32_t& cb_offset) const;
   bool patch(int32_t oopmap_slot, int32_t cb_offset);
@@ -359,14 +353,7 @@ class NativeDeoptInstruction: public NativeInstruction {
   address instruction_address() const       { return addr_at(instruction_offset); }
   address next_instruction_address() const  { return addr_at(instruction_size); }
 
-  void verify();
-
-  static bool is_deopt_at(address instr) {
-    assert(instr != nullptr, "");
-    uint32_t value = Assembler::ld_instr(instr);
-    // 0xc0201073 encodes CSRRW x0, instret, x0
-    return value == 0xc0201073;
-  }
+  static bool is_deopt_at(address instr);
 
   // MT-safe patching
   static void insert(address code_pos);

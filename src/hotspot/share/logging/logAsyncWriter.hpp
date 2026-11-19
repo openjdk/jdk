@@ -1,6 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,10 +29,10 @@
 #include "logging/logMessageBuffer.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/mutex.hpp"
-#include "runtime/os.inline.hpp"
 #include "runtime/nonJavaThread.hpp"
+#include "runtime/os.inline.hpp"
 #include "runtime/semaphore.hpp"
-#include "utilities/resourceHash.hpp"
+#include "utilities/hashTable.hpp"
 
 class LogFileStreamOutput;
 
@@ -66,7 +66,7 @@ class AsyncLogWriter : public NonJavaThread {
 
   // account for dropped messages
   template <AnyObj::allocation_type ALLOC_TYPE>
-  using AsyncLogMap = ResourceHashtable<LogFileStreamOutput*,
+  using AsyncLogMap = HashTable<LogFileStreamOutput*,
                           uint32_t, 17, /*table_size*/
                           ALLOC_TYPE, mtLogging>;
 
@@ -124,7 +124,7 @@ class AsyncLogWriter : public NonJavaThread {
     }
 
     ~Buffer() {
-      FREE_C_HEAP_ARRAY(char, _buf);
+      FREE_C_HEAP_ARRAY(_buf);
     }
 
     void push_flush_token();
@@ -185,6 +185,7 @@ class AsyncLogWriter : public NonJavaThread {
   static const LogDecorations& None;
 
   AsyncLogWriter();
+  ~AsyncLogWriter() override;
   void enqueue_locked(LogFileStreamOutput* output, const LogDecorations& decorations, const char* msg);
   bool write(AsyncLogMap<AnyObj::RESOURCE_AREA>& snapshot);
   void run() override;

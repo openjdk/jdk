@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -40,6 +40,7 @@ import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import static java.lang.constant.ConstantDescs.INIT_NAME;
 import static java.util.Objects.requireNonNull;
 import static jdk.internal.classfile.impl.BytecodeHelpers.*;
 import static jdk.internal.classfile.impl.RawBytecodeHelper.*;
@@ -185,14 +186,14 @@ public final class DirectCodeBuilder
     private void writeExceptionHandlers(BufWriterImpl buf) {
         int pos = buf.size();
         int handlersSize = handlers.size();
+        Util.checkU2(handlersSize, "exception handlers");
         buf.writeU2(handlersSize);
         if (handlersSize > 0) {
-            writeExceptionHandlers(buf, pos);
+            writeExceptionHandlers(buf, pos, handlersSize);
         }
     }
 
-    private void writeExceptionHandlers(BufWriterImpl buf, int pos) {
-        int handlersSize = handlers.size();
+    private void writeExceptionHandlers(BufWriterImpl buf, int pos, int handlersSize) {
         for (AbstractPseudoInstruction.ExceptionCatchImpl h : handlers) {
             int startPc = labelToBci(h.tryStart());
             int endPc = labelToBci(h.tryEnd());
@@ -206,7 +207,6 @@ public final class DirectCodeBuilder
             } else {
                 buf.writeU2U2U2(startPc, endPc, handlerPc);
                 buf.writeIndexOrZero(h.catchTypeEntry());
-                handlersSize++;
             }
         }
         if (handlersSize < handlers.size())
@@ -228,6 +228,7 @@ public final class DirectCodeBuilder
                     public void writeBody(BufWriterImpl b) {
                         int pos = b.size();
                         int crSize = characterRangesCount;
+                        Util.checkU2(crSize, "character range count");
                         b.writeU2(crSize);
                         for (int i = 0; i < characterRangesCount; i++) {
                             CharacterRange cr = characterRanges[i];
@@ -263,6 +264,7 @@ public final class DirectCodeBuilder
                     public void writeBody(BufWriterImpl b) {
                         int pos = b.size();
                         int lvSize = localVariablesCount;
+                        Util.checkU2(lvSize, "local variable count");
                         b.writeU2(lvSize);
                         for (int i = 0; i < localVariablesCount; i++) {
                             LocalVariable l = localVariables[i];
@@ -292,6 +294,7 @@ public final class DirectCodeBuilder
                     public void writeBody(BufWriterImpl b) {
                         int pos = b.size();
                         int lvtSize = localVariableTypesCount;
+                        Util.checkU2(lvtSize, "local variable type count");
                         b.writeU2(lvtSize);
                         for (int i = 0; i < localVariableTypesCount; i++) {
                             LocalVariableType l = localVariableTypes[i];
@@ -373,7 +376,7 @@ public final class DirectCodeBuilder
                             dcb.methodInfo.methodTypeSymbol().displayDescriptor()));
                 }
 
-                boolean codeMatch = dcb.original != null && codeAndExceptionsMatch(codeLength);
+                boolean codeMatch = dcb.codeAndExceptionsMatch(codeLength, buf);
                 buf.setLabelContext(dcb, codeMatch);
                 var context = dcb.context;
                 if (context.stackMapsWhenRequired()) {
@@ -442,7 +445,7 @@ public final class DirectCodeBuilder
             b.writeIndex(b.constantPool().utf8Entry(Attributes.NAME_LINE_NUMBER_TABLE));
             push();
             b.writeInt(buf.size() + 2);
-            b.writeU2(buf.size() / 4);
+            b.writeU2(Util.checkU2(buf.size() / 4, "line number count"));
             b.writeBytes(buf);
         }
 
@@ -452,7 +455,7 @@ public final class DirectCodeBuilder
         }
     }
 
-    private boolean codeAndExceptionsMatch(int codeLength) {
+    private boolean codeAndExceptionsMatch(int codeLength, BufWriterImpl buf) {
         boolean codeAttributesMatch;
         if (original instanceof CodeImpl cai && canWriteDirect(cai.constantPool())) {
             codeAttributesMatch = cai.codeLength == curPc()
@@ -461,6 +464,22 @@ public final class DirectCodeBuilder
                 var bw = new BufWriterImpl(constantPool, context);
                 writeExceptionHandlers(bw);
                 codeAttributesMatch = cai.classReader.compare(bw, 0, cai.exceptionHandlerPos, bw.size());
+            }
+
+            if (codeAttributesMatch) {
+                var thisIsConstructor = methodInfo.methodName().equalsString(INIT_NAME);
+                var originalIsConstructor = cai.enclosingMethod.methodName().equalsString(INIT_NAME);
+                if (thisIsConstructor || originalIsConstructor) {
+                    if (thisIsConstructor != originalIsConstructor) {
+                        codeAttributesMatch = false;
+                    }
+                }
+
+                if (codeAttributesMatch && thisIsConstructor) {
+                    if (!buf.strictFieldsMatch(cai.classReader.getContainedClass())) {
+                        codeAttributesMatch = false;
+                    }
+                }
             }
         }
         else
@@ -546,8 +565,8 @@ public final class DirectCodeBuilder
     }
 
     private void writeShortJump(int bytecode, Label target) {
+        int targetBci = labelToBci(target); // implicit null check
         int instructionPc = curPc();
-        int targetBci = labelToBci(target);
 
         // algebraic union of jump | (instructionPc, target), distinguished by null == target.
         int jumpOrInstructionPc;
@@ -570,6 +589,7 @@ public final class DirectCodeBuilder
     }
 
     private void writeLongJump(int bytecode, Label target) {
+        Objects.requireNonNull(target); // before any write
         int instructionPc = curPc();
         bytecodesBufWriter.writeU1(bytecode);
         writeLongLabelOffset(instructionPc, target);
@@ -617,6 +637,17 @@ public final class DirectCodeBuilder
     }
 
     public void writeLookupSwitch(Label defaultTarget, List<SwitchCase> cases) {
+        cases = new ArrayList<>(cases); // cases may be untrusted
+        for (var each : cases) {
+            Objects.requireNonNull(each); // single null case may exist
+        }
+        cases.sort(new Comparator<>() {
+            @Override
+            public int compare(SwitchCase c1, SwitchCase c2) {
+                return Integer.compare(c1.caseValue(), c2.caseValue());
+            }
+        });
+        // validation end
         int instructionPc = curPc();
         bytecodesBufWriter.writeU1(LOOKUPSWITCH);
         int pad = 4 - (curPc() % 4);
@@ -624,13 +655,6 @@ public final class DirectCodeBuilder
             bytecodesBufWriter.skip(pad); // padding content can be anything
         writeLongLabelOffset(instructionPc, defaultTarget);
         bytecodesBufWriter.writeInt(cases.size());
-        cases = new ArrayList<>(cases);
-        cases.sort(new Comparator<>() {
-            @Override
-            public int compare(SwitchCase c1, SwitchCase c2) {
-                return Integer.compare(c1.caseValue(), c2.caseValue());
-            }
-        });
         for (var c : cases) {
             bytecodesBufWriter.writeInt(c.caseValue());
             var target = c.target();
@@ -639,6 +663,11 @@ public final class DirectCodeBuilder
     }
 
     public void writeTableSwitch(int low, int high, Label defaultTarget, List<SwitchCase> cases) {
+        var caseMap = new HashMap<Integer, Label>(cases.size()); // cases may be untrusted
+        for (var c : cases) {
+            caseMap.put(c.caseValue(), c.target());
+        }
+        // validation end
         int instructionPc = curPc();
         bytecodesBufWriter.writeU1(TABLESWITCH);
         int pad = 4 - (curPc() % 4);
@@ -646,10 +675,6 @@ public final class DirectCodeBuilder
             bytecodesBufWriter.skip(pad); // padding content can be anything
         writeLongLabelOffset(instructionPc, defaultTarget);
         bytecodesBufWriter.writeIntInt(low, high);
-        var caseMap = new HashMap<Integer, Label>(cases.size());
-        for (var c : cases) {
-            caseMap.put(c.caseValue(), c.target());
-        }
         for (long l = low; l<=high; l++) {
             var target = caseMap.getOrDefault((int)l, defaultTarget);
             writeLongLabelOffset(instructionPc, target);
@@ -928,6 +953,7 @@ public final class DirectCodeBuilder
             int slots = Util.parameterSlots(Util.methodTypeSymbol(ref.type())) + 1;
             writeInvokeInterface(opcode, (InterfaceMethodRefEntry) ref, slots);
         } else {
+            Util.checkKind(opcode, Opcode.Kind.INVOKE);
             writeInvokeNormal(opcode, ref);
         }
         return this;
@@ -959,7 +985,8 @@ public final class DirectCodeBuilder
 
     @Override
     public CodeBuilder fieldAccess(Opcode opcode, FieldRefEntry ref) {
-        bytecodesBufWriter.writeIndex(opcode.bytecode(), ref);
+        Util.checkKind(opcode, Opcode.Kind.FIELD_ACCESS);
+        writeFieldAccess(opcode, ref);
         return this;
     }
 
@@ -977,6 +1004,7 @@ public final class DirectCodeBuilder
 
     @Override
     public CodeBuilder branch(Opcode op, Label target) {
+        Util.checkKind(op, Opcode.Kind.BRANCH);
         writeBranch(op, target);
         return this;
     }
@@ -1640,6 +1668,8 @@ public final class DirectCodeBuilder
 
     @Override
     public CodeBuilder lookupswitch(Label defaultTarget, List<SwitchCase> cases) {
+        Objects.requireNonNull(defaultTarget);
+        // check cases when we sort them
         writeLookupSwitch(defaultTarget, cases);
         return this;
     }
@@ -1799,6 +1829,7 @@ public final class DirectCodeBuilder
 
     @Override
     public CodeBuilder multianewarray(ClassEntry array, int dims) {
+        BytecodeHelpers.validateMultiArrayDimensions(dims);
         writeNewMultidimensionalArray(dims, array);
         return this;
     }
@@ -1845,6 +1876,9 @@ public final class DirectCodeBuilder
 
     @Override
     public CodeBuilder tableswitch(int low, int high, Label defaultTarget, List<SwitchCase> cases) {
+        BytecodeHelpers.validateTableSwitchValues(low, high);
+        Objects.requireNonNull(defaultTarget);
+        // check cases when we write them
         writeTableSwitch(low, high, defaultTarget, cases);
         return this;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,13 @@ import javax.lang.model.type.*;
  * clause, among other restrictions; see JLS {@jls 9.6.1} for details.
  *
  * @see ExecutableType
+ * @jls 8.4 Method Declarations
+ * @jls 8.6 Instance Initializers
+ * @jls 8.7 Static Initializers
+ * @jls 8.8 Constructor Declarations
+ * @jls 9.4 Method Declarations
+ * @jls 9.6.1 Annotation Interface Elements
+ *
  * @since 1.6
  */
 public interface ExecutableElement extends Element, Parameterizable {

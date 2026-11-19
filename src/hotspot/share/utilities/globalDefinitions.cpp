@@ -56,8 +56,6 @@ int LogMinObjAlignmentInBytes  = -1;
 // Oop encoding heap max
 uint64_t OopEncodingHeapMax = 0;
 
-const int LockingMode = LM_LIGHTWEIGHT;
-
 // Something to help porters sleep at night
 
 #ifdef ASSERT
@@ -210,8 +208,8 @@ char type2char_tab[T_CONFLICT+1] = {
   JVM_SIGNATURE_BYTE,    JVM_SIGNATURE_SHORT,
   JVM_SIGNATURE_INT,     JVM_SIGNATURE_LONG,
   JVM_SIGNATURE_CLASS,   JVM_SIGNATURE_ARRAY,
-  JVM_SIGNATURE_VOID,    0,
-  0, 0, 0, 0
+  JVM_SIGNATURE_VOID,
+  0, 0, 0, 0, 0, 0
 };
 
 // Map BasicType to Java type name
@@ -228,6 +226,7 @@ const char* type2name_tab[T_CONFLICT+1] = {
   "object",
   "array",
   "void",
+  "flat element",
   "*address*",
   "*narrowoop*",
   "*metadata*",
@@ -257,7 +256,7 @@ BasicType name2type(const char* name) {
 }
 
 // Map BasicType to size in words
-int type2size[T_CONFLICT+1]={ -1, 0, 0, 0, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 0, 1, 1, 1, 1, -1};
+int type2size[T_CONFLICT+1]={ -1, 0, 0, 0, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 0, -1, 1, 1, 1, 1, -1};
 
 BasicType type2field[T_CONFLICT+1] = {
   (BasicType)0,            // 0,
@@ -275,11 +274,12 @@ BasicType type2field[T_CONFLICT+1] = {
   T_OBJECT,                // T_OBJECT   = 12,
   T_OBJECT,                // T_ARRAY    = 13,
   T_VOID,                  // T_VOID     = 14,
-  T_ADDRESS,               // T_ADDRESS  = 15,
-  T_NARROWOOP,             // T_NARROWOOP= 16,
-  T_METADATA,              // T_METADATA = 17,
-  T_NARROWKLASS,           // T_NARROWKLASS = 18,
-  T_CONFLICT               // T_CONFLICT = 19,
+  (BasicType)0,            // T_FLAT_ELEMENT = 15,
+  T_ADDRESS,               // T_ADDRESS  = 16,
+  T_NARROWOOP,             // T_NARROWOOP= 17,
+  T_METADATA,              // T_METADATA = 18,
+  T_NARROWKLASS,           // T_NARROWKLASS = 19,
+  T_CONFLICT               // T_CONFLICT = 20
 };
 
 
@@ -299,11 +299,12 @@ BasicType type2wfield[T_CONFLICT+1] = {
   T_OBJECT,  // T_OBJECT   = 12,
   T_OBJECT,  // T_ARRAY    = 13,
   T_VOID,    // T_VOID     = 14,
-  T_ADDRESS, // T_ADDRESS  = 15,
-  T_NARROWOOP, // T_NARROWOOP  = 16,
-  T_METADATA,  // T_METADATA   = 17,
-  T_NARROWKLASS, // T_NARROWKLASS  = 18,
-  T_CONFLICT // T_CONFLICT = 19,
+  (BasicType)0,  // T_FLAT_ELEMENT = 15,
+  T_ADDRESS, // T_ADDRESS  = 16,
+  T_NARROWOOP, // T_NARROWOOP  = 17,
+  T_METADATA,  // T_METADATA   = 18,
+  T_NARROWKLASS, // T_NARROWKLASS  = 19,
+  T_CONFLICT // T_CONFLICT = 20
 };
 
 
@@ -323,11 +324,12 @@ int _type2aelembytes[T_CONFLICT+1] = {
   T_OBJECT_aelem_bytes,      // T_OBJECT   = 12,
   T_ARRAY_aelem_bytes,       // T_ARRAY    = 13,
   0,                         // T_VOID     = 14,
-  T_OBJECT_aelem_bytes,      // T_ADDRESS  = 15,
-  T_NARROWOOP_aelem_bytes,   // T_NARROWOOP= 16,
-  T_OBJECT_aelem_bytes,      // T_METADATA = 17,
-  T_NARROWKLASS_aelem_bytes, // T_NARROWKLASS= 18,
-  0                          // T_CONFLICT = 19,
+  0,                         // T_FLAT_ELEMENT = 15,
+  T_OBJECT_aelem_bytes,      // T_ADDRESS  = 16,
+  T_NARROWOOP_aelem_bytes,   // T_NARROWOOP= 17,
+  T_OBJECT_aelem_bytes,      // T_METADATA = 18,
+  T_NARROWKLASS_aelem_bytes, // T_NARROWKLASS= 19,
+  0                          // T_CONFLICT = 20
 };
 
 #ifdef ASSERT
@@ -402,11 +404,11 @@ size_t lcm(size_t a, size_t b) {
 // Test that nth_bit macro and friends behave as
 // expected, even with low-precedence operators.
 
-STATIC_ASSERT(nth_bit(3)   == 0x8);
-STATIC_ASSERT(nth_bit(1|2) == 0x8);
+static_assert(nth_bit(3)   == 0x8);
+static_assert(nth_bit(1|2) == 0x8);
 
-STATIC_ASSERT(right_n_bits(3)   == 0x7);
-STATIC_ASSERT(right_n_bits(1|2) == 0x7);
+static_assert(right_n_bits(3)   == 0x7);
+static_assert(right_n_bits(1|2) == 0x7);
 
 // Check for Flush-To-Zero mode
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ import javax.swing.border.Border;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.basic.*;
 
-public class AquaSplitPaneUI extends BasicSplitPaneUI implements MouseListener, PropertyChangeListener {
+public final class AquaSplitPaneUI extends BasicSplitPaneUI implements MouseListener, PropertyChangeListener {
     static final String DIVIDER_PAINTER_KEY = "JSplitPane.dividerPainter";
 
     public AquaSplitPaneUI() {
@@ -44,22 +44,26 @@ public class AquaSplitPaneUI extends BasicSplitPaneUI implements MouseListener, 
         return new AquaSplitPaneUI();
     }
 
+    @Override
     public BasicSplitPaneDivider createDefaultDivider() {
         return new AquaSplitPaneDividerUI(this);
     }
 
+    @Override
     protected void installListeners() {
         super.installListeners();
         splitPane.addPropertyChangeListener(DIVIDER_PAINTER_KEY, this);
         divider.addMouseListener(this);
     }
 
+    @Override
     protected void uninstallListeners() {
         divider.removeMouseListener(this);
         splitPane.removePropertyChangeListener(DIVIDER_PAINTER_KEY, this);
         super.uninstallListeners();
     }
 
+    @Override
     public void mouseClicked(final MouseEvent e) {
         if (e.getClickCount() < 2) return;
         if (!splitPane.isOneTouchExpandable()) return;
@@ -90,11 +94,16 @@ public class AquaSplitPaneUI extends BasicSplitPaneUI implements MouseListener, 
         }
     }
 
+    @Override
     public void mouseEntered(final MouseEvent e) { }
+    @Override
     public void mouseExited(final MouseEvent e) { }
+    @Override
     public void mousePressed(final MouseEvent e) { }
+    @Override
     public void mouseReleased(final MouseEvent e) { }
 
+    @Override
     public void propertyChange(final PropertyChangeEvent evt) {
         if (!DIVIDER_PAINTER_KEY.equals(evt.getPropertyName())) return;
 

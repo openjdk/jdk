@@ -26,6 +26,7 @@
 #define SHARE_ASM_MACROASSEMBLER_HPP
 
 #include "asm/assembler.hpp"
+#include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 
 #include CPU_HEADER(macroAssembler)

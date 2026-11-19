@@ -38,10 +38,15 @@ include JarArchive.gmk
 ###
 
 # Create classes that can run on the bootjdk
-TARGET_RELEASE_BOOTJDK := $(BOOT_JDK_SOURCETARGET)
+# -Xlint:-options is added to avoid the warning
+# "system modules path not set in conjunction with -source"
+TARGET_RELEASE_BOOTJDK := -source $(OLDEST_BOOT_JDK_VERSION) \
+    -target $(OLDEST_BOOT_JDK_VERSION) -Xlint:-options
 
-# Create classes that can be used in (or be a part of) the new jdk we're building
-TARGET_RELEASE_NEWJDK := -source $(JDK_SOURCE_TARGET_VERSION) -target $(JDK_SOURCE_TARGET_VERSION)
+# Create classes that can be used in (or be a part of) the new jdk we're
+# building
+TARGET_RELEASE_NEWJDK := -source $(JDK_SOURCE_TARGET_VERSION) \
+    -target $(JDK_SOURCE_TARGET_VERSION)
 
 # Create classes that can be used in JDK 8, for legacy support
 TARGET_RELEASE_JDK8 := --release 8
@@ -143,8 +148,8 @@ endef
 #   BIN store classes here
 #   MODULE Name of module being compiled. If set, classes are put in BIN/MODULE.
 #   CLASSPATH a list of additional entries to set as classpath to javac
-#   INCLUDES myapp.foo means will only compile java files in myapp.foo or any of its sub-packages.
-#   EXCLUDES myapp.foo means will do not compile java files in myapp.foo or any of its sub-packages.
+#   INCLUDES myapp/foo means will only compile java files in myapp.foo or any of its sub-packages.
+#   EXCLUDES myapp/foo means will do not compile java files in myapp.foo or any of its sub-packages.
 #   COPY .prp means copy all prp files to the corresponding package in BIN.
 #   COPY_FILES myapp/foo/setting.txt means copy this file over to the package myapp/foo
 #   CLEAN .properties means copy and clean all properties file to the corresponding package in BIN.
@@ -177,6 +182,10 @@ define SetupJavaCompilationBody
   endif
 
   $1_SAFE_NAME := $$(strip $$(subst /,_, $1))
+
+  ifeq ($$($1_LOG_ACTION), )
+    $1_LOG_ACTION := Compiling
+  endif
 
   ifeq ($$($1_SMALL_JAVA), )
     # If unspecified, default to true
@@ -472,7 +481,7 @@ define SetupJavaCompilationBody
     # list of files.
     $$($1_FILELIST): $$($1_SRCS) $$($1_VARDEPS_FILE)
 		$$(call MakeDir, $$(@D))
-		$$(call LogWarn, Compiling up to $$(words $$($1_SRCS)) files for $1)
+		$$(call LogWarn, $$($1_LOG_ACTION) up to $$(words $$($1_SRCS)) files for $1)
 		$$(eval $$(call ListPathsSafely, $1_SRCS, $$($1_FILELIST)))
 
     # Create a $$($1_MODFILELIST) file with significant modified dependencies

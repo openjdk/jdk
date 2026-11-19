@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,20 +76,21 @@ class WindowsException extends Exception {
     }
 
     private IOException translateToIOException(String file, String other) {
-        // not created with last error
-        if (lastError() == 0)
-            return new IOException(errorString());
+        return switch (lastError()) {
+            // not created with last error
+            case 0 -> new IOException(errorString());
 
-        // handle specific cases
-        if (lastError() == ERROR_FILE_NOT_FOUND || lastError() == ERROR_PATH_NOT_FOUND)
-            return new NoSuchFileException(file, other, null);
-        if (lastError() == ERROR_FILE_EXISTS || lastError() == ERROR_ALREADY_EXISTS)
-            return new FileAlreadyExistsException(file, other, null);
-        if (lastError() == ERROR_ACCESS_DENIED)
-            return new AccessDeniedException(file, other, null);
+            // handle specific cases
+            case ERROR_FILE_NOT_FOUND, ERROR_PATH_NOT_FOUND
+                -> new NoSuchFileException(file, other, null);
+            case ERROR_FILE_EXISTS, ERROR_ALREADY_EXISTS
+                -> new FileAlreadyExistsException(file, other, null);
+            case ERROR_ACCESS_DENIED, ERROR_NETWORK_ACCESS_DENIED, ERROR_PRIVILEGE_NOT_HELD
+                -> new AccessDeniedException(file, other, null);
 
-        // fallback to the more general exception
-        return new FileSystemException(file, other, errorString());
+            // fallback to the more general exception
+            default -> new FileSystemException(file, other, errorString());
+        };
     }
 
     void rethrowAsIOException(String file) throws IOException {

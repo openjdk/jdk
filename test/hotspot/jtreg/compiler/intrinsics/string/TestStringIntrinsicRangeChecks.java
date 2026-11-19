@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,12 +89,16 @@ public class TestStringIntrinsicRangeChecks {
         for (int srcOff = 0; srcOff < SIZE; ++srcOff) {
             for (int dstOff = 0; dstOff < SIZE; ++dstOff) {
                 for (int len = 0; len < SIZE; ++len) {
+                    int srcEnd = srcOff + len;
+                    int dstEnd = dstOff + len;
                     // Check for potential overlows in source or destination array
                     boolean srcOverflow  = (srcOff + len) > SIZE;
                     boolean srcOverflowB = (2*srcOff + 2*len) > SIZE;
                     boolean dstOverflow  = (dstOff + len) > SIZE;
                     boolean dstOverflowB = (2*dstOff + 2*len) > SIZE;
-                    boolean getCharsOver = (srcOff < len) && ((2*(len-1) >= SIZE) || ((dstOff + len - srcOff) > SIZE));
+                    boolean getCharsOver = srcOff > srcEnd || (2*srcEnd) > SIZE ||  // src
+                            (2*len) > SIZE ||                                       // len
+                            dstOff > dstEnd || dstEnd > SIZE;                       // dst
                     // Check if an exception is thrown and bail out if result is inconsistent with above
                     // assumptions (for example, an exception was not thrown although an overflow happened).
                     check(compressByte, srcOverflowB || dstOverflow,  byteArray, srcOff, SIZE, dstOff, len);
@@ -102,7 +106,7 @@ public class TestStringIntrinsicRangeChecks {
                     check(inflateByte,  srcOverflow  || dstOverflowB, byteArray, srcOff, SIZE, dstOff, len);
                     check(inflateChar,  srcOverflow  || dstOverflow,  byteArray, srcOff, SIZE, dstOff, len);
                     check(toBytes,      srcOverflow,                  charArray, srcOff, len);
-                    check(getChars,     getCharsOver,                 byteArray, srcOff, len, SIZE, dstOff);
+                    check(getChars,     getCharsOver,                 byteArray, srcOff, srcEnd, SIZE, dstOff);
                 }
             }
         }

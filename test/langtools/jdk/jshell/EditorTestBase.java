@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
-import org.testng.annotations.Test;
-
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 public abstract class EditorTestBase extends ReplToolTesting {
 
@@ -61,11 +61,11 @@ public abstract class EditorTestBase extends ReplToolTesting {
     }
 
     void assertEditInput(boolean after, String cmd, String input, Action action) {
-        assertEditInput(after, cmd, s -> assertEquals(s, input, "Input"), action);
+        assertEditInput(after, cmd, s -> assertEquals(input, s, "Input"), action);
     }
 
     void assertEditOutput(boolean after, String cmd, String output, Action action) {
-        assertEditOutput(after, cmd, s -> assertEquals(s.trim(), output.trim(), "command"), action);
+        assertEditOutput(after, cmd, s -> assertEquals(output.trim(), s.trim(), "command"), action);
     }
 
     @Test
@@ -219,16 +219,15 @@ public abstract class EditorTestBase extends ReplToolTesting {
 
     @Test
     public void testNoArguments() {
-        testEditor(
-                a -> assertVariable(a, "int", "a"),
+        testEditor(a -> assertVariable(a, "int", "a"),
                 a -> assertMethod(a, "void f() {}", "()void", "f"),
                 a -> assertClass(a, "class A {}", "class", "A"),
                 a -> assertEditInput(a, "/ed", s -> {
                     String[] ss = s.split("\n");
-                    assertEquals(ss.length, 3, "Expected 3 lines: " + s);
-                    assertEquals(ss[0], "int a;");
-                    assertEquals(ss[1], "void f() {}");
-                    assertEquals(ss[2], "class A {}");
+                    assertEquals(3, ss.length, "Expected 3 lines: " + s);
+                    assertEquals("int a;", ss[0]);
+                    assertEquals("void f() {}", ss[1]);
+                    assertEquals("class A {}", ss[2]);
                 }, this::exit)
         );
     }
@@ -263,7 +262,8 @@ public abstract class EditorTestBase extends ReplToolTesting {
         );
     }
 
-    @Test(enabled = false) // TODO JDK-8191875
+    @Test // TODO JDK-8191875
+    @Disabled
     public void testStatementMush() {
         testEditor(
                 a -> assertCommand(a, "System.out.println(\"Hello\")",

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2025 Unicode, Inc.
+<!-- Copyright © 1991-2026 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -23,7 +23,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="bs" draft="unconfirmed">Se-bosnia</language>
 			<language type="ca" draft="unconfirmed">Se-catalia</language>
 			<language type="cs" draft="unconfirmed">Se-czech</language>
-			<language type="cy" draft="unconfirmed">Se-welsh</language>
+			<language type="cy">Sewelsh</language>
 			<language type="da" draft="unconfirmed">Se-dutch</language>
 			<language type="de" draft="unconfirmed">Se-jeremane</language>
 			<language type="el" draft="unconfirmed">Se-greek</language>
@@ -137,7 +137,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<monthWidth type="abbreviated">
 							<month type="1">Phe</month>
 							<month type="2">Kol</month>
-							<month type="3">Ube</month>
+							<month type="3">Hlb</month>
 							<month type="4">Mme</month>
 							<month type="5">Mot</month>
 							<month type="6">Jan</month>
@@ -195,6 +195,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</dayPeriodContext>
 				</dayPeriods>
 				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator draft="provisional">-</numericDateSeparator>
+						<numericTimeSeparator draft="provisional">:</numericTimeSeparator>
+					</numericSeparators>
 					<availableFormats>
 						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
 						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
@@ -205,8 +209,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="hmv">h:mm a v</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="one">'week' W 'of' MMM</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="other">'week' W 'of' MMM</dateFormatItem>
+						<dateFormatItem id="yMMMMd" draft="contributed">y MMMM d</dateFormatItem>
+						<dateFormatItem id="yMMMMEd" draft="contributed">y MMMM d, EEE</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="mixed" draft="provisional">{0} – {1}</intervalFormatRange>
+							<intervalFormatRange type="non-numeric" draft="provisional">{0}–{1}</intervalFormatRange>
+							<intervalFormatRange type="numeric" draft="provisional">{0}–{1}</intervalFormatRange>
+						</intervalFormatRanges>
 						<intervalFormatItem id="h">
 							<greatestDifference id="a">h a – h a</greatestDifference>
 							<greatestDifference id="h">h–h a</greatestDifference>
@@ -277,6 +288,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<regionFormat>{0} Nako</regionFormat>
 			<regionFormat type="daylight">{0} Nako ya Motshehare</regionFormat>
 			<regionFormat type="standard">{0} Nako ya Tlwaelo</regionFormat>
+			<zone type="Etc/UTC">
+				<long>
+					<standard>Coordinated Universal Time</standard>
+				</long>
+			</zone>
 			<metazone type="GMT">
 				<long>
 					<standard>Greenwich Mean Time</standard>

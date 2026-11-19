@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,8 @@
  */
 
 #include "memory/allocation.hpp"
-#include "nmt/memTracker.hpp"
 #include "nmt/memoryFileTracker.hpp"
+#include "nmt/memTracker.hpp"
 #include "nmt/nmtCommon.hpp"
 #include "nmt/nmtNativeCallStackStorage.hpp"
 #include "nmt/vmatree.hpp"
@@ -42,21 +42,23 @@ void MemoryFileTracker::allocate_memory(MemoryFile* file, size_t offset,
                                         MemTag mem_tag) {
   NativeCallStackStorage::StackIndex sidx = _stack_storage.push(stack);
   VMATree::RegionData regiondata(sidx, mem_tag);
-  VMATree::SummaryDiff diff = file->_tree.commit_mapping(offset, size, regiondata);
-  for (int i = 0; i < mt_number_of_tags; i++) {
-    VirtualMemory* summary = file->_summary.by_tag(NMTUtil::index_to_tag(i));
-    summary->reserve_memory(diff.tag[i].commit);
-    summary->commit_memory(diff.tag[i].commit);
-  }
+  VMATree::SummaryDiff diff;
+  file->_tree.commit_mapping(offset, size, regiondata, diff);
+  diff.visit([&](MemTag mt, const VMATree::SingleDiff& single_diff) {
+    VirtualMemory* summary = file->_summary.by_tag(mt);
+    summary->reserve_memory(single_diff.commit);
+    summary->commit_memory(single_diff.commit);
+  });
 }
 
 void MemoryFileTracker::free_memory(MemoryFile* file, size_t offset, size_t size) {
-  VMATree::SummaryDiff diff = file->_tree.release_mapping(offset, size);
-  for (int i = 0; i < mt_number_of_tags; i++) {
-    VirtualMemory* summary = file->_summary.by_tag(NMTUtil::index_to_tag(i));
-    summary->reserve_memory(diff.tag[i].commit);
-    summary->commit_memory(diff.tag[i].commit);
-  }
+  VMATree::SummaryDiff diff;
+  file->_tree.release_mapping(offset, size, diff);
+  diff.visit([&](MemTag mt, const VMATree::SingleDiff& single_diff) {
+    VirtualMemory* summary = file->_summary.by_tag(mt);
+    summary->reserve_memory(single_diff.commit);
+    summary->commit_memory(single_diff.commit);
+  });
 }
 
 void MemoryFileTracker::print_report_on(const MemoryFile* file, outputStream* stream, size_t scale) {
@@ -64,12 +66,12 @@ void MemoryFileTracker::print_report_on(const MemoryFile* file, outputStream* st
 
   stream->print_cr("Memory map of %s", file->_descriptive_name);
   stream->cr();
-  VMATree::TreapNode* prev = nullptr;
+  const VMATree::TNode* prev = nullptr;
 #ifdef ASSERT
-  VMATree::TreapNode* broken_start = nullptr;
-  VMATree::TreapNode* broken_end = nullptr;
+  const VMATree::TNode* broken_start = nullptr;
+  const VMATree::TNode* broken_end = nullptr;
 #endif
-  file->_tree.visit_in_order([&](VMATree::TreapNode* current) {
+  file->_tree.visit_in_order([&](const VMATree::TNode* current) {
     if (prev == nullptr) {
       // Must be first node.
       prev = current;

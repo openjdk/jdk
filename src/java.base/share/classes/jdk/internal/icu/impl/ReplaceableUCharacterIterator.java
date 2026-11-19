@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ import jdk.internal.icu.text.UCharacterIterator;
  *
  * What are first, last, and getBeginIndex doing here?!?!?!
  */
-public class ReplaceableUCharacterIterator extends UCharacterIterator {
+public class ReplaceableUCharacterIterator extends UCharacterIterator implements Cloneable {
 
     // public constructor ------------------------------------------------------
 
@@ -86,9 +86,9 @@ public class ReplaceableUCharacterIterator extends UCharacterIterator {
      * <code>Replaceable</code>object
      * @return copy of this iterator
      */
-    public Object clone(){
+    public ReplaceableUCharacterIterator clone(){
         try {
-          return super.clone();
+          return (ReplaceableUCharacterIterator) super.clone();
         } catch (CloneNotSupportedException e) {
             return null; // never invoked
         }

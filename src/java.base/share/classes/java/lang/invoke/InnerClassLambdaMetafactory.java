@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package java.lang.invoke;
 
+import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.constant.ClassOrInterfaceDescImpl;
 import jdk.internal.misc.CDS;
 import jdk.internal.util.ClassFileDumper;
@@ -68,6 +70,8 @@ import sun.invoke.util.Wrapper;
     private static final String LAMBDA_INSTANCE_FIELD = "LAMBDA_INSTANCE$";
     private static final @Stable String[] ARG_NAME_CACHE = {"arg$1", "arg$2", "arg$3", "arg$4", "arg$5", "arg$6", "arg$7", "arg$8"};
     private static final ClassDesc[] EMPTY_CLASSDESC_ARRAY = ConstantUtils.EMPTY_CLASSDESC;
+
+    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 
     // For dumping generated classes to disk, for debugging purposes
     private static final ClassFileDumper lambdaProxyClassFileDumper;
@@ -312,6 +316,8 @@ import sun.invoke.util.Wrapper;
             public void accept(ClassBuilder clb) {
                 clb.withFlags(ACC_SUPER | ACC_FINAL | ACC_SYNTHETIC)
                    .withInterfaceSymbols(interfaces);
+                // All Classes in the BSM argument method types are loaded; no need for LoadableDescriptors
+
                 // Generate final fields to be filled in by constructor
                 for (int i = 0; i < argDescs.length; i++) {
                     clb.withField(argName(i), argDescs[i], ACC_PRIVATE | ACC_FINAL);
@@ -349,9 +355,17 @@ import sun.invoke.util.Wrapper;
         // Define the generated class in this VM.
 
         try {
-            // this class is linked at the indy callsite; so define a hidden nestmate
+            // This class is linked at the indy callsite; so define a hidden nestmate.
+            // Redefinition or retransformation of the caller can cause lambda call
+            // sites to be linked again, generating additional proxy classes.
+            // If the caller or a superclass has been redefined, allow newly generated
+            // proxies to unload independently of the defining class loader.
+            int flags = NESTMATE_CLASS;
+            if (!JLA.hasBeenRedefined(caller.lookupClass())) {
+                flags |= STRONG_LOADER_LINK;
+            }
             var classdata = useImplMethodHandle? implementation : null;
-            return caller.makeHiddenClassDefiner(lambdaClassName, classBytes, lambdaProxyClassFileDumper, NESTMATE_CLASS | STRONG_LOADER_LINK)
+            return caller.makeHiddenClassDefiner(lambdaClassName, classBytes, lambdaProxyClassFileDumper, flags)
                          .defineClass(!disableEagerInitialization, classdata);
 
         } catch (Throwable t) {
@@ -391,15 +405,15 @@ import sun.invoke.util.Wrapper;
                 new Consumer<>() {
                     @Override
                     public void accept(CodeBuilder cob) {
-                        cob.aload(0)
-                           .invokespecial(CD_Object, INIT_NAME, MTD_void);
                         int parameterCount = factoryType.parameterCount();
                         for (int i = 0; i < parameterCount; i++) {
                             cob.aload(0)
                                .loadLocal(TypeKind.from(factoryType.parameterType(i)), cob.parameterSlot(i))
                                .putfield(pool.fieldRefEntry(lambdaClassEntry, pool.nameAndTypeEntry(argName(i), argDescs[i])));
                         }
-                        cob.return_();
+                        cob.aload(0)
+                           .invokespecial(CD_Object, INIT_NAME, MTD_void)
+                           .return_();
                     }
                 });
     }

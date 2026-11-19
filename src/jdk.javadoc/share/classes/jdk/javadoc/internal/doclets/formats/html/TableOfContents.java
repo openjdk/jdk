@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,15 +103,27 @@ public class TableOfContents {
                 .put(HtmlAttr.ARIA_LABEL, writer.resources.getText("doclet.table_of_contents"));
         var header = HtmlTree.DIV(HtmlStyles.tocHeader, writer.contents.contentsHeading);
         if (hasFilterInput) {
+            var filterLabel = writer.resources.getText("doclet.filter_label");
             header.add(Entity.NO_BREAK_SPACE)
                     .add(HtmlTree.INPUT(HtmlAttr.InputType.TEXT, HtmlStyles.filterInput)
-                            .put(HtmlAttr.PLACEHOLDER, writer.resources.getText("doclet.filter_label"))
+                            .put(HtmlAttr.TITLE, filterLabel)
+                            .put(HtmlAttr.PLACEHOLDER, filterLabel)
                             .put(HtmlAttr.ARIA_LABEL, writer.resources.getText("doclet.filter_table_of_contents"))
                             .put(HtmlAttr.AUTOCOMPLETE, "off")
                             .put(HtmlAttr.SPELLCHECK, "false"))
                     .add(HtmlTree.INPUT(HtmlAttr.InputType.RESET, HtmlStyles.resetFilter)
                             .put(HtmlAttr.TABINDEX, "-1")
                             .put(HtmlAttr.VALUE, writer.resources.getText("doclet.filter_reset")));
+
+            header.add(Entity.NO_BREAK_SPACE)
+                    .add(HtmlTree.BUTTON(HtmlStyles.tocSortToggle)
+                            .setId(HtmlIds.TOC_ORDER_TOGGLE)
+                            .add(HtmlTree.IMG(writer.pathToRoot.resolve(DocPaths.RESOURCE_FILES)
+                                            .resolve(DocPaths.SORT_A_Z_SVG),
+                                    writer.resources.getText("doclet.sort_table_of_contents")
+                            ))
+                    );
+
         }
         content.add(header);
         content.add(listBuilder);

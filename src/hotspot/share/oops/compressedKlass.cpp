@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,15 +44,19 @@ narrowKlass CompressedKlassPointers::_lowest_valid_narrow_klass_id = (narrowKlas
 narrowKlass CompressedKlassPointers::_highest_valid_narrow_klass_id = (narrowKlass)-1;
 size_t CompressedKlassPointers::_protection_zone_size = 0;
 
-#ifdef _LP64
-
 size_t CompressedKlassPointers::max_klass_range_size() {
-  // We disallow klass range sizes larger than 4GB even if the encoding
-  // range would allow for a larger Klass range (e.g. Base=zero, shift=3 -> 32GB).
-  // That is because many CPU-specific compiler decodings do not want the
-  // shifted narrow Klass to spill over into the third quadrant of the 64-bit target
-  // address, e.g. to use a 16-bit move for a simplified base addition.
-  return MIN2(4 * G, max_encoding_range_size());
+#ifdef _LP64
+  const size_t encoding_allows = nth_bit(narrow_klass_pointer_bits() + max_shift());
+  constexpr size_t cap = 4 * G;
+  return MIN2(encoding_allows, cap);
+#else
+  // 32-bit: only 32-bit "narrow" Klass pointers allowed. If we ever support smaller narrow
+  // Klass pointers here, coding needs to be revised.
+  // We keep one page safety zone free to guard against size_t overflows on 32-bit. In practice
+  // this is irrelevant because these upper address space parts are not user-addressable on
+  // any of our 32-bit platforms.
+  return align_down(UINT_MAX, os::vm_page_size());
+#endif
 }
 
 void CompressedKlassPointers::pre_initialize() {
@@ -60,8 +64,13 @@ void CompressedKlassPointers::pre_initialize() {
     _narrow_klass_pointer_bits = narrow_klass_pointer_bits_coh;
     _max_shift = max_shift_coh;
   } else {
+#ifdef _LP64
     _narrow_klass_pointer_bits = narrow_klass_pointer_bits_noncoh;
     _max_shift = max_shift_noncoh;
+#else
+    _narrow_klass_pointer_bits = 32;
+    _max_shift = 0;
+#endif
   }
 }
 
@@ -69,10 +78,10 @@ void CompressedKlassPointers::pre_initialize() {
 void CompressedKlassPointers::sanity_check_after_initialization() {
   // In expectation of an assert, prepare condensed info to be printed with the assert.
   char tmp[256];
-  os::snprintf(tmp, sizeof(tmp), "klass range: " RANGE2FMT ","
-      " base " PTR_FORMAT ", shift %d, lowest/highest valid narrowKlass %u/%u",
-      RANGE2FMTARGS(_klass_range_start, _klass_range_end),
-      p2i(_base), _shift, _lowest_valid_narrow_klass_id, _highest_valid_narrow_klass_id);
+  os::snprintf_checked(tmp, sizeof(tmp), "klass range: " RANGE2FMT ","
+                       " base " PTR_FORMAT ", shift %d, lowest/highest valid narrowKlass %u/%u",
+                       RANGE2FMTARGS(_klass_range_start, _klass_range_end),
+                       p2i(_base), _shift, _lowest_valid_narrow_klass_id, _highest_valid_narrow_klass_id);
 #define ASSERT_HERE(cond) assert(cond, " (%s)", tmp);
 #define ASSERT_HERE_2(cond, msg) assert(cond, msg " (%s)", tmp);
 
@@ -83,6 +92,10 @@ void CompressedKlassPointers::sanity_check_after_initialization() {
   ASSERT_HERE(_lowest_valid_narrow_klass_id != (narrowKlass)-1);
   ASSERT_HERE(_base != (address)-1);
   ASSERT_HERE(_shift != -1);
+
+  // We should need a class space if address space is larger than what narrowKlass can address
+  const bool should_need_class_space = (BytesPerWord * BitsPerByte) > narrow_klass_pointer_bits();
+  ASSERT_HERE(should_need_class_space == (INCLUDE_CLASS_SPACE ? true : false));
 
   const size_t klass_align = klass_alignment_in_bytes();
 
@@ -96,7 +109,9 @@ void CompressedKlassPointers::sanity_check_after_initialization() {
 
   // Check that Klass range is fully engulfed in the encoding range
   const address encoding_start = _base;
-  const address encoding_end = (address)(p2u(_base) + (uintptr_t)nth_bit(narrow_klass_pointer_bits() + _shift));
+  const address encoding_end = (address)
+      LP64_ONLY((p2u(_base) + (uintptr_t)nth_bit(narrow_klass_pointer_bits() + _shift)))
+      NOT_LP64(max_klass_range_size());
   ASSERT_HERE_2(_klass_range_start >= _base && _klass_range_end <= encoding_end,
                 "Resulting encoding range does not fully cover the class range");
 
@@ -141,7 +156,8 @@ void CompressedKlassPointers::calc_lowest_highest_narrow_klass_id() {
   address lowest_possible_klass_location = _klass_range_start;
 
   // A Klass will never be placed at the Encoding range start, since that would translate to a narrowKlass=0, which
-  // is disallowed. Note that both Metaspace and CDS prvent allocation at the first address for this reason.
+  // is disallowed. If the encoding range starts at the klass range start, both Metaspace and CDS establish an
+  // mprotected zone for this reason (see establish_protection_zone).
   if (lowest_possible_klass_location == _base) {
     lowest_possible_klass_location += klass_alignment_in_bytes();
   }
@@ -172,11 +188,7 @@ void CompressedKlassPointers::initialize_for_given_encoding(address addr, size_t
 
   calc_lowest_highest_narrow_klass_id();
 
-  // This has already been checked for SharedBaseAddress and if this fails, it's a bug in the allocation code.
-  if (!set_klass_decode_mode()) {
-    fatal("base=" PTR_FORMAT " given with shift %d, cannot be used to encode class pointers",
-          p2i(_base), _shift);
-  }
+  initialize_pd();
 
   DEBUG_ONLY(sanity_check_after_initialization();)
 }
@@ -229,15 +241,13 @@ void CompressedKlassPointers::initialize(address addr, size_t len) {
     // a cacheline size.
     _base = addr;
 
+    const int log2_len_to_cover = log2i_ceil(len);
     const int log_cacheline = exact_log2(DEFAULT_CACHE_LINE_SIZE);
-    int s = max_shift();
-    while (s > log_cacheline && ((size_t)nth_bit(narrow_klass_pointer_bits() + s - 1) > len)) {
-      s--;
-    }
-    _shift = s;
+    _shift = MAX2(log_cacheline, log2_len_to_cover - narrow_klass_pointer_bits());
 
   } else {
 
+#ifdef _LP64
     // Traditional (non-compact) header mode
     const uintptr_t unscaled_max = nth_bit(narrow_klass_pointer_bits());
     const uintptr_t zerobased_max = nth_bit(narrow_klass_pointer_bits() + max_shift());
@@ -249,6 +259,7 @@ void CompressedKlassPointers::initialize(address addr, size_t len) {
     address const end = addr + len;
     _base = (end <= (address)unscaled_max) ? nullptr : addr;
 #else
+
     // We try, in order of preference:
     // -unscaled    (base=0 shift=0)
     // -zero-based  (base=0 shift>0)
@@ -269,60 +280,46 @@ void CompressedKlassPointers::initialize(address addr, size_t len) {
       }
     }
 #endif // AARCH64
+#else
+    // 32-bit "compressed class pointer" mode
+    _base = nullptr;
+    _shift = 0;
+    // as our "protection zone", we just assume the lowest protected parts of
+    // the user address space.
+    _protection_zone_size = os::vm_min_address();
+#endif // LP64
   }
 
   calc_lowest_highest_narrow_klass_id();
 
-  // Initialize klass decode mode and check compability with decode instructions
-  if (!set_klass_decode_mode()) {
+  initialize_pd();
 
-    // Give fatal error if this is a specified address
-    if (CompressedClassSpaceBaseAddress == (size_t)_base) {
-      vm_exit_during_initialization(
-            err_msg("CompressedClassSpaceBaseAddress=" PTR_FORMAT " given with shift %d, cannot be used to encode class pointers",
-                    CompressedClassSpaceBaseAddress, _shift));
-    } else {
-      // If this fails, it's a bug in the allocation code.
-      fatal("CompressedClassSpaceBaseAddress=" PTR_FORMAT " given with shift %d, cannot be used to encode class pointers",
-            p2i(_base), _shift);
-    }
-  }
-#ifdef ASSERT
-  sanity_check_after_initialization();
-#endif
+  DEBUG_ONLY(sanity_check_after_initialization();)
 }
 
 void CompressedKlassPointers::print_mode(outputStream* st) {
-  st->print_cr("UseCompressedClassPointers %d, UseCompactObjectHeaders %d",
-               UseCompressedClassPointers, UseCompactObjectHeaders);
-  if (UseCompressedClassPointers) {
-    st->print_cr("Narrow klass pointer bits %d, Max shift %d",
-                 _narrow_klass_pointer_bits, _max_shift);
-    st->print_cr("Narrow klass base: " PTR_FORMAT ", Narrow klass shift: %d",
-                  p2i(base()), shift());
-    st->print_cr("Encoding Range: " RANGE2FMT, RANGE2FMTARGS(_base, encoding_range_end()));
-    st->print_cr("Klass Range:    " RANGE2FMT, RANGE2FMTARGS(_klass_range_start, _klass_range_end));
-    st->print_cr("Klass ID Range:  [%u - %u) (%u)", _lowest_valid_narrow_klass_id, _highest_valid_narrow_klass_id + 1,
-                 _highest_valid_narrow_klass_id + 1 - _lowest_valid_narrow_klass_id);
-    if (_protection_zone_size > 0) {
-      st->print_cr("Protection zone: " RANGEFMT, RANGEFMTARGS(_base, _protection_zone_size));
-    } else {
-      st->print_cr("No protection zone.");
-    }
+  st->print_cr("UseCompactObjectHeaders %d", UseCompactObjectHeaders);
+  st->print_cr("Narrow klass pointer bits %d, Max shift %d",
+               _narrow_klass_pointer_bits, _max_shift);
+  st->print_cr("Narrow klass base: " PTR_FORMAT ", Narrow klass shift: %d",
+                p2i(base()), shift());
+  st->print_cr("Encoding Range: " RANGE2FMT, RANGE2FMTARGS(_base, encoding_range_end()));
+  st->print_cr("Klass Range:    " RANGE2FMT, RANGE2FMTARGS(_klass_range_start, _klass_range_end));
+  st->print_cr("Klass ID Range:  [%u - %u) (%u)", _lowest_valid_narrow_klass_id, _highest_valid_narrow_klass_id + 1,
+               _highest_valid_narrow_klass_id + 1 - _lowest_valid_narrow_klass_id);
+  if (_protection_zone_size > 0) {
+    st->print_cr("Protection zone: " RANGEFMT, RANGEFMTARGS(_base, _protection_zone_size));
   } else {
-    st->print_cr("UseCompressedClassPointers off");
+    st->print_cr("No protection zone.");
   }
 }
-
-// On AIX, we cannot mprotect archive space or class space since they are reserved with SystemV shm.
-static constexpr bool can_mprotect_archive_space = NOT_AIX(true) AIX_ONLY(false);
 
 // Protect a zone a the start of the encoding range
 void CompressedKlassPointers::establish_protection_zone(address addr, size_t size) {
   assert(_protection_zone_size == 0, "just once");
   assert(addr == base(), "Protection zone not at start of encoding range?");
   assert(size > 0 && is_aligned(size, os::vm_page_size()), "Protection zone not page sized");
-  const bool rc = can_mprotect_archive_space && os::protect_memory((char*)addr, size, os::MEM_PROT_NONE, false);
+  const bool rc = os::protect_memory((char*)addr, size, os::MEM_PROT_NONE, false);
   log_info(metaspace)("%s Narrow Klass Protection zone " RANGEFMT,
       (rc ? "Established" : "FAILED to establish "),
       RANGEFMTARGS(addr, size));
@@ -340,4 +337,3 @@ bool CompressedKlassPointers::is_in_protection_zone(address addr) {
       (addr >= base() && addr < base() + _protection_zone_size) : false;
 }
 
-#endif // _LP64

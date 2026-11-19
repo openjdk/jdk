@@ -23,67 +23,24 @@
  */
 
 #include "rdtsc_x86.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/globals_extension.hpp"
-#include "runtime/javaThread.hpp"
 #include "runtime/os.inline.hpp"
-#include "runtime/orderAccess.hpp"
+#include "utilities/macros.hpp"
 #include "vm_version_x86.hpp"
 
-static jlong _epoch = 0;
-static bool rdtsc_elapsed_counter_enabled = false;
-static jlong tsc_frequency = 0;
+DEBUG_ONLY(volatile int Rdtsc::_initialized = 0;)
+jlong Rdtsc::_epoch = 0;
+jlong Rdtsc::_tsc_frequency = 0;
 
-static jlong set_epoch() {
+jlong Rdtsc::set_epoch() {
   assert(0 == _epoch, "invariant");
   _epoch = os::rdtsc();
   return _epoch;
 }
 
-// Base loop to estimate ticks frequency for tsc counter from user mode.
-// Volatiles and sleep() are used to prevent compiler from applying optimizations.
-static void do_time_measurements(volatile jlong& time_base,
-                                 volatile jlong& time_fast,
-                                 volatile jlong& time_base_elapsed,
-                                 volatile jlong& time_fast_elapsed) {
-  static const unsigned int FT_SLEEP_MILLISECS = 1;
-  const unsigned int loopcount = 3;
-
-  volatile jlong start = 0;
-  volatile jlong fstart = 0;
-  volatile jlong end = 0;
-  volatile jlong fend = 0;
-
-  // Figure out the difference between rdtsc and os provided timer.
-  // base algorithm adopted from JRockit.
-  for (unsigned int times = 0; times < loopcount; times++) {
-    start = os::elapsed_counter();
-    OrderAccess::fence();
-    fstart = os::rdtsc();
-
-    // use sleep to prevent compiler from optimizing
-    JavaThread::current()->sleep(FT_SLEEP_MILLISECS);
-
-    end = os::elapsed_counter();
-    OrderAccess::fence();
-    fend = os::rdtsc();
-
-    time_base += end - start;
-    time_fast += fend - fstart;
-
-    // basis for calculating the os tick start
-    // to fast time tick start offset
-    time_base_elapsed += end;
-    time_fast_elapsed += (fend - _epoch);
-  }
-
-  time_base /= loopcount;
-  time_fast /= loopcount;
-  time_base_elapsed /= loopcount;
-  time_fast_elapsed /= loopcount;
-}
-
-static jlong initialize_frequency() {
-  assert(0 == tsc_frequency, "invariant");
+jlong Rdtsc::initialize_frequency() {
+  assert(0 == _tsc_frequency, "invariant");
   assert(0 == _epoch, "invariant");
   const jlong initial_counter = set_epoch();
   if (initial_counter == 0) {
@@ -102,29 +59,6 @@ static jlong initialize_frequency() {
     // for invariant tsc platforms, take the maximum qualified cpu frequency
     tsc_freq = (double)VM_Version::maximum_qualified_cpu_frequency();
     os_to_tsc_conv_factor = tsc_freq / os_freq;
-  } else {
-    // use measurements to estimate
-    // a conversion factor and the tsc frequency
-
-    volatile jlong time_base = 0;
-    volatile jlong time_fast = 0;
-    volatile jlong time_base_elapsed = 0;
-    volatile jlong time_fast_elapsed = 0;
-
-    // do measurements to get base data
-    // on os timer and fast ticks tsc time relation.
-    do_time_measurements(time_base, time_fast, time_base_elapsed, time_fast_elapsed);
-
-    // if invalid measurements, cannot proceed
-    if (time_fast == 0 || time_base == 0) {
-      return 0;
-    }
-
-    os_to_tsc_conv_factor = (double)time_fast / (double)time_base;
-    if (os_to_tsc_conv_factor > 1) {
-      // estimate on tsc counter frequency
-      tsc_freq = os_to_tsc_conv_factor * os_freq;
-    }
   }
 
   if ((tsc_freq < 0) || (tsc_freq > 0 && tsc_freq <= os_freq) || (os_to_tsc_conv_factor <= 1)) {
@@ -136,47 +70,52 @@ static jlong initialize_frequency() {
   return (jlong)tsc_freq;
 }
 
-static bool initialize_elapsed_counter() {
-  tsc_frequency = initialize_frequency();
-  return tsc_frequency != 0 && _epoch != 0;
+bool Rdtsc::initialize_elapsed_counter() {
+  _tsc_frequency = initialize_frequency();
+  return _tsc_frequency != 0 && _epoch != 0;
 }
 
 static bool ergonomics() {
-  const bool invtsc_support = Rdtsc::is_supported();
-  if (FLAG_IS_DEFAULT(UseFastUnorderedTimeStamps) && invtsc_support) {
-    FLAG_SET_ERGO(UseFastUnorderedTimeStamps, true);
-  }
+  if (Rdtsc::is_supported()) {
+    // Use rdtsc when it is supported by default
+    FLAG_SET_ERGO_IF_DEFAULT(UseFastUnorderedTimeStamps, true);
+  } else if (UseFastUnorderedTimeStamps) {
+    assert(!FLAG_IS_DEFAULT(UseFastUnorderedTimeStamps), "Unexpected default value");
 
-  bool ft_enabled = UseFastUnorderedTimeStamps && invtsc_support;
-
-  if (!ft_enabled) {
-    if (UseFastUnorderedTimeStamps && VM_Version::supports_tsc()) {
-      warning("\nThe hardware does not support invariant tsc (INVTSC) register and/or cannot guarantee tsc synchronization between sockets at startup.\n"\
-        "Values returned via rdtsc() are not guaranteed to be accurate, esp. when comparing values from cross sockets reads. Enabling UseFastUnorderedTimeStamps on non-invariant tsc hardware should be considered experimental.\n");
-      ft_enabled = true;
-    }
-  }
-
-  if (!ft_enabled) {
-    // Warn if unable to support command-line flag
-    if (UseFastUnorderedTimeStamps && !VM_Version::supports_tsc()) {
+    if (VM_Version::supports_tsc()) {
+      warning("Ignoring UseFastUnorderedTimeStamps, the hardware does not support invariant tsc (INVTSC) register and/or cannot guarantee tsc synchronization between sockets at startup.\n"
+              "Values returned via rdtsc() are not guaranteed to be accurate, esp. when comparing values from cross sockets reads.");
+    } else {
       warning("Ignoring UseFastUnorderedTimeStamps, hardware does not support normal tsc");
     }
+
+    // We do not support non invariant rdtsc
+    FLAG_SET_ERGO(UseFastUnorderedTimeStamps, false);
   }
 
-  return ft_enabled;
+  return UseFastUnorderedTimeStamps;
+}
+
+bool Rdtsc::initialize() {
+  precond(AtomicAccess::xchg(&_initialized, 1) == 0);
+  assert(0 == _tsc_frequency, "invariant");
+  assert(0 == _epoch, "invariant");
+
+  if (!ergonomics()) {
+    // We decided to ergonomically not support rdtsc.
+    return false;
+  }
+
+  // Try to initialize the elapsed counter
+  return initialize_elapsed_counter();
 }
 
 bool Rdtsc::is_supported() {
   return VM_Version::supports_tscinv_ext();
 }
 
-bool Rdtsc::is_elapsed_counter_enabled() {
-  return rdtsc_elapsed_counter_enabled;
-}
-
 jlong Rdtsc::frequency() {
-  return tsc_frequency;
+  return _tsc_frequency;
 }
 
 jlong Rdtsc::elapsed_counter() {
@@ -191,19 +130,7 @@ jlong Rdtsc::raw() {
   return os::rdtsc();
 }
 
-bool Rdtsc::initialize() {
-  static bool initialized = false;
-  if (!initialized) {
-    assert(!rdtsc_elapsed_counter_enabled, "invariant");
-    VM_Version::initialize_tsc();
-    assert(0 == tsc_frequency, "invariant");
-    assert(0 == _epoch, "invariant");
-    bool result = initialize_elapsed_counter(); // init hw
-    if (result) {
-      result = ergonomics(); // check logical state
-    }
-    rdtsc_elapsed_counter_enabled = result;
-    initialized = true;
-  }
-  return rdtsc_elapsed_counter_enabled;
+bool Rdtsc::enabled() {
+  static bool enabled = initialize();
+  return enabled;
 }

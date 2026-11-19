@@ -22,40 +22,41 @@
  *
  */
 
-#include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/heuristics/shenandoahPassiveHeuristics.hpp"
 #include "gc/shenandoah/heuristics/shenandoahSpaceInfo.hpp"
 #include "gc/shenandoah/mode/shenandoahPassiveMode.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
-#include "logging/log.hpp"
-#include "logging/logTag.hpp"
-#include "runtime/java.hpp"
+#include "runtime/globals_extension.hpp"
 
 void ShenandoahPassiveMode::initialize_flags() const {
+  if (!UnlockDiagnosticVMOptions) {
+    vm_exit_during_initialization(err_msg(
+      "GC mode \"Passive\" is diagnostic, and must be enabled via -XX:+UnlockDiagnosticVMOptions."));
+  }
+
   // Do not allow concurrent cycles.
   FLAG_SET_DEFAULT(ExplicitGCInvokesConcurrent, false);
-  FLAG_SET_DEFAULT(ShenandoahImplicitGCInvokesConcurrent, false);
 
-  // Passive runs with max speed for allocation, because GC is always STW
-  SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahPacing);
-
-  // No need for evacuation reserve with Full GC, only for Degenerated GC.
-  if (!ShenandoahDegeneratedGC) {
-    SHENANDOAH_ERGO_OVERRIDE_DEFAULT(ShenandoahEvacReserve, 0);
+  // No need for evacuation reserve with Full GC
+  if (FLAG_IS_DEFAULT(ShenandoahEvacReserve)) {
+    log_info(gc)("Heuristics sets -XX:ShenandoahEvacReserve=0");
+    FLAG_SET_DEFAULT(ShenandoahEvacReserve, 0);
   }
 
   // Disable known barriers by default.
   SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahLoadRefBarrier);
   SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahSATBBarrier);
-  SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahCASBarrier);
   SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahCloneBarrier);
-  SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahStackWatermarkBarrier);
   SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahCardBarrier);
 
-  // Final configuration checks
-  // Passive mode does not instantiate the machinery to support the card table.
-  // Exit if the flag has been explicitly set.
-  SHENANDOAH_CHECK_FLAG_UNSET(ShenandoahCardBarrier);
+  // TLAB sizing policy makes resizing decisions before each GC cycle. It averages
+  // historical data, assigning more recent data the weight according to TLABAllocationWeight.
+  // Current default is good for generational collectors that run frequent young GCs.
+  // With Shenandoah, GC cycles are much less frequent, so we need sizing policy
+  // to converge faster over smaller number of resizing decisions.
+  if (FLAG_IS_DEFAULT(TLABAllocationWeight)) {
+    FLAG_SET_DEFAULT(TLABAllocationWeight, 90);
+  }
 }
 
 ShenandoahHeuristics* ShenandoahPassiveMode::initialize_heuristics(ShenandoahSpaceInfo* space_info) const {

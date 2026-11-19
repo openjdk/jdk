@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,8 +61,8 @@ import jdk.jfr.internal.util.ImplicitFields;
  *
  */
 public final class EventInstrumentation {
-    public static final long MASK_THROTTLE               = 1 << 62;
-    public static final long MASK_THROTTLE_CHECK         = 1 << 63;
+    public static final long MASK_THROTTLE               = 1L << 62;
+    public static final long MASK_THROTTLE_CHECK         = 1L << 63;
     public static final long MASK_THROTTLE_BITS          = MASK_THROTTLE | MASK_THROTTLE_CHECK;
     public static final long MASK_THROTTLE_CHECK_SUCCESS = MASK_THROTTLE_CHECK | MASK_THROTTLE;
     public static final long MASK_THROTTLE_CHECK_FAIL    = MASK_THROTTLE_CHECK | 0;
@@ -94,6 +94,7 @@ public final class EventInstrumentation {
     private static final MethodDesc METHOD_RESET = MethodDesc.of("reset", "()V");
     private static final MethodDesc METHOD_SHOULD_COMMIT_LONG = MethodDesc.of("shouldCommit", "(J)Z");
     private static final MethodDesc METHOD_TIME_STAMP = MethodDesc.of("timestamp", "()J");
+    private static final MethodDesc METHOD_TRY_UPDATE_EPOCH_FIELD = MethodDesc.of("tryUpdateEpoch", "(Ljava/lang/reflect/Field;)Z");
 
     private final ClassInspector inspector;
     private final long eventTypeId;
@@ -124,11 +125,7 @@ public final class EventInstrumentation {
         this.eventClassDesc = inspector.getClassDesc();
         this.staticCommitMethod = inspector.findStaticCommitMethod();
         this.untypedEventConfiguration = hasUntypedConfiguration();
-        if (inspector.isJDK()) {
-            this.throttled = inspector.hasStaticMethod(METHOD_EVENT_SHOULD_THROTTLE_COMMIT_LONG_LONG);
-        } else {
-            this.throttled = inspector.isThrottled();
-        }
+        this.throttled = inspector.isThrottled(METHOD_EVENT_SHOULD_THROTTLE_COMMIT_LONG_LONG);
     }
 
     byte[] buildInstrumented() {
@@ -174,6 +171,9 @@ public final class EventInstrumentation {
             }
             if (isMethod(method, METHOD_TIME_STAMP)) {
                 return this::methodTimestamp;
+            }
+            if (isMethod(method, METHOD_TRY_UPDATE_EPOCH_FIELD)) {
+                return this::methodTryUpdateEpochField;
             }
             if (staticCommitMethod != null && isMethod(method, staticCommitMethod)) {
                 return this::methodCommit;
@@ -352,6 +352,12 @@ public final class EventInstrumentation {
         methodShouldCommitStatic(codeBuilder, METHOD_EVENT_CONFIGURATION_SHOULD_THROTTLE_COMMIT_LONG);
     }
 
+    private void methodTryUpdateEpochField(CodeBuilder codeBuilder) {
+        codeBuilder.aload(0);
+        invokestatic(codeBuilder, TYPE_EVENT_CONFIGURATION, METHOD_TRY_UPDATE_EPOCH_FIELD);
+        codeBuilder.ireturn();
+    }
+
     private void methodShouldCommitStatic(CodeBuilder codeBuilder, MethodDesc method) {
         Label fail = codeBuilder.newLabel();
         if (guardEventConfiguration) {
@@ -482,6 +488,11 @@ public final class EventInstrumentation {
         blockCodeBuilder.ifne(durationEvent);
         invokestatic(blockCodeBuilder, TYPE_EVENT_CONFIGURATION, METHOD_TIME_STAMP);
         blockCodeBuilder.lstore(1);
+        if (throttled) {
+            blockCodeBuilder.aload(0);
+            blockCodeBuilder.lload(1);
+            putfield(blockCodeBuilder, eventClassDesc, ImplicitFields.FIELD_START_TIME);
+        }
         Label commit = blockCodeBuilder.newLabel();
         blockCodeBuilder.goto_(commit);
         //   if (duration == 0) {
@@ -491,7 +502,7 @@ public final class EventInstrumentation {
         blockCodeBuilder.labelBinding(durationEvent);
         blockCodeBuilder.aload(0);
         getfield(blockCodeBuilder, eventClassDesc, ImplicitFields.FIELD_DURATION);
-        blockCodeBuilder.lconst_0();
+        blockCodeBuilder.lconst_0(); // also blocks throttled event
         blockCodeBuilder.lcmp();
         blockCodeBuilder.ifne(commit);
         blockCodeBuilder.aload(0);
@@ -527,9 +538,7 @@ public final class EventInstrumentation {
             // write duration
             blockCodeBuilder.dup();
             // stack: [EW] [EW]
-            blockCodeBuilder.aload(0);
-            // stack: [EW] [EW] [this]
-            getfield(blockCodeBuilder, eventClassDesc, ImplicitFields.FIELD_DURATION);
+            getDuration(blockCodeBuilder);
             // stack: [EW] [EW] [long]
             invokevirtual(blockCodeBuilder, TYPE_EVENT_WRITER, EventWriterMethod.PUT_LONG.method());
             fieldIndex++;

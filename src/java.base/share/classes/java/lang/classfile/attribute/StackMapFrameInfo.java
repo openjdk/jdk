@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,11 +30,14 @@ import java.lang.classfile.Label;
 import java.lang.classfile.Opcode;
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.instruction.BranchInstruction;
+import java.lang.classfile.constantpool.NameAndTypeEntry;
 import java.lang.constant.ClassDesc;
 import java.util.List;
 
 import jdk.internal.classfile.impl.StackMapDecoder;
+import jdk.internal.classfile.impl.StackMapGenerator;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
+import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models a stack map frame in a {@link StackMapTableAttribute StackMapTable}
@@ -78,16 +81,61 @@ public sealed interface StackMapFrameInfo
     List<VerificationTypeInfo> stack();
 
     /**
+     * {@return the expanded unset fields}
+     * <p>
+     * If this stack map frame is declared in a {@code class} file that does not
+     * depend on preview features, the list of unset fields is always empty.
+     * If the {@code class} file depends on preview features, this method
+     * returns the list of unset fields.
+     *
+     * @jvms strict-fields-4.7.4 The {@code StackMapTable} Attribute
+     * @since 28
+     */
+    @PreviewFeature(feature = PreviewFeature.Feature.STRICT_FIELDS, reflective = true)
+    List<NameAndTypeEntry> unsetFields();
+
+    /**
      * {@return a new stack map frame}
      *
      * @param target the location of the frame
      * @param locals the complete list of frame locals
      * @param stack the complete frame stack
+     * @throws IllegalArgumentException if the number of types in {@code locals}
+     *         or {@code stack} exceeds the limit of {@link java.lang.classfile##u2 u2}
      */
     public static StackMapFrameInfo of(Label target,
             List<VerificationTypeInfo> locals,
             List<VerificationTypeInfo> stack) {
-        return new StackMapDecoder.StackMapFrameImpl(255, target, locals, stack);
+
+        return of(target, locals, stack, List.of());
+    }
+
+    /**
+     * {@return a new stack map frame}
+     * <p>
+     * If this stack map frame is declared in a {@code class} file that does not
+     * depend on preview features, the list of unset fields must be empty;
+     * otherwise, the {@code class} file must declare that it depends on preview
+     * features if the unset fields list contains any item.
+     *
+     * @param target the location of the frame
+     * @param locals the complete list of frame locals
+     * @param stack the complete frame stack
+     * @param unsetFields the complete list of unset fields
+     * @throws IllegalArgumentException if the number of elements in {@code locals},
+     *         {@code stack}, or {@code unsetFields} exceeds the limit of
+     *         {@link java.lang.classfile##u2 u2}; or if unset fields has
+     *         elements, but no {@link SimpleVerificationTypeInfo#UNINITIALIZED_THIS
+     *         uninitializedThis} is present in {@code locals}
+     * @since 28
+     */
+    @PreviewFeature(feature = PreviewFeature.Feature.STRICT_FIELDS, reflective = true)
+    public static StackMapFrameInfo of(Label target,
+                                       List<VerificationTypeInfo> locals,
+                                       List<VerificationTypeInfo> stack,
+                                       List<NameAndTypeEntry> unsetFields) {
+
+        return new StackMapDecoder.StackMapFrameImpl(255, target, locals, stack, unsetFields);
     }
 
     /**
@@ -101,31 +149,31 @@ public sealed interface StackMapFrameInfo
     sealed interface VerificationTypeInfo {
 
         /** The {@link #tag() tag} for verification type info {@link SimpleVerificationTypeInfo#TOP TOP}. */
-        int ITEM_TOP = 0;
+        int ITEM_TOP = StackMapGenerator.ITEM_TOP;
 
         /** The {@link #tag() tag} for verification type info {@link SimpleVerificationTypeInfo#INTEGER INTEGER}. */
-        int ITEM_INTEGER = 1;
+        int ITEM_INTEGER = StackMapGenerator.ITEM_INTEGER;
 
         /** The {@link #tag() tag} for verification type info {@link SimpleVerificationTypeInfo#FLOAT FLOAT}. */
-        int ITEM_FLOAT = 2;
+        int ITEM_FLOAT = StackMapGenerator.ITEM_FLOAT;
 
         /** The {@link #tag() tag} for verification type info {@link SimpleVerificationTypeInfo#DOUBLE DOUBLE}. */
-        int ITEM_DOUBLE = 3;
+        int ITEM_DOUBLE = StackMapGenerator.ITEM_DOUBLE;
 
         /** The {@link #tag() tag} for verification type info {@link SimpleVerificationTypeInfo#LONG LONG}. */
-        int ITEM_LONG = 4;
+        int ITEM_LONG = StackMapGenerator.ITEM_LONG;
 
         /** The {@link #tag() tag} for verification type info {@link SimpleVerificationTypeInfo#NULL NULL}. */
-        int ITEM_NULL = 5;
+        int ITEM_NULL = StackMapGenerator.ITEM_NULL;
 
         /** The {@link #tag() tag} for verification type info {@link SimpleVerificationTypeInfo#UNINITIALIZED_THIS UNINITIALIZED_THIS}. */
-        int ITEM_UNINITIALIZED_THIS = 6;
+        int ITEM_UNINITIALIZED_THIS = StackMapGenerator.ITEM_UNINITIALIZED_THIS;
 
         /** The {@link #tag() tag} for verification type info {@link ObjectVerificationTypeInfo OBJECT}. */
-        int ITEM_OBJECT = 7;
+        int ITEM_OBJECT = StackMapGenerator.ITEM_OBJECT;
 
         /** The {@link #tag() tag} for verification type info {@link UninitializedVerificationTypeInfo UNINITIALIZED}. */
-        int ITEM_UNINITIALIZED = 8;
+        int ITEM_UNINITIALIZED = StackMapGenerator.ITEM_UNINITIALIZED;
 
         /**
          * {@return the tag of the type info}

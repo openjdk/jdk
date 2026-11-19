@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,6 +70,7 @@ public class MotifTreeCellRenderer extends DefaultTreeCellRenderer
             highlight = UIManager.getColor("Tree.iconHighlight");
         }
 
+        @Override
         public void paintIcon(Component c, Graphics g, int x, int y) {
             g.setColor(bg);
 
@@ -90,10 +91,12 @@ public class MotifTreeCellRenderer extends DefaultTreeCellRenderer
             g.drawLine(x + 9, y + 8, x + 7, y + 6);
         }
 
+        @Override
         public int getIconWidth() {
             return LEAF_SIZE;
         }
 
+        @Override
         public int getIconHeight() {
             return LEAF_SIZE;
         }

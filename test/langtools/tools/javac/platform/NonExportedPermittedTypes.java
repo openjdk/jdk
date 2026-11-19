@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,9 @@
  * @bug 8318913
  * @summary Verify no error is when compiling a class whose permitted types are not exported
  * @modules jdk.compiler
- * @compile/fail/ref=NonExportedPermittedTypes.out -XDrawDiagnostics NonExportedPermittedTypes.java
- * @compile/fail/ref=NonExportedPermittedTypes.out --release 21 -XDrawDiagnostics NonExportedPermittedTypes.java
- * @compile/fail/ref=NonExportedPermittedTypes.out --release ${jdk.version} -XDrawDiagnostics NonExportedPermittedTypes.java
+ * @compile/fail/ref=NonExportedPermittedTypes.out -XDrawDiagnostics -XDexhaustivityMaxBaseChecks=0 NonExportedPermittedTypes.java
+ * @compile/fail/ref=NonExportedPermittedTypes.out --release 21 -XDrawDiagnostics -XDexhaustivityMaxBaseChecks=0 NonExportedPermittedTypes.java
+ * @compile/fail/ref=NonExportedPermittedTypes.out --release ${jdk.version} -XDrawDiagnostics -XDexhaustivityMaxBaseChecks=0 NonExportedPermittedTypes.java
  */
 
 

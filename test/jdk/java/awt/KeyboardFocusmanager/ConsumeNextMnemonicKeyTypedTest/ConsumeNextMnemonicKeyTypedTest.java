@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
   @test
   @key headful
-  @bug        6346690
+  @bug        6346690 8361606 8321303
   @summary    Tests that key_typed is consumed after mnemonic key_pressed is handled for a menu item.
   @library    /test/lib
   @build      jdk.test.lib.Platform

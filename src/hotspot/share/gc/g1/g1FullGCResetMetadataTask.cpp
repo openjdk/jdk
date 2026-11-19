@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,16 +31,14 @@ G1FullGCResetMetadataTask::G1ResetMetadataClosure::G1ResetMetadataClosure(G1Full
   _collector(collector) { }
 
 void G1FullGCResetMetadataTask::G1ResetMetadataClosure::reset_region_metadata(G1HeapRegion* hr) {
-  hr->rem_set()->clear();
-  hr->clear_cardtable();
+  precond(!hr->rem_set()->has_card_set_group());
+
+  hr->rem_set()->clear_code_roots(); // Will be regenerated later.
+  hr->clear_both_card_tables();
+  _g1h->concurrent_mark()->reset_region_marking_state(hr);
 }
 
 bool G1FullGCResetMetadataTask::G1ResetMetadataClosure::do_heap_region(G1HeapRegion* hr) {
-  if (!hr->is_humongous()) {
-    hr->uninstall_cset_group();
-  }
-
-
   uint const region_idx = hr->hrm_index();
   if (!_collector->is_compaction_target(region_idx)) {
     assert(!hr->is_free(), "all free regions should be compaction targets");

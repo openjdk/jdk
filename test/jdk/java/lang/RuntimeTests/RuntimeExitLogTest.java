@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ public class RuntimeExitLogTest {
 
     private static final String TEST_JDK = System.getProperty("test.jdk");
     private static final String TEST_SRC = System.getProperty("test.src");
-
+    private static final String NEW_LINE = System.lineSeparator();
     private static Object HOLD_LOGGER;
 
     /**
@@ -65,30 +65,79 @@ public class RuntimeExitLogTest {
     }
 
     /**
+     * Generate a regular expression pattern that match the expected log output for a Runtime.exit() call.
+     * The pattern includes the method call stack trace and the exit status.
+     * @param status the exit status passed to the Runtime.exit() call
+     * @return the regex pattern as a string
+     */
+    private static String generateStackTraceLogPattern(int status) {
+        return "(?s)^.+ java\\.lang\\.Shutdown logRuntimeExit\\n" +
+                ".*: Runtime\\.exit\\(\\) called with status: " + status + "\\n" +
+                "java\\.lang\\.Throwable: Runtime\\.exit\\(" + status + "\\)\\n" +
+                "\\s+at java\\.base/java\\.lang\\.Shutdown\\.logRuntimeExit\\(Shutdown\\.java:\\d+\\)\\n" +
+                "\\s+at(?: .+)";
+    }
+
+    /**
      * Test various log level settings, and none.
      * @return a stream of arguments for parameterized test
      */
     private static Stream<Arguments> logParamProvider() {
         return Stream.of(
-                // Logging enabled with level DEBUG
+                // Logging configuration using the java.util.logging.config.file property
                 Arguments.of(List.of("-Djava.util.logging.config.file=" +
-                        Path.of(TEST_SRC, "ExitLogging-FINE.properties").toString()), 1,
-                        "Runtime.exit() called with status: 1"),
-                // Logging disabled due to level
+                        Path.of(TEST_SRC, "ExitLogging-ALL.properties").toString()), 1,
+                        generateStackTraceLogPattern(1)),
                 Arguments.of(List.of("-Djava.util.logging.config.file=" +
-                        Path.of(TEST_SRC, "ExitLogging-INFO.properties").toString()), 2,
+                        Path.of(TEST_SRC, "ExitLogging-FINER.properties").toString()), 2,
+                        generateStackTraceLogPattern(2)),
+                Arguments.of(List.of("-Djava.util.logging.config.file=" +
+                        Path.of(TEST_SRC, "ExitLogging-FINE.properties").toString()), 3,
+                        generateStackTraceLogPattern(3)),
+                Arguments.of(List.of("-Djava.util.logging.config.file=" +
+                        Path.of(TEST_SRC, "ExitLogging-INFO.properties").toString()), 4,
                         ""),
-                // Console logger
+                Arguments.of(List.of("-Djava.util.logging.config.file=" +
+                        Path.of(TEST_SRC, "ExitLogging-WARNING.properties").toString()), 5,
+                        ""),
+                Arguments.of(List.of("-Djava.util.logging.config.file=" +
+                        Path.of(TEST_SRC, "ExitLogging-SEVERE.properties").toString()), 6,
+                        ""),
+                Arguments.of(List.of("-Djava.util.logging.config.file=" +
+                        Path.of(TEST_SRC, "ExitLogging-OFF.properties").toString()), 7,
+                        ""),
+
+                // Logging configuration using the jdk.system.logger.level property
                 Arguments.of(List.of("--limit-modules", "java.base",
-                        "-Djdk.system.logger.level=DEBUG"), 3,
-                        "Runtime.exit() called with status: 3"),
-                // Console logger
-                Arguments.of(List.of(), 4, ""),
+                        "-Djdk.system.logger.level=ALL"), 8,
+                        generateStackTraceLogPattern(8)),
+                Arguments.of(List.of("--limit-modules", "java.base",
+                        "-Djdk.system.logger.level=TRACE"), 9,
+                        generateStackTraceLogPattern(9)),
+                Arguments.of(List.of("--limit-modules", "java.base",
+                        "-Djdk.system.logger.level=DEBUG"), 10,
+                        generateStackTraceLogPattern(10)),
+                Arguments.of(List.of("--limit-modules", "java.base",
+                        "-Djdk.system.logger.level=INFO"), 11,
+                        ""),
+                Arguments.of(List.of("--limit-modules", "java.base",
+                        "-Djdk.system.logger.level=WARNING"), 12,
+                        ""),
+                Arguments.of(List.of("--limit-modules", "java.base",
+                        "-Djdk.system.logger.level=ERROR"), 13,
+                        ""),
+                Arguments.of(List.of("--limit-modules", "java.base",
+                        "-Djdk.system.logger.level=OFF"), 14,
+                        ""),
+
                 // Throwing Handler
                 Arguments.of(List.of("-DThrowingHandler",
                         "-Djava.util.logging.config.file=" +
-                        Path.of(TEST_SRC, "ExitLogging-FINE.properties").toString()), 5,
-                        "Runtime.exit(5) logging failed: Exception in publish")
+                        Path.of(TEST_SRC, "ExitLogging-FINE.properties").toString()), 15,
+                        "Runtime\\.exit\\(15\\) logging failed: Exception in publish"),
+
+                // Default console logging configuration with no additional parameters
+                Arguments.of(List.of(), 16, "")
                 );
     }
 
@@ -115,13 +164,14 @@ public class RuntimeExitLogTest {
             try (BufferedReader reader = process.inputReader()) {
                 List<String> lines = reader.lines().toList();
                 boolean match = (expectMessage.isEmpty())
-                        ? lines.size() == 0
-                        : lines.stream().filter(s -> s.contains(expectMessage)).findFirst().isPresent();
+                        ? lines.isEmpty()
+                        : String.join("\n", lines).matches(expectMessage);
                 if (!match) {
                     // Output lines for debug
-                    System.err.println("Expected: \"" + expectMessage + "\"");
+                    System.err.println("Expected pattern (line-break):");
+                    System.err.println(expectMessage.replaceAll("\\n", NEW_LINE));
                     System.err.println("---- Actual output begin");
-                    lines.forEach(l -> System.err.println(l));
+                    lines.forEach(System.err::println);
                     System.err.println("---- Actual output end");
                     fail("Unexpected log contents");
                 }

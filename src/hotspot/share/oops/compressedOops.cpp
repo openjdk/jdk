@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  *
  */
 
+#include "gc/shared/collectedHeap.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/memRegion.hpp"
@@ -29,7 +30,6 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/compressedOops.hpp"
-#include "gc/shared/collectedHeap.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/globals.hpp"
 
@@ -54,11 +54,11 @@ void CompressedOops::initialize(const ReservedHeapSpace& heap_space) {
   // See needs_explicit_null_check.
   // Only set the heap base for compressed oops because it indicates
   // compressed oops for pstack code.
-  if ((uint64_t)heap_space.end() > UnscaledOopHeapMax) {
+  if ((uint64_t)heap_space.end() > UnscaledOopHeapMax || AOTCompatibleOopCompression) {
     // Didn't reserve heap below 4Gb.  Must shift.
     set_shift(LogMinObjAlignmentInBytes);
   }
-  if ((uint64_t)heap_space.end() <= OopEncodingHeapMax) {
+  if ((uint64_t)heap_space.end() <= OopEncodingHeapMax && !AOTCompatibleOopCompression) {
     // Did reserve heap below 32Gb. Can use base == 0;
     set_base(nullptr);
   } else {

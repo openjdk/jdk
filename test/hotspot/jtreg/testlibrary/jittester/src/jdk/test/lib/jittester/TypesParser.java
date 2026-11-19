@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,7 @@
 
 package jdk.test.lib.jittester;
 
-import java.io.File;
 import java.io.IOException;
-import java.io.StringReader;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -35,21 +33,30 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import jdk.test.lib.Asserts;
 import jdk.test.lib.jittester.functions.FunctionInfo;
 import jdk.test.lib.jittester.types.TypeArray;
 import jdk.test.lib.jittester.types.TypeKlass;
+
+import static java.util.function.Predicate.not;
 
 /**
  * Class used for parsing included classes file and excluded methods file
  */
 public class TypesParser {
 
+    private List<MethodTemplate> methodsToExclude;
+
     private static final HashMap<Class<?>, Type> TYPE_CACHE = new HashMap<>();
+
+    private static String trimComment(String source) {
+        int commentStart = source.indexOf('#');
+        return commentStart == -1 ? source : source.substring(0, commentStart);
+    }
 
     /**
      * Parses included classes file and excluded methods file to TypeList and SymbolTable.
@@ -62,27 +69,21 @@ public class TypesParser {
     public static void parseTypesAndMethods(String klassesFileName, String exMethodsFileName) {
         Asserts.assertNotNull(klassesFileName, "Classes input file name is null");
         Asserts.assertFalse(klassesFileName.isEmpty(), "Classes input file name is empty");
-        List<Class<?>> klasses = parseKlasses(klassesFileName);
-        Set<Executable> methodsToExclude;
-        if (exMethodsFileName != null && !exMethodsFileName.isEmpty()) {
-            methodsToExclude = parseMethods(exMethodsFileName);
-        } else {
-            methodsToExclude = new HashSet<>();
-        }
-        klasses.stream().forEach(klass -> {
-            TypeKlass typeKlass = (TypeKlass) getType(klass);
-            if (TypeList.isReferenceType(typeKlass)) {
-                return;
-            }
-            TypeList.add(typeKlass);
-            Set<Executable> methods = new HashSet<>();
-            methods.addAll(Arrays.asList(klass.getMethods()));
-            methods.addAll(Arrays.asList(klass.getConstructors()));
-            methods.removeAll(methodsToExclude);
-            methods.stream().forEach(method -> {
-                if (method.isSynthetic()) {
-                    return;
-                }
+        TypesParser theParser = new TypesParser();
+        theParser.initMethodsToExclude(exMethodsFileName);
+        parseKlasses(klassesFileName)
+            .stream()
+            .filter(klass -> !TypeList.isReferenceType(getTypeKlass(klass)))
+            .forEach(theParser::processKlass);
+    }
+
+    private void processKlass(Class<?> klass) {
+        TypeKlass typeKlass = getTypeKlass(klass);
+        TypeList.add(typeKlass);
+        Stream.concat(Arrays.stream(klass.getMethods()), Arrays.stream(klass.getConstructors()))
+            .filter(not(Executable::isSynthetic))
+            .filter(method -> MethodTemplate.noneMatches(methodsToExclude, method))
+            .forEach(method -> {
                 String name = method.getName();
                 boolean isConstructor = false;
                 Type returnType;
@@ -106,10 +107,8 @@ public class TypesParser {
                     paramList.add(new VariableInfo("arg" + argNum, typeKlass, paramType,
                             VariableInfo.LOCAL | VariableInfo.INITIALIZED));
                 }
-                typeKlass.addSymbol(new FunctionInfo(name, typeKlass, returnType, 1, flags,
-                        paramList));
+                typeKlass.addSymbol(new FunctionInfo(name, typeKlass, returnType, 1, flags, paramList));
             });
-        });
     }
 
     private static Type getType(Class<?> klass) {
@@ -153,6 +152,10 @@ public class TypesParser {
         }
         TYPE_CACHE.put(klass, type);
         return type;
+    }
+
+    private static TypeKlass getTypeKlass(Class<?> klass) {
+        return (TypeKlass) getType(klass);
     }
 
     private static int getArrayClassDimension(Class<?> klass) {
@@ -234,133 +237,24 @@ public class TypesParser {
         return klassesList;
     }
 
-    private static Set<Executable> parseMethods(String methodsFileName) {
-        Asserts.assertNotNull(methodsFileName, "Methods exclude input file name is null");
-        Asserts.assertFalse(methodsFileName.isEmpty(), "Methods exclude input file name is empty");
-        LinkedList<String> methodNamesList = new LinkedList<>();
-        Path klassesFilePath = Paths.get(methodsFileName);
-        try {
-            Files.lines(klassesFilePath).forEach(line -> {
-                line = line.trim();
-                if (line.isEmpty()) {
-                    return;
-                }
-                String msg = String.format("Format of the methods exclude input file \"%s\" is incorrect,"
-                        + " line \"%s\" has wrong format", methodsFileName, line);
-                Asserts.assertTrue(line.matches("\\w[\\w/$]*::[\\w$]+\\((\\[?[ZBSCIJFD]|\\[?L[\\w/$]+;)*\\)"), msg);
-                methodNamesList.add(line.substring(0, line.length() - 1));
-            });
-        } catch (IOException ex) {
-            throw new Error("Error reading exclude method file", ex);
-        }
-        Set<Executable> methodsList = new HashSet<>();
-        methodNamesList.forEach(methodName -> {
-            String[] klassAndNameAndSig = methodName.split("::");
-            String klassName = klassAndNameAndSig[0].replaceAll("/", "\\.");
-            String[] nameAndSig = klassAndNameAndSig[1].split("[\\(\\)]");
-            String name = nameAndSig[0];
-            String signature = "";
-            if (nameAndSig.length > 1) {
-                signature = nameAndSig[1];
-            }
-            Class<?> klass = null;
-            List<Class<?>> signatureTypes = null;
+    private void initMethodsToExclude(String methodsFileName) {
+        if (methodsFileName != null && !methodsFileName.isEmpty()) {
+            Path methodsFilePath = Paths.get(methodsFileName);
             try {
-                klass = Class.forName(klassName);
-                signatureTypes = parseSignature(signature);
-            } catch (ClassNotFoundException ex) {
-                throw new Error("Unexpected exception while parsing exclude methods file", ex);
-            }
-            try {
-                Executable method;
-                if (name.equals(klass.getSimpleName())) {
-                    method = klass.getConstructor(signatureTypes.toArray(new Class<?>[0]));
-                } else {
-                    method = klass.getMethod(name, signatureTypes.toArray(new Class<?>[0]));
-                }
-                methodsList.add(method);
-            } catch (NoSuchMethodException | SecurityException ex) {
-                throw new Error("Unexpected exception while parsing exclude methods file", ex);
-            }
-        });
-        return methodsList;
-    }
+                methodsToExclude = Files.lines(methodsFilePath)
+                    // Cleaning nonimportant parts
+                    .map(TypesParser::trimComment)
+                    .map(String::trim)
+                    .filter(not(String::isEmpty))
 
-    private static List<Class<?>> parseSignature(String signature) throws ClassNotFoundException {
-        LinkedList<Class<?>> sigClasses = new LinkedList<>();
-        char typeChar;
-        boolean isArray;
-        String klassName;
-        StringBuilder sb;
-        StringBuilder arrayDim;
-        try (StringReader str = new StringReader(signature)) {
-            int symbol = str.read();
-            while (symbol != -1){
-                typeChar = (char) symbol;
-                arrayDim = new StringBuilder();
-                Class<?> primArrayClass = null;
-                if (typeChar == '[') {
-                    isArray = true;
-                    arrayDim.append('[');
-                    symbol = str.read();
-                    while (symbol == '['){
-                        arrayDim.append('[');
-                        symbol = str.read();
-                    }
-                    typeChar = (char) symbol;
-                    if (typeChar != 'L') {
-                        primArrayClass = Class.forName(arrayDim.toString() + typeChar);
-                    }
-                } else {
-                    isArray = false;
-                }
-                switch (typeChar) {
-                    case 'Z':
-                        sigClasses.add(isArray ? primArrayClass : boolean.class);
-                        break;
-                    case 'I':
-                        sigClasses.add(isArray ? primArrayClass : int.class);
-                        break;
-                    case 'J':
-                        sigClasses.add(isArray ? primArrayClass : long.class);
-                        break;
-                    case 'F':
-                        sigClasses.add(isArray ? primArrayClass : float.class);
-                        break;
-                    case 'D':
-                        sigClasses.add(isArray ? primArrayClass : double.class);
-                        break;
-                    case 'B':
-                        sigClasses.add(isArray ? primArrayClass : byte.class);
-                        break;
-                    case 'S':
-                        sigClasses.add(isArray ? primArrayClass : short.class);
-                        break;
-                    case 'C':
-                        sigClasses.add(isArray ? primArrayClass : char.class);
-                        break;
-                    case 'L':
-                        sb = new StringBuilder();
-                        symbol = str.read();
-                        while (symbol != ';') {
-                            sb.append((char) symbol);
-                            symbol = str.read();
-                        }
-                        klassName = sb.toString().replaceAll("/", "\\.");
-                        if (isArray) {
-                            klassName = arrayDim.toString() + "L" + klassName + ";";
-                        }
-                        Class<?> klass = Class.forName(klassName);
-                        sigClasses.add(klass);
-                        break;
-                    default:
-                        throw new Error("Unknown type " + typeChar);
-                }
-                symbol = str.read();
+                    // Actual parsing
+                    .map(MethodTemplate::parse)
+                    .collect(Collectors.toList());
+            } catch (IOException ex) {
+                throw new Error("Error reading exclude method file", ex);
             }
-        } catch (IOException ex) {
-            throw new Error("Unexpected exception while parsing exclude methods file", ex);
+        } else {
+            methodsToExclude = new ArrayList<>();
         }
-        return sigClasses;
     }
 }

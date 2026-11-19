@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,8 +105,8 @@ class DebugInformationRecorder: public ResourceObj {
                       int         bci,
                       bool        reexecute,
                       bool        rethrow_exception = false,
-                      bool        is_method_handle_invoke = false,
                       bool        return_oop = false,
+                      bool        return_scalarized = false,
                       bool        has_ea_local_in_scope = false,
                       bool        arg_escape = false,
                       DebugToken* locals      = nullptr,
@@ -154,6 +154,8 @@ class DebugInformationRecorder: public ResourceObj {
 
   DebugInfoWriteStream* stream() const { return _stream; }
 
+  bool has_vectors() const { return _has_vectors; }
+  void set_has_vectors()   { _has_vectors = true; }
 
  private:
   friend class ScopeDesc;
@@ -202,6 +204,8 @@ class DebugInformationRecorder: public ResourceObj {
   int  serialize_monitor_values(GrowableArray<MonitorValue*>* monitors);
   int  serialize_scope_values(GrowableArray<ScopeValue*>* values);
   int  find_sharable_decode_offset(int stream_offset);
+
+  bool _has_vectors;
 
 #ifndef PRODUCT
   bool recorders_frozen();

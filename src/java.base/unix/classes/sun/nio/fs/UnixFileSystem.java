@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -337,20 +337,6 @@ abstract class UnixFileSystem
         return Pattern.compile(expr);
     }
 
-    // Override if the platform uses different Unicode normalization form
-    // for native file path. For example on MacOSX, the native path is stored
-    // in Unicode NFD form.
-    String normalizeNativePath(String path) {
-        return path;
-    }
-
-    // Override if the native file path use non-NFC form. For example on MacOSX,
-    // the native path is stored in Unicode NFD form, the path need to be
-    // normalized back to NFC before passed back to Java level.
-    String normalizeJavaPath(String path) {
-        return path;
-    }
-
     //  Unix implementation of Files#copy and Files#move methods.
 
     // calculate the least common multiple of two values;
@@ -403,10 +389,8 @@ abstract class UnixFileSystem
         boolean copyPosixAttributes;
         boolean copyNonPosixAttributes;
 
-        // flags that indicate if we should fail if attributes cannot be copied
+        // flag that indicates if we should fail if basic attributes cannot be copied
         boolean failIfUnableToCopyBasic;
-        boolean failIfUnableToCopyPosix;
-        boolean failIfUnableToCopyNonPosix;
 
         static Flags fromCopyOptions(CopyOption... options) {
             Flags flags = new Flags();
@@ -497,10 +481,6 @@ abstract class UnixFileSystem
             dfd = open(target, O_RDONLY, 0);
         } catch (UnixException x) {
             // access to target directory required to copy named attributes
-            if (flags.copyNonPosixAttributes && flags.failIfUnableToCopyNonPosix) {
-                try { rmdir(target); } catch (UnixException ignore) { }
-                x.rethrowAsIOException(target);
-            }
         }
 
         boolean done = false;
@@ -517,8 +497,6 @@ abstract class UnixFileSystem
                     }
                 } catch (UnixException x) {
                     // unable to set owner/group
-                    if (flags.failIfUnableToCopyPosix)
-                        x.rethrowAsIOException(target);
                 }
             }
             // copy other attributes
@@ -527,8 +505,6 @@ abstract class UnixFileSystem
                 try {
                     sfd = open(source, O_RDONLY, 0);
                 } catch (UnixException x) {
-                    if (flags.failIfUnableToCopyNonPosix)
-                        x.rethrowAsIOException(source);
                 }
                 if (sfd >= 0) {
                     source.getFileSystem().copyNonPosixAttributes(sfd, dfd);
@@ -677,8 +653,6 @@ abstract class UnixFileSystem
                         fchown(fo, attrs.uid(), attrs.gid());
                         fchmod(fo, attrs.mode());
                     } catch (UnixException x) {
-                        if (flags.failIfUnableToCopyPosix)
-                            x.rethrowAsIOException(target);
                     }
                 }
                 // copy non POSIX attributes (depends on file system)
@@ -763,8 +737,6 @@ abstract class UnixFileSystem
                     chown(target, attrs.uid(), attrs.gid());
                     chmod(target, attrs.mode());
                 } catch (UnixException x) {
-                    if (flags.failIfUnableToCopyPosix)
-                        x.rethrowAsIOException(target);
                 }
             }
             if (flags.copyBasicAttributes) {

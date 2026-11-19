@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,15 @@
 package jdk.jpackage.internal.model;
 
 import java.nio.file.Path;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
+import jdk.jpackage.internal.model.AppImageLayout.DirectorySelector;
+import jdk.jpackage.internal.util.ExplodedPath;
 
 /**
  * A generic application for packaging.
@@ -40,7 +44,7 @@ import java.util.stream.Stream;
  *
  * @see Package
  */
-public interface Application extends BundleSpec {
+public non-sealed interface Application extends BundleSpec {
 
     /**
      * Gets the name of this application.
@@ -78,27 +82,28 @@ public interface Application extends BundleSpec {
     String copyright();
 
     /**
-     * Gets the source directory of this application if available or an empty
-     * {@link Optional} instance.
+     * Gets the configuration for user-supplied paths to copy into the application
+     * image.
      * <p>
-     * Source directory is a directory with the applications's classes and other
-     * resources.
+     * Each item in the collection specifies source paths and the directory in the
+     * application image where they should be copied.
      *
-     * @return the source directory of this application
+     * @return the source paths
      */
-    Optional<Path> srcDir();
+    Collection<Map.Entry<ExplodedPath, DirectorySelector>> userContent();
 
     /**
-     * Gets the input content directories of this application.
-     * <p>
-     * Contents of the content directories will be copied as-is into the dedicated
-     * location of the application image.
+     * Returns user content that should be copied to the given destination directory.
+     * @param dest the destination directory
      *
-     * @see ApplicationLayout#contentDirectory
-     *
-     * @return the input content directories of this application
+     * @return the filtered user content
      */
-    List<Path> contentDirs();
+    default Stream<ExplodedPath> filterUserContent(DirectorySelector dest) {
+        Objects.requireNonNull(dest);
+        return userContent().stream().filter(v -> {
+            return v.getValue() == dest;
+        }).map(Map.Entry::getKey);
+    }
 
     /**
      * Gets the unresolved app image layout of this application.
@@ -222,10 +227,10 @@ public interface Application extends BundleSpec {
 
     /**
      * Gets the additional properties of this application for the application entry
-     * in the app image (".jpackage") file.
+     * in the app image (".jpackage.xml") file.
      *
      * @return the additional properties of this application for the application
-     *         entry in ".jpackage" file
+     *         entry in ".jpackage.xml" file
      */
     Map<String, String> extraAppImageFileData();
 
@@ -244,8 +249,16 @@ public interface Application extends BundleSpec {
     /**
      * Default implementation of {@link Application} interface.
      */
-    record Stub(String name, String description, String version, String vendor, String copyright, Optional<Path> srcDir,
-            List<Path> contentDirs, AppImageLayout imageLayout, Optional<RuntimeBuilder> runtimeBuilder,
-            List<Launcher> launchers,  Map<String, String> extraAppImageFileData) implements Application {
+    record Stub(
+            String name,
+            String description,
+            String version,
+            String vendor,
+            String copyright,
+            Collection<Map.Entry<ExplodedPath, DirectorySelector>> userContent,
+            AppImageLayout imageLayout,
+            Optional<RuntimeBuilder> runtimeBuilder,
+            List<Launcher> launchers,
+            Map<String, String> extraAppImageFileData) implements Application {
     }
 }

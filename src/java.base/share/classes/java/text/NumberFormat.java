@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,7 +92,7 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  *
  * <h3>Locale Extensions</h3>
  * Formatting behavior can be changed when using a locale that contains any of the following
- * <a href="../util/Locale.html#def_locale_extension">Unicode extensions</a>,
+ * {@linkplain Locale##def_locale_extension Unicode extensions},
  * <ul>
  * <li> "nu"
  * (<a href="https://unicode.org/reports/tr35/#UnicodeNumberSystemIdentifier">
@@ -103,11 +103,14 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * <li> "cf"
  * (<a href="https://www.unicode.org/reports/tr35/tr35.html#UnicodeCurrencyFormatIdentifier">
  * Currency Format style</a>) - Overrides the Currency Format style used
+ * <li> "cu"
+ * (<a href="https://www.unicode.org/reports/tr35/tr35.html#UnicodeCurrencyIdentifier">
+ * Currency Type</a>) - Overrides the Currency used
  * </ul>
  * <p>
- * If both "nu" and "rg" are specified, the decimal digits from the "nu"
- * extension supersedes the implicit one from the "rg" extension.
- * Although <a href="../util/Locale.html#def_locale_extension">Unicode extensions</a>
+ * For both "nu" and "cu", if they are specified in addition to "rg", the respective
+ * values from the "nu" and "cu" extension supersede the implicit ones from the "rg" extension.
+ * Although {@linkplain Locale##def_locale_extension Unicode extensions}
  * defines various keys and values, actual locale-sensitive service implementations
  * in a Java Runtime Environment might not support any particular Unicode locale
  * attributes or key/type pairs.
@@ -192,7 +195,11 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * Lenient parsing should be used when attempting to parse a number
  * out of a String that contains non-numerical or non-format related values.
  * For example, using a {@link Locale#US} currency format to parse the number
- * {@code 1000} out of the String "$1,000.00 was paid".
+ * {@code 1000} out of the String "$1,000.00 was paid". Lenient parsing also
+ * allows loose matching of characters in the source text. For example, an
+ * implementation of the {@code NumberFormat} class may allow matching "−"
+ * (U+2212 MINUS SIGN) to the "-" (U+002D HYPHEN-MINUS) pattern character
+ * when used as a negative prefix.
  * <p>
  * Strict parsing should be used when attempting to ensure a String adheres exactly
  * to a locale's conventions, and can thus serve to validate input. For example, successfully
@@ -230,7 +237,7 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * </ul>
  *
  * @spec         https://www.unicode.org/reports/tr35
- *               Unicode Locale Data Markup Language (LDML)
+ *               Unicode Common Locale Data {@literal &} Rules (CLDR)
  * @see          DecimalFormat
  * @see          ChoiceFormat
  * @see          CompactNumberFormat
@@ -684,7 +691,7 @@ public abstract class NumberFormat extends Format  {
      * <p>If the specified locale contains the "{@code cf}" (
      * <a href="https://www.unicode.org/reports/tr35/tr35.html#UnicodeCurrencyFormatIdentifier">
      * currency format style</a>)
-     * <a href="../util/Locale.html#def_locale_extension">Unicode extension</a>,
+     * {@linkplain Locale##def_locale_extension Unicode extension},
      * the returned currency format uses the style if it is available.
      * Otherwise, the style uses the default "{@code standard}" currency format.
      * For example, if the style designates "{@code account}", negative
@@ -693,7 +700,7 @@ public abstract class NumberFormat extends Format  {
      * @param inLocale the desired locale
      * @return the {@code NumberFormat} instance for currency formatting
      *
-     * @spec https://www.unicode.org/reports/tr35 Unicode Locale Data Markup Language (LDML)
+     * @spec https://www.unicode.org/reports/tr35 Unicode Common Locale Data {@literal &} Rules (CLDR)
      */
     public static NumberFormat getCurrencyInstance(Locale inLocale) {
         return getInstance(inLocale, null, CURRENCYSTYLE);

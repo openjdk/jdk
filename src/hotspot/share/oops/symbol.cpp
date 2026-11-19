@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
  */
 
 #include "cds/archiveBuilder.hpp"
-#include "cds/metaspaceShared.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -34,7 +33,7 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/symbol.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 #include "runtime/signature.hpp"
@@ -44,7 +43,7 @@
 Symbol* Symbol::_vm_symbols[vmSymbols::number_of_symbols()];
 
 uint32_t Symbol::pack_hash_and_refcount(short hash, int refcount) {
-  STATIC_ASSERT(PERM_REFCOUNT == ((1 << 16) - 1));
+  static_assert(PERM_REFCOUNT == ((1 << 16) - 1));
   assert(refcount >= 0, "negative refcount");
   assert(refcount <= PERM_REFCOUNT, "invalid refcount");
   uint32_t hi = hash;
@@ -153,7 +152,7 @@ void Symbol::print_symbol_on(outputStream* st) const {
     // stream it could resize, using the same resource arena.
     ResourceMark rm;
     s = as_quoted_ascii();
-    s = os::strdup(s);
+    s = os::strdup(s, mtInternal);
   }
   if (s == nullptr) {
     st->print("(null)");
@@ -296,7 +295,7 @@ bool Symbol::try_increment_refcount() {
     } else if (refc == 0) {
       return false; // dead, can't revive.
     } else {
-      found = Atomic::cmpxchg(&_hash_and_refcount, old_value, old_value + 1);
+      found = AtomicAccess::cmpxchg(&_hash_and_refcount, old_value, old_value + 1);
       if (found == old_value) {
         return true; // successfully updated.
       }
@@ -315,7 +314,7 @@ void Symbol::increment_refcount() {
   }
 #ifndef PRODUCT
   if (refcount() != PERM_REFCOUNT) { // not a permanent symbol
-    NOT_PRODUCT(Atomic::inc(&_total_count);)
+    NOT_PRODUCT(AtomicAccess::inc(&_total_count);)
   }
 #endif
 }
@@ -335,7 +334,7 @@ void Symbol::decrement_refcount() {
       fatal("refcount underflow");
       return;
     } else {
-      found = Atomic::cmpxchg(&_hash_and_refcount, old_value, old_value - 1);
+      found = AtomicAccess::cmpxchg(&_hash_and_refcount, old_value, old_value - 1);
       if (found == old_value) {
         return;  // successfully updated.
       }
@@ -357,7 +356,7 @@ void Symbol::make_permanent() {
       return;
     } else {
       short hash = extract_hash(old_value);
-      found = Atomic::cmpxchg(&_hash_and_refcount, old_value, pack_hash_and_refcount(hash, PERM_REFCOUNT));
+      found = AtomicAccess::cmpxchg(&_hash_and_refcount, old_value, pack_hash_and_refcount(hash, PERM_REFCOUNT));
       if (found == old_value) {
         return;  // successfully updated.
       }

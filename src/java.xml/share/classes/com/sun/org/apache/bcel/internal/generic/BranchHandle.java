@@ -56,6 +56,8 @@ public final class BranchHandle extends InstructionHandle {
     }
 
     /**
+     * Gets the target of instruction.
+     *
      * @return target of instruction.
      */
     public InstructionHandle getTarget() {
@@ -63,7 +65,7 @@ public final class BranchHandle extends InstructionHandle {
     }
 
     /**
-     * Set new contents. Old instruction is disposed and may not be used anymore.
+     * Sets new contents. Old instruction is disposed and may not be used anymore.
      */
     @Override // This is only done in order to apply the additional type check; could be merged with super impl.
     public void setInstruction(final Instruction i) { // TODO could be package-protected?
@@ -83,6 +85,8 @@ public final class BranchHandle extends InstructionHandle {
 
     /**
      * Pass new target to instruction.
+     *
+     * @param ih The new target.
      */
     public void setTarget(final InstructionHandle ih) {
         bi.setTarget(ih);
@@ -97,6 +101,9 @@ public final class BranchHandle extends InstructionHandle {
 
     /**
      * Update target of instruction.
+     *
+     * @param oldIh The old instruction handle.
+     * @param newIh The new instruction handle.
      */
     public void updateTarget(final InstructionHandle oldIh, final InstructionHandle newIh) {
         bi.updateTarget(oldIh, newIh);

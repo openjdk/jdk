@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /* @test
-   @bug 4691554 6221056 6380723 6404504 6419565 6529796 8301119
+   @bug 4691554 6221056 6380723 6404504 6419565 6529796 8301119 8368845
    @summary Test the supported New I/O coders
    @modules jdk.charsets
    @run main CoderTest

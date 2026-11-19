@@ -65,6 +65,8 @@ public sealed interface InnerClassesAttribute
     /**
      * {@return an {@code InnerClasses} attribute}
      * @param innerClasses descriptions of the nested classes
+     * @throws IllegalArgumentException if the number of descriptions exceeds
+     *         the limit of {@link java.lang.classfile##u2 u2}
      */
     static InnerClassesAttribute of(List<InnerClassInfo> innerClasses) {
         return new UnboundAttribute.UnboundInnerClassesAttribute(innerClasses);
@@ -73,6 +75,8 @@ public sealed interface InnerClassesAttribute
     /**
      * {@return an {@code InnerClasses} attribute}
      * @param innerClasses descriptions of the nested classes
+     * @throws IllegalArgumentException if the number of descriptions exceeds
+     *         the limit of {@link java.lang.classfile##u2 u2}
      */
     static InnerClassesAttribute of(InnerClassInfo... innerClasses) {
         return new UnboundAttribute.UnboundInnerClassesAttribute(List.of(innerClasses));

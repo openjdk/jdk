@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
 package java.lang.invoke;
 
 import jdk.internal.misc.CDS;
+import jdk.internal.value.ValueClass;
+import jdk.internal.vm.annotation.LooselyConsistentValue;
 import sun.invoke.util.Wrapper;
 
 import java.lang.foreign.MemoryLayout;
@@ -46,52 +48,81 @@ import static java.lang.invoke.MethodHandleStatics.newIllegalArgumentException;
 
 final class VarHandles {
 
-    static VarHandle makeFieldHandle(MemberName f, Class<?> refc, boolean isWriteAllowedOnFinalFields) {
+    static VarHandle makeFieldHandle(MemberName f, Class<?> refc, boolean trustedLookup) {
+        // No strict final or trusted final writes: we don't know the lifecycle of such a field.
+        boolean noWriting = f.isFinal() && (!trustedLookup || f.isStrictInit() || f.isTrustedFinalField());
         if (!f.isStatic()) {
             long foffset = MethodHandleNatives.objectFieldOffset(f);
             Class<?> type = f.getFieldType();
             if (!type.isPrimitive()) {
-                return maybeAdapt(f.isFinal() && !isWriteAllowedOnFinalFields
-                       ? new VarHandleReferences.FieldInstanceReadOnly(refc, foffset, type)
-                       : new VarHandleReferences.FieldInstanceReadWrite(refc, foffset, type));
+                if (ValueClass.isConcreteValueClass(type)) {
+                    int layout = f.getLayout();
+                    boolean isAtomic = isAtomicFlat(f);
+                    boolean isFlat = f.isFlat();
+                    if (isFlat) {
+                        if (isAtomic) {
+                            return maybeAdapt(noWriting
+                                    ? new VarHandleFlatValues.FieldInstanceReadOnly(refc, foffset, type, f.isNullRestricted(), layout)
+                                    : new VarHandleFlatValues.FieldInstanceReadWrite(refc, foffset, type, f.isNullRestricted(), layout));
+                        } else {
+                            return maybeAdapt(noWriting
+                                    ? new VarHandleNonAtomicFlatValues.FieldInstanceReadOnly(refc, foffset, type, f.isNullRestricted(), layout)
+                                    : new VarHandleNonAtomicFlatValues.FieldInstanceReadWrite(refc, foffset, type, f.isNullRestricted(), layout));
+                        }
+                    } else {
+                        if (isAtomic) {
+                            return maybeAdapt(noWriting
+                                    ? new VarHandleReferences.FieldInstanceReadOnly(refc, foffset, type, f.isNullRestricted())
+                                    : new VarHandleReferences.FieldInstanceReadWrite(refc, foffset, type, f.isNullRestricted()));
+                        } else {
+                            return maybeAdapt(noWriting
+                                    ? new VarHandleNonAtomicReferences.FieldInstanceReadOnly(refc, foffset, type, f.isNullRestricted())
+                                    : new VarHandleNonAtomicReferences.FieldInstanceReadWrite(refc, foffset, type, f.isNullRestricted()));
+                        }
+                    }
+                } else {
+                    return maybeAdapt(noWriting
+                       ? new VarHandleReferences.FieldInstanceReadOnly(refc, foffset, type, f.isNullRestricted())
+                       : new VarHandleReferences.FieldInstanceReadWrite(refc, foffset, type, f.isNullRestricted()));
+                }
             }
             else if (type == boolean.class) {
-                return maybeAdapt(f.isFinal() && !isWriteAllowedOnFinalFields
+                return maybeAdapt(noWriting
                        ? new VarHandleBooleans.FieldInstanceReadOnly(refc, foffset)
                        : new VarHandleBooleans.FieldInstanceReadWrite(refc, foffset));
             }
             else if (type == byte.class) {
-                return maybeAdapt(f.isFinal() && !isWriteAllowedOnFinalFields
+                return maybeAdapt(noWriting
                        ? new VarHandleBytes.FieldInstanceReadOnly(refc, foffset)
                        : new VarHandleBytes.FieldInstanceReadWrite(refc, foffset));
             }
             else if (type == short.class) {
-                return maybeAdapt(f.isFinal() && !isWriteAllowedOnFinalFields
+                return maybeAdapt(noWriting
                        ? new VarHandleShorts.FieldInstanceReadOnly(refc, foffset)
                        : new VarHandleShorts.FieldInstanceReadWrite(refc, foffset));
             }
             else if (type == char.class) {
-                return maybeAdapt(f.isFinal() && !isWriteAllowedOnFinalFields
+                return maybeAdapt(noWriting
                        ? new VarHandleChars.FieldInstanceReadOnly(refc, foffset)
                        : new VarHandleChars.FieldInstanceReadWrite(refc, foffset));
             }
             else if (type == int.class) {
-                return maybeAdapt(f.isFinal() && !isWriteAllowedOnFinalFields
+                return maybeAdapt(noWriting
                        ? new VarHandleInts.FieldInstanceReadOnly(refc, foffset)
                        : new VarHandleInts.FieldInstanceReadWrite(refc, foffset));
             }
             else if (type == long.class) {
-                return maybeAdapt(f.isFinal() && !isWriteAllowedOnFinalFields
+                return maybeAdapt(noWriting
                        ? new VarHandleLongs.FieldInstanceReadOnly(refc, foffset)
                        : new VarHandleLongs.FieldInstanceReadWrite(refc, foffset));
             }
             else if (type == float.class) {
-                return maybeAdapt(f.isFinal() && !isWriteAllowedOnFinalFields
+                return maybeAdapt(noWriting
                        ? new VarHandleFloats.FieldInstanceReadOnly(refc, foffset)
                        : new VarHandleFloats.FieldInstanceReadWrite(refc, foffset));
             }
             else if (type == double.class) {
-                return maybeAdapt(f.isFinal() && !isWriteAllowedOnFinalFields
+                return maybeAdapt(noWriting
                        ? new VarHandleDoubles.FieldInstanceReadOnly(refc, foffset)
                        : new VarHandleDoubles.FieldInstanceReadWrite(refc, foffset));
             }
@@ -101,77 +132,139 @@ final class VarHandles {
         }
         else {
             Class<?> decl = f.getDeclaringClass();
-            var vh = makeStaticFieldVarHandle(decl, f, isWriteAllowedOnFinalFields);
+            var vh = makeStaticFieldVarHandle(decl, f, noWriting);
             return maybeAdapt((UNSAFE.shouldBeInitialized(decl) || CDS.needsClassInitBarrier(decl))
-                    ? new LazyInitializingVarHandle(vh, decl)
+                    ? new LazyInitializingVarHandle(vh, f.isStrictInit())
                     : vh);
         }
     }
 
-    static VarHandle makeStaticFieldVarHandle(Class<?> decl, MemberName f, boolean isWriteAllowedOnFinalFields) {
+    /// A root class for static field var handles. Allows [LazyInitializingVarHandle]
+    /// to access the declaring class and field offsets.
+    sealed static abstract class StaticFieldVarHandle extends VarHandle permits
+            VarHandleBooleans.FieldStaticReadOnly,
+            VarHandleBytes.FieldStaticReadOnly,
+            VarHandleChars.FieldStaticReadOnly,
+            VarHandleShorts.FieldStaticReadOnly,
+            VarHandleInts.FieldStaticReadOnly,
+            VarHandleLongs.FieldStaticReadOnly,
+            VarHandleFloats.FieldStaticReadOnly,
+            VarHandleDoubles.FieldStaticReadOnly,
+            VarHandleReferences.FieldStaticReadOnly,
+            VarHandleNonAtomicReferences.FieldStaticReadOnly {
+        final Class<?> declaringClass;
+        final Object base;
+        final long fieldOffset;
+
+        StaticFieldVarHandle(VarForm vform, boolean exact, Class<?> declaringClass, Object base, long fieldOffset) {
+            this.declaringClass = declaringClass;
+            this.base = base;
+            this.fieldOffset = fieldOffset;
+            super(vform, exact);
+        }
+
+        @Override
+        public abstract StaticFieldVarHandle withInvokeBehavior();
+
+        @Override
+        public abstract StaticFieldVarHandle withInvokeExactBehavior();
+    }
+
+    static StaticFieldVarHandle makeStaticFieldVarHandle(Class<?> decl, MemberName f, boolean noWriting) {
         Object base = MethodHandleNatives.staticFieldBase(f);
         long foffset = MethodHandleNatives.staticFieldOffset(f);
         Class<?> type = f.getFieldType();
         if (!type.isPrimitive()) {
-            return maybeAdapt(f.isFinal() && !isWriteAllowedOnFinalFields
-                    ? new VarHandleReferences.FieldStaticReadOnly(decl, base, foffset, type)
-                    : new VarHandleReferences.FieldStaticReadWrite(decl, base, foffset, type));
+            assert !f.isFlat() : ("static field is flat in " + decl + "." + f.getName());
+            if (ValueClass.isConcreteValueClass(type)) {
+                if (isAtomicFlat(f)) {
+                    return noWriting
+                            ? new VarHandleReferences.FieldStaticReadOnly(decl, base, foffset, type, f.isNullRestricted())
+                            : new VarHandleReferences.FieldStaticReadWrite(decl, base, foffset, type, f.isNullRestricted());
+                } else {
+                    return noWriting
+                            ? new VarHandleNonAtomicReferences.FieldStaticReadOnly(decl, base, foffset, type, f.isNullRestricted())
+                            : new VarHandleNonAtomicReferences.FieldStaticReadWrite(decl, base, foffset, type, f.isNullRestricted());
+                }
+            } else {
+                return noWriting
+                        ? new VarHandleReferences.FieldStaticReadOnly(decl, base, foffset, type, f.isNullRestricted())
+                        : new VarHandleReferences.FieldStaticReadWrite(decl, base, foffset, type, f.isNullRestricted());
+            }
         }
         else if (type == boolean.class) {
-            return maybeAdapt(f.isFinal() && !isWriteAllowedOnFinalFields
+            return noWriting
                     ? new VarHandleBooleans.FieldStaticReadOnly(decl, base, foffset)
-                    : new VarHandleBooleans.FieldStaticReadWrite(decl, base, foffset));
+                    : new VarHandleBooleans.FieldStaticReadWrite(decl, base, foffset);
         }
         else if (type == byte.class) {
-            return maybeAdapt(f.isFinal() && !isWriteAllowedOnFinalFields
+            return noWriting
                     ? new VarHandleBytes.FieldStaticReadOnly(decl, base, foffset)
-                    : new VarHandleBytes.FieldStaticReadWrite(decl, base, foffset));
+                    : new VarHandleBytes.FieldStaticReadWrite(decl, base, foffset);
         }
         else if (type == short.class) {
-            return maybeAdapt(f.isFinal() && !isWriteAllowedOnFinalFields
+            return noWriting
                     ? new VarHandleShorts.FieldStaticReadOnly(decl, base, foffset)
-                    : new VarHandleShorts.FieldStaticReadWrite(decl, base, foffset));
+                    : new VarHandleShorts.FieldStaticReadWrite(decl, base, foffset);
         }
         else if (type == char.class) {
-            return maybeAdapt(f.isFinal() && !isWriteAllowedOnFinalFields
+            return noWriting
                     ? new VarHandleChars.FieldStaticReadOnly(decl, base, foffset)
-                    : new VarHandleChars.FieldStaticReadWrite(decl, base, foffset));
+                    : new VarHandleChars.FieldStaticReadWrite(decl, base, foffset);
         }
         else if (type == int.class) {
-            return maybeAdapt(f.isFinal() && !isWriteAllowedOnFinalFields
+            return noWriting
                     ? new VarHandleInts.FieldStaticReadOnly(decl, base, foffset)
-                    : new VarHandleInts.FieldStaticReadWrite(decl, base, foffset));
+                    : new VarHandleInts.FieldStaticReadWrite(decl, base, foffset);
         }
         else if (type == long.class) {
-            return maybeAdapt(f.isFinal() && !isWriteAllowedOnFinalFields
+            return noWriting
                     ? new VarHandleLongs.FieldStaticReadOnly(decl, base, foffset)
-                    : new VarHandleLongs.FieldStaticReadWrite(decl, base, foffset));
+                    : new VarHandleLongs.FieldStaticReadWrite(decl, base, foffset);
         }
         else if (type == float.class) {
-            return maybeAdapt(f.isFinal() && !isWriteAllowedOnFinalFields
+            return noWriting
                     ? new VarHandleFloats.FieldStaticReadOnly(decl, base, foffset)
-                    : new VarHandleFloats.FieldStaticReadWrite(decl, base, foffset));
+                    : new VarHandleFloats.FieldStaticReadWrite(decl, base, foffset);
         }
         else if (type == double.class) {
-            return maybeAdapt(f.isFinal() && !isWriteAllowedOnFinalFields
+            return noWriting
                     ? new VarHandleDoubles.FieldStaticReadOnly(decl, base, foffset)
-                    : new VarHandleDoubles.FieldStaticReadWrite(decl, base, foffset));
+                    : new VarHandleDoubles.FieldStaticReadWrite(decl, base, foffset);
         }
         else {
             throw new UnsupportedOperationException();
         }
     }
 
+    static boolean isAtomicFlat(MemberName field) {
+        boolean hasAtomicAccess = (field.getModifiers() & Modifier.VOLATILE) != 0 ||
+                !(field.isNullRestricted()) ||
+                !field.getFieldType().isAnnotationPresent(LooselyConsistentValue.class);
+        return hasAtomicAccess && ValueClass.hasBinaryPayload(field.getFieldType());
+    }
+
+    static boolean isAtomicFlat(Object[] array) {
+        Class<?> componentType = array.getClass().componentType();
+        boolean hasAtomicAccess = ValueClass.isAtomicArray(array) ||
+                !ValueClass.isNullRestrictedArray(array) ||
+                !componentType.isAnnotationPresent(LooselyConsistentValue.class);
+        return hasAtomicAccess && ValueClass.hasBinaryPayload(componentType);
+    }
+
     // Required by instance field handles
     static Field getFieldFromReceiverAndOffset(Class<?> receiverType,
                                                long offset,
                                                Class<?> fieldType) {
-        for (Field f : receiverType.getDeclaredFields()) {
-            if (Modifier.isStatic(f.getModifiers())) continue;
+        // The receiver may be a referenced class different from the declaring class
+        for (var declaringClass = receiverType; declaringClass != null; declaringClass = declaringClass.getSuperclass()) {
+            for (Field f : declaringClass.getDeclaredFields()) {
+                if (Modifier.isStatic(f.getModifiers())) continue;
 
-            if (offset == UNSAFE.objectFieldOffset(f)) {
-                assert f.getType() == fieldType;
-                return f;
+                if (offset == UNSAFE.objectFieldOffset(f)) {
+                    assert f.getType() == fieldType;
+                    return f;
+                }
             }
         }
         throw new InternalError("Field not found at offset");
@@ -192,42 +285,48 @@ final class VarHandles {
         throw new InternalError("Static field not found at offset");
     }
 
+    // This is invoked by non-flat array var handle code when attempting to access a flat array
+    public static void checkAtomicFlatArray(Object[] array) {
+        if (!isAtomicFlat(array)) {
+            throw new IllegalArgumentException("Attempt to perform a non-plain access on a non-atomic array");
+        }
+    }
+
     static VarHandle makeArrayElementHandle(Class<?> arrayClass) {
         if (!arrayClass.isArray())
             throw new IllegalArgumentException("not an array: " + arrayClass);
 
         Class<?> componentType = arrayClass.getComponentType();
-
-        int aoffset = (int) UNSAFE.arrayBaseOffset(arrayClass);
-        int ascale = UNSAFE.arrayIndexScale(arrayClass);
-        int ashift = 31 - Integer.numberOfLeadingZeros(ascale);
-
         if (!componentType.isPrimitive()) {
-            return maybeAdapt(new VarHandleReferences.Array(aoffset, ashift, arrayClass));
+            // Here we always return a reference array element var handle. This is because
+            // the access semantics is determined at runtime, when an actual array object is passed
+            // to the var handle. The var handle implementation will switch to use flat access
+            // primitives if it sees a flat array.
+            return maybeAdapt(new ArrayVarHandle(arrayClass));
         }
         else if (componentType == boolean.class) {
-            return maybeAdapt(new VarHandleBooleans.Array(aoffset, ashift));
+            return maybeAdapt(VarHandleBooleans.Array.NON_EXACT_INSTANCE);
         }
         else if (componentType == byte.class) {
-            return maybeAdapt(new VarHandleBytes.Array(aoffset, ashift));
+            return maybeAdapt(VarHandleBytes.Array.NON_EXACT_INSTANCE);
         }
         else if (componentType == short.class) {
-            return maybeAdapt(new VarHandleShorts.Array(aoffset, ashift));
+            return maybeAdapt(VarHandleShorts.Array.NON_EXACT_INSTANCE);
         }
         else if (componentType == char.class) {
-            return maybeAdapt(new VarHandleChars.Array(aoffset, ashift));
+            return maybeAdapt(VarHandleChars.Array.NON_EXACT_INSTANCE);
         }
         else if (componentType == int.class) {
-            return maybeAdapt(new VarHandleInts.Array(aoffset, ashift));
+            return maybeAdapt(VarHandleInts.Array.NON_EXACT_INSTANCE);
         }
         else if (componentType == long.class) {
-            return maybeAdapt(new VarHandleLongs.Array(aoffset, ashift));
+            return maybeAdapt(VarHandleLongs.Array.NON_EXACT_INSTANCE);
         }
         else if (componentType == float.class) {
-            return maybeAdapt(new VarHandleFloats.Array(aoffset, ashift));
+            return maybeAdapt(VarHandleFloats.Array.NON_EXACT_INSTANCE);
         }
         else if (componentType == double.class) {
-            return maybeAdapt(new VarHandleDoubles.Array(aoffset, ashift));
+            return maybeAdapt(VarHandleDoubles.Array.NON_EXACT_INSTANCE);
         }
         else {
             throw new UnsupportedOperationException();
@@ -657,240 +756,4 @@ final class VarHandles {
                 !RuntimeException.class.isAssignableFrom(clazz) &&
                 !Error.class.isAssignableFrom(clazz);
     }
-
-//    /**
-//     * A helper program to generate the VarHandleGuards class with a set of
-//     * static guard methods each of which corresponds to a particular shape and
-//     * performs a type check of the symbolic type descriptor with the VarHandle
-//     * type descriptor before linking/invoking to the underlying operation as
-//     * characterized by the operation member name on the VarForm of the
-//     * VarHandle.
-//     * <p>
-//     * The generated class essentially encapsulates pre-compiled LambdaForms,
-//     * one for each method, for the most set of common method signatures.
-//     * This reduces static initialization costs, footprint costs, and circular
-//     * dependencies that may arise if a class is generated per LambdaForm.
-//     * <p>
-//     * A maximum of L*T*S methods will be generated where L is the number of
-//     * access modes kinds (or unique operation signatures) and T is the number
-//     * of variable types and S is the number of shapes (such as instance field,
-//     * static field, or array access).
-//     * If there are 4 unique operation signatures, 5 basic types (Object, int,
-//     * long, float, double), and 3 shapes then a maximum of 60 methods will be
-//     * generated.  However, the number is likely to be less since there
-//     * be duplicate signatures.
-//     * <p>
-//     * Each method is annotated with @LambdaForm.Compiled to inform the runtime
-//     * that such methods should be treated as if a method of a class that is the
-//     * result of compiling a LambdaForm.  Annotation of such methods is
-//     * important for correct evaluation of certain assertions and method return
-//     * type profiling in HotSpot.
-//     */
-//    public static class GuardMethodGenerator {
-//
-//        static final String GUARD_METHOD_SIG_TEMPLATE = "<RETURN> <NAME>_<SIGNATURE>(<PARAMS>)";
-//
-//        static final String GUARD_METHOD_TEMPLATE =
-//                """
-//                @ForceInline
-//                @LambdaForm.Compiled
-//                @Hidden
-//                static final <METHOD> throws Throwable {
-//                    boolean direct = handle.checkAccessModeThenIsDirect(ad);
-//                    if (direct && handle.vform.methodType_table[ad.type] == ad.symbolicMethodTypeErased) {
-//                        <RESULT_ERASED>MethodHandle.linkToStatic(<LINK_TO_STATIC_ARGS>);<RETURN_ERASED>
-//                    } else {
-//                        MethodHandle mh = handle.getMethodHandle(ad.mode);
-//                        <RETURN>mh.asType(ad.symbolicMethodTypeInvoker).invokeBasic(<LINK_TO_INVOKER_ARGS>);
-//                    }
-//                }""";
-//
-//        static final String GUARD_METHOD_TEMPLATE_V =
-//                """
-//                @ForceInline
-//                @LambdaForm.Compiled
-//                @Hidden
-//                static final <METHOD> throws Throwable {
-//                    boolean direct = handle.checkAccessModeThenIsDirect(ad);
-//                    if (direct && handle.vform.methodType_table[ad.type] == ad.symbolicMethodTypeErased) {
-//                        MethodHandle.linkToStatic(<LINK_TO_STATIC_ARGS>);
-//                    } else if (direct && handle.vform.getMethodType_V(ad.type) == ad.symbolicMethodTypeErased) {
-//                        MethodHandle.linkToStatic(<LINK_TO_STATIC_ARGS>);
-//                    } else {
-//                        MethodHandle mh = handle.getMethodHandle(ad.mode);
-//                        mh.asType(ad.symbolicMethodTypeInvoker).invokeBasic(<LINK_TO_INVOKER_ARGS>);
-//                    }
-//                }""";
-//
-//        // A template for deriving the operations
-//        // could be supported by annotating VarHandle directly with the
-//        // operation kind and shape
-//        interface VarHandleTemplate {
-//            Object get();
-//
-//            void set(Object value);
-//
-//            boolean compareAndSet(Object actualValue, Object expectedValue);
-//
-//            Object compareAndExchange(Object actualValue, Object expectedValue);
-//
-//            Object getAndUpdate(Object value);
-//        }
-//
-//        record HandleType(Class<?> receiver, Class<?>... intermediates) {
-//        }
-//
-//        /**
-//         * @param args parameters
-//         */
-//        public static void main(String[] args) {
-//            System.out.println("package java.lang.invoke;");
-//            System.out.println();
-//            System.out.println("import jdk.internal.vm.annotation.ForceInline;");
-//            System.out.println("import jdk.internal.vm.annotation.Hidden;");
-//            System.out.println();
-//            System.out.println("// This class is auto-generated by " +
-//                               GuardMethodGenerator.class.getName() +
-//                               ". Do not edit.");
-//            System.out.println("final class VarHandleGuards {");
-//
-//            System.out.println();
-//
-//            // Declare the stream of shapes
-//            List<HandleType> hts = List.of(
-//                    // Object->T
-//                    new HandleType(Object.class),
-//
-//                    // <static>->T
-//                    new HandleType(null),
-//
-//                    // Array[index]->T
-//                    new HandleType(Object.class, int.class),
-//
-//                    // MS[base]->T
-//                    new HandleType(Object.class, long.class),
-//
-//                    // MS[base][offset]->T
-//                    new HandleType(Object.class, long.class, long.class)
-//            );
-//
-//            Stream.of(VarHandleTemplate.class.getMethods()).<MethodType>
-//                    mapMulti((m, sink) -> {
-//                        for (var ht : hts) {
-//                            for (var bt : LambdaForm.BasicType.ARG_TYPES) {
-//                                sink.accept(generateMethodType(m, ht.receiver, bt.btClass, ht.intermediates));
-//                            }
-//                        }
-//                    }).
-//                    distinct().
-//                    map(GuardMethodGenerator::generateMethod).
-//                    forEach(System.out::println);
-//
-//            System.out.println("}");
-//        }
-//
-//        static MethodType generateMethodType(Method m, Class<?> receiver, Class<?> value, Class<?>... intermediates) {
-//            Class<?> returnType = m.getReturnType() == Object.class
-//                                  ? value : m.getReturnType();
-//
-//            List<Class<?>> params = new ArrayList<>();
-//            if (receiver != null)
-//                params.add(receiver);
-//            java.util.Collections.addAll(params, intermediates);
-//            for (var p : m.getParameters()) {
-//                params.add(value);
-//            }
-//            return MethodType.methodType(returnType, params);
-//        }
-//
-//        static String generateMethod(MethodType mt) {
-//            Class<?> returnType = mt.returnType();
-//
-//            var params = new java.util.LinkedHashMap<String, Class<?>>();
-//            params.put("handle", VarHandle.class);
-//            for (int i = 0; i < mt.parameterCount(); i++) {
-//                params.put("arg" + i, mt.parameterType(i));
-//            }
-//            params.put("ad", VarHandle.AccessDescriptor.class);
-//
-//            // Generate method signature line
-//            String RETURN = className(returnType);
-//            String NAME = "guard";
-//            String SIGNATURE = getSignature(mt);
-//            String PARAMS = params.entrySet().stream().
-//                    map(e -> className(e.getValue()) + " " + e.getKey()).
-//                    collect(java.util.stream.Collectors.joining(", "));
-//            String METHOD = GUARD_METHOD_SIG_TEMPLATE.
-//                    replace("<RETURN>", RETURN).
-//                    replace("<NAME>", NAME).
-//                    replace("<SIGNATURE>", SIGNATURE).
-//                    replace("<PARAMS>", PARAMS);
-//
-//            // Generate method
-//            params.remove("ad");
-//
-//            List<String> LINK_TO_STATIC_ARGS = new ArrayList<>(params.keySet());
-//            LINK_TO_STATIC_ARGS.add("handle.vform.getMemberName(ad.mode)");
-//
-//            List<String> LINK_TO_INVOKER_ARGS = new ArrayList<>(params.keySet());
-//            LINK_TO_INVOKER_ARGS.set(0, LINK_TO_INVOKER_ARGS.get(0) + ".asDirect()");
-//
-//            RETURN = returnType == void.class
-//                     ? ""
-//                     : returnType == Object.class
-//                       ? "return "
-//                       : "return (" + returnType.getName() + ") ";
-//
-//            String RESULT_ERASED = returnType == void.class
-//                                   ? ""
-//                                   : returnType != Object.class
-//                                     ? "return (" + returnType.getName() + ") "
-//                                     : "Object r = ";
-//
-//            String RETURN_ERASED = returnType != Object.class
-//                                   ? ""
-//                                   : "\n        return ad.returnType.cast(r);";
-//
-//            String template = returnType == void.class
-//                              ? GUARD_METHOD_TEMPLATE_V
-//                              : GUARD_METHOD_TEMPLATE;
-//            return template.
-//                    replace("<METHOD>", METHOD).
-//                    replace("<NAME>", NAME).
-//                    replaceAll("<RETURN>", RETURN).
-//                    replace("<RESULT_ERASED>", RESULT_ERASED).
-//                    replace("<RETURN_ERASED>", RETURN_ERASED).
-//                    replaceAll("<LINK_TO_STATIC_ARGS>", String.join(", ", LINK_TO_STATIC_ARGS)).
-//                    replace("<LINK_TO_INVOKER_ARGS>", String.join(", ", LINK_TO_INVOKER_ARGS))
-//                    .indent(4);
-//        }
-//
-//        static String className(Class<?> c) {
-//            String n = c.getName();
-//            if (n.startsWith("java.lang.")) {
-//                n = n.replace("java.lang.", "");
-//                if (n.startsWith("invoke.")) {
-//                    n = n.replace("invoke.", "");
-//                }
-//            }
-//            return n.replace('$', '.');
-//        }
-//
-//        static String getSignature(MethodType m) {
-//            StringBuilder sb = new StringBuilder(m.parameterCount() + 1);
-//
-//            for (int i = 0; i < m.parameterCount(); i++) {
-//                Class<?> pt = m.parameterType(i);
-//                sb.append(getCharType(pt));
-//            }
-//
-//            sb.append('_').append(getCharType(m.returnType()));
-//
-//            return sb.toString();
-//        }
-//
-//        static char getCharType(Class<?> pt) {
-//            return Wrapper.forBasicType(pt).basicTypeChar();
-//        }
-//    }
 }

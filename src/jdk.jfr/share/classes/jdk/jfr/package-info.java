@@ -33,7 +33,7 @@
  * running application up to the failure or crash.
  * <p>
  * To define a Flight Recorder event, extend {@link jdk.jfr.Event} and add
- * fields that matches the data types of the payload. Metadata about fields,
+ * fields that match the data types of the payload. Metadata about fields,
  * such as labels, descriptions and units, can be added by using the annotations
  * available in the {@code jdk.jfr} package, or by using a user-defined
  * annotation that has the {@link jdk.jfr.MetadataDefinition} annotation.
@@ -119,7 +119,7 @@
  * <th scope="row">{@code enabled}</th>
  * <td>Specifies whether the event is recorded</td>
  * <td>{@code "true"}</td>
- * <td>String representation of a {@code Boolean} ({@code "true"} or
+ * <td>String representation of a {@code boolean} ({@code "true"} or
  * {@code "false"})</td>
  * <td>{@code "true"}<br>
  * {@code "false"}</td>
@@ -129,7 +129,7 @@
  * <td>Specifies the duration below which an event is not recorded</td>
  * <td>{@code "0"} (no limit)</td>
  * <td>{@code "0"} if no threshold is used, otherwise a string representation of
- * a positive {@code Long} followed by a space and one of the following units:
+ * a positive {@code long} followed by a space and one of the following units:
  * <ul style="list-style-type:none">
  * <li>{@code "ns"} (nanoseconds)
  * <li>{@code "us"} (microseconds)
@@ -149,7 +149,7 @@
  * periodic</td>
  * <td>{@code "everyChunk"}</td>
  * <td>{@code "everyChunk"}, if a periodic event should be emitted with every
- * file rotation, otherwise a string representation of a positive {@code Long}
+ * file rotation, otherwise a string representation of a positive {@code long}
  * value followed by an empty space and one of the following units:
  * <ul style="list-style-type:none">
  * <li>{@code "ns"} (nanoseconds)
@@ -171,7 +171,7 @@
  * <td>Specifies whether the stack trace from the {@link Event#commit()} method
  * is recorded</td>
  * <td>{@code "true"}</td>
- * <td>String representation of a {@code Boolean} ({@code "true"} or
+ * <td>String representation of a {@code boolean} ({@code "true"} or
  * {@code "false"})</td>
  * <td>{@code "true"},<br>
  * {@code "false"}</td>
@@ -181,7 +181,7 @@
  *   <td>Specifies the maximum rate of events per time unit.</td>
  *   <td>{@code "off"} (no throttling)</td>
  *   <td>
- *     "off", if events should not be throttled, otherwise a string representation of a positive {@code Long} value followed by forward slash ("/") and one of the following units:
+ *     "off", if events should not be throttled, otherwise a string representation of a positive {@code long} value followed by forward slash ("/") and one of the following units:
  *     <ul style="list-style-type:none">
  *       <li>{@code "ns"} (nanoseconds)
  *       <li>{@code "us"} (microseconds)
@@ -232,7 +232,7 @@
  * Typically this is expressed as {@code "not null"}. If a {@code null}
  * parameter is used where it is not allowed, a
  * {@code java.lang.NullPointerException} is thrown. If a {@code null}
- * parameters is passed to a method that throws other exceptions, such as
+ * parameters are passed to a method that throws other exceptions, such as
  * {@code java.io.IOException}, the {@code java.lang.NullPointerException} takes
  * precedence, unless the Javadoc for the method explicitly states how
  * {@code null} is handled, i.e. by throwing

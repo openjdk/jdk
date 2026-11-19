@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2025 Unicode, Inc.
+<!-- Copyright © 1991-2026 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -279,6 +279,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ksf">ବାଫଲା</language>
 			<language type="ksh">କୋଲୋବନିୟ</language>
 			<language type="ku">କୁର୍ଦ୍ଦିଶ୍</language>
+			<language type="ku" menu="core">କୁର୍ଦ୍ଦିଶ୍‌</language>
+			<language type="ku" menu="extension">କୁର୍‌ମାଞ୍ଜି</language>
 			<language type="kum">କୁମୀକ୍</language>
 			<language type="kut">କୁତେନାଉ</language>
 			<language type="kv">କୋମି</language>
@@ -407,6 +409,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="pi">ପାଲି</language>
 			<language type="pis">ପିଜିନ୍</language>
 			<language type="pl">ପୋଲିଶ୍</language>
+			<language type="pms">ପିଡ୍‌ମଣ୍ଟିଜ୍</language>
 			<language type="pon">ପୋହପିଏନ୍</language>
 			<language type="pqm">ମାଲିସୀଟ-ପାସମକୁଅଡ୍ଡି</language>
 			<language type="prg">ପ୍ରୁସିୟ</language>
@@ -801,6 +804,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="CN">ଚୀନ୍‌</territory>
 			<territory type="CO">କଲମ୍ବିଆ</territory>
 			<territory type="CP">କ୍ଲିପରଟନ୍‌ ଦ୍ୱୀପ</territory>
+			<territory type="CQ">ସର୍କ୍‌</territory>
 			<territory type="CR">କୋଷ୍ଟା ରିକା</territory>
 			<territory type="CU">କ‍୍ୟୁବା</territory>
 			<territory type="CV">କେପ୍ ଭର୍ଦେ</territory>
@@ -1043,87 +1047,230 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<keys>
 			<key type="calendar">କ୍ୟାଲେଣ୍ଡର୍</key>
 			<key type="cf">ମୁଦ୍ରା ଫର୍ମାଟ୍‌</key>
+			<key type="colAlternate">ପ୍ରତୀକ କ୍ରମବିନ୍ୟାସ ଅଣଦେଖା କରନ୍ତୁ</key>
+			<key type="colBackwards">ବିପରୀତ ଆକ୍ସେଣ୍ଟ୍ କ୍ରମବିନ୍ୟାସ</key>
+			<key type="colCaseFirst">ଅପର୍‌କେସ୍/ଲୋଅର୍‌କେସ୍ କ୍ରମବିନ୍ୟାସ</key>
+			<key type="colCaseLevel">କେସ୍ ଅନୁଯାୟୀ କ୍ରମବିନ୍ୟାସ</key>
 			<key type="collation">ସର୍ଟ୍‌ କ୍ରମ</key>
+			<key type="colNormalization">ସ୍ବାଭାବିକୀକୃତ କ୍ରମବିନ୍ୟାସ</key>
+			<key type="colNumeric">ସାଂଖ୍ୟିକ କ୍ରମବିନ୍ୟାସ</key>
+			<key type="colReorder">ସ୍କ୍ରିପ୍ଟ୍/ବ୍ଲକ୍ ପୁନଃ କ୍ରମବିନ୍ୟାସ</key>
+			<key type="colStrength">କ୍ରମବିନ୍ୟାସ ଦୃଢ଼ତା</key>
 			<key type="currency">ମୁଦ୍ରା</key>
+			<key type="d0">ଟ୍ରାନ୍ସ୍‌ଫର୍ମ୍ ଗନ୍ତବ୍ୟ</key>
+			<key type="dx">ଶବ୍ଦକୋଷ ବ୍ରେକ୍ ବହିର୍ଭୂତ</key>
+			<key type="em">ଦର୍ଶାଯାଇଥିବା ଇମୋଜି</key>
+			<key type="fw">ସପ୍ତାହର ପ୍ରଥମ ଦିନ</key>
+			<key type="h0">ମିଶ୍ରିତ</key>
 			<key type="hc">ଘଣ୍ଟା ଚକ୍ର (12 ବନାମ 24)</key>
+			<key type="i0">ଇନ୍‌ପୁଟ୍ ପଦ୍ଧତି</key>
+			<key type="k0">କୀ‘ବୋର୍ଡ୍</key>
+			<key type="kv">ସର୍ବାଧିକ ଉପେକ୍ଷିତ</key>
 			<key type="lb">ଲାଇନ୍‌ ବ୍ରେକ୍‌ ଷ୍ଟାଇଲ୍‌</key>
+			<key type="lw">ଶବ୍ଦଗୁଡ଼ିକ ଥିବା ଲାଇନ ବ୍ରେକ</key>
+			<key type="m0">ରୂପାନ୍ତର ନିୟମାବଳୀ</key>
 			<key type="ms">ମାପ ପଦ୍ଧତି</key>
+			<key type="mu">ମାପ ଏକକ</key>
 			<key type="numbers">ସଂଖ୍ୟା</key>
+			<key type="rg">ପରିପୂରକ ଡେଟା ପାଇଁ ଅଞ୍ଚଳ</key>
+			<key type="s0">ରୂପାନ୍ତର ସୋର୍ସ୍</key>
+			<key type="sd">ଅଞ୍ଚଳ ସବ୍‌ଡିଭିଜନ୍</key>
+			<key type="ss">Abbr ପରେ ଥିବା ବାକ୍ୟ</key>
+			<key type="t">ରୂପାନ୍ତର</key>
+			<key type="t0">ମଶୀନ୍ ଦ୍ବାରା ଅନୁବାଦିତ</key>
+			<key type="timezone">ଟାଇମ୍ ଜୋନ୍</key>
+			<key type="va">ଭାଷା ଭାରିଆଣ୍ଟ୍</key>
+			<key type="x">ଗୋପନୀୟ-ବ୍ୟବହାର</key>
+			<key type="x0">ଗୋପନୀୟ-ବ୍ୟବହାର ରୂପାନ୍ତର</key>
 		</keys>
 		<types>
 			<type key="calendar" type="buddhist">ବୌଦ୍ଧ କ୍ୟାଲେଣ୍ଡର୍‌</type>
+			<type key="calendar" type="buddhist" scope="core">ବୌଦ୍ଧ</type>
 			<type key="calendar" type="chinese">ଚାଇନିଜ୍‌ କ୍ୟାଲେଣ୍ଡର୍‌</type>
+			<type key="calendar" type="chinese" scope="core">ଚାଇନିଜ୍‌</type>
 			<type key="calendar" type="coptic">କପ୍ଟିକ୍ କ୍ୟାଲେଣ୍ଡର୍‌</type>
+			<type key="calendar" type="coptic" scope="core">କପ୍ଟିକ୍‌</type>
 			<type key="calendar" type="dangi">ଦାଙ୍ଗି କ୍ୟାଲେଣ୍ଡର୍‌</type>
+			<type key="calendar" type="dangi" scope="core">ଦାଙ୍ଗି</type>
 			<type key="calendar" type="ethiopic">ଇଥିଓପିକ୍‌ କ୍ୟାଲେଣ୍ଡର୍‌</type>
+			<type key="calendar" type="ethiopic" scope="core">ଇଥିଓପିକ୍‌</type>
 			<type key="calendar" type="ethiopic-amete-alem">ଏଥିଓପିକ୍-ଆମେଟ୍-ଆଲେମ୍</type>
+			<type key="calendar" type="ethiopic-amete-alem" scope="core">ଇଥିଓପିକ୍ ଆମେଟେ ଆଲେମ୍</type>
 			<type key="calendar" type="gregorian">ଗ୍ରେଗୋରିୟ କ୍ୟାଲେଣ୍ଡର୍</type>
+			<type key="calendar" type="gregorian" scope="core">ଗ୍ରେଗୋରିଆନ୍‌</type>
 			<type key="calendar" type="hebrew">ହିବୃ କ୍ୟାଲେଣ୍ଡର୍‌</type>
+			<type key="calendar" type="hebrew" scope="core">ହିବୃ</type>
 			<type key="calendar" type="indian">ଭାରତୀୟ ରାଷ୍ଟ୍ରୀୟ କ୍ୟାଲେଣ୍ଡର୍‌</type>
+			<type key="calendar" type="indian" scope="core">ଭାରତୀୟ ଜାତୀୟ</type>
 			<type key="calendar" type="islamic">ହିଜ୍ରି କ୍ୟାଲେଣ୍ଡର</type>
+			<type key="calendar" type="islamic" scope="core">ହିଜ୍ରି</type>
 			<type key="calendar" type="islamic-civil">ହିଜ୍ରି କ୍ୟାଲେଣ୍ଡର (ଟାବୁଲାର୍, ନାଗରିକ ଯୁଗ)</type>
+			<type key="calendar" type="islamic-civil" scope="core">ହିଜ୍ରି (ଟାବୁଲାର୍, ସିଭିଲ୍‌ ଆରମ୍ଭ କାଳ)</type>
+			<type key="calendar" type="islamic-rgsa" scope="core">ହିଜ୍ରି, ସାଉଦି ଆରବ ପର୍ଯ୍ୟବେକ୍ଷଣ</type>
+			<type key="calendar" type="islamic-tbla" scope="core">ହିଜ୍ରି (ଟାବୁଲାର୍, ଜ୍ୟୋତିର୍ବିଜ୍ଞାନ କାଳ)</type>
 			<type key="calendar" type="islamic-umalqura">ହିଜ୍ରି କ୍ୟାଲେଣ୍ଡର (ଉମ୍ ଅଲ୍-କୁରା)</type>
+			<type key="calendar" type="islamic-umalqura" scope="core">ହିଜ୍ରି (ଉମ୍ ଅଲ୍-କୁରା)</type>
 			<type key="calendar" type="iso8601">ISO-8601 କ୍ୟାଲେଣ୍ଡର୍‌</type>
+			<type key="calendar" type="iso8601" scope="core">ଗ୍ରେଗୋରିଆନ୍</type>
 			<type key="calendar" type="japanese">ଜାପାନିଜ୍‌ କ୍ୟାଲେଣ୍ଡର୍‌</type>
+			<type key="calendar" type="japanese" scope="core">ଜାପାନିଜ୍‌</type>
 			<type key="calendar" type="persian">ପର୍ସିଆନ୍‌ କ୍ୟାଲେଣ୍ଡର୍‌</type>
+			<type key="calendar" type="persian" scope="core">ପର୍ସିଆନ୍‌</type>
 			<type key="calendar" type="roc">ମିଙ୍ଗୋଓ କ୍ୟାଲେଣ୍ଡର୍‌</type>
-			<type key="cf" type="account">ଏକାଉଣ୍ଟିଂ ମୁଦ୍ରା ଫର୍ମାଟ୍‌</type>
-			<type key="cf" type="standard">ମାନାଙ୍କ ମୁଦ୍ରା ଫର୍ମାଟ୍‌</type>
+			<type key="calendar" type="roc" scope="core">ମିଙ୍ଗ୍‌ୱୋ</type>
+			<type key="cf" type="account">ଆକାଉଣ୍ଟିଂ ମୁଦ୍ରା ଫର୍ମାଟ୍‌</type>
+			<type key="cf" type="account" scope="core">ଆକାଉଣ୍ଟିଂ</type>
+			<type key="cf" type="standard">ମାନକ ମୁଦ୍ରା ଫର୍ମାଟ୍‌</type>
+			<type key="cf" type="standard" scope="core">ମାନକ</type>
+			<type key="colCaseFirst" type="lower" scope="core">ଲୋଅର୍‌କେସ୍</type>
+			<type key="colCaseFirst" type="no" scope="core">ଲୋଅର୍‌କେସ୍</type>
+			<type key="colCaseFirst" type="upper" scope="core">ଅପର୍‌କେସ୍</type>
+			<type key="collation" type="compat" scope="core">ସୁସଙ୍ଗତି</type>
+			<type key="collation" type="dictionary" scope="core">ଶବ୍ଦକୋଷ</type>
 			<type key="collation" type="ducet">ଡିଫଲ୍ଟ ୟୁନିକୋଡ୍‌ ସର୍ଟ୍‌ କ୍ରମ</type>
+			<type key="collation" type="ducet" scope="core">ଡିଫଲ୍ଟ୍‌ ୟୁନିକୋଡ୍‌</type>
+			<type key="collation" type="emoji" scope="core">ଇମୋଜି</type>
+			<type key="collation" type="eor" scope="core">ୟୁରୋପୀୟ ନିୟମ</type>
+			<type key="collation" type="phonebook" scope="core">ଫୋନ୍‌ବୁକ୍</type>
+			<type key="collation" type="phonetic" scope="core">ଫୋନେଟିକ୍</type>
+			<type key="collation" type="pinyin" scope="core">ପିନ୍‌ୟିନ୍</type>
 			<type key="collation" type="search">ସାଧାରଣ ଉଦ୍ଦେଶ୍ୟ-ବିଶିଷ୍ଟ ସନ୍ଧାନ</type>
+			<type key="collation" type="search" scope="core">ସର୍ଚ୍ଚ୍‌</type>
+			<type key="collation" type="searchjl" scope="core">କୋରିଆନ୍ ପ୍ରାରମ୍ଭିକ ବ୍ୟଞ୍ଜନ ବର୍ଣ୍ଣ</type>
 			<type key="collation" type="standard">ଷ୍ଟାଣ୍ଡାର୍ଡ୍‌ ସର୍ଟ୍‌ କ୍ରମ</type>
+			<type key="collation" type="standard" scope="core">ଷ୍ଟାଣ୍ଡାର୍ଡ୍‌</type>
+			<type key="collation" type="stroke" scope="core">ଷ୍ଟ୍ରୋକ୍</type>
+			<type key="collation" type="traditional" scope="core">ପାରମ୍ପରିକ</type>
+			<type key="collation" type="unihan" scope="core">ରାଡିକଲ୍-ଷ୍ଟ୍ରୋକ୍</type>
+			<type key="collation" type="zhuyin" scope="core">ଝୂଇନ୍</type>
+			<type key="colReorder" type="currency" scope="core">ମୁଦ୍ରା</type>
+			<type key="colReorder" type="digit" scope="core">ଅଙ୍କ</type>
+			<type key="colReorder" type="punct" scope="core">ବିରାମ ଚିହ୍ନ</type>
+			<type key="colReorder" type="space" scope="core">ଖାଲି ସ୍ପେସ୍</type>
+			<type key="colReorder" type="symbol" scope="core">ପ୍ରତୀକ</type>
+			<type key="colStrength" type="identical" scope="core">ସମସ୍ତ</type>
+			<type key="colStrength" type="primary" scope="core">କେବଳ ବେସ୍ ଅକ୍ଷର</type>
+			<type key="colStrength" type="quaternary" scope="core">ବେସ୍, ଆକ୍ସେଣ୍ଟ୍, କେସ୍, ଭାରିଆଣ୍ଟ୍, କାନା</type>
+			<type key="colStrength" type="secondary" scope="core">ବେସ୍, ଆକ୍ସେଣ୍ଟ୍</type>
+			<type key="colStrength" type="tertiary" scope="core">ବେସ୍, ଆକ୍ସେଣ୍ଟ୍, କେସ୍, ଭାରିଆଣ୍ଟ୍</type>
+			<type key="d0" type="fwidth">ଫୁଲ୍‌ୱିଡ୍‌ଥ୍‌କୁ</type>
+			<type key="d0" type="hwidth">ହାଫ୍‌‌ୱିଡ୍‌ଥ୍‌କୁ</type>
+			<type key="em" type="default" scope="core">ଡିଫଲ୍ଟ୍‌</type>
+			<type key="em" type="emoji" scope="core">ଇମୋଜି</type>
+			<type key="em" type="text" scope="core">ଟେକ୍ସ୍‌ଟ୍‌</type>
+			<type key="hc" type="c12">12 ଘଣ୍ଟିଆ ପଦ୍ଧତି</type>
+			<type key="hc" type="c12" scope="core">12</type>
+			<type key="hc" type="c24">24 ଘଣ୍ଟିଆ ପଦ୍ଧତି</type>
+			<type key="hc" type="c24" scope="core">24</type>
 			<type key="hc" type="h11">12 ଘଣ୍ଟିଆ ପଦ୍ଧତି (0–11)</type>
+			<type key="hc" type="h11" scope="core">12 (0–11)</type>
 			<type key="hc" type="h12">12 ଘଣ୍ଟିଆ ପଦ୍ଧତି (1–12)</type>
+			<type key="hc" type="h12" scope="core">12 (1–12)</type>
 			<type key="hc" type="h23">24 ଘଣ୍ଟିଆ ପଦ୍ଧତି (0–23)</type>
+			<type key="hc" type="h23" scope="core">24 (0–23)</type>
 			<type key="hc" type="h24">24 ଘଣ୍ଟିଆ ପଦ୍ଧତି (1–24)</type>
+			<type key="hc" type="h24" scope="core">24 (1–24)</type>
+			<type key="kv" type="currency" scope="core">ଶିଫ୍ଟ୍ ସ୍ପେସ୍, ବିରାମ ଚିହ୍ନ, ସମସ୍ତ ପ୍ରତୀକ</type>
+			<type key="kv" type="punct" scope="core">ଶିଫ୍ଟ୍ ସ୍ପେସ୍, ବିରାମ ଚିହ୍ନ</type>
+			<type key="kv" type="space" scope="core">ଶିଫ୍ଟ୍ ସ୍ପେସ୍, ବିରାମ ଚିହ୍ନ</type>
+			<type key="kv" type="symbol" scope="core">ଶିଫ୍ଟ୍ ସ୍ପେସ୍, ବିରାମ ଚିହ୍ନ, ଅଣ-ମୁଦ୍ରା ପ୍ରତୀକ</type>
 			<type key="lb" type="loose">କୋହଳ ଲାଇନ୍‌ ବ୍ରେକ୍‌ ଷ୍ଟାଇଲ୍‌</type>
+			<type key="lb" type="loose" scope="core">କୋହଳ</type>
 			<type key="lb" type="normal">ସାଧାରଣ ଲାଇନ୍‌ ବ୍ରେକ୍‌ ଷ୍ଟାଇଲ୍‌</type>
+			<type key="lb" type="normal" scope="core">ସାଧାରଣ</type>
 			<type key="lb" type="strict">କଠୋର ଧାଡ଼ି ବିରତି ଶୈଳୀ</type>
+			<type key="lb" type="strict" scope="core">କଠୋର</type>
+			<type key="lw" type="breakall" scope="core">ସବୁ ବ୍ରେକ୍ କରନ୍ତୁ</type>
+			<type key="lw" type="keepall" scope="core">ସବୁ ରଖନ୍ତୁ</type>
+			<type key="lw" type="normal" scope="core">ସାଧାରଣ</type>
+			<type key="lw" type="phrase" scope="core">ବାକ‍୍ୟାଂଶରେ ରଖନ୍ତୁ</type>
+			<type key="m0" type="bgn">US BGN ଲିପ୍ୟନ୍ତରଣ</type>
+			<type key="m0" type="ungegn">US GEGN ଲିପ୍ୟନ୍ତରଣ</type>
 			<type key="ms" type="metric">ମେଟ୍ରିକ୍‌ ପଦ୍ଧତି</type>
+			<type key="ms" type="metric" scope="core">ମେଟ୍ରିକ୍‌</type>
 			<type key="ms" type="uksystem">ଇମ୍ପେରିଆଲ୍‌ ମାପ ପଦ୍ଧତି</type>
+			<type key="ms" type="uksystem" scope="core">UK</type>
 			<type key="ms" type="ussystem">ୟୁଏସ୍‌ ମାପ ପଦ୍ଧତି</type>
+			<type key="ms" type="ussystem" scope="core">US</type>
 			<type key="numbers" type="arab">ଆରବିକ୍‌-ଇଣ୍ଡିକ୍‌ ଅଙ୍କଗୁଡ଼ିକ</type>
 			<type key="numbers" type="arabext">ପରିବର୍ଦ୍ଧିତ ଆରବିକ୍‌-ଇଣ୍ଡିକ୍‌ ଅଙ୍କଗୁଡ଼ିକ</type>
+			<type key="numbers" type="arabext" scope="core">ପରିବର୍ଦ୍ଧିତ ଆରବିକ-ଭାରତୀୟ</type>
 			<type key="numbers" type="armn">ଆର୍ମେନିୟ ସଂଖ୍ୟାଗୁଡ଼ିକ</type>
 			<type key="numbers" type="armnlow">ଆର୍ମେନିୟ ଛୋଟ ଅକ୍ଷର ସଂଖ୍ୟାଗୁଡ଼ିକ</type>
+			<type key="numbers" type="armnlow" scope="core">ଆର୍ମେନିୟ ଲୋଅର୍‌କେସ୍</type>
 			<type key="numbers" type="beng">ବଙ୍ଗଳା ଅଙ୍କଗୁଡ଼ିକ</type>
 			<type key="numbers" type="cakm">ଚକମା ଅଙ୍କଗୁଡ଼ିକ</type>
 			<type key="numbers" type="deva">ଦେବନାଗରୀ ଅଙ୍କଗୁଡ଼ିକ</type>
 			<type key="numbers" type="ethi">ଇଥିଓପିକ୍‌ ସଂଖ୍ୟାଗୁଡ଼ିକ</type>
+			<type key="numbers" type="finance" scope="core">ଆର୍ଥିକ</type>
 			<type key="numbers" type="fullwide">ପୂର୍ଣ୍ଣ-ପ୍ରସ୍ଥ ଅଙ୍କଗୁଡ଼ିକ</type>
+			<type key="numbers" type="fullwide" scope="core">ପୂର୍ଣ୍ଣ-ପ୍ରସ୍ଥ</type>
 			<type key="numbers" type="geor">ଜର୍ଜିଆନ୍‌ ସଂଖ୍ୟାଗୁଡ଼ିକ</type>
 			<type key="numbers" type="grek">ଗ୍ରୀକ୍‌ ସଂଖ୍ୟାଗୁଡ଼ିକ</type>
 			<type key="numbers" type="greklow">ଗ୍ରୀକ୍‌ ଛୋଟ ଅକ୍ଷର ସଂଖ୍ୟାଗୁଡ଼ିକ</type>
+			<type key="numbers" type="greklow" scope="core">ଗ୍ରୀକ୍ ଲୋଅର୍‌କେସ୍</type>
 			<type key="numbers" type="gujr">ଗୁଜରାଟୀ ଅଙ୍କଗୁଡ଼ିକ</type>
 			<type key="numbers" type="guru">ଗୁରମୁଖୀ ଅଙ୍କଗୁଡ଼ିକ</type>
+			<type key="numbers" type="hanidays" scope="core">ପାରମ୍ପରିକ କ୍ୟାଲେଣ୍ଡର୍ ପାଇଁ ହାନ୍-କ୍ୟାରେକ୍ଟର୍ ମାସର-ଦିନ</type>
 			<type key="numbers" type="hanidec">ଚାଇନିଜ୍‌ ଦଶମିକ ସଂଖ୍ୟା</type>
+			<type key="numbers" type="hanidec" scope="core">ଚାଇନିଜ୍ ସଂଖ୍ୟା ଆଇଡିଓଗ୍ରାଫ୍‌କୁ ଡିଜିଟ୍ ଭାବରେ ବ୍ୟବହାର କରୁଥିବା ସ୍ଥାନିକ ଦଶମିକ ସିଷ୍ଟମ୍</type>
 			<type key="numbers" type="hans">ସରଳୀକୃତ ଚିନି ସଂଖ୍ୟାଗୁଡ଼ିକ</type>
 			<type key="numbers" type="hansfin">ସରଳୀକୃତ ଚିନି ଆର୍ଥିକ ସଂଖ୍ୟାଗୁଡ଼ିକ</type>
+			<type key="numbers" type="hansfin" scope="core">ସରଳୀକୃତ ଚାଇନିଜ୍ ଆର୍ଥିକ</type>
 			<type key="numbers" type="hant">ପାରମ୍ପରିକ ଚିନି ସଂଖ୍ୟାଗୁଡ଼ିକ</type>
 			<type key="numbers" type="hantfin">ପାରମ୍ପରିକ ଚିନି ଆର୍ଥିକ ସଂଖ୍ୟାଗୁଡ଼ିକ</type>
+			<type key="numbers" type="hantfin" scope="core">ପାରମ୍ପରିକ ଚାଇନିଜ୍ ଆର୍ଥିକ</type>
 			<type key="numbers" type="hebr">ହିବୃ ସଂଖ୍ୟାଗୁଡ଼ିକ</type>
 			<type key="numbers" type="java">ଜାଭାନିଜ ଅଙ୍କଗୁଡ଼ିକ</type>
 			<type key="numbers" type="jpan">ଜାପାନୀ ସଂଖ୍ୟାଗୁଡ଼ିକ</type>
 			<type key="numbers" type="jpanfin">ଜାପାନୀ ଆର୍ଥିକ ସଂଖ୍ୟାଗୁଡ଼ିକ</type>
+			<type key="numbers" type="jpanfin" scope="core">ଜାପାନୀ ଆର୍ଥିକ</type>
+			<type key="numbers" type="jpanyear" scope="core">ଜାପାନୀ ପ୍ରଥମ-ବର୍ଷ ଗ୍ୟାନେନ୍ ସଂଖ୍ୟା ପଦ୍ଧତି</type>
 			<type key="numbers" type="khmr">ଖିମର୍‌ ଅଙ୍କଗୁଡ଼ିକ</type>
 			<type key="numbers" type="knda">କନ୍ନଡ଼ ଅଙ୍କଗୁଡ଼ିକ</type>
+			<type key="numbers" type="lanatham" scope="core">ତାଇ ଥାମ୍ ଥାମ୍ (ଯାଜକୀୟ)</type>
 			<type key="numbers" type="laoo">ଲାଓ ଅଙ୍କଗୁଡ଼ିକ</type>
 			<type key="numbers" type="latn">ପାଶ୍ଚାତ୍ୟ ଅଙ୍କଗୁଡ଼ିକ</type>
+			<type key="numbers" type="mathbold" scope="core">ଗାଣିତିକ ବୋଲ୍ଡ୍</type>
+			<type key="numbers" type="mathdbl" scope="core">ଗାଣିତିକ ଡବଲ୍-ଷ୍ଟ୍ରକ୍</type>
+			<type key="numbers" type="mathmono" scope="core">ଗାଣିତିକ ମନୋସ୍ପେସ୍</type>
+			<type key="numbers" type="mathsanb" scope="core">ଗାଣିତିକ sans-serif ବୋଲ୍ଡ୍</type>
+			<type key="numbers" type="mathsans" scope="core">ଗାଣିତିକ sans-serif</type>
 			<type key="numbers" type="mlym">ମଲୟାଲମ୍ ଅଙ୍କଗୁଡ଼ିକ</type>
 			<type key="numbers" type="mong">ମଙ୍ଗୋଲୀୟ ଡିଜିଟ୍</type>
 			<type key="numbers" type="mtei">ମିତେଇ ମାୟେକ ଅଙ୍କଗୁଡ଼ିକ</type>
 			<type key="numbers" type="mymr">ମିଆଁମାର୍‌ ଅଙ୍କଗୁଡ଼ିକ</type>
+			<type key="numbers" type="mymrepka" scope="core">ମିଆଁମାର୍ ଇଷ୍ଟର୍ନ୍ ପୋ କାରେନ୍</type>
+			<type key="numbers" type="mymrpao" scope="core">ମିଆଁମାର୍ ପାଓ</type>
+			<type key="numbers" type="mymrshan" scope="core">ମିଆଁମାର୍ ଶାନ୍</type>
+			<type key="numbers" type="mymrtlng" scope="core">ମିଆଁମାର୍ ତାଇ ଲାଏଙ୍ଗ୍</type>
+			<type key="numbers" type="native">ମୂଳ ଅଙ୍କ</type>
+			<type key="numbers" type="native" scope="core">ମୂଳ ଅଙ୍କ</type>
 			<type key="numbers" type="olck">ଓଲ୍ ଚିକି ଅଙ୍କଗୁଡ଼ିକ</type>
 			<type key="numbers" type="orya">ଓଡ଼ିଆ ଅଙ୍କଗୁଡ଼ିକ</type>
+			<type key="numbers" type="outlined" scope="core">ଆଉଟ୍‌ଲାଇନ୍ ଯୁକ୍ତ</type>
 			<type key="numbers" type="roman">ରୋମାନ୍‌ ସଂଖ୍ୟାଗୁଡ଼ିକ</type>
+			<type key="numbers" type="roman" scope="core">ରୋମାନ୍ ଅପର୍‌କେସ୍</type>
 			<type key="numbers" type="romanlow">ରୋମାନ୍‌ ଛୋଟ ଅକ୍ଷର ସଂଖ୍ୟାଗୁଡ଼ିକ</type>
+			<type key="numbers" type="romanlow" scope="core">ରୋମାନ୍ ଲୋଅର୍‌କେସ୍</type>
+			<type key="numbers" type="segment" scope="core">ବିଭାଜିତ</type>
 			<type key="numbers" type="taml">ପାରମ୍ପରିକ ତାମିଲ୍ ସଂଖ୍ୟାଗୁଡ଼ିକ</type>
 			<type key="numbers" type="tamldec">ତାମିଲ୍ ଅଙ୍କଗୁଡ଼ିକ</type>
+			<type key="numbers" type="tamldec" scope="core">ଆଧୁନିକ ତାମିଲ୍</type>
 			<type key="numbers" type="telu">ତେଲୁଗୁ ଅଙ୍କଗୁଡ଼ିକ</type>
 			<type key="numbers" type="thai">ଥାଇ ଅଙ୍କଗୁଡ଼ିକ</type>
 			<type key="numbers" type="tibt">ତିବତୀ ଅଙ୍କଗୁଡ଼ିକ</type>
+			<type key="numbers" type="traditional" scope="core">ପାରମ୍ପରିକ ସଂଖ୍ୟା</type>
 			<type key="numbers" type="vaii">ଭାଇ ଅଙ୍କଗୁଡ଼ିକ</type>
+			<type key="ss" type="none" scope="core">ଅଫ୍‌</type>
+			<type key="ss" type="standard" scope="core">ଅନ୍‌</type>
+			<type key="t0" type="und">ଅନିର୍ଦ୍ଧାରିତ ମଶୀନ୍ ଅନୁବାଦ</type>
+			<type key="va" type="posix" scope="core">POSIX ଭାରିଆଣ୍ଟ୍</type>
 		</types>
+		<typeValues>
+			<typeValue type="no">ଅଫ୍</typeValue>
+			<typeValue type="yes">ଅନ୍</typeValue>
+		</typeValues>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">ମେଟ୍ରିକ୍‌</measurementSystemName>
 			<measurementSystemName type="UK">ୟୁକେ</measurementSystemName>
@@ -1138,11 +1285,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	<characters>
 		<exemplarCharacters>[଼ ଅ ଆ ଇ ଈ ଉ ଊ ଋ ଏ ଐ ଓ ଔ ଁ ଂ ଃ କ ଖ ଗ ଘ ଙ ଚ ଛ ଜ ଝ ଞ ଟ ଠ ଡ{ଡ଼} ଢ{ଢ଼} ଣ ତ ଥ ଦ ଧ ନ ପ ଫ ବ ଭ ମ ଯୟ ର ଲ ଳ ଵ ୱ ଶ ଷ ସ ହ {କ୍ଷ} ା ି ୀ ୁ ୂ ୃ େ ୈ ୋ ୌ ୍]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[\u200C\u200D]</exemplarCharacters>
-		<exemplarCharacters type="index">[ଅ ଆ ଇ ଈ ଉ ଊ ଋ ଏ ଐ ଓ ଔ କ ଖ ଗ ଘ ଙ ଚ ଛ ଜ ଝ ଞ ଟ ଠ ଡ ଢ ଣ ତ ଥ ଦ ଧ ନ ପ ଫ ବ ଭ ମ ଯ ର ଲ ଳ ଶ ଷ ସ ହ {କ୍ଷ}]</exemplarCharacters>
+		<exemplarCharacters type="index">[ଅ ଆ ଇ ଈ ଉ ଊ ଋ ଏ ଐ ଓ ଔ କ ଖ ଗ ଘ ଙ ଚ ଛ ଜ ଝ ଞ ଟ ଠ ଡ ଢ ଣ ତ ଥ ଦ ଧ ନ ପ ଫ ବ ଭ ମ ଯୟ ର ଲ ଳ ୱ ଶ ଷ ସ ହ {କ୍ଷ}]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0୦ 1୧ 2୨ 3୩ 4୪ 5୫ 6୬ 7୭ 8୮ 9୯]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … '‘’ &quot;“” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
+		<exemplarCharacters type="numbers-auxiliary">[୦ ୧ ୨ ୩ ୪ ୫ ୬ ୭ ୮ ୯]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … । '‘’ &quot;“” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
+		<exemplarCharacters type="punctuation-auxiliary">[॥]</exemplarCharacters>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample="£">[£￡ ₤]</parseLenient>
 			<parseLenient sample="₹">[₹ {ଟ.} {ଟଙ୍କା} {Rp} {Rs}₨]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
@@ -1152,6 +1300,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	</characters>
 	<dates>
 		<calendars>
+			<calendar type="chinese">
+				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator draft="provisional">-</numericDateSeparator>
+					</numericSeparators>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="dangi">
+				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator draft="contributed">-</numericDateSeparator>
+					</numericSeparators>
+				</dateTimeFormats>
+			</calendar>
 			<calendar type="generic">
 				<dateFormats>
 					<dateFormatLength type="full">
@@ -1206,6 +1368,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<availableFormats>
 						<dateFormatItem id="Ed">d E</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
+						<dateFormatItem id="GyMEd">G dd-MM-y, E</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">MMM d, y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, MMM d, y G</dateFormatItem>
@@ -1229,6 +1392,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yyyyQQQQ">QQQQ y G</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="non-numeric">{0}–{1}</intervalFormatRange>
+						</intervalFormatRanges>
 						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="GyM">
 							<greatestDifference id="G">M/y GGGGG – M/y GGGGG</greatestDifference>
@@ -1395,8 +1561,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<quarterWidth type="abbreviated">
 							<quarter type="1">Q1</quarter>
 							<quarter type="2">Q2</quarter>
-							<quarter type="3">3ୟ ତ୍ରୟମାସ</quarter>
-							<quarter type="4">4ର୍ଥ ତ୍ରୟମାସ</quarter>
+							<quarter type="3">Q3</quarter>
+							<quarter type="4">Q4</quarter>
 						</quarterWidth>
 						<quarterWidth type="wide">
 							<quarter type="1">1ମ ତ୍ରୟମାସ</quarter>
@@ -1405,33 +1571,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<quarter type="4">4ର୍ଥ ତ୍ରୟମାସ</quarter>
 						</quarterWidth>
 					</quarterContext>
-					<quarterContext type="stand-alone">
-						<quarterWidth type="abbreviated">
-							<quarter type="1">Q1</quarter>
-							<quarter type="2">Q2</quarter>
-							<quarter type="3">Q3</quarter>
-							<quarter type="4">Q4</quarter>
-						</quarterWidth>
-					</quarterContext>
 				</quarters>
-				<dayPeriods>
-					<dayPeriodContext type="format">
-						<dayPeriodWidth type="narrow">
-							<dayPeriod type="am">ପୂ</dayPeriod>
-							<dayPeriod type="pm">ଅ</dayPeriod>
-						</dayPeriodWidth>
-					</dayPeriodContext>
-					<dayPeriodContext type="stand-alone">
-						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="am">ପୂର୍ବାହ୍ନ</dayPeriod>
-							<dayPeriod type="pm">ଅପରାହ୍ନ</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="narrow">
-							<dayPeriod type="am">AM</dayPeriod>
-							<dayPeriod type="pm">PM</dayPeriod>
-						</dayPeriodWidth>
-					</dayPeriodContext>
-				</dayPeriods>
 				<eras>
 					<eraNames>
 						<era type="0">ଖ୍ରୀଷ୍ଟପୂର୍ବ</era>
@@ -1496,6 +1636,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</timeFormatLength>
 				</timeFormats>
 				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator>/</numericDateSeparator>
+					</numericSeparators>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
@@ -1526,6 +1669,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="Ed">d E</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
 						<dateFormatItem id="GyMd">M/d/y G</dateFormatItem>
+						<dateFormatItem id="GyMEd">G dd-MM-y, E</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">MMM d, y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, MMM d, y G</dateFormatItem>
@@ -1543,11 +1687,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yMMMd">MMM d, y</dateFormatItem>
 						<dateFormatItem id="yMMMEd">E, MMM d, y</dateFormatItem>
 						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
+						<dateFormatItem id="yMMMMd">d MMMM y</dateFormatItem>
+						<dateFormatItem id="yMMMMEd">E, d MMMM y</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
 						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
 						<dateFormatItem id="yw" count="one">Y ର ସପ୍ତାହ w</dateFormatItem>
 						<dateFormatItem id="yw" count="other">Y ର ସପ୍ତାହ w</dateFormatItem>
 					</availableFormats>
+					<appendItems>
+						<appendItem request="Day-Of-Week">{0} {1}</appendItem>
+						<appendItem request="Era">{0} {1}</appendItem>
+					</appendItems>
 					<intervalFormats>
 						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="Gy">
@@ -1641,50 +1791,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<calendar type="indian">
 				<months>
 					<monthContext type="format">
-						<monthWidth type="abbreviated">
-							<month type="1">ଚୈତ୍ର</month>
-							<month type="2">ବୈଶାଖ</month>
-							<month type="3">ଜ୍ୟେଷ୍ଠ</month>
-							<month type="4">ଆଷାଢ଼</month>
-							<month type="5">ଶ୍ରାବଣ</month>
-							<month type="6">ଭାଦ୍ରବ</month>
-							<month type="7">ଆଶ୍ଵିନ</month>
-							<month type="8">କାର୍ତ୍ତିକ</month>
-							<month type="9">ମାର୍ଗଶିର</month>
-							<month type="10">ପୌଷ</month>
-							<month type="11">ମାଘ</month>
-							<month type="12">ଫାଲଗୁନ</month>
-						</monthWidth>
-						<monthWidth type="wide">
-							<month type="1">ଚୈତ୍ର</month>
-							<month type="2">ବୈଶାଖ</month>
-							<month type="3">ଜ୍ୟେଷ୍ଠ</month>
-							<month type="4">ଆଷାଢ଼</month>
-							<month type="5">ଶ୍ରାବଣ</month>
-							<month type="6">ଭାଦ୍ରବ</month>
-							<month type="7">ଆଶ୍ଵିନ</month>
-							<month type="8">କାର୍ତ୍ତିକ</month>
-							<month type="9">ମାର୍ଗଶିର</month>
-							<month type="10">ପୌଷ</month>
-							<month type="11">ମାଘ</month>
-							<month type="12">ଫାଲଗୁନ</month>
-						</monthWidth>
-					</monthContext>
-					<monthContext type="stand-alone">
-						<monthWidth type="abbreviated">
-							<month type="1">ଚୈତ୍ର</month>
-							<month type="2">ବୈଶାଖ</month>
-							<month type="3">ଜ୍ୟେଷ୍ଠ</month>
-							<month type="4">ଆଷାଢ଼</month>
-							<month type="5">ଶ୍ରାବଣ</month>
-							<month type="6">ଭାଦ୍ରବ</month>
-							<month type="7">ଆଶ୍ଵିନ</month>
-							<month type="8">କାର୍ତ୍ତିକ</month>
-							<month type="9">ମାର୍ଗଶିର</month>
-							<month type="10">ପୌଷ</month>
-							<month type="11">ମାଘ</month>
-							<month type="12">ଫାଲଗୁନ</month>
-						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">ଚୈତ୍ର</month>
 							<month type="2">ବୈଶାଖ</month>
@@ -1854,9 +1960,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ମାସର ସାପ୍ତାହିକ ଦିନ</displayName>
 			</field>
 			<field type="weekdayOfMonth-short">
-				<displayName>ମାସର ସାପ୍ତାହିକ ଦି.</displayName>
-			</field>
-			<field type="weekdayOfMonth-narrow">
 				<displayName>ମାସର ସାପ୍ତାହିକ ଦି.</displayName>
 			</field>
 			<field type="sun">
@@ -2065,13 +2168,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<relativeTimePattern count="other">{0} ଶନି. ପୂର୍ବେ</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="dayperiod-short">
-				<displayName>AM/PM</displayName>
-			</field>
 			<field type="dayperiod">
-				<displayName>AM/PM</displayName>
-			</field>
-			<field type="dayperiod-narrow">
 				<displayName>AM/PM</displayName>
 			</field>
 			<field type="hour">
@@ -2509,6 +2606,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Pacific/Easter">
 				<exemplarCity>ଇଷ୍ଟର୍‌</exemplarCity>
 			</zone>
+			<zone type="America/Coyhaique">
+				<exemplarCity>କୋୟାଇକେ</exemplarCity>
+			</zone>
 			<zone type="America/Punta_Arenas">
 				<exemplarCity>ପୁଣ୍ଟା ଏରିନାସ୍‌</exemplarCity>
 			</zone>
@@ -2630,9 +2730,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>ଲିବ୍ରେଭିଲ୍ଲେ</exemplarCity>
 			</zone>
 			<zone type="Europe/London">
-				<long>
-					<daylight>ବ୍ରିଟିଶ୍‌ ଗ୍ରୀଷ୍ମକାଳୀନ ସମୟ</daylight>
-				</long>
 				<exemplarCity>ଲଣ୍ଡନ୍</exemplarCity>
 			</zone>
 			<zone type="America/Grenada">
@@ -2723,9 +2820,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>ଜୟପୁରା</exemplarCity>
 			</zone>
 			<zone type="Europe/Dublin">
-				<long>
-					<daylight>ଆଇରିଶ୍‌ ମାନକ ସମୟ</daylight>
-				</long>
 				<exemplarCity>ଡବଲିନ୍</exemplarCity>
 			</zone>
 			<zone type="Asia/Jerusalem">
@@ -2774,9 +2868,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>ଫନୋମ୍‌ ପେନହ</exemplarCity>
 			</zone>
 			<zone type="Pacific/Enderbury">
-				<exemplarCity>ଏଣ୍ଡେରବୁରି</exemplarCity>
-			</zone>
-			<zone type="Pacific/Kanton">
 				<exemplarCity>କ୍ୟାଣ୍ଟନ</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
@@ -3453,9 +3544,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Africa_Western">
 				<long>
-					<generic>ପଶ୍ଚିମ ଆଫ୍ରିକା ସମୟ</generic>
-					<standard>ପଶ୍ଚିମ ଆଫ୍ରିକା ମାନାଙ୍କ ସମୟ</standard>
-					<daylight>ପଶ୍ଚିମ ଆଫ୍ରିକା ଖରାଦିନ ସମୟ</daylight>
+					<standard>ପଶ୍ଚିମ ଆଫ୍ରିକା ସମୟ</standard>
 				</long>
 			</metazone>
 			<metazone type="Alaska">
@@ -3463,13 +3552,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>ଆଲାସ୍କା ସମୟ</generic>
 					<standard>ଆଲାସ୍କା ମାନାଙ୍କ ସମୟ</standard>
 					<daylight>ଆଲାସ୍କା ଦିବାଲୋକ ସମୟ</daylight>
-				</long>
-			</metazone>
-			<metazone type="Almaty">
-				<long>
-					<generic>ଅଲମାଟୀ ସମୟ</generic>
-					<standard>ଅଲମାଟୀ ମାନକ ସମୟ</standard>
-					<daylight>ଅଲମାଟୀ ଗ୍ରୀଷ୍ମ ସମୟ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Amazon">
@@ -3521,20 +3603,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>ଆପିଆ ଦିବାଲୋକ ସମୟ</daylight>
 				</long>
 			</metazone>
-			<metazone type="Aqtau">
-				<long>
-					<generic>ଅକତୌ ସମୟ</generic>
-					<standard>ଅକତୌ ମାନକ ସମୟ</standard>
-					<daylight>ଅକତୌ ଗ୍ରୀଷ୍ମ ସମୟ</daylight>
-				</long>
-			</metazone>
-			<metazone type="Aqtobe">
-				<long>
-					<generic>ଅକ୍ତୋବ ସମୟ</generic>
-					<standard>ଅକ୍ତୋବ ମାନକ ସମୟ</standard>
-					<daylight>ଅକ୍ତୋବ ଗ୍ରୀଷ୍ମ ସମୟ</daylight>
-				</long>
-			</metazone>
 			<metazone type="Arabian">
 				<long>
 					<generic>ଆରବୀୟ ସମୟ</generic>
@@ -3566,7 +3634,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Atlantic">
 				<long>
 					<generic>ଆଟଲାଣ୍ଟିକ୍ ସମୟ</generic>
-					<standard>ଆଟଲାଣ୍ଟିକ୍ ମାନାଙ୍କ ସମୟ</standard>
+					<standard>ଆଟଲାଣ୍ଟିକ୍ ମାନକ ସମୟ</standard>
 					<daylight>ଆଟଲାଣ୍ଟିକ୍ ଦିବାଲୋକ ସମୟ</daylight>
 				</long>
 			</metazone>
@@ -3636,6 +3704,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>ବ୍ରାସିଲିଆ ଗ୍ରୀଷ୍ମକାଳ ସମୟ</daylight>
 				</long>
 			</metazone>
+			<metazone type="British">
+				<long>
+					<generic>ବ୍ରିଟିଶ ସମୟ</generic>
+					<daylight>ବ୍ରିଟିଶ୍‌ ଗ୍ରୀଷ୍ମକାଳୀନ ସମୟ</daylight>
+				</long>
+			</metazone>
 			<metazone type="Brunei">
 				<long>
 					<standard>ବ୍ରୁନେଇ ଡାରୁସାଲାମ ସମୟ</standard>
@@ -3701,7 +3775,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Cuba">
 				<long>
 					<generic>କ୍ୟୁବା ସମୟ</generic>
-					<standard>କ୍ୟୁବା ମାନାଙ୍କ ସମୟ</standard>
+					<standard>କ୍ୟୁବା ମାନକ ସମୟ</standard>
 					<daylight>କ୍ୟୁବା ଦିବାଲୋକ ସମୟ</daylight>
 				</long>
 			</metazone>
@@ -3812,6 +3886,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard draft="contributed">GMT</standard>
 				</short>
 			</metazone>
+			<metazone type="Greenland">
+				<long>
+					<generic>ଗ୍ରୀନ୍‌ଲ୍ୟାଣ୍ଡ୍ ସମୟ</generic>
+					<standard>ଗ୍ରୀନ୍‌ଲ୍ୟାଣ୍ଡ୍ ମାନକ ସମୟ</standard>
+					<daylight>ଗ୍ରୀନ୍‌ଲ୍ୟାଣ୍ଡ୍ ଗ୍ରୀଷ୍ମ ସମୟ</daylight>
+				</long>
+			</metazone>
 			<metazone type="Greenland_Eastern">
 				<long>
 					<generic>ପୂର୍ବ ଗ୍ରୀନଲ୍ୟାଣ୍ଡ୍ ସମୟ</generic>
@@ -3836,10 +3917,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>ଗୁଏନା ସମୟ</standard>
 				</long>
 			</metazone>
+			<metazone type="Hawaii">
+				<long>
+					<standard>ହୱାଇ-ଆଲେଉଟିୟ ମାନାଙ୍କ ସମୟ</standard>
+				</long>
+			</metazone>
 			<metazone type="Hawaii_Aleutian">
 				<long>
 					<generic>ହୱାଇ-ଆଲେଉଟିୟ ସମୟ</generic>
-					<standard>ହୱାଇ-ଆଲେଉଟିୟ ମାନାଙ୍କ ସମୟ</standard>
+					<standard>ହୱାଇ-ଅଲୂଶନ୍ ମାନକ ସମୟ</standard>
 					<daylight>ହୱାଇ-ଆଲେଉଟିୟ ଦିବାଲୋକ ସମୟ</daylight>
 				</long>
 			</metazone>
@@ -3895,6 +3981,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>ଇରାନ ସମୟ</generic>
 					<standard>ଇରାନ ମାନକ ସମୟ</standard>
 					<daylight>ଇରାନ ଦିବାଲୋକ ସମୟ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Irish">
+				<long>
+					<generic>ଆଇରିସ୍ ସମୟ</generic>
+					<daylight>ଆଇରିଶ୍‌ ମାନକ ସମୟ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Irkutsk">
@@ -3964,11 +4056,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>କିର୍ଗିସ୍ତାନ ସମୟ</standard>
 				</long>
 			</metazone>
-			<metazone type="Lanka">
-				<long>
-					<standard>ଲଙ୍କା ସମୟ</standard>
-				</long>
-			</metazone>
 			<metazone type="Line_Islands">
 				<long>
 					<standard>ଲାଇନ୍‌ ଦ୍ୱୀପପୁଞ୍ଜ ସମୟ</standard>
@@ -3979,13 +4066,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>ଲର୍ଡ ହୋୱେ ସମୟ</generic>
 					<standard>ଲର୍ଡ ହୋୱେ ମାନାଙ୍କ ସମୟ</standard>
 					<daylight>ଲର୍ଡ ହୋୱେ ଦିବାଲୋକ ସମୟ</daylight>
-				</long>
-			</metazone>
-			<metazone type="Macau">
-				<long>
-					<generic>ମାକାଓ ସମୟ</generic>
-					<standard>ମକାଓ ମାନକ ସମୟ</standard>
-					<daylight>ମକାଓ ଗ୍ରୀଷ୍ମ ସମୟ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Magadan">
@@ -4103,11 +4183,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>ଫର୍ଣ୍ଣାଣ୍ଡୋ ଡି ନୋରୋନ୍ନା ଗ୍ରୀଷ୍ମକାଳ ସମୟ</daylight>
 				</long>
 			</metazone>
-			<metazone type="North_Mariana">
-				<long>
-					<standard>ଉତ୍ତର ମେରିଆନା ଆଇଲ୍ୟାଣ୍ଡ ସମୟ</standard>
-				</long>
-			</metazone>
 			<metazone type="Novosibirsk">
 				<long>
 					<generic>ନୋଭୋସିବିରସ୍କ ସମୟ</generic>
@@ -4187,13 +4262,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>ପୋୟଙ୍ଗୟାଙ୍ଗ ସମୟ</standard>
 				</long>
 			</metazone>
-			<metazone type="Qyzylorda">
-				<long>
-					<generic>କାଜିଲୋର୍ଡା ସମୟ</generic>
-					<standard>କାଜିଲୋର୍ଡା ମାନକ ସମୟ</standard>
-					<daylight>କାଜିଲୋର୍ଡା ଗ୍ରୀଷ୍ମ ସମୟ</daylight>
-				</long>
-			</metazone>
 			<metazone type="Reunion">
 				<long>
 					<standard>ରିୟୁନିଅନ୍‌ ସମୟ</standard>
@@ -4220,9 +4288,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Samoa">
 				<long>
-					<generic>ସାମୋଆ ସମୟ</generic>
 					<standard>ସାମୋଆ ମାନକ ସମୟ</standard>
-					<daylight>ସାମୋଆ ଦିବାଲୋକ ସମୟ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">
@@ -4289,6 +4355,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>ଚୂକ୍‌ ସମୟ</standard>
 				</long>
 			</metazone>
+			<metazone type="Turkey">
+				<long>
+					<generic>ତୁର୍କୀ ସମୟ</generic>
+					<standard>ତୁର୍କୀ ମାନକ ସମୟ</standard>
+					<daylight>ତୁର୍କୀ ଗ୍ରୀଷ୍ମ ସମୟ</daylight>
+				</long>
+			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
 					<generic>ତୁର୍କମେନିସ୍ତାନ ସମୟ</generic>
@@ -4306,6 +4379,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>ଉରୁଗୁଏ ସମୟ</generic>
 					<standard>ଉରୁଗୁଏ ମାନାଙ୍କ ସମୟ</standard>
 					<daylight>ଉରୁଗୁଏ ଗ୍ରୀଷ୍ମକାଳ ସମୟ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Urumqi">
+				<long>
+					<standard>ଉରୁମ୍‌ଚି ସମୟ</standard>
 				</long>
 			</metazone>
 			<metazone type="Uzbekistan">
@@ -4448,7 +4526,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>¤#,##0.00</pattern>
-					<pattern alt="alphaNextToNumber" draft="provisional">¤ #,##0.00</pattern>
 				</currencyFormat>
 				<currencyFormat type="accounting">
 					<pattern>¤#,##0.00;(¤#,##0.00)</pattern>
@@ -4495,17 +4572,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<pattern type="100000000000" count="other">¤000ବି</pattern>
 					<pattern type="100000000000" count="other" alt="alphaNextToNumber">¤ 000ବି</pattern>
 					<pattern type="1000000000000" count="one">¤0ଟ୍ରି</pattern>
-					<pattern type="1000000000000" count="one" alt="alphaNextToNumber">¤ 0T</pattern>
+					<pattern type="1000000000000" count="one" alt="alphaNextToNumber">¤ 0ଟ୍ରି</pattern>
 					<pattern type="1000000000000" count="other">¤0ଟ୍ରି</pattern>
-					<pattern type="1000000000000" count="other" alt="alphaNextToNumber">¤ 0T</pattern>
+					<pattern type="1000000000000" count="other" alt="alphaNextToNumber">¤ 0ଟ୍ରି</pattern>
 					<pattern type="10000000000000" count="one">¤00ଟ୍ରି</pattern>
-					<pattern type="10000000000000" count="one" alt="alphaNextToNumber">¤ 00T</pattern>
+					<pattern type="10000000000000" count="one" alt="alphaNextToNumber">¤ 00ଟ୍ରି</pattern>
 					<pattern type="10000000000000" count="other">¤00ଟ୍ରି</pattern>
-					<pattern type="10000000000000" count="other" alt="alphaNextToNumber">¤ 00T</pattern>
+					<pattern type="10000000000000" count="other" alt="alphaNextToNumber">¤ 00ଟ୍ରି</pattern>
 					<pattern type="100000000000000" count="one">¤000ଟ୍ରି</pattern>
-					<pattern type="100000000000000" count="one" alt="alphaNextToNumber">¤ 000T</pattern>
+					<pattern type="100000000000000" count="one" alt="alphaNextToNumber">¤ 000ଟ୍ରି</pattern>
 					<pattern type="100000000000000" count="other">¤000ଟ୍ରି</pattern>
-					<pattern type="100000000000000" count="other" alt="alphaNextToNumber">¤ 000T</pattern>
+					<pattern type="100000000000000" count="other" alt="alphaNextToNumber">¤ 000ଟ୍ରି</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
@@ -4991,6 +5068,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="XCD">
 				<displayName>ପୂର୍ବ କାରିବୀୟ ଡଲାର୍</displayName>
 			</currency>
+			<currency type="XCG">
+				<displayName>କ‍୍ୟାରବିଅନ୍‌ ଗିଲ୍ଡର୍‌</displayName>
+			</currency>
 			<currency type="XOF">
 				<displayName>ପଶ୍ଚିମ ଆଫ୍ରିକିୟ CFA ଫ୍ରାଙ୍କ୍</displayName>
 				<displayName count="one">ପଶ୍ଚିମ ଆଫ୍ରିକୀୟ CFA ଫ୍ରାଙ୍କ୍</displayName>
@@ -5013,6 +5093,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="ZMW">
 				<displayName>ଜାମ୍ବୀୟ କ୍ୱାଚା</displayName>
 			</currency>
+			<currency type="ZWG">
+				<displayName>ଜିମ୍ବାୱିଅନ୍‌ ଗୋଲ୍ଡ୍‌</displayName>
+			</currency>
 		</currencies>
 		<miscPatterns numberSystem="latn">
 			<pattern type="atLeast">{0}+</pattern>
@@ -5020,6 +5103,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<minimalPairs>
 			<pluralMinimalPairs count="one">{0} ଦିନ</pluralMinimalPairs>
 			<pluralMinimalPairs count="other">{0} ଦିନଗୁଡ଼ିକ</pluralMinimalPairs>
+			<ordinalMinimalPairs ordinal="one">{0}ମ ଡାହାଣପଟ ରାସ୍ତାରେ ଯାଆନ୍ତୁ।</ordinalMinimalPairs>
+			<ordinalMinimalPairs ordinal="two">{0} ଡାହାଣପଟ ରାସ୍ତାରେ ଯାଆନ୍ତୁ।</ordinalMinimalPairs>
+			<ordinalMinimalPairs ordinal="few">{0}ୟ ଡାହାଣପଟ ରାସ୍ତାରେ ଯାଆନ୍ତୁ।</ordinalMinimalPairs>
+			<ordinalMinimalPairs ordinal="many">{0}ତମ ଡାହାଣପଟ ରାସ୍ତାରେ ଯାଆନ୍ତୁ।</ordinalMinimalPairs>
 			<ordinalMinimalPairs ordinal="other">ଡାହାଣରେ ଥିବା {0} ନିଅନ୍ତୁ</ordinalMinimalPairs>
 		</minimalPairs>
 	</numbers>
@@ -5208,7 +5295,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ଆଇଟମ୍</unitPattern>
 				<unitPattern count="other">{0} ଆଇଟମ୍‌ଗୁଡିକ</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>ଅଂଶ ପ୍ରତି ନିୟୁତ</displayName>
 				<unitPattern count="one">{0} ଅଂଶ ପ୍ରତି ନିୟୁତ</unitPattern>
 				<unitPattern count="other">{0} ଅଂଶ ପ୍ରତି ନିୟୁତ</unitPattern>
@@ -5229,6 +5316,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ମୋଲସ</displayName>
 				<unitPattern count="one">{0} ମୋଲ</unitPattern>
 				<unitPattern count="other">{0} ମୋଲସ</unitPattern>
+			</unit>
+			<unit type="concentr-ofglucose">
+				<displayName>ଗ୍ଲୁକୋଜ୍‌</displayName>
+				<unitPattern count="one">{0} ଗ୍ଲୁକୋଜ୍‌</unitPattern>
+				<unitPattern count="other">{0} ଗ୍ଲୁକୋଜ୍‌</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>ଲିଟର୍ ପ୍ରତି କିଲୋମିଟର୍</displayName>
@@ -5297,10 +5389,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ଶତାବ୍ଦୀ</displayName>
 				<unitPattern count="one">{0} ଶତାବ୍ଦୀ</unitPattern>
 				<unitPattern count="other">{0} ଶତାବ୍ଦୀ</unitPattern>
-			</unit>
-			<unit type="duration-decade">
-				<unitPattern count="one">{0} ଦଶନ୍ଧି</unitPattern>
-				<unitPattern count="other">{0} ଦଶନ୍ଧି</unitPattern>
 			</unit>
 			<unit type="duration-year">
 				<perUnitPattern>{0} ପ୍ରତି ବର୍ଷ</perUnitPattern>
@@ -5567,7 +5655,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ପଏଣ୍ଟ୍</unitPattern>
 			</unit>
 			<unit type="length-solar-radius">
-				<displayName>ସୋଲାର ବ୍ୟାସାର୍ଦ୍ଧ</displayName>
 				<unitPattern count="one">{0} ସୋଲାର ବ୍ୟାସାର୍ଦ୍ଧ</unitPattern>
 				<unitPattern count="other">{0} ସୋଲାର ବ୍ୟାସାର୍ଦ୍ଧ</unitPattern>
 			</unit>
@@ -5676,6 +5763,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ପାରାର ମିଲିମିଟର୍</displayName>
 				<unitPattern count="one">ପାରାର {0} ମିଲିମିଟର୍</unitPattern>
 				<unitPattern count="other">ପାରାର {0} ମିଲିମିଟର୍</unitPattern>
+			</unit>
+			<unit type="pressure-ofhg">
+				<displayName>ପାରଦ</displayName>
+				<unitPattern count="one">{0} ପାରଦ</unitPattern>
+				<unitPattern count="other">{0} ପାରଦ</unitPattern>
 			</unit>
 			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>ପାଉଣ୍ଡ୍ ପ୍ରତି ବର୍ଗ ଇଞ୍ଚ</displayName>
@@ -5829,6 +5921,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ମେଟ୍ରିକ୍ କପ୍</unitPattern>
 				<unitPattern count="other">{0} ମେଟ୍ରିକ୍ କପ୍</unitPattern>
 			</unit>
+			<unit type="volume-fluid-ounce-metric">
+				<displayName>ମେଟ୍ରିକ୍‌ ଫ୍ଲୁଇଡ୍‌ ଆଉନ୍ସ୍‌</displayName>
+				<unitPattern count="one">{0} ମେଟ୍ରିକ୍‌ ଫ୍ଲୁଇଡ୍‌ ଆଉନ୍ସ୍‌</unitPattern>
+				<unitPattern count="other">{0} ମେଟ୍ରିକ୍‌ ଫ୍ଲୁଇଡ୍‌ ଆଉନ୍ସ୍‌</unitPattern>
+			</unit>
 			<unit type="volume-acre-foot">
 				<displayName>ଏକର-ଫିଟ୍</displayName>
 				<unitPattern count="one">{0} ଏକର-ଫୁଟ</unitPattern>
@@ -5869,20 +5966,77 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ଡିଜଟ୍ ସ୍ପୁନ୍</unitPattern>
 				<unitPattern count="other">{0} ଡିଜଟ୍ ସ୍ପୁନ୍</unitPattern>
 			</unit>
-			<unit type="speed-light-speed">
-				<displayName>ଆଲୋକ</displayName>
-				<unitPattern count="one">{0} ଆଲୋକ</unitPattern>
-				<unitPattern count="other">{0} ଆଲୋକ</unitPattern>
+			<unit type="angle-steradian">
+				<displayName>ଷ୍ଟେରାଡିଆନ୍</displayName>
+				<unitPattern count="one">{0} ଷ୍ଟେରାଡିଆନ୍‌</unitPattern>
+				<unitPattern count="other">{0} ଷ୍ଟେରାଡିଆନ୍‌</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-katal">
+				<displayName>କେଟଲ୍‌</displayName>
+				<unitPattern count="one">{0} କେଟଲ୍‌</unitPattern>
+				<unitPattern count="other">{0} କେଟଲ୍‌</unitPattern>
+			</unit>
+			<unit type="electric-coulomb">
+				<displayName>କୂଲମ୍‌</displayName>
+				<unitPattern count="one">{0} କୂଲମ୍‌</unitPattern>
+				<unitPattern count="other">{0} କୂଲମ୍‌</unitPattern>
+			</unit>
+			<unit type="electric-farad">
+				<displayName>ଫାରାଡ୍‌</displayName>
+				<unitPattern count="one">{0} ଫାରାଡ୍‌</unitPattern>
+				<unitPattern count="other">{0} ଫାରାଡ୍‌</unitPattern>
+			</unit>
+			<unit type="electric-henry">
+				<displayName>ହେନେରି</displayName>
+				<unitPattern count="one">{0} ହେନେରି</unitPattern>
+				<unitPattern count="other">{0} ହେନେରି</unitPattern>
+			</unit>
+			<unit type="electric-siemens">
+				<displayName>ସିମେନ୍ସ୍‌</displayName>
+				<unitPattern count="one">{0} ସିମେନ୍ସ୍‌</unitPattern>
+				<unitPattern count="other">{0} ସିମେନ୍ସ୍‌</unitPattern>
+			</unit>
+			<unit type="energy-calorie-it">
+				<displayName>କ‍୍ୟାଲୋରି [IT]</displayName>
+				<unitPattern count="one">{0} କ‍୍ୟାଲୋରି [IT]</unitPattern>
+				<unitPattern count="other">{0} କ‍୍ୟାଲୋରି [IT]</unitPattern>
+			</unit>
+			<unit type="energy-becquerel">
+				<displayName>ବେକରେଲ୍‌</displayName>
+				<unitPattern count="one">{0} ବେକରେଲ୍‌</unitPattern>
+				<unitPattern count="other">{0} ବେକରେଲ୍‌</unitPattern>
+			</unit>
+			<unit type="energy-sievert">
+				<displayName>ସିଭର୍ଟ୍‌</displayName>
+				<unitPattern count="one">{0} ସିଭର୍ଟ୍‌</unitPattern>
+				<unitPattern count="other">{0} ସିଭର୍ଟ୍‌</unitPattern>
+			</unit>
+			<unit type="energy-gray">
+				<displayName>ଗ୍ରେ</displayName>
+				<unitPattern count="one">{0} ଗ୍ରେ</unitPattern>
+				<unitPattern count="other">{0} ଗ୍ରେ</unitPattern>
+			</unit>
+			<unit type="force-kilogram-force">
+				<displayName>କିଲୋଗ୍ରାମ୍‌-ବଳ</displayName>
+				<unitPattern count="one">{0} କିଲୋଗ୍ରାମ୍‌-ବଳ</unitPattern>
+				<unitPattern count="other">{0} କିଲୋଗ୍ରାମ୍‌-ବଳ</unitPattern>
+			</unit>
+			<unit type="magnetic-tesla">
+				<displayName>ଟେସ୍‌ଲା</displayName>
+				<unitPattern count="one">{0} ଟେସ୍‌ଲା</unitPattern>
+				<unitPattern count="other">{0} ଟେସ୍‌ଲା</unitPattern>
+			</unit>
+			<unit type="magnetic-weber">
+				<displayName>ୱେବର୍‌</displayName>
+				<unitPattern count="one">{0} ୱେବର୍‌</unitPattern>
+				<unitPattern count="other">{0} ୱେବର୍‌</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-1e9">
 				<displayName>ବିଲିୟନ ପ୍ରତି ଅଂଶଗୁଡିକ</displayName>
 				<unitPattern count="one">{0} ପାର୍ଟ୍ସ ପ୍ରତି ବିଲିୟନ୍</unitPattern>
 				<unitPattern count="other">{0} ପାର୍ଟ୍ସ ପ୍ରତି ବିଲିୟନ୍</unitPattern>
 			</unit>
 			<unit type="duration-night">
-				<displayName>ରାତି</displayName>
-				<unitPattern count="one">{0} ରାତି</unitPattern>
-				<unitPattern count="other">{0} ରାତି</unitPattern>
 				<perUnitPattern>{0} ପ୍ରତି ରାତି</perUnitPattern>
 			</unit>
 			<coordinateUnit>
@@ -6058,7 +6212,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ଆଇଟମ୍</unitPattern>
 				<unitPattern count="other">{0} ଆଇଟମ୍</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part">
+				<displayName>ଅଂଶ</displayName>
+				<unitPattern count="one">{0} ଅଂଶ</unitPattern>
+				<unitPattern count="other">{0} ଅଂଶ</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-1e6">
 				<displayName>ଅଂଶ/ନିୟୁତ</displayName>
 				<unitPattern count="one">{0} ପିପିଏମ୍</unitPattern>
 				<unitPattern count="other">{0} ପିପିଏମ୍</unitPattern>
@@ -6076,6 +6235,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ମୋଲ</displayName>
 				<unitPattern count="one">ମୋଲ</unitPattern>
 				<unitPattern count="other">{0} ମୋଲ</unitPattern>
+			</unit>
+			<unit type="concentr-ofglucose">
+				<displayName>Glc</displayName>
+				<unitPattern count="one">{0} Glc</unitPattern>
+				<unitPattern count="other">{0} Glc</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>ଲିଟର୍/କିମି</displayName>
@@ -6346,8 +6510,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="length-astronomical-unit">
 				<displayName>ଆୟୁ</displayName>
-				<unitPattern count="one">{0} au</unitPattern>
-				<unitPattern count="other">{0} au</unitPattern>
 			</unit>
 			<unit type="length-furlong">
 				<displayName>ଫର୍ଲଙ୍ଗସ୍</displayName>
@@ -6360,8 +6522,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="length-nautical-mile">
 				<displayName>ନୌମି</displayName>
-				<unitPattern count="one">{0} nmi</unitPattern>
-				<unitPattern count="other">{0} nmi</unitPattern>
 			</unit>
 			<unit type="length-mile-scandinavian">
 				<displayName>ସମି</displayName>
@@ -6555,8 +6715,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="volume-cubic-yard">
 				<displayName>ୟାର୍ଡ୍³</displayName>
-				<unitPattern count="one">{0} yd³</unitPattern>
-				<unitPattern count="other">{0} yd³</unitPattern>
 			</unit>
 			<unit type="volume-cubic-foot">
 				<displayName>ଫିଟ୍³</displayName>
@@ -6601,8 +6759,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="volume-pint-metric">
 				<displayName>ମେପା</displayName>
-				<unitPattern count="one">{0} mpt</unitPattern>
-				<unitPattern count="other">{0} mpt</unitPattern>
 			</unit>
 			<unit type="volume-cup-metric">
 				<unitPattern count="one">{0} ମେକ</unitPattern>
@@ -6655,8 +6811,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="volume-teaspoon">
 				<displayName>ଛୋଟ ଚାମଚ</displayName>
-				<unitPattern count="one">{0} tsp</unitPattern>
-				<unitPattern count="other">{0} tsp</unitPattern>
 			</unit>
 			<unit type="volume-barrel">
 				<displayName>ବାରେଲ</displayName>
@@ -6665,12 +6819,35 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} dsp-Imp.</unitPattern>
 				<unitPattern count="other">{0} dsp-Imp.</unitPattern>
 			</unit>
+			<unit type="angle-steradian">
+				<unitPattern count="one">{0} sr</unitPattern>
+				<unitPattern count="other">{0} sr</unitPattern>
+			</unit>
+			<unit type="concentr-katal">
+				<unitPattern count="one">{0} kat</unitPattern>
+				<unitPattern count="other">{0} kat</unitPattern>
+			</unit>
+			<unit type="energy-calorie-it">
+				<displayName>cal-IT</displayName>
+			</unit>
+			<unit type="force-kilogram-force">
+				<unitPattern count="one">{0} kgf</unitPattern>
+				<unitPattern count="other">{0} kgf</unitPattern>
+			</unit>
+			<unit type="magnetic-tesla">
+				<unitPattern count="one">{0} T</unitPattern>
+				<unitPattern count="other">{0} T</unitPattern>
+			</unit>
+			<unit type="magnetic-weber">
+				<unitPattern count="one">{0} Wb</unitPattern>
+				<unitPattern count="other">{0} Wb</unitPattern>
+			</unit>
 			<unit type="speed-light-speed">
 				<displayName>ଆଲୋକ</displayName>
 				<unitPattern count="one">{0} ଆଲୋକ</unitPattern>
 				<unitPattern count="other">{0} ଆଲୋକ</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>ପାର୍ଟ୍ସ/ବିଲିୟନ୍</displayName>
 			</unit>
 			<unit type="duration-night">
@@ -6818,7 +6995,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}ଆଇଟମ୍</unitPattern>
 				<unitPattern count="other">{0}ଆଇଟମ୍</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part">
+				<unitPattern count="one">{0} ଅଂଶ</unitPattern>
+				<unitPattern count="other">{0} ଅଂଶ</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-1e6">
 				<displayName>ପିପିଏମ୍</displayName>
 				<unitPattern count="one">{0}ପିପିଏମ୍</unitPattern>
 				<unitPattern count="other">{0}ପିପିଏମ୍</unitPattern>
@@ -6855,8 +7036,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="duration-decade">
 				<displayName>ଦଶନ୍ଧି</displayName>
-				<unitPattern count="one">{0} ଦଶନ୍ଧି</unitPattern>
-				<unitPattern count="other">{0} ଦଶନ୍ଧି</unitPattern>
 			</unit>
 			<unit type="duration-year">
 				<displayName>yr</displayName>
@@ -7160,7 +7339,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}mpt</unitPattern>
 			</unit>
 			<unit type="volume-cup-metric">
-				<displayName>mcup</displayName>
 				<unitPattern count="one">{0}mc</unitPattern>
 				<unitPattern count="other">{0}mc</unitPattern>
 			</unit>
@@ -7223,20 +7401,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ଚିମୁଟ</unitPattern>
 				<unitPattern count="other">{0} ଚିମୁଟ</unitPattern>
 			</unit>
-			<unit type="speed-light-speed">
-				<displayName>ଆଲୋକ</displayName>
-				<unitPattern count="one">{0} ଆଲୋକ</unitPattern>
-				<unitPattern count="other">{0} ଆଲୋକ</unitPattern>
-			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<unitPattern count="one">{0}ppb</unitPattern>
 				<unitPattern count="other">{0}ppb</unitPattern>
-			</unit>
-			<unit type="duration-night">
-				<displayName>ରାତି</displayName>
-				<unitPattern count="one">{0} ରାତି</unitPattern>
-				<unitPattern count="other">{0} ରାତି</unitPattern>
-				<perUnitPattern>{0}/ରାତି</perUnitPattern>
 			</unit>
 			<coordinateUnit>
 				<coordinateUnitPattern type="north">{0}ଉ</coordinateUnitPattern>

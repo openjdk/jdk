@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,20 @@
  */
 
 #include "cds/aotLinkedClassTable.hpp"
+#include "cds/archiveUtils.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/serializeClosure.hpp"
 #include "oops/array.hpp"
 
-AOTLinkedClassTable AOTLinkedClassTable::_for_static_archive;
-AOTLinkedClassTable AOTLinkedClassTable::_for_dynamic_archive;
+AOTLinkedClassTable AOTLinkedClassTable::_instance;
 
 void AOTLinkedClassTable::serialize(SerializeClosure* soc) {
-  soc->do_ptr((void**)&_boot);
+  // These tables are used for loading classes in a retaining JVM. However,
+  // these tables should not be written into the AOT configuration file (which
+  // doesn't store AOT-linked classes).
+  AOTWriteClosureDisabler disable_if(CDSConfig::is_redumping_aot_configuration());
+
+  soc->do_ptr((void**)&_boot1);
   soc->do_ptr((void**)&_boot2);
   soc->do_ptr((void**)&_platform);
   soc->do_ptr((void**)&_app);

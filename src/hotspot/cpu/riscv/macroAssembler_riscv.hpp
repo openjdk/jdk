@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2024, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -28,10 +28,16 @@
 #define CPU_RISCV_MACROASSEMBLER_RISCV_HPP
 
 #include "asm/assembler.inline.hpp"
+#include "code/aotCodeCache.hpp"
 #include "code/vmreg.hpp"
 #include "metaprogramming/enableIf.hpp"
 #include "oops/compressedOops.hpp"
+#include "runtime/atomicAccess.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
+#include "runtime/signature.hpp"
+
+class ciValueKlass;
 
 // MacroAssembler extends Assembler by frequently used macros.
 //
@@ -138,6 +144,7 @@ class MacroAssembler: public Assembler {
 
   // These always tightly bind to MacroAssembler::call_VM_base
   // bypassing the virtual implementation
+  void super_call_VM_leaf(address entry_point);
   void super_call_VM_leaf(address entry_point, Register arg_0);
   void super_call_VM_leaf(address entry_point, Register arg_0, Register arg_1);
   void super_call_VM_leaf(address entry_point, Register arg_0, Register arg_1, Register arg_2);
@@ -168,6 +175,7 @@ class MacroAssembler: public Assembler {
     Register oop_result,               // where an oop-result ends up if any; use noreg otherwise
     Register java_thread,              // the thread if computed before     ; use noreg otherwise
     Register last_java_sp,             // to set up last_Java_frame in stubs; use noreg otherwise
+    Label*   return_pc,                // to set up last_Java_frame; use nullptr otherwise
     address  entry_point,              // the entry point
     int      number_of_arguments,      // the number of arguments (w/o thread) to pop after the call
     bool     check_exceptions          // whether to check for pending exceptions after return
@@ -196,8 +204,14 @@ class MacroAssembler: public Assembler {
                        Register val, Register tmp1, Register tmp2, Register tmp3);
   void load_klass(Register dst, Register src, Register tmp = t0);
   void load_narrow_klass_compact(Register dst, Register src);
+  void load_narrow_klass(Register dst, Register src);
   void store_klass(Register dst, Register src, Register tmp = t0);
-  void cmp_klass_compressed(Register oop, Register trial_klass, Register tmp, Label &L, bool equal);
+  void cmp_klass_beq(Register obj, Register klass,
+                     Register tmp1, Register tmp2,
+                     Label &L, bool is_far = false);
+  void cmp_klass_bne(Register obj, Register klass,
+                     Register tmp1, Register tmp2,
+                     Label &L, bool is_far = false);
 
   void encode_klass_not_null(Register r, Register tmp = t0);
   void decode_klass_not_null(Register r, Register tmp = t0);
@@ -242,6 +256,25 @@ class MacroAssembler: public Assembler {
   static bool needs_explicit_null_check(intptr_t offset);
   static bool uses_implicit_null_check(void* address);
 
+  void test_field_is_null_free_value_type(Register flags, Register temp_reg, Label& is_null_free);
+  void test_field_is_not_null_free_value_type(Register flags, Register temp_reg, Label& not_null_free_value_type);
+  void test_field_is_flat(Register flags, Register temp_reg, Label& is_flat);
+
+  void test_markword_is_value_type(Register markword, Label& is_value_type);
+  void test_oop_is_not_value_type(Register object, Register tmp, Label& not_value_type, bool can_be_null = true);
+  void test_oop_prototype_bit(Register oop, Register temp_reg, int32_t tst_bit, bool jmp_set, Label& jmp_label);
+  void test_flat_array_oop(Register klass, Register temp_reg, Label& is_flat_array);
+  void test_null_free_array_oop(Register oop, Register temp_reg, Label& is_null_free_array);
+  void test_non_flat_array_oop(Register oop, Register temp_reg, Label&is_non_flat_array);
+  void test_non_null_free_array_oop(Register oop, Register temp_reg, Label&is_non_null_free_array);
+
+  // Check array klass layout helper for flat or null-free arrays...
+  void test_flat_array_layout(Register lh, Label& is_flat_array);
+
+  // value type data payload offsets...
+  void payload_offset(Register value_klass, Register offset);
+  void payload_address(Register oop, Register data, Register value_klass);
+
   // interface method calling
   void lookup_interface_method(Register recv_klass,
                                Register intf_klass,
@@ -284,6 +317,7 @@ class MacroAssembler: public Assembler {
   }
 
   // allocation
+
   void tlab_allocate(
     Register obj,                   // result: pointer to object after successful allocation
     Register var_size_in_bytes,     // object size in bytes if unknown at compile time; invalid otherwise
@@ -389,6 +423,8 @@ class MacroAssembler: public Assembler {
 
   Address argument_address(RegisterOrConstant arg_slot, int extra_slot_offset = 0);
 
+  void profile_receiver_type(Register recv, Register mdp, int mdp_offset);
+
   // only if +VerifyOops
   void _verify_oop(Register reg, const char* s, const char* file, int line);
   void _verify_oop_addr(Address addr, const char* s, const char* file, int line);
@@ -479,6 +515,7 @@ class MacroAssembler: public Assembler {
   }
 
   static int patch_oop(address insn_addr, address o);
+  static int patch_metadata(address insn_addr, address metadata);
 
   static address get_target_of_li32(address insn_addr);
   static int patch_imm_in_li32(address branch, int32_t target);
@@ -488,8 +525,8 @@ class MacroAssembler: public Assembler {
     return false;
   }
 
-  address emit_reloc_call_address_stub(int insts_call_instruction_offset, address target);
-  static int max_reloc_call_address_stub_size();
+  address emit_address_stub(int insts_call_instruction_offset, address target);
+  static int max_address_stub_size();
 
   void emit_static_call_stub();
   static int static_call_stub_size();
@@ -646,6 +683,9 @@ class MacroAssembler: public Assembler {
   void bltz(Register Rs, const address dest);
   void bgtz(Register Rs, const address dest);
 
+  void cmov_zicond_eqz(Register dst, Register src, Register cond, Register tmp = t0);
+  void cmov_zicond_nez(Register dst, Register src, Register cond, Register tmp = t0);
+
   void cmov_eq(Register cmp1, Register cmp2, Register dst, Register src);
   void cmov_ne(Register cmp1, Register cmp2, Register dst, Register src);
   void cmov_le(Register cmp1, Register cmp2, Register dst, Register src);
@@ -663,6 +703,24 @@ class MacroAssembler: public Assembler {
   void cmov_cmp_fp_ge(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single);
   void cmov_cmp_fp_lt(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single);
   void cmov_cmp_fp_gt(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single);
+
+  void cmov_fp_eq(Register cmp1, Register cmp2, FloatRegister dst, FloatRegister src, bool is_single);
+  void cmov_fp_ne(Register cmp1, Register cmp2, FloatRegister dst, FloatRegister src, bool is_single);
+  void cmov_fp_le(Register cmp1, Register cmp2, FloatRegister dst, FloatRegister src, bool is_single);
+  void cmov_fp_leu(Register cmp1, Register cmp2, FloatRegister dst, FloatRegister src, bool is_single);
+  void cmov_fp_ge(Register cmp1, Register cmp2, FloatRegister dst, FloatRegister src, bool is_single);
+  void cmov_fp_geu(Register cmp1, Register cmp2, FloatRegister dst, FloatRegister src, bool is_single);
+  void cmov_fp_lt(Register cmp1, Register cmp2, FloatRegister dst, FloatRegister src, bool is_single);
+  void cmov_fp_ltu(Register cmp1, Register cmp2, FloatRegister dst, FloatRegister src, bool is_single);
+  void cmov_fp_gt(Register cmp1, Register cmp2, FloatRegister dst, FloatRegister src, bool is_single);
+  void cmov_fp_gtu(Register cmp1, Register cmp2, FloatRegister dst, FloatRegister src, bool is_single);
+
+  void cmov_fp_cmp_fp_eq(FloatRegister cmp1, FloatRegister cmp2, FloatRegister dst, FloatRegister src, bool cmp_single, bool cmov_single);
+  void cmov_fp_cmp_fp_ne(FloatRegister cmp1, FloatRegister cmp2, FloatRegister dst, FloatRegister src, bool cmp_single, bool cmov_single);
+  void cmov_fp_cmp_fp_le(FloatRegister cmp1, FloatRegister cmp2, FloatRegister dst, FloatRegister src, bool cmp_single, bool cmov_single);
+  void cmov_fp_cmp_fp_ge(FloatRegister cmp1, FloatRegister cmp2, FloatRegister dst, FloatRegister src, bool cmp_single, bool cmov_single);
+  void cmov_fp_cmp_fp_lt(FloatRegister cmp1, FloatRegister cmp2, FloatRegister dst, FloatRegister src, bool cmp_single, bool cmov_single);
+  void cmov_fp_cmp_fp_gt(FloatRegister cmp1, FloatRegister cmp2, FloatRegister dst, FloatRegister src, bool cmp_single, bool cmov_single);
 
  public:
   // We try to follow risc-v asm menomics.
@@ -714,7 +772,7 @@ class MacroAssembler: public Assembler {
   // is used to keep the entry address for jalr/movptr.
   // Uses call() for intra code cache, else movptr + jalr.
   // Clobebrs t1
-  void rt_call(address dest, Register tmp = t1);
+  void rt_call(address dest, Register tmp1 = t1, Register tmp2 = noreg);
 
   // ret: jalr x0, 0(x1)
   inline void ret() {
@@ -791,24 +849,17 @@ class MacroAssembler: public Assembler {
   void double_blt(FloatRegister Rs1, FloatRegister Rs2, Label &l, bool is_far = false, bool is_unordered = false);
   void double_bgt(FloatRegister Rs1, FloatRegister Rs2, Label &l, bool is_far = false, bool is_unordered = false);
 
-private:
-  int push_reg(unsigned int bitset, Register stack);
-  int pop_reg(unsigned int bitset, Register stack);
-  int push_fp(unsigned int bitset, Register stack);
-  int pop_fp(unsigned int bitset, Register stack);
-#ifdef COMPILER2
-  int push_v(unsigned int bitset, Register stack);
-  int pop_v(unsigned int bitset, Register stack);
-#endif // COMPILER2
-
+public:
   // The signed 20-bit upper imm can materialize at most negative 0xF...F80000000, two G.
   // The following signed 12-bit imm can at max subtract 0x800, two K, from that previously loaded two G.
-  bool is_valid_32bit_offset(int64_t x) {
+  // Also used when patching an auipc pair, so that emit and patch agree on the reachable range.
+  static bool is_valid_32bit_offset(int64_t x) {
     constexpr int64_t twoG = (2 * G);
     constexpr int64_t twoK = (2 * K);
     return x < (twoG - twoK) && x >= (-twoG - twoK);
   }
 
+private:
   // Ensure that the auipc can reach the destination at x from anywhere within
   // the code cache so that if it is relocated we know it will still reach.
   bool is_32bit_offset_from_codecache(int64_t x) {
@@ -818,15 +869,19 @@ private:
   }
 
 public:
+  // Stack push and pop individual 64 bit registers
   void push_reg(Register Rs);
   void pop_reg(Register Rd);
-  void push_reg(RegSet regs, Register stack) { if (regs.bits()) push_reg(regs.bits(), stack); }
-  void pop_reg(RegSet regs, Register stack)  { if (regs.bits()) pop_reg(regs.bits(), stack); }
-  void push_fp(FloatRegSet regs, Register stack) { if (regs.bits()) push_fp(regs.bits(), stack); }
-  void pop_fp(FloatRegSet regs, Register stack)  { if (regs.bits()) pop_fp(regs.bits(), stack); }
+
+  int push_reg(RegSet regset, Register stack);
+  int pop_reg(RegSet regset, Register stack);
+
+  int push_fp(FloatRegSet regset, Register stack);
+  int pop_fp(FloatRegSet regset, Register stack);
+
 #ifdef COMPILER2
-  void push_v(VectorRegSet regs, Register stack) { if (regs.bits()) push_v(regs.bits(), stack); }
-  void pop_v(VectorRegSet regs, Register stack)  { if (regs.bits()) pop_v(regs.bits(), stack); }
+  int push_v(VectorRegSet regset, Register stack);
+  int pop_v(VectorRegSet regset, Register stack);
 #endif // COMPILER2
 
   // Push and pop everything that might be clobbered by a native
@@ -849,16 +904,13 @@ public:
   void push_cont_fastpath(Register java_thread = xthread);
   void pop_cont_fastpath(Register java_thread = xthread);
 
-  void inc_held_monitor_count(Register tmp);
-  void dec_held_monitor_count(Register tmp);
-
   // if heap base register is used - reinit it with the correct value
   void reinit_heapbase();
 
   void bind(Label& L) {
     Assembler::bind(L);
     // fences across basic blocks should not be merged
-    code()->clear_last_insn();
+    code()->clear_last_merge_candidate();
   }
 
   typedef void (MacroAssembler::* compare_and_branch_insn)(Register Rs1, Register Rs2, const address dest);
@@ -1141,6 +1193,58 @@ public:
 
 #undef INSN
 
+#define INSN(NAME, LOAD_INSN, ZALASR_INSN, BITS)                               \
+  void NAME(Register Rd, Register Rs1) {                                       \
+    if (UseZalasr) {                                                           \
+      Assembler::ZALASR_INSN(Rd, Rs1);                                         \
+      zext(Rd, Rd, BITS);                                                      \
+    } else {                                                                   \
+      Assembler::LOAD_INSN(Rd, Rs1, 0);                                        \
+      membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);            \
+    }                                                                          \
+  }
+
+INSN(lbu_acquire, lbu, lb_aq,  8);
+INSN(lhu_acquire, lhu, lh_aq, 16);
+INSN(lwu_acquire, lwu, lw_aq, 32);
+
+#undef INSN
+
+  void lw_acquire(Register Rd, Register Rs1) {
+    if (UseZalasr) {
+      Assembler::lw_aq(Rd, Rs1);
+    } else {
+      Assembler::lw(Rd, Rs1, 0);
+      membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
+    }
+  }
+
+  void ld_acquire(Register Rd, Register Rs1) {
+    if (UseZalasr) {
+      Assembler::ld_aq(Rd, Rs1);
+    } else {
+      Assembler::ld(Rd, Rs1, 0);
+      membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
+    }
+  }
+
+#define INSN(NAME, STORE_INSN, ZALASR_INSN)                                    \
+  void NAME(Register Rs2, Register Rs1) {                                      \
+    if (UseZalasr) {                                                           \
+      Assembler::ZALASR_INSN(Rs2, Rs1);                                        \
+    } else {                                                                   \
+      membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);          \
+      Assembler::STORE_INSN(Rs2, Rs1, 0);                                      \
+    }                                                                          \
+  }
+
+INSN(sb_release, sb, sb_rl);
+INSN(sh_release, sh, sh_rl);
+INSN(sw_release, sw, sw_rl);
+INSN(sd_release, sd, sd_rl);
+
+#undef INSN
+
 #define INSN(NAME)                                                                                 \
   void NAME(FloatRegister Rs, address dest, Register temp = t0) {                                  \
     assert_cond(dest != nullptr);                                                                  \
@@ -1185,17 +1289,15 @@ public:
 
 #undef INSN_ENTRY_RELOC
 
-  void cmpxchg_obj_header(Register oldv, Register newv, Register obj, Register tmp, Label &succeed, Label *fail);
-  void cmpxchgptr(Register oldv, Register newv, Register addr, Register tmp, Label &succeed, Label *fail);
   void cmpxchg(Register addr, Register expected,
                Register new_val,
                Assembler::operand_size size,
-               Assembler::Aqrl acquire, Assembler::Aqrl release,
+               enum atomic_memory_order order,
                Register result, bool result_as_bool = false);
   void weak_cmpxchg(Register addr, Register expected,
                     Register new_val,
                     Assembler::operand_size size,
-                    Assembler::Aqrl acquire, Assembler::Aqrl release,
+                    enum atomic_memory_order order,
                     Register result);
   void cmpxchg_narrow_value_helper(Register addr, Register expected, Register new_val,
                                    Assembler::operand_size size,
@@ -1203,13 +1305,13 @@ public:
   void cmpxchg_narrow_value(Register addr, Register expected,
                             Register new_val,
                             Assembler::operand_size size,
-                            Assembler::Aqrl acquire, Assembler::Aqrl release,
+                            enum atomic_memory_order order,
                             Register result, bool result_as_bool,
                             Register tmp1, Register tmp2, Register tmp3);
   void weak_cmpxchg_narrow_value(Register addr, Register expected,
                                  Register new_val,
                                  Assembler::operand_size size,
-                                 Assembler::Aqrl acquire, Assembler::Aqrl release,
+                                 enum atomic_memory_order order,
                                  Register result,
                                  Register tmp1, Register tmp2, Register tmp3);
 
@@ -1240,10 +1342,13 @@ public:
   void far_jump(const Address &entry, Register tmp = t1);
 
   static int far_branch_size() {
-      return 2 * 4;  // auipc + jalr, see far_call() & far_jump()
+      return 2 * MacroAssembler::instruction_size;  // auipc + jalr, see far_call() & far_jump()
   }
 
   void load_byte_map_base(Register reg);
+
+  // Load a constant address in the AOT Runtime Constants area
+  void load_aotrc_address(Register reg, address a);
 
   void bang_stack_with_offset(int offset) {
     // stack grows down, caller passes positive offset
@@ -1261,6 +1366,8 @@ public:
   // Frame creation and destruction shared between JITs.
   void build_frame(int framesize);
   void remove_frame(int framesize);
+
+  void verified_entry(Compile* C, int sp_inc);
 
   void reserved_stack_check();
 
@@ -1295,8 +1402,8 @@ public:
   //     address stub:
   //       <64-bit destination address>
   //
-  //    To change the destination we simply atomically store the new
-  //    address in the stub section.
+  //    Retargeting atomically updates the address slot and may replace the final
+  //    jalr with jal, or vice versa, via optimize_call().
   //    There is a benign race in that the other thread might observe the old
   //    64-bit destination address before it observes the new address. That does
   //    not matter because the destination method has been invalidated, so there
@@ -1330,11 +1437,11 @@ public:
   void decrement(const Address dst, int64_t value = 1, Register tmp1 = t0, Register tmp2 = t1);
   void decrementw(const Address dst, int32_t value = 1, Register tmp1 = t0, Register tmp2 = t1);
 
-  void cmpptr(Register src1, const Address &src2, Label& equal, Register tmp = t0);
-
   void clinit_barrier(Register klass, Register tmp, Label* L_fast_path = nullptr, Label* L_slow_path = nullptr);
+
   void load_method_holder_cld(Register result, Register method);
   void load_method_holder(Register holder, Register method);
+  void load_metadata(Register dst, Register src);
 
   void compute_index(Register str1, Register trailing_zeros, Register match_mask,
                      Register result, Register char_tmp, Register tmp,
@@ -1350,6 +1457,23 @@ public:
         Register table0, Register table1, Register table2, Register table3,
         bool upper);
   void update_byte_crc32(Register crc, Register val, Register table);
+
+  // CRC32C code for java.util.zip.CRC32C::updateBytes() intrinsic,
+  // accelerated with Zbc carry-less multiplication (clmul/clmulh).
+  void kernel_crc32c(Register crc, Register buf, Register len,
+        Register byte_table, Register clmul_table,
+        Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5, Register tmp6);
+  void kernel_crc32c_clmul_fold(Register crc, Register buf, Register len,
+        Register byte_table, Register clmul_table,
+        Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5, Register tmp6);
+  void kernel_crc32c_clmul_align(Register crc, Register buf, Register len,
+        Register table, Register tmp1, Register tmp2);
+  void kernel_crc32c_clmul_fold_128(Register accum_lo, Register accum_hi,
+        Register k1, Register k2, Register buf, Register tmp1, Register tmp2);
+  void kernel_crc32c_clmul_reduce_128_to_64(Register accum_lo, Register accum_hi,
+        Register clmul_table, Register k, Register tmp1, Register tmp2);
+  void kernel_crc32c_clmul_barrett_64_to_32(Register accum_lo, Register clmul_table,
+        Register k, Register tmp);
 
 #ifdef COMPILER2
   void vector_update_crc32(Register crc, Register buf, Register len,
@@ -1411,10 +1535,10 @@ public:
   address zero_words(Register ptr, Register cnt);
   void fill_words(Register base, Register cnt, Register value);
   void zero_memory(Register addr, Register len, Register tmp);
-  void zero_dcache_blocks(Register base, Register cnt, Register tmp1, Register tmp2);
+  void shift_left_add(Register Rd, Register Rs1, Register Rs2, int shamt);
+  void shift_left_add(Register Rd, Register Rs1, Register Rs2, int shamt, Register tmp);
 
-  // shift left by shamt and add
-  void shadd(Register Rd, Register Rs1, Register Rs2, Register tmp, int shamt);
+  void shadd(Register Rd, Register Rs1, Register Rs2, int shamt);
 
   // test single bit in Rs, result is set to Rd
   void test_bit(Register Rd, Register Rs, uint32_t bit_pos);
@@ -1430,6 +1554,16 @@ public:
 
   void java_round_float(Register dst, FloatRegister src, FloatRegister ftmp);
   void java_round_double(Register dst, FloatRegister src, FloatRegister ftmp);
+
+  // Helper routine processing the slow path of NaN when converting float to float16
+  void float_to_float16_NaN(Register dst, FloatRegister src, Register tmp1, Register tmp2);
+
+  // j.l.Float.float16ToFloat and j.l.Float.floatToFloat16, with the NaN handling
+  // emitted inline. C2 uses C2_MacroAssembler::float16_to_float() and
+  // C2_MacroAssembler::float_to_float16() instead, which keep it out of line.
+  // Both clobber t0 and t1.
+  void flt16_to_flt(FloatRegister dst, Register src);
+  void flt_to_flt16(Register dst, FloatRegister src, FloatRegister ftmp);
 
   // vector load/store unit-stride instructions
   void vlex_v(VectorRegister vd, Register base, Assembler::SEW sew, VectorMask vm = unmasked) {
@@ -1469,11 +1603,15 @@ public:
   }
 
   // vector pseudo instructions
-  // rotate vector register left with shift bits, 32-bit version
+  // Rotate 32-bit vector elements left. The caller must configure SEW=32.
   inline void vrole32_vi(VectorRegister vd, uint32_t shift, VectorRegister tmp_vr) {
-    vsrl_vi(tmp_vr, vd, 32 - shift);
-    vsll_vi(vd, vd, shift);
-    vor_vv(vd, vd, tmp_vr);
+    if (UseZvbb) {
+      vror_vi(vd, vd, 32 - shift);
+    } else {
+      vsrl_vi(tmp_vr, vd, 32 - shift);
+      vsll_vi(vd, vd, shift);
+      vor_vv(vd, vd, tmp_vr);
+    }
   }
 
   inline void vl1r_v(VectorRegister vd, Register rs) {
@@ -1588,6 +1726,8 @@ public:
   void zext(Register dst, Register src, int bits);
   void sext(Register dst, Register src, int bits);
 
+  void narrow_subword_type(Register reg, BasicType bt);
+
 private:
   void cmp_x2i(Register dst, Register src1, Register src2, Register tmp, bool is_signed = true);
 
@@ -1614,9 +1754,8 @@ public:
                    int* receiver_offset);
 
 #ifdef ASSERT
-  // Template short-hand support to clean-up after a failed call to trampoline
-  // call generation (see trampoline_call() below), when a set of Labels must
-  // be reset (before returning).
+  // Reset labels that would otherwise remain unbound when returning
+  // after a failed reloc_call().
   template<typename Label, typename... More>
   void reset_labels(Label& lbl, More&... more) {
     lbl.reset(); reset_labels(more...);
@@ -1638,15 +1777,15 @@ private:
   void store_conditional(Register dst, Register new_val, Register addr, Assembler::operand_size size, Assembler::Aqrl release);
 
 public:
-  void lightweight_lock(Register basic_lock, Register obj, Register tmp1, Register tmp2, Register tmp3, Label& slow);
-  void lightweight_unlock(Register obj, Register tmp1, Register tmp2, Register tmp3, Label& slow);
+  void fast_lock(Register basic_lock, Register obj, Register tmp1, Register tmp2, Register tmp3, Label& slow);
+  void fast_unlock(Register obj, Register tmp1, Register tmp2, Register tmp3, Label& slow);
 
 public:
   enum {
     // movptr
-    movptr1_instruction_size = 6 * instruction_size, // lui, addi, slli, addi, slli, addi.  See movptr1().
-    movptr2_instruction_size = 5 * instruction_size, // lui, lui, slli, add, addi.  See movptr2().
-    load_pc_relative_instruction_size = 2 * instruction_size // auipc, ld
+    movptr1_instruction_size = 6 * MacroAssembler::instruction_size, // lui, addi, slli, addi, slli, addi.  See movptr1().
+    movptr2_instruction_size = 5 * MacroAssembler::instruction_size, // lui, lui, slli, add, addi.  See movptr2().
+    load_pc_relative_instruction_size = 2 * MacroAssembler::instruction_size // auipc, ld
   };
 
   static bool is_load_pc_relative_at(address branch);
@@ -1671,7 +1810,7 @@ public:
     assert_cond(instr != nullptr);
     return extract_opcode(instr) == 0b0010011 &&
            extract_funct3(instr) == 0b101 &&
-           Assembler::extract(((unsigned*)instr)[0], 31, 26) == 0b000000;
+           Assembler::extract(Assembler::ld_instr(instr), 31, 26) == 0b000000;
   }
 
   static bool is_slli_shift_at(address instr, uint32_t shift) {
@@ -1701,11 +1840,11 @@ public:
   //     addi/jalr/load
   static bool check_movptr1_data_dependency(address instr) {
     address lui = instr;
-    address addi1 = lui + instruction_size;
-    address slli1 = addi1 + instruction_size;
-    address addi2 = slli1 + instruction_size;
-    address slli2 = addi2 + instruction_size;
-    address last_instr = slli2 + instruction_size;
+    address addi1 = lui + MacroAssembler::instruction_size;
+    address slli1 = addi1 + MacroAssembler::instruction_size;
+    address addi2 = slli1 + MacroAssembler::instruction_size;
+    address slli2 = addi2 + MacroAssembler::instruction_size;
+    address last_instr = slli2 + MacroAssembler::instruction_size;
     return extract_rs1(addi1) == extract_rd(lui) &&
            extract_rs1(addi1) == extract_rd(addi1) &&
            extract_rs1(slli1) == extract_rd(addi1) &&
@@ -1725,10 +1864,10 @@ public:
   //     addi/jalr/load
   static bool check_movptr2_data_dependency(address instr) {
     address lui1 = instr;
-    address lui2 = lui1 + instruction_size;
-    address slli = lui2 + instruction_size;
-    address add  = slli + instruction_size;
-    address last_instr = add + instruction_size;
+    address lui2 = lui1 + MacroAssembler::instruction_size;
+    address slli = lui2 + MacroAssembler::instruction_size;
+    address add  = slli + MacroAssembler::instruction_size;
+    address last_instr = add + MacroAssembler::instruction_size;
     return extract_rd(add) == extract_rd(lui2) &&
            extract_rs1(add) == extract_rd(lui2) &&
            extract_rs2(add) == extract_rd(slli) &&
@@ -1742,7 +1881,7 @@ public:
   //     srli
   static bool check_li16u_data_dependency(address instr) {
     address lui = instr;
-    address srli = lui + instruction_size;
+    address srli = lui + MacroAssembler::instruction_size;
 
     return extract_rs1(srli) == extract_rd(lui) &&
            extract_rs1(srli) == extract_rd(srli);
@@ -1753,7 +1892,7 @@ public:
   //     addiw
   static bool check_li32_data_dependency(address instr) {
     address lui = instr;
-    address addiw = lui + instruction_size;
+    address addiw = lui + MacroAssembler::instruction_size;
 
     return extract_rs1(addiw) == extract_rd(lui) &&
            extract_rs1(addiw) == extract_rd(addiw);
@@ -1764,7 +1903,7 @@ public:
   //     jalr/addi/load/float_load
   static bool check_pc_relative_data_dependency(address instr) {
     address auipc = instr;
-    address last_instr = auipc + instruction_size;
+    address last_instr = auipc + MacroAssembler::instruction_size;
 
     return extract_rs1(last_instr) == extract_rd(auipc);
   }
@@ -1774,7 +1913,7 @@ public:
   //     load
   static bool check_load_pc_relative_data_dependency(address instr) {
     address auipc = instr;
-    address load = auipc + instruction_size;
+    address load = auipc + MacroAssembler::instruction_size;
 
     return extract_rd(load) == extract_rd(auipc) &&
            extract_rs1(load) == extract_rd(load);
@@ -1784,10 +1923,14 @@ public:
   static bool is_pc_relative_at(address branch);
 
   static bool is_membar(address addr) {
-    return (Bytes::get_native_u4(addr) & 0x7f) == 0b1111 && extract_funct3(addr) == 0;
+    return (Assembler::ld_instr(addr) & 0x7f) == 0b1111 && extract_funct3(addr) == 0;
   }
   static uint32_t get_membar_kind(address addr);
   static void set_membar_kind(address addr, uint32_t order_kind);
+
+ public:
+  // Value type specific methods
+  #include "asm/macroAssembler_common.hpp"
 };
 
 #ifdef ASSERT

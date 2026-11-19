@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,8 @@ public class GenericRecordDeconstructionPattern {
         testInference3();
         assertEquals(1, runIfSuperBound(new Box<>(new StringBuilder())));
         assertEquals(1, runIfSuperBound(new Box<>(0)));
+        assertEquals(1, new PairBox<String, Integer>("", 0)
+                .selfSuperInference(new PairBox<>("x", 1)));
     }
 
     void runTest(Function<Box<String>, Integer> test) {
@@ -122,6 +124,18 @@ public class GenericRecordDeconstructionPattern {
 
     sealed interface I<T> {}
     record Box<V>(V v) implements I<V> {
+    }
+
+    interface PairI<A, B> {}
+    record PairBox<A, B>(A a, B b) implements PairI<A, B> {
+        int selfSuperInference(PairI<A, B> p) {
+            if (p instanceof PairBox(var a, var b)) {
+                A aa = a;
+                B bb = b;
+                return 1;
+            }
+            return -1;
+        }
     }
 
     void assertEquals(Object expected, Object actual) {

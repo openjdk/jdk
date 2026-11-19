@@ -34,6 +34,7 @@ import java.util.Set;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.UnboundAttribute;
 import jdk.internal.classfile.impl.Util;
+import jdk.internal.reflect.PreviewAccessFlags;
 
 /**
  * Models a single entry in the {@link InnerClassesAttribute}.
@@ -68,8 +69,7 @@ public sealed interface InnerClassInfo
 
     /**
      * {@return a bit mask of flags denoting access permissions and properties
-     * of the inner class}  It is in the range of unsigned short, {@code [0,
-     * 0xFFFF]}.
+     * of the inner class}  It is a {@link java.lang.classfile##u2 u2} value.
      *
      * @see Class#getModifiers()
      * @see AccessFlag.Location#INNER_CLASS
@@ -85,7 +85,7 @@ public sealed interface InnerClassInfo
      * @see AccessFlag.Location#INNER_CLASS
      */
     default Set<AccessFlag> flags() {
-        return AccessFlag.maskToAccessFlags(flagsMask(), AccessFlag.Location.INNER_CLASS);
+        return PreviewAccessFlags.maskToAccessFlags(flagsMask(), AccessFlag.Location.INNER_CLASS);
     }
 
     /**
@@ -104,6 +104,8 @@ public sealed interface InnerClassInfo
      * @param outerClass the class that has the nested class as a member, if it exists
      * @param innerName the simple name of the nested class, if it is not anonymous
      * @param flags the inner class access flags
+     * @throws IllegalArgumentException if {@code flags} is not {@link
+     *         java.lang.classfile##u2 u2}
      */
     static InnerClassInfo of(ClassEntry innerClass, Optional<ClassEntry> outerClass,
                              Optional<Utf8Entry> innerName, int flags) {
@@ -116,7 +118,9 @@ public sealed interface InnerClassInfo
      * @param outerClass the class that has the nested class as a member, if it exists
      * @param innerName the simple name of the nested class, if it is not anonymous
      * @param flags the inner class access flags
-     * @throws IllegalArgumentException if {@code innerClass} or {@code outerClass} represents a primitive type
+     * @throws IllegalArgumentException if {@code innerClass} or {@code outerClass}
+     *         represents a primitive type, or if {@code flags} is not {@link
+     *         java.lang.classfile##u2 u2}
      */
     static InnerClassInfo of(ClassDesc innerClass, Optional<ClassDesc> outerClass, Optional<String> innerName, int flags) {
         return new UnboundAttribute.UnboundInnerClassInfo(TemporaryConstantPool.INSTANCE.classEntry(innerClass),

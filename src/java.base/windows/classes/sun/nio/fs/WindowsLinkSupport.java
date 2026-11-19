@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ class WindowsLinkSupport {
     }
 
     /**
-     * Creates a symbolic link, retyring if not privileged
+     * Creates a symbolic link, retrying if not privileged
      */
     static void createSymbolicLink(String link, String target, int flags)
         throws WindowsException
@@ -84,7 +84,7 @@ class WindowsLinkSupport {
             x.rethrowAsIOException(path);
         }
         try {
-            return readLinkImpl(path, handle);
+            return readLink(path, handle);
         } finally {
             CloseHandle(handle);
         }
@@ -148,7 +148,7 @@ class WindowsLinkSupport {
             try {
                 WindowsFileAttributes attrs =
                     WindowsFileAttributes.get(target, false);
-                // non a link so we are done
+                // not a link so we are done
                 if (!attrs.isSymbolicLink()) {
                     return target.getPathForWin32Calls();
                 }
@@ -207,7 +207,7 @@ class WindowsLinkSupport {
         char c1 = path.charAt(1);
         if ((c0 <= 'z' && c0 >= 'a' || c0 <= 'Z' && c0 >= 'A') &&
             c1 == ':' && path.charAt(2) == '\\') {
-            // Driver specifier
+            // Drive specifier
             sb.append(Character.toUpperCase(c0));
             sb.append(":\\");
             start = 3;
@@ -289,18 +289,19 @@ class WindowsLinkSupport {
      * Returns target of a symbolic link given the handle of an open file
      * (that should be a link).
      */
-    private static String readLinkImpl(WindowsPath path, long handle)
-        throws IOException
-    {
+    static String readLink(WindowsPath path, long handle) throws IOException {
         int size = MAXIMUM_REPARSE_DATA_BUFFER_SIZE;
+        String pathname = path.getPathForExceptionMessage();
         try (NativeBuffer buffer = NativeBuffers.getNativeBuffer(size)) {
+            int bytesReturned;
             try {
-                DeviceIoControlGetReparsePoint(handle, buffer.address(), size);
+                bytesReturned = DeviceIoControl(handle, FSCTL_GET_REPARSE_POINT,
+                                                buffer.address(), size);
             } catch (WindowsException x) {
-                String pathname = path.getPathForExceptionMessage();
-                if (x.lastError() == ERROR_NOT_A_REPARSE_POINT)
+                if (x.lastError() == ERROR_NOT_A_REPARSE_POINT) {
                     throw new NotLinkException(pathname, null, x.errorString());
-                x.rethrowAsIOException(pathname + ": " + x.errorString());
+                }
+                throw x.asIOException(path);
             }
 
             /*
@@ -314,6 +315,7 @@ class WindowsLinkSupport {
              *             USHORT  SubstituteNameLength;
              *             USHORT  PrintNameOffset;
              *             USHORT  PrintNameLength;
+             *             ULONG   Flags;
              *             WCHAR  PathBuffer[1];
              *         } SymbolicLinkReparseBuffer;
              *         struct {
@@ -330,21 +332,41 @@ class WindowsLinkSupport {
              * } REPARSE_DATA_BUFFER
              */
             final short OFFSETOF_REPARSETAG = 0;
+            final short OFFSETOF_REPARSEDATALENGTH = 4;
             final short OFFSETOF_PATHOFFSET = 8;
             final short OFFSETOF_PATHLENGTH = 10;
-            final short OFFSETOF_PATHBUFFER = 16 + 4;   // check this
+            final short OFFSETOF_PATHBUFFER = 20;
+            final short SIZEOF_REPARSE_DATA_BUFFER_HEADER = 8;
+            final short SIZEOF_SYMLINK_REPARSE_BUFFER = 12;
 
-            int tag = (int)unsafe.getLong(buffer.address() + OFFSETOF_REPARSETAG);
+            int tag = unsafe.getInt(buffer.address() + OFFSETOF_REPARSETAG);
             if (tag != IO_REPARSE_TAG_SYMLINK) {
-                String pathname = path.getPathForExceptionMessage();
                 throw new NotLinkException(pathname, null, "Reparse point is not a symbolic link");
             }
 
-            // get offset and length of target
-            short nameOffset = unsafe.getShort(buffer.address() + OFFSETOF_PATHOFFSET);
-            short nameLengthInBytes = unsafe.getShort(buffer.address() + OFFSETOF_PATHLENGTH);
-            if ((nameLengthInBytes % 2) != 0)
-                throw new FileSystemException(null, null, "Symbolic link corrupted");
+            // minimum size of valid symbolic-link REPARSE_DATA_BUFFER is 20 bytes
+            if (bytesReturned < OFFSETOF_PATHBUFFER) {
+                throw new NotLinkException(pathname, null, "Symbolic link corrupted");
+            }
+
+            int reparseDataLength = Short.toUnsignedInt(
+                unsafe.getShort(buffer.address() + OFFSETOF_REPARSEDATALENGTH));
+            int nameOffset = Short.toUnsignedInt(
+                unsafe.getShort(buffer.address() + OFFSETOF_PATHOFFSET));
+            int nameLengthInBytes = Short.toUnsignedInt(
+                unsafe.getShort(buffer.address() + OFFSETOF_PATHLENGTH));
+            int pathBufferSize = reparseDataLength - SIZEOF_SYMLINK_REPARSE_BUFFER;
+
+            // returned data must contain the fixed fields and an even-length
+            // UTF-16 name whose offset and length are within the path buffer
+            if ((reparseDataLength < SIZEOF_SYMLINK_REPARSE_BUFFER)
+                    || (reparseDataLength > bytesReturned - SIZEOF_REPARSE_DATA_BUFFER_HEADER)
+                    || ((nameOffset & 1) != 0)
+                    || ((nameLengthInBytes & 1) != 0)
+                    || (nameOffset > pathBufferSize)
+                    || (nameLengthInBytes > pathBufferSize - nameOffset)) {
+                throw new NotLinkException(pathname, null, "Symbolic link corrupted");
+            }
 
             // copy into char array
             char[] name = new char[nameLengthInBytes/2];
@@ -354,14 +376,16 @@ class WindowsLinkSupport {
             // remove special prefix
             String target = stripPrefix(new String(name));
             if (target.isEmpty()) {
-                throw new IOException("Symbolic link target is invalid");
+                throw new NotLinkException(pathname, null, "Symbolic link target is empty");
             }
-            return target;
+
+            // return normalized path string
+            return WindowsPathParser.parse(target).path();
         }
     }
 
     /**
-     * Resolve all symbolic-links in a given absolute and normalized path
+     * Resolve all symbolic links in a given absolute and normalized path
      */
     private static WindowsPath resolveAllLinks(WindowsPath path)
         throws IOException

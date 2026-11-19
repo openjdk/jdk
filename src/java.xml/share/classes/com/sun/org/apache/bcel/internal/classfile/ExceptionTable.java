@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -27,6 +27,7 @@ import java.util.Arrays;
 
 import com.sun.org.apache.bcel.internal.Const;
 import com.sun.org.apache.bcel.internal.util.Args;
+import jdk.xml.internal.Utils;
 
 /**
  * This class represents the table of exceptions that are thrown by a method. This attribute may be used once per
@@ -42,8 +43,9 @@ import com.sun.org.apache.bcel.internal.util.Args;
  *   u2 exception_index_table[number_of_exceptions];
  * }
  * </pre>
+ *
  * @see Code
- * @LastModified: Feb 2023
+ * @LastModified: Nov 2026
  */
 public final class ExceptionTable extends Attribute {
 
@@ -60,40 +62,38 @@ public final class ExceptionTable extends Attribute {
     }
 
     /**
-     * Construct object from input stream.
+     * Constructs object from input stream.
      *
-     * @param nameIndex Index in constant pool
-     * @param length Content length in bytes
-     * @param input Input stream
-     * @param constantPool Array of constants
-     * @throws IOException if an I/O error occurs.
+     * @param nameIndex Index in constant pool.
+     * @param length Content length in bytes.
+     * @param input Input stream.
+     * @param constantPool Array of constants.
+     * @throws IOException Thrown if an I/O error occurs.
      */
     ExceptionTable(final int nameIndex, final int length, final DataInput input, final ConstantPool constantPool) throws IOException {
         this(nameIndex, length, (int[]) null, constantPool);
-        final int exceptionCount = input.readUnsignedShort();
-        exceptionIndexTable = new int[exceptionCount];
-        for (int i = 0; i < exceptionCount; i++) {
-            exceptionIndexTable[i] = input.readUnsignedShort();
-        }
+        exceptionIndexTable = ClassParser.readU2U2Table(input);
     }
 
     /**
-     * @param nameIndex Index in constant pool
-     * @param length Content length in bytes
-     * @param exceptionIndexTable Table of indices in constant pool
-     * @param constantPool Array of constants
+     * Constructs an ExceptionTable.
+     *
+     * @param nameIndex Index in constant pool.
+     * @param length Content length in bytes.
+     * @param exceptionIndexTable Table of indices in constant pool.
+     * @param constantPool Array of constants.
      */
     public ExceptionTable(final int nameIndex, final int length, final int[] exceptionIndexTable, final ConstantPool constantPool) {
         super(Const.ATTR_EXCEPTIONS, nameIndex, length, constantPool);
-        this.exceptionIndexTable = exceptionIndexTable != null ? exceptionIndexTable : Const.EMPTY_INT_ARRAY;
+        this.exceptionIndexTable = Utils.createEmptyArrayIfNull(exceptionIndexTable);
         Args.requireU2(this.exceptionIndexTable.length, "exceptionIndexTable.length");
     }
 
     /**
      * Called by objects that are traversing the nodes of the tree implicitly defined by the contents of a Java class.
-     * I.e., the hierarchy of methods, fields, attributes, etc. spawns a tree of objects.
+     * That is, the hierarchy of methods, fields, attributes, and so on spawns a tree of objects.
      *
-     * @param v Visitor object
+     * @param v Visitor object.
      */
     @Override
     public void accept(final Visitor v) {
@@ -101,7 +101,9 @@ public final class ExceptionTable extends Attribute {
     }
 
     /**
-     * @return deep copy of this attribute
+     * Creates a deep copy of this attribute.
+     *
+     * @return deep copy of this attribute.
      */
     @Override
     public Attribute copy(final ConstantPool constantPool) {
@@ -114,21 +116,23 @@ public final class ExceptionTable extends Attribute {
     }
 
     /**
-     * Dump exceptions attribute to file stream in binary format.
+     * Dumps exceptions attribute to file stream in binary format.
      *
-     * @param file Output file stream
-     * @throws IOException if an I/O error occurs.
+     * @param file Output file stream.
+     * @throws IOException Thrown if an I/O error occurs.
      */
     @Override
     public void dump(final DataOutputStream file) throws IOException {
         super.dump(file);
-        file.writeShort(exceptionIndexTable.length);
+        file.writeShort(Args.requireU2(exceptionIndexTable.length, "exceptionIndexTable.length"));
         for (final int index : exceptionIndexTable) {
             file.writeShort(index);
         }
     }
 
     /**
+     * Gets the array of indices into constant pool of thrown exceptions.
+     *
      * @return Array of indices into constant pool of thrown exceptions.
      */
     public int[] getExceptionIndexTable() {
@@ -136,7 +140,9 @@ public final class ExceptionTable extends Attribute {
     }
 
     /**
-     * @return class names of thrown exceptions
+     * Gets the class names of thrown exceptions.
+     *
+     * @return class names of thrown exceptions.
      */
     public String[] getExceptionNames() {
         final String[] names = new String[exceptionIndexTable.length];
@@ -145,6 +151,8 @@ public final class ExceptionTable extends Attribute {
     }
 
     /**
+     * Gets the length of exception table.
+     *
      * @return Length of exception table.
      */
     public int getNumberOfExceptions() {
@@ -152,15 +160,17 @@ public final class ExceptionTable extends Attribute {
     }
 
     /**
-     * @param exceptionIndexTable the list of exception indexes Also redefines number_of_exceptions according to table
+     * Sets the exception index table.
+     *
+     * @param exceptionIndexTable The list of exception indexes Also redefines number_of_exceptions according to table
      *        length.
      */
     public void setExceptionIndexTable(final int[] exceptionIndexTable) {
-        this.exceptionIndexTable = exceptionIndexTable != null ? exceptionIndexTable : Const.EMPTY_INT_ARRAY;
+        this.exceptionIndexTable = Utils.createEmptyArrayIfNull(exceptionIndexTable);
     }
 
     /**
-     * @return String representation, i.e., a list of thrown exceptions.
+     * @return String representation, that is, a list of thrown exceptions.
      */
     @Override
     public String toString() {

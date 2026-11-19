@@ -64,16 +64,22 @@ template <unsigned int key_bits=16,
 struct hb_cache_t
 {
   using item_t = typename std::conditional<thread_safe,
-                                           typename std::conditional<key_bits + value_bits - cache_bits <= 16,
-                                                                     hb_atomic_t<unsigned short>,
-                                                                     hb_atomic_t<unsigned int>>::type,
-                                           typename std::conditional<key_bits + value_bits - cache_bits <= 16,
-                                                                     unsigned short,
-                                                                     unsigned int>::type
+                                           typename std::conditional<key_bits + value_bits - cache_bits <= 8,
+                                                                     hb_atomic_t<unsigned char>,
+                                                                     typename std::conditional<key_bits + value_bits - cache_bits <= 16,
+                                                                                               hb_atomic_t<unsigned short>,
+                                                                                               hb_atomic_t<unsigned int>>::type>::type,
+                                           typename std::conditional<key_bits + value_bits - cache_bits <= 8,
+                                                                     unsigned char,
+                                                                     typename std::conditional<key_bits + value_bits - cache_bits <= 16,
+                                                                                               unsigned short,
+                                                                                               unsigned int>::type>::type
                                           >::type;
 
   static_assert ((key_bits >= cache_bits), "");
   static_assert ((key_bits + value_bits <= cache_bits + 8 * sizeof (item_t)), "");
+
+  static constexpr unsigned MAX_VALUE = (1u << value_bits) - 1;
 
   hb_cache_t () { clear (); }
 
@@ -83,25 +89,29 @@ struct hb_cache_t
       v = -1;
   }
 
+  HB_HOT
   bool get (unsigned int key, unsigned int *value) const
   {
     unsigned int k = key & ((1u<<cache_bits)-1);
     unsigned int v = values[k];
-    if ((key_bits + value_bits - cache_bits == 8 * sizeof (item_t) && v == (unsigned int) -1) ||
-        (v >> value_bits) != (key >> cache_bits))
+    constexpr unsigned int empty = (1ULL << (8 * sizeof (item_t))) - 1;
+    /* Combine overflow, tag mismatch, and empty checks into one branch. */
+    if ((key >> key_bits) |
+        ((v >> value_bits) ^ (key >> cache_bits)) |
+        ((key_bits + value_bits - cache_bits == 8 * sizeof (item_t)) && (v == empty)))
       return false;
     *value = v & ((1u<<value_bits)-1);
     return true;
   }
 
-  bool set (unsigned int key, unsigned int value)
+  HB_HOT
+  void set (unsigned int key, unsigned int value)
   {
     if (unlikely ((key >> key_bits) || (value >> value_bits)))
-      return false; /* Overflows */
+      return; /* Overflows */
     unsigned int k = key & ((1u<<cache_bits)-1);
     unsigned int v = ((key>>cache_bits)<<value_bits) | value;
     values[k] = v;
-    return true;
   }
 
   private:

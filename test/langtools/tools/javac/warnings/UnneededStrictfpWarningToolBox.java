@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,8 +116,8 @@ public class UnneededStrictfpWarningToolBox extends TestRunner {
         var expected = List.of("UnneededStrictfpWarning1.java:1:17: compiler.warn.strictfp",
                                "UnneededStrictfpWarning1.java:10:10: compiler.warn.strictfp",
                                "UnneededStrictfpWarning1.java:12:29: compiler.warn.strictfp",
-                               "UnneededStrictfpWarning1.java:16:28: compiler.warn.strictfp",
                                "UnneededStrictfpWarning1.java:18:21: compiler.warn.strictfp",
+                               "UnneededStrictfpWarning1.java:16:28: compiler.warn.strictfp",
                                "5 warnings");
         checkLog(log, expected);
     }

@@ -38,28 +38,36 @@
 #include "opto/runtime.hpp"
 #endif
 
-
-static address zero_null_code_stub() {
-  address start = ShouldNotCallThisStub();
-  return start;
-}
-
 int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
                                            VMRegPair *regs,
                                            int total_args_passed) {
   return 0;
 }
 
+int SharedRuntime::java_return_convention(const BasicType *sig_bt,
+                                           VMRegPair *regs,
+                                           int total_args_passed) {
+  Unimplemented();
+  return 0;
+}
+
+BufferedValueTypeBlob* SharedRuntime::generate_buffered_value_type_adapter(const ValueKlass* vk) {
+  Unimplemented();
+  return nullptr;
+}
+
 void SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm,
-                                            int total_args_passed,
                                             int comp_args_on_stack,
-                                            const BasicType *sig_bt,
-                                            const VMRegPair *regs,
-                                            AdapterHandlerEntry* handler) {
-  handler->set_entry_points(CAST_FROM_FN_PTR(address,zero_null_code_stub),
-                            CAST_FROM_FN_PTR(address,zero_null_code_stub),
-                            CAST_FROM_FN_PTR(address,zero_null_code_stub),
-                            nullptr);
+                                            const GrowableArray <SigEntry>* sig,
+                                            const VMRegPair* regs,
+                                            const GrowableArray <SigEntry>* sig_cc,
+                                            const VMRegPair* regs_cc,
+                                            const GrowableArray <SigEntry>* sig_cc_ro,
+                                            const VMRegPair* regs_cc_ro,
+                                            address entry_address[AdapterBlob::ENTRY_COUNT],
+                                            AdapterBlob*& new_adapter,
+                                            bool allocate_code_blob) {
+  ShouldNotCallThis();
   return;
 }
 
@@ -108,15 +116,15 @@ void SharedRuntime::generate_deopt_blob() {
   _deopt_blob = generate_empty_deopt_blob();
 }
 
-SafepointBlob* SharedRuntime::generate_handler_blob(SharedStubId id, address call_ptr) {
+SafepointBlob* SharedRuntime::generate_handler_blob(StubId id, address call_ptr) {
   return generate_empty_safepoint_blob();
 }
 
-RuntimeStub* SharedRuntime::generate_resolve_blob(SharedStubId id, address destination) {
+RuntimeStub* SharedRuntime::generate_resolve_blob(StubId id, address destination) {
   return generate_empty_runtime_stub();
 }
 
-RuntimeStub* SharedRuntime::generate_throw_exception(SharedStubId id, address runtime_entry) {
+RuntimeStub* SharedRuntime::generate_throw_exception(StubId id, address runtime_entry) {
   return generate_empty_runtime_stub();
 }
 
@@ -132,6 +140,13 @@ int SharedRuntime::vector_calling_convention(VMRegPair *regs,
                                              uint total_args_passed) {
   ShouldNotCallThis();
   return 0;
+}
+
+// Call here from the interpreter or compiled code to store returned
+// values to a newly allocated value type instance.
+RuntimeStub* SharedRuntime::generate_return_value_stub(address destination) {
+  Unimplemented();
+  return nullptr;
 }
 
 #if INCLUDE_JFR

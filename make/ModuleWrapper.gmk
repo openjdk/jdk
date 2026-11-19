@@ -34,18 +34,23 @@ include MakeFileStart.gmk
 ################################################################################
 
 include CopyFiles.gmk
+include Modules.gmk
 
 MODULE_SRC := $(TOPDIR)/src/$(MODULE)
 
-# Define the snippet for MakeSnippetStart/End
-THIS_SNIPPET := modules/$(MODULE)/$(MAKEFILE_PREFIX).gmk
+################################################################################
+# Include module specific build settings
 
-include MakeSnippetStart.gmk
+THIS_SNIPPET := $(call GetModuleSnippetName, $(MAKEFILE_PREFIX))
 
-# Include the file being wrapped.
-include $(THIS_SNIPPET)
+ifneq ($(wildcard $(THIS_SNIPPET)), )
+  include MakeSnippetStart.gmk
 
-include MakeSnippetEnd.gmk
+  # Include the file being wrapped.
+  include $(THIS_SNIPPET)
+
+  include MakeSnippetEnd.gmk
+endif
 
 ifeq ($(MAKEFILE_PREFIX), Lib)
   # We need to keep track of what libraries are generated/needed by this

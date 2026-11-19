@@ -237,8 +237,9 @@ public class TreeMaker implements JCTree.Factory {
         return tree;
     }
 
-    public JCVariableDecl VarDef(JCModifiers mods, Name name, JCExpression vartype, JCExpression init, boolean declaredUsingVar) {
-        JCVariableDecl tree = new JCVariableDecl(mods, name, vartype, init, null, declaredUsingVar);
+    public JCVariableDecl VarDef(JCModifiers mods, Name name, JCExpression vartype, JCExpression init,
+      JCVariableDecl.DeclKind declKind) {
+        JCVariableDecl tree = new JCVariableDecl(mods, name, vartype, init, null, declKind);
         tree.pos = pos;
         return tree;
     }
@@ -561,6 +562,12 @@ public class TreeMaker implements JCTree.Factory {
 
     public JCPrimitiveTypeTree TypeIdent(TypeTag typetag) {
         JCPrimitiveTypeTree tree = new JCPrimitiveTypeTree(typetag);
+        tree.pos = pos;
+        return tree;
+    }
+
+    public JCVarType VarType() {
+        JCVarType tree = new JCVarType();
         tree.pos = pos;
         return tree;
     }

@@ -59,6 +59,7 @@ import java.util.TreeSet;
 import java.util.concurrent.CompletableFuture;
 
 import static java.lang.String.format;
+import static jdk.internal.net.http.common.Utils.copyProxy;
 import static jdk.internal.net.http.common.Utils.isValidName;
 import static jdk.internal.net.http.common.Utils.stringOf;
 import static jdk.internal.util.Exceptions.filterNonSocketInfo;
@@ -369,7 +370,7 @@ public class OpeningHandshake {
         if (proxy.type() != Proxy.Type.HTTP) {
             return null;
         }
-        return proxy;
+        return copyProxy(proxy);
     }
 
 }

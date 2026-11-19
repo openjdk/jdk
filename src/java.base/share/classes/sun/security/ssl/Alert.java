@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,9 +34,9 @@ import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLProtocolException;
 
 /**
- * SSL/(D)TLS Alter description
+ * SSL/(D)TLS Alert description
  */
-enum Alert {
+public enum Alert {
     // Please refer to TLS Alert Registry for the latest (D)TLS Alert values:
     //     https://www.iana.org/assignments/tls-parameters/
     CLOSE_NOTIFY            ((byte)0,   "close_notify", false),
@@ -103,7 +103,7 @@ enum Alert {
         return null;
     }
 
-    static String nameOf(byte id) {
+    public static String nameOf(byte id) {
         for (Alert al : Alert.values()) {
             if (al.id == id) {
                 return al.description;
@@ -181,6 +181,18 @@ enum Alert {
 
         AlertMessage(TransportContext context,
                 ByteBuffer m) throws IOException {
+
+            // From RFC 8446: TLSv1.3
+            //
+            // Implementations MUST NOT send Handshake and Alert records that
+            // have a zero-length TLSInnerPlaintext.content; if such a message
+            // is received, the receiving implementation MUST terminate the
+            // connection with an "unexpected_message" alert.
+            if (m.remaining() == 0) {
+                throw context.fatal(Alert.UNEXPECTED_MESSAGE,
+                        "Alert fragments must not be zero length.");
+            }
+
             //  struct {
             //      AlertLevel level;
             //      AlertDescription description;
@@ -228,7 +240,7 @@ enum Alert {
             TransportContext tc = (TransportContext)context;
 
             AlertMessage am = new AlertMessage(tc, m);
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                 SSLLogger.fine("Received alert message", am);
             }
 
@@ -254,25 +266,39 @@ enum Alert {
             } else if ((level == Level.WARNING) && (alert != null)) {
                 // Terminate the connection if an alert with a level of warning
                 // is received during handshaking, except the no_certificate
-                // warning.
-                if (alert.handshakeOnly && (tc.handshakeContext != null)) {
-                    // It's OK to get a no_certificate alert from a client of
-                    // which we requested client authentication.  However,
-                    // if we required it, then this is not acceptable.
-                    if (tc.sslConfig.isClientMode ||
-                            alert != Alert.NO_CERTIFICATE ||
-                            (tc.sslConfig.clientAuthType !=
+                // warning for SSLv3.
+                HandshakeContext hc = tc.handshakeContext;
+                if (alert.handshakeOnly && (hc != null)) {
+                    // In SSLv3, it's OK to get a no_certificate alert from a
+                    // client where we requested (want) client authentication.
+                    // If we required it (need), this is not acceptable
+                    // and must fail.
+                    //
+                    // no_certificate alerts are not acceptable in TLSv1.*.
+                    //
+                    if (!tc.sslConfig.isClientMode &&
+                            (hc.negotiatedProtocol == ProtocolVersion.SSL30) &&
+                            (alert == Alert.NO_CERTIFICATE) &&
+                            (tc.sslConfig.clientAuthType ==
                                     ClientAuthType.CLIENT_AUTH_REQUESTED)) {
-                        throw tc.fatal(Alert.HANDSHAKE_FAILURE,
-                            "received handshake warning: " + alert.description);
-                    } else {
-                        // Otherwise, ignore the warning but remove the
-                        // Certificate and CertificateVerify handshake
-                        // consumer so the state machine doesn't expect it.
-                        tc.handshakeContext.handshakeConsumers.remove(
-                                SSLHandshake.CERTIFICATE.id);
-                        tc.handshakeContext.handshakeConsumers.remove(
+
+                        // We'll ignore the warning and remove the Certificate,
+                        // CompressedCertificate and CertificateVerify handshake
+                        // consumers so the state machine isn't expecting them.
+                        if (hc.handshakeConsumers.remove(
+                                SSLHandshake.CERTIFICATE.id) != null) {
+                            hc.handshakeConsumers.remove(
+                                SSLHandshake.COMPRESSED_CERTIFICATE.id);
+                            hc.handshakeConsumers.remove(
                                 SSLHandshake.CERTIFICATE_VERIFY.id);
+                        } else {
+                            throw tc.fatal(Alert.HANDSHAKE_FAILURE,
+                                    "NO_CERTIFICATE alert received when certs" +
+                                    " were not expected or already received");
+                        }
+                    } else {
+                        throw tc.fatal(Alert.HANDSHAKE_FAILURE,
+                            "Received handshake warning: " + alert.description);
                     }
                 }  // Otherwise, ignore the warning
             } else {    // fatal or unknown

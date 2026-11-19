@@ -49,7 +49,7 @@ import jdk.test.lib.process.ProcessTools;
  *          module java.base to add java.lang.JTRegModuleHelper. If then a
  *          jlink run is attempted in-process - using the ToolProvider API -
  *          on a JEP 493 enabled JDK, the test fails.
- * @run main/othervm jdk.jfr.jvm.TestModularImage
+ * @run main/othervm/timeout=480 jdk.jfr.jvm.TestModularImage
  */
 public class TestModularImage {
     private static final String STARTED_RECORDING = "Started recording";

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018, 2019, Red Hat, Inc. All rights reserved.
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 
 #include "gc/shenandoah/heuristics/shenandoahStaticHeuristics.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.hpp"
-#include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "logging/log.hpp"
@@ -35,29 +34,16 @@
 ShenandoahStaticHeuristics::ShenandoahStaticHeuristics(ShenandoahSpaceInfo* space_info) :
   ShenandoahHeuristics(space_info) {
   SHENANDOAH_ERGO_ENABLE_FLAG(ExplicitGCInvokesConcurrent);
-  SHENANDOAH_ERGO_ENABLE_FLAG(ShenandoahImplicitGCInvokesConcurrent);
 }
 
-ShenandoahStaticHeuristics::~ShenandoahStaticHeuristics() {}
-
 bool ShenandoahStaticHeuristics::should_start_gc() {
-  size_t max_capacity = _space_info->max_capacity();
-  size_t capacity = _space_info->soft_max_capacity();
-  size_t available = _space_info->available();
+  const size_t capacity = ShenandoahHeap::heap()->soft_max_capacity();
+  const size_t available = _space_info->soft_mutator_available();
 
-  // Make sure the code below treats available without the soft tail.
-  size_t soft_tail = max_capacity - capacity;
-  available = (available > soft_tail) ? (available - soft_tail) : 0;
-
-  size_t threshold_available = capacity / 100 * ShenandoahMinFreeThreshold;
-
-  if (available < threshold_available) {
-    log_trigger("Free (%zu%s) is below minimum threshold (%zu%s)",
-                 byte_size_in_proper_unit(available),           proper_unit_for_byte_size(available),
-                 byte_size_in_proper_unit(threshold_available), proper_unit_for_byte_size(threshold_available));
-    accept_trigger();
+  if (trigger_min_free_threshold(available, capacity)) {
     return true;
   }
+
   return ShenandoahHeuristics::should_start_gc();
 }
 

@@ -33,6 +33,7 @@ import jdk.jfr.events.MethodTimingEvent;
  * Holds timed method for a class. Used when publishing method ids.
  */
 public final class TimedClass {
+    private static final long MISSING = Long.MIN_VALUE;
     private final ConcurrentHashMap<Long, TimedMethod> methods = new ConcurrentHashMap<>();
 
     public TimedMethod add(Method method) {
@@ -60,13 +61,23 @@ public final class TimedClass {
                 long methodId = tm.method().methodId();
                 long invocations = tm.invocations().get();
                 long time = tm.time().get();
-                long average = invocations == 0 ? Long.MIN_VALUE : time / invocations;
                 long min = tm.minimum().get();
-                if (min == Long.MAX_VALUE) {
-                    min = Long.MIN_VALUE; // Signals that the value is missing
-                }
                 long max = tm.maximum().get();
-                MethodTimingEvent.commit(timestamp, methodId, invocations, min, average, max);
+                if (time == 0 || invocations == 0) {
+                    // If time is zero, it's a low resolution clock and more invocations are needed.
+                    MethodTimingEvent.commit(timestamp, methodId, invocations, MISSING, MISSING, MISSING);
+                } else {
+                    long average = (time + invocations / 2) / invocations;
+                    if (min == Long.MAX_VALUE) {
+                        min = average;
+                    }
+                    if (max == Long.MIN_VALUE) {
+                        max = average;
+                    }
+                    min = Math.min(min, average);
+                    max = Math.max(max, average);
+                    MethodTimingEvent.commit(timestamp, methodId, invocations, min, average, max);
+                }
                 tm.method().log("Emitted event");
             }
         }

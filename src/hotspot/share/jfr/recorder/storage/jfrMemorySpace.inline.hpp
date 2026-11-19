@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
 #include "jfr/recorder/storage/jfrMemorySpace.hpp"
 
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceIdEpoch.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/os.hpp"
 
 template <typename Client, template <typename> class RetrievalPolicy, typename FreeListType, typename FullListType, bool epoch_aware>
@@ -267,7 +267,7 @@ inline void JfrMemorySpace<Client, RetrievalPolicy, FreeListType, FullListType, 
   assert(node != nullptr, "invariant");
   _free_list.add(node);
   if (is_free_list_cache_limited()) {
-    Atomic::inc(&_free_list_cache_count);
+    AtomicAccess::inc(&_free_list_cache_count);
   }
 }
 
@@ -280,7 +280,7 @@ inline void JfrMemorySpace<Client, RetrievalPolicy, FreeListType, FullListType, 
 template <typename Client, template <typename> class RetrievalPolicy, typename FreeListType, typename FullListType, bool epoch_aware>
 inline void JfrMemorySpace<Client, RetrievalPolicy, FreeListType, FullListType, epoch_aware>::decrement_free_list_count() {
   if (is_free_list_cache_limited()) {
-    Atomic::dec(&_free_list_cache_count);
+    AtomicAccess::dec(&_free_list_cache_count);
   }
 }
 
@@ -641,9 +641,13 @@ inline bool ReinitializeAllReleaseRetiredOp<Mspace, FromList>::process(typename 
 template <typename Node>
 inline void assert_migration_state(const Node* old, const Node* new_node, size_t used, size_t requested) {
   assert(old != nullptr, "invariant");
-  assert(new_node != nullptr, "invariant");
+  assert(old->acquired_by_self(), "invariant");
+  assert(!old->retired(), "invariant");
   assert(old->pos() >= old->start(), "invariant");
   assert(old->pos() + used <= old->end(), "invariant");
+  assert(new_node != nullptr, "invariant");
+  assert(new_node->acquired_by_self(), "invariant");
+  assert(!new_node->retired(), "invariant");
   assert(new_node->free_size() >= (used + requested), "invariant");
 }
 #endif // ASSERT

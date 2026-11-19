@@ -163,7 +163,7 @@ class NativeHeapTrimmerThread : public NamedThread {
 public:
 
   NativeHeapTrimmerThread() :
-    _lock(new (std::nothrow) PaddedMonitor(Mutex::nosafepoint, "NativeHeapTrimmer_lock")),
+    _lock(new PaddedMonitor(Mutex::nosafepoint, "NativeHeapTrimmer_lock")),
     _stop(false),
     _suspend_count(0),
     _num_trims_performed(0)

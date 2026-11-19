@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,7 @@ public final class MetadataEvent {
      * The delta will be from the last metadata event. If no metadata event has been
      * emitted earlier, the list will be empty.
      *
-     * @return an immutable list of added event types, not {@code null}
+     * @return an immutable list of removed event types, not {@code null}
      */
     public final List<EventType> getRemovedEventTypes() {
         if (removed == null) {

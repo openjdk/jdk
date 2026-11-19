@@ -21,12 +21,11 @@
  * questions.
  */
 
-#include "foreignGlobals.hpp"
 #include "classfile/javaClasses.hpp"
 #include "memory/resourceArea.hpp"
 #include "prims/foreignGlobals.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
-#include "utilities/resourceHash.hpp"
+#include "utilities/hashTable.hpp"
 
 StubLocations::StubLocations() {
   for (uint32_t i = 0; i < LOCATION_LIMIT; i++) {
@@ -65,8 +64,8 @@ int StubLocations::data_offset(uint32_t loc) const {
 
 const CallRegs ForeignGlobals::parse_call_regs(jobject jconv) {
   oop conv_oop = JNIHandles::resolve_non_null(jconv);
-  objArrayOop arg_regs_oop = jdk_internal_foreign_abi_CallConv::argRegs(conv_oop);
-  objArrayOop ret_regs_oop = jdk_internal_foreign_abi_CallConv::retRegs(conv_oop);
+  refArrayOop arg_regs_oop = jdk_internal_foreign_abi_CallConv::argRegs(conv_oop);
+  refArrayOop ret_regs_oop = jdk_internal_foreign_abi_CallConv::retRegs(conv_oop);
   int num_args = arg_regs_oop->length();
   int num_rets = ret_regs_oop->length();
   CallRegs result(num_args, num_rets);
@@ -201,7 +200,7 @@ class ArgumentShuffle::ComputeMoveOrder: public StackObj {
     return a.type() == b.type() && a.index_or_offset() == b.index_or_offset();
   }
 
-  using KillerTable = ResourceHashtable<
+  using KillerTable = HashTable<
     VMStorage, MoveOperation*,
     32, // doesn't need to be big. don't have that many argument registers (in known ABIs)
     AnyObj::RESOURCE_AREA,

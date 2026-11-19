@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,9 @@ import java.util.Objects;
  */
 public class InputNode extends Properties.Entity {
 
+    public static final String LABEL_PROPERTY = "label";
+    public static final String COLOR_PROPERTY = "color";
+
     private int id;
 
     public InputNode(InputNode n) {
@@ -49,6 +52,17 @@ public class InputNode extends Properties.Entity {
 
     public int getId() {
         return id;
+    }
+
+    // Return the node properties that are present in the input graph, excluding
+    // properties computed by IGV itself. This is useful e.g. to produce the
+    // difference view, where nodes should be compared based only on their
+    // intrinsic characteristics.
+    public Properties getPrimaryProperties() {
+        Properties primaryProperties = new Properties(getProperties());
+        primaryProperties.setProperty(LABEL_PROPERTY, null);
+        primaryProperties.setProperty(COLOR_PROPERTY, null);
+        return primaryProperties;
     }
 
     @Override
@@ -72,14 +86,14 @@ public class InputNode extends Properties.Entity {
     public void setCustomColor(Color color) {
         if (color != null) {
             String hexColor = String.format("#%08X", color.getRGB());
-            getProperties().setProperty("color", hexColor);
+            getProperties().setProperty(COLOR_PROPERTY, hexColor);
         } else {
-            getProperties().setProperty("color", null);
+            getProperties().setProperty(COLOR_PROPERTY, null);
         }
     }
 
     public Color getCustomColor() {
-        String hexColor = getProperties().get("color");
+        String hexColor = getProperties().get(COLOR_PROPERTY);
         if (hexColor != null) {
             try {
                 String hex = hexColor.startsWith("#") ? hexColor.substring(1) : hexColor;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ extern BOOL g_bUserHasChangedInputLang;
  * Signature: ()I
  */
 JNIEXPORT jint JNICALL
-Java_sun_awt_windows_WInputMethod_createNativeContext(JNIEnv *env, jobject self)
+Java_sun_awt_windows_WInputMethod_createNativeContext(JNIEnv *env, jclass cls)
 {
     TRY;
 
@@ -69,7 +69,7 @@ Java_sun_awt_windows_WInputMethod_createNativeContext(JNIEnv *env, jobject self)
  * Signature: (I)V
  */
 JNIEXPORT void JNICALL
-Java_sun_awt_windows_WInputMethod_destroyNativeContext(JNIEnv *env, jobject self, jint context)
+Java_sun_awt_windows_WInputMethod_destroyNativeContext(JNIEnv *env, jclass cls, jint context)
 {
     TRY_NO_VERIFY;
 

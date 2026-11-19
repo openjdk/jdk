@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,29 +28,27 @@ import javax.net.ssl.*;
 
 /**
  * @test
- * @bug 8337664 8341059
+ * @bug 8337664 8341059 8361212 8386371
  * @summary Check that TLS Server certificates chaining back to distrusted
  *          Entrust roots are invalid
  * @library /test/lib
  * @modules java.base/sun.security.validator
  * @run main/othervm Entrust after policyOn invalid
  * @run main/othervm Entrust after policyOff valid
- * @run main/othervm Entrust before policyOn valid
+ * @run main/othervm Entrust before policyOn invalid
  * @run main/othervm Entrust before policyOff valid
  */
 
 public class Entrust {
 
-    private static final String certPath = "chains" + File.separator + "entrust";
+    private static final String CERT_PATH = "chains" + File.separator + "entrust";
 
     // Each of the roots have a test certificate chain stored in a file
     // named "<root>-chain.pem".
-    private static String[] rootsToTest = new String[]{
-            "entrustevca", "entrustrootcaec1", "entrustrootcag2", "entrustrootcag4",
-            "entrust2048ca", "affirmtrustcommercialca", "affirmtrustnetworkingca",
-            "affirmtrustpremiumca", "affirmtrustpremiumeccca"};
+    private static final String[] ROOTS_TO_TEST = new String[]{
+            "entrustevca", "entrustrootcaec1", "entrustrootcag2", "entrust2048ca"};
 
-    // Date when the restrictions take effect
+    // Date after the restrictions took effect when distrust was first announced
     private static final ZonedDateTime DISTRUST_DATE =
             LocalDate.of(2024, 11, 12).atStartOfDay(ZoneOffset.UTC);
 
@@ -63,6 +61,6 @@ public class Entrust {
         };
 
         Date notBefore = distrust.getNotBefore(DISTRUST_DATE);
-        distrust.testCertificateChain(certPath, notBefore, tms, rootsToTest);
+        distrust.testCertificateChain(CERT_PATH, notBefore, tms, ROOTS_TO_TEST);
     }
 }

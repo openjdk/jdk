@@ -30,7 +30,7 @@
 
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2024 Marti Maria Saguer
+//  Copyright (c) 1998-2026 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -471,6 +471,9 @@ cmsBool _cmsRegisterMutexPlugin(cmsContext ContextID, cmsPluginBase* Plugin);
 // Parallelization
 cmsBool _cmsRegisterParallelizationPlugin(cmsContext ContextID, cmsPluginBase* Plugin);
 
+// Header
+cmsBool _cmsRegisterHeaderPlugin(cmsContext ContextID, cmsPluginBase* Data);
+
 // ---------------------------------------------------------------------------------------------------------
 
 // Suballocators.
@@ -519,6 +522,7 @@ typedef enum {
     TransformPlugin,
     MutexPlugin,
     ParallelizationPlugin,
+    HeaderPlugin,
 
     // Last in list
     MemoryClientMax
@@ -770,7 +774,17 @@ extern  _cmsParallelizationPluginChunkType _cmsParallelizationPluginChunk;
 void _cmsAllocParallelizationPluginChunk(struct _cmsContext_struct* ctx,
                                          const struct _cmsContext_struct* src);
 
+// Container for header plug-in
+typedef struct {
 
+    cmsUInt32Number          ICCVersion;
+    _cmsReadProfileHeaderFn  ReadPtr;
+    _cmsWriteProfileHeaderFn WritePtr;
+
+} _cmsHeaderPluginChunkType;
+
+void _cmsAllocHeaderPluginChunk(struct _cmsContext_struct* ctx,
+                                const struct _cmsContext_struct* src);
 
 // ----------------------------------------------------------------------------------
 // MLU internal representation
@@ -876,6 +890,10 @@ typedef struct _cms_iccprofile_struct {
     // Keep a mutex for cmsReadTag -- Note that this only works if the user includes a mutex plugin
     void *                   UsrMutex;
 
+    // User data for profile plug-ins
+    void *                   UsrData;
+    _cmsFreeUserDataFn       FreeUsrData;
+
 } _cmsICCPROFILE;
 
 // IO helpers for profiles
@@ -887,6 +905,7 @@ int                  _cmsSearchTag(_cmsICCPROFILE* Icc, cmsTagSignature sig, cms
 cmsTagTypeHandler*   _cmsGetTagTypeHandler(cmsContext ContextID, cmsTagTypeSignature sig);
 cmsTagTypeSignature  _cmsGetTagTrueType(cmsHPROFILE hProfile, cmsTagSignature sig);
 cmsTagDescriptor*    _cmsGetTagDescriptor(cmsContext ContextID, cmsTagSignature sig);
+cmsBool              _cmsAvoidTypeCheckOnTags(cmsContext ContextID);
 
 // Error logging ---------------------------------------------------------------------------------------------------------
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,7 @@
  * has happened since the allocation.
  */
 bool G1BarrierSetC2::g1_can_remove_pre_barrier(GraphKit* kit,
-                                               PhaseValues* phase,
+                                               PhaseGVN* phase,
                                                Node* adr,
                                                BasicType bt,
                                                uint adr_idx) const {
@@ -206,13 +206,14 @@ Node* G1BarrierSetC2::load_at_resolved(C2Access& access, const Type* val_type) c
   // mechanism. Also we need to add a memory barrier to prevent commoning reads
   // from this field across safepoints, since GC can change its value.
   bool need_read_barrier = ((on_weak || on_phantom) && !no_keepalive);
+  assert((access.decorators() & C2_SPECIAL_ACCESS) == 0, "access shouldn't be special");
   if (access.is_oop() && need_read_barrier) {
     access.set_barrier_data(G1C2BarrierPre);
   }
   return CardTableBarrierSetC2::load_at_resolved(access, val_type);
 }
 
-void G1BarrierSetC2::eliminate_gc_barrier(PhaseMacroExpand* macro, Node* node) const {
+void G1BarrierSetC2::eliminate_gc_barrier(PhaseIterGVN* igvn, Node* node) const {
   eliminate_gc_barrier_data(node);
 }
 
@@ -226,23 +227,38 @@ void G1BarrierSetC2::eliminate_gc_barrier_data(Node* node) const {
   }
 }
 
+static TypePtr::PTR meet_ptr_of_oops_in_store_l_special(const MemNode* store) {
+  const Type* oops_meet = store->in(StoreLSpecialNode::FirstOop)->bottom_type();
+  if (!store->in(StoreLSpecialNode::SecondOop)->is_top()) {
+    oops_meet = oops_meet->meet(store->in(StoreLSpecialNode::SecondOop)->bottom_type());
+  }
+  const TypePtr* oops_meet_as_ptr = oops_meet->make_ptr();
+  return oops_meet_as_ptr->ptr();
+}
+
 static void refine_barrier_by_new_val_type(const Node* n) {
   if (n->Opcode() != Op_StoreP &&
-      n->Opcode() != Op_StoreN) {
+      n->Opcode() != Op_StoreN &&
+      n->Opcode() != Op_StoreLSpecial) {
     return;
   }
   MemNode* store = n->as_Mem();
-  const Node* newval = n->in(MemNode::ValueIn);
-  assert(newval != nullptr, "");
-  const Type* newval_bottom = newval->bottom_type();
-  TypePtr::PTR newval_type = newval_bottom->make_ptr()->ptr();
   uint8_t barrier_data = store->barrier_data();
-  if (!newval_bottom->isa_oopptr() &&
-      !newval_bottom->isa_narrowoop() &&
-      newval_type != TypePtr::Null) {
-    // newval is neither an OOP nor null, so there is no barrier to refine.
-    assert(barrier_data == 0, "non-OOP stores should have no barrier data");
-    return;
+  TypePtr::PTR newval_type;
+  if (n->Opcode() == Op_StoreLSpecial) {
+    newval_type = meet_ptr_of_oops_in_store_l_special(store);
+  } else {
+    const Node* newval = n->in(MemNode::ValueIn);
+    assert(newval != nullptr, "");
+    const Type* newval_bottom = newval->bottom_type();
+    newval_type = newval_bottom->make_ptr()->ptr();
+    if (!newval_bottom->is_oopptr() &&
+        !newval_bottom->is_narrowoop() &&
+        newval_type != TypePtr::Null) {
+      // newval is neither an OOP nor null, so there is no barrier to refine.
+      assert(barrier_data == 0, "non-OOP stores should have no barrier data");
+      return;
+    }
   }
   if (barrier_data == 0) {
     // No barrier to refine.
@@ -268,7 +284,7 @@ static void refine_barrier_by_new_val_type(const Node* n) {
 bool G1BarrierSetC2::expand_barriers(Compile* C, PhaseIterGVN& igvn) const {
   ResourceMark rm;
   VectorSet visited;
-  Node_List worklist;
+  Node_List<Node> worklist;
   worklist.push(C->root());
   while (worklist.size() > 0) {
     Node* n = worklist.pop();
@@ -289,22 +305,34 @@ bool G1BarrierSetC2::expand_barriers(Compile* C, PhaseIterGVN& igvn) const {
 uint G1BarrierSetC2::estimated_barrier_size(const Node* node) const {
   uint8_t barrier_data = MemNode::barrier_data(node);
   uint nodes = 0;
+  uint factor = 1;
+  if (node->Opcode() == Op_StoreLSpecial && !node->in(StoreLSpecialNode::SecondOop)->is_top()) {
+    // assigning two oops will make two barrier sets
+    factor = 2;
+  }
   if ((barrier_data & G1C2BarrierPre) != 0) {
     // Only consider the fast path for the barrier that is
     // actually inlined into the main code stream.
     // The slow path is laid out separately and does not
     // directly affect performance.
     // It has a cost of 6 (AddP, LoadB, Cmp, Bool, If, IfProj).
-    nodes += 6;
+    nodes += 6 * factor;
   }
   if ((barrier_data & G1C2BarrierPost) != 0) {
-    nodes += 60;
+    // Approximate the number of nodes needed; an if costs 4 nodes (Cmp, Bool,
+    // If, If projection), any other (Assembly) instruction is approximated with
+    // a cost of 1.
+    uint post_nodes =   4  // base cost for the card write containing getting base offset, address calculation and the card write;
+                      + 6  // same region check: Uncompress (new_val) oop, xor, shr, (cmp), jmp
+                      + 4  // new_val is null check
+                      + (UseCondCardMark ? 4 : 0); // card not clean check.
+    nodes += post_nodes * factor;
   }
   return nodes;
 }
 
 bool G1BarrierSetC2::can_initialize_object(const StoreNode* store) const {
-  assert(store->Opcode() == Op_StoreP || store->Opcode() == Op_StoreN, "OOP store expected");
+  assert(store->Opcode() == Op_StoreP || store->Opcode() == Op_StoreN || store->Opcode() == Op_StoreLSpecial, "OOP store expected");
   // It is OK to move the store across the object initialization boundary only
   // if it does not have any barrier, or if it has barriers that can be safely
   // elided (because of the compensation steps taken on the allocation slow path
@@ -345,7 +373,7 @@ Node* G1BarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue& val) co
 
 Node* G1BarrierSetC2::atomic_cmpxchg_val_at_resolved(C2AtomicParseAccess& access, Node* expected_val,
                                                      Node* new_val, const Type* value_type) const {
-  GraphKit* kit = access.kit();
+  assert((access.decorators() & C2_SPECIAL_ACCESS) == 0, "access shouldn't be special");
   if (!access.is_oop()) {
     return BarrierSetC2::atomic_cmpxchg_val_at_resolved(access, expected_val, new_val, value_type);
   }
@@ -355,7 +383,7 @@ Node* G1BarrierSetC2::atomic_cmpxchg_val_at_resolved(C2AtomicParseAccess& access
 
 Node* G1BarrierSetC2::atomic_cmpxchg_bool_at_resolved(C2AtomicParseAccess& access, Node* expected_val,
                                                       Node* new_val, const Type* value_type) const {
-  GraphKit* kit = access.kit();
+  assert((access.decorators() & C2_SPECIAL_ACCESS) == 0, "access shouldn't be special");
   if (!access.is_oop()) {
     return BarrierSetC2::atomic_cmpxchg_bool_at_resolved(access, expected_val, new_val, value_type);
   }
@@ -364,7 +392,7 @@ Node* G1BarrierSetC2::atomic_cmpxchg_bool_at_resolved(C2AtomicParseAccess& acces
 }
 
 Node* G1BarrierSetC2::atomic_xchg_at_resolved(C2AtomicParseAccess& access, Node* new_val, const Type* value_type) const {
-  GraphKit* kit = access.kit();
+  assert((access.decorators() & C2_SPECIAL_ACCESS) == 0, "access shouldn't be special");
   if (!access.is_oop()) {
     return BarrierSetC2::atomic_xchg_at_resolved(access, new_val, value_type);
   }
@@ -386,8 +414,9 @@ public:
   }
 
   bool needs_liveness_data(const MachNode* mach) const {
-    return G1PreBarrierStubC2::needs_barrier(mach) ||
-           G1PostBarrierStubC2::needs_barrier(mach);
+    // Liveness data is only required to compute registers that must be preserved
+    // across the runtime call in the pre-barrier stub.
+    return G1BarrierStubC2::needs_pre_barrier(mach);
   }
 
   bool needs_livein_data() const {
@@ -401,10 +430,22 @@ static G1BarrierSetC2State* barrier_set_state() {
 
 G1BarrierStubC2::G1BarrierStubC2(const MachNode* node) : BarrierStubC2(node) {}
 
+bool G1BarrierStubC2::needs_pre_barrier(const MachNode* node) {
+  return (node->barrier_data() & G1C2BarrierPre) != 0;
+}
+
+bool G1BarrierStubC2::needs_post_barrier(const MachNode* node) {
+  return (node->barrier_data() & G1C2BarrierPost) != 0;
+}
+
+bool G1BarrierStubC2::post_new_val_may_be_null(const MachNode* node) {
+  return (node->barrier_data() & G1C2BarrierPostNotNull) == 0;
+}
+
 G1PreBarrierStubC2::G1PreBarrierStubC2(const MachNode* node) : G1BarrierStubC2(node) {}
 
 bool G1PreBarrierStubC2::needs_barrier(const MachNode* node) {
-  return (node->barrier_data() & G1C2BarrierPre) != 0;
+  return needs_pre_barrier(node);
 }
 
 G1PreBarrierStubC2* G1PreBarrierStubC2::create(const MachNode* node) {
@@ -448,48 +489,6 @@ void G1PreBarrierStubC2::emit_code(MacroAssembler& masm) {
   bs->generate_c2_pre_barrier_stub(&masm, this);
 }
 
-G1PostBarrierStubC2::G1PostBarrierStubC2(const MachNode* node) : G1BarrierStubC2(node) {}
-
-bool G1PostBarrierStubC2::needs_barrier(const MachNode* node) {
-  return (node->barrier_data() & G1C2BarrierPost) != 0;
-}
-
-G1PostBarrierStubC2* G1PostBarrierStubC2::create(const MachNode* node) {
-  G1PostBarrierStubC2* const stub = new (Compile::current()->comp_arena()) G1PostBarrierStubC2(node);
-  if (!Compile::current()->output()->in_scratch_emit_size()) {
-    barrier_set_state()->stubs()->append(stub);
-  }
-  return stub;
-}
-
-void G1PostBarrierStubC2::initialize_registers(Register thread, Register tmp1, Register tmp2, Register tmp3) {
-  _thread = thread;
-  _tmp1 = tmp1;
-  _tmp2 = tmp2;
-  _tmp3 = tmp3;
-}
-
-Register G1PostBarrierStubC2::thread() const {
-  return _thread;
-}
-
-Register G1PostBarrierStubC2::tmp1() const {
-  return _tmp1;
-}
-
-Register G1PostBarrierStubC2::tmp2() const {
-  return _tmp2;
-}
-
-Register G1PostBarrierStubC2::tmp3() const {
-  return _tmp3;
-}
-
-void G1PostBarrierStubC2::emit_code(MacroAssembler& masm) {
-  G1BarrierSetAssembler* bs = static_cast<G1BarrierSetAssembler*>(BarrierSet::barrier_set()->barrier_set_assembler());
-  bs->generate_c2_post_barrier_stub(&masm, this);
-}
-
 void* G1BarrierSetC2::create_barrier_state(Arena* comp_arena) const {
   return new (comp_arena) G1BarrierSetC2State(comp_arena);
 }
@@ -529,7 +528,7 @@ int G1BarrierSetC2::get_store_barrier(C2Access& access) const {
   return barriers;
 }
 
-void G1BarrierSetC2::elide_dominated_barrier(MachNode* mach) const {
+void G1BarrierSetC2::elide_dominated_barrier(MachNode* mach, MachNode* dominator) const {
   uint8_t barrier_data = mach->barrier_data();
   barrier_data &= ~G1C2BarrierPre;
   if (CardTableBarrierSetC2::use_ReduceInitialCardMarks()) {
@@ -545,8 +544,8 @@ void G1BarrierSetC2::analyze_dominating_barriers() const {
 
   // Find allocations and memory accesses (stores and atomic operations), and
   // track them in lists.
-  Node_List accesses;
-  Node_List allocations;
+  Node_List<MachNode> accesses;
+  Node_List<Node> allocations;
   for (uint i = 0; i < cfg->number_of_blocks(); ++i) {
     const Block* const block = cfg->get_block(i);
     for (uint j = 0; j < block->number_of_nodes(); ++j) {
@@ -564,6 +563,7 @@ void G1BarrierSetC2::analyze_dominating_barriers() const {
       switch (mach->ideal_Opcode()) {
       case Op_StoreP:
       case Op_StoreN:
+      case Op_StoreLSpecial:
       case Op_CompareAndExchangeP:
       case Op_CompareAndSwapP:
       case Op_GetAndSetP:
@@ -601,7 +601,7 @@ void G1BarrierSetC2::emit_stubs(CodeBuffer& cb) const {
     }
     stubs->at(i)->emit_code(masm);
   }
-  masm.flush();
+  // Code will be copied. No ICache sync required.
 }
 
 #ifndef PRODUCT

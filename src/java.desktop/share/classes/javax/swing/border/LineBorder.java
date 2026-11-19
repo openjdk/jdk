@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,8 @@ import java.awt.geom.RoundRectangle2D;
 import java.beans.ConstructorProperties;
 
 import com.sun.java.swing.SwingUtilities3;
+
+import static sun.java2d.pipe.Region.clipRound;
 
 /**
  * A class which implements a line border of arbitrary thickness
@@ -161,7 +163,7 @@ public class LineBorder extends AbstractBorder
             Shape outer;
             Shape inner;
 
-            int offs = this.thickness * (int) scaleFactor;
+            int offs = clipRound(this.thickness * scaleFactor);
             int size = offs + offs;
             if (this.roundedCorners) {
                 float arc = .2f * offs;

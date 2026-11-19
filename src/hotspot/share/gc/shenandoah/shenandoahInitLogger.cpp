@@ -43,12 +43,12 @@ void ShenandoahInitLogger::print_heap() {
   log_info(gc, init)("Heap Region Count: %zu", ShenandoahHeapRegion::region_count());
   log_info(gc, init)("Heap Region Size: " EXACTFMT, EXACTFMTARGS(ShenandoahHeapRegion::region_size_bytes()));
   log_info(gc, init)("TLAB Size Max: " EXACTFMT, EXACTFMTARGS(ShenandoahHeapRegion::max_tlab_size_bytes()));
+  log_info(gc, init)("Soft Max Heap Size: " EXACTFMT, EXACTFMTARGS(ShenandoahHeap::heap()->soft_max_capacity()));
 }
 
 void ShenandoahInitLogger::print_gc_specific() {
   GCInitLogger::print_gc_specific();
 
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-  log_info(gc, init)("Mode: %s", heap->mode()->name());
-  log_info(gc, init)("Heuristics: %s", heap->heuristics()->name());
+  log_info(gc, init)("Mode: %s", ShenandoahGCMode);
+  log_info(gc, init)("Heuristics: %s", ShenandoahGCHeuristics);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -204,11 +204,9 @@ public abstract class TestDebuggerType1 {
              new EventHandler.EventListener() {
                  public boolean eventReceived(Event event) {
                     if (event instanceof BreakpointEvent && bpRequest.equals(event.request())) {
-                        synchronized(eventHandler) {
-                            display("Received communication breakpoint event.");
-                            bpCount++;
-                            eventHandler.notifyAll();
-                        }
+                        display("Received communication breakpoint event.");
+                        bpCount++;
+                        eventHandler.notifyAll();
                         return true;
                     }
                     return false;

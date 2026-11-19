@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2025 Unicode, Inc.
+<!-- Copyright © 1991-2026 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -147,6 +147,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<era type="1" alt="variant">нове ере</era>
 					</eraNames>
 				</eras>
+				<dateTimeFormats>
+					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="non-numeric" draft="provisional">{0}–{1}</intervalFormatRange>
+							<intervalFormatRange type="numeric" draft="provisional">{0}–{1}</intervalFormatRange>
+						</intervalFormatRanges>
+					</intervalFormats>
+				</dateTimeFormats>
 			</calendar>
 		</calendars>
 		<fields>
@@ -528,21 +536,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/St_Johns">
 				<exemplarCity>Сент Џонс</exemplarCity>
 			</zone>
-			<zone type="Europe/London">
-				<long>
-					<daylight>Британија, љетње вријеме</daylight>
-				</long>
-			</zone>
 			<zone type="America/Scoresbysund">
 				<exemplarCity>Итокортормит</exemplarCity>
 			</zone>
 			<zone type="America/Port-au-Prince">
 				<exemplarCity>Порт-о-Пренс</exemplarCity>
-			</zone>
-			<zone type="Europe/Dublin">
-				<long>
-					<daylight>Ирска, стандардно вријеме</daylight>
-				</long>
 			</zone>
 			<zone type="Pacific/Niue">
 				<exemplarCity>Нијуе</exemplarCity>
@@ -602,9 +600,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Africa_Western">
 				<long>
-					<generic>Западно-афричко вријеме</generic>
-					<standard>Западно-афричко стандардно вријеме</standard>
-					<daylight>Западно-афричко љетње вријеме</daylight>
+					<standard>Западно-афричко вријеме</standard>
 				</long>
 			</metazone>
 			<metazone type="Alaska">
@@ -755,6 +751,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Бразилија вријеме</generic>
 					<standard>Бразилија, стандардно вријеме</standard>
 					<daylight>Бразилија, љетње вријеме</daylight>
+				</long>
+			</metazone>
+			<metazone type="British">
+				<long>
+					<daylight>Британија, љетње вријеме</daylight>
 				</long>
 			</metazone>
 			<metazone type="Brunei">
@@ -949,6 +950,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>Гвајана вријеме</standard>
 				</long>
 			</metazone>
+			<metazone type="Hawaii">
+				<long>
+					<standard>Хавајско-алеутско стандардно вријеме</standard>
+				</long>
+			</metazone>
 			<metazone type="Hawaii_Aleutian">
 				<long>
 					<generic>Хавајско-алеутско вријеме</generic>
@@ -1005,6 +1011,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Иран вријеме</generic>
 					<standard>Иран, стандардно вријеме</standard>
 					<daylight>Иран, љетње вријеме</daylight>
+				</long>
+			</metazone>
+			<metazone type="Irish">
+				<long>
+					<daylight>Ирска, стандардно вријеме</daylight>
 				</long>
 			</metazone>
 			<metazone type="Irkutsk">
@@ -1292,9 +1303,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Samoa">
 				<long>
-					<generic>Самоа вријеме</generic>
 					<standard>Самоа, стандардно вријеме</standard>
-					<daylight>Самоа, љетње вријеме</daylight>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">
@@ -1595,7 +1604,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="genitive">{0} свјетала</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} свјетала</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>дијелови на милијарду</displayName>
 				<unitPattern count="one">{0} дио на милијарду</unitPattern>
 				<unitPattern count="one" case="accusative">{0} дио на милијарду</unitPattern>
@@ -1630,7 +1639,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="speed-beaufort">
 				<unitPattern count="one">B {0}</unitPattern>
 				<unitPattern count="few">B {0}</unitPattern>
-				<unitPattern count="other">Б {0}</unitPattern>
+				<unitPattern count="other">B {0}</unitPattern>
 			</unit>
 			<unit type="speed-light-speed">
 				<displayName>свјетло</displayName>
@@ -1638,7 +1647,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="few">{0} свјетла</unitPattern>
 				<unitPattern count="other">{0} свјетала</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>дијелови/милијарда</displayName>
 			</unit>
 		</unitLength>
@@ -1702,7 +1711,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="few">{0} свјетла</unitPattern>
 				<unitPattern count="other">{0} свјетала</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>дијелови/милијарда</displayName>
 			</unit>
 		</unitLength>

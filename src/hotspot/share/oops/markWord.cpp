@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,79 +23,47 @@
  */
 
 #include "oops/markWord.hpp"
-#include "runtime/basicLock.inline.hpp"
-#include "runtime/javaThread.hpp"
-#include "runtime/objectMonitor.inline.hpp"
 #include "utilities/ostream.hpp"
 
 #ifdef _LP64
-STATIC_ASSERT(markWord::klass_shift + markWord::klass_bits == 64);
+static_assert(markWord::klass_shift + markWord::klass_bits == 64);
 // The hash (preceding klass bits) shall be a direct neighbor but not interleave
-STATIC_ASSERT(markWord::klass_shift == markWord::hash_bits + markWord::hash_shift);
+static_assert(markWord::klass_shift == markWord::hash_bits + markWord::hash_shift);
 #endif
 
-markWord markWord::displaced_mark_helper() const {
-  assert(has_displaced_mark_helper(), "check");
-  if (has_monitor()) {
-    // Has an inflated monitor. Must be checked before has_locker().
-    ObjectMonitor* monitor = this->monitor();
-    return monitor->header();
-  }
-  if (has_locker()) {  // has a stack lock
-    BasicLock* locker = this->locker();
-    return locker->displaced_header();
-  }
-  // This should never happen:
-  fatal("bad header=" INTPTR_FORMAT, value());
-  return markWord(value());
-}
-
-void markWord::set_displaced_mark_helper(markWord m) const {
-  assert(has_displaced_mark_helper(), "check");
-  if (has_monitor()) {
-    // Has an inflated monitor. Must be checked before has_locker().
-    ObjectMonitor* monitor = this->monitor();
-    monitor->set_header(m);
-    return;
-  }
-  if (has_locker()) {  // has a stack lock
-    BasicLock* locker = this->locker();
-    locker->set_displaced_header(m);
-    return;
-  }
-  // This should never happen:
-  fatal("bad header=" INTPTR_FORMAT, value());
-}
-
-void markWord::print_on(outputStream* st, bool print_monitor_info) const {
-  if (is_marked()) {  // last bits = 11
+void markWord::print_on(outputStream* st) const {
+  if (is_marked()) {           // last bits = 11
     st->print(" marked(" INTPTR_FORMAT ")", value());
-  } else if (has_monitor()) {  // last bits = 10
-    // have to check has_monitor() before is_locked()
-    st->print(" monitor(" INTPTR_FORMAT ")=", value());
-    if (print_monitor_info && !UseObjectMonitorTable) {
-      ObjectMonitor* mon = monitor();
-      if (mon == nullptr) {
-        st->print("null (this should never be seen!)");
-      } else {
-        mon->print_on(st);
-      }
-    }
-  } else if (is_locked()) {  // last bits != 01 => 00
-    // thin locked
-    st->print(" locked(" INTPTR_FORMAT ")", value());
-  } else {
-    st->print(" mark(");
-    if (is_unlocked()) {   // last bits = 01
-      st->print("is_unlocked");
-      if (has_no_hash()) {
-        st->print(" no_hash");
-      } else {
-        st->print(" hash=" INTPTR_FORMAT, hash());
-      }
-    } else {
-      st->print("??");
-    }
-    st->print(" age=%d)", age());
+    return;
   }
+  st->print(" mark(");
+  if (has_monitor()) {         // last bits = 10
+    st->print("has_monitor");
+  } else if (is_lock_neutral()) {  // last bits = 01
+    st->print("is_lock_neutral");
+  } else {                     // last bits = 00
+    assert(is_fast_locked(), "should be");
+    st->print("is_fast_locked");
+  }
+  if (is_value_type()) {
+    st->print(" value_type");
+  }
+  if (has_hash()) {
+    st->print(" hash=" INTPTR_FORMAT, hash());
+  } else {
+    st->print(" no_hash");
+  }
+#ifdef _LP64 // 64 bit encodings have array information
+  // flat or null-free do not imply each other
+  const bool flat = is_flat_array();
+  const bool null_free = is_null_free_array();
+  if (flat && !null_free) {
+    st->print(" flat_array");
+  } else if (!flat && null_free) {
+    st->print(" null_free_array");
+  } else if (flat && null_free) {
+    st->print(" flat_null_free_array");
+  }
+#endif
+  st->print(" age=%d)", age());
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -247,6 +247,11 @@ public final class RawBytecodeHelper {
             JSR_W = 201;
 
     public record CodeRange(byte[] array, int length) {
+        public CodeRange {
+            // Don't use IAE formatter - this length comes from implementation, any
+            // out-of-bounds is an implementation defect instead of a user error
+            Preconditions.checkIndex(length, array.length + 1, Preconditions.AIOOBE_FORMATTER);
+        }
         public RawBytecodeHelper start() {
             return new RawBytecodeHelper(this);
         }
@@ -399,13 +404,27 @@ public final class RawBytecodeHelper {
     }
 
     // non-wide branches
+    // dest() on validated payload only
     public int dest() {
-        return bci + getShortUnchecked(bci + 1);
+        int offset = getOffsetS2();
+        assert -0xFFFF <= offset && offset <= 0xFFFF;
+        return bci + offset;
+    }
+
+    public int getOffsetS2() {
+        return getShortUnchecked(bci + 1);
     }
 
     // goto_w and jsr_w
+    // destW() on validated payload only
     public int destW() {
-        return bci + getIntUnchecked(bci + 1);
+        int offset = getOffsetS4();
+        assert -0xFFFF <= offset && offset <= 0xFFFF;
+        return bci + offset;
+    }
+
+    public int getOffsetS4() {
+        return getIntUnchecked(bci + 1);
     }
 
     // *load, *store, iinc
@@ -472,7 +491,7 @@ public final class RawBytecodeHelper {
             }
         } else if (code == LOOKUPSWITCH) {
             int alignedBci = align(bci + 1);
-            if (alignedBci + 2 * 4 < end) {
+            if (alignedBci + 2 * 4 <= end) {
                 int npairs = getIntUnchecked(alignedBci + 4);
                 if (npairs >= 0) {
                     long l = alignedBci - bci + (2L + 2L * npairs) * 4L;

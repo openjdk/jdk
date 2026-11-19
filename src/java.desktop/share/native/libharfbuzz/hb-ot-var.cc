@@ -89,7 +89,7 @@ hb_ot_var_get_axis_count (hb_face_t *face)
  * @start_offset: offset of the first lookup to retrieve
  * @axes_count: (inout) (optional): Input = the maximum number of variation axes to return;
  *                Output = the actual number of variation axes returned (may be zero)
- * @axes_array: (out caller-allocates) (array length=axes_count): The array of variation axes found
+ * @axes_array: (out caller-allocates) (array length=axes_count) (nullable): The array of variation axes found
  *
  * Fetches a list of all variation axes in the specified face. The list returned will begin
  * at the offset provided.
@@ -135,7 +135,7 @@ hb_ot_var_find_axis (hb_face_t        *face,
  * @start_offset: offset of the first lookup to retrieve
  * @axes_count: (inout) (optional): Input = the maximum number of variation axes to return;
  *                Output = the actual number of variation axes returned (may be zero)
- * @axes_array: (out caller-allocates) (array length=axes_count): The array of variation axes found
+ * @axes_array: (out caller-allocates) (array length=axes_count) (nullable): The array of variation axes found
  *
  * Fetches a list of all variation axes in the specified face. The list returned will begin
  * at the offset provided.
@@ -239,7 +239,7 @@ hb_ot_var_named_instance_get_postscript_name_id (hb_face_t  *face,
  * @instance_index: The index of the named instance to query
  * @coords_length: (inout) (optional): Input = the maximum number of coordinates to return;
  *                 Output = the actual number of coordinates returned (may be zero)
- * @coords: (out) (array length=coords_length): The array of coordinates found for the query
+ * @coords: (out) (array length=coords_length) (nullable): The array of coordinates found for the query
  *
  * Fetches the design-space coordinates corresponding to the given
  * named instance in the face.
@@ -286,10 +286,14 @@ hb_ot_var_normalize_variations (hb_face_t            *face,
     hb_ot_var_axis_info_t info;
     if (hb_ot_var_find_axis_info (face, variations[i].tag, &info) &&
         info.axis_index < coords_length)
-      coords[info.axis_index] = fvar.normalize_axis_value (info.axis_index, variations[i].value);
+      coords[info.axis_index] = roundf (fvar.normalize_axis_value (info.axis_index, variations[i].value) * 65536.0f);
   }
 
-  face->table.avar->map_coords (coords, coords_length);
+  face->table.avar->map_coords_16_16 (coords, coords_length);
+
+  // Round to 2.14
+  for (unsigned i = 0; i < coords_length; i++)
+    coords[i] = (coords[i] + 2) >> 2;
 }
 
 /**
@@ -309,6 +313,10 @@ hb_ot_var_normalize_variations (hb_face_t            *face,
  * Any additional scaling defined in the face's `avar` table is also
  * applied, as described at https://docs.microsoft.com/en-us/typography/opentype/spec/avar
  *
+ * Note: @coords_length must be the same as the number of axes in the face, as
+ * for example returned by hb_ot_var_get_axis_count().
+ * Otherwise, the behavior is undefined.
+ *
  * Since: 1.4.2
  **/
 void
@@ -319,9 +327,13 @@ hb_ot_var_normalize_coords (hb_face_t    *face,
 {
   const OT::fvar &fvar = *face->table.fvar;
   for (unsigned int i = 0; i < coords_length; i++)
-    normalized_coords[i] = fvar.normalize_axis_value (i, design_coords[i]);
+    normalized_coords[i] = roundf (fvar.normalize_axis_value (i, design_coords[i]) * 65536.0f);
 
-  face->table.avar->map_coords (normalized_coords, coords_length);
+  face->table.avar->map_coords_16_16 (normalized_coords, coords_length);
+
+  // Round to 2.14
+  for (unsigned i = 0; i < coords_length; i++)
+    normalized_coords[i] = (normalized_coords[i] + 2) >> 2;
 }
 
 
