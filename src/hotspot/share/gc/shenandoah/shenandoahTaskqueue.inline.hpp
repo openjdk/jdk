@@ -77,7 +77,7 @@ inline ShenandoahTaskQueueChunk* ShenandoahTaskQueueSegment::flip_from(Atomic<ui
 
 inline void ShenandoahTaskQueueSegment::flip_to(ShenandoahTaskQueueChunk* chunk, Atomic<uint64_t>* bm) {
   size_t local_idx = chunk->index() & (SEGMENT_SIZE - 1);
-  uint64_t mask = nth_bit(local_idx);
+  uint64_t mask = (uint64_t)nth_bit(local_idx);
   uint64_t prev = bm->fetch_then_or(mask);
   assert((prev & mask) == 0, "Must not have been set");
 }
