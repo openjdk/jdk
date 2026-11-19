@@ -42,8 +42,8 @@ inline FlatArrayKlass* flatArrayOopDesc::klass() const {
 
 inline void* flatArrayOopDesc::base() const { return arrayOopDesc::base(T_FLAT_ELEMENT); }
 
-inline size_t flatArrayOopDesc::base_offset_in_bytes() {
-  return static_cast<size_t>(arrayOopDesc::base_offset_in_bytes(T_FLAT_ELEMENT));
+inline int flatArrayOopDesc::base_offset_in_bytes() {
+  return arrayOopDesc::base_offset_in_bytes(T_FLAT_ELEMENT);
 }
 
 inline void* flatArrayOopDesc::value_at_addr(int index, jint lh) const {

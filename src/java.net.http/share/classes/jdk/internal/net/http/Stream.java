@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1873,6 +1874,33 @@ class Stream<T> extends ExchangeImpl<T> {
      */
      boolean isCanceled() {
         return errorRef.get() != null;
+    }
+
+    /**
+     * Returns true if in closed/terminal state as defined by RFC 9113 (5.1).
+     * @return true if in closed/terminal state as defined by RFC 9113 (5.1).
+     */
+    boolean isTerminalState() {
+        // Closed locally or reset.
+        if (closed || streamState != 0) {
+            return true;
+        }
+        // Server finished sending.
+        if (!(endStreamSeen || endStreamReceived())) {
+            return false;
+        }
+        // Client finished sending. Never sends for PushedStream.
+        if (this instanceof PushedStream || requestBodyCF.isDone()) {
+            return true;
+        }
+        // Client finished sending for first request on an
+        // upgraded connection.
+        stateLock.lock();
+        try {
+            return requestSent;
+        } finally {
+            stateLock.unlock();
+        }
     }
 
     /**

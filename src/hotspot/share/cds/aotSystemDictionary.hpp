@@ -230,7 +230,7 @@ public:
                                                             Symbol* super_name,  bool is_superclass);
 
   static void initialize() NOT_CDS_RETURN;
-  static void init_dumptime_info(InstanceKlass* k) NOT_CDS_RETURN;
+  static DumpTimeClassInfo* init_dumptime_info(InstanceKlass* k) NOT_CDS_RETURN_(nullptr);
   static void init_dumptime_info_from_input_archive(InstanceKlass* k) NOT_CDS_RETURN;
   static void handle_class_unloading(InstanceKlass* k) NOT_CDS_RETURN;
 
@@ -274,7 +274,7 @@ public:
   }
   static bool add_unregistered_class(Thread* current, InstanceKlass* k);
   static InstanceKlass* get_unregistered_class(Symbol* name);
-  static void copy_unregistered_class_size_and_crc32(InstanceKlass* klass);
+  static void copy_unregistered_class_size_and_crc32(InstanceKlass* klass, DumpTimeClassInfo* dt_info);
   static void copy_unregistered_classes_for_retraining(JavaThread* current);
   static void copy_unregistered_class(JavaThread* current, InstanceKlass* k);
 
