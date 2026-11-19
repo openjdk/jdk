@@ -31,6 +31,7 @@
 #include "memory/universe.hpp"
 #include "oops/arrayKlass.hpp"
 #include "oops/arrayOop.hpp"
+#include "oops/flatArrayKlass.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/globalDefinitions.hpp"
