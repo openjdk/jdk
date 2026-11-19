@@ -309,6 +309,11 @@ uint8_t ShenandoahBarrierSetC2::refine_load(Node* n, uint8_t bd) {
   assert(ShenandoahElideIdealBarriers, "Checked by caller");
   assert(bd != 0, "Checked by caller");
 
+  if (n->Opcode() == Op_LoadLSpecial) {
+    // Skip any refinement for special nodes for now.
+    return bd;
+  }
+
   // Do not touch weak loads at all: they are responsible for shielding from
   // Reference.referent resurrection.
   if ((bd & (ShenandoahBitWeak | ShenandoahBitPhantom)) != 0) {
