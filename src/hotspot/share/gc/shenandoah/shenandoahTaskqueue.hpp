@@ -26,7 +26,6 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHTASKQUEUE_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHTASKQUEUE_HPP
 
-#include "gc/shared/taskqueue.hpp"
 #include "gc/shenandoah/shenandoahPadding.hpp"
 #include "memory/reservedSpace.hpp"
 #include "memory/virtualspace.hpp"
