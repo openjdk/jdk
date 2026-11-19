@@ -60,6 +60,12 @@ class GetCtorLocalStrictInitFields {
         volatile boolean canContinue;
         volatile Throwable exception;
 
+        void checkException(Throwable t) {
+            if (t != null) {
+                throw new RuntimeException("target thread threw exception", t);
+            }
+        }
+
         /**
          * Starts a thread to execute the given action. The action is expected to spin
          * at the given class/method. Once spinning, the thread is suspended and testGetLocalInstance
@@ -80,6 +86,7 @@ class GetCtorLocalStrictInitFields {
             try {
                 // wait for target thread to spin
                 while (!ready) {
+                    checkException(exception);
                     Thread.sleep(10);
                 }
                 assertEquals(JVMTI_ERROR_NONE, suspendThread(thread));
@@ -91,7 +98,7 @@ class GetCtorLocalStrictInitFields {
                 if (suspended) resumeThread(thread);
                 thread.join();
             }
-            assertNull(exception, "target thread threw exception");
+            checkException(exception);
             return err;
         }
     }

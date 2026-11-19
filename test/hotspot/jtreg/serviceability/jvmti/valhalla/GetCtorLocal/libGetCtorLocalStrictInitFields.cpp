@@ -69,6 +69,7 @@ Java_GetCtorLocalStrictInitFields_testGetLocalInstance(JNIEnv *jni, jclass ignor
   char* mname = get_method_name(jvmti, jni, method);
   jobject obj_this = nullptr;
   jobject obj0 = nullptr;
+  jobject obj1 = nullptr;
 
   LOG("\ntestGetLocalInstance: frame method: %s\n", mname);
 
@@ -76,7 +77,11 @@ Java_GetCtorLocalStrictInitFields_testGetLocalInstance(JNIEnv *jni, jclass ignor
   LOG("testGetLocalInstance: GetLocalInstance returned error code: %s (%d)\n", TranslateError(err), err);
 
   jvmtiError err_obj = jvmti->GetLocalObject(thread, depth, 0, &obj0);
-  LOG("testGetLocalInstance: GetLocalObject returned error code: %s (%d)\n", TranslateError(err_obj), err_obj);
+  LOG("testGetLocalInstance: GetLocalObject for slot 0 returned error code: %s (%d)\n", TranslateError(err_obj), err_obj);
+
+  jvmtiError err_obj1 = jvmti->GetLocalObject(thread, depth, 1, &obj1);
+  LOG("testGetLocalInstance: GetLocalObject for slot 1 returned error code: %s (%d)\n", TranslateError(err_obj1), err_obj1);
+  check_jvmti_status(jni, err_obj1, "GetLocalObject for slot 1");
 
   if (err_obj != err) {
     LOG("Failed: expected from GetLocalObject same error code as from GetLocalInstance: expected %s (%d), got: %s (%d)\n",
