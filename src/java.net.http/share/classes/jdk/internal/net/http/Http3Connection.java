@@ -1745,6 +1745,7 @@ public final class Http3Connection implements AutoCloseable {
             assert size <= 3 * VariableLengthEncoder.MAX_INTEGER_LENGTH;
             ByteBuffer buffer = ByteBuffer.allocate((int) size);
             cancelPush.writeFrame(buffer);
+            buffer.flip();
             controlStreamPair.localWriter().scheduleForWriting(buffer, false);
         } catch (IOException io) {
             debug.log("Failed to cancel pushId: " + pushId);
