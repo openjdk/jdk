@@ -750,11 +750,9 @@ void ShenandoahBarrierSetAssembler::store_c2_special(const MachNode* node, Macro
   // Do the actual store
   __ sd(src, Address(dst_base));
 
-  if (first_oop) {
+  if (first_oop || second_oop) {
+    // Since the atomic store is aligned, we can update one card for both oops.
     ShenandoahBarrierStubC2::store_post(masm, node, Address(dst_base), tmp1, tmp2);
-  }
-  if (second_oop) {
-    ShenandoahBarrierStubC2::store_post(masm, node, Address(dst_base, 4), tmp1, tmp2);
   }
 }
 
