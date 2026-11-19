@@ -2872,7 +2872,7 @@ void C2_MacroAssembler::element_compare(Register a1, Register a2, Register resul
                                         bool islatin, Label &DIFF) {
   Assembler::SEW sew = islatin ? Assembler::e8 : Assembler::e16;
 
-  Label COMPARE_ONCE, COMPARE_M2, COMPARE_M4, LARGE, LOOP, SAME;
+  Label COMPARE_ONCE, COMPARE_M4, LARGE, LOOP, SAME;
   // Callers reserve v4-v11 as implicit vector TEMP operands in their .ad rules.
   // v4 and v8 start non-overlapping register groups aligned for LMUL=m4.
   const VectorRegister va = v4;
@@ -2881,7 +2881,7 @@ void C2_MacroAssembler::element_compare(Register a1, Register a2, Register resul
 
   // Short input: one vl-bounded m1 compare, no loop.
   mv(tmp1, elems_m1);
-  bgt(cnt, tmp1, COMPARE_M2);
+  bgt(cnt, tmp1, COMPARE_M4);
   vsetvli(tmp1, cnt, sew, Assembler::m1, Assembler::ma, Assembler::ta);
   bind(COMPARE_ONCE);
   vlex_v(va, a1, sew);
@@ -2890,13 +2890,6 @@ void C2_MacroAssembler::element_compare(Register a1, Register a2, Register resul
   vfirst_m(tmp2, va);
   bgez(tmp2, DIFF);
   j(SAME);
-
-  // Medium input: one vl-bounded m2 compare.
-  bind(COMPARE_M2);
-  mv(tmp1, 2 * elems_m1);
-  bgt(cnt, tmp1, COMPARE_M4);
-  vsetvli(tmp1, cnt, sew, Assembler::m2, Assembler::ma, Assembler::ta);
-  j(COMPARE_ONCE);
 
   // Medium input: one vl-bounded m4 compare.
   bind(COMPARE_M4);
