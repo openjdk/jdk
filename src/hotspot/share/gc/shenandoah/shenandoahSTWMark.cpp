@@ -88,7 +88,7 @@ void ShenandoahSTWMark::mark() {
 
   start_mark();
 
-  task_queues()->rebalance();
+  task_queues()->flush_to_shared();
 
   {
     // Mark

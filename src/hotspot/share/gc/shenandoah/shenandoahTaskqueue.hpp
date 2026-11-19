@@ -375,7 +375,7 @@ public:
   inline bool is_shared_empty();
 
   void clear();
-  void rebalance();
+  void flush_to_shared();
 
   size_t allocated();
 };

@@ -168,7 +168,7 @@ void ShenandoahConcurrentMark::concurrent_mark() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   WorkerThreads* workers = heap->workers();
   uint nworkers = workers->active_workers();
-  task_queues()->rebalance();
+  task_queues()->flush_to_shared();
 
   ShenandoahGenerationType gen_type = _generation->type();
   ShenandoahSATBMarkQueueSet& qset = ShenandoahBarrierSet::satb_mark_queue_set();
@@ -255,7 +255,7 @@ void ShenandoahConcurrentMark::finish_mark_work() {
     ShenandoahGCPhase phase(ShenandoahPhaseTimings::finish_mark);
 
     uint nworkers = heap->workers()->active_workers();
-    task_queues()->rebalance();
+    task_queues()->flush_to_shared();
     ShenandoahTaskTerminator terminator(nworkers, task_queues());
 
     switch (_generation->type()) {

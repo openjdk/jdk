@@ -132,7 +132,7 @@ void ShenandoahTaskQueueSet::clear() {
   _shared_count.store_relaxed(0);
 }
 
-void ShenandoahTaskQueueSet::rebalance() {
+void ShenandoahTaskQueueSet::flush_to_shared() {
   for (size_t i = 0; i < _queue_count; i++) {
     ShenandoahTaskQueue* q = queue(i);
     assert(q != nullptr, "Sanity");
