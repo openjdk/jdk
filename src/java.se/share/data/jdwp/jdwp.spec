@@ -2625,14 +2625,12 @@ JDWP "Java(tm) Debug Wire Protocol"
         "index can be determined for method arguments from the method "
         "signature without access to the local variable table information.) "
         "<p>"
-        "When preview features are enabled in the target VM, "
-        "if the local variable is the 'this' object and represents a "
-        "<a href=../../api/java.base/java/lang/Class.html#isValue()>value object<sup>PREVIEW</sup></a> "
-        "under construction, the value returned "
-        "will be for a snapshot of the value object, not a reference to the actual "
-        "value object under construction. Therefore the value returned will not reflect "
-        "changes to the value object that happen later on during construction."
-        
+        "When preview features are enabled on the target VM, OPAQUE_FRAME "
+        " is returned if slot 0 is requested and the specified frame is a "
+        "constructor frame whose declaring class or any of its superclasses has  "
+        "<a href=../../api/java.base/java/lang/reflect/Field.html#isStrictInit()>"
+        "strictly-initialized<sup>PREVIEW</sup></a> instance fields. "
+
         (Out
             (threadObject thread "The frame's thread. ")
             (frame frame "The frame ID. ")
@@ -2655,8 +2653,12 @@ JDWP "Java(tm) Debug Wire Protocol"
             (Error INVALID_OBJECT)
             (Error INVALID_FRAMEID)
             (Error INVALID_SLOT)
-            (Error OPAQUE_FRAME      "Unable to get the value of local variables in the frame "
-                                     "(e.g. the frame is executing a native method).")
+            (Error OPAQUE_FRAME      "Unable to get the value of local variables in the frame. "
+                        "For example,  the frame is executing a native method, "
+                        " or slot 0 is requested and the specified frame is a "
+                        "constructor frame whose declaring class or any of its superclasses has  "
+                        "<a href=../../api/java.base/java/lang/reflect/Field.html#isStrictInit()>"
+                        "strictly-initialized<sup>PREVIEW</sup></a> instance fields. ")
             (Error VM_DEAD)
         )
     )
@@ -2705,14 +2707,11 @@ JDWP "Java(tm) Debug Wire Protocol"
         "If the frame's method is static or native, the reply "
         "will contain the null object reference. "
         "<p>"
-        "When preview features are enabled on the target VM, "
-        "if 'this' represents a "
-        "<a href=../../api/java.base/java/lang/Class.html#isValue()>value object<sup>PREVIEW</sup></a> "
-        "under construction, the value returned will be for a snapshot of the "
-        "value object, not a reference to the actual value object under "
-        "construction. Therefore the value returned will not reflect "
-        "changes to the value object that happen later on during "
-        "construction."
+        "When preview features are enabled on the target VM, OPAQUE_FRAME "
+        " is returned if the specified frame is a "
+        "constructor frame whose declaring class or any of its superclasses has  "
+        "<a href=../../api/java.base/java/lang/reflect/Field.html#isStrictInit()>"
+        "strictly-initialized<sup>PREVIEW</sup></a> instance fields. "
         (Out
             (threadObject thread "The frame's thread. ")
             (frame frame "The frame ID. ")
@@ -2724,6 +2723,10 @@ JDWP "Java(tm) Debug Wire Protocol"
             (Error INVALID_THREAD)
             (Error INVALID_OBJECT)
             (Error INVALID_FRAMEID)
+            (Error OPAQUE_FRAME   "The specified frame is a "
+                                "constructor frame whose declaring class or any of its superclasses has  "
+                                "<a href=../../api/java.base/java/lang/reflect/Field.html#isStrictInit()>"
+                                "strictly-initialized<sup>PREVIEW</sup></a> instance fields. ")")
             (Error VM_DEAD)
         )
     )

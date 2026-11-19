@@ -250,6 +250,9 @@ public class StackFrameImpl extends MirrorImpl
                 case JDWP.Error.THREAD_NOT_SUSPENDED:
                 case JDWP.Error.INVALID_THREAD:
                     throw new InvalidStackFrameException();
+                case JDWP.Error.OPAQUE_FRAME:
+                    throw new InternalException(
+                                                "Unexpected OPAQUE_FRAME error");
                 default:
                     throw exc.toJDIException();
             }
