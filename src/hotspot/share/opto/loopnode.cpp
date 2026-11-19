@@ -5151,6 +5151,52 @@ static float estimate_path_freq( Node *n ) {
   return 0.0f;                  // No estimate available
 }
 
+// Is there an induction variable which is updated on this backedge and
+// unchanged on every other backedge of the shared header?
+static bool has_uniquely_updated_iv(Node* head, uint backedge_idx) {
+  Node* back_control = head->in(backedge_idx);
+  if (back_control->Opcode() == Op_SafePoint) {
+    back_control = back_control->in(TypeFunc::Control);
+  }
+  if (!back_control->is_IfTrue() && !back_control->is_IfFalse()) {
+    return false;
+  }
+  Node* bol = back_control->in(0)->in(1);
+  if (!bol->is_Bool()) {
+    return false;
+  }
+  Node* cmp = bol->in(1);
+  if (cmp->Opcode() != Op_CmpI && cmp->Opcode() != Op_CmpL) {
+    return false;
+  }
+
+  for (DUIterator_Fast imax, i = head->fast_outs(imax); i < imax; i++) {
+    Node* phi = head->fast_out(i);
+    if (!phi->is_Phi()) {
+      continue;
+    }
+    Node* incr = phi->in(backedge_idx);
+    if (incr == nullptr ||
+        (incr->Opcode() != Op_AddI && incr->Opcode() != Op_AddL) ||
+        incr->in(1) != phi || !incr->in(2)->is_Con() ||
+        (cmp->in(1) != phi && cmp->in(1) != incr &&
+         cmp->in(2) != phi && cmp->in(2) != incr)) {
+      continue;
+    }
+    bool unique = true;
+    for (uint j = 2; j < head->req(); j++) {
+      if (j != backedge_idx && phi->in(j) != phi) {
+        unique = false;
+        break;
+      }
+    }
+    if (unique) {
+      return true;
+    }
+  }
+  return false;
+}
+
 //------------------------------merge_many_backedges---------------------------
 // Merge all the backedges from the shared header into a private Region.
 // Feed that region as the one backedge to this loop.
@@ -5177,6 +5223,19 @@ void IdealLoopTree::merge_many_backedges( PhaseIdealLoop *phase ) {
   // by being much hotter than the next hottest backedge.
   if( hotcnt <= 0.0001 ||
       hotcnt < 2.0*warmcnt ) hot_idx = 0;// No hot backedge
+
+  // When two nested loops share a header, their backedges can be equally
+  // frequent. If only one backedge updates the induction variable tested by
+  // its exit, keep the other backedge as an inner loop. Otherwise merging
+  // both backedges obscures the induction variable and prevents counted loop
+  // detection. Do not depend on the DFS order of the two backedges.
+  if (hot_idx == 0 && _head->req() == 4) {
+    bool iv_on_first = has_uniquely_updated_iv(_head, 2);
+    bool iv_on_second = has_uniquely_updated_iv(_head, 3);
+    if (iv_on_first != iv_on_second) {
+      hot_idx = iv_on_first ? 3 : 2;
+    }
+  }
 
   // Peel out the backedges into a private merge point; peel
   // them all except optionally hot_idx.

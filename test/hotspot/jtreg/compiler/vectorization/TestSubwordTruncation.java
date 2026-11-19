@@ -29,7 +29,7 @@ import compiler.lib.generators.*;
 
 /*
  * @test
- * @bug 8350177 8362171 8369881 8342095 8380988 8394230 8394456
+ * @bug 8350177 8362171 8369881 8342095 8380988 8394230 8394456 8397248
  * @summary Ensure that truncation of subword vectors produces correct results
  * @library /test/lib /
  * @run driver compiler.vectorization.TestSubwordTruncation
@@ -570,6 +570,9 @@ public class TestSubwordTruncation {
                 i -= j;
 
                 for (int u = 1; 1 > u; u++) {
+                    // Update k on both backedges of the shared header to retain the
+                    // loop shape that produces the CastII. This loop never executes.
+                    k++;
                 }
             } while (++k < 8);
         } while (++j < 191);
@@ -673,7 +676,10 @@ public class TestSubwordTruncation {
     }
 
     public static void main(String[] args) {
-        TestFramework.run();
+        // Allow partial peeling to reach CastII truncation in testCastII as well.
+        new TestFramework().addScenarios(new Scenario(0),
+                                        new Scenario(1, "-XX:PartialPeelNewPhiDelta=2"))
+                           .start();
     }
 }
 
