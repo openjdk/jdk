@@ -315,7 +315,6 @@ public:
 
   static int get_path_index(const InstanceKlass* ik);
   int get_boot_classpath_index(const InstanceKlass* ik) const;
-  static bool is_modules_image(InstanceKlass* ik);
   static void print();
 };
 

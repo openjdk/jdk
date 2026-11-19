@@ -767,6 +767,7 @@ const AOTClassLocation* AOTClassLocationConfig::class_location_at(int index) con
 }
 
 const AOTClassLocation* AOTClassLocationConfig::class_location_not_null(const InstanceKlass* ik) const {
+  precond(ik->in_aot_cache());
   int index = to_path_index(ik->aot_class_location_id());
   assert(index >= 0, "must be aot class for built-in loaders");
   return class_location_at(index);
@@ -780,10 +781,6 @@ int AOTClassLocationConfig::get_boot_classpath_index(const InstanceKlass* ik) co
   int index = to_path_index(ik->aot_class_location_id());
   assert(index >= 0 && index < boot_cp_end_index(), "sanity");
   return index;
-}
-
-bool AOTClassLocationConfig::is_modules_image(InstanceKlass* ik) {
-  return get_path_index(ik) == 0;
 }
 
 AOTClassLocationID AOTClassLocationConfig::get_module_location_id(Symbol* location) const {
