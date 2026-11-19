@@ -58,6 +58,7 @@ public class BasicFloat16ArithTests {
         checkValueOfDouble();
         checkValueOfLong();
         checkValueOfString();
+        checkShortValue();
         checkBaseConversionRoundTrip();
         FusedMultiplyAddTests.main();
     }
@@ -506,6 +507,36 @@ public class BasicFloat16ArithTests {
             double halfWayNextUp =   Math.nextUp(halfWay);
             checkFloat16(add(f16, ulp),         valueOf( halfWayNextUp).floatValue(), roundUpMsg);
             checkFloat16(subtract(f16Neg, ulp), valueOf(-halfWayNextUp).floatValue(), roundUpMsg);
+        }
+    }
+
+    private static void checkShortValue() {
+        // Loop over all 16-bit bit patterns
+        for(int i = Short.MIN_VALUE; i <= Short.MAX_VALUE; i++) {
+            Float16 f16 = Float16.shortBitsToFloat16((short)i);
+
+            short expected;
+
+            float f16AsFloat = f16.floatValue();
+            if (Float.isNaN(f16AsFloat)) {
+                expected = 0;
+            } else {
+                if (f16AsFloat >= Short.MAX_VALUE) {
+                    expected = Short.MAX_VALUE;
+                } else if (f16AsFloat <= Short.MIN_VALUE) {
+                    expected = Short.MIN_VALUE;
+                } else if (Math.abs(f16AsFloat) < 1.0) {
+                    expected = (short)0;
+                } else {
+                    expected = Float.valueOf(f16AsFloat).shortValue();
+                }
+            }
+
+            short result = f16.shortValue();
+            if (result != expected) {
+                throwRE("For Float16 value " + f16 + " expected shortValue of " +
+                        expected + " but got " + result);
+            }
         }
     }
 
