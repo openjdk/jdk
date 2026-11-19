@@ -2627,7 +2627,7 @@ JDWP "Java(tm) Debug Wire Protocol"
         "<p>"
         "When preview features are enabled on the target VM, OPAQUE_FRAME "
         "is returned if slot 0 is requested and the specified frame is a "
-        "constructor frame whose declaring class or any of its superclasses has  "
+        "constructor frame whose declaring class or any of its superclasses has "
         "<a href=../../api/java.base/java/lang/reflect/Field.html#isStrictInit()>"
         "strictly-initialized<sup>PREVIEW</sup></a> instance fields. "
 
@@ -2658,7 +2658,7 @@ JDWP "Java(tm) Debug Wire Protocol"
                                      "or slot 0 is requested and the specified frame is a "
                                      "constructor frame whose declaring class or any of its superclasses has  "
                                      "<a href=../../api/java.base/java/lang/reflect/Field.html#isStrictInit()>"
-                                     "strictly-initialized<sup>PREVIEW</sup></a> instance fields. ")
+                                     "strictly-initialized<sup>PREVIEW</sup></a> instance fields.")
             (Error VM_DEAD)
         )
     )
@@ -2709,9 +2709,9 @@ JDWP "Java(tm) Debug Wire Protocol"
         "<p>"
         "When preview features are enabled on the target VM, OPAQUE_FRAME "
         "is returned if the specified frame is a "
-        "constructor frame whose declaring class or any of its superclasses has  "
+        "constructor frame whose declaring class or any of its superclasses has "
         "<a href=../../api/java.base/java/lang/reflect/Field.html#isStrictInit()>"
-        "strictly-initialized<sup>PREVIEW</sup></a> instance fields. "
+        "strictly-initialized<sup>PREVIEW</sup></a> instance fields."
         (Out
             (threadObject thread "The frame's thread. ")
             (frame frame "The frame ID. ")
