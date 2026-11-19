@@ -62,7 +62,6 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
@@ -415,7 +414,7 @@ public class H3PushCancel implements HttpServerAdapters {
                     custom).join();
 
             // fails if sendCancelPush wrote no bytes (missing flip)
-            long cancelledId = cancelReceived.get(10, TimeUnit.SECONDS);
+            long cancelledId = cancelReceived.get();
             assertTrue(cancelledId >= 0, "Server should receive CANCEL_PUSH");
         }
     }
