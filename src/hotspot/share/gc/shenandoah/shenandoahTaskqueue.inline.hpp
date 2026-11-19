@@ -27,6 +27,7 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHTASKQUEUE_INLINE_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHTASKQUEUE_INLINE_HPP
 
+#include "code/vtableStubs.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.hpp"
 #include "utilities/bitMap.inline.hpp"
 
@@ -63,32 +64,68 @@ inline void ShenandoahTaskQueue::share_work() {
   }
 }
 
-inline bool ShenandoahTaskQueueSet::is_shared_empty() {
-  return _shared_count.load_relaxed() == 0;
+inline ShenandoahTaskQueueChunk* ShenandoahTaskQueueSegment::flip_from(Atomic<uint64_t>* bm) {
+  while (true) {
+    uint64_t cur = bm->load_relaxed();
+    if (cur == 0) {
+      return nullptr;
+    }
+    for (int b = 0; b < 64; b++) {
+      if (is_set_nth_bit(cur, b)) {
+        if (bm->compare_set(cur, cur & ~(1 << b))) {
+          return &_chunks[b];
+        }
+      }
+    }
+  }
 }
 
-inline size_t ShenandoahTaskQueueSet::allocated() {
-  return _chunks_allocated.load_relaxed();
+inline ShenandoahTaskQueueChunk* ShenandoahTaskQueueSegment::flip_from_shared() {
+  return flip_from(&_shared_bm);
+}
+
+inline ShenandoahTaskQueueChunk * ShenandoahTaskQueueSegment::flip_from_free() {
+  return flip_from(&_free_bm);
+}
+
+inline void ShenandoahTaskQueueSegment::flip_to_shared(ShenandoahTaskQueueChunk* chunk) {
+  size_t local_idx = chunk->index() & (SEGMENT_SIZE - 1);
+  _shared_bm.or_then_fetch(1 << local_idx);
+}
+
+inline void ShenandoahTaskQueueSegment::flip_to_free(ShenandoahTaskQueueChunk *chunk) {
+  size_t local_idx = chunk->index() & (SEGMENT_SIZE - 1);
+  _free_bm.or_then_fetch(1 << local_idx);
+}
+
+inline bool ShenandoahTaskQueueSet::is_shared_empty() {
+  return _shared_count.load_relaxed() == 0;
 }
 
 inline ShenandoahTaskQueueChunk* ShenandoahTaskQueueSet::flip_from_shared() {
   if (_shared_count.load_relaxed() == 0) {
     return nullptr;
   }
-  size_t idx = find_and_claim(_shared_bm);
-  if (idx == _max_chunks) {
-    return nullptr;
+  for (size_t s = 0; s < _max_segments; s++) {
+    auto chunk = _segments[s].flip_from_shared();
+    if (chunk != nullptr) {
+      _shared_count.fetch_then_sub((size_t)1, memory_order_seq_cst);
+      return chunk;
+    }
   }
-  _shared_count.fetch_then_sub((size_t)1, memory_order_seq_cst);
-  return chunk_at(idx);
+  return nullptr;
 }
 
 inline ShenandoahTaskQueueChunk* ShenandoahTaskQueueSet::flip_from_free() {
-  size_t idx = find_and_claim(_free_bm);
-  if (idx == _max_chunks) {
-    return allocate_chunk();
+  while (true) {
+    for (size_t s = 0; s < _max_segments; s++) {
+      auto chunk = _segments[s].flip_from_free();
+      if (chunk != nullptr) {
+        return chunk;
+      }
+    }
+    allocate_segment();
   }
-  return chunk_at(idx);
 }
 
 inline void ShenandoahTaskQueueSet::flip_to_shared(ShenandoahTaskQueueChunk* chunk) {
@@ -96,16 +133,14 @@ inline void ShenandoahTaskQueueSet::flip_to_shared(ShenandoahTaskQueueChunk* chu
   // For the sake of proper termination, we need to bump shared work count
   // before publishing the chunk.
   _shared_count.fetch_then_add((size_t)1, memory_order_seq_cst);
-  size_t idx = index_of(chunk);
-  bool succ = _shared_bm.par_set_bit(idx, memory_order_release);
-  assert(succ, "Must succeed");
+  size_t sub_idx = chunk->index() & (ShenandoahTaskQueueSegment::SEGMENT_SIZE - 1);
+  _segments[sub_idx].flip_to_shared(chunk);
 }
 
 inline void ShenandoahTaskQueueSet::flip_to_free(ShenandoahTaskQueueChunk* chunk) {
   assert(chunk->is_empty(), "Do not free non-empty chunks");
-  size_t idx = index_of(chunk);
-  bool succ = _free_bm.par_set_bit(idx, memory_order_release);
-  assert(succ, "Must succeed");
+  size_t sub_idx = chunk->index() & (ShenandoahTaskQueueSegment::SEGMENT_SIZE - 1);
+  _segments[sub_idx].flip_to_free(chunk);
 }
 
 bool ShenandoahTaskQueueChunk::push(ShenandoahTask t) {
@@ -137,38 +172,14 @@ inline bool ShenandoahTaskQueueChunk::is_sliceable() {
   return _top >= MIN_SIZE * 2;
 }
 
-inline ShenandoahTaskQueueChunk* ShenandoahTaskQueueSet::chunk_at(size_t idx) {
-  return reinterpret_cast<ShenandoahTaskQueueChunk*>(_chunks_base + idx * CHUNK_SIZE);
-}
-
-inline size_t ShenandoahTaskQueueSet::index_of(ShenandoahTaskQueueChunk* chunk) {
-  size_t off = pointer_delta((char*)chunk, _chunks_base, 1);
-  assert(is_aligned(off, CHUNK_SIZE), "Sanity: alignment");
-  return off / CHUNK_SIZE;
-}
-
-inline size_t ShenandoahTaskQueueSet::find_and_claim(BitMapView& bm) {
-  size_t end = chunks_end();
-  for (size_t idx = bm.find_first_set_bit(0, end); idx < end;
-              idx = bm.find_first_set_bit(idx + 1, end)) {
-    if (bm.par_clear_bit(idx, memory_order_acq_rel)) {
-      return idx;
+inline ShenandoahTaskQueueSegment* ShenandoahTaskQueueSet::allocate_segment() {
+  auto seg = new ShenandoahTaskQueueSegment();
+  while (true) {
+    if (AtomicAccess::cmpxchg(&_segments[_max_segments], (ShenandoahTaskQueueSegment*)nullptr, seg) == (ShenandoahTaskQueueSegment*)nullptr) {
+      _max_segments++;
+      return seg;
     }
   }
-  return _max_chunks;
-}
-
-inline size_t ShenandoahTaskQueueSet::chunks_end() {
-  return MIN2(_chunks_allocated.load_relaxed(), _max_chunks);
-}
-
-inline ShenandoahTaskQueueChunk* ShenandoahTaskQueueSet::allocate_chunk() {
-  size_t idx = _chunks_allocated.fetch_then_add((size_t)1, memory_order_relaxed);
-  if (idx >= _chunks_committed.load_acquire()) {
-    expand_to(idx);
-  }
-  assert(idx < _chunks_committed.load_relaxed(), "Sanity");
-  return new (chunk_at(idx)) ShenandoahTaskQueueChunk();
 }
 
 inline bool ShenandoahTaskTerminator::has_waiters() {

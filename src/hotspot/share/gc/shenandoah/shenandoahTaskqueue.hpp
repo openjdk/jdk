@@ -275,16 +275,17 @@ public:
 
 class ShenandoahTaskQueueChunk {
   // Target 1x4K page per chunk for full chunks.
-  static const int MAX_SIZE = 511;
+  static const int MAX_SIZE = 510;
 
   // Split the chunks down to this size if needed.
   static const int MIN_SIZE = 1;
 
   size_t _top;
   ShenandoahTask _tasks[MAX_SIZE];
+  size_t _index;
 
 public:
-  ShenandoahTaskQueueChunk() : _top(0) {}
+  ShenandoahTaskQueueChunk(size_t index) : _top(0), _index(index) {}
 
   ALWAYSINLINE
   bool push(ShenandoahTask t);
@@ -294,6 +295,8 @@ public:
 
   bool is_empty();
   void clear();
+
+  size_t index() { return _index; }
 
   bool is_sliceable();
   void slice_top(ShenandoahTaskQueueChunk* to_chunk);
@@ -323,6 +326,27 @@ public:
   void share_work();
 };
 
+class ShenandoahTaskQueueSegment : public CHeapObj<mtGC> {
+public:
+  static const int SEGMENT_SIZE_SHIFT = 6;
+  static const int SEGMENT_SIZE = 1 << SEGMENT_SIZE_SHIFT;
+  static_assert(SEGMENT_SIZE <= 64, "Bitmap encoding");
+
+  Atomic<uint64_t> _free_bm;
+  Atomic<uint64_t> _shared_bm;
+
+  ShenandoahTaskQueueChunk _chunks[SEGMENT_SIZE];
+
+  ShenandoahTaskQueueSegment();
+
+  inline ShenandoahTaskQueueChunk* flip_from(Atomic<uint64_t>* bm);
+  inline ShenandoahTaskQueueChunk* flip_from_shared();
+  inline ShenandoahTaskQueueChunk* flip_from_free();
+
+  inline void flip_to_shared(ShenandoahTaskQueueChunk* chunk);
+  inline void flip_to_free(ShenandoahTaskQueueChunk* chunk);
+};
+
 class ShenandoahTaskQueueSet : public CHeapObj<mtGC> {
   static const size_t CHUNK_SIZE = sizeof(ShenandoahTaskQueueChunk);
   static const size_t COMMIT_CHUNKS = 16;
@@ -331,17 +355,8 @@ class ShenandoahTaskQueueSet : public CHeapObj<mtGC> {
   ShenandoahTaskQueue** _queues;
   size_t _queue_count;
 
-  ReservedSpace _rs;
-  VirtualSpace  _vs;
-  char*         _chunks_base;
-  size_t        _max_chunks;
-
-  BitMapView    _free_bm;
-  BitMapView    _shared_bm;
-
-  Mutex _expand_lock;
-  Atomic<size_t> _chunks_allocated;
-  Atomic<size_t> _chunks_committed;
+  ShenandoahTaskQueueSegment* _segments;
+  size_t _max_segments;
 
   shenandoah_padding(0);
   Atomic <size_t> _shared_count;
@@ -349,12 +364,8 @@ class ShenandoahTaskQueueSet : public CHeapObj<mtGC> {
 
   inline size_t find_and_claim(BitMapView& bm);
 
-  inline size_t chunks_end();
-
-  ShenandoahTaskQueueChunk* allocate_chunk();
+  ShenandoahTaskQueueSegment* allocate_segment();
   ShenandoahTaskQueueChunk* chunk_at(size_t idx);
-  size_t index_of(ShenandoahTaskQueueChunk* chunk);
-  void expand_to(size_t idx);
 
 public:
   ShenandoahTaskQueueSet(uint queue_count);
@@ -376,7 +387,6 @@ public:
   void clear();
   void flush_to_shared();
 
-  size_t allocated();
 };
 
 class ShenandoahTaskTerminator {

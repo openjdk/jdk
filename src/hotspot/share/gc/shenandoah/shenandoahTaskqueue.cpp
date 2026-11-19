@@ -26,7 +26,6 @@
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.inline.hpp"
 #include "memory/memoryReserver.hpp"
-#include "utilities/bitMap.inline.hpp"
 #include "utilities/spinYield.hpp"
 
 bool ShenandoahTaskQueueChunk::is_empty() {
@@ -62,31 +61,17 @@ void ShenandoahTaskQueue::flush_to_shared() {
   }
 }
 
+ShenandoahTaskQueueSegment::ShenandoahTaskQueueSegment() : _free_bm(0), _shared_bm(0) {
+}
+
 ShenandoahTaskQueueSet::ShenandoahTaskQueueSet(uint queue_count) :
   _queue_count(queue_count),
-  _expand_lock(Mutex::stackwatermark - 1, "ShenandoahTaskQueueChunkPool_lock", true),
-  _chunks_allocated(0), _chunks_committed(0), _shared_count(0) {
-
-  size_t alignment = MAX3(CHUNK_SIZE, os::vm_allocation_granularity(), os::vm_page_size());
+  _shared_count(0) {
 
   // Size up for the absolute worst case: one 8-byte task per smallest 8-byte object
-  // TODO: 2-level indexing would allow us to reserve as we go.
-  size_t chunks_bytes = align_up(MaxHeapSize, alignment);
-  _max_chunks = chunks_bytes / CHUNK_SIZE;
-
-  size_t bm_words = BitMap::calc_size_in_words(_max_chunks);
-  size_t bm_bytes = align_up(2 * bm_words * BytesPerWord, alignment);
-
-  _rs = MemoryReserver::reserve(bm_bytes + chunks_bytes, alignment, os::vm_page_size(), mtGC);
-  if (!_rs.is_reserved() || !_vs.initialize(_rs, bm_bytes)) {
-    vm_exit_out_of_memory(bm_bytes + chunks_bytes, OOM_MMAP_ERROR, "Cannot reserve space for ShenandoahTaskQueueSet");
-  }
-
-  auto bm_base = (BitMap::bm_word_t*)_vs.low();
-  _free_bm = BitMapView(bm_base, _max_chunks);
-  _shared_bm = BitMapView(bm_base + bm_words, _max_chunks);
-  _chunks_base = _vs.low() + bm_bytes;
-  assert(is_aligned(_chunks_base, CHUNK_SIZE), "Chunk area must be aligned");
+  size_t alignment = MAX3(CHUNK_SIZE, os::vm_allocation_granularity(), os::vm_page_size());
+  _max_segments = align_up(MaxHeapSize, alignment) / CHUNK_SIZE / ShenandoahTaskQueueSegment::SEGMENT_SIZE;
+  _segments = NEW_C_HEAP_ARRAY(ShenandoahTaskQueueSegment, _max_segments, mtGC);
 
   _queues = NEW_C_HEAP_ARRAY(ShenandoahTaskQueue*, _queue_count, mtGC);
   for (size_t i = 0; i < _queue_count; i++) {
@@ -99,9 +84,7 @@ ShenandoahTaskQueueSet::~ShenandoahTaskQueueSet() {
     delete _queues[i];
   }
   FREE_C_HEAP_ARRAY(_queues);
-
-  _vs.release();
-  MemoryReserver::release(_rs);
+  FREE_C_HEAP_ARRAY(_segments);
 }
 
 bool ShenandoahTaskQueueSet::is_empty() {
@@ -137,19 +120,6 @@ void ShenandoahTaskQueueSet::flush_to_shared() {
     ShenandoahTaskQueue* q = queue(i);
     assert(q != nullptr, "Sanity");
     q->flush_to_shared();
-  }
-}
-
-void ShenandoahTaskQueueSet::expand_to(size_t idx) {
-  MutexLocker ml(&_expand_lock, Mutex::_no_safepoint_check_flag);
-  size_t cur = _chunks_committed.load_relaxed();
-  if (idx >= cur) {
-    size_t target = MIN2(align_up(idx + 1, COMMIT_CHUNKS), _max_chunks);
-    size_t bytes = (target - cur) * CHUNK_SIZE;
-    if (idx >= _max_chunks || !_vs.expand_by(bytes)) {
-      vm_exit_out_of_memory(bytes, OOM_MMAP_ERROR, "ShenandoahTaskQueueSet pool exhausted");
-    }
-    _chunks_committed.release_store(target);
   }
 }
 
