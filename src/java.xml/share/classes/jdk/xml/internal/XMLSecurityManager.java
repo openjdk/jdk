@@ -85,8 +85,7 @@ public final class XMLSecurityManager implements Cloneable {
         CR_MAP = Collections.unmodifiableMap(map);
     }
 
-    // Valid values for Resource Access, and mappings between the string and
-    // integer values
+    // Canonical string representations of the Resource Access integer values
     static final Map<String, Integer> RA_MAP;
     // Source Level JDK 8
     static {
@@ -108,10 +107,12 @@ public final class XMLSecurityManager implements Cloneable {
     // Catalog Resolve value mapper
     private static final StringMapper CRMAPPER = new StringMapper(JdkConstants.JDKCATALOG_RESOLVE, CR_MAP);
 
-    // Resource Access rules are validated by AccessRule. Rules not in the map
-    // use ALLOW as their integer representation.
-    private static final StringMapper RAMAPPER = new StringMapper(
-            JdkConstants.RESOURCE_ACCESS, RA_MAP, JdkConstants.ALLOW);
+    /**
+     * Resource Access value mapper
+     * AccessRule parses and validates the rules. This mapper provides string representations
+     * of the broad access cases: allow all and deny all.
+     */
+    private static final StringMapper RAMAPPER = new StringMapper(JdkConstants.RESOURCE_ACCESS, RA_MAP);
 
     /**
      * Limits managed by the security manager
@@ -486,7 +487,9 @@ public final class XMLSecurityManager implements Cloneable {
             if (state.compareTo(states[index]) >= 0) {
                 String ruleValue = (String)value;
                 AccessRule rule = new AccessRule(ruleValue);
-                int intValue = limit.mapper().toInt(ruleValue);
+                // AccessRule holds the actual rules. The integer value is used
+                // only for bookkeeping; access decisions use AccessRule.allows.
+                int intValue = ruleValue.trim().isEmpty() ? JdkConstants.DENY : JdkConstants.ALLOW;
                 accessRule = rule;
                 values[index] = intValue;
                 states[index] = state;
@@ -898,26 +901,16 @@ public final class XMLSecurityManager implements Cloneable {
         private final String propertyName;
         private final Map<String, Integer> map;
         private final Map<Integer, String> reverseMap;
-        private final Integer unmappedValue;
-
-        public StringMapper(String propertyName, Map<String, Integer> map) {
-            this(propertyName, map, null);
-        }
 
         /**
-         * Creates a mapper with an optional integer representation for values
-         * not in the map. Properties such as {@link Limit#RESOURCE_ACCESS} use
-         * a dedicated validator ({@link AccessRule}) to validate those values.
+         * Creates a mapper for the named property.
          *
          * @param propertyName the name of the property
          * @param map the value mappings, or null for numeric conversion
-         * @param unmappedValue the integer representation for unmapped values,
-         * or null to require a mapping
          */
-        public StringMapper(String propertyName, Map<String, Integer> map, Integer unmappedValue) {
+        public StringMapper(String propertyName, Map<String, Integer> map) {
             this.propertyName = propertyName;
             this.map = map;
-            this.unmappedValue = unmappedValue;
             if (map != null) {
                 reverseMap = map.entrySet().stream()
                     .collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
@@ -931,8 +924,7 @@ public final class XMLSecurityManager implements Cloneable {
          * method trims surrounding whitespace before looking up the value,
          * or converts the value to an integer if no map is supplied.
          * @param value the property value
-         * @return the mapped integer, or the configured integer representation
-         * for unmapped values
+         * @return the mapped or converted integer
          * @throws IllegalArgumentException if the value is not in the provided map
          * @throws NumberFormatException if numeric conversion is required and
          * the value cannot be parsed as a number
@@ -943,7 +935,7 @@ public final class XMLSecurityManager implements Cloneable {
             Integer iVal;
             if (map != null) {
                 String stringValue = ((String)value).trim();
-                iVal = map.getOrDefault(stringValue.toLowerCase(Locale.ROOT), unmappedValue);
+                iVal = map.get(stringValue.toLowerCase(Locale.ROOT));
                 if (iVal == null) {
                     throw new IllegalArgumentException("Invalid setting '" + value
                             + "' for property '" + propertyName + "'.");
