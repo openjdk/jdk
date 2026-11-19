@@ -97,17 +97,26 @@ import java.util.stream.Collectors;
  * }
  *
  * <h2 id="formatting">Formatting</h2>
- * Formatting that uses the special pattern "0", either explicitly or when the empty string compact pattern
+ *
+ * {@code CompactNumberFormat} utilizes both compact number formatting and general number formatting. For example,
+ * using the following patterns {@code {"", "", "", "0K", ...}} with the {@link Locale#US US locale} and a
+ * minimum of 1 fractional digit, {@code 55.5} is formatted as "56" through general number formatting, and
+ * {@code 5500} is formatted as "5.5K" through compact number formatting.
+ *
+ * <h3>General Number Formatting</h3>
+ * Formatting that uses the special compact pattern "0", either explicitly or when the empty string compact pattern
  * falls back to it, is referred to as general number formatting. This uses the formatting provided by {@link
- * DecimalFormat}. Such formatting never produces fractional digits, even if the underlying decimal pattern
- * has been composed to use fractional digits. Only formatting that does not use the special pattern can produce
- * output with fractional digits. However, the default compact pattern behavior supports no fractional
- * digits. This is why the patterns provided for formatting contain only the minimum
- * integer digits, prefix and/or suffix, but no fractional part. If needed, users can use
- * {@link #setMinimumFractionDigits(int)} to support fractional digits for compact number formatting.
- * For example, using the following patterns {@code {"", "", "", "0K", ...}} with the {@link
- * Locale#US US locale} and a minimum of 1 fractional digit, {@code 55.5} is formatted as
- * "56", and {@code 5500} is formatted as "5.5K".
+ * DecimalFormat} with the {@code decimalPattern} provided to the {@code CompactNumberFormat}. Such formatting
+ * never produces fractional digits, even if the underlying decimal pattern has been composed to use fractional digits.
+ * Changes to the {@code CompactNumberFormat}, such as setting {@link #setGroupingUsed(boolean)
+ * setGroupingUsed(true)} will not change the behavior for general number formatting.
+ *
+ * <h3>Compact Number Formatting</h3>
+ * The default compact number formatting behavior does not produce fractional digits.
+ * This is why the compact patterns are expected to contain only the minimum
+ * integer digits, prefix and/or suffix, but no fractional part, such as {@code "00M"}.
+ * However, users can use {@link #setMinimumFractionDigits(int)} to support fractional digits
+ * for compact number formatting if needed.
  *
  * <h3>Rounding</h3>
  * {@code CompactNumberFormat} provides rounding modes defined in
