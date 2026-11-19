@@ -627,7 +627,7 @@ public class AOTFlags {
                 "-Xlog:aot=debug",
                 "-cp", appJar, helloClass);
             out = CDSTestUtils.executeAndLog(pb, "neg");
-            out.shouldContain("This archive was created with --enable-preview. It is incompatible with the current JVM setting");
+            out.shouldContain("This AOT configuration file was created with --enable-preview. It is incompatible with the current JVM setting");
             out.shouldNotHaveExitValue(0);
 
             printTestCase("Assembly-Production Preview mismatch");
@@ -662,7 +662,7 @@ public class AOTFlags {
                 "-Xlog:aot=debug",
                 "-cp", appJar, helloClass);
             out = CDSTestUtils.executeAndLog(pb, "neg");
-            out.shouldContain("This archive was created with --enable-preview. It is incompatible with the current JVM setting");
+            out.shouldContain("This AOT cache was created with --enable-preview. It is incompatible with the current JVM setting");
             out.shouldNotHaveExitValue(0);
 
             printTestCase("Training-Assembly Preview mismatch 2");
@@ -697,7 +697,7 @@ public class AOTFlags {
                 "-Xlog:aot=debug",
                 "-cp", appJar, helloClass);
             out = CDSTestUtils.executeAndLog(pb, "neg");
-            out.shouldContain("This archive was not created with --enable-preview. It is incompatible with the current JVM setting");
+            out.shouldContain("This AOT configuration file was not created with --enable-preview. It is incompatible with the current JVM setting");
             out.shouldNotHaveExitValue(0);
 
             printTestCase("Assembly-Production Preview mismatch 2");
@@ -732,7 +732,7 @@ public class AOTFlags {
                 "-Xlog:aot=debug",
                 "-cp", appJar, helloClass);
             out = CDSTestUtils.executeAndLog(pb, "neg");
-            out.shouldContain("This archive was not created with --enable-preview. It is incompatible with the current JVM setting");
+            out.shouldContain("This AOT cache was not created with --enable-preview. It is incompatible with the current JVM setting");
             out.shouldNotHaveExitValue(0);
 
             String[] valhallaFlags = {
@@ -778,6 +778,10 @@ public class AOTFlags {
         testAssemblyProductionMismatchHelper(flag, numericFlag, false);
     }
 
+    static String mismatchFlagPattern(String flag) {
+        return "The.*'s " + flag + " setting [(].*[)] does not equal the current setting [(].*[)]";
+    }
+
     // Run training run with flag enabled and assembly run with the flag disabled
     static void testTrainingAssemblyMismatchHelper(String flag, boolean numericFlag, boolean reverse) throws Exception {
         String flagMode0;
@@ -815,7 +819,7 @@ public class AOTFlags {
             "-cp", appJar, helloClass);
 
         out = CDSTestUtils.executeAndLog(pb, "neg");
-        out.shouldContain("VM option " + flag + " is different between");
+        out.shouldMatch(mismatchFlagPattern(flag));
         out.shouldNotHaveExitValue(0);
     }
 
@@ -869,7 +873,7 @@ public class AOTFlags {
             "-cp", appJar, helloClass);
 
         out = CDSTestUtils.executeAndLog(pb, "neg");
-        out.shouldContain("VM option " + flag + " is different between");
+        out.shouldMatch(mismatchFlagPattern(flag));
         out.shouldNotHaveExitValue(0);
     }
 
