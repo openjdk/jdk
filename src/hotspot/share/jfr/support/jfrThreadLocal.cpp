@@ -188,7 +188,6 @@ void JfrThreadLocal::release(Thread* t) {
       assert(t->is_Java_thread(), "invariant");
       JfrJavaEventWriter::return_lease(java_event_writer(), JavaThread::cast(t));
     }
-    assert(shelved_buffer() == nullptr, "invariant");
     JfrStorage::release_thread_local(java_buffer(), t);
     _java_buffer = nullptr;
   }
@@ -201,6 +200,7 @@ void JfrThreadLocal::release(Thread* t) {
     JfrStorage::release_thread_local(native_buffer(), t);
     _native_buffer = nullptr;
   }
+  assert(shelved_buffer() == nullptr, "invariant");
   if (_load_barrier_buffer_epoch_0 != nullptr) {
     _load_barrier_buffer_epoch_0->set_retired();
     _load_barrier_buffer_epoch_0 = nullptr;
