@@ -96,7 +96,7 @@ public:
   static void get_aot_code_region_size() NOT_CDS_RETURN;
   static char* get_archived_cpu_features() NOT_CDS_RETURN_(nullptr);
 
-  static void print_on(outputStream* st);
+  static void print_on(outputStream* st) NOT_CDS_RETURN;
 
   static void set_static_archive_validation_failed() {
     _static_archive_validation_failed = true;

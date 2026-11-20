@@ -1871,6 +1871,9 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
             // Finally, permit client socket factory or RMIServer, to avoid requiring an exhaustive filter.
             // Otherwise, return REJECTED.
             Class<?> c = info.serialClass();
+            if (c == null) {
+                return Status.UNDECIDED;
+            }
             if (RMIClientSocketFactory.class.isAssignableFrom(c)
                 || RMIServer.class.isAssignableFrom(c)) {
                 return Status.ALLOWED;

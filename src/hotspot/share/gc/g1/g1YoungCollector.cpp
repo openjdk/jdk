@@ -423,7 +423,7 @@ class G1PrepareEvacuationTask : public WorkerTask {
         _worker_humongous_candidates++;
         // We will later handle the remembered sets of these regions.
       } else {
-        _g1h->update_region_attr(hr);
+        _g1h->register_humongous_non_candidate_region_with_region_attr(index);
       }
 
       // Sample card set sizes for humongous regions before GC: this makes the policy

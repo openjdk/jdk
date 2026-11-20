@@ -243,7 +243,18 @@ public final class CDataTransferer extends DataTransferer {
     }
 
     @Override
-    protected byte[] imageToPlatformBytes(Image image, long format) {
+    protected byte[] imageToPlatformBytes(Image image, long format) throws IOException {
+        if (format == CF_PNG) {
+            return imageToStandardBytes(image, "image/png");
+        }
+        if (format == CF_JPEG) {
+            // JPEG doesn't support transparency, convert to opaque
+            Image opaque = CImage.getCreator().getOpaqueImage(image);
+            if (opaque == null) {
+                return null;
+            }
+            return imageToStandardBytes(opaque, "image/jpeg");
+        }
         return CImage.getCreator().getPlatformImageBytes(image);
     }
 
