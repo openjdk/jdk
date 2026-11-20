@@ -61,7 +61,7 @@ ShenandoahHeapRegion::ShenandoahHeapRegion(HeapWord* start, size_t index, bool c
   _bottom(start),
   _end(start + RegionSizeWords),
   _new_top(nullptr),
-  _empty_time(os::elapsedTime()),
+  _uncommit_time(0),
   _top_before_promoted(nullptr),
   _top_at_evac_start(start),
   _state(committed ? _empty_committed : _empty_uncommitted),
@@ -341,8 +341,8 @@ void ShenandoahHeapRegion::make_empty() {
   reset_age();
   switch (state()) {
     case _trash:
+      set_uncommit_time(0);
       set_state(_empty_committed);
-      _empty_time = os::elapsedTime();
       return;
     default:
       report_illegal_transition("emptying");

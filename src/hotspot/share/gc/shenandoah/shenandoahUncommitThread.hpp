@@ -44,30 +44,26 @@ class ShenandoahUncommitThread : public ConcurrentGCThread {
   // Indicates that regions are being actively uncommitted
   ShenandoahSharedFlag _uncommit_in_progress;
 
+  // Indicates that current stride needs to be restarted.
+  ShenandoahSharedFlag _restart;
+
   // This lock is used to coordinate allowing or forbidding regions to be uncommitted
   Monitor _uncommit_lock;
 
-  // True if there are regions to uncommit and uncommits are allowed
-  bool should_uncommit(double shrink_before, size_t shrink_until) const;
-
-  // True if there are regions that have been empty for longer than ShenandoahUncommitDelay and the committed
-  // memory is higher than soft max capacity or minimum capacity
-  bool has_work(double shrink_before, size_t shrink_until) const;
-
   // Perform the work of uncommitting empty regions
-  void uncommit(double shrink_before, size_t shrink_until);
+  void uncommit(size_t shrink_until);
 
-  // True if the control thread has allowed this thread to uncommit regions
-  bool is_uncommit_allowed() const;
+  // Try to set progress, potentially stalling until uncommits are allowed
+  bool try_set_progress();
 
-  // Iterate over and uncommit eligible regions until committed heap falls below
-  // `shrink_until` bytes. A region is eligible for uncommit if the timestamp at which
-  // it was last made empty is before `shrink_before` seconds since jvm start.
-  // Returns the number of regions uncommitted. May be interrupted by `forbid_uncommit`.
-  size_t do_uncommit_work(double shrink_before, size_t shrink_until) const;
+  // Unset progress
+  void unset_progress();
 
 public:
   explicit ShenandoahUncommitThread(ShenandoahHeap* heap);
+
+  // Permanent thread, no cleanup
+  ~ShenandoahUncommitThread() override { ShouldNotReachHere(); }
 
   // Periodically check for regions to uncommit
   void run_service() override;

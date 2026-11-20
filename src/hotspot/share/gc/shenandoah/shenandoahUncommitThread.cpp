@@ -43,166 +43,176 @@ void ShenandoahUncommitThread::run_service() {
   assert(ShenandoahUncommit, "Thread should only run when uncommit is enabled");
 
   // poll_interval avoids constantly polling regions for shrinking.
-  // Having an interval 10x lower than the delay would mean we hit the
-  // shrinking with lag of less than 1/10-th of true delay.
-  // ShenandoahUncommitDelay is in millis, but shrink_period is in seconds.
-  const int64_t poll_interval = int64_t(ShenandoahUncommitDelay) / 10;
-  const double shrink_period = double(ShenandoahUncommitDelay) / 1000;
-  bool timed_out = false;
-  while (!should_terminate()) {
-    bool soft_max_changed = _soft_max_changed.try_unset();
-    bool explicit_gc_requested = _explicit_gc_requested.try_unset();
+  const int64_t poll_interval_ms = 500;
 
-    if (soft_max_changed || explicit_gc_requested || timed_out) {
-      double current = os::elapsedTime();
-      size_t shrink_until = soft_max_changed ? _heap->soft_max_capacity() : _heap->min_capacity();
-      double shrink_before = (soft_max_changed || explicit_gc_requested) ?
-              current :
-              current - shrink_period;
+  // When balancing the uncommits, target to complete entire work at most in 5 seconds.
+  const double per_region_delay = 5.0 / _heap->num_regions();
 
-      // Explicit GC tries to uncommit everything down to min capacity.
-      // Soft max change tries to uncommit everything down to target capacity.
-      // Periodic uncommit tries to uncommit suitable regions down to min capacity.
-      if (should_uncommit(shrink_before, shrink_until)) {
-        uncommit(shrink_before, shrink_until);
+  while (true) {
+    bool soft_max_changed;
+    bool explicit_gc_requested;
+
+    {
+      MonitorLocker locker(&_uncommit_lock, Mutex::_no_safepoint_check_flag);
+      if (should_terminate()) {
+        // Already requested termination, exit.
+        break;
+      }
+
+      locker.wait(poll_interval_ms);
+
+      if (should_terminate()) {
+        // Wake up for terminating, exit.
+        break;
+      }
+
+      if (_uncommit_allowed.is_unset()) {
+        // Futile wakeup, go back to sleep.
+        continue;
+      }
+
+      soft_max_changed = _soft_max_changed.try_unset();
+      explicit_gc_requested = _explicit_gc_requested.try_unset();
+
+      _restart.unset();
+    }
+
+    double now = os::elapsedTime();
+    size_t plan_prompt = 0;
+    size_t plan_deferred = 0;
+    size_t plan_uncommit = 0;
+
+    // Categorise the regions and figure out if we have any work.
+    for (size_t i = _heap->num_regions(); i > 0; i--) {
+      ShenandoahHeapRegion* r = _heap->get_region(i - 1);
+      if (r->is_empty_committed()) {
+        if (soft_max_changed || explicit_gc_requested) {
+          // Either threshold moved: the region is eagerly uncommittable.
+          // Balance the uncommits a bit to avoid too eager uncommit.
+          r->set_uncommit_time(now + plan_prompt * per_region_delay);
+          plan_prompt++;
+        } else if (r->uncommit_time() == 0) {
+          // Newly empty region, record it for eventual uncommit.
+          r->set_uncommit_time(now + plan_deferred * per_region_delay + ShenandoahUncommitDelay / 1000);
+          plan_deferred++;
+        } else if (r->uncommit_time() <= now) {
+          plan_uncommit++;
+        }
       }
     }
 
-    if (!should_terminate()) {
-      MonitorLocker locker(&_uncommit_lock, Mutex::_no_safepoint_check_flag);
-      timed_out = locker.wait(poll_interval);
+    // Explicit GC tries to uncommit everything down to min capacity.
+    // Soft max change tries to uncommit everything down to target capacity.
+    // Periodic uncommit tries to uncommit suitable regions down to min capacity.
+    size_t shrink_until = soft_max_changed ? _heap->soft_max_capacity() : _heap->min_capacity();
+
+    if (_heap->committed() <= shrink_until) {
+      // Do not uncommit below target.
+      continue;
+    }
+
+    if (plan_uncommit > 0) {
+      uncommit(shrink_until);
     }
   }
 }
 
-bool ShenandoahUncommitThread::should_uncommit(double shrink_before, size_t shrink_until) const {
-  // Only start uncommit if the GC is idle, is not trying to run and there is work to do.
-  return _heap->is_idle() && is_uncommit_allowed() && has_work(shrink_before, shrink_until);
-}
-
-bool ShenandoahUncommitThread::has_work(double shrink_before, size_t shrink_until) const {
-  // Determine if there is work to do. This avoids locking the heap if there is
-  // no work available, avoids spamming logs with superfluous logging messages,
-  // and minimises the amount of work while locks are held.
-
-  if (_heap->committed() <= shrink_until) {
-    return false;
-  }
-
-  for (size_t i = 0; i < _heap->num_regions(); i++) {
-    ShenandoahHeapRegion *r = _heap->get_region(i);
-    if (r->is_empty_committed() && (r->empty_time() < shrink_before)) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
-void ShenandoahUncommitThread::notify_soft_max_changed() {
-  assert(is_uncommit_allowed(), "Only notify if uncommit is allowed");
-  if (_soft_max_changed.try_set()) {
-    MonitorLocker locker(&_uncommit_lock, Mutex::_no_safepoint_check_flag);
-    locker.notify_all();
-  }
-}
-
-void ShenandoahUncommitThread::notify_explicit_gc_requested() {
-  assert(is_uncommit_allowed(), "Only notify if uncommit is allowed");
-  if (_explicit_gc_requested.try_set()) {
-    MonitorLocker locker(&_uncommit_lock, Mutex::_no_safepoint_check_flag);
-    locker.notify_all();
-  }
-}
-
-bool ShenandoahUncommitThread::is_uncommit_allowed() const {
-  return _uncommit_allowed.is_set();
-}
-
-void ShenandoahUncommitThread::uncommit(double shrink_before, size_t shrink_until) {
-  assert(ShenandoahUncommit, "should be enabled");
+void ShenandoahUncommitThread::uncommit(size_t shrink_until) {
+  assert(ShenandoahUncommit, "Should be enabled");
   assert(_uncommit_in_progress.is_unset(), "Uncommit should not be in progress");
 
-  {
-    // Final check, under the lock, if uncommit is allowed.
-    MonitorLocker locker(&_uncommit_lock, Mutex::_no_safepoint_check_flag);
-    if (is_uncommit_allowed()) {
-      _uncommit_in_progress.set();
-    }
-  }
+  double start = os::elapsedTime();
 
-  // If not allowed to start, do nothing.
-  if (!_uncommit_in_progress.is_set()) {
-    return;
-  }
-
-  // From here on, uncommit is in progress. Attempts to stop the uncommit must wait
-  // until the cancellation request is acknowledged and uncommit is no longer in progress.
-  const char* msg = "Concurrent uncommit";
-  const double start = os::elapsedTime();
-  EventMark em("%s", msg);
-  log_info(gc, start)("%s", msg);
-
-  // This is the number of regions uncommitted during this increment of uncommit work.
-  const size_t uncommitted_region_count = do_uncommit_work(shrink_before, shrink_until);
-
-  {
-    MonitorLocker locker(&_uncommit_lock, Mutex::_no_safepoint_check_flag);
-    _uncommit_in_progress.unset();
-    locker.notify_all();
-  }
-
-  if (uncommitted_region_count > 0) {
-    _heap->notify_heap_changed();
-  }
-
-  const double elapsed = os::elapsedTime() - start;
-  log_info(gc)("%s " PROPERFMT " (" PROPERFMT ") %.3fms",
-               msg, PROPERFMTARGS(uncommitted_region_count * ShenandoahHeapRegion::region_size_bytes()), PROPERFMTARGS(_heap->capacity()),
-               elapsed * MILLIUNITS);
-}
-
-size_t ShenandoahUncommitThread::do_uncommit_work(double shrink_before, size_t shrink_until) const {
-  size_t count = 0;
-  // Application allocates from the beginning of the heap, and GC allocates at
-  // the end of it. It is more efficient to uncommit from the end, so that applications
-  // could enjoy the near committed regions. GC allocations are much less frequent,
-  // and therefore can accept the committing costs.
+  // Uncommit from the end, allowing the allocation path that takes the regions from
+  // the beginning flip the regions back to use. We are not in a hurry to uncommit,
+  // otherwise we will just trip through uncommit-commit wastefully.
+  size_t uncommitted_count = 0;
   for (size_t i = _heap->num_regions(); i > 0; i--) {
-    if (!is_uncommit_allowed()) {
-      // GC wants to start, so the uncommit operation must stop
+    if (_heap->committed() < shrink_until + ShenandoahHeapRegion::region_size_bytes()) {
+      // Do not uncommit below the target.
       break;
     }
 
     ShenandoahHeapRegion* r = _heap->get_region(i - 1);
-    if (r->is_empty_committed() && (r->empty_time() < shrink_before)) {
+
+    double now = os::elapsedTime();
+    if (!r->is_empty_committed() || (r->uncommit_time() > now)) {
+      // Not a candidate, try again.
+      continue;
+    }
+
+    // Try to claim progress, gracefully waiting.
+    if (!try_set_progress()) {
+      // Requested to restart.
+      break;
+    }
+
+    // Go for uncommit!
+    {
       SuspendibleThreadSetJoiner sts_joiner;
       ShenandoahHeapLocker heap_locker(_heap->lock());
-      if (r->is_empty_committed()) {
-        if (_heap->committed() < shrink_until + ShenandoahHeapRegion::region_size_bytes()) {
-          // We have uncommitted enough regions to hit the target heap committed size
-          break;
-        }
-
+      if (r->is_empty_committed() && (r->uncommit_time() <= now)) {
+        log_trace(gc)("Uncommitting region %zu", r->index());
         r->make_uncommitted();
-        count++;
+        uncommitted_count++;
       }
     }
-    SpinPause(); // allow allocators to take the lock
+
+    // All done, turn the flag down.
+    unset_progress();
   }
-  return count;
+
+  double elapsed = os::elapsedTime() - start;
+
+  if (uncommitted_count > 0) {
+    _heap->notify_heap_changed();
+
+    log_info(gc)("Concurrent uncommit " PROPERFMT " (%zuM) %.3fms",
+                 PROPERFMTARGS(uncommitted_count * ShenandoahHeapRegion::region_size_bytes()),
+                 _heap->capacity() / M,
+                 elapsed * MILLIUNITS);
+  }
+
+  assert(_uncommit_in_progress.is_unset(), "Uncommit should not be in progress");
 }
 
+bool ShenandoahUncommitThread::try_set_progress() {
+  MonitorLocker locker(&_uncommit_lock, Mutex::_no_safepoint_check_flag);
+  assert(_uncommit_in_progress.is_unset(), "Should be unset before checks");
+
+  // Uncommits are disallowed. Wait until allowed again.
+  while (_uncommit_allowed.is_unset() && _restart.is_unset()) {
+    locker.wait();
+  }
+
+  if (_restart.is_set()) {
+    // Exit if restart is requested.
+    assert(_uncommit_in_progress.is_unset(), "Should remain unset");
+    return false;
+  }
+
+  // We are good to enable uncommits.
+  _uncommit_in_progress.set();
+  return true;
+}
+
+void ShenandoahUncommitThread::unset_progress() {
+  MonitorLocker locker(&_uncommit_lock, Mutex::_no_safepoint_check_flag);
+  _uncommit_in_progress.unset();
+  locker.notify_all();
+}
 
 void ShenandoahUncommitThread::stop_service() {
   MonitorLocker locker(&_uncommit_lock, Mutex::_safepoint_check_flag);
   _uncommit_allowed.unset();
+  _restart.set();
   locker.notify_all();
 }
 
 void ShenandoahUncommitThread::forbid_uncommit() {
   MonitorLocker locker(&_uncommit_lock, Mutex::_no_safepoint_check_flag);
   _uncommit_allowed.unset();
+  locker.notify_all();
   while (_uncommit_in_progress.is_set()) {
     locker.wait();
   }
@@ -211,4 +221,21 @@ void ShenandoahUncommitThread::forbid_uncommit() {
 void ShenandoahUncommitThread::allow_uncommit() {
   MonitorLocker locker(&_uncommit_lock, Mutex::_no_safepoint_check_flag);
   _uncommit_allowed.set();
+  locker.notify_all();
+}
+
+void ShenandoahUncommitThread::notify_soft_max_changed() {
+  MonitorLocker locker(&_uncommit_lock, Mutex::_no_safepoint_check_flag);
+  if (_soft_max_changed.try_set()) {
+    _restart.set();
+    locker.notify_all();
+  }
+}
+
+void ShenandoahUncommitThread::notify_explicit_gc_requested() {
+  MonitorLocker locker(&_uncommit_lock, Mutex::_no_safepoint_check_flag);
+  if (_explicit_gc_requested.try_set()) {
+    _restart.set();
+    locker.notify_all();
+  }
 }
