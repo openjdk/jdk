@@ -32,8 +32,11 @@ RequiresIdentityTest.java:86:90: compiler.warn.attempt.to.use.value.based.where.
 RequiresIdentityTest.java:87:52: compiler.warn.attempt.to.use.value.based.where.identity.expected
 RequiresIdentityTest.java:88:82: compiler.warn.attempt.to.use.value.based.where.identity.expected
 RequiresIdentityTest.java:88:31: compiler.warn.attempt.to.use.value.based.where.identity.expected
+RequiresIdentityTest.java:96:40: compiler.warn.attempt.to.use.value.based.where.identity.expected
+RequiresIdentityTest.java:100:31: compiler.warn.attempt.to.use.value.based.where.identity.expected
+RequiresIdentityTest.java:105:35: compiler.warn.attempt.to.use.value.based.where.identity.expected
 - compiler.err.warnings.and.werror
 - compiler.note.unchecked.filename: RequiresIdentityTest.java
 - compiler.note.unchecked.recompile
 1 error
-34 warnings
+37 warnings
