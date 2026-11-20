@@ -44,7 +44,6 @@
 package compiler.valhalla.valuetypes;
 
 import jdk.internal.value.ValueClass;
-import jdk.test.lib.Asserts;
 import jdk.test.whitebox.WhiteBox;
 
 public class TestFlatArraycopyMissingBarriers {
