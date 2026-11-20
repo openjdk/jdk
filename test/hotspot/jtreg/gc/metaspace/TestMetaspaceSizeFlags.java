@@ -49,6 +49,8 @@ public class TestMetaspaceSizeFlags {
   public static final long MAX_ALIGNMENT = 32 * M;
   // The default MetaspaceSize is specified in globals.hpp:
   public static final long DEFAULT_METASPACE_SIZE = (Platform.is64bit() ? 21 : 16) * M;
+  // The minimum MaxMetaspaceSize is specified in globals.hpp:
+  public static final long MIN_MAXMETASPACE_SIZE = 128L * K;
   // If we set a MaxMetaspaceSize value less than the default MetaspaceSize
   // value and then set a MaxMetaspaceSize value higher than the default
   // MetaspaceSize, then MetaspaceSize should be unaffected and remain at
@@ -65,9 +67,16 @@ public class TestMetaspaceSizeFlags {
     // Specifying MaxMetaspaceSize < MetaspaceSize, both on the
     // cmd line in either order is a mis-configuration.
     testMaxHalfFlagValues(MAX_ALIGNMENT);
+    // Specifying MaxMetaspaceSize 2X MetaspaceSize, both on the
+    // cmd line in either order is just fine.
     testMax2XFlagValues(MAX_ALIGNMENT);
     // Test MaxMetaspaceSize=0 and verify a range failure.
     testMaxMetaspaceSizeIsOutOfRange(0);
+    // Test minimum MaxMetaspaceSize value for both flags in either
+    // order.
+    testEQFlagValues(MIN_MAXMETASPACE_SIZE);
+    // Test MaxMetaspaceSize just below minimum and verify a range failure.
+    testMaxMetaspaceSizeIsOutOfRange(MIN_MAXMETASPACE_SIZE - 1);
     // Testing a too small MaxMetaspaceSize and verifying an OOME
     // is done by runtime/Metaspace/MaxMetaspaceSizeTest.java so
     // we don't repeat that test here.
