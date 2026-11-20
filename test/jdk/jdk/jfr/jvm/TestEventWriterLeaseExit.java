@@ -74,7 +74,7 @@ public class TestEventWriterLeaseExit {
             stream.enable(TwoStringsEvent.class).withoutStackTrace();
             stream.enable(EventNames.ThreadEnd);
 
-            stream.onMetadata((metadata) -> {
+            stream.onMetadata(metadata -> {
                 // Metadata can be delivered more than once.
                 // Therefore, start the worker thread only once.
                 if (worker.getState() == Thread.State.NEW) {
@@ -82,16 +82,16 @@ public class TestEventWriterLeaseExit {
                     worker.start();
                 }
             });
-            stream.onEvent(TwoStringsEvent.class.getName(), (event) -> {
+            stream.onEvent(TwoStringsEvent.class.getName(), event -> {
                 throw new AssertionError("Oversized event should have been discarded");
             });
-            stream.onEvent(EventNames.ThreadEnd, (event) -> {
+            stream.onEvent(EventNames.ThreadEnd, event -> {
                 if (worker.getName().equals(event.getThread().getJavaName())) {
                     workerEnded[0] = true;
                     stream.close();
                 }
             });
-            stream.onError((error) -> {
+            stream.onError(error -> {
                 throw new AssertionError("Recording stream failed", error);
             });
 
