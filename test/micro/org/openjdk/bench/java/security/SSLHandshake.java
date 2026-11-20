@@ -80,16 +80,16 @@ public class SSLHandshake {
     @Param({
             "12/P256/ECDSA",
             "13/X25519/ECDSA",
-            "13/P256/ECDSA",
-            "13/P384/ECDSA",
-            "13/X+K768/ECDSA",
-            "13/P256+K768/ECDSA",
-            "13/P384+K1024/ECDSA",
             "13/X25519/MLDSA65",
+            "13/P256/ECDSA",
             "13/P256/MLDSA65",
+            "13/P384/ECDSA",
             "13/P384/MLDSA65",
+            "13/X+K768/ECDSA",
             "13/X+K768/MLDSA65",
+            "13/P256+K768/ECDSA",
             "13/P256+K768/MLDSA65",
+            "13/P384+K1024/ECDSA",
             "13/P384+K1024/MLDSA65"
     })
     String tlsProfile;
