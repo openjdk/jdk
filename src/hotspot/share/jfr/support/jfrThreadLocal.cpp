@@ -252,10 +252,10 @@ void JfrThreadLocal::on_exit(Thread* t) {
       if (tl->should_write()) {
         JfrCheckpointManager::write_checkpoint(t);
       }
-      JfrCPUTimeThreadSampling::on_javathread_terminate(jt);
-      JfrThreadCPULoadEvent::send_event_for_thread(jt);
       const traceid tid = JfrThreadLocal::jvm_thread_id(jt);
       ObjectSampleCheckpoint::on_thread_exit(tid);
+      JfrCPUTimeThreadSampling::on_javathread_terminate(jt);
+      JfrThreadCPULoadEvent::send_event_for_thread(jt);
       send_java_thread_end_event(tid);
     }
   }
