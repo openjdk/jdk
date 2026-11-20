@@ -833,7 +833,7 @@ int VM_Version::cpu_features_size() {
   return sizeof(_features);
 }
 
-void VM_Version::store_cpu_features(void* buf) {
+void VM_Version::cpu_features_for_aot_cache(void* buf) {
   assert(is_aligned(buf, cpu_features_alignment()), "sanity check");
   *(uint64_t*)buf = _features;
 }

@@ -259,7 +259,7 @@ class Abstract_VM_Version: AllStatic {
 
   // Stores arch dependent cpu features representation in the provided buffer.
   // Size of the buffer must be same as returned by cpu_features_size()
-  static void store_cpu_features(void* buf) { return; }
+  static void cpu_features_for_aot_cache(void* buf) { return; }
 
   // features_buffer is an opaque object that stores arch specific representation of cpu features
   static bool verify_aot_code_cache_features(void* features_buffer) { return false; };

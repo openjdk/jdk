@@ -444,7 +444,11 @@ void FileMapHeader::print(outputStream* st, bool output_for_diff, bool actual_jv
   void* cpu_features = archived_cpu_features();
   if (cpu_features != nullptr) {
     VM_Version::get_cpu_features_name(cpu_features, ss);
-    st->print_cr("- cpu features:                             %s", actual_jvm_setting ? VM_Version::features_string() : ss.as_string());
+    stringStream ss_jvm;
+    void* cpu_features_jvm = NEW_RESOURCE_ARRAY(char, VM_Version::cpu_features_size());
+    VM_Version::cpu_features_for_aot_cache(cpu_features_jvm);
+    VM_Version::get_cpu_features_name(cpu_features_jvm, ss_jvm);
+    st->print_cr("- cpu features:                             %s", actual_jvm_setting ? ss_jvm.as_string() : ss.as_string());
   }
   st->print_cr("- type_profile_level:                       %u", actual_jvm_setting ? TypeProfileLevel : _type_profile_level);
   st->print_cr("- type_profile_args_limit:                  %d", actual_jvm_setting ? TypeProfileArgsLimit : _type_profile_args_limit);
