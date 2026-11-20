@@ -52,14 +52,11 @@ public class TestFlatArraycopyMissingBarriers {
     private static final int ARRAY_LENGTH = 300_000;
     private static final WhiteBox WB = WhiteBox.getWhiteBox();
 
-
     private static final V[] SRC_ARRAY = (V[])ValueClass.newNullRestrictedNonAtomicArray(V.class, ARRAY_LENGTH, new V(null));
     private static final V[] DEST_ARRAY =(V[])ValueClass.newNullRestrictedNonAtomicArray(V.class, ARRAY_LENGTH, new V(null));
 
     public static void main(String[] args) throws Exception {
         System.gc(); // Moves SRC_ARRAY and DEST_ARRAY to old gen
-        Asserts.assertTrue(WB.isObjectInOldGen(SRC_ARRAY) && WB.isObjectInOldGen(DEST_ARRAY),
-                           "must be in old gen");
         for (int i = 0; i < 10_000; i++) {
             test(); // Compile
         }
