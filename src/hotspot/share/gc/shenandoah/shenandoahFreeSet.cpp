@@ -1387,6 +1387,10 @@ ShenandoahFreeSet::ShenandoahFreeSet(ShenandoahHeap* heap, size_t max_regions) :
   clear_internal();
 }
 
+ShenandoahFreeSet::~ShenandoahFreeSet() {
+  FREE_C_HEAP_ARRAY(_empty_region_array);
+}
+
 void ShenandoahFreeSet::move_unaffiliated_regions_from_collector_to_old_collector(ssize_t count) {
   shenandoah_assert_heaplocked();
   size_t region_size_bytes =  ShenandoahHeapRegion::region_size_bytes();

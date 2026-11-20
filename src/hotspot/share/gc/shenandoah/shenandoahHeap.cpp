@@ -940,9 +940,6 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
       result = allocate_memory_work(req, in_new_region);
     }
 
-    if (result == nullptr && is_humongous) {
-      _failed_humongous_request_count_since_gc_end.add_then_fetch(1u, memory_order_relaxed);
-    }
     // Check that gc overhead is not exceeded.
     //
     // Shenandoah will grind along for quite a while allocating one
@@ -1795,9 +1792,8 @@ void ShenandoahHeap::on_cycle_end(ShenandoahGeneration* generation) {
   if (!generation->is_old() && !cancelled_gc()) {
     size_t max = _max_humongous_region_count_requested_since_gc_end.exchange(0, memory_order_relaxed);
     size_t total = _total_humongous_region_count_requested_since_gc_end.exchange(0, memory_order_relaxed);
-    size_t failed = _failed_humongous_request_count_since_gc_end.exchange(0, memory_order_relaxed);
 
-    _humongous_allocation_history.push(max, total, failed);
+    _humongous_allocation_history.push(max, total);
 
     // humongous counts
     {
@@ -1813,7 +1809,7 @@ void ShenandoahHeap::on_cycle_end(ShenandoahGeneration* generation) {
       const bool risk_high = _humongous_allocation_history.sample_count() >= ShenandoahHeuristicsHumongousMinSampleCount
         && prob_failure >= ShenandoahHeuristicsHumongousFailureProb;
       _humongous_alloc_failure_risk_high.store_relaxed(risk_high);
-      log_info(gc, ergo)("Humongous allocation failure probability: %.1f%%, %zu epochs in history%s",
+      log_debug(gc, ergo)("Humongous allocation failure probability: %.1f%%, %zu epochs in history%s",
                     prob_failure * 100, _humongous_allocation_history.sample_count(),
                     risk_high ? ", humongous alloc failure risk high" : "");
 
@@ -3003,8 +2999,8 @@ bool ShenandoahHumongousAllocationHistory::can_fit(const Epoch& epoch, const siz
   return demand <= available_slots;
 }
 
-void ShenandoahHumongousAllocationHistory::push(size_t max_requested_region_count, size_t total_requested_region_count, size_t failed_humongous_request_count) {
-  _epochs[_next] = { max_requested_region_count, total_requested_region_count, failed_humongous_request_count };
+void ShenandoahHumongousAllocationHistory::push(size_t max_requested_region_count, size_t total_requested_region_count) {
+  _epochs[_next] = { max_requested_region_count, total_requested_region_count};
   _next = (_next + 1) % max_history_entry;
   if (_sample_count < max_history_entry) {
     _sample_count++;

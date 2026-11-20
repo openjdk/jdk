@@ -248,17 +248,26 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
     return true;
   }
 
+  if (trigger_for_humongous(anticipated_gc_duration)) {
+    ShenandoahHeap::heap()->record_humongous_triggered_gc();
+    return true;
+  }
+
+  return ShenandoahHeuristics::should_start_gc();
+}
+
+bool ShenandoahAdaptiveHeuristics::trigger_for_humongous(double anticipated_gc_duration) {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   bool trigger = false;
   const size_t humongous_budget_since_gc_end = heap->humongous_budget_region_count();
   const size_t humongous_requested = heap->total_humongous_region_count_requested_since_gc_end();
   const size_t humongous_budget_curr = (humongous_budget_since_gc_end > humongous_requested ? humongous_budget_since_gc_end - humongous_requested : 0) * ShenandoahHeapRegion::region_size_bytes();
-  const ShenandoahAnticipatedConsumption humongous_consumption =
-      heap->humongous_alloc_rate().snapshot(anticipated_gc_duration, _margin_of_error_sd);
 
   if (humongous_regions_under_budget(humongous_budget_curr)) {
     trigger = true;
   } else if (heap->humongous_alloc_backoff_epochs_left() == 0) {
+    const ShenandoahAnticipatedConsumption humongous_consumption =
+        heap->humongous_alloc_rate().snapshot(anticipated_gc_duration, _margin_of_error_sd);
     maybe_log_rate_trigger_parameters(humongous_consumption, humongous_budget_curr, true /* is_humongous */);
     if (trigger_average_allocation_rate(humongous_consumption, humongous_budget_curr, true /* is_humongous */)) {
       trigger = true;
@@ -267,13 +276,8 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
       accept_trigger_with_type(OTHER);
       trigger = true;
     }
-    if (trigger) {
-      heap->record_humongous_triggered_gc();
-      return true;
-    }
   }
-
-  return ShenandoahHeuristics::should_start_gc();
+  return trigger;
 }
 
 bool ShenandoahAdaptiveHeuristics::humongous_regions_under_budget(size_t max_humongous_budget_byte) {
@@ -284,13 +288,13 @@ bool ShenandoahAdaptiveHeuristics::humongous_regions_under_budget(size_t max_hum
 
   const size_t demand_in_byte = max_requested_regions * ShenandoahHeapRegion::region_size_bytes();
   if (max_humongous_budget_byte <= demand_in_byte) { // needs to be equal in case regular objects are assigned into the regions
-    log_trigger("Max humongous allocatable: " PROPERFMT ", below max requested humongous region size: " PROPERFMT,
+    log_trigger("Humongous budget: " PROPERFMT ", below or equal to the predicted humongous demand region size: " PROPERFMT,
                 PROPERFMTARGS(max_humongous_budget_byte), PROPERFMTARGS(demand_in_byte));
     accept_trigger_with_type(OTHER);
     return true;
   }
-  log_debug(gc, ergo)("Min humongous threshold: max humongous allocatable: " PROPERFMT
-                      " (%zu regions), max requested: " PROPERFMT " (%zu regions), not triggering",
+  log_debug(gc, ergo)("Min humongous threshold: Humongous budget: " PROPERFMT
+                      " (%zu regions), predicted humongous demand region size: " PROPERFMT " (%zu regions), not triggering",
                       PROPERFMTARGS(max_humongous_budget_byte),
                       max_humongous_budget_byte / ShenandoahHeapRegion::region_size_bytes(),
                       PROPERFMTARGS(demand_in_byte), max_requested_regions);

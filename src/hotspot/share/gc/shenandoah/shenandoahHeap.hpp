@@ -122,12 +122,11 @@ class ShenandoahHumongousAllocationHistory {
   struct Epoch {
     size_t max_requested_region_count;
     size_t total_requested_region_count;
-    size_t failed_request_count;
   };
 public:
   static const size_t max_history_entry = 16;
   ShenandoahHumongousAllocationHistory() : _sample_count(0), _next(0) {};
-  void push(size_t max_requested_region_count, size_t total_requested_region_count, size_t failed_humongous_request_count);
+  void push(size_t max_requested_region_count, size_t total_requested_region_count);
   double probability_of_failure(const size_t* empty_region_array, size_t empty_region_array_length, double recency_weight) const;
   // Largest single humongous request (in regions) across the most recent `window` epochs, 0 if none.
   size_t max_requested_region_count(size_t window) const;
@@ -270,7 +269,6 @@ private:
   ShenandoahAllocationRate _humongous_alloc_rate;
   Atomic<size_t> _max_humongous_region_count_requested_since_gc_end;
   Atomic<size_t> _total_humongous_region_count_requested_since_gc_end;
-  Atomic<size_t> _failed_humongous_request_count_since_gc_end;
   Atomic<bool> _humongous_alloc_failure_risk_high;
   Atomic<bool> _humongous_triggered_gc;
   Atomic<size_t> _empty_humongous_region_count_at_trigger;
