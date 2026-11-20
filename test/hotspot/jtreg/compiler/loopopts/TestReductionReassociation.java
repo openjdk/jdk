@@ -323,12 +323,12 @@ public class TestReductionReassociation {
         Generators.G.fill(Generators.G.longs(), input);
     }
 
-    private Object[] expectedNonPowerOfTwoBatch = testNonPowerOfTwoBatch();
+    private long[] expectedNonPowerOfTwoBatch = testNonPowerOfTwoBatch();
 
     @Test
     @IR(counts = {IRNode.MAX_L, "= 5"},
         phase = CompilePhase.AFTER_LOOP_OPTS)
-    public Object[] testNonPowerOfTwoBatch() {
+    public long[] testNonPowerOfTwoBatch() {
         long result = Long.MIN_VALUE;
         long result2 = Long.MIN_VALUE;
         for (int i = 0; i < input.length; i += 5) {
@@ -350,22 +350,22 @@ public class TestReductionReassociation {
             result = u4;
             result2 = t4;
         }
-        return new Object[]{result, result2};
+        return new long[]{result, result2};
     }
 
     @Check(test = "testNonPowerOfTwoBatch")
-    public void checkNonPowerOfTwoBatch(Object[] results) {
+    public void checkNonPowerOfTwoBatch(long[] results) {
         Verify.checkEQ(expectedNonPowerOfTwoBatch[0], results[0]);
         Verify.checkEQ(expectedNonPowerOfTwoBatch[1], results[1]);
         Verify.checkEQ(results[0], results[1]);
     }
 
-    private Object[] expectedUseIntermediate = testUseIntermediate();
+    private long[] expectedUseIntermediate = testUseIntermediate();
 
     @Test
     @IR(counts = {IRNode.MAX_L, "= 8"},
         phase = CompilePhase.AFTER_LOOP_OPTS)
-    public Object[] testUseIntermediate() {
+    public long[] testUseIntermediate() {
         long result = Long.MIN_VALUE;
         long result2 = Long.MIN_VALUE;
         for (int i = 0; i < input.length; i += 8) {
@@ -405,22 +405,22 @@ public class TestReductionReassociation {
             result = u7;
             result2 = t7;
         }
-        return new Object[]{result, result2};
+        return new long[]{result, result2};
     }
 
     @Check(test = "testUseIntermediate")
-    public void checkUseIntermediate(Object[] results) {
+    public void checkUseIntermediate(long[] results) {
         Verify.checkEQ(expectedUseIntermediate[0], results[0]);
         Verify.checkEQ(expectedUseIntermediate[1], results[1]);
         Verify.checkEQ(results[0], results[1]);
     }
 
-    private Object[] expectedSumMax = testSumMax();
+    private long[] expectedSumMax = testSumMax();
 
     @Test
     @IR(counts = {IRNode.MAX_L, "= 4", IRNode.ADD_L, "= 2"},
         phase = CompilePhase.AFTER_LOOP_OPTS)
-    public Object[] testSumMax() {
+    public long[] testSumMax() {
         long result = Long.MIN_VALUE;
         long result2 = Long.MIN_VALUE;
         for (int i = 0; i < input.length; i += 4) {
@@ -439,11 +439,11 @@ public class TestReductionReassociation {
             result += u3;
             result2 += t3;
         }
-        return new Object[]{result, result2};
+        return new long[]{result, result2};
     }
 
     @Check(test = "testSumMax")
-    public void checkSumMax(Object[] results) {
+    public void checkSumMax(long[] results) {
         Verify.checkEQ(expectedSumMax[1], results[1]);
         Verify.checkEQ(expectedSumMax[0], results[0]);
         Verify.checkEQ(results[0], results[1]);
