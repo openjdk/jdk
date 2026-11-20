@@ -342,29 +342,27 @@ Java_sun_nio_ch_UnixFileDispatcherImpl_map0(JNIEnv *env, jclass klass, jobject f
         flags = MAP_PRIVATE;
     }
 
-    // if MAP_SYNC and MAP_SHARED_VALIDATE are not defined then it is
-    // best to define them here. This ensures the code compiles on old
-    // OS releases which do not provide the relevant headers. If run
-    // on the same machine then it will work if the kernel contains
-    // the necessary support otherwise mmap should fail with an
-    // invalid argument error
-
+    if (map_sync) {
+        // ensure
+        //  1) this is Linux on AArch64, x86_64, or PPC64 LE
+        //  2) the mmap APIs are available at compile time
+#if !defined(LINUX) || ! (defined(aarch64) || (defined(amd64) && defined(_LP64)) || defined(ppc64le))
+        // TODO - implement for AIX/BSD/WINDOWS and for 32 bit
+        JNU_ThrowInternalError(env, "should never call map on platform where MAP_SYNC is unimplemented");
+        return IOS_THROWN;
+#else
+        // if MAP_SYNC and MAP_SHARED_VALIDATE are not defined then it is
+        // best to define them here. This ensures the code compiles on old
+        // OS releases which do not provide the relevant headers. If run
+        // on the same machine then it will work if the kernel contains
+        // the necessary support otherwise mmap should fail with an
+        // invalid argument error
 #ifndef MAP_SYNC
 #define MAP_SYNC 0x80000
 #endif
 #ifndef MAP_SHARED_VALIDATE
 #define MAP_SHARED_VALIDATE 0x03
 #endif
-
-    if (map_sync) {
-        // ensure
-        //  1) this is Linux on AArch64, x86_64, or PPC64 LE
-        //  2) the mmap APIs are available at compile time
-#if !defined(LINUX) || ! (defined(aarch64) || (defined(amd64) && defined(_LP64)) || defined(ppc64le))
-        // TODO - implement for solaris/AIX/BSD/WINDOWS and for 32 bit
-        JNU_ThrowInternalError(env, "should never call map on platform where MAP_SYNC is unimplemented");
-        return IOS_THROWN;
-#else
         flags |= MAP_SYNC | MAP_SHARED_VALIDATE;
 #endif
     }
