@@ -38,6 +38,12 @@ import static jdk.internal.util.Exceptions.formatMsg;
  */
 public class Handler extends java.net.URLStreamHandler {
 
+    private static final boolean DISABLE_NORMALIZE_OPTIMIZATION;
+    static {
+        DISABLE_NORMALIZE_OPTIMIZATION =
+                Boolean.getBoolean("jdk.net.urlDisableNormalizeOptimization");
+    }
+
     private static final String separator = "!/";
 
     protected java.net.URLConnection openConnection(URL u)
@@ -236,7 +242,42 @@ public class Handler extends java.net.URLStreamHandler {
         }
     }
 
+    private static String doCanonicalize(String file) {
+        int i, lim;
+
+        // Remove embedded /../
+        while ((i = file.indexOf("/../")) >= 0) {
+            if ((lim = file.lastIndexOf('/', i - 1)) >= 0) {
+                file = file.substring(0, lim) + file.substring(i + 3);
+            } else {
+                file = file.substring(i + 3);
+            }
+        }
+        // Remove embedded /./
+        while ((i = file.indexOf("/./")) >= 0) {
+            file = file.substring(0, i) + file.substring(i + 2);
+        }
+        // Remove trailing ..
+        while (file.endsWith("/..")) {
+            i = file.indexOf("/..");
+            if ((lim = file.lastIndexOf('/', i - 1)) >= 0) {
+                file = file.substring(0, lim+1);
+            } else {
+                file = file.substring(0, i);
+            }
+        }
+        // Remove trailing .
+        if (file.endsWith("/."))
+            file = file.substring(0, file.length() -1);
+
+        return file;
+    }
+
     static String doNormalize(String file) {
+        if (DISABLE_NORMALIZE_OPTIMIZATION) {
+            return doCanonicalize(file);
+        }
+
         String normalizedPath = SharedSecrets.getJavaNetURLAccess().normalize(file);
         // jar long-standing behaviour:
         //   leading /../ are removed
@@ -251,37 +292,6 @@ public class Handler extends java.net.URLStreamHandler {
         }
         return normalizedPath.isEmpty() ? "/" : normalizedPath;
     }
-
-//    private static String doCanonicalize(String file) {
-//        int i, lim;
-//
-//        // Remove embedded /../
-//        while ((i = file.indexOf("/../")) >= 0) {
-//            if ((lim = file.lastIndexOf('/', i - 1)) >= 0) {
-//                file = file.substring(0, lim) + file.substring(i + 3);
-//            } else {
-//                file = file.substring(i + 3);
-//            }
-//        }
-//        // Remove embedded /./
-//        while ((i = file.indexOf("/./")) >= 0) {
-//            file = file.substring(0, i) + file.substring(i + 2);
-//        }
-//        // Remove trailing ..
-//        while (file.endsWith("/..")) {
-//            i = file.indexOf("/..");
-//            if ((lim = file.lastIndexOf('/', i - 1)) >= 0) {
-//                file = file.substring(0, lim+1);
-//            } else {
-//                file = file.substring(0, i);
-//            }
-//        }
-//        // Remove trailing .
-//        if (file.endsWith("/."))
-//            file = file.substring(0, file.length() -1);
-//
-//        return file;
-//    }
 
     @SuppressWarnings("deprecation")
     private static URL newURL(String spec) throws MalformedURLException {
