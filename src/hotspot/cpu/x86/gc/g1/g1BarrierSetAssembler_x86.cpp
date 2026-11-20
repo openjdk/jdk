@@ -280,6 +280,7 @@ static void generate_post_barrier(MacroAssembler* masm,
                                   const Register store_addr,
                                   const Register new_val,
                                   const Register tmp1,
+                                  bool use_aot_runtime_const,
                                   bool new_val_may_be_null) {
 
   assert_different_registers(store_addr, new_val, tmp1, noreg);
@@ -291,7 +292,7 @@ static void generate_post_barrier(MacroAssembler* masm,
   // AOT code needs to load the barrier grain shift from the aot
   // runtime constants area in the code cache otherwise we can compile
   // it as an immediate operand
-  if (AOTCodeCache::is_on_for_dump()) {
+  if (INCLUDE_CDS && use_aot_runtime_const) {
     address grain_shift_addr = AOTRuntimeConstants::grain_shift_address();
     Register save = pick_different_reg(rcx, tmp1, new_val, store_addr);
     __ push(save);
@@ -336,7 +337,8 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm,
                                                   Register store_addr,
                                                   Register new_val,
                                                   Register tmp) {
-  generate_post_barrier(masm, store_addr, new_val, tmp, true /* new_val_may_be_null */);
+  bool use_aot_runtime_const = AOTCodeCache::is_on_for_dump();
+  generate_post_barrier(masm, store_addr, new_val, tmp, use_aot_runtime_const, true /* new_val_may_be_null */);
 }
 
 #if defined(COMPILER2)
@@ -397,7 +399,8 @@ void G1BarrierSetAssembler::g1_write_barrier_post_c2(MacroAssembler* masm,
                                                      Register new_val,
                                                      Register tmp,
                                                      bool new_val_may_be_null) {
-  generate_post_barrier(masm, store_addr, new_val, tmp, new_val_may_be_null);
+  bool use_aot_runtime_const = Compile::current()->is_aot_compile();
+  generate_post_barrier(masm, store_addr, new_val, tmp, use_aot_runtime_const, new_val_may_be_null);
 }
 
 #endif // COMPILER2
@@ -487,7 +490,8 @@ void G1BarrierSetAssembler::g1_write_barrier_post_c1(MacroAssembler* masm,
                                                      Register thread,
                                                      Register tmp1,
                                                      Register tmp2 /* unused on x86 */) {
-  generate_post_barrier(masm, store_addr, new_val, tmp1, true /* new_val_may_be_null */);
+  bool use_aot_runtime_const = ciEnv::current()->is_aot_compile();
+  generate_post_barrier(masm, store_addr, new_val, tmp1, use_aot_runtime_const, true /* new_val_may_be_null */);
 }
 
 #define __ sasm->
