@@ -275,8 +275,8 @@ protected:
   const Type* const _type;      // What kind of value is loaded?
 
   virtual Node* find_previous_arraycopy(PhaseValues* phase, Node* ld_alloc, Node*& mem, bool can_see_stored_value) const;
-  Node* can_see_stored_value_through_membars(Node* st, PhaseValues* phase) const;
   Node* Ideal_load_common(PhaseGVN* phase, bool can_reshape);
+
 public:
 
   LoadNode(Node *c, Node *mem, Node *adr, const TypePtr* at, const Type *rt, MemOrd mo, ControlDependency control_dependency)
@@ -302,15 +302,19 @@ public:
 
   virtual uint hash()   const;  // Check the type
 
-  // Handle algebraic identities here.  If we have an identity, return the Node
-  // we are equivalent to.  We look for Load of a Store.
+  // Handling these nodes is delicate, so we need to consolidate all of them here
+  virtual Node* Ideal(PhaseGVN *phase, bool can_reshape);
   virtual Node* Identity(PhaseGVN* phase);
+  virtual const Type* Value(PhaseGVN* phase) const;
 
-  // If the load is from Field memory and the pointer is non-null, it might be possible to
-  // zero out the control input.
-  // If the offset is constant and the base is an object allocation,
-  // try to hook me up to the exact initializing store.
-  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
+private:
+  bool optimize_inputs(PhaseGVN* phase, bool can_reshape);
+  const Type* try_constant_fold(PhaseGVN* phase) const;
+  Node* try_fold(PhaseGVN* phase, bool can_reshape);
+  Node* can_see_stored_value_through_membars(Node* st, PhaseValues* phase) const;
+  void process_trailing_barriers(PhaseIterGVN* igvn, bool can_remove);
+
+public:
 
   // Return true if it's possible to split the Load through a Phi merging the bases
   bool can_split_through_phi_base(PhaseGVN *phase);
@@ -320,10 +324,6 @@ public:
 
   // Recover original value from boxed values
   Node *eliminate_autobox(PhaseIterGVN *igvn);
-
-  // Compute a new Type for this node.  Basically we just do the pre-check,
-  // then call the virtual add() to set the type.
-  virtual const Type* Value(PhaseGVN* phase) const;
 
   // Common methods for LoadKlass and LoadNKlass nodes.
   const Type* klass_value_common(PhaseGVN* phase) const;
@@ -399,8 +399,6 @@ public:
     : LoadNode(c, mem, adr, at, ti, mo, control_dependency) {}
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return Op_RegI; }
-  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
-  virtual const Type* Value(PhaseGVN* phase) const;
   virtual int store_Opcode() const { return Op_StoreB; }
   virtual BasicType value_basic_type() const { return T_BYTE; }
 };
@@ -413,8 +411,6 @@ public:
     : LoadNode(c, mem, adr, at, ti, mo, control_dependency) {}
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return Op_RegI; }
-  virtual Node* Ideal(PhaseGVN *phase, bool can_reshape);
-  virtual const Type* Value(PhaseGVN* phase) const;
   virtual int store_Opcode() const { return Op_StoreB; }
   virtual BasicType value_basic_type() const { return T_BYTE; }
 };
@@ -427,8 +423,6 @@ public:
     : LoadNode(c, mem, adr, at, ti, mo, control_dependency) {}
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return Op_RegI; }
-  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
-  virtual const Type* Value(PhaseGVN* phase) const;
   virtual int store_Opcode() const { return Op_StoreC; }
   virtual BasicType value_basic_type() const { return T_CHAR; }
 };
@@ -441,8 +435,6 @@ public:
     : LoadNode(c, mem, adr, at, ti, mo, control_dependency) {}
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return Op_RegI; }
-  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
-  virtual const Type* Value(PhaseGVN* phase) const;
   virtual int store_Opcode() const { return Op_StoreC; }
   virtual BasicType value_basic_type() const { return T_SHORT; }
 };
@@ -578,7 +570,6 @@ class LoadNNode : public LoadNode {
 public:
   LoadNNode(Node *c, Node *mem, Node *adr, const TypePtr *at, const Type* t, MemOrd mo, ControlDependency control_dependency = DependsOnlyOnTest)
     : LoadNode(c, mem, adr, at, t, mo, control_dependency) {}
-  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return Op_RegN; }
   virtual int store_Opcode() const { return Op_StoreN; }
@@ -1276,6 +1267,7 @@ public:
   bool leading_load_store() const { return _kind == LeadingLoadStore; }
   bool trailing() const { return _kind == TrailingLoad || _kind == TrailingStore || _kind == TrailingLoadStore; }
   bool leading() const { return _kind == LeadingStore || _kind == LeadingLoadStore; }
+  void set_standalone() { _kind = Standalone; }
   bool standalone() const { return _kind == Standalone; }
   void set_trailing_expanded_array_copy() { _kind = TrailingExpandedArrayCopy; }
   bool trailing_expanded_array_copy() const { return _kind == TrailingExpandedArrayCopy; }

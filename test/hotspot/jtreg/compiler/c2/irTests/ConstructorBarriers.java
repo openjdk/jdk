@@ -249,50 +249,35 @@ public class ConstructorBarriers {
     }
 
     @Test
-    @IR(failOn = IRNode.MEMBAR_RELEASE)
-    @IR(failOn = IRNode.MEMBAR_STORESTORE)
-    @IR(failOn = IRNode.MEMBAR_VOLATILE)
-    @IR(counts = {IRNode.MEMBAR_ACQUIRE, "1"})
+    @IR(failOn = IRNode.MEMBAR)
     public long non_escaping_plainVolatile() {
         PlainVolatile c = new PlainVolatile(l);
         return c.f1 + c.f2;
     }
 
     @Test
-    @IR(failOn = IRNode.MEMBAR_RELEASE)
-    @IR(failOn = IRNode.MEMBAR_STORESTORE)
-    @IR(failOn = IRNode.MEMBAR_VOLATILE)
-    @IR(counts = {IRNode.MEMBAR_ACQUIRE, "1"})
+    @IR(failOn = IRNode.MEMBAR)
     public long non_escaping_volatilePlain() {
         VolatilePlain c = new VolatilePlain(l);
         return c.f1 + c.f2;
     }
 
     @Test
-    @IR(failOn = IRNode.MEMBAR_RELEASE)
-    @IR(failOn = IRNode.MEMBAR_STORESTORE)
-    @IR(failOn = IRNode.MEMBAR_VOLATILE)
-    @IR(counts = {IRNode.MEMBAR_ACQUIRE, "2"})
+    @IR(failOn = IRNode.MEMBAR)
     public long non_escaping_volatileVolatile() {
         VolatileVolatile c = new VolatileVolatile(l);
         return c.f1 + c.f2;
     }
 
     @Test
-    @IR(failOn = IRNode.MEMBAR_RELEASE)
-    @IR(failOn = IRNode.MEMBAR_STORESTORE)
-    @IR(failOn = IRNode.MEMBAR_VOLATILE)
-    @IR(counts = {IRNode.MEMBAR_ACQUIRE, "1"})
+    @IR(failOn = IRNode.MEMBAR)
     public long non_escaping_finalVolatile() {
         FinalVolatile c = new FinalVolatile(l);
         return c.f1 + c.f2;
     }
 
     @Test
-    @IR(failOn = IRNode.MEMBAR_RELEASE)
-    @IR(failOn = IRNode.MEMBAR_STORESTORE)
-    @IR(failOn = IRNode.MEMBAR_VOLATILE)
-    @IR(counts = {IRNode.MEMBAR_ACQUIRE, "1"})
+    @IR(failOn = IRNode.MEMBAR)
     public long non_escaping_volatileFinal() {
         VolatileFinal c = new VolatileFinal(l);
         return c.f1 + c.f2;
