@@ -1565,6 +1565,9 @@ INSN(sd_release, sd, sd_rl);
   void flt16_to_flt(FloatRegister dst, Register src);
   void flt_to_flt16(Register dst, FloatRegister src, FloatRegister ftmp);
 
+  // Select LMUL for bulk vector memory loops, targeting 128 bytes with at least m1.
+  static Assembler::LMUL select_lmul_for_main_loop();
+
   // vector load/store unit-stride instructions
   void vlex_v(VectorRegister vd, Register base, Assembler::SEW sew, VectorMask vm = unmasked) {
     switch (sew) {
