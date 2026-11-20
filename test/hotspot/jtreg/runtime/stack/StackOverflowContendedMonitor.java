@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,19 +25,17 @@
  * @test
  * @key stress
  *
- * @summary converted from VM testbase nsk/stress/stack/stack014.
+ * @summary Provoke stack overflow while multiple threads contend for a shared object's monitor.
  * VM testbase keywords: [stress, stack, nonconcurrent]
  * VM testbase readme:
  * DESCRIPTION
  *     This test provokes multiple stack overflows in the multiple
  *     threads -- by invoking synchronized virtual recursive method
- *     for the given fixed depth of recursion (though, for a large
- *     depth). Note however, that different threads are not actual
- *     synchronized, because different instances having the recursive
- *     method are used.
+ *     for the given fixed depth of recursion from within another
+ *     recursive method already deeply invoked.
  *     This test measures a number of recursive invocations until
  *     stack overflow, and then tries to provoke similar stack overflows
- *     10 times in each of 10 threads. Each provocation consists of
+ *     in 10 times in each of 10 threads. Each provocation consists of
  *     invoking that recursive method for the given fixed depth
  *     of invocations which is 100 times that depth measured before.
  *     The test is deemed passed, if VM have not crashed, and
@@ -50,20 +48,28 @@
  *     4366625 (P4/S4) multiple stack overflow causes HS crash
  *
  * @requires vm.opt.DeoptimizeALot != true
- * @run main/othervm/timeout=900 Stack014
+ * @run main/othervm/timeout=900 StackOverflowContendedMonitor
  */
 
-public class Stack014 extends Stack014i {
+public class StackOverflowContendedMonitor extends StackOverflowContendedMonitorThread {
     final static int THREADS = 10;
     final static int CYCLES = 10;
+    final static int STEP = 10;
+    final static int RESERVE = 100;
 
     public static void main(String[] args) {
-        Stack014i test = new Stack014();
+        //
+        // The test will invoke the particular StackOverflowContendedMonitor.recurse()
+        // method via abstract test.recurse() invocations.
+        //
+        StackOverflowContendedMonitorThread test = new StackOverflowContendedMonitor();
+        StackOverflowContendedMonitorThread.test = test;
+
         //
         // Measure maximal recursion depth until stack overflow:
         //
         int maxDepth = 0;
-        for (int depth = 10; ; depth += 10) {
+        for (int depth = 0; ; depth += STEP) {
             try {
                 test.recurse(depth);
                 maxDepth = depth;
@@ -76,11 +82,10 @@ public class Stack014 extends Stack014i {
         //
         // Execute multiple threads repeatedly provoking stack overflows:
         //
-        Stack014i threads[] = new Stack014i[THREADS];
+        StackOverflowContendedMonitorThread threads[] = new StackOverflowContendedMonitorThread[THREADS];
         for (int i = 0; i < threads.length; i++) {
-            threads[i] = new Stack014();
-            threads[i].depthToTry = 100 * maxDepth;
-            threads[i].cycles = CYCLES;
+            threads[i] = new StackOverflowContendedMonitor();
+            threads[i].depthToTry = RESERVE * maxDepth;
             threads[i].start();
         }
         for (int i = 0; i < threads.length; i++) {
@@ -103,30 +108,48 @@ public class Stack014 extends Stack014i {
         }
     }
 
-    synchronized void recurse(int depth) {
+    synchronized void syncRecurse(int depth) {
         if (depth > 0) {
-            recurse(depth - 1);
+            syncRecurse(depth - 1);
         }
     }
 }
 
-abstract class Stack014i extends Thread {
+abstract class StackOverflowContendedMonitorThread extends Thread {
     //
     // Pure virtual method:
     //
-    abstract void recurse(int depth);
+    abstract void syncRecurse(int depth);
+
+    void recurse(int depth) {
+        //
+        // Stack overflow must occur here:
+        //
+        syncRecurse(StackOverflowContendedMonitor.STEP);
+        //
+        // If no stack overflow occured, try again with deeper stack:
+        //
+        if (depth > 0) {
+            recurse(depth - 1);
+        }
+    }
 
     Throwable thrown = null;
     int depthToTry;
-    int cycles;
+
+    static StackOverflowContendedMonitorThread test;
 
     public void run() {
         //
         // Provoke multiple stack overflows:
         //
-        for (int i = 0; i < cycles; i++) {
+        for (int i = 0; i < StackOverflowContendedMonitor.CYCLES; i++) {
             try {
-                recurse(depthToTry);
+                //
+                // All threads invoke the same synchronized method:
+                //
+                test.recurse(depthToTry);
+
                 throw new Exception(
                         "TEST_RFE: no stack overflow thrown" +
                                 ", need to try deeper recursion?");
