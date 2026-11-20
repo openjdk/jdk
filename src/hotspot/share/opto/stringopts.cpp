@@ -1639,22 +1639,6 @@ void PhaseStringOpts::copy_latin1_string(GraphKit& kit, IdealKit& ideal, Node* s
   }
 }
 
-// Read two bytes from index and index+1 and convert them to a char
-static jchar readChar(ciTypeArray* array, int index) {
-  int shift_high, shift_low;
-#ifdef VM_LITTLE_ENDIAN
-    shift_high = 0;
-    shift_low = 8;
-#else
-    shift_high = 8;
-    shift_low = 0;
-#endif
-
-  jchar b1 = ((jchar) array->byte_at(index)) & 0xff;
-  jchar b2 = ((jchar) array->byte_at(index+1)) & 0xff;
-  return (b1 << shift_high) | (b2 << shift_low);
-}
-
 // Copy contents of constant src_array to dst_array by emitting individual stores
 void PhaseStringOpts::copy_constant_string(GraphKit& kit, IdealKit& ideal, ciTypeArray* src_array, IdealVariable& count,
                                            bool src_is_byte, Node* dst_array, Node* dst_coder, Node* start) {
@@ -1681,13 +1665,14 @@ void PhaseStringOpts::copy_constant_string(GraphKit& kit, IdealKit& ideal, ciTyp
   if (!dcon || !dbyte) {
     // Destination is UTF16. Copy each char of src_array into dst_array.
     Node* index = start;
-    for (int i = 0; i < length; i++) {
+    int stride = src_is_byte ? 1 : 2;
+    for (int i = 0; i < length; i += stride) {
       Node* adr = kit.array_element_address(dst_array, index, T_BYTE);
       jchar val;
       if (src_is_byte) {
         val = src_array->byte_at(i) & 0xff;
       } else {
-        val = readChar(src_array, i++);
+        val = src_array->read_integral_bytes<jchar>(i);
       }
       __ store(__ ctrl(), adr, __ ConI(val), T_CHAR, byte_adr_idx, MemNode::unordered, false /* require_atomic_access */,
                true /* mismatched */);
