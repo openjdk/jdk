@@ -1558,6 +1558,10 @@ void ConnectionGraph::verify_ram_nodes(Compile* C, Node* root) {
           if (Node::is<SafePointScalarMergeNode>(sfpt->in(merge_idx))) {
             assert(false, "SafePointScalarMerge nodes can't be nested.");
             C->record_failure(C2Compiler::retry_no_reduce_allocation_merges());
+          } else if (Node::is<SafePointScalarObjectNode>(sfpt->in(merge_idx))) {
+            // Deoptimization needs the merge pointer as an oop before it reallocates objects.
+            assert(false, "The merge pointer of a SafePointScalarMerge can't be scalar replaced.");
+            C->record_failure(C2Compiler::retry_no_reduce_allocation_merges());
           }
         } else {
           assert(false, "Only safepoints can use SafePointScalarMerge nodes.");
