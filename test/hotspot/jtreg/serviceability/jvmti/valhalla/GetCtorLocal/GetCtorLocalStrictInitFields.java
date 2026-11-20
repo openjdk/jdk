@@ -465,6 +465,10 @@ class GetCtorLocalStrictInitFields {
                     test.ready = true;
                     while (!test.canContinue) {}
                 }
+                // The value class has no instance fields.
+                // JIT compiler can remove the THIS object as it is not used in the constructor.
+                // But it is needed in the call to testGetLocalInstance() which checks the value
+                // returned by the JVMTI GetLocalInstance() and GetLocalObject() for slot 0.
                 Reference.reachabilityFence(this);
             }
         }
