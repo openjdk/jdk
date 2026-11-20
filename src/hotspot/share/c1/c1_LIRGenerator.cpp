@@ -31,6 +31,7 @@
 #include "c1/c1_LIRAssembler.hpp"
 #include "c1/c1_LIRGenerator.hpp"
 #include "c1/c1_ValueStack.hpp"
+#include "c1/c1_ValueType.hpp"
 #include "ci/ciArrayKlass.hpp"
 #include "ci/ciFlatArrayKlass.hpp"
 #include "ci/ciInstance.hpp"
@@ -53,6 +54,7 @@
 #include "runtime/stubRoutines.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/bitMap.inline.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 
@@ -1960,6 +1962,22 @@ class ComputedAddressValue: public Instruction {
   virtual const char* name() const { return "ComputedAddressValue"; }
 };
 
+class LIRTemporaryValue: public Instruction {
+ public:
+  explicit LIRTemporaryValue(ValueType* ty) : Instruction(ty) {}
+
+  void input_values_do(ValueVisitor*) override {}
+  void visit(InstructionVisitor*) override {}
+  const char* name() const override { return "LIRTemporaryValue"; }
+};
+
+// Assigns a new register to a temporary of a type. The operand is set by the factory.
+Value LIRGenerator::make_lir_temporary(BasicType bt) {
+  Value val = new LIRTemporaryValue(as_ValueType(bt));
+  set_result(val, new_register(bt));
+  return val;
+}
+
 LIR_Opr LIRGenerator::get_and_load_element_address(LIRItem& array, LIRItem& index) {
 #ifndef _LP64
   // We need to be careful with overflows in 32-bit arithmetic
@@ -2003,12 +2021,11 @@ void LIRGenerator::access_sub_element(LIRItem& array, LIRItem& index, LIR_Opr& r
                  nullptr, nullptr);
 }
 
-LIR_Opr LIRGenerator::access_flat_array(bool is_load, LIRItem& array, LIRItem& index, LIRItem& obj_item,
+LIR_Opr LIRGenerator::access_flat_array(AccessIndexed* x, LIRItem& array, LIRItem& index, LIRItem& obj_item,
                                         ciField* field, size_t sub_offset) {
   assert(sub_offset == 0 || field != nullptr, "Sanity check");
 
-  // Find the starting address of the source (inside the array)
-  LIR_Opr elm_op = get_and_load_element_address(array, index);
+  const bool is_load = x->as_LoadIndexed() != nullptr;
 
   ciFlatArrayKlass* array_klass = array.value()->as_loaded_flat_array_klass_or_null();
   assert(array_klass != nullptr, "must be");
@@ -2025,49 +2042,79 @@ LIR_Opr LIRGenerator::access_flat_array(bool is_load, LIRItem& array, LIRItem& i
   if (atomic) {
     assert(field == nullptr && sub_offset == 0, "delayed sub-element access is only supported for non-atomic arrays");
     BasicType bt = elem_klass->atomic_size_to_basic_type(null_free);
-    LIR_Opr payload = new_register((bt == T_LONG) ? bt : T_INT);
-    ComputedAddressValue* elm_resolved_addr = new ComputedAddressValue(as_ValueType(bt), elm_op);
-    LIRItem elm_item(elm_resolved_addr, this);
+    Value payload_value = make_lir_temporary(bt == T_LONG ? T_LONG : T_INT);
+    LIR_Opr payload = payload_value->operand();
     DecoratorSet decorators = IN_HEAP;
     if (is_load) {
+      // Find the starting address of the source (inside the array)
+      LIR_Opr elm_op = get_and_load_element_address(array, index);
+      ComputedAddressValue* elm_resolved_addr = new ComputedAddressValue(as_ValueType(bt), elm_op);
+      LIRItem elm_item(elm_resolved_addr, this);
       access_load_at(decorators, bt, elm_item, LIR_OprFact::intConst(0), payload, nullptr, nullptr, elem_klass);
       access_store_at(decorators, bt, obj_item, LIR_OprFact::intConst(elem_klass->payload_offset()), payload,
                       nullptr, nullptr, elem_klass);
       // Null check is performed in the caller
-    } else {
-      // Zero the payload
-      LIR_Opr zero = (bt == T_LONG) ? LIR_OprFact::longConst(0) : LIR_OprFact::intConst(0);
-      __ move(zero, payload);
+      return payload;
+    }
 
-      if (null_free) {
-        if (!elem_klass->is_empty()) {
-          access_load_at(decorators, bt, obj_item, LIR_OprFact::intConst(elem_klass->payload_offset()), payload,
-                         nullptr, nullptr, elem_klass);
-        }
-      } else {
-        bool is_constant_null = obj_item.is_constant() && obj_item.value()->is_null_obj();
-        if (!is_constant_null) {
-          LabelObj* L_isNull = new LabelObj();
-          bool needs_null_check = !obj_item.is_constant();
-          if (needs_null_check) {
-            __ cmp(lir_cond_equal, obj_item.result(), LIR_OprFact::oopConst(nullptr));
-            __ branch(lir_cond_equal, L_isNull->label());
+    assert(!is_load && x->as_StoreIndexed() != nullptr, "must be store");
+    StoreIndexed* store = x->as_StoreIndexed();
+    // Zero the payload
+    LIR_Opr zero = (bt == T_LONG) ? LIR_OprFact::longConst(0) : LIR_OprFact::intConst(0);
+    __ move(zero, payload);
+
+    if (null_free) {
+      if (!elem_klass->is_empty()) {
+        access_load_at(decorators, bt, obj_item, LIR_OprFact::intConst(elem_klass->payload_offset()), payload, nullptr, nullptr, elem_klass);
+      }
+    } else {
+      bool is_constant_null = obj_item.is_constant() && obj_item.value()->is_null_obj();
+      if (!is_constant_null) {
+        bool needs_null_check = !obj_item.is_constant();
+        if (needs_null_check) {
+          { LateControlFlowDiamond lcfd(this, store, [&](BlockBegin* taken, BlockBegin* not_taken) {
+              __ cmp(lir_cond_equal, obj_item.result(), LIR_OprFact::oopConst(nullptr));
+              __ branch(lir_cond_equal, taken);
+              __ jump(not_taken);
+            });
+            { LateControlFlowDiamond::NotTakenBlock not_taken(lcfd);
+              // Load payload (if not empty) and set null marker.
+              if (!elem_klass->is_empty()) {
+                LIRItem value(store->value(), this);
+                value.load_item();
+
+                access_load_at(decorators, bt, value, LIR_OprFact::intConst(elem_klass->payload_offset()), payload, nullptr, nullptr, elem_klass);
+              }
+              __ logical_or(payload, null_marker_mask(bt, elem_klass->null_marker_offset_in_payload()), payload);
+            }
           }
+          array.set_instruction(store->array());
+          obj_item.set_instruction(store->value());
+          index.set_instruction(store->index());
+          array.load_item();
+          obj_item.load_item();
+          index.load_nonconstant();
+        } else {
           // Load payload (if not empty) and set null marker.
           if (!elem_klass->is_empty()) {
             access_load_at(decorators, bt, obj_item, LIR_OprFact::intConst(elem_klass->payload_offset()), payload,
                            nullptr, nullptr, elem_klass);
           }
           __ logical_or(payload, null_marker_mask(bt, elem_klass->null_marker_offset_in_payload()), payload);
-          if (needs_null_check) {
-            __ branch_destination(L_isNull->label());
-          }
         }
       }
-      access_store_at(decorators, bt, elm_item, LIR_OprFact::intConst(0), payload, nullptr, nullptr, elem_klass);
     }
-    return payload;
+    // Must be computed here so it does not cross block boundaries.
+    LIR_Opr elm_op = get_and_load_element_address(array, index);
+    ComputedAddressValue* elm_resolved_addr = new ComputedAddressValue(as_ValueType(bt), elm_op);
+    LIRItem elm_item(elm_resolved_addr, this);
+    access_store_at(decorators, bt, elm_item, LIR_OprFact::intConst(0), payload, nullptr, nullptr, elem_klass);
+
+    return LIR_OprFact::illegalOpr;
   }
+
+  // Find the starting address of the source (inside the array)
+  LIR_Opr elm_op = get_and_load_element_address(array, index);
 
   for (int i = 0; i < elem_klass->nof_nonstatic_fields(); i++) {
     ciField* inner_field = elem_klass->nonstatic_field_at(i);
@@ -2272,7 +2319,7 @@ void LIRGenerator::do_StoreIndexed(StoreIndexed* x) {
     // If array element is an empty null-free value type, no need to copy anything.
     // Nullable empty arrays still need their null marker updated.
     if (!elem_klass->is_empty() || !null_free) {
-      access_flat_array(false, array, index, value);
+      access_flat_array(x, array, index, value);
     }
   } else {
     if (needs_flat_array_store_check(x)) {
@@ -2746,7 +2793,7 @@ void LIRGenerator::do_LoadIndexed(LoadIndexed* x) {
     assert(x->array()->is_loaded_flat_array(), "must be");
     // Find the destination address (of the NewValueTypeInstance).
     LIRItem buffer(x->buffer(), this);
-    LIR_Opr payload = access_flat_array(true, array, index, buffer,
+    LIR_Opr payload = access_flat_array(x, array, index, buffer,
                                         x->delayed() == nullptr ? nullptr : x->delayed()->field(),
                                         x->delayed() == nullptr ? 0 : x->delayed()->offset());
     if (flat_array_klass->is_elem_null_free()) {

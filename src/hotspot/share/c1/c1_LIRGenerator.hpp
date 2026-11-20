@@ -29,6 +29,7 @@
 #include "c1/c1_Instruction.hpp"
 #include "c1/c1_LIR.hpp"
 #include "gc/shared/barrierSet.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/sizes.hpp"
 
@@ -367,7 +368,9 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
 
   void deoptimize_vmalloc_for_jvmti(bool is_allocated_by_vm, CodeEmitInfo* info);
 
-  LIR_Opr access_flat_array(bool is_load, LIRItem& array, LIRItem& index, LIRItem& obj_item, ciField* field = nullptr, size_t offset = 0);
+  Value make_lir_temporary(BasicType bt);
+
+  LIR_Opr access_flat_array(AccessIndexed* x, LIRItem& array, LIRItem& index, LIRItem& obj_item, ciField* field = nullptr, size_t offset = 0);
   void access_sub_element(LIRItem& array, LIRItem& index, LIR_Opr& result, ciField* field, size_t sub_offset);
   LIR_Opr get_and_load_element_address(LIRItem& array, LIRItem& index);
   static bool needs_flat_array_store_check(StoreIndexed* x);
