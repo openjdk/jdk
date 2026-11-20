@@ -109,7 +109,7 @@ public interface StackFrame extends Mirror, Locatable {
      *
      * @return an {@link ObjectReference}, or null if the frame represents
      * a native or static method.
-     * @throws OpaqueFrameException if the this stack frame is for a constructor whose
+     * @throws OpaqueFrameException if this stack frame is for a constructor whose
      * declaring class or any of its superclasses has
      * {@linkplain java.lang.reflect.Field#isStrictInit() strictly-initialized}
      * instance fields.

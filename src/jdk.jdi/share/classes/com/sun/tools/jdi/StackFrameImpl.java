@@ -251,6 +251,13 @@ public class StackFrameImpl extends MirrorImpl
                 case JDWP.Error.INVALID_THREAD:
                     throw new InvalidStackFrameException();
                 case JDWP.Error.OPAQUE_FRAME:
+                    /*
+                     * Although JDWP.StackFrame.GetValues can return OPAQUE_FRAME, it should
+                     * never happen with our usage here. getValues() can't possibly
+                     * be called with a slot 0 LocalVariable because there is no way
+                     * in JDI to get a slot 0 LocalVariable. This is why we treat
+                     * it as an InternalException instead of OpaqueFrameException.
+                     */
                     throw new InternalException("Unexpected OPAQUE_FRAME error");
                 default:
                     throw exc.toJDIException();
