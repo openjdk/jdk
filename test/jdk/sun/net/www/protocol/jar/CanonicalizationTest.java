@@ -34,10 +34,10 @@
 import java.net.URL;
 
 public class CanonicalizationTest {
-    private static final boolean DISABLE_NORMALIZE_OPTIMIZATION;
+    private static final boolean USE_LEGACY_NORMALIZATION;
     static {
-        DISABLE_NORMALIZE_OPTIMIZATION =
-                Boolean.getBoolean("jdk.net.urlDisableNormalizeOptimization");
+        USE_LEGACY_NORMALIZATION =
+                Boolean.getBoolean("jdk.net.url.useLegacyNormalization");
     }
 
     public static void main(String args[]) throws Exception {
@@ -45,7 +45,7 @@ public class CanonicalizationTest {
 
         check(new URL(base, ""), "jar:file:/foo!/");
         check(new URL(base, "."), "jar:file:/foo!/");
-        if (DISABLE_NORMALIZE_OPTIMIZATION) {
+        if (USE_LEGACY_NORMALIZATION) {
             check(new URL(base, ".."), "jar:file:/foo!");
         } else {
             check(new URL(base, ".."), "jar:file:/foo!/");

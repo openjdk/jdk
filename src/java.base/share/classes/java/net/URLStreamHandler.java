@@ -51,10 +51,10 @@ import static jdk.internal.util.Exceptions.filterNonSocketInfo;
  */
 public abstract class URLStreamHandler {
 
-    private static final boolean DISABLE_NORMALIZE_OPTIMIZATION;
+    private static final boolean USE_LEGACY_NORMALIZATION;
     static {
-        DISABLE_NORMALIZE_OPTIMIZATION =
-                Boolean.getBoolean("jdk.net.urlDisableNormalizeOptimization");
+        USE_LEGACY_NORMALIZATION =
+                Boolean.getBoolean("jdk.net.url.useLegacyNormalization");
     }
 
     /**
@@ -295,7 +295,7 @@ public abstract class URLStreamHandler {
         if (path == null)
             path = "";
 
-        if (DISABLE_NORMALIZE_OPTIMIZATION && isRelPath) {
+        if (USE_LEGACY_NORMALIZATION && isRelPath) {
             // Remove embedded /./
             while ((i = path.indexOf("/./")) >= 0) {
                 path = path.substring(0, i) + path.substring(i + 2);

@@ -38,10 +38,10 @@ import static jdk.internal.util.Exceptions.formatMsg;
  */
 public class Handler extends java.net.URLStreamHandler {
 
-    private static final boolean DISABLE_NORMALIZE_OPTIMIZATION;
+    private static final boolean USE_LEGACY_NORMALIZATION;
     static {
-        DISABLE_NORMALIZE_OPTIMIZATION =
-                Boolean.getBoolean("jdk.net.urlDisableNormalizeOptimization");
+        USE_LEGACY_NORMALIZATION =
+                Boolean.getBoolean("jdk.net.url.useLegacyNormalization");
     }
 
     private static final String separator = "!/";
@@ -274,7 +274,7 @@ public class Handler extends java.net.URLStreamHandler {
     }
 
     static String doNormalize(String file) {
-        if (DISABLE_NORMALIZE_OPTIMIZATION) {
+        if (USE_LEGACY_NORMALIZATION) {
             return doCanonicalize(file);
         }
 
