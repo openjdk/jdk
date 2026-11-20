@@ -26,6 +26,7 @@
 
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
+#include "asm/register.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "ci/ciEnv.hpp"
 #include "ci/ciValueKlass.hpp"
@@ -2125,13 +2126,10 @@ void MacroAssembler::_verify_oop(Register reg, const char* s, const char* file, 
     ResourceMark rm;
     stringStream ss;
     ss.print("verify_oop: %s: %s (%s:%d)", reg->name(), s, file, line);
-#if INCLUDE_CDS
     if (AOTCodeCache::is_on_for_dump() && !code_section()->scratch_emit()) {
       // this will duplicate string to preserve it
       b = AOTCodeCache::add_C_string(ss.as_string());
-    } else
-#endif
-    {
+    } else {
       b = code_string(ss.as_string());
     }
   }
@@ -2169,13 +2167,10 @@ void MacroAssembler::_verify_oop_addr(Address addr, const char* s, const char* f
     ResourceMark rm;
     stringStream ss;
     ss.print("verify_oop_addr: %s (%s:%d)", s, file, line);
-#if INCLUDE_CDS
     if (AOTCodeCache::is_on_for_dump() && !code_section()->scratch_emit()) {
       // this will duplicate string to preserve it
       b = AOTCodeCache::add_C_string(ss.as_string());
-    } else
-#endif
-    {
+    } else {
       b = code_string(ss.as_string());
     }
   }
@@ -3733,6 +3728,14 @@ void MacroAssembler::cmpxchg(Register addr, Register expected,
                              enum atomic_memory_order order,
                              bool weak,
                              Register result) {
+  // Be careful to not use overlapping register with rscratch1 and result
+  assert_different_registers(rscratch1, addr);
+  assert_different_registers(rscratch1, expected);
+  assert_different_registers(rscratch1, new_val);
+  assert_different_registers(result, addr);
+  assert_different_registers(result, expected);
+  assert_different_registers(result, new_val);
+
   bool acquire, release;
 
   switch (order) {
@@ -6016,14 +6019,12 @@ void MacroAssembler::adrp(Register reg1, const Address &dest, uint64_t &byte_off
 }
 
 void MacroAssembler::load_byte_map_base(Register reg) {
-#if INCLUDE_CDS
   if (AOTCodeCache::is_on_for_dump()) {
     address byte_map_base_adr = AOTRuntimeConstants::card_table_base_address();
     lea(reg, ExternalAddress(byte_map_base_adr));
     ldr(reg, Address(reg));
     return;
   }
-#endif
   CardTableBarrierSet* ctbs = CardTableBarrierSet::barrier_set();
 
   // Strictly speaking the card table base isn't an address at all, and it might
@@ -7194,7 +7195,7 @@ int MacroAssembler::store_value_type_fields_to_buf(ciValueKlass* vk, bool from_i
 
   if (vk != nullptr) {
     // Called from C1, where the return type is statically known.
-    movptr(klass, (intptr_t)vk->get_ValueKlass());
+    mov_metadata(klass, vk->get_ValueKlass()); // get_ValueKlass asserts that vk is ValueKlass
     jint lh = vk->layout_helper();
     assert(lh != Klass::_lh_neutral_value, "value class in return type must have been resolved");
     if (UseTLAB && !Klass::layout_helper_needs_slow_path(lh)) {
@@ -7233,7 +7234,19 @@ int MacroAssembler::store_value_type_fields_to_buf(ciValueKlass* vk, bool from_i
     }
     // 3. Initialize its fields with a value class specific handler
     if (vk != nullptr) {
-      far_call(RuntimeAddress(vk->pack_handler())); // no need for call info as this will not safepoint.
+      if (AOTCodeCache::is_on_for_dump()) {
+        // in AOT compiled code call the pack handler indirectly via
+        // the klass. The handler's blob does not currently get saved
+        // to the archive. So, a direct call to the handler address
+        // cannot be injected into a caller that is saved and
+        // restored.
+        mov_metadata(tmp1, vk->constant_encoding());
+        ldr(tmp1, Address(tmp1, ValueKlass::adr_members_offset()));
+        ldr(tmp1, Address(tmp1, ValueKlass::pack_handler_offset()));
+        blr(tmp1);
+      } else {
+        far_call(RuntimeAddress(vk->pack_handler())); // no need for call info as this will not safepoint.
+      }
     } else {
       ldr(tmp1, Address(klass, ValueKlass::adr_members_offset()));
       ldr(tmp1, Address(tmp1, ValueKlass::pack_handler_offset()));

@@ -54,6 +54,11 @@ public class MethodHandleHelper {
     }
 
     @ForceInline
+    public static void linkToStatic(Object name, int a, long b, Object c) throws Throwable {
+        MethodHandle.linkToStatic(a, b, c, name);
+    }
+
+    @ForceInline
     public static void invokeBasicV(MethodHandle mh, float arg) throws Throwable {
         mh.invokeBasic(arg);
     }

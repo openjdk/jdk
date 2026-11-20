@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,6 +53,38 @@ public class FCCompositeTest {
         }
     }
 
+    private static boolean usesVariableFont(String name) {
+        try {
+            String[] filecmd = {"fc-match", name, "file"};
+            Runtime runtime = Runtime.getRuntime();
+            Process p = runtime.exec(filecmd, null, null);
+            p.waitFor();
+            InputStream is = p.getInputStream();
+            BufferedReader br = new BufferedReader(new InputStreamReader(is));
+            String fileline = br.readLine();
+            br.close();
+            String[] list = fileline.split("=|,", 0);
+            String filename = list[1];
+            System.out.println("found filename = " + filename);
+            String[] querycmd = {"fc-query", "-f", "%{variable}\n", filename};
+            p = runtime.exec(querycmd, null, null);
+            p.waitFor();
+            is = p.getInputStream();
+            br = new BufferedReader(new InputStreamReader(is));
+            String line;
+            while ((line = br.readLine()) != null) {
+                System.out.println("read line " + line);
+                if (line.equalsIgnoreCase("True")) {
+                     return true;
+                }
+            }
+            br.close();
+        } catch (Exception e) {
+             return true;
+        }
+        return false;
+    }
+
     private static void test(int index) {
         boolean matched = false;
         String fullName = "";
@@ -68,6 +100,9 @@ public class FCCompositeTest {
             fullName = pf.getFontName(Locale.ENGLISH);
             System.out.println("PF="+fullName);
 
+            if (usesVariableFont(fcnames[index])) {
+                return;
+            }
             String[] command = {"fc-match",
                                 fcnames[index],
                                 "fullname"};
@@ -106,6 +141,7 @@ public class FCCompositeTest {
                 }
             }
             br.close();
+            errorBr.close();
         } catch (Exception e) {
             e.printStackTrace();
             throw new RuntimeException("Method invocation exception");

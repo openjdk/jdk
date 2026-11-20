@@ -6671,11 +6671,10 @@ class StubGenerator: public StubCodeGenerator {
       __ andn(dst, z, x);
       __ xorr(dst, dst, t0);
     } else if (round >= 40 && round < 60) {
-      // (x & y) ^ (x & z) ^ (y & z)
-      __ andr(t0, x, y);
-      __ andr(t1, x, z);
-      __ andr(dst, y, z);
-      __ xorr(dst, dst, t0);
+      // (x & y) ^ (x & z) ^ (y & z) = (x & y) ^ (z & (x ^ y))
+      __ xorr(t0, x, y);
+      __ andr(t1, x, y);
+      __ andr(dst, z, t0);
       __ xorr(dst, dst, t1);
     } else {
       // x ^ y ^ z
@@ -6685,11 +6684,12 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   // T = ROTL'5(a) + f't(b, c, d) + e + K't + W't
-  // e = d
-  // d = c
-  // c = ROTL'30(b)
-  // b = a
-  // a = T
+  // Updates values in place as follows to avoid register-move overhead:
+  //   a <- e = T
+  //   b <- a
+  //   c <- b = ROTL'30(b)
+  //   d <- c
+  //   e <- d
   void sha1_process_round(Register a, Register b, Register c, Register d, Register e,
                           Register cur_k, Register cur_w, Register tmp, int round) {
     assert(round >= 0 && round < 80, "must be");
@@ -6697,32 +6697,18 @@ class StubGenerator: public StubCodeGenerator {
 
     // T = ROTL'5(a) + f't(b, c, d) + e + K't + W't
 
-    // cur_w will be recalculated at the beginning of each round,
-    // so, we can reuse it as a temp register here.
-    Register tmp2 = cur_w;
+    __ add(e, e, cur_w);
+    __ add(e, e, cur_k);
 
-    // reuse e as a temporary register, as we will mv new value into it later
-    Register tmp3 = e;
-    __ add(tmp2, cur_k, tmp2);
-    __ add(tmp3, tmp3, tmp2);
-    __ rolw(tmp2, a, 5, t0);
+    // cur_w is dead after its contribution above; reuse it for f(b,c,d).
+    sha1_f(cur_w, b, c, d, round);
 
-    sha1_f(tmp, b, c, d, round);
+    // b becomes next-round 'c'.
+    __ rolw(b, b, 30);
 
-    __ add(tmp2, tmp2, tmp);
-    __ add(tmp2, tmp2, tmp3);
-
-    // e = d
-    // d = c
-    // c = ROTL'30(b)
-    // b = a
-    // a = T
-    __ mv(e, d);
-    __ mv(d, c);
-
-    __ rolw(c, b, 30);
-    __ mv(b, a);
-    __ mv(a, tmp2);
+    __ add(e, e, cur_w);
+    __ rolw(tmp, a, 5, t0);
+    __ add(e, e, tmp);
   }
 
   // H(i)0 = a + H(i-1)0
@@ -6827,7 +6813,7 @@ class StubGenerator: public StubCodeGenerator {
     // [saved-reg]: x18 - x27
 
     // h0/1/2/3/4
-    const Register a = x14, b = x15, c = x16, d = x17, e = x28;
+    Register a = x14, b = x15, c = x16, d = x17, e = x28;
     // w0, w1, ... w15
     // put two adjecent w's in one register:
     //    one at high word part, another at low word part
@@ -6888,6 +6874,15 @@ class StubGenerator: public StubCodeGenerator {
 
       // one round process
       sha1_process_round(a, b, c, d, e, cur_k, cur_w, t2, round);
+
+      // Software register renaming for next round:
+      //   a' = e, b' = a, c' = b, d' = c, e' = d
+      Register old_e = e;
+      e = d;
+      d = c;
+      c = b;
+      b = a;
+      a = old_e;
     }
 
     // compute the intermediate hash value

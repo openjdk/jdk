@@ -112,13 +112,10 @@ void CardTableBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembl
   __ shrptr(end, CardTable::card_shift());
   __ subptr(end, addr); // end --> cards count
 
-#if INCLUDE_CDS
   if (AOTCodeCache::is_on_for_dump()) {
     __ lea(tmp, ExternalAddress(AOTRuntimeConstants::card_table_base_address()));
     __ movq(tmp, Address(tmp, 0));
-  } else
-#endif
-  {
+  } else {
     __ mov64(tmp, (intptr_t)ctbs->card_table_base_const());
   }
   __ addptr(addr, tmp);
@@ -147,14 +144,11 @@ void CardTableBarrierSetAssembler::store_check(MacroAssembler* masm, Register ob
   // never need to be relocated. On 64bit however the value may be too
   // large for a 32bit displacement.
   intptr_t byte_map_base = (intptr_t)ctbs->card_table_base_const();
-#if INCLUDE_CDS
   if (AOTCodeCache::is_on_for_dump()) {
     __ lea(rscratch, ExternalAddress(AOTRuntimeConstants::card_table_base_address()));
     __ movq(rscratch, Address(rscratch, 0));
     card_addr = Address(rscratch, obj, Address::times_1, 0);
-  } else
-#endif
-  if (__ is_simm32(byte_map_base)) {
+  } else if (__ is_simm32(byte_map_base)) {
     card_addr = Address(noreg, obj, Address::times_1, byte_map_base);
   } else {
     // By doing it as an ExternalAddress 'byte_map_base' could be converted to a rip-relative

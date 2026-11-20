@@ -1147,6 +1147,8 @@ void LIRGenerator::do_NewTypeArray(NewTypeArray* x) {
     info = state_for(x, x->state());
   }
 
+  deoptimize_vmalloc_for_jvmti(!x->zero_array(), info);
+
   LIRItem length(x->length(), this);
   length.load_item_force(FrameMap::r19_opr);
 

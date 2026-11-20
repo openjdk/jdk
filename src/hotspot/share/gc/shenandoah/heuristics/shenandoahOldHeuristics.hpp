@@ -248,12 +248,6 @@ public:
 
   void record_full_gc(GCCause::Cause cause) override;
 
-  const char* name() override;
-
-  bool is_diagnostic() override;
-
-  bool is_experimental() override;
-
   // Returns the current value of a dynamically adjusted threshold percentage of garbage above which an old region is
   // deemed eligible for evacuation.
   inline uintx get_old_garbage_threshold() { return _old_garbage_threshold; }

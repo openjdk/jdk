@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,9 +37,15 @@ import sun.security.jgss.krb5.Krb5AcceptCredential;
 import java.net.InetAddress;
 import sun.security.util.*;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
+
 import sun.security.krb5.internal.rcache.AuthTimeWithHash;
 
 import static sun.security.krb5.internal.Krb5.DEBUG;
@@ -341,12 +347,52 @@ public class KrbApReq {
             }
         }
 
-        // XXX check for repeated authenticator
-        // if found
-        //    throw new KrbApErrException(Krb5.KRB_AP_ERR_REPEAT);
-        // else
-        //    save authenticator to check for later
+        if (DEBUG != null) {
+            DEBUG.println(">>> KrbApReq: Received ticket options " + enc_ticketPart.flags);
+        }
 
+        if (!enc_ticketPart.flags.get(Krb5.TKT_OPTS_TRANSIT_POLICY_CHECKED)
+                && enc_ticketPart.transited.contents.length != 0) {
+            // System property to control transited policy check:
+            //
+            // If true, compare transited field inside the service ticket to
+            // local settings, and fail with KRB_AP_PATH_NOT_ACCEPTED if there
+            // is no match. Otherwise, ignore the check.
+            //
+            // Default value is `true`. Set to `false` to revert to old behavior.
+            String propValue = SecurityProperties.getOverridableProperty(
+                    "sun.security.krb5.acceptor.checkTransitedPolicy");
+            if (propValue != null) {
+                propValue = propValue.toLowerCase(Locale.ROOT);
+            }
+            boolean checkTransitedPolicy = switch (propValue) {
+                case null -> true;
+                case "true" -> true;
+                case "false" -> false;
+                default -> throw new IllegalArgumentException(
+                        "Invalid property value: " + propValue);
+            };
+            if (checkTransitedPolicy) {
+                if (enc_ticketPart.transited.trType == Krb5.DOMAIN_X500_COMPRESS) {
+                    String transited = new String(
+                            enc_ticketPart.transited.contents, StandardCharsets.UTF_8);
+                    String cRealm = enc_ticketPart.cname.getRealmAsString();
+                    String sRealm = apReqMessg.ticket.sname.getRealmAsString();
+                    String[] allowed = Realm.getRealmsList(cRealm, sRealm);
+                    if (DEBUG != null) {
+                        DEBUG.println(">>> KrbApReq: transited realm is " + transited
+                                + ", allowed is " + Arrays.toString(allowed)
+                                + ". Checking from " + cRealm + " to " + sRealm);
+                    }
+                    List<String> inTicket = parseTransited(transited);
+                    if (!Set.of(allowed).containsAll(inTicket)) {
+                        throw new KrbApErrException(Krb5.KRB_AP_PATH_NOT_ACCEPTED);
+                    }
+                } else {
+                    throw new KrbApErrException(Krb5.KRB_AP_PATH_NOT_ACCEPTED);
+                }
+            }
+        }
         KerberosTime now = KerberosTime.now();
 
         if ((enc_ticketPart.starttime != null &&
@@ -378,6 +424,29 @@ public class KrbApReq {
         if (DEBUG != null) {
             DEBUG.println(">>> KrbApReq: authenticate succeed.");
         }
+    }
+
+    // https://datatracker.ietf.org/doc/html/rfc4120#section-3.3.3.2
+    // Only support "," and "." as special characters.
+    private static List<String> parseTransited(String input)
+            throws KrbApErrException {
+        ArrayList<String> output = new ArrayList<>();
+        String last = null;
+        for (String s : input.split(",", -1)) {
+            if (s == null || s.isEmpty() || s.contains("/")
+                    || s.contains("\\") || s.contains(" ")) {
+                throw new KrbApErrException(Krb5.KRB_AP_PATH_NOT_ACCEPTED);
+            }
+            if (s.endsWith(".")) {
+                if (last == null) {
+                    throw new KrbApErrException(Krb5.KRB_AP_PATH_NOT_ACCEPTED);
+                }
+                s = s + last;
+            }
+            output.add(s);
+            last = s;
+        }
+        return output;
     }
 
     /**
