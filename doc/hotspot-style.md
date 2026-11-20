@@ -140,8 +140,8 @@ change should be done with a "setter" accessor matched to the simple
 Sometimes variables are accessed concurrently without appropriate synchronization
 context, such as a held mutex or at a safepoint. In such cases the variable should
 be declared `volatile` and it should NOT be accessed as a normal C++ lvalue. Rather,
-access should be performed via functions from `Atomic`, such as `Atomic::load`,
-`Atomic::store`, etc.
+access should be performed via functions from `AtomicAccess`, such as `AtomicAccess::load`,
+`AtomicAccess::store`, etc.
 
 This special formulation makes it more clear to maintainers that the variable is
 accessed concurrently in a lock-free manner.

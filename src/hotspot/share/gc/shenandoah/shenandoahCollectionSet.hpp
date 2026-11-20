@@ -84,6 +84,9 @@ public:
   // Single-thread version
   ShenandoahHeapRegion* next();
 
+  // Not MT safe, use to test if gc workers processed all regions
+  bool all_regions_claimed() const;
+
   size_t count()  const { return _region_count; }
   bool is_empty() const { return _region_count == 0; }
 

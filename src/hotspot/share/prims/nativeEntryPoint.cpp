@@ -27,7 +27,7 @@
 #include "code/vmreg.hpp"
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
-#include "oops/oopCast.inline.hpp"
+#include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "prims/downcallLinker.hpp"
 #include "prims/foreignGlobals.inline.hpp"

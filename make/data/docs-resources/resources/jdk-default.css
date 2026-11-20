@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,116 @@
 
 @import url('../api/resource-files/fonts/dejavu.css');
 
+/* Light theme and global variables */
+:root {
+    color-scheme: light;
+    --body-font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Luxi Sans', Verdana, Arial, Helvetica;
+    --code-font-family: 'DejaVu Sans Mono', 'Bitstream Vera Sans Mono', 'Luxi Mono', 'Courier New';
+    --body-font-size: 10pt;
+    --nav-font-size: 13.4px;
+    --max-content-width: 1500px;
+    --body-text-color: #181818;
+    --body-background-color: #ffffff;
+    --navbar-background-color: #4D7A97;
+    --navbar-text-color: #ffffff;
+    --even-row-color: #f0f0f2;
+    --odd-row-color: #fdfdfe;
+    --link-color: #437291;
+    --link-color-active: #bb7a2a;
+    --link-color-visited: #77629E;
+    --table-border-color: #000000;
+    --table-header-background-color: #DDF;
+    --button-border-color: #b0b8c8;
+    --button-hover-color: #e9ecf0;
+    --settings-background-color: #f8f8f8;
+    --settings-border-color: #e6e6e6;
+    --underline-thickness: 0.08em;
+    --icon-filter: none;
+    --current-theme-svg: url('data:image/svg+xml; utf8, \
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" >\
+    <g fill="none" stroke="%23fff" stroke-linecap="round">\
+    <circle cx="49.932" cy="50.193" r="24.947" stroke-width="7.6"/>\
+    <path d="m50.882 5.5255v10.822" stroke-width="7.533"/>\
+    <path d="m24.315 74.134-7.6524 7.6524" stroke-width="7.533"/>\
+    <path d="m75.461 73.989 7.6524 7.6524" stroke-width="7.533"/>\
+    <path d="m18.223 16.442c7.6524 7.6524 7.6524 7.6524 7.6524 7.6524" stroke-width="7.533"/>\
+    <path d="m83.27 19.68-7.6524 7.6524" stroke-width="7.533"/><path d="m50.014 84.417v10.822" stroke-width="7.533"/>\
+    <path d="m95.53 49.53h-10.822" stroke-width="7.533"/><path d="m15.446 49.162h-10.822" stroke-width="7.533"/></g></svg>');
+    --x-svg: url('data:image/svg+xml; utf8, \
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">\
+    <path d="m8 8 84 84" style="stroke:%23505050;stroke-width:15"/>\
+    <path d="M8 92 92 8" style="stroke:%23505050;stroke-width:15"/></svg>');
+}
+/* Dark theme variables */
+:root[data-theme="theme-dark"] {
+    color-scheme: dark;
+    --body-text-color: #e8e8e8;
+    --body-background-color: #202226;
+    --navbar-background-color: #406074;
+    --navbar-text-color: #ffffff;
+    --even-row-color: #34383D;
+    --odd-row-color: #222528;
+    --link-color: #94badb;
+    --link-color-active: #e8a351;
+    --link-color-visited: #A5A3C5;
+    --table-border-color: #919191;
+    --table-header-background-color: #4D4D6C;
+    --button-border-color: #909090;
+    --button-hover-color: #3f4146;
+    --settings-background-color: #2f3439;
+    --settings-border-color: #595959;
+    --icon-filter: invert(91%) brightness(160%);
+    --underline-thickness: 0.05em;
+    /* Inline SVG icons for dark theme */
+    --current-theme-svg: url('data:image/svg+xml; utf8, \
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">\
+    <g fill="none" stroke="%23fff" stroke-linecap="round"><path d="m34.834 \
+    21.49a29.94 29.94 0 0 1 33.103 12.994 29.94 29.94 0 0 1-2.6651 35.462 \
+    29.94 29.94 0 0 1-34.674 7.9004" stroke-width="7.6"/><path d="m35.411 \
+    22.187a42.812 42.812 0 0 1-4.6466 55.023" stroke-width="7.6892"/></g></svg>');
+    --x-svg: url('data:image/svg+xml; utf8, \
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">\
+    <path d="m8 8 84 84" style="stroke:%23e0e0e0;stroke-width:15"/>\
+    <path d="M8 92 92 8" style="stroke:%23e0e0e0;stroke-width:15"/></svg>');
+    main a[href] {
+        text-decoration: underline var(--underline-thickness);
+        text-underline-offset: 0.14em;
+    }
+}
+
+@supports (-webkit-hyphens:none) {
+    :root {
+        --underline-thickness: 0.05em;
+    }
+    :root[data-theme="theme-dark"] {
+        --underline-thickness: 0.03em;
+    }
+}
+:root[data-underline-links="on"] {
+    main a[href] {
+        text-decoration: underline var(--underline-thickness);
+        text-underline-offset: 0.14em;
+    }
+}
+:root[data-underline-links="off"] {
+    main a[href] {
+        text-decoration: none;
+    }
+}
+
+[id] {
+  scroll-margin-top: 0.9em;
+}
+
+code[id], span[id] {
+    scroll-margin-top: 0.3em;
+}
+
 body {
-  font-family: DejaVu Sans, Bitstream Vera Sans, Luxi Sans, Verdana, Arial, Helvetica, sans-serif;
-  font-size: 10pt;
+  background-color:var(--body-background-color);
+  color:var(--body-text-color);
+  font-family: var(--body-font-family), sans-serif;
+  font-size:var(--body-font-size);
   margin: 0;
   padding: 0;
   height: 100%;
@@ -37,17 +144,18 @@ body {
 }
 
 pre, code, tt {
-    font-family: DejaVu Sans Mono, Bitstream Vera Sans Mono, Luxi Mono, Courier New, monospace;
+    font-family: var(--code-font-family), monospace;
 }
 
 main, footer {
-  margin: 16px 27px;
+  margin-block: 16px;
 }
 
-/* Adjust horizontal margin for content elements outside of main element */
-:is(body, header) > :is(nav, h1, h2, h3, h4, h5, h6, p, .sub-title) {
-    margin-left: 27px;
-    margin-right: 27px;
+/* Adjust horizontal margin and padding for child elements of body element */
+main, footer, body > nav, header > p, header h1, header#title-block-header div.nav-content {
+  max-width: var(--max-content-width);
+  margin-inline: auto;
+  padding-inline: 27px;
 }
 
 blockquote {
@@ -94,15 +202,15 @@ h1.title + .subtitle {
 a { text-decoration: none }
 
 a:link {
-  color: #4A6782;
+  color: var(--link-color);
 }
 
 a:visited {
-  color: #666666;
+  color: var(--link-color-visited);
 }
 
 a[href]:hover {
-  color: #e76f00;
+  color: var(--link-color-active);
 }
 
 a img {
@@ -110,13 +218,12 @@ a img {
 }
 
 img {
-  background: white;
+  filter: var(--icon-filter);
 }
 
 table {
   border-collapse: collapse;
-  margin-left: 15px;
-  margin-right: 15px;
+  margin: 8px 15px;
 }
 
 th, td {
@@ -125,7 +232,7 @@ th, td {
 }
 
 table, th, td {
-  border: 1px solid black;
+  border: 1px solid var(--table-border-color);
 }
 
 caption  {
@@ -136,15 +243,15 @@ caption  {
 }
 
 tr:nth-child(even), tr:nth-child(even) th[scope=row] {
-  background: #E3E3E3;
+  background: var(--even-row-color);
 }
 
 tr:nth-child(odd), tr:nth-child(odd) th[scope=row] {
-  background: #FFF;
+  background: var(--odd-row-color);
 }
 
 th {
-  background: #DDF;
+  background: var(--table-header-background-color);
 }
 
 table.centered {
@@ -175,6 +282,7 @@ nav#TOC {
   border-radius: 10px;
   padding: 5px 10px;
   margin-bottom: 15px;
+  max-width: min(var(--max-content-width) - 27px, 100% - 77px);
 }
 
 nav#TOC ul ul {
@@ -191,35 +299,39 @@ nav#TOC ul ul li::before {
 
 /* Rules below replicate sizing of navigation bar in API docs */
 header#title-block-header div.navbar {
-    padding: 0 20px 0 26px;
-    margin-bottom: 30px;
-    background-color: #4D7A97;
-    color: #FFFFFF;
-    height: 44px;
-    overflow: hidden;
-    font-size: 0.857em;
-    line-height: initial;
-    display: flex;
-    flex-direction: row-reverse;
-    align-items: center;
+    background-color: var(--navbar-background-color);
+    color: var(--navbar-text-color);
 }
 
-header#title-block-header div.navbar nav {
+header#title-block-header div.nav-content {
+    padding: 0 20px 0 26px;
+    margin-bottom: 30px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    height: 44px;
+    overflow: auto hidden;
+    font-size: 0.857em;
+    line-height: initial;
+}
+
+header#title-block-header div.nav-content nav {
     flex: 1 1 auto;
     font-size: 12px;
     white-space: nowrap;
 }
 
-header#title-block-header div.navbar div {
+header#title-block-header div.nav-content > div {
     flex: 0 0 auto;
     font-size: 10.978px;
     white-space: nowrap;
 }
 
 header#title-block-header ul {
-    display:block;
-    margin:0 25px 0 0;
-    padding:0;
+    display:inline-flex;
+    align-items: center;
+    padding: 0;
+    margin: 0;
 }
 header#title-block-header ul li {
     list-style:none;
@@ -242,3 +354,87 @@ header#title-block-header a:link, header#title-block-header a:active, header#tit
 header#title-block-header a:hover {
     color:#bb7a2a;
 }
+/*
+ * Styles for header/section anchor links
+ */
+a.anchor-link {
+    opacity: 0;
+    transition: opacity 0.1s 0.1s;
+}
+:hover > a.anchor-link {
+    opacity: 90%;
+}
+a.anchor-link:hover,
+a.anchor-link:focus-visible,
+a.anchor-link.visible {
+    opacity: 100%;
+}
+a.anchor-link > img {
+    width: 0.8em;
+    height: 0.8em;
+}
+/*
+ * Styles for theme picker
+ */
+button#theme-button {
+    position: relative;
+    width: 32px;
+    height: 32px;
+    padding: 6px;
+    margin-left: -6px;
+    background: var(--current-theme-svg) no-repeat 6px;
+    background-size: 18px 18px;
+    background-color: transparent;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    cursor: pointer;
+}
+button#theme-button:hover,
+button#theme-button:focus-visible {
+    border: 1px solid var(--button-border-color);
+}
+div#theme-panel {
+    display: none;
+    position: fixed;
+    z-index: 8;
+    background-color: var(--settings-background-color);
+    color: var(--body-text-color);
+    font-size: var(--nav-font-size);
+    padding: 4px;
+    white-space: nowrap;
+    border: 1px solid var(--settings-border-color);
+    border-radius: 4px;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
+}
+button#theme-panel-close-button {
+    position: absolute;
+    right: 4px;
+    top: 4px;
+    width: 24px;
+    height: 24px;
+    background: var(--x-svg) no-repeat 5.5px;
+    background-size: 12px;
+    border: 1px solid transparent;
+    border-radius: 3px;
+    cursor: pointer;
+}
+button#theme-panel-close-button:hover,
+button#theme-panel-close-button:focus-visible {
+    border: 1px solid var(--button-border-color);
+    background-color: var(--button-hover-color);
+}
+div#theme-panel div.panel-heading {
+    font-weight: bold;
+    font-size: 16px;
+}
+div#theme-panel div {
+    padding: 10px 8px;
+}
+div#theme-panel label {
+    margin-right: 8px;
+    cursor: pointer;
+}
+div#theme-panel input {
+    margin-right: 4px;
+}
+

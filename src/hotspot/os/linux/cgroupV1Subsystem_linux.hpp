@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef CGROUP_V1_SUBSYSTEM_LINUX_HPP
-#define CGROUP_V1_SUBSYSTEM_LINUX_HPP
+#ifndef OS_LINUX_CGROUPV1SUBSYSTEM_LINUX_HPP
+#define OS_LINUX_CGROUPV1SUBSYSTEM_LINUX_HPP
 
 #include "cgroupSubsystem_linux.hpp"
 #include "cgroupUtil_linux.hpp"
@@ -228,4 +228,4 @@ class CgroupV1Subsystem: public CgroupSubsystem {
 
 };
 
-#endif // CGROUP_V1_SUBSYSTEM_LINUX_HPP
+#endif // OS_LINUX_CGROUPV1SUBSYSTEM_LINUX_HPP

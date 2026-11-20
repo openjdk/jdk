@@ -44,7 +44,8 @@ public interface MatchedBlockParser {
     BlockParser getMatchedBlockParser();
 
     /**
-     * Returns the current paragraph lines if the matched block is a paragraph.
+     * Returns the current paragraph lines if the matched block is a paragraph. If you want to use some or all of the
+     * lines for starting a new block instead, use {@link BlockStart#replaceParagraphLines(int)}.
      *
      * @return paragraph content or an empty list
      */

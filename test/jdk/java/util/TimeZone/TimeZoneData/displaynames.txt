@@ -88,7 +88,7 @@ America/Tijuana PST PDT
 America/Toronto EST EDT
 America/Vancouver MST
 America/Whitehorse MST
-America/Winnipeg CST CDT
+America/Winnipeg EST
 America/Yakutat AKST AKDT
 Antarctica/Macquarie AEST AEDT
 Asia/Beirut EET EEST

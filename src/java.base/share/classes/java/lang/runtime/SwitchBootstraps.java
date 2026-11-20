@@ -45,6 +45,7 @@ import java.util.Optional;
 import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 
+import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.Label;
@@ -80,6 +81,8 @@ import sun.invoke.util.Wrapper;
 public final class SwitchBootstraps {
 
     private SwitchBootstraps() {}
+
+    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 
     private static final Object SENTINEL = new Object();
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
@@ -764,9 +767,12 @@ public final class SwitchBootstraps {
         });
 
         try {
-            // this class is linked at the indy callsite; so define a hidden nestmate
-            MethodHandles.Lookup lookup;
-            lookup = caller.defineHiddenClass(classBytes, true, NESTMATE, STRONG);
+            // This class is linked at the indy callsite; so define a hidden nestmate.
+            // Allow obsolete helpers from relinking after redefinition or
+            // retransformation to unload independently of the loader.
+            MethodHandles.Lookup lookup = JLA.hasBeenRedefined(caller.lookupClass())
+                    ? caller.defineHiddenClass(classBytes, true, NESTMATE)
+                    : caller.defineHiddenClass(classBytes, true, NESTMATE, STRONG);
             MethodHandle typeSwitch = lookup.findStatic(lookup.lookupClass(),
                                                         "typeSwitch",
                                                         addExtraInfo ? MT_TYPE_SWITCH_EXTRA : MT_TYPE_SWITCH);

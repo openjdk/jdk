@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 8295753 8306882
+ * @bug 8295753 8306882 8253212
  * @summary Verify correct operation of Path.toRealPath
  * @library .. /test/lib
  * @build ToRealPath jdk.test.lib.Platform
@@ -46,6 +46,7 @@ import org.junit.jupiter.api.condition.OS;
 
 import static java.nio.file.LinkOption.*;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 public class ToRealPath {
     static final boolean SUPPORTS_LINKS;
@@ -255,5 +256,24 @@ public class ToRealPath {
         Files.delete(DIR);
         for (Path p : extraDeletions)
             Files.deleteIfExists(p);
+    }
+
+    @Test
+    @EnabledOnOs(OS.WINDOWS)
+    @EnabledIf("supportsSymbolicLinks")
+    public void uncRootViaSymLink() throws IOException {
+        Path uncRoot = Path.of("\\\\localhost\\c$");
+        assumeTrue(Files.exists(uncRoot), "Administrative share is unavailable");
+
+        try {
+            Path link = Files.createSymbolicLink(LINK, uncRoot);
+            Path real = link.toRealPath();
+            assertNull(real.getFileName());
+            assertNull(real.getParent());
+            assertEquals(0, real.getNameCount());
+            assertEquals(real, real.getRoot());
+        } finally {
+            Files.deleteIfExists(LINK);
+        }
     }
 }

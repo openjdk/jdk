@@ -1769,7 +1769,49 @@ Zone America/Toronto	-5:17:32 -	LMT	1895
 			-5:00	Canada	E%sT	1946
 			-5:00	Toronto	E%sT	1974
 			-5:00	Canada	E%sT
-# For Atikokan see America/Panama.
+# From Tim Parenti (2026-09-21), per Paul Eggert (2000-10-02, 2006-07-17):
+# In the northwest of the province, most portions of Kenora, Rainy River, and
+# Thunder Bay Districts lying broadly west of 90°W longitude have historically
+# been aligned with neighboring Manitoba and use America/Winnipeg, in
+# accordance with section 2(2) of Ontario's Time Act, RSO 1990 chapter T.9:
+# https://www.ontario.ca/laws/statute/90t09
+#
+# In practice, there are several exceptions to the 90°W dividing line set by
+# the province, all of which technically contravene the official Ontario rules:
+#   - An area around Big Trout Lake in Kenora District aligns with
+#     America/Winnipeg despite extending east of 90°W.
+#   - An area around Upsala in the southwest of Thunder Bay District observes
+#     Eastern Time (-05/-04) like America/Toronto despite extending west of
+#     90°W.
+#   - Atikokan in the east of Rainy River District has observed year-round -05
+#     (EST) since at least 1952; this matches America/Panama since our 1970
+#     cutoff.
+#   - Pickle Lake and the Mishkeegogamang First Nation (formerly New Osnaburgh)
+#     in Kenora District have also observed year-round -05 (EST) since at least
+#     1998, though it is less clear how far back that arrangement goes; assume
+#     the area is covered in the same way as Atikokan.
+# See the 'backzone' file for further commentary.
+#
+# From Tim Parenti (2026-10-13):
+# On 2026-09-17, after neighboring Manitoba announced a shift to year-round -05
+# (see Manitoba, below), local leaders throughout northwestern Ontario
+# coordinated regionally alongside their local members of provincial parliament
+# to swiftly conduct several local surveys on the matter ahead of a potential
+# divergence on 2026-11-01.  All of the surveys returned more than 90% support
+# for remaining in alignment with the “Manitoba model”.
+# https://www.nwonewswatch.com/local-journalism-initiative-lji/vast-majority-want-to-end-time-changes-mayor-12838025
+# https://www.kenoraminerandnews.com/news/local-news/kenora-asks-province-to-end-clock-changes/article_5118b819-9f67-42ce-938a-1478b8ab541e.html
+# From Aoun Khan and Chris Walton (2026-10-13):
+# Ontario is set to move parts of the province’s northwest region to permanent
+# daylight time in order to align with Manitoba.
+# https://www.cp24.com/news/canada/2026/10/13/ontario-to-move-northwest-regions-to-permanent-daylight-time/
+# The provincial government has issued a written news release:
+# https://news.ontario.ca/en/release/1008130/ontario-moving-to-permanent-daylight-saving-time-in-parts-of-northwestern-ontario
+# From Heitor David Pinto (2026-10-22):
+# [On 2026-10-19] the government of Ontario issued [Regulation 333/26] setting
+# the time in the part of the province west of 90°W as UTC-5 all year.  It
+# comes into force on 1 November 2026.
+# https://www.ontario.ca/laws/regulation/r26333
 
 
 # Manitoba
@@ -1804,6 +1846,40 @@ Zone America/Toronto	-5:17:32 -	LMT	1895
 # the 1987 version would apply - the changeover was at 2:00 Central
 # Standard Time (i.e. not until 3:00 Central Daylight Time).
 
+# From Tim Parenti (2026-09-29):
+# As much of western Canada began announcing year-round DST in early 2026,
+# Manitoba Premier Wab Kinew publicly mused on forming a "Prairie time zone" by
+# joining Saskatchewan and Alberta on year-round -06, while committing to
+# conducting a public engagement survey on the matter.  The results, however,
+# showed that while "[a] total of 92 per cent of Manitobans surveyed wanted to
+# see an end to seasonal time changes", "[a] majority of Manitobans (58 per
+# cent) preferred to stay on permanent DST, while 34 per cent voted to
+# eliminate the time change but stay on standard time."
+#
+# The survey results were published on Thursday 2026-09-17 alongside a policy
+# announcement adopting permanent DST, or year-round -05, just over 6 weeks
+# before clocks would otherwise fall back on 2026-11-01.
+# https://news.gov.mb.ca/news/?item=75397
+# https://www.cbc.ca/news/canada/manitoba/daylight-time-manitoba-9.7347844
+#
+# While other potential options would have required further legislation, the
+# Official Time Amendment Act (Bill 2 of the 42nd Legislature's 5th Session),
+# assented to 2023-05-30, provides for year-round -05 upon proclamation.
+# https://web2.gov.mb.ca/laws/statutes/2023/pdf/c00423.pdf
+# Order in Council 221/2026, issued 2026-09-23, directed the proclamation
+# bringing the Act into force on 2026-10-31, 26 hours before clocks would
+# otherwise fall back.
+# https://oic.gov.mb.ca/OICDocs/2026/09/Municipal%20and%20Northern%20Relations.260923.%20Official%20Time%20Amendment%20Act.2212026.pdf
+# https://web2.gov.mb.ca/laws/statutes/proclamations/2023c4(2026-10-31).pdf
+#
+# The Act further allows for the Lieutenant Governor in Council to, on
+# recommendation of the relevant minister, "make regulations varying the
+# reckoning" of official time in Manitoba, provided the minister has "due
+# regard for the applicable time zone in neighbouring jurisdictions."
+#
+# Use a temporary hack like Alberta’s to work around potential CLDR
+# limitations.
+
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Winn	1916	only	-	Apr	23	0:00	1:00	D
 Rule	Winn	1916	only	-	Sep	17	0:00	0	S
@@ -1832,7 +1908,11 @@ Rule	Winn	1987	2005	-	Apr	Sun>=1	2:00s	1:00	D
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone America/Winnipeg	-6:28:36 -	LMT	1887 Jul 16
 			-6:00	Winn	C%sT	2006
-			-6:00	Canada	C%sT
+			-6:00	Canada	C%sT	2026 Oct 31
+			# Temporary hack; see above.
+			-6:00	Canada	CDT	2026 Nov  1  2:00
+			# End of temporary hack.
+			-5:00	-	EST
 
 
 # Saskatchewan
@@ -1909,7 +1989,13 @@ Zone America/Winnipeg	-6:28:36 -	LMT	1887 Jul 16
 # which can be prescribed by regulation "if it is in the provincial interest"
 # for those areas to observe either "UTC-5, UTC-6 or UTC-7 for all or part of
 # the year" on at least 30 days' notice.
-# The new Act comes into force by order of the Lieutenant Governor in Council.
+# From Tim Parenti (2026-10-27), per Heitor David Pinto (2026-10-27):
+# Order in Council 438/2026 brings the new Act into force from 2026-10-30.
+# https://publications.saskatchewan.ca/#/products/130175
+# This should allow the area around Creighton to more straightforwardly remain
+# aligned with Manitoba on year-round -05, since its previous de facto
+# arrangement technically violated provincial law without a special charter
+# like Lloydminster.
 
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Regina	1918	only	-	Apr	14	2:00	1:00	D
@@ -2068,13 +2154,13 @@ Zone America/Edmonton	-7:33:52 -	LMT	1906 Sep
 # on March 8 will be the last time change, ending twice-yearly clock changes.”
 # https://news.gov.bc.ca/releases/2026AG0013-000209
 #
-# From Paul Eggert (2026-07-02):
+# From Paul Eggert (2026-09-23):
 # The law says that 21 hours after the usual 2026-03-08 02:00 switch from
-# PST to PDT, the next day inaugurates the new standard time Pacific Time,
+# PST to PDT, the next day inaugurated the new standard time Pacific Time,
 # i.e., just one clock change but two name changes separated by 21 hours.
 # PT, the obvious abbreviation for Pacific Time, is one letter too short
 # to conform to TZDB’s (and POSIX’s) [-+[:alnum:]]{3,6} requirements.
-# I asked the BC government for advice, with no response. For now, do this:
+# For now, do this:
 #   1.	As a temporary hack, pretend that the BC law takes effect
 #	not on 2026-03-09 at 00:00, but on 2026-11-01 at 02:00.
 #	This pretense works around a limitation in CLDR 48.1 (2026-01-08),
@@ -2092,10 +2178,10 @@ Zone America/Edmonton	-7:33:52 -	LMT	1906 Sep
 #	and already used in parts of BC and in Yukon
 #   PDT - almost as software-friendly, but confusing because it implies
 #	it is DST and is paired with PST, whereas PT is standard time
-#   PST - straightforward but even more confusing,
-#	and will likely break much software that assumes PST is -08
 #   -07 - accurate and clear in itself, but makes BC look odd vs neighbors
-#   PacT - straightforward but novel abbreviation for Pacific Time
+#   PCT - as I understand it, inspired by the phrase “Pacific Coast Time”
+#	though legally it’s “Pacific Time”; suggested by the BC government
+#	<https://news.gov.bc.ca/releases/2026CITZ0009-001073>
 
 # From Tim Parenti (2026-08-21):
 # In the southeast of the province, the Regional District of East Kootenay
@@ -2121,18 +2207,24 @@ Zone America/Edmonton	-7:33:52 -	LMT	1906 Sep
 # 2026-08-14 meeting.
 # https://www.cbc.ca/news/canada/british-columbia/east-kootenay-stops-changing-clocks-9.7308201
 #
-# From Tim Parenti (2026-09-10):
-# Although on 2026-09-01 the Town of Golden voted instead to split its
-# timekeeping practice from RDEK and rejoin BC on year-round -07, this was met
-# with significant pushback from residents in Golden and CSRD Area A.  In light
-# of these public comments, CSRD voted on 2026-09-10 to defer its decision on
-# timekeeping in Area A “to gather and assess further information before a
-# decision is implemented”.  As such, at time of writing, it seems likely that
-# Golden may soon revisit its decision as well.
-#
-# For now, these areas remain aligned with America/Edmonton, but if they
-# diverge, a new zone with a name like 'America/Brit_Columbia/Golden' would be
-# needed.
+# From Tim Parenti (2026-10-15):
+# Echoing RDEK’s earlier false step, the Town of Golden initially opted for
+# year-round -07 by a 4–2 Council vote on 2026-09-01.  This was met with
+# significant pushback from residents preferring to maintain the existing
+# alignment with RDEK and Alberta, with a formal petition swiftly gathering
+# 2,395 signatures in two weeks from the town of 3,986 and some smaller
+# neighboring communities.  In response, Council unanimously rescinded the
+# resolution at the following meeting on 2026-09-22, and unanimously replaced
+# it with year-round -06 to keep the regional alignment.
+# Acknowledging that “its initial move was driven in part by concerns about
+# dark winter mornings and pedestrian safety for children travelling to
+# school”, the new resolution directs town staff to partner on safety supports
+# and commits to reviewing the decision and its impacts in October 2027.
+# https://www.ctvnews.ca/calgary/article/golden-bc-council-reverses-course-on-time-zone-opts-for-mountain-daylight-time/
+# Following a 2026-09-10 deferral “to gather and assess further information” in
+# light of the ongoing petition, the surrounding CSRD Area A unanimously
+# formalized its own change on 2026-10-15 in order to maintain the alignment.
+# https://www.csrd.bc.ca/m/newsflash/home/detail/2486
 
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Vanc	1918	only	-	Apr	14	2:00	1:00	D
@@ -3479,6 +3571,17 @@ Zone America/Costa_Rica	-5:36:13 -	LMT	1890        # San José
 # From Paul Eggert (2012-11-03):
 # For now, assume the future rule is first Sunday in November.
 
+# From an anonymous contributor (2026-10-24):
+# On October 24, 2026, the Cuban authorities announced that daylight saving
+# time would remain in effect until November 7, 2027, suspending the usual
+# return to standard time scheduled for November 1, 2026.
+# From Tim Parenti (2026-10-26):
+# The measure delays the start times for schools and workplaces by 30 minutes
+# during the period in which standard time would normally be in effect "to
+# avoid disrupting social activities during the early part of the day".
+# http://www.cuba.cu/otras/2026-10-25/cuba-mantendra-horario-de-verano-hasta-noviembre-de-2027/69459
+# https://en.cibercuba.com/noticias/2026-10-24-u1-e74-s27061-nid343708-cuba-mantendra-horario-verano-noviembre-2027-retrasara
+
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Cuba	1928	only	-	Jun	10	0:00	1:00	D
 Rule	Cuba	1928	only	-	Oct	10	0:00	0	S
@@ -3517,8 +3620,10 @@ Rule	Cuba	2009	2010	-	Mar	Sun>=8	0:00s	1:00	D
 Rule	Cuba	2011	only	-	Mar	Sun>=15	0:00s	1:00	D
 Rule	Cuba	2011	only	-	Nov	13	0:00s	0	S
 Rule	Cuba	2012	only	-	Apr	1	0:00s	1:00	D
-Rule	Cuba	2012	max	-	Nov	Sun>=1	0:00s	0	S
-Rule	Cuba	2013	max	-	Mar	Sun>=8	0:00s	1:00	D
+Rule	Cuba	2012	2025	-	Nov	Sun>=1	0:00s	0	S
+Rule	Cuba	2013	2026	-	Mar	Sun>=8	0:00s	1:00	D
+Rule	Cuba	2027	max	-	Nov	Sun>=1	0:00s	0	S
+Rule	Cuba	2028	max	-	Mar	Sun>=8	0:00s	1:00	D
 
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	America/Havana	-5:29:28 -	LMT	1890

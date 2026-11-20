@@ -53,7 +53,6 @@ import java.util.StringJoiner;
 import java.util.TimerTask;
 import java.util.TreeMap;
 
-import jdk.jfr.Configuration;
 import jdk.jfr.FlightRecorderListener;
 import jdk.jfr.Recording;
 import jdk.jfr.RecordingState;
@@ -91,7 +90,6 @@ public final class PlatformRecording implements AutoCloseable {
     private TimerTask startTask;
     private boolean shouldWriteActiveRecordingEvent = true;
     private Duration flushInterval = Duration.ofSeconds(1);
-    private long finalStartChunkNanos = Long.MIN_VALUE;
     private long startNanos = -1;
 
     PlatformRecording(PlatformRecorder recorder, long id) {
@@ -551,10 +549,6 @@ public final class PlatformRecording implements AutoCloseable {
         return getName() + " (id=" + getId() + ") " + getState();
     }
 
-    public void setConfiguration(Configuration c) {
-        setSettings(c.getSettings());
-    }
-
     public void setMaxAge(Duration maxAge) {
         synchronized (recorder) {
             if (getState() == RecordingState.CLOSED) {
@@ -882,14 +876,6 @@ public final class PlatformRecording implements AutoCloseable {
 
     public long getStartNanos() {
         return startNanos;
-    }
-
-    public long getFinalChunkStartNanos() {
-        return finalStartChunkNanos;
-    }
-
-    public void setFinalStartnanos(long chunkStartNanos) {
-       this.finalStartChunkNanos = chunkStartNanos;
     }
 
     public void removeBefore(Instant timestamp) {

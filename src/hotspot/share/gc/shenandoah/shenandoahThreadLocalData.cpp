@@ -35,6 +35,7 @@ ShenandoahThreadLocalData::ShenandoahThreadLocalData() :
   _card_table(nullptr),
   _gclab(nullptr),
   _gclab_size(0),
+  _has_evac_failures(false),
   _shenandoah_plab(nullptr),
   _evacuation_stats(new ShenandoahEvacuationStats()),
   _invisible_root(nullptr),

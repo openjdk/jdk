@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -583,6 +583,8 @@ GtkApi* gtk3_load(JNIEnv *env, const char* lib_name)
         fp_g_variant_get = dl_symbol("g_variant_get");
         fp_g_variant_get_string = dl_symbol("g_variant_get_string");
         fp_g_variant_get_uint32 = dl_symbol("g_variant_get_uint32");
+        fp_g_variant_get_type_string = dl_symbol("g_variant_get_type_string");
+        fp_g_variant_is_of_type = dl_symbol("g_variant_is_of_type");
         fp_g_variant_iter_loop = dl_symbol("g_variant_iter_loop");
         fp_g_variant_unref = dl_symbol("g_variant_unref");
         fp_g_variant_lookup = dl_symbol("g_variant_lookup");
@@ -611,6 +613,7 @@ GtkApi* gtk3_load(JNIEnv *env, const char* lib_name)
 
         fp_g_error_free = dl_symbol("g_error_free");
         fp_g_unix_fd_list_get = dl_symbol("g_unix_fd_list_get");
+        fp_g_unix_fd_list_get_length = dl_symbol("g_unix_fd_list_get_length");
     }
     /* Now we have only one kind of exceptions: NO_SYMBOL_EXCEPTION
      * Otherwise we can check the return value of setjmp method.
@@ -3122,6 +3125,8 @@ static void gtk3_init(GtkApi* gtk) {
     gtk->g_variant_get = fp_g_variant_get;
     gtk->g_variant_get_string = fp_g_variant_get_string;
     gtk->g_variant_get_uint32 = fp_g_variant_get_uint32;
+    gtk->g_variant_get_type_string = fp_g_variant_get_type_string;
+    gtk->g_variant_is_of_type = fp_g_variant_is_of_type;
 
     gtk->g_variant_lookup = fp_g_variant_lookup;
 
@@ -3150,6 +3155,7 @@ static void gtk3_init(GtkApi* gtk) {
     gtk->g_main_context_is_owner = fp_g_main_context_is_owner;
     gtk->g_error_free = fp_g_error_free;
     gtk->g_unix_fd_list_get = fp_g_unix_fd_list_get;
+    gtk->g_unix_fd_list_get_length = fp_g_unix_fd_list_get_length;
 
     gtk->gdk_pixbuf_new = fp_gdk_pixbuf_new;
     gtk->gdk_pixbuf_new_from_data = fp_gdk_pixbuf_new_from_data;

@@ -186,47 +186,32 @@ public final class LinuxAARCH64CFrame extends DwarfCFrame {
         senderPC = stripPAC(senderPC);
       }
 
+      if (linuxDbg().isSignalTrampoline(senderPC)) {
+        // We can use the caller frame if it is a signal trampoline.
+        // We should not rely on DWARF here because vdso.so .eh_frame is not required
+        // on aarch64, and DwarfParser might not be able to find out CFA register.
+        // The sender() method of the returned frame restores registers from the signal context.
+        // Passing null as DwarfParser is necessary and safe.
+        return new LinuxAARCH64CFrame(linuxDbg(), senderSP, senderFP, null /* no CFA */, senderPC, null /* no DWARF */);
+      }
+
+      boolean use1ByteBeforeToLookup = VM.getVM().getCodeCache().findBlobUnsafe(senderPC) == null;
+      Address lookupPC = use1ByteBeforeToLookup ? senderPC.addOffsetTo(-1) : senderPC;
       DwarfParser senderDwarf = null;
-      boolean fallback = false;
       try {
-        senderDwarf = createDwarfParser(linuxDbg(), senderPC);
+        senderDwarf = createDwarfParser(linuxDbg(), lookupPC);
       } catch (DebuggerException _) {
-        // Try again with PC-1 in case PC is just outside function bounds,
-        // due to function ending with a `call` instruction.
-        try {
-          senderDwarf = createDwarfParser(linuxDbg(), senderPC.addOffsetTo(-1));
-          fallback = true;
-        } catch (DebuggerException _) {
-          if (linuxDbg().isSignalTrampoline(senderPC)) {
-            // We can use the caller frame if it is a signal trampoline.
-            // DWARF processing might fail because vdso.so .eh_frame is not required on aarch64.
-            return new LinuxAARCH64CFrame(linuxDbg(), senderSP, senderFP, null, senderPC, senderDwarf);
-          }
-
-          // Returns CFrame if the sender is native frame even though it does not have DWARF,
-          // otherwise returns null because we cannot unwind anymore.
-          return linuxDbg().findLibPtrByAddress(senderPC) != null
-            ? new LinuxAARCH64CFrame(linuxDbg(), senderSP, senderFP, null /* no CFA */, senderPC, null /* no DWARF */)
-            : null;
-        }
-      }
-
-      try {
-        Address senderCFA = getSenderCFA(senderDwarf, senderSP, senderFP);
-        return isValidFrame(senderCFA, senderFP)
-          ? new LinuxAARCH64CFrame(linuxDbg(), senderSP, senderFP, senderCFA, senderPC, senderDwarf, fallback)
+        // Returns CFrame if the sender is native frame even though it does not have DWARF,
+        // otherwise returns null because we cannot unwind anymore.
+        return linuxDbg().findLibPtrByAddress(lookupPC) != null
+          ? new LinuxAARCH64CFrame(linuxDbg(), senderSP, senderFP, null /* no CFA */, senderPC, null /* no DWARF */, use1ByteBeforeToLookup)
           : null;
-      } catch (DebuggerException e) {
-        if (linuxDbg().isSignalTrampoline(senderPC)) {
-          // We can use the caller frame if it is a signal trampoline.
-          // getSenderCFA() might fail because DwarfParser cannot find out CFA register.
-          return new LinuxAARCH64CFrame(linuxDbg(), senderSP, senderFP, null, senderPC, senderDwarf, fallback);
-        }
-
-        // Rethrow the original exception if getSenderCFA() failed
-        // and the caller is not signal trampoline.
-        throw e;
       }
+
+      Address senderCFA = getSenderCFA(senderDwarf, senderSP, senderFP);
+      return isValidFrame(senderCFA, senderFP)
+        ? new LinuxAARCH64CFrame(linuxDbg(), senderSP, senderFP, senderCFA, senderPC, senderDwarf, use1ByteBeforeToLookup)
+        : null;
    }
 
    @Override

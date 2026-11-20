@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,11 +71,11 @@ void IdealKit::if_then(Node* left, BoolTest::mask relop,
                        Node* right, float prob, float cnt, bool push_new_state) {
   assert((state() & (BlockS|LoopS|IfThenS|ElseS)), "bad state for new If");
   Node* bol;
-  if (left->bottom_type()->isa_ptr() == nullptr) {
-    if (left->bottom_type()->isa_int() != nullptr) {
+  if (!left->bottom_type()->is_ptr()) {
+    if (left->bottom_type()->is_int()) {
       bol = Bool(CmpI(left, right), relop);
     } else {
-      assert(left->bottom_type()->isa_long() != nullptr, "what else?");
+      assert(left->bottom_type()->is_long(), "what else?");
       bol = Bool(CmpL(left, right), relop);
     }
   } else {
@@ -485,7 +485,7 @@ Node* IdealKit::make_leaf_call(const TypeFunc *slow_call_type,
   uint adr_idx = C->get_alias_index(adr_type);
 
   // Slow-path leaf call
-  CallNode *call =  (CallNode*)new CallLeafNode( slow_call_type, slow_call, leaf_name, adr_type);
+  CallNode* call = new CallLeafNode(slow_call_type, slow_call, leaf_name, adr_type, adr_type);
 
   // Set fixed predefined input arguments
   call->init_req( TypeFunc::Control, ctrl() );
@@ -514,7 +514,8 @@ Node* IdealKit::make_leaf_call(const TypeFunc *slow_call_type,
   // Set the RawPtr memory state only.
   set_memory(mem, adr_idx);
 
-  assert(C->alias_type(call->adr_type()) == C->alias_type(adr_type),
+  assert(C->alias_type(call->out_adr_type()) == C->alias_type(adr_type) &&
+         C->alias_type(call->in_adr_type()) == C->alias_type(adr_type),
          "call node must be constructed correctly");
   Node* res = nullptr;
   if (slow_call_type->range_sig()->cnt() > TypeFunc::Parms) {
@@ -537,7 +538,7 @@ void IdealKit::make_leaf_call_no_fp(const TypeFunc *slow_call_type,
   uint adr_idx = C->get_alias_index(adr_type);
 
   // Slow-path leaf call
-  CallNode *call =  (CallNode*)new CallLeafNoFPNode( slow_call_type, slow_call, leaf_name, adr_type);
+  CallNode* call = new CallLeafNoFPNode(slow_call_type, slow_call, leaf_name, adr_type, adr_type);
 
   // Set fixed predefined input arguments
   call->init_req( TypeFunc::Control, ctrl() );
@@ -566,6 +567,7 @@ void IdealKit::make_leaf_call_no_fp(const TypeFunc *slow_call_type,
   // Set the RawPtr memory state only.
   set_memory(mem, adr_idx);
 
-  assert(C->alias_type(call->adr_type()) == C->alias_type(adr_type),
+  assert(C->alias_type(call->out_adr_type()) == C->alias_type(adr_type) &&
+         C->alias_type(call->in_adr_type()) == C->alias_type(adr_type),
          "call node must be constructed correctly");
 }

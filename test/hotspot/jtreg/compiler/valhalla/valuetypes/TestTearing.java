@@ -36,7 +36,7 @@ import jdk.internal.vm.annotation.NullRestricted;
 
 /*
  * @test id=no-flattening
- * @key randomness
+ * @key stress randomness
  * @requires vm.compMode != "Xint" & vm.flavor == "server"
  * @summary Detect tearing on flat accesses and buffering.
  * @library /testlibrary /test/lib /
@@ -49,12 +49,12 @@ import jdk.internal.vm.annotation.NullRestricted;
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:-UseFieldFlattening -XX:-UseArrayFlattening
  *                   -XX:+StressGCM -XX:+StressLCM
- *                   compiler.valhalla.valuetypes.TestTearing
+ *                   ${test.main.class}
  */
 
 /*
  * @test id=no-flattening-AII
- * @key randomness
+ * @key stress randomness
  * @requires vm.compMode != "Xint" & vm.flavor == "server"
  * @summary Detect tearing on flat accesses and buffering.
  * @library /testlibrary /test/lib /
@@ -68,12 +68,12 @@ import jdk.internal.vm.annotation.NullRestricted;
  *                   -XX:+WhiteBoxAPI -XX:-UseFieldFlattening -XX:-UseArrayFlattening
  *                   -XX:+StressGCM -XX:+StressLCM
  *                   -XX:+IgnoreUnrecognizedVMOptions -XX:+AlwaysIncrementalInline
- *                   compiler.valhalla.valuetypes.TestTearing
+ *                   ${test.main.class}
  */
 
 /*
  * @test id=no-flattening-di
- * @key randomness
+ * @key stress randomness
  * @requires vm.compMode != "Xint" & vm.flavor == "server"
  * @summary Detect tearing on flat accesses and buffering.
  * @library /testlibrary /test/lib /
@@ -87,12 +87,12 @@ import jdk.internal.vm.annotation.NullRestricted;
  *                   -XX:+WhiteBoxAPI -XX:-UseFieldFlattening -XX:-UseArrayFlattening
  *                   -XX:CompileCommand=dontinline,*::incrementAndCheck*
  *                   -XX:+StressGCM -XX:+StressLCM
- *                   compiler.valhalla.valuetypes.TestTearing
+ *                   ${test.main.class}
  */
 
 /*
  * @test id=no-flattening-di-AII
- * @key randomness
+ * @key stress randomness
  * @requires vm.compMode != "Xint" & vm.flavor == "server"
  * @summary Detect tearing on flat accesses and buffering.
  * @library /testlibrary /test/lib /
@@ -107,12 +107,12 @@ import jdk.internal.vm.annotation.NullRestricted;
  *                   -XX:CompileCommand=dontinline,*::incrementAndCheck*
  *                   -XX:+StressGCM -XX:+StressLCM
  *                   -XX:+IgnoreUnrecognizedVMOptions -XX:+AlwaysIncrementalInline
- *                   compiler.valhalla.valuetypes.TestTearing
+ *                   ${test.main.class}
  */
 
 /*
  * @test id=xcomp-no-stress
- * @key randomness
+ * @key stress randomness
  * @requires vm.compMode != "Xint" & vm.flavor == "server"
  * @summary Detect tearing on flat accesses and buffering.
  * @library /testlibrary /test/lib /
@@ -125,12 +125,12 @@ import jdk.internal.vm.annotation.NullRestricted;
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *                   -XX:+WhiteBoxAPI -XX:+UseNullableAtomicValueFlattening -XX:+UseNullFreeAtomicValueFlattening -XX:+UseArrayFlattening
  *                   -Xcomp -XX:-TieredCompilation
- *                   compiler.valhalla.valuetypes.TestTearing
+ *                   ${test.main.class}
  */
 
 /*
  * @test id=flattening
- * @key randomness
+ * @key stress randomness
  * @requires vm.compMode != "Xint" & vm.flavor == "server"
  * @summary Detect tearing on flat accesses and buffering.
  * @library /testlibrary /test/lib /
@@ -143,12 +143,12 @@ import jdk.internal.vm.annotation.NullRestricted;
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *                   -XX:+WhiteBoxAPI -XX:+UseNullableAtomicValueFlattening -XX:+UseNullFreeAtomicValueFlattening -XX:+UseArrayFlattening
  *                   -XX:+StressGCM -XX:+StressLCM
- *                   compiler.valhalla.valuetypes.TestTearing
+ *                   ${test.main.class}
  */
 
 /*
  * @test id=flattening-AII
- * @key randomness
+ * @key stress randomness
  * @requires vm.compMode != "Xint" & vm.flavor == "server"
  * @summary Detect tearing on flat accesses and buffering.
  * @library /testlibrary /test/lib /
@@ -162,12 +162,12 @@ import jdk.internal.vm.annotation.NullRestricted;
  *                   -XX:+WhiteBoxAPI -XX:+UseNullableAtomicValueFlattening -XX:+UseNullFreeAtomicValueFlattening -XX:+UseArrayFlattening
  *                   -XX:+StressGCM -XX:+StressLCM
  *                   -XX:+IgnoreUnrecognizedVMOptions -XX:+AlwaysIncrementalInline
- *                   compiler.valhalla.valuetypes.TestTearing
+ *                   ${test.main.class}
  */
 
 /*
  * @test id=flattening-di
- * @key randomness
+ * @key stress randomness
  * @requires vm.compMode != "Xint" & vm.flavor == "server"
  * @summary Detect tearing on flat accesses and buffering.
  * @library /testlibrary /test/lib /
@@ -181,12 +181,12 @@ import jdk.internal.vm.annotation.NullRestricted;
  *                   -XX:+WhiteBoxAPI -XX:+UseNullableAtomicValueFlattening -XX:+UseNullFreeAtomicValueFlattening -XX:+UseArrayFlattening
  *                   -XX:CompileCommand=dontinline,*::incrementAndCheck*
  *                   -XX:+StressGCM -XX:+StressLCM
- *                   compiler.valhalla.valuetypes.TestTearing
+ *                   ${test.main.class}
  */
 
 /*
  * @test id=flattening-di-AII
- * @key randomness
+ * @key stress randomness
  * @requires vm.compMode != "Xint" & vm.flavor == "server"
  * @summary Detect tearing on flat accesses and buffering.
  * @library /testlibrary /test/lib /
@@ -201,7 +201,7 @@ import jdk.internal.vm.annotation.NullRestricted;
  *                   -XX:CompileCommand=dontinline,*::incrementAndCheck*
  *                   -XX:+StressGCM -XX:+StressLCM
  *                   -XX:+IgnoreUnrecognizedVMOptions -XX:+AlwaysIncrementalInline
- *                   compiler.valhalla.valuetypes.TestTearing
+ *                   ${test.main.class}
  */
 
 @LooselyConsistentValue
@@ -422,11 +422,13 @@ public class TestTearing {
             loopLimit = 50_000;
         }
         TestTearing test = new TestTearing();
-        Thread runner = null;
+        Runner[] runners = new Runner[10];
         for (int i = 0; i < 10; ++i) {
-            runner = new Runner(test, loopLimit);
-            runner.start();
+            runners[i] = new Runner(test, loopLimit);
+            runners[i].start();
         }
-        runner.join();
+        for (Runner runner : runners) {
+            runner.join();
+        }
     }
 }

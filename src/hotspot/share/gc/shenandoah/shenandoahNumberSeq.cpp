@@ -32,14 +32,16 @@
 #include <cfloat>
 #include <cmath>
 
-HdrSeq::HdrSeq() : _minimum(DBL_MAX) {
-  _hdr = NEW_C_HEAP_ARRAY(int*, MagBuckets, mtGC);
-  for (int c = 0; c < MagBuckets; c++) {
-    _hdr[c] = nullptr;
-  }
+HdrSeq::HdrSeq() :
+  _hdr(nullptr),
+  _minimum(DBL_MAX) {
 }
 
 HdrSeq::~HdrSeq() {
+  if (_hdr == nullptr) {
+    return;
+  }
+
   for (int c = 0; c < MagBuckets; c++) {
     int* sub = _hdr[c];
     if (sub != nullptr) {
@@ -49,7 +51,18 @@ HdrSeq::~HdrSeq() {
   FREE_C_HEAP_ARRAY(_hdr);
 }
 
+void HdrSeq::allocate_hdr() {
+  if (_hdr == nullptr) {
+    _hdr = NEW_C_HEAP_ARRAY(int*, MagBuckets, mtGC);
+    for (int c = 0; c < MagBuckets; c++) {
+      _hdr[c] = nullptr;
+    }
+  }
+}
+
 void HdrSeq::add(double val) {
+  allocate_hdr();
+
   if (val < 0) {
     assert (false, "value (%8.2f) is not negative", val);
     val = 0;
@@ -112,7 +125,7 @@ double HdrSeq::minimum() const {
 }
 
 double HdrSeq::percentile(double level) const {
-  if (level == 0) {
+  if (level == 0 || num() == 0) {
     return minimum();
   }
 
@@ -144,6 +157,8 @@ void HdrSeq::add(const HdrSeq& other) {
     // Other sequence is empty, return
     return;
   }
+
+  allocate_hdr();
 
   for (int mag = 0; mag < MagBuckets; mag++) {
     int* other_bucket = other._hdr[mag];
@@ -185,11 +200,13 @@ void HdrSeq::add(const HdrSeq& other) {
 
 void HdrSeq::clear() {
   // Clear the storage
-  for (int mag = 0; mag < MagBuckets; mag++) {
-    int* bucket = _hdr[mag];
-    if (bucket != nullptr) {
-      for (int c = 0; c < ValBuckets; c++) {
-        bucket[c] = 0;
+  if (_hdr != nullptr) {
+    for (int mag = 0; mag < MagBuckets; mag++) {
+      int* bucket = _hdr[mag];
+      if (bucket != nullptr) {
+        for (int c = 0; c < ValBuckets; c++) {
+          bucket[c] = 0;
+        }
       }
     }
   }

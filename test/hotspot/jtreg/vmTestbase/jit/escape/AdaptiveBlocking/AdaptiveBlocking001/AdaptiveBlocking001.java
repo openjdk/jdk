@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key stress
  *
  * @summary converted from VM Testbase jit/escape/AdaptiveBlocking/AdaptiveBlocking001.
  * VM Testbase keywords: [jit, quick]
@@ -36,9 +37,9 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build jit.escape.AdaptiveBlocking.AdaptiveBlocking001.AdaptiveBlocking001
+ * @build ${test.main.class}
  * @run driver/timeout=1200 ExecDriver --java -server -Xcomp -XX:+DoEscapeAnalysis
- *             jit.escape.AdaptiveBlocking.AdaptiveBlocking001.AdaptiveBlocking001 -numRounds 10
+ *             ${test.main.class} -numRounds 10
  */
 
 package jit.escape.AdaptiveBlocking.AdaptiveBlocking001;

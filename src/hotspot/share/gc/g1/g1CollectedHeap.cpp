@@ -31,7 +31,6 @@
 #include "gc/g1/g1Arguments.hpp"
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1BatchedTask.hpp"
-#include "gc/g1/g1CardSetGroup.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectionSet.hpp"
 #include "gc/g1/g1CollectionSetCandidates.hpp"
@@ -85,7 +84,6 @@
 #include "gc/shared/isGCActiveMark.hpp"
 #include "gc/shared/locationPrinter.inline.hpp"
 #include "gc/shared/oopStorageParState.hpp"
-#include "gc/shared/partialArrayState.hpp"
 #include "gc/shared/referenceProcessor.inline.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
@@ -254,10 +252,6 @@ void G1CollectedHeap::set_humongous_metadata(G1HeapRegion* first_hr,
   first_hr->hr_clear(false /* clear_space */);
   first_hr->set_starts_humongous(obj_top, words_fillable);
 
-  if (update_remsets) {
-    _policy->remset_tracker()->update_at_allocate(first_hr);
-  }
-
   // Indices of first and last regions in the series.
   uint first = first_hr->hrm_index();
   uint last = first + num_regions - 1;
@@ -267,11 +261,12 @@ void G1CollectedHeap::set_humongous_metadata(G1HeapRegion* first_hr,
     hr = region_at(i);
     hr->hr_clear(false /* clear_space */);
     hr->set_continues_humongous(first_hr);
-    if (update_remsets) {
-      _policy->remset_tracker()->update_at_allocate(hr);
-    }
   }
 
+  if (update_remsets) {
+    ConditionalMutexLocker x(G1RareEvent_lock, SafepointSynchronize::is_at_safepoint(), Mutex::_safepoint_check_flag);
+    G1CollectedHeap::heap()->humongous_card_set_groups()->add_newly_allocated(first_hr);
+  }
   // Up to this point no concurrent thread would have been able to
   // do any scanning on any region in this series. All the top
   // fields still point to bottom, so the intersection between
@@ -389,14 +384,14 @@ HeapWord* G1CollectedHeap::humongous_obj_allocate(size_t word_size) {
   G1HeapRegion* humongous_start = _hrm.allocate_humongous(obj_regions);
   if (humongous_start == nullptr) {
     // Policy: We could not find enough regions for the humongous object in the
-    // free list. Look through the heap to find a mix of free and uncommitted regions.
+    // free list. Look through the heap to find a mix of free, pending uncommit or uncommitted regions.
     // If so, expand the heap and allocate the humongous object.
     humongous_start = _hrm.expand_and_allocate_humongous(obj_regions);
     if (humongous_start != nullptr) {
       // We managed to find a region by expanding the heap.
       log_debug(gc, ergo, heap)("Heap expansion (humongous allocation request). Allocation request: %zuB",
                                 word_size * HeapWordSize);
-      policy()->record_new_heap_size(num_committed_regions());
+      policy()->record_new_heap_size(num_active_regions());
     } else {
       // Policy: Potentially trigger a defragmentation GC.
     }
@@ -553,18 +548,18 @@ HeapWord* G1CollectedHeap::alloc_archive_region(size_t word_size) {
   // when mmap'ing archived heap data in, so pre-touching is wasted.
   FlagSetting fs(AlwaysPreTouch, false);
 
-  size_t commits = 0;
+  size_t num_newly_activated_regions = 0;
   // Attempt to allocate towards the end of the heap.
   HeapWord* start_addr = reserved.end() - align_up(word_size, G1HeapRegion::GrainWords);
   MemRegion range = MemRegion(start_addr, word_size);
   HeapWord* last_address = range.last();
-  if (!_hrm.allocate_containing_regions(range, &commits, workers())) {
+  if (!_hrm.allocate_containing_regions(range, &num_newly_activated_regions, workers())) {
     return nullptr;
   }
   increase_used(word_size * HeapWordSize);
-  if (commits != 0) {
+  if (num_newly_activated_regions != 0) {
     log_debug(gc, ergo, heap)("Attempt heap expansion (allocate archive regions). Total size: %zuB",
-                              G1HeapRegion::GrainWords * HeapWordSize * commits);
+                              G1HeapRegion::GrainWords * HeapWordSize * num_newly_activated_regions);
   }
 
   // Mark each G1 region touched by the range as old, add it to
@@ -608,22 +603,22 @@ void G1CollectedHeap::dealloc_archive_regions(MemRegion range) {
          p2i(start_address), p2i(last_address));
   size_used += range.byte_size();
 
-  uint max_shrink_count = 0;
+  uint max_num_regions_to_shrink = 0;
   if (capacity() > MinHeapSize) {
     size_t max_shrink_bytes = capacity() - MinHeapSize;
-    max_shrink_count = (uint)(max_shrink_bytes / G1HeapRegion::GrainBytes);
+    max_num_regions_to_shrink = (uint)(max_shrink_bytes / G1HeapRegion::GrainBytes);
   }
 
-  uint shrink_count = 0;
+  uint num_shrunk_regions = 0;
   // Free, empty and uncommit regions with CDS archive content.
   auto dealloc_archive_region = [&] (G1HeapRegion* r, bool is_last) {
     guarantee(r->is_old(), "Expected old region at index %u", r->hrm_index());
     _old_set.remove(r);
     r->set_free();
     r->set_top(r->bottom());
-    if (shrink_count < max_shrink_count) {
+    if (num_shrunk_regions < max_num_regions_to_shrink) {
       _hrm.shrink_at(r->hrm_index(), 1);
-      shrink_count++;
+      num_shrunk_regions++;
     } else {
       _hrm.insert_into_free_list(r);
     }
@@ -631,11 +626,11 @@ void G1CollectedHeap::dealloc_archive_regions(MemRegion range) {
 
   iterate_regions_in_range(range, dealloc_archive_region);
 
-  if (shrink_count != 0) {
+  if (num_shrunk_regions != 0) {
     log_debug(gc, ergo, heap)("Attempt heap shrinking (CDS archive regions). Total size: %zuB (%u Regions)",
-                              G1HeapRegion::GrainWords * HeapWordSize * shrink_count, shrink_count);
+                              G1HeapRegion::GrainWords * HeapWordSize * num_shrunk_regions, num_shrunk_regions);
     // Explicit uncommit.
-    uncommit_regions(shrink_count);
+    uncommit_regions(num_shrunk_regions);
   }
   decrease_used(size_used);
 }
@@ -1147,12 +1142,12 @@ bool G1CollectedHeap::expand(size_t expand_bytes, WorkerThreads* pretouch_worker
   size_t aligned_expand_bytes = os::align_up_vm_page_size(expand_bytes);
   aligned_expand_bytes = align_up(aligned_expand_bytes, G1HeapRegion::GrainBytes);
 
-  uint num_regions_to_expand = (uint)(aligned_expand_bytes / G1HeapRegion::GrainBytes);
+  uint num_regions_to_expand = checked_cast<uint>(aligned_expand_bytes / G1HeapRegion::GrainBytes);
 
   log_debug(gc, ergo, heap)("Heap resize. Requested expansion amount: %zuB aligned expansion amount: %zuB (%u regions)",
                             expand_bytes, aligned_expand_bytes, num_regions_to_expand);
 
-  if (num_inactive_regions() == 0) {
+  if (num_non_active_regions() == 0) {
     log_debug(gc, ergo, heap)("Heap resize. Did not expand the heap (heap already fully expanded)");
     return false;
   }
@@ -1161,7 +1156,7 @@ bool G1CollectedHeap::expand(size_t expand_bytes, WorkerThreads* pretouch_worker
 
   size_t actual_expand_bytes = expanded_by * G1HeapRegion::GrainBytes;
   assert(actual_expand_bytes <= aligned_expand_bytes, "post-condition");
-  policy()->record_new_heap_size(num_committed_regions());
+  policy()->record_new_heap_size(num_active_regions());
 
   return true;
 }
@@ -1170,12 +1165,12 @@ bool G1CollectedHeap::expand_single_region(uint node_index) {
   uint expanded_by = _hrm.expand_on_preferred_node(node_index);
 
   if (expanded_by == 0) {
-    assert(num_inactive_regions() == 0, "Should be no regions left, available: %u", num_inactive_regions());
+    assert(num_non_active_regions() == 0, "Should be no regions left, available: %u", num_non_active_regions());
     log_debug(gc, ergo, heap)("Did not expand the heap (heap already fully expanded)");
     return false;
   }
 
-  policy()->record_new_heap_size(num_committed_regions());
+  policy()->record_new_heap_size(num_active_regions());
   return true;
 }
 
@@ -1193,7 +1188,7 @@ void G1CollectedHeap::shrink_helper(size_t shrink_bytes) {
   log_debug(gc, ergo, heap)("Heap resize. Requested shrinking amount: %zuB actual shrinking amount: %zuB (%u regions)",
                             shrink_bytes, shrunk_bytes, num_regions_removed);
   if (num_regions_removed > 0) {
-    policy()->record_new_heap_size(num_committed_regions());
+    policy()->record_new_heap_size(num_active_regions());
   } else {
     log_debug(gc, ergo, heap)("Heap resize. Did not shrink the heap (heap shrinking operation failed)");
   }
@@ -1327,15 +1322,13 @@ G1CollectedHeap::G1CollectedHeap() :
   _gc_tracer_stw(new G1NewTracer()),
   _policy(new G1Policy(_gc_timer_stw)),
   _heap_sizing_policy(nullptr),
-  _collection_set(this, _policy),
   _rem_set(nullptr),
   _card_set_config(),
   _card_set_freelist_pool(G1CardSetConfiguration::num_mem_object_types()),
-  _young_regions_card_set_group(card_set_config(), &_card_set_freelist_pool, G1CardSetGroup::YoungId),
+  _collection_set(this, _policy),
   _cm(nullptr),
   _cr(nullptr),
   _task_queues(nullptr),
-  _partial_array_state_manager(nullptr),
   _ref_processor_stw(nullptr),
   _is_alive_closure_stw(this),
   _is_subject_to_discovery_stw(this),
@@ -1369,13 +1362,7 @@ G1CollectedHeap::G1CollectedHeap() :
     _task_queues->register_queue(i, q);
   }
 
-  _partial_array_state_manager = new PartialArrayStateManager(num_queues);
-
   _gc_tracer_stw->initialize();
-}
-
-PartialArrayStateManager* G1CollectedHeap::partial_array_state_manager() const {
-  return _partial_array_state_manager;
 }
 
 G1RegionToSpaceMapper* G1CollectedHeap::create_aux_memory_mapper(const char* description,
@@ -1456,6 +1443,18 @@ jint G1CollectedHeap::initialize() {
   Universe::check_alignment(reserved_byte_size, G1HeapRegion::GrainBytes, "g1 heap");
   Universe::check_alignment(reserved_byte_size, HeapAlignment, "g1 heap");
 
+  // Ensure that the maximum number of regions (based on the max region index) we allow can fit the reservation.
+  const size_t max_num_regions_by_index = (1u << (sizeof(RegionIdx_t) * BitsPerByte - 1));
+  size_t num_regions_for_reservation = reserved_byte_size / G1HeapRegion::GrainBytes;
+
+  if (num_regions_for_reservation > max_num_regions_by_index) {
+    vm_exit_during_initialization(err_msg("Requested heap size (%zu%s) would exceed maximum region count %zu at region size %zu. Decrease maximum heap size.",
+                                          byte_size_in_proper_unit(reserved_byte_size),
+                                          proper_unit_for_byte_size(reserved_byte_size),
+                                          max_num_regions_by_index,
+                                          G1HeapRegion::GrainBytes));
+  }
+
   // Reserve the maximum.
 
   // When compressed oops are enabled, the preferred heap base
@@ -1533,11 +1532,6 @@ jint G1CollectedHeap::initialize() {
     satbqs.set_process_completed_buffers_threshold(G1SATBProcessCompletedThreshold);
     satbqs.set_buffer_enqueue_threshold_percentage(G1SATBBufferEnqueueingThresholdPercent);
   }
-
-  // 6843694 - ensure that the maximum region index can fit
-  // in the remembered set structures.
-  const uint max_region_idx = (1U << (sizeof(RegionIdx_t)*BitsPerByte-1)) - 1;
-  guarantee((max_num_regions() - 1) <= max_region_idx, "too many regions");
 
   // Also create a G1 rem set.
   _rem_set = new G1RemSet(this);
@@ -1622,6 +1616,7 @@ jint G1CollectedHeap::initialize() {
   // values in the heap have been properly initialized.
   _monitoring_support = new G1MonitoringSupport(this);
 
+  _collection_set_candidates.initialize(max_num_regions());
   _collection_set.initialize(max_num_regions());
 
   start_new_collection_set();
@@ -1746,7 +1741,7 @@ void G1CollectedHeap::ref_processing_init() {
 }
 
 size_t G1CollectedHeap::capacity() const {
-  return _hrm.num_committed_regions() * G1HeapRegion::GrainBytes;
+  return _hrm.num_active_regions() * G1HeapRegion::GrainBytes;
 }
 
 size_t G1CollectedHeap::unused_committed_regions_in_bytes() const {
@@ -2462,7 +2457,7 @@ G1HeapSummary G1CollectedHeap::create_g1_heap_summary() {
 
   VirtualSpaceSummary heap_summary = create_heap_space_summary();
   return G1HeapSummary(heap_summary, heap_used, eden_used_bytes, eden_capacity_bytes,
-                       survivor_used_bytes, old_gen_used_bytes, num_committed_regions());
+                       survivor_used_bytes, old_gen_used_bytes, num_active_regions());
 }
 
 G1EvacSummary G1CollectedHeap::create_g1_evac_summary(G1EvacStats* stats) {
@@ -2513,16 +2508,16 @@ void G1CollectedHeap::gc_epilogue(bool full) {
   _refinement_epoch++;
 }
 
-uint G1CollectedHeap::uncommit_regions(uint region_limit) {
-  return _hrm.uncommit_inactive_regions(region_limit);
+uint G1CollectedHeap::uncommit_regions(uint max_num_regions_to_uncommit) {
+  return _hrm.uncommit_regions(max_num_regions_to_uncommit);
 }
 
-bool G1CollectedHeap::has_uncommittable_regions() {
-  return _hrm.has_inactive_regions();
+bool G1CollectedHeap::has_pending_uncommit_regions() {
+  return _hrm.has_pending_uncommit_regions();
 }
 
 void G1CollectedHeap::uncommit_regions_if_necessary() {
-  if (has_uncommittable_regions()) {
+  if (has_pending_uncommit_regions()) {
     G1UncommitRegionTask::enqueue();
   }
 }
@@ -2584,7 +2579,9 @@ void G1CollectedHeap::verify_region_attr_is_remset_tracked() {
       G1CollectedHeap* g1h = G1CollectedHeap::heap();
       G1HeapRegionAttr attr = g1h->region_attr(r->bottom());
       bool const is_remset_tracked = attr.is_remset_tracked();
-      assert((r->rem_set()->is_tracked() == is_remset_tracked) ||
+       // Card set is tracked in the region attribute table, backlinks were already removed for collection set regions.
+      assert((r->in_collection_set() && !r->rem_set()->has_card_set_group() && is_remset_tracked) ||
+             (r->rem_set()->is_tracked() == is_remset_tracked) ||
              (attr.is_new_survivor() && is_remset_tracked),
              "Region %u (%s) remset tracking status (%s) different to region attribute (%s)",
              r->hrm_index(), r->get_type_str(), BOOL_TO_STR(r->rem_set()->is_tracked()), BOOL_TO_STR(is_remset_tracked));
@@ -2848,8 +2845,7 @@ void G1CollectedHeap::set_humongous_stats(uint num_humongous_total, uint num_hum
 }
 
 bool G1CollectedHeap::should_sample_collection_set_candidates() const {
-  const G1CollectionSetCandidates* candidates = collection_set()->candidates();
-  return !candidates->is_empty();
+  return !collection_set_candidates()->is_empty();
 }
 
 void G1CollectedHeap::set_collection_set_candidates_stats(G1MonotonicArenaMemoryStats& stats) {
@@ -2866,7 +2862,7 @@ void G1CollectedHeap::record_obj_copy_mem_stats() {
 
   log_debug(gc)("Allocated %u survivor %u old percent total %1.2f%% (%u%%)",
                 _survivor_evac_stats.num_filled_regions(), _old_evac_stats.num_filled_regions(),
-                percent_of(num_allocated_regions, num_committed_regions() - num_allocated_regions),
+                percent_of(num_allocated_regions, num_active_regions() - num_allocated_regions),
                 G1ReservePercent);
 
   policy()->old_gen_alloc_tracker()->
@@ -2890,7 +2886,6 @@ void G1CollectedHeap::free_region(G1HeapRegion* hr, G1FreeRegionList* free_list)
   // Reset region metadata to allow reuse.
   hr->hr_clear(true /* clear_space */);
   concurrent_mark()->reset_region_marking_state(hr);
-  _policy->remset_tracker()->update_at_free(hr);
 
   if (free_list != nullptr) {
     free_list->add_ordered(hr);
@@ -2904,7 +2899,7 @@ void G1CollectedHeap::free_region(G1HeapRegion* hr, G1FreeRegionList* free_list)
 
 void G1CollectedHeap::retain_region(G1HeapRegion* hr) {
   MutexLocker x(G1RareEvent_lock, Mutex::_no_safepoint_check_flag);
-  collection_set()->candidates()->add_retained_region_unsorted(hr);
+  collection_set_candidates()->add_retained_region_unsorted(hr);
 }
 
 void G1CollectedHeap::free_humongous_region(G1HeapRegion* hr,
@@ -3197,9 +3192,8 @@ G1HeapRegion* G1CollectedHeap::new_gc_alloc_region(size_t word_size, G1HeapRegio
       register_new_survivor_region_with_region_attr(new_alloc_region);
     } else {
       new_alloc_region->set_old();
-      // Update remembered set state.
-      _policy->remset_tracker()->update_at_allocate(new_alloc_region);
-      // Synchronize with region attribute table.
+      // Old regions do not get a card set group assigned by default. Synchronize with
+      // region attribute table.
       update_region_attr(new_alloc_region);
     }
 

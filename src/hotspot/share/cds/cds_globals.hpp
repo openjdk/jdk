@@ -99,13 +99,19 @@
            "do not map the archive")                                        \
            range(0, 2)                                                      \
                                                                             \
+  product(bool, AOTStressArchiveUnmapping, false, DIAGNOSTIC,               \
+           "Iff ArchiveRelocationMode is 1, always map the archive at  "    \
+           "the preferred address, unmap it, and then map at alternative "  \
+           "address")                                                       \
+                                                                            \
   /*========== New "AOT" flags =========================================*/  \
   /* The following 3 flags are aliases of -Xshare:dump,                 */  \
   /* -XX:SharedArchiveFile=..., etc. See CDSConfig::check_flag_aliases()*/  \
                                                                             \
   product(ccstr, AOTMode, nullptr,                                          \
           "Specifies how AOTCache should be created or used. Valid values " \
-          "are: off, record, create, auto, on; the default is auto")        \
+          "are: off, record, create, auto, required, and (deprecated) on; "   \
+          "the default is auto")                                            \
           constraint(AOTModeConstraintFunc, AtParse)                        \
                                                                             \
   product(ccstr, AOTConfiguration, nullptr,                                 \
@@ -135,6 +141,10 @@
                                                                             \
   /* flags to control training and deployment modes  */                     \
                                                                             \
+  product(bool, AOTIgnoreIncompatibleCacheInTraining, false, DIAGNOSTIC,    \
+          "If an incompatible AOT cache is specified during AOT training, " \
+          "ignore it instead of giving an error")                           \
+                                                                            \
   product(bool, AOTRecordTraining, false, DIAGNOSTIC,                       \
           "Request output of training data for improved deployment.")       \
                                                                             \
@@ -147,10 +157,13 @@
   product(bool, AOTVerifyTrainingData, trueInDebug, DIAGNOSTIC,             \
           "Verify archived training data")                                  \
                                                                             \
-  product(bool, AOTCompileEagerly, false, EXPERIMENTAL,                     \
-          "Compile methods as soon as possible")                            \
+  product(bool, AOTCompileEagerly, false, DIAGNOSTIC,                       \
+          "Compile methods as soon as possible during production run")      \
                                                                             \
   /* AOT Code flags */                                                      \
+                                                                            \
+  product(bool, AOTCodeCaching, false, DIAGNOSTIC,                          \
+          "Enable saving and restoring JIT compiled code in AOT cache")     \
                                                                             \
   product(bool, AOTAdapterCaching, false, DIAGNOSTIC,                       \
           "Enable saving and restoring i2c2i adapters in AOT cache")        \
@@ -158,7 +171,7 @@
   product(bool, AOTStubCaching, false, DIAGNOSTIC,                          \
           "Enable saving and restoring stubs and code blobs in AOT cache")  \
                                                                             \
-  product(uint, AOTCodeMaxSize, 10*M, DIAGNOSTIC,                           \
+  product(uint, AOTCodeMaxSize, 512*M, DIAGNOSTIC,                          \
           "Buffer size in bytes for AOT code caching")                      \
           range(1*M, CODE_CACHE_SIZE_LIMIT)                                 \
                                                                             \
@@ -168,6 +181,11 @@
                                                                             \
   develop(bool, TestAOTAdapterLinkFailure, false,                           \
           "Test failure of adapter linking when loading from AOT cache.")   \
+                                                                            \
+  product(bool, UseAOTCacheCpuFeaturesOnly, false,                          \
+          "Enable only the cpu features recorded in the AOTCache if the "   \
+          "runtime cpu features are a super set of the cached features")    \
+
 
 // end of CDS_FLAGS
 

@@ -25,6 +25,7 @@
  * @test TestCDSVMCrash
  * @summary Verify that an exception is thrown when the VM crashes during executeAndLog
  * @requires vm.cds
+ * @requires vm.cds.default.archive.available
  * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  * @library /test/lib

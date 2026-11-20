@@ -389,6 +389,41 @@
           "available.")                                                     \
           range(0, max_juint)                                               \
                                                                             \
+  /* AOT Code Caching flags */                                              \
+                                                                            \
+  product(uint, DisableAOTCode, 0, DIAGNOSTIC,                              \
+          "Disable AOT code on some compilation levels "                    \
+          "(T1=1; T2=10; T4=1000; T5/preload=10000) "                       \
+          "(T3 is disabled regardless - AOT T3 code is not generated)")     \
+          constraint(DisableAOTCodeConstraintFunc, AtParse)                 \
+                                                                            \
+  product(uint, ClassInitBarrierMode, 0, DIAGNOSTIC,                        \
+          "Produce AOT preload code which could be called on first "        \
+          "method invocation, add class initialization barriers, "          \
+          "other checks and constraints if needed "                         \
+          "(0: no AOT preload code produced) "                              \
+          "(1: produce AOT preload code with uncommon trap for barriers)")  \
+          range(0, 1)                                                       \
+                                                                            \
+  product(uint, AOTCodePreloadStart, 0, DIAGNOSTIC,                         \
+          "The index of the first AOT code to preload")                     \
+                                                                            \
+  product(uint, AOTCodePreloadStop, max_jint, DIAGNOSTIC,                   \
+          "The index of the last AOT code to preload")                      \
+                                                                            \
+  product(bool, AOTPreloadBlocking, false, DIAGNOSTIC,                      \
+          "Preload code is processed with blocking. Startup would not "     \
+          "proceed until all preloaded code is done loading.")              \
+                                                                            \
+  product(bool, VerifyAOTCode, false, DIAGNOSTIC,                           \
+          "Load AOT code but not install into CodeCache")                   \
+                                                                            \
+  develop(bool, AOTAssertOnUnknownExternalAddress, false,                   \
+          "Assert when external address is missing from the AOT Code "      \
+          "external address table. By default (false) AOT compilation "     \
+          "will be skipped for method which references such address.")      \
+                                                                            \
+
 // end of COMPILER_FLAGS
 
 DECLARE_FLAGS(COMPILER_FLAGS)

@@ -31,6 +31,7 @@ class JfrJavaArguments;
 class JfrDCmd : public DCmd {
  private:
   const char* _args;
+  size_t _args_length;
   const int _num_arguments;
   char _delimiter;
  protected:

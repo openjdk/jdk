@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,9 +36,8 @@
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run junit/othervm/timeout=480 -Xint -XX:+UseSerialGC -XX:+UseCompressedOops -Xlog:gc*=info
-                                  -XX:+UseCompressedClassPointers
                                   -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
-                                  runtime.valhalla.valuetypes.FlatArrayCopyingTest
+                                  ${test.main.class}
  */
 
 /*
@@ -57,7 +56,7 @@
  * @run junit/othervm/timeout=480 -Xint -XX:+UseParallelGC -XX:+UseCompressedOops -Xlog:gc*=info
                                   -XX:ParallelGCThreads=1 -XX:-UseDynamicNumberOfGCThreads
                                   -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
-                                  runtime.valhalla.valuetypes.FlatArrayCopyingTest
+                                  ${test.main.class}
  */
 
 /*
@@ -76,9 +75,9 @@
  * @run junit/othervm/timeout=480 -XX:+UnlockDiagnosticVMOptions
                                   -Xint -XX:+UseG1GC -XX:+UseCompressedOops -Xlog:gc*=info
                                   -XX:ParallelGCThreads=1 -XX:ConcGCThreads=1 -XX:-UseDynamicNumberOfGCThreads
-                                  -XX:-G1UseConcRefinement -XX:+UseCompressedClassPointers
+                                  -XX:-G1UseConcRefinement
                                   -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
-                                  runtime.valhalla.valuetypes.FlatArrayCopyingTest
+                                  ${test.main.class}
  */
 
 /*
@@ -97,9 +96,8 @@
  * @run junit/othervm/timeout=480 -XX:+UnlockDiagnosticVMOptions
                                   -Xint -XX:+UseShenandoahGC -XX:+UseCompressedOops -Xlog:gc*=info
                                   -XX:ParallelGCThreads=1 -XX:ConcGCThreads=1 -XX:-UseDynamicNumberOfGCThreads
-                                  -XX:+UseCompressedClassPointers
                                   -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
-                                  runtime.valhalla.valuetypes.FlatArrayCopyingTest
+                                  ${test.main.class}
  */
 
 package runtime.valhalla.valuetypes;

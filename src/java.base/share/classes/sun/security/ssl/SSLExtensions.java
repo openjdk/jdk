@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,8 +68,17 @@ final class SSLExtensions {
         }
 
         encodedLength = len + 2;        // 2: the length of the extensions.
+        Set<Integer> extIdSet = new HashSet<>();  // To check for duplicates.
+
         while (len > 0) {
             int extId = Record.getInt16(m);
+
+            if (!extIdSet.add(extId)) {
+                throw hm.handshakeContext.conContext.fatal(
+                        Alert.ILLEGAL_PARAMETER,
+                        "Duplicate extension with ID: " + extId);
+            }
+
             int extLen = Record.getInt16(m);
             if (extLen > m.remaining()) {
                 throw hm.handshakeContext.conContext.fatal(

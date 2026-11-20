@@ -85,7 +85,7 @@ uint G1FullCollector::calc_active_workers() {
 
   // Consider G1HeapWastePercent to decide max number of workers. Each worker
   // will in average cause half a region waste.
-  uint max_wasted_regions_allowed = ((heap->num_committed_regions() * G1HeapWastePercent) / 100);
+  uint max_wasted_regions_allowed = ((heap->num_active_regions() * G1HeapWastePercent) / 100);
   uint waste_worker_count = MAX2((max_wasted_regions_allowed * 2) , 1u);
   uint heap_waste_worker_limit = MIN2(waste_worker_count, max_worker_count);
 
@@ -119,7 +119,6 @@ G1FullCollector::G1FullCollector(G1CollectedHeap* heap,
     _has_compaction_targets(false),
     _has_humongous(false),
     _marking_task_queues(_num_workers),
-    _partial_array_state_manager(nullptr),
     _preserved_marks_set(true),
     _serial_compaction_point(this, nullptr),
     _humongous_compaction_point(this, nullptr),
@@ -143,8 +142,6 @@ G1FullCollector::G1FullCollector(G1CollectedHeap* heap,
   _compaction_tops = NEW_C_HEAP_ARRAY(Atomic<HeapWord*>, _heap->max_num_regions(), mtGC);
   ::new (_compaction_tops) Atomic<HeapWord*>[heap->max_num_regions()]{};
 
-  _partial_array_state_manager = new PartialArrayStateManager(_num_workers);
-
   for (uint i = 0; i < _num_workers; i++) {
     _markers[i] = new G1FullGCMarker(this, i, _live_stats);
     _compaction_points[i] = new G1FullGCCompactionPoint(this, _preserved_marks_set.get(i));
@@ -156,17 +153,11 @@ G1FullCollector::G1FullCollector(G1CollectedHeap* heap,
   _region_attr_table.initialize(heap->reserved(), G1HeapRegion::GrainBytes);
 }
 
-PartialArrayStateManager* G1FullCollector::partial_array_state_manager() const {
-  return _partial_array_state_manager;
-}
-
 G1FullCollector::~G1FullCollector() {
   for (uint i = 0; i < _num_workers; i++) {
     delete _markers[i];
     delete _compaction_points[i];
   }
-
-  delete _partial_array_state_manager;
 
   FREE_C_HEAP_ARRAY(_markers);
   FREE_C_HEAP_ARRAY(_compaction_points);

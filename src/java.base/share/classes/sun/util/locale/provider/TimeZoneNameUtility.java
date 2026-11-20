@@ -26,6 +26,7 @@
 package sun.util.locale.provider;
 
 import java.lang.ref.SoftReference;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -60,6 +61,12 @@ public final class TimeZoneNameUtility {
      */
     private static final Map<String, SoftReference<Map<Locale, String[]>>> cachedDisplayNames =
         new ConcurrentHashMap<>();
+
+    /**
+     * Explicit DST offset map
+     */
+    private static final LazyConstant<Map<String, ZoneOffset>> explicitDstOffsets =
+        LazyConstant.of(TimeZoneNameUtility::initExplicitDstOffsets);
 
     /**
      * get time zone localized strings. Enumerate all keys.
@@ -177,12 +184,35 @@ public final class TimeZoneNameUtility {
      * {@return the explicit metazone DST offset for the specified time zone ID if it exists, or else null}
      * @param tzid the time zone ID
      */
-    public static String explicitDstOffset(String tzid) {
-        return (String) (LocaleProviderAdapter.forType(CLDR) instanceof CLDRLocaleProviderAdapter ca ?
-            ca.getLocaleResources(Locale.ROOT)
-                .getTimeZoneNames("metazone.dstoffset." +
-                    ca.canonicalTZID(tzid).orElse(tzid)) :
-            null);
+    public static ZoneOffset explicitDstOffset(String tzid) {
+        return explicitDstOffsets.get().get(canonicalTZID(tzid).orElse(tzid));
+    }
+
+    private static Map<String, ZoneOffset> initExplicitDstOffsets() {
+        return LocaleProviderAdapter.forType(CLDR)
+            .getLocaleResources(Locale.ROOT)
+            .getExplicitDstOffsets();
+    }
+
+    /**
+     * {@return the localized GMT (zero) format with fallback}
+     * CLDR removed {@code gmtZeroFormat} element as of v49, it falls back
+     * to {@code gmtFormat} with the placeholder removed, or "GMT".
+     * {@code gmtZeroFormat} is checked first for compatibility, even though
+     * it is not in the spec (DTD still defines it).
+     * @param locale the locale
+     */
+    public static String gmtZeroFormat(Locale locale) {
+        if (LocaleProviderAdapter.forType(CLDR) instanceof CLDRLocaleProviderAdapter ca) {
+            var rb = ca.getLocaleResources(locale).getJavaTimeFormatData();
+            if (rb.containsKey("timezone.gmtZeroFormat")) {
+                return rb.getString("timezone.gmtZeroFormat");
+            } else if (rb.containsKey("timezone.gmtFormat")) {
+                return rb.getString("timezone.gmtFormat").replace("{0}", "").trim();
+            }
+        }
+
+        return "GMT";
     }
 
     private static String[] retrieveDisplayNamesImpl(String id, Locale locale) {

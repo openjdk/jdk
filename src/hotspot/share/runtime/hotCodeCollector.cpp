@@ -112,6 +112,14 @@ void HotCodeCollector::thread_entry(JavaThread* thread, TRAPS) {
   }
 }
 
+static nmethod* find_nmethod(void* addr) {
+  if (addr == nullptr) {
+    return nullptr;
+  }
+  CodeBlob* blob = CodeCache::find_blob(addr);
+  return blob == nullptr ? nullptr : blob->as_nmethod_or_null();
+}
+
 void HotCodeCollector::do_grouping(Candidates& candidates) {
   // Number of nmethods relocated (candidate + callees)
   int num_relocated = 0;
@@ -131,14 +139,25 @@ void HotCodeCollector::do_grouping(Candidates& candidates) {
       break;
     }
 
-    nmethod* candidate = candidates.get_candidate();
+    Candidate candidate = candidates.get_candidate();
 
     MutexLocker ml_Compile_lock(Compile_lock);
     MutexLocker ml_CompiledIC_lock(CompiledIC_lock, Mutex::_no_safepoint_check_flag);
     MutexLocker ml_CodeCache_lock(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
-    switch (do_relocation(candidate, 0, &num_relocated)) {
+    nmethod* nm = find_nmethod(candidate.get_nmethod());
+    if (nm == nullptr ||
+        nm != candidate.get_nmethod() ||
+        nm->compile_id() != candidate.get_compile_id()) {
+      log_debug(hotcode)("Skipped stale candidate: address=%p, compile_id=%d, samples=%d",
+                         candidate.get_nmethod(), candidate.get_compile_id(), candidate.get_sample_count());
+      num_skipped++;
+      continue;
+    }
+
+    switch (do_relocation(nm, 0, &num_relocated)) {
       case nmethod::RelocationResult::SUCCESS:
+        candidates.move_samples_to_hot(candidate.get_sample_count());
         break;
       case nmethod::RelocationResult::FAILED_NO_SPACE_IN_CODE_HEAP: {
         CodeHeap* heap = CodeCache::get_code_heap(CodeBlobType::MethodHot);
@@ -153,6 +172,9 @@ void HotCodeCollector::do_grouping(Candidates& candidates) {
         break;
       }
       case nmethod::RelocationResult::FAILED_NOT_RELOCATABLE_NMETHOD:
+        if (nm->method() != nullptr) {
+          log_debug(hotcode)("Skipped not relocatable nmethod: %s", nm->method()->name_and_sig_as_C_string());
+        }
         num_skipped++;
         break;
       case nmethod::RelocationResult::FAILED_INVALIDATED_NMETHOD:
@@ -165,21 +187,9 @@ void HotCodeCollector::do_grouping(Candidates& candidates) {
                     "Skipped %d candidates. %d candidates invalidated during relocation.", num_relocated, num_skipped, num_invalidated);
 }
 
-nmethod::RelocationResult HotCodeCollector::do_relocation(void* candidate, uint call_level, int* num_relocated) {
+nmethod::RelocationResult HotCodeCollector::do_relocation(nmethod* nm, uint call_level, int* num_relocated) {
   assert(num_relocated != nullptr, "num_relocated must be provided");
 
-  if (candidate == nullptr) {
-    return nmethod::RelocationResult::FAILED_NOT_RELOCATABLE_NMETHOD;
-  }
-
-  // Verify that address still points to CodeBlob
-  CodeBlob* blob = CodeCache::find_blob(candidate);
-  if (blob == nullptr) {
-    return nmethod::RelocationResult::FAILED_NOT_RELOCATABLE_NMETHOD;
-  }
-
-  // Verify that blob is nmethod
-  nmethod* nm = blob->as_nmethod_or_null();
   if (nm == nullptr || nm->method() == nullptr) {
     return nmethod::RelocationResult::FAILED_NOT_RELOCATABLE_NMETHOD;
   }
@@ -235,7 +245,7 @@ nmethod::RelocationResult HotCodeCollector::do_relocation(void* candidate, uint 
       address dest = ((CallRelocation*) reloc)->destination();
 
       // Recursively relocate callees
-      if (do_relocation(dest, call_level + 1, num_relocated) == nmethod::RelocationResult::FAILED_NO_SPACE_IN_CODE_HEAP) {
+      if (do_relocation(find_nmethod(dest), call_level + 1, num_relocated) == nmethod::RelocationResult::FAILED_NO_SPACE_IN_CODE_HEAP) {
         return nmethod::RelocationResult::FAILED_NO_SPACE_IN_CODE_HEAP;
       }
     }

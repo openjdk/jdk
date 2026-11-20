@@ -76,6 +76,13 @@ public:
   static uint _throw_illegal_monitor_state_exception_count;
   static uint _throw_identity_exception_count;
   static uint _throw_count;
+
+  static address arraycopy_count_address(BasicType type);
+  static void increment_throw_count();
+#endif
+
+#if INCLUDE_CDS
+static void init_AOTAddressTable(GrowableArray<address>& external_addresses);
 #endif
 
  private:
@@ -155,11 +162,6 @@ public:
 
   // method tracing
   static void trace_block_entry(jint block_id);
-
-#ifndef PRODUCT
-  static address throw_count_address()               { return (address)&_throw_count;             }
-  static address arraycopy_count_address(BasicType type);
-#endif
 
   // directly accessible leaf routine
   static int  is_instance_of(oopDesc* mirror, oopDesc* obj);

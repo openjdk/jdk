@@ -27,9 +27,6 @@
 
 HeapWord* G1HeapRegionRemSet::_heap_base_address = nullptr;
 
-const char* G1HeapRegionRemSet::_state_strings[] =  {"Untracked", "Updating", "Complete"};
-const char* G1HeapRegionRemSet::_short_state_strings[] =  {"UNTRA", "UPDAT", "CMPLT"};
-
 void G1HeapRegionRemSet::initialize(MemRegion reserved) {
   G1CardSet::initialize(reserved);
   _heap_base_address = reserved.start();
@@ -41,28 +38,19 @@ void G1HeapRegionRemSet::uninstall_card_set_group() {
 
 G1HeapRegionRemSet::G1HeapRegionRemSet() :
   _code_roots(),
-  _card_set_group(nullptr),
-  _state(Untracked) { }
+  _card_set_group(nullptr) { }
 
 G1HeapRegionRemSet::~G1HeapRegionRemSet() {
   assert(!has_card_set_group(), "Still assigned to a card set group");
 }
 
-void G1HeapRegionRemSet::clear() {
-  assert(card_set_is_empty(), "Card set must be empty");
+void G1HeapRegionRemSet::clear_code_roots() {
+  assert(!is_tracked(), "Card set must be untracked before clearing");
   _code_roots.clear();
-  set_state_untracked();
 }
 
 void G1HeapRegionRemSet::reset_code_root_table_scanner() {
   _code_roots.reset_table_scanner();
-}
-
-void G1HeapRegionRemSet::reset_table_scanner() {
-  reset_code_root_table_scanner();
-  if (has_card_set_group()) {
-    card_set()->reset_table_scanner();
-  }
 }
 
 G1MonotonicArenaMemoryStats G1HeapRegionRemSet::card_set_memory_stats() const {

@@ -27,6 +27,7 @@
 
 #include "gc/shenandoah/shenandoahClosures.hpp"
 
+#include "classfile/classLoaderData.inline.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
@@ -76,6 +77,15 @@ ShenandoahMarkRefsSuperClosure::ShenandoahMarkRefsSuperClosure(ShenandoahObjToSc
         _mark_context(ShenandoahHeap::heap()->marking_context()),
         _weak(false) {}
 
+void ShenandoahMarkRefsSuperClosure::do_cld(ClassLoaderData* cld) {
+  cld->oops_do(this, _weak ? ClassLoaderData::_claim_finalizable
+                           : ClassLoaderData::_claim_strong);
+}
+
+void ShenandoahMarkRefsSuperClosure::do_klass(Klass* k) {
+  do_cld(k->class_loader_data());
+}
+
 template<class T, ShenandoahGenerationType GENERATION, bool REDIRTY>
 ALWAYSINLINE
 void ShenandoahMarkRefsSuperClosure::work(T* p) {
@@ -89,9 +99,12 @@ bool ShenandoahForwardedIsAliveClosure::do_object_b(oop obj) {
   if (CompressedOops::is_null(obj)) {
     return false;
   }
-  obj = ShenandoahForwarding::get_forwardee(obj);
-  shenandoah_assert_not_forwarded_if(nullptr, obj, ShenandoahHeap::heap()->is_concurrent_mark_in_progress());
-  return _mark_context->is_marked_or_old(obj);
+  oop resolved = ShenandoahForwarding::forwardee_or_null(obj);
+  if (resolved == nullptr) {
+    resolved = obj;
+  }
+  shenandoah_assert_not_forwarded_if(nullptr, resolved, ShenandoahHeap::heap()->is_concurrent_mark_in_progress());
+  return _mark_context->is_marked_or_old(resolved);
 }
 
 ShenandoahIsAliveClosure::ShenandoahIsAliveClosure() :
@@ -149,17 +162,18 @@ void ShenandoahEvacuateUpdateRootClosureBase<CONCURRENT, STABLE_THREAD>::do_oop_
     if (_heap->in_collection_set(obj)) {
       assert(_heap->is_evacuation_in_progress(), "Only do this when evacuation is in progress");
       shenandoah_assert_marked(p, obj);
-      oop resolved = ShenandoahForwarding::get_forwardee(obj);
-      if (resolved == obj) {
+      oop resolved = ShenandoahForwarding::forwardee_or_null(obj);
+      if (resolved == nullptr) {
         Thread* thr = STABLE_THREAD ? _thread : Thread::current();
         assert(thr == Thread::current(), "Wrong thread");
-
         resolved = _heap->evacuate_object(obj, thr);
       }
-      if (CONCURRENT) {
-        ShenandoahHeap::atomic_update_oop(resolved, p, o);
-      } else {
-        RawAccess<IS_NOT_NULL | MO_UNORDERED>::oop_store(p, resolved);
+      if (resolved != obj) {
+        if (CONCURRENT) {
+          ShenandoahHeap::atomic_update_oop(resolved, p, o);
+        } else {
+          RawAccess<IS_NOT_NULL | MO_UNORDERED>::oop_store(p, resolved);
+        }
       }
     }
   }
@@ -197,33 +211,26 @@ void ShenandoahCleanUpdateWeakOopsClosure<CONCURRENT, IsAlive, KeepAlive>::do_oo
 //
 // ========= Update References
 //
-
-template <ShenandoahGenerationType GENERATION>
-ShenandoahMarkUpdateRefsClosure<GENERATION>::ShenandoahMarkUpdateRefsClosure(ShenandoahObjToScanQueue* q,
-                                                                             ShenandoahReferenceProcessor* rp,
-                                                                             ShenandoahObjToScanQueue* old_q) :
-  ShenandoahMarkRefsSuperClosure(q, rp, old_q) {
-  assert(_heap->is_stw_gc_in_progress(), "Can only be used for STW GC");
-}
-
-template<ShenandoahGenerationType GENERATION>
+template<bool CONCURRENT>
 template<class T>
-inline void ShenandoahMarkUpdateRefsClosure<GENERATION>::work(T* p) {
-  // Update the location
-  _heap->non_conc_update_with_forwarded(p);
+void ShenandoahUpdateRefsClosure<CONCURRENT>::work(T* p) {
+  T o = RawAccess<>::oop_load(p);
+  if (!CompressedOops::is_null(o)) {
+    oop obj = CompressedOops::decode_not_null(o);
+    if (_heap->in_collection_set(obj)) {
+      shenandoah_assert_forwarded(p, obj);
+      oop resolved = ShenandoahForwarding::forwardee(obj);
+      shenandoah_assert_not_in_cset_except(p, resolved, _heap->cancelled_gc() || _heap->has_self_forwarded_objects());
 
-  // ...then do the usual thing
-  ShenandoahMarkRefsSuperClosure::work<T, GENERATION, false>(p);
-}
-
-template<class T>
-inline void ShenandoahNonConcUpdateRefsClosure::work(T* p) {
-  _heap->non_conc_update_with_forwarded(p);
-}
-
-template<class T>
-inline void ShenandoahConcUpdateRefsClosure::work(T* p) {
-  _heap->conc_update_with_forwarded(p);
+      if (resolved != obj) {
+        if (CONCURRENT) {
+          _heap->atomic_update_oop(resolved, p, o);
+        } else {
+          RawAccess<IS_NOT_NULL>::oop_store(p, resolved);
+        }
+      }
+    }
+  }
 }
 
 inline void ShenandoahFlushSATB::do_thread(Thread* thread) {

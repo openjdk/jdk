@@ -178,7 +178,7 @@ Node* GraphKit::unbox_vector(Node* v, const TypeInstPtr* vbox_type, BasicType el
   Node* mem = reset_memory();
   set_all_memory(mem);
   Node* unbox = gvn().transform(new VectorUnboxNode(C, vt, ctrl, v, mem));
-  if (gvn().type(unbox)->isa_vect() == nullptr) {
+  if (!gvn().type(unbox)->is_vect()) {
     assert(gvn().type(unbox) == Type::TOP, "sanity");
     return nullptr; // not a vector
   }
@@ -279,7 +279,6 @@ bool LibraryCallKit::arch_supports_vector(int sopc, int num_elem, BasicType type
         is_supported = Matcher::match_rule_supported_vector_masked(sopc, num_elem, type);
       }
     }
-    is_supported |= Matcher::supports_vector_predicate_op_emulation(sopc, num_elem, type);
 
     if (!is_supported) {
       non_product_log_if_needed("Rejected vector mask predicate using (%s,%s,%d) because architecture does not support it",
@@ -687,7 +686,7 @@ bool LibraryCallKit::inline_vector_mask_operation() {
     return false;
   }
 
-  if (!Matcher::mask_op_prefers_predicate(mopc, mask_vec->bottom_type()->is_vect())) {
+  if (!Matcher::mask_op_prefers_predicate(mopc, mask_vec->bottom_type()->as_vect())) {
     mask_vec = gvn().transform(VectorStoreMaskNode::make(gvn(), mask_vec, elem_bt, num_elem));
   }
   const Type* maskoper_ty = mopc == Op_VectorMaskToLong ? (const Type*)TypeLong::LONG : (const Type*)TypeInt::INT;
@@ -915,7 +914,7 @@ bool LibraryCallKit::inline_vector_mem_operation(bool is_store) {
   // This is not 1-1 implementation.
   const Type *const base_type = gvn().type(base);
 
-  const TypePtr *addr_type = gvn().type(addr)->isa_ptr();
+  const TypePtr* addr_type = gvn().type(addr)->as_ptr();
   const TypeAryPtr* arr_type = addr_type->isa_aryptr();
 
   const bool in_native = TypePtr::NULL_PTR == base_type; // base always null
@@ -923,7 +922,7 @@ bool LibraryCallKit::inline_vector_mem_operation(bool is_store) {
 
   const bool is_mixed_access = !in_heap && !in_native;
 
-  const bool is_mismatched_access = in_heap && (addr_type->isa_aryptr() == nullptr);
+  const bool is_mismatched_access = in_heap && !addr_type->is_aryptr();
 
   const bool needs_cpu_membar = is_mixed_access || is_mismatched_access;
 
@@ -997,7 +996,7 @@ bool LibraryCallKit::inline_vector_mem_operation(bool is_store) {
     if (mismatched_ms) {
       store_num_elem = mem_num_elem;
       const TypeVect* to_vect_type = TypeVect::make(mem_elem_bt, store_num_elem);
-      val = gvn().transform(new VectorReinterpretNode(val, val->bottom_type()->is_vect(), to_vect_type));
+      val = gvn().transform(new VectorReinterpretNode(val, val->bottom_type()->as_vect(), to_vect_type));
     }
     if (is_mask) {
       val = gvn().transform(VectorStoreMaskNode::make(gvn(), val, elem_bt, num_elem));
@@ -1010,7 +1009,7 @@ bool LibraryCallKit::inline_vector_mem_operation(bool is_store) {
     if (mismatched_ms) {
       vload = gvn().transform(trace_vector(LoadVectorNode::make(0, control(), memory(addr), addr, addr_type, mem_num_elem, mem_elem_bt)));
       const TypeVect* to_vect_type = TypeVect::make(elem_bt, num_elem);
-      vload = gvn().transform(new VectorReinterpretNode(vload, vload->bottom_type()->is_vect(), to_vect_type));
+      vload = gvn().transform(new VectorReinterpretNode(vload, vload->bottom_type()->as_vect(), to_vect_type));
     } else {
       // Special handle for masks
       if (is_mask) {
@@ -1104,7 +1103,7 @@ bool LibraryCallKit::inline_vector_mem_masked_operation(bool is_store) {
   SavedState old_state(this);
 
   Node* addr = make_unsafe_address(base, offset, elem_bt, true);
-  const TypePtr *addr_type = gvn().type(addr)->isa_ptr();
+  const TypePtr* addr_type = gvn().type(addr)->as_ptr();
   const TypeAryPtr* arr_type = addr_type->isa_aryptr();
 
   bool mismatched_ms = from_ms->get_con() && arr_type != nullptr && arr_type->elem()->array_element_basic_type() != elem_bt;
@@ -1131,7 +1130,7 @@ bool LibraryCallKit::inline_vector_mem_masked_operation(bool is_store) {
       needs_predicate = true;
     } else {
       // Masked vector load with IOOBE always uses the predicated load.
-      const TypeInt* offset_in_range = gvn().type(argument(9))->isa_int();
+      const TypeInt* offset_in_range = gvn().type(argument(9))->as_int();
       if (!offset_in_range->is_con()) {
         log_if_needed("  ** missing constant: offsetInRange=%s",
                         NodeClassNames[argument(8)->Opcode()]);
@@ -1209,7 +1208,7 @@ bool LibraryCallKit::inline_vector_mem_masked_operation(bool is_store) {
     if (mismatched_ms) {
       // Reinterpret the incoming vector to byte vector.
       const TypeVect* to_vect_type = TypeVect::make(mem_elem_bt, mem_num_elem);
-      val = gvn().transform(new VectorReinterpretNode(val, val->bottom_type()->is_vect(), to_vect_type));
+      val = gvn().transform(new VectorReinterpretNode(val, val->bottom_type()->as_vect(), to_vect_type));
       // Reinterpret the vector mask to byte type.
       const TypeVect* from_mask_type = TypeVect::makemask(elem_bt, num_elem);
       const TypeVect* to_mask_type = TypeVect::makemask(mem_elem_bt, mem_num_elem);
@@ -1241,7 +1240,7 @@ bool LibraryCallKit::inline_vector_mem_masked_operation(bool is_store) {
 
     if (mismatched_ms) {
       const TypeVect* to_vect_type = TypeVect::make(elem_bt, num_elem);
-      vload = gvn().transform(new VectorReinterpretNode(vload, vload->bottom_type()->is_vect(), to_vect_type));
+      vload = gvn().transform(new VectorReinterpretNode(vload, vload->bottom_type()->as_vect(), to_vect_type));
     }
 
     Node* box = box_vector(vload, vbox_type, elem_bt, num_elem);
@@ -1366,11 +1365,45 @@ bool LibraryCallKit::inline_vector_gather_scatter(bool is_scatter) {
   }
 
   // Check that the vector holding indices is supported by architecture
-  // For sub-word gathers expander receive index array.
-  if (!is_subword_type(elem_bt) && !arch_supports_vector(Op_LoadVector, idx_num_elem, T_INT, VecMaskNotUsed)) {
+  if (!arch_supports_vector(Op_LoadVector, idx_num_elem, T_INT, VecMaskNotUsed)) {
     log_if_needed("  ** not supported: arity=%d op=%s/loadindex vlen=%d etype=int is_masked_op=%d",
                   is_scatter, is_scatter ? "scatter" : "gather",
                   idx_num_elem, is_masked_op ? 1 : 0);
+    return false; // not supported
+  }
+
+  // Currently, subword is not supported.
+  // Note: we used to have an x64 subword gather implementation before, but it was buggy.
+  //       JDK-8318650 had introduced the subword gather implementation:
+  //         - We loaded from indexMap once to perform checkIndex
+  //         - And then we loaded again from indexMap in the LoadVectorGather(Masked)
+  //           backend implementation. But if a second thread mutated the indexMap,
+  //           we would not have checked the index again, and possibly performed out
+  //           of bounds accesses.
+  //         - The reason for using indexMap directly was that subword gather requires
+  //           an int-index per subword element, and so the indices vector would have
+  //           to be larger than the output vector, or we would need multiple index
+  //           vectors. Just loading from indexMap seemed like an elegant solution,
+  //           but unfortunetely, it leads to TOCTOU bugs.
+  //
+  //       JDK-8383689 removed subword gather again.
+  //
+  //       In the future, we could consider re-implementing subword gather. We would
+  //       have to ensure to only load the indices once, and perform checkIndex and
+  //       indexing from that same index vector. We may also want to change the API,
+  //       so that one can provide an index vector, rather than a indexMap array.
+  //       Since vectors are immutable, the indexCheck and indexing would trivially
+  //       be consuming the same indices. And the API user could compute arbitrary
+  //       indices, and would not have to round-trip them via an indexMap array.
+  //       However: so far, no hardware we are aware of can actually perform
+  //       vectorized subword gather/scatter. So the implementation would actually
+  //       need to be a scalar emulation. The JDK-8318650 performed scalar loads
+  //       from the indexMap. A re-implementation would instead have to extract
+  //       elements from the index vector. The performance impact has not yet been
+  //       investigated.
+  if (is_subword_type(elem_bt)) {
+    log_if_needed("  ** not supported: subword type etype=%s",
+                  type2name(elem_bt));
     return false; // not supported
   }
 
@@ -1380,17 +1413,7 @@ bool LibraryCallKit::inline_vector_gather_scatter(bool is_scatter) {
   // Save state and restore on bailout
   SavedState old_state(this);
 
-  Node* addr = nullptr;
-  if (!is_subword_type(elem_bt)) {
-    addr = make_unsafe_address(base, offset, elem_bt, true);
-  } else {
-    assert(!is_scatter, "Only supports gather operation for subword types now");
-    uint header = arrayOopDesc::base_offset_in_bytes(elem_bt);
-    assert(offset->is_Con() && offset->bottom_type()->is_long()->get_con() == header,
-           "offset must be the array base offset");
-    Node* index = argument(15);
-    addr = array_element_address(base, index, elem_bt);
-  }
+  Node* addr = make_unsafe_address(base, offset, elem_bt, true);
 
   const TypeAryPtr* arr_type = gvn().type(addr)->isa_aryptr();
 
@@ -1417,18 +1440,13 @@ bool LibraryCallKit::inline_vector_gather_scatter(bool is_scatter) {
   }
 
   // Get the indexes for gather/scatter.
-  Node* indexes = nullptr;
+  // Note: we have already loaded the indices from indexMap into a vector,
+  //       and performed checkIndex on it. We must now use that same vector,
+  //       and not reload from the indexMap again.
   const TypeInstPtr* vbox_idx_type = TypeInstPtr::make_exact(TypePtr::NotNull, vbox_idx_klass);
-  if (is_subword_type(elem_bt)) {
-    Node* indexMap = argument(16);
-    Node* indexM   = argument(17);
-    indexes = array_element_address(indexMap, indexM, T_INT);
-  } else {
-    // Get the first index vector.
-    indexes = unbox_vector(argument(9), vbox_idx_type, T_INT, idx_num_elem);
-    if (indexes == nullptr) {
-      return false;
-    }
+  Node* indexes = unbox_vector(argument(9), vbox_idx_type, T_INT, idx_num_elem);
+  if (indexes == nullptr) {
+    return false;
   }
 
   // Get the vector mask value.
@@ -1693,7 +1711,7 @@ bool LibraryCallKit::inline_vector_test() {
 
   Node* opd2;
   if (Matcher::vectortest_needs_second_argument(booltest == BoolTest::overflow,
-                                                opd1->bottom_type()->isa_pvectmask())) {
+                                                opd1->bottom_type()->is_pvectmask())) {
     opd2 = unbox_vector(argument(5), vbox_type, elem_bt, num_elem);
     if (opd2 == nullptr) {
       log_if_needed("  ** unbox failed m2=%s", NodeClassNames[argument(5)->Opcode()]);
@@ -1705,7 +1723,7 @@ bool LibraryCallKit::inline_vector_test() {
 
   Node* cmp = gvn().transform(trace_vector(new VectorTestNode(opd1, opd2, booltest)));
   BoolTest::mask test = Matcher::vectortest_mask(booltest == BoolTest::overflow,
-                                                 opd1->bottom_type()->isa_pvectmask(), num_elem);
+                                                 opd1->bottom_type()->is_pvectmask(), num_elem);
   Node* bol = gvn().transform(new BoolNode(cmp, test));
   Node* res = gvn().transform(new CMoveINode(bol, gvn().intcon(0), gvn().intcon(1), TypeInt::BOOL));
 
@@ -1826,6 +1844,12 @@ bool LibraryCallKit::inline_vector_slice() {
   int num_elem = vlen->get_con();
   BasicType elem_bt = get_vector_primitive_lane_type(vltype);
 
+  jint origin_con = origin->get_con();
+  if (origin_con < 0 || origin_con > num_elem) {
+    log_if_needed("  ** vector slice origin %d out of range [0, %d]", origin_con, num_elem);
+    return false;
+  }
+
   if (!arch_supports_vector(Op_VectorSlice, num_elem, elem_bt, VecMaskNotUsed)) {
     log_if_needed("  ** not supported: arity=2 op=slice vlen=%d etype=%s",
                     num_elem, type2name(elem_bt));
@@ -1842,7 +1866,7 @@ bool LibraryCallKit::inline_vector_slice() {
   }
 
   // Defining origin in terms of number of bytes to make it type agnostic value.
-  Node* origin_node = gvn().intcon(origin->get_con() * type2aelembytes(elem_bt));
+  Node* origin_node = gvn().intcon(origin_con * type2aelembytes(elem_bt));
   const TypeVect* vector_type = TypeVect::make(elem_bt, num_elem);
   Node* operation = gvn().transform(trace_vector(new VectorSliceNode(v1, v2, origin_node, vector_type)));
   Node* box = box_vector(operation, vbox_type, elem_bt, num_elem);
@@ -2260,7 +2284,7 @@ bool LibraryCallKit::inline_vector_select_from() {
       rearrange->add_flag(Node::Flag_is_predicated_vector);
     } else {
       // masked rearrange is not supported so emulate usig blend
-      const TypeVect* vt = v1->bottom_type()->is_vect();
+      const TypeVect* vt = v1->bottom_type()->as_vect();
       rearrange = gvn().transform(rearrange);
 
       // create a zero vector with each lane element set as zero
@@ -2563,8 +2587,8 @@ bool LibraryCallKit::inline_vector_convert() {
   // where certain masks (depending on the species) are either propagated
   // through a vector or predicate register.
   if (is_mask &&
-      ((src_type->isa_pvectmask() == nullptr && dst_type->isa_pvectmask()) ||
-       (dst_type->isa_pvectmask() == nullptr && src_type->isa_pvectmask()))) {
+      ((!src_type->is_pvectmask() && dst_type->is_pvectmask()) ||
+       (!dst_type->is_pvectmask() && src_type->is_pvectmask()))) {
     return false;
   }
 
@@ -2612,7 +2636,7 @@ bool LibraryCallKit::inline_vector_convert() {
 
       op = gvn().transform(trace_vector(VectorCastNode::make(cast_vopc, op, elem_bt_to, num_elem_for_cast)));
       // Now ensure that the destination gets properly resized to needed size.
-      op = gvn().transform(new VectorReinterpretNode(op, op->bottom_type()->is_vect(), dst_type));
+      op = gvn().transform(new VectorReinterpretNode(op, op->bottom_type()->as_vect(), dst_type));
     } else if (num_elem_from > num_elem_to) {
       // Since number of elements from input is larger than output, simply reduce size of input
       // (we are supposed to drop top elements anyway).
@@ -2719,7 +2743,7 @@ bool LibraryCallKit::inline_vector_insert() {
   }
 
   Node* insert_val = argument(5);
-  assert(gvn().type(insert_val)->isa_long() != nullptr, "expected to be long");
+  assert(gvn().type(insert_val)->is_long(), "expected to be long");
 
   // Convert insert value back to its appropriate type.
   switch (elem_bt) {
@@ -2821,7 +2845,7 @@ bool LibraryCallKit::inline_vector_extract() {
         return false;
       }
       // VectorMaskToLongNode requires the input is either a mask or a vector with BOOLEAN type.
-      if (!Matcher::mask_op_prefers_predicate(Op_VectorMaskToLong, opd->bottom_type()->is_vect())) {
+      if (!Matcher::mask_op_prefers_predicate(Op_VectorMaskToLong, opd->bottom_type()->as_vect())) {
         opd = gvn().transform(trace_vector(VectorStoreMaskNode::make(gvn(), opd, elem_bt, num_elem)));
       }
       // ((toLong() >>> pos) & 1L
@@ -3065,7 +3089,7 @@ bool LibraryCallKit::inline_vector_select_from_two_vectors() {
     int indexRangeMask = 2 * num_elem - 1;
     Node* wrap_mask = gvn().makecon(TypeInteger::make(indexRangeMask, indexRangeMask, Type::WidenMin, index_elem_bt != T_LONG ? T_INT : index_elem_bt));
     Node* wrap_mask_vec = gvn().transform(VectorNode::scalar2vector(wrap_mask, num_elem, index_elem_bt, false));
-    opd1 = gvn().transform(VectorNode::make(Op_AndV, opd1, wrap_mask_vec, opd1->bottom_type()->is_vect()));
+    opd1 = gvn().transform(VectorNode::make(Op_AndV, opd1, wrap_mask_vec, opd1->bottom_type()->as_vect()));
     operation = gvn().transform(trace_vector(VectorNode::make(Op_SelectFromTwoVector, opd1, opd2, opd3, vt)));
   }
 

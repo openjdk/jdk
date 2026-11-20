@@ -24,49 +24,108 @@
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import jdk.test.lib.Asserts;
-import jdk.test.lib.JDKToolLauncher;
-import jdk.test.lib.Utils;
 import jdk.test.lib.apps.LingeredApp;
 import jdk.test.lib.dcmd.PidJcmdExecutor;
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
 
 import jdk.test.lib.hprof.HprofParser;
 
-/**
- * @test
- * @bug 8306441 8319053
- * @summary Verify the integrity of generated heap dump and capability of parallel dump
+/*
+ * @test id=Serial
+ * @bug 8306441 8319053 8384612 8392050
+ * @requires vm.gc.Serial
+ * @summary Verify the integrity of generated heap dump and that parallel dump requests run serially (Serial GC)
  * @library /test/lib
- * @run main HeapDumpParallelTest
+ * @run driver HeapDumpParallelTest -XX:+UseSerialGC
+ */
+
+/*
+ * @test id=Parallel
+ * @bug 8306441 8319053 8384612 8392050
+ * @requires vm.gc.Parallel
+ * @summary Verify the integrity of generated heap dump and capability of parallel dump (Parallel GC)
+ * @library /test/lib
+ * @run driver HeapDumpParallelTest -XX:+UseParallelGC
+ */
+
+/*
+ * @test id=G1
+ * @bug 8306441 8319053 8384612 8392050
+ * @requires vm.gc.G1
+ * @summary Verify the integrity of generated heap dump and capability of parallel dump (G1 GC)
+ * @library /test/lib
+ * @run driver HeapDumpParallelTest -XX:+UseG1GC
+ */
+
+/*
+ * @test id=Shenandoah
+ * @bug 8306441 8319053 8384612 8392050
+ * @requires vm.gc.Shenandoah
+ * @summary Verify the integrity of generated heap dump and capability of parallel dump (Shenandoah GC)
+ * @library /test/lib
+ * @run driver HeapDumpParallelTest -XX:+UseShenandoahGC
+ */
+
+/*
+ * @test id=ShenandoahGenerational
+ * @bug 8306441 8319053 8384612 8392050
+ * @requires vm.gc.Shenandoah
+ * @summary Verify the integrity of generated heap dump and capability of parallel dump (Generational Shenandoah GC)
+ * @library /test/lib
+ * @run driver HeapDumpParallelTest -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
+ */
+
+/*
+ * @test id=Z
+ * @bug 8306441 8319053 8384612 8392050
+ * @requires vm.gc.Z
+ * @summary Verify the integrity of generated heap dump and capability of parallel dump (Z GC)
+ * @library /test/lib
+ * @run driver HeapDumpParallelTest -XX:+UseZGC
+ */
+
+/*
+ * @test id=Epsilon
+ * @bug 8306441 8319053 8384612 8392050
+ * @requires vm.gc.Epsilon
+ * @summary Verify the integrity of generated heap dump and that parallel dump requests run serially (Epsilon GC)
+ * @library /test/lib
+ * @run driver HeapDumpParallelTest -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC
  */
 
 public class HeapDumpParallelTest {
 
     private static final String heapDumpFileName = "parallelHeapDump.bin";
+    private static final int ACTIVE_PROCESSOR_COUNT = 8;
+    private static final int DEFAULT_WORKERS = Math.max(1, ACTIVE_PROCESSOR_COUNT * 3 / 8);
 
-    private static void checkAndVerify(OutputAnalyzer dcmdOut, LingeredApp app, File heapDumpFile, boolean expectSerial) throws Exception {
+    private static void checkAndVerify(OutputAnalyzer dcmdOut, LingeredApp app, File heapDumpFile,
+                                       int expectedDiagWorkers) throws Exception {
         dcmdOut.shouldHaveExitValue(0);
         dcmdOut.shouldContain("Heap dump file created");
         OutputAnalyzer appOut = new OutputAnalyzer(app.getProcessStdout());
         appOut.shouldMatch("\\[heapdump *\\]");
-        String opts = Arrays.asList(Utils.getTestJavaOpts()).toString();
-        if (opts.contains("-XX:+UseSerialGC") || opts.contains("-XX:+UseEpsilonGC")) {
-            System.out.println("UseSerialGC detected.");
-            expectSerial = true;
+        // Check the target VM's selected GC, including ergonomic selection.
+        appOut.shouldMatch("\\[gc *\\] Using ");
+        if (appOut.getStdout().contains("Using Serial") || appOut.getStdout().contains("Using Epsilon")) {
+            System.out.println("Serial or Epsilon GC detected.");
+            expectedDiagWorkers = 0;
         }
-        if (!expectSerial && Runtime.getRuntime().availableProcessors() > 1) {
+        if (expectedDiagWorkers > 1) {
+            appOut.shouldContain("Created diagnostic worker pool (max " + ACTIVE_PROCESSOR_COUNT + " workers)");
             appOut.shouldContain("Dump heap objects in parallel");
             appOut.shouldContain("Merge heap files complete");
+            appOut.shouldContain("active dump threads " + expectedDiagWorkers + ",");
         } else {
+            appOut.shouldNotContain("Created diagnostic worker pool");
             appOut.shouldNotContain("Dump heap objects in parallel");
+            appOut.shouldContain("active dump threads 0");
         }
         HprofParser.parseAndVerify(heapDumpFile);
 
@@ -84,11 +143,12 @@ public class HeapDumpParallelTest {
         }
     }
 
-    private static LingeredApp launchApp() throws IOException {
+    private static LingeredApp launchApp(String[] gcArgs) throws IOException {
         LingeredApp theApp = new LingeredApp();
-        LingeredApp.startApp(theApp, "-Xlog:heapdump", "-Xmx512m",
-                             "-XX:-UseDynamicNumberOfGCThreads",
-                             "-XX:ParallelGCThreads=2");
+        List<String> jvmArgs = new ArrayList<>(List.of("-Xlog:gc,heapdump,gc+task", "-Xmx512m",
+                                                       "-XX:ActiveProcessorCount=" + ACTIVE_PROCESSOR_COUNT));
+        jvmArgs.addAll(Arrays.asList(gcArgs));
+        LingeredApp.startApp(theApp, jvmArgs.toArray(new String[0]));
         return theApp;
     }
 
@@ -98,7 +158,7 @@ public class HeapDumpParallelTest {
             heapDumpFile.delete();
         }
 
-        LingeredApp theApp = launchApp();
+        LingeredApp theApp = launchApp(args);
         try {
             // Expect error message
             OutputAnalyzer out = attachJcmdHeapDump(heapDumpFile, theApp.getPid(), "-parallel=" + -1);
@@ -109,27 +169,34 @@ public class HeapDumpParallelTest {
             out.shouldContain("Invalid number of parallel dump threads.");
 
             // Expect serial dump because 0 implies to disable parallel dump
-            test(heapDumpFile, "-parallel=" + 0, true);
+            test(heapDumpFile, "-parallel=" + 0, 0, args);
 
             // Expect serial dump
-            test(heapDumpFile,  "-parallel=" + 1, true);
+            test(heapDumpFile,  "-parallel=" + 1, 0, args);
 
             // Expect parallel dump
-            test(heapDumpFile, "-parallel=" + Integer.MAX_VALUE, false);
+            test(heapDumpFile, "-parallel=" + 2, 2, args);
 
             // Expect parallel dump
-            test(heapDumpFile, "-gz=9 -overwrite -parallel=" + Runtime.getRuntime().availableProcessors(), false);
+            test(heapDumpFile, "-parallel=" + Integer.MAX_VALUE, ACTIVE_PROCESSOR_COUNT, args);
+
+            // Expect parallel dump
+            test(heapDumpFile, "-gz=9 -overwrite -parallel=" + ACTIVE_PROCESSOR_COUNT, ACTIVE_PROCESSOR_COUNT, args);
+
+            // If no parallel threads are passed in, the default number of parallel threads
+            // to use is based on CPUs: max(1, ACTIVE_PROCESSOR_COUNT * 3 / 8).
+            test(heapDumpFile, "", DEFAULT_WORKERS, args);
         } finally {
             theApp.stopApp();
         }
     }
 
-    private static void test(File heapDumpFile, String arg, boolean expectSerial) throws Exception {
-        LingeredApp theApp = launchApp();
+    private static void test(File heapDumpFile, String arg, int expectedDiagWorkers, String[] gcArgs) throws Exception {
+        LingeredApp theApp = launchApp(gcArgs);
         try {
             OutputAnalyzer dcmdOut = attachJcmdHeapDump(heapDumpFile, theApp.getPid(), arg);
             theApp.stopApp();
-            checkAndVerify(dcmdOut, theApp, heapDumpFile, expectSerial);
+            checkAndVerify(dcmdOut, theApp, heapDumpFile, expectedDiagWorkers);
         } finally {
             theApp.stopApp();
         }

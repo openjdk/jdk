@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ import jdk.test.lib.process.OutputAnalyzer;
  * @comment muslc dlclose is a no-op, see 8285921
  * @requires !vm.musl
  * @library /test/lib
- * @run testng AttachReturnError
+ * @run testng/othervm -XX:+EnableDynamicAgentLoading AttachReturnError
  */
 public class AttachReturnError extends AttachFailedTestBase {
     @Override

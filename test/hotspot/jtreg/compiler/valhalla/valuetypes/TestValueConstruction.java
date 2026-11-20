@@ -30,6 +30,7 @@ import java.lang.invoke.MethodType;
 import java.lang.reflect.Constructor;
 import java.util.Random;
 
+import jdk.internal.misc.Unsafe;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Utils;
 import jdk.test.whitebox.WhiteBox;
@@ -37,9 +38,11 @@ import test.java.lang.invoke.lib.InstructionHelper;
 
 /*
  * @test id=Xbatch
+ * @bug 8396321
  * @summary Test construction of value objects.
  * @key randomness
  * @library /testlibrary /test/lib /compiler/whitebox /test/jdk/java/lang/invoke/common /
+ * @modules java.base/jdk.internal.misc
  * @enablePreview
  * @requires (vm.opt.final.PerMethodTrapLimit >= 100 & vm.opt.final.PerMethodSpecTrapLimit >= 5000) | vm.opt.final.StressIncrementalInlining == false
  * @build jdk.test.whitebox.WhiteBox test.java.lang.invoke.lib.InstructionHelper
@@ -51,8 +54,10 @@ import test.java.lang.invoke.lib.InstructionHelper;
 
 /*
  * @test id=DeoptimizeALot
+ * @bug 8396321
  * @key randomness
  * @library /testlibrary /test/lib /compiler/whitebox /test/jdk/java/lang/invoke/common /
+ * @modules java.base/jdk.internal.misc
  * @enablePreview
  * @requires (vm.opt.final.PerMethodTrapLimit >= 100 & vm.opt.final.PerMethodSpecTrapLimit >= 5000) | vm.opt.final.StressIncrementalInlining == false
  * @build jdk.test.whitebox.WhiteBox test.java.lang.invoke.lib.InstructionHelper
@@ -64,8 +69,10 @@ import test.java.lang.invoke.lib.InstructionHelper;
 
 /*
  * @test id=CompileonlyTest
+ * @bug 8396321
  * @key randomness
  * @library /testlibrary /test/lib /compiler/whitebox /test/jdk/java/lang/invoke/common /
+ * @modules java.base/jdk.internal.misc
  * @enablePreview
  * @requires (vm.opt.final.PerMethodTrapLimit >= 100 & vm.opt.final.PerMethodSpecTrapLimit >= 5000) | vm.opt.final.StressIncrementalInlining == false
  * @build jdk.test.whitebox.WhiteBox test.java.lang.invoke.lib.InstructionHelper
@@ -78,9 +85,11 @@ import test.java.lang.invoke.lib.InstructionHelper;
 
 /*
  * @test id=DontInlineHelper
+ * @bug 8396321
  * @summary Test construction of value objects.
  * @key randomness
  * @library /testlibrary /test/lib /compiler/whitebox /test/jdk/java/lang/invoke/common /
+ * @modules java.base/jdk.internal.misc
  * @enablePreview
  * @requires (vm.opt.final.PerMethodTrapLimit >= 100 & vm.opt.final.PerMethodSpecTrapLimit >= 5000) | vm.opt.final.StressIncrementalInlining == false
  * @build jdk.test.whitebox.WhiteBox test.java.lang.invoke.lib.InstructionHelper
@@ -93,8 +102,10 @@ import test.java.lang.invoke.lib.InstructionHelper;
 
 /*
  * @test id=DontInlineMyValueInit
+ * @bug 8396321
  * @key randomness
  * @library /testlibrary /test/lib /compiler/whitebox /test/jdk/java/lang/invoke/common /
+ * @modules java.base/jdk.internal.misc
  * @enablePreview
  * @requires (vm.opt.final.PerMethodTrapLimit >= 100 & vm.opt.final.PerMethodSpecTrapLimit >= 5000) | vm.opt.final.StressIncrementalInlining == false
  * @build jdk.test.whitebox.WhiteBox test.java.lang.invoke.lib.InstructionHelper
@@ -107,8 +118,10 @@ import test.java.lang.invoke.lib.InstructionHelper;
 
 /*
  * @test id=DontInlineObjectInit
+ * @bug 8396321
  * @key randomness
  * @library /testlibrary /test/lib /compiler/whitebox /test/jdk/java/lang/invoke/common /
+ * @modules java.base/jdk.internal.misc
  * @enablePreview
  * @requires (vm.opt.final.PerMethodTrapLimit >= 100 & vm.opt.final.PerMethodSpecTrapLimit >= 5000) | vm.opt.final.StressIncrementalInlining == false
  * @build jdk.test.whitebox.WhiteBox test.java.lang.invoke.lib.InstructionHelper
@@ -121,8 +134,10 @@ import test.java.lang.invoke.lib.InstructionHelper;
 
 /*
  * @test id=DontInlineObjectInitDeoptimizeALot
+ * @bug 8396321
  * @key randomness
  * @library /testlibrary /test/lib /compiler/whitebox /test/jdk/java/lang/invoke/common /
+ * @modules java.base/jdk.internal.misc
  * @enablePreview
  * @requires (vm.opt.final.PerMethodTrapLimit >= 100 & vm.opt.final.PerMethodSpecTrapLimit >= 5000) | vm.opt.final.StressIncrementalInlining == false
  * @build jdk.test.whitebox.WhiteBox test.java.lang.invoke.lib.InstructionHelper
@@ -135,8 +150,10 @@ import test.java.lang.invoke.lib.InstructionHelper;
 
 /*
  * @test id=DontInlineMyAbstractInit
+ * @bug 8396321
  * @key randomness
  * @library /testlibrary /test/lib /compiler/whitebox /test/jdk/java/lang/invoke/common /
+ * @modules java.base/jdk.internal.misc
  * @enablePreview
  * @requires (vm.opt.final.PerMethodTrapLimit >= 100 & vm.opt.final.PerMethodSpecTrapLimit >= 5000) | vm.opt.final.StressIncrementalInlining == false
  * @build jdk.test.whitebox.WhiteBox test.java.lang.invoke.lib.InstructionHelper
@@ -149,8 +166,10 @@ import test.java.lang.invoke.lib.InstructionHelper;
 
 /*
  * @test id=StressIncrementalInlining
+ * @bug 8396321
  * @key randomness
  * @library /testlibrary /test/lib /compiler/whitebox /test/jdk/java/lang/invoke/common /
+ * @modules java.base/jdk.internal.misc
  * @enablePreview
  * @requires vm.opt.final.PerMethodTrapLimit >= 100 & vm.opt.final.PerMethodSpecTrapLimit >= 5000
  * @build jdk.test.whitebox.WhiteBox test.java.lang.invoke.lib.InstructionHelper
@@ -164,8 +183,10 @@ import test.java.lang.invoke.lib.InstructionHelper;
 
 /*
  * @test id=StressIncrementalInliningCompileOnlyTest
+ * @bug 8396321
  * @key randomness
  * @library /testlibrary /test/lib /compiler/whitebox /test/jdk/java/lang/invoke/common /
+ * @modules java.base/jdk.internal.misc
  * @enablePreview
  * @requires vm.opt.final.PerMethodTrapLimit >= 100 & vm.opt.final.PerMethodSpecTrapLimit >= 5000
  * @build jdk.test.whitebox.WhiteBox test.java.lang.invoke.lib.InstructionHelper
@@ -178,8 +199,10 @@ import test.java.lang.invoke.lib.InstructionHelper;
  */
 
 /* @test id=StressIncrementalInliningDontInlineMyValueInit
+ * @bug 8396321
  * @key randomness
  * @library /testlibrary /test/lib /compiler/whitebox /test/jdk/java/lang/invoke/common /
+ * @modules java.base/jdk.internal.misc
  * @enablePreview
  * @requires vm.opt.final.PerMethodTrapLimit >= 100 & vm.opt.final.PerMethodSpecTrapLimit >= 5000
  * @build jdk.test.whitebox.WhiteBox test.java.lang.invoke.lib.InstructionHelper
@@ -193,8 +216,10 @@ import test.java.lang.invoke.lib.InstructionHelper;
 
 /*
  * @test id=StressIncrementalInliningDontInlineObjectInit
+ * @bug 8396321
  * @key randomness
  * @library /testlibrary /test/lib /compiler/whitebox /test/jdk/java/lang/invoke/common /
+ * @modules java.base/jdk.internal.misc
  * @enablePreview
  * @requires vm.opt.final.PerMethodTrapLimit >= 100 & vm.opt.final.PerMethodSpecTrapLimit >= 5000
  * @build jdk.test.whitebox.WhiteBox test.java.lang.invoke.lib.InstructionHelper
@@ -208,8 +233,10 @@ import test.java.lang.invoke.lib.InstructionHelper;
 
 /*
  * @test id=StressIncrementalInliningDontInlineMyAbstractInit
+ * @bug 8396321
  * @key randomness
  * @library /testlibrary /test/lib /compiler/whitebox /test/jdk/java/lang/invoke/common /
+ * @modules java.base/jdk.internal.misc
  * @enablePreview
  * @requires vm.opt.final.PerMethodTrapLimit >= 100 & vm.opt.final.PerMethodSpecTrapLimit >= 5000
  * @build jdk.test.whitebox.WhiteBox test.java.lang.invoke.lib.InstructionHelper
@@ -224,8 +251,10 @@ import test.java.lang.invoke.lib.InstructionHelper;
 
 /*
  * @test id=StressIncrementalInliningOnStackReplacement
+ * @bug 8396321
  * @key randomness
  * @library /testlibrary /test/lib /compiler/whitebox /test/jdk/java/lang/invoke/common /
+ * @modules java.base/jdk.internal.misc
  * @enablePreview
  * @requires vm.opt.final.PerMethodTrapLimit >= 100 & vm.opt.final.PerMethodSpecTrapLimit >= 5000
  * @build jdk.test.whitebox.WhiteBox test.java.lang.invoke.lib.InstructionHelper
@@ -238,8 +267,17 @@ import test.java.lang.invoke.lib.InstructionHelper;
  *                   compiler.valhalla.valuetypes.TestValueConstruction
  */
 
+class UnresolvedValue {
+    static int value;
+}
+
 public class TestValueConstruction {
     static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
+    static final Unsafe UNSAFE = Unsafe.getUnsafe();
+    static final Object[] ARRAY = new Integer[1];
+    static final Integer[] UNSAFE_ARRAY = new Integer[1];
+    static final long UNSAFE_ARRAY_BASE = UNSAFE.arrayInstanceBaseOffset(UNSAFE_ARRAY);
+    static final int UNSAFE_ARRAY_LAYOUT = UNSAFE.arrayLayout(UNSAFE_ARRAY);
 
     static boolean VERBOSE = false;
     static boolean[] deopt = new boolean[14];
@@ -1772,6 +1810,121 @@ public class TestValueConstruction {
         return (MyValue1) mh.invoke(x);
     }
 
+    // Below tests construct value objects whose aliases are represented by different C2
+    // nodes and verify that all aliases are correctly scalarized after construction.
+
+    static void sink(Integer value) { }
+
+    // Pass alias to a non-inlined call
+    static void testCall(int i) {
+        do {
+            sink(new Integer(i < 1 ? 1 : UnresolvedValue.value));
+        } while (i++ < 0);
+    }
+
+    // Keep alias live through a merge
+    static Integer testMerge(int i) {
+        Integer value;
+        do {
+            value = new Integer(i < 1 ? 1 : UnresolvedValue.value);
+            if (i != 0) {
+                i = 1;
+            }
+        } while (i++ < 0);
+        return value;
+    }
+
+    Integer field;
+
+    // Store alias into a field
+    static Integer testFieldStore(int i) {
+        TestValueConstruction holder = new TestValueConstruction();
+        do {
+            holder.field = new Integer(i < 1 ? 1 : UnresolvedValue.value);
+        } while (i++ < 0);
+        return holder.field;
+    }
+
+    // Store alias into a value array
+    static Object testArrayStore(int i) {
+        do {
+            ARRAY[0] = new Integer(i < 1 ? 1 : UnresolvedValue.value);
+        } while (i++ < 0);
+        return ARRAY[0];
+    }
+
+    // Pass alias to the flat value store intrinsic
+    static Integer testUnsafeFlatStore(int i) {
+        do {
+            Integer value = new Integer(i < 1 ? 1 : UnresolvedValue.value);
+            UNSAFE.putFlatValue(UNSAFE_ARRAY, UNSAFE_ARRAY_BASE, UNSAFE_ARRAY_LAYOUT, Integer.class, value);
+        } while (i++ < 0);
+        return UNSAFE_ARRAY[0];
+    }
+
+    static DeadLocalValue deadLocal1;
+    static DeadLocalValue deadLocal2;
+
+    static value class DeadLocalValue {
+        int x;
+
+        DeadLocalValue(int x) {
+            this.x = x;
+            super();
+            if (x == 42) {
+                deadLocal1 = this;
+            } else if (x == 43) {
+                deadLocal2 = this;
+            }
+        }
+    }
+
+    // Test that C2 does not use a Phi of dead local values to canonicalize distinct live values
+    private static final MethodHandle DEAD_LOCAL_ALIAS = InstructionHelper.buildMethodHandle(MethodHandles.lookup(),
+            "deadLocalAlias",
+            MethodType.methodType(void.class, int.class),
+            CODE -> {
+                var deadLocalValueDesc = DeadLocalValue.class.describeConstable().get();
+                var constructorDesc = MethodType.methodType(void.class, int.class).describeConstable().get();
+                Label skip = CODE.newLabel();
+                Label merge = CODE.newLabel();
+                CODE.
+                    // DeadLocalValue A is stored in local 2
+                    new_(deadLocalValueDesc).
+                    astore(2).
+                    // DeadLocalValue B is stored in local 3
+                    new_(deadLocalValueDesc).
+                    astore(3).
+                    iload(0).
+                    ifne(skip).
+                    // A is stored local 1
+                    aload(2).
+                    astore(1).
+                    goto_(merge).
+                    labelBinding(skip).
+                    // B is stored local 1
+                    aload(3).
+                    astore(1).
+                    labelBinding(merge).
+                    // The verifier does not merge A and B because local 1 is dead here, so its
+                    // stack-map type is top. But with DeoptimizeALot, C2 still keeps the dead Phi:
+                    //   Local 1: Phi(A, B)
+                    //   Local 2: A
+                    //   Local 3: B
+                    // ciTypeFlow meets the stale values in local 1 and keeps only one early larval
+                    // wrapper because both unwrap to the same type. If canonicalization visits
+                    // the dead local, Phi(A, B) can replace the corresponding live value in
+                    // local 2 or 3. The different values passed to the constructors below make this
+                    // observable through deadLocal1 or deadLocal2 which store the escaped values.
+                    aload(2).
+                    bipush(42).
+                    invokespecial(deadLocalValueDesc, "<init>", constructorDesc).
+                    aload(3).
+                    bipush(43).
+                    invokespecial(deadLocalValueDesc, "<init>", constructorDesc).
+                    return_();
+            });
+
     public static void main(String[] args) throws Throwable {
         Random rand = Utils.getRandomInstance();
 
@@ -1807,6 +1960,11 @@ public class TestValueConstruction {
                 WHITE_BOX.testSetDontInlineMethod(MyAbstract16.class.getConstructor(int.class), rand.nextBoolean());
             }
         }
+        // More compiler control needed by some tests
+        WHITE_BOX.testSetDontInlineMethod(TestValueConstruction.class.getDeclaredMethod("sink", Integer.class), true);
+        Constructor<DeadLocalValue> deadLocalConstructor = DeadLocalValue.class.getDeclaredConstructor(int.class);
+        WHITE_BOX.testSetDontInlineMethod(deadLocalConstructor, true);
+        WHITE_BOX.makeMethodNotCompilable(deadLocalConstructor);
 
         Integer deoptNum = Integer.getInteger("deoptNum");
         Integer deoptNumBig = Integer.getInteger("deoptNumBig");
@@ -1905,6 +2063,19 @@ public class TestValueConstruction {
         check(testReflectionVar(MY_VALUE1_CONSTRUCTOR, x), new MyValue1(x), doCheck);
         check(testMethodHandleCon(x), new MyValue1(x), doCheck);
         check(testMethodHandleVar(MY_VALUE1_CONSTRUCTOR_HANDLE, x), new MyValue1(x), doCheck);
+        testCall(0);
+        check(testMerge(0), Integer.valueOf(1), doCheck);
+        check(testFieldStore(0), Integer.valueOf(1), doCheck);
+        check(testArrayStore(0), Integer.valueOf(1), doCheck);
+        if (UNSAFE_ARRAY_LAYOUT != Unsafe.NON_FLAT_LAYOUT) {
+            check(testUnsafeFlatStore(0), Integer.valueOf(1), doCheck);
+        }
+        DEAD_LOCAL_ALIAS.invokeExact(0);
+        Asserts.assertEQ(deadLocal1.x, 42);
+        Asserts.assertEQ(deadLocal2.x, 43);
+        DEAD_LOCAL_ALIAS.invokeExact(1);
+        Asserts.assertEQ(deadLocal1.x, 42);
+        Asserts.assertEQ(deadLocal2.x, 43);
     }
 
     private static void check(Object testResult, Object expectedResult, boolean check) {

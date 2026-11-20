@@ -206,7 +206,6 @@ PhaseChaitin::PhaseChaitin(uint unique, PhaseCFG &cfg, Matcher &matcher, bool sc
        )
   , _live(nullptr)
   , _lo_degree(0), _lo_stk_degree(0), _hi_degree(0), _simplified(0)
-  , _oldphi(unique)
 #ifndef PRODUCT
   , _trace_spilling(C->directive()->TraceSpillingOption)
 #endif
@@ -884,8 +883,8 @@ void PhaseChaitin::gather_lrg_masks( bool after_aggressive ) {
         lrg.and_with(rm);
 
         uint ireg = n->ideal_reg();
-        assert( !n->bottom_type()->isa_oop_ptr() || ireg == Op_RegP,
-                "oops must be in Op_RegP's" );
+        assert(!n->bottom_type()->is_oopptr() || ireg == Op_RegP,
+                "oops must be in Op_RegP's");
 
         // Check for vector live range (only if vector register is used).
         // On SPARC vector uses RegD which could be misaligned so it is not
@@ -917,7 +916,7 @@ void PhaseChaitin::gather_lrg_masks( bool after_aggressive ) {
             lrg.set_scalable_reg_slots(Matcher::scalable_predicate_reg_slots());
           }
         }
-        assert(n_type->isa_vect() == nullptr || lrg._is_vector ||
+        assert(!n_type->is_vect() || lrg._is_vector ||
                ireg == Op_RegD || ireg == Op_RegL || ireg == Op_RegVectMask,
                "vector must be in vector registers");
 
@@ -980,7 +979,7 @@ void PhaseChaitin::gather_lrg_masks( bool after_aggressive ) {
           // AMD64    1     1     1          1    1         14          15
           // -----------------------------------------------------
           lrg.set_reg_pressure(1);  // normally one value per register
-          if( n_type->isa_oop_ptr() ) {
+          if (n_type->is_oopptr()) {
             lrg._is_oop = 1;
           }
           break;
@@ -1128,7 +1127,7 @@ void PhaseChaitin::gather_lrg_masks( bool after_aggressive ) {
         const RegMask &lrgmask_in = lrg_in.mask();
         uint kreg = n->in(k)->ideal_reg();
         bool is_vect = RegMask::is_vector(kreg);
-        assert(n->in(k)->bottom_type()->isa_vect() == nullptr || is_vect ||
+        assert(!n->in(k)->bottom_type()->is_vect() || is_vect ||
                kreg == Op_RegD || kreg == Op_RegL || kreg == Op_RegVectMask,
                "vector must be in vector registers");
         if (lrgmask_in.is_bound(kreg))
@@ -1940,8 +1939,8 @@ Node* PhaseChaitin::find_base_for_derived(Node** derived_base_map, Node* derived
   // pointers derived from null!  These are always along paths that
   // can't happen at run-time but the optimizer cannot deduce it so
   // we have to handle it gracefully.
-  assert(!derived->bottom_type()->isa_narrowoop() ||
-         derived->bottom_type()->make_ptr()->is_ptr()->offset() == 0, "sanity");
+  assert(!derived->bottom_type()->is_narrowoop() ||
+         derived->bottom_type()->make_ptr()->as_ptr()->offset() == 0, "sanity");
   const TypePtr *tj = derived->bottom_type()->isa_ptr();
   // If its an OOP with a non-zero offset, then it is derived.
   if (tj == nullptr || tj->offset() == 0) {
@@ -2109,10 +2108,10 @@ bool PhaseChaitin::stretch_base_pointer_live_ranges(ResourceArea *a) {
           // This works because we are still in SSA during this call.
           Node *derived = lrgs(neighbor)._def;
           const TypePtr *tj = derived->bottom_type()->isa_ptr();
-          assert(!derived->bottom_type()->isa_narrowoop() ||
-                 derived->bottom_type()->make_ptr()->is_ptr()->offset() == 0, "sanity");
+          assert(!derived->bottom_type()->is_narrowoop() ||
+                 derived->bottom_type()->make_ptr()->as_ptr()->offset() == 0, "sanity");
           // If its an OOP with a non-zero offset, then it is derived.
-          if (tj && tj->offset() != 0 && tj->isa_oop_ptr()) {
+          if (tj && tj->offset() != 0 && tj->is_oopptr()) {
             Node *base = find_base_for_derived(derived_base_map, derived, maxlrg);
             assert(base->_idx < _lrg_map.size(), "");
             // Add reaching DEFs of derived pointer and base pointer as a
@@ -2603,7 +2602,7 @@ void PhaseChaitin::dump_lrg(uint lidx, bool defs_only) const {
 #ifdef ASSERT
 // Verify that base pointers and derived pointers are still sane.
 void PhaseChaitin::verify_base_ptrs(ResourceArea* a) const {
-  Unique_Node_List worklist(a);
+  Unique_Node_List<const Node> worklist(a);
   for (uint i = 0; i < _cfg.number_of_blocks(); i++) {
     Block* block = _cfg.get_block(i);
     for (uint j = block->end_idx() + 1; j > 1; j--) {
@@ -2620,7 +2619,7 @@ void PhaseChaitin::verify_base_ptrs(ResourceArea* a) const {
           if (jvms->oopoff() < sfpt->req()) {
             // Check each derived/base pair
             for (uint idx = jvms->oopoff(); idx < sfpt->req(); idx++) {
-              Node* check = sfpt->in(idx);
+              const Node* check = sfpt->in(idx);
               bool is_derived = ((idx - jvms->oopoff()) & 1) == 0;
               // search upwards through spills and spill phis for AddP
               worklist.clear();
@@ -2638,20 +2637,20 @@ void PhaseChaitin::verify_base_ptrs(ResourceArea* a) const {
                     worklist.push(check->in(m));
                   }
                 } else if (check->is_Con()) {
-                  if (is_derived && check->bottom_type()->is_ptr()->offset() != 0) {
+                  if (is_derived && check->bottom_type()->as_ptr()->offset() != 0) {
                     // Derived is null+non-zero offset, base must be null.
-                    assert(check->bottom_type()->is_ptr()->ptr() == TypePtr::Null, "Bad derived pointer");
+                    assert(check->bottom_type()->as_ptr()->ptr() == TypePtr::Null, "Bad derived pointer");
                   } else {
-                    assert(check->bottom_type()->is_ptr()->offset() == 0, "Bad base pointer");
+                    assert(check->bottom_type()->as_ptr()->offset() == 0, "Bad base pointer");
                     // Base either ConP(nullptr) or loadConP
                     if (check->is_Mach()) {
                       assert(check->as_Mach()->ideal_Opcode() == Op_ConP, "Bad base pointer");
                     } else {
                       assert(check->Opcode() == Op_ConP &&
-                             check->bottom_type()->is_ptr()->ptr() == TypePtr::Null, "Bad base pointer");
+                             check->bottom_type()->as_ptr()->ptr() == TypePtr::Null, "Bad base pointer");
                     }
                   }
-                } else if (check->bottom_type()->is_ptr()->offset() == 0) {
+                } else if (check->bottom_type()->as_ptr()->offset() == 0) {
                   if (check->is_Proj() || (check->is_Mach() &&
                      (check->as_Mach()->ideal_Opcode() == Op_CreateEx ||
                       check->as_Mach()->ideal_Opcode() == Op_ThreadLocal ||
@@ -2699,20 +2698,8 @@ void PhaseChaitin::verify(ResourceArea* a, bool verify_ifg) const {
 }
 #endif // ASSERT
 
-int PhaseChaitin::_final_loads  = 0;
-int PhaseChaitin::_final_stores = 0;
-int PhaseChaitin::_final_memoves= 0;
-int PhaseChaitin::_final_copies = 0;
-double PhaseChaitin::_final_load_cost  = 0;
-double PhaseChaitin::_final_store_cost = 0;
-double PhaseChaitin::_final_memove_cost= 0;
-double PhaseChaitin::_final_copy_cost  = 0;
 int PhaseChaitin::_conserv_coalesce = 0;
-int PhaseChaitin::_conserv_coalesce_pair = 0;
-int PhaseChaitin::_conserv_coalesce_trie = 0;
-int PhaseChaitin::_conserv_coalesce_quad = 0;
 int PhaseChaitin::_post_alloc = 0;
-int PhaseChaitin::_lost_opp_pp_coalesce = 0;
 int PhaseChaitin::_lost_opp_cflow_coalesce = 0;
 int PhaseChaitin::_used_cisc_instructions   = 0;
 int PhaseChaitin::_unused_cisc_instructions = 0;
@@ -2724,19 +2711,11 @@ uint PhaseChaitin::_high_pressure           = 0;
 uint PhaseChaitin::_low_pressure            = 0;
 
 void PhaseChaitin::print_chaitin_statistics() {
-  tty->print_cr("Inserted %d spill loads, %d spill stores, %d mem-mem moves and %d copies.", _final_loads, _final_stores, _final_memoves, _final_copies);
-  tty->print_cr("Total load cost= %6.0f, store cost = %6.0f, mem-mem cost = %5.2f, copy cost = %5.0f.", _final_load_cost, _final_store_cost, _final_memove_cost, _final_copy_cost);
-  tty->print_cr("Adjusted spill cost = %7.0f.",
-                _final_load_cost*4.0 + _final_store_cost  * 2.0 +
-                _final_copy_cost*1.0 + _final_memove_cost*12.0);
-  tty->print("Conservatively coalesced %d copies, %d pairs",
-                _conserv_coalesce, _conserv_coalesce_pair);
-  if( _conserv_coalesce_trie || _conserv_coalesce_quad )
-    tty->print(", %d tries, %d quads", _conserv_coalesce_trie, _conserv_coalesce_quad);
+  tty->print("Conservatively coalesced %d copies",
+                _conserv_coalesce);
   tty->print_cr(", %d post alloc.", _post_alloc);
-  if( _lost_opp_pp_coalesce || _lost_opp_cflow_coalesce )
-    tty->print_cr("Lost coalesce opportunity, %d private-private, and %d cflow interfered.",
-                  _lost_opp_pp_coalesce, _lost_opp_cflow_coalesce );
+  if (_lost_opp_cflow_coalesce)
+    tty->print_cr("Lost coalesce opportunity, %d cflow interfered.", _lost_opp_cflow_coalesce);
   if( _used_cisc_instructions || _unused_cisc_instructions )
     tty->print_cr("Used cisc instruction  %d,  remained in register %d",
                    _used_cisc_instructions, _unused_cisc_instructions);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CPU_RISCV_VM_VMREG_RISCV_INLINE_HPP
-#define CPU_RISCV_VM_VMREG_RISCV_INLINE_HPP
+#ifndef CPU_RISCV_VMREG_RISCV_INLINE_HPP
+#define CPU_RISCV_VMREG_RISCV_INLINE_HPP
 
 inline VMReg Register::RegisterImpl::as_VMReg() const {
   return VMRegImpl::as_VMReg(encoding() * Register::max_slots_per_register);
@@ -40,4 +40,4 @@ inline VMReg VectorRegister::VectorRegisterImpl::as_VMReg() const {
                              ConcreteRegisterImpl::max_fpr);
 }
 
-#endif // CPU_RISCV_VM_VMREG_RISCV_INLINE_HPP
+#endif // CPU_RISCV_VMREG_RISCV_INLINE_HPP

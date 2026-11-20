@@ -1201,13 +1201,8 @@ Handle SharedRuntime::find_callee_info_helper(vframeStream& vfst, Bytecodes::Cod
     bc = Bytecodes::_invokestatic;
     methodHandle attached_method(THREAD, extract_attached_method(vfst));
     assert(attached_method.not_null(), "must have attached method");
-    vmClasses::ValueObjectMethods_klass()->initialize(CHECK_NH);
     LinkResolver::resolve_invoke(callinfo, receiver, attached_method, bc, false, CHECK_NH);
-#ifdef ASSERT
-    Symbol* subst_method_name = vmSymbols::isSubstitutable_name();
-    Method* is_subst = vmClasses::ValueObjectMethods_klass()->find_method(subst_method_name, vmSymbols::object_object_boolean_signature());
-    assert(callinfo.selected_method() == is_subst, "must be isSubstitutable method");
-#endif
+    assert(callinfo.selected_method() == Universe::is_substitutable_method(), "must be isSubstitutable method");
     return receiver;
   }
 
@@ -1368,9 +1363,31 @@ methodHandle SharedRuntime::find_callee_method(bool& caller_does_not_scalarize, 
     Bytecodes::Code bc;
     CallInfo callinfo;
     find_callee_info_helper(vfst, bc, callinfo, CHECK_(methodHandle()));
-    // Calls via mismatching methods are always non-scalarized
-    if (callinfo.resolved_method()->mismatch()) {
-      caller_does_not_scalarize = true;
+
+    if (!caller_does_not_scalarize) {
+      // check if the call is an optimized virtual call
+      RegisterMap reg_map(current,
+                    RegisterMap::UpdateMap::skip,
+                    RegisterMap::ProcessFrames::include,
+                    RegisterMap::WalkContinuation::skip);
+      frame stub_frame = current->last_frame();
+      assert(stub_frame.is_runtime_frame(), "must be a runtimeStub");
+      frame caller = stub_frame.sender(&reg_map);
+      nmethod* caller_nm = CodeCache::find_nmethod(caller.pc());
+      assert(caller_nm != nullptr, "did not find caller nmethod");
+
+      address call_addr = caller_nm->call_instruction_address(caller.pc());
+
+      bool is_optimized = false;
+      if (call_addr != nullptr) {
+        RelocIterator iter(caller_nm, call_addr, call_addr+1);
+        bool ret = iter.next(); // Get item
+        if (ret && iter.type() == relocInfo::opt_virtual_call_type) {
+          is_optimized = true;
+        }
+      }
+      // Calls via mismatching methods are always non-scalarized
+      caller_does_not_scalarize = is_optimized ? callinfo.selected_method()->mismatch() : callinfo.resolved_method()->mismatch();
     }
     callee_method = methodHandle(current, callinfo.selected_method());
   }
@@ -2850,7 +2867,7 @@ bool CompiledEntrySignature::check_supers_and_deoptimize(int arg_num) {
   assert(JavaThread::current()->thread_state() == _thread_in_vm, "must be in vm state");
 
   bool scalar_super = false;
-  bool non_scalar_super = false;
+  bool non_scalar = _method->is_native();
 
   GrowableArray<Method*>* supers = get_supers();
   for (int i = 0; i < supers->length(); ++i) {
@@ -2858,20 +2875,20 @@ bool CompiledEntrySignature::check_supers_and_deoptimize(int arg_num) {
     if (super_method->is_scalarized_arg(arg_num)) {
       scalar_super = true;
     } else {
-      non_scalar_super = true;
+      non_scalar = true;
     }
   }
 #ifdef ASSERT
   // Randomly enable below code paths for stress testing
   bool stress = StressCallingConvention;
   if (stress && (os::random() & 1) == 1) {
-    non_scalar_super = true;
+    non_scalar = true;
     if ((os::random() & 1) == 1) {
       scalar_super = true;
     }
   }
 #endif
-  if (non_scalar_super) {
+  if (non_scalar) {
     // Found a super method with a non-scalarized argument. Fall back to the non-scalarized calling convention.
     if (scalar_super) {
       // Found non-scalar *and* scalar super methods. We can't handle both.
@@ -2896,7 +2913,7 @@ bool CompiledEntrySignature::check_supers_and_deoptimize(int arg_num) {
     }
   }
 
-  return non_scalar_super;
+  return non_scalar;
 }
 
 // Iterate over arguments and compute scalarized and non-scalarized signatures
@@ -3252,7 +3269,7 @@ void AdapterHandlerLibrary::lookup_aot_cache(AdapterHandlerEntry* handler) {
   const char* name = AdapterHandlerLibrary::name(handler);
   const uint32_t id = AdapterHandlerLibrary::id(handler);
 
-  CodeBlob* blob = AOTCodeCache::load_code_blob(AOTCodeEntry::Adapter, id, name);
+  CodeBlob* blob = AOTCodeCache::load_adapter(id, name);
   if (blob != nullptr) {
     handler->set_adapter_blob(blob->as_adapter_blob());
   }
@@ -3366,7 +3383,7 @@ bool AdapterHandlerLibrary::generate_adapter_code(AdapterHandlerEntry* handler,
     // try to save generated code
     const char* name = AdapterHandlerLibrary::name(handler);
     const uint32_t id = AdapterHandlerLibrary::id(handler);
-    bool success = AOTCodeCache::store_code_blob(*adapter_blob, AOTCodeEntry::Adapter, id, name);
+    bool success = AOTCodeCache::store_adapter(*adapter_blob, id, name);
     assert(success || !AOTCodeCache::is_dumping_adapter(), "caching of adapter must be disabled");
   }
 #endif // ZERO
@@ -3455,6 +3472,11 @@ void AdapterHandlerLibrary::dump_aot_adapter_table() {
 }
 
 void AdapterHandlerLibrary::serialize_shared_table_header(SerializeClosure* soc) {
+  // This table is used for loading cached adapters in a retraining JVM. However,
+  // this table should not be written into the AOT configuration file (which
+  // doesn't store AOT adapters).
+  AOTWriteClosureDisabler disable_if(CDSConfig::is_redumping_aot_configuration());
+
   _aot_adapter_handler_table.serialize_header(soc);
 }
 
@@ -3601,6 +3623,13 @@ AdapterHandlerEntry::~AdapterHandlerEntry() {
   FreeHeap(this);
 }
 
+int AdapterHandlerEntry::fingerprint_size() const {
+  return fingerprint()->size();
+}
+
+bool AdapterHandlerEntry::fingerprint_equals(AdapterFingerPrint* fp) const {
+  return fingerprint()->equals(fp);
+}
 
 #ifdef ASSERT
 // Capture the code before relocation so that it can be compared

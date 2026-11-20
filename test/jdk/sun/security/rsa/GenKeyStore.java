@@ -31,16 +31,23 @@
 
 // @author Andreas Sterbenz
 
-import java.io.*;
-import java.math.BigInteger;
-import java.util.*;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.KeyStore;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.cert.X509Certificate;
+import java.time.Instant;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
 
-import java.security.*;
-import java.security.cert.*;
-import java.security.interfaces.*;
-import java.security.spec.*;
-
-import sun.security.x509.*;
+import sun.security.x509.CertificateSerialNumber;
+import sun.security.x509.CertificateValidity;
+import sun.security.x509.CertificateVersion;
+import sun.security.x509.CertificateX509Key;
+import sun.security.x509.X500Name;
+import sun.security.x509.X509CertImpl;
+import sun.security.x509.X509CertInfo;
 
 public class GenKeyStore {
 
@@ -51,7 +58,7 @@ public class GenKeyStore {
                                                     PrivateKey privateKey) throws Exception {
         X500Name name = new X500Name("CN=Dummy Certificate " + suffix);
         String algorithm = "SHA1with" + publicKey.getAlgorithm();
-        Date date = new Date();
+        Instant instant = Instant.now();
 
         X509CertInfo certInfo = new X509CertInfo();
         certInfo.setVersion(new CertificateVersion(CertificateVersion.V1));
@@ -59,7 +66,7 @@ public class GenKeyStore {
         certInfo.setSubject(name);
         certInfo.setIssuer(name);
         certInfo.setKey(new CertificateX509Key(publicKey));
-        certInfo.setValidity(new CertificateValidity(date, date));
+        certInfo.setValidity(new CertificateValidity(instant, instant));
 
         return X509CertImpl.newSigned(certInfo, privateKey, algorithm);
     }

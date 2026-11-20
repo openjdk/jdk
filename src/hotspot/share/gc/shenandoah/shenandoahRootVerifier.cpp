@@ -46,19 +46,23 @@
 #include "utilities/debug.hpp"
 #include "utilities/enumIterator.hpp"
 
-Atomic<int> ShenandoahGCStateResetter::_active_count;
+Atomic<bool> ShenandoahGCStateResetter::_is_active;
 
 ShenandoahGCStateResetter::ShenandoahGCStateResetter() :
-  _heap(ShenandoahHeap::heap()),
-  _saved_gc_state(_heap->gc_state()),
-  _saved_gc_state_changed(_heap->_gc_state_changed) {
+  _heap(ShenandoahHeap::heap()) {
+
+  shenandoah_assert_safepoint();
+  assert(!_is_active.load_relaxed(), "No nested resets");
+
+  // Capture the GC state right away.
+  _saved_gc_state = _heap->gc_state();
+  _saved_gc_state_changed = _heap->_gc_state_changed;
 
   // Need to complete GC processing before deactivating the barriers.
   // Once the GC state is dropped, we cannot allow GC-state dependent fixups,
   // that would patch barriers or process the oops incorrectly. Verifier code
   // can enter stack watermark processing as part of regular thread root work.
   // This pretends Java threads have fixed up all state before we go for verification.
-  // Do this unconditionally in all callers to get to the same consensus point.
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread* jt = jtiwh.next();) {
     StackWatermarkSet::finish_processing(jt, nullptr, StackWatermarkKind::gc);
   }
@@ -68,29 +72,27 @@ ShenandoahGCStateResetter::ShenandoahGCStateResetter() :
   ShenandoahSATBMarkQueueSet& satb_qs = ShenandoahBarrierSet::satb_mark_queue_set();
   satb_qs.flush_queue(ShenandoahThreadLocalData::satb_mark_queue(Thread::current()));
 
-  // From this moment on, level-1 resetter is active.
-  if (_active_count.compare_set(0, 1, memory_order_relaxed)) {
-    // Clear state to deactivate barriers. Indicate that state has changed
-    // so that verifier threads will use this value, rather than thread local
-    // values (which we are _not_ changing here).
-    _heap->_gc_state.clear();
-    _heap->_gc_state_changed = true;
-  }
+  // Flip the state to zero. Indicate that state has changed so that verifier threads
+  // will use this value, rather than thread local values (which we are _not_ changing here).
+  _heap->_gc_state.clear();
+  _heap->_gc_state_changed = true;
+
+  // GC state is now reset.
+  _is_active.store_relaxed(true);
+
+  assert(_heap->gc_state() == 0, "Should have been cleared");
 }
 
 ShenandoahGCStateResetter::~ShenandoahGCStateResetter() {
-  if (_active_count.add_then_fetch(-1, memory_order_relaxed) > 0) {
-    // Nested, nothing to do.
-    return;
-  }
-
   _heap->_gc_state.set(_saved_gc_state);
   _heap->_gc_state_changed = _saved_gc_state_changed;
   assert(_heap->gc_state() == _saved_gc_state, "Should be restored");
+
+  _is_active.store_relaxed(false);
 }
 
 void ShenandoahRootVerifier::roots_do(OopIterateClosure* oops, ShenandoahGeneration* generation) {
-  ShenandoahGCStateResetter resetter;
+  assert(ShenandoahGCStateResetter::is_active(), "Must be active");
   shenandoah_assert_safepoint();
 
   NMethodToOopClosure blobs(oops, !NMethodToOopClosure::FixRelocations);
@@ -116,7 +118,7 @@ void ShenandoahRootVerifier::roots_do(OopIterateClosure* oops, ShenandoahGenerat
 }
 
 void ShenandoahRootVerifier::strong_roots_do(OopIterateClosure* oops, ShenandoahGeneration* generation) {
-  ShenandoahGCStateResetter resetter;
+  assert(ShenandoahGCStateResetter::is_active(), "Must be active");
   shenandoah_assert_safepoint();
 
   CLDToOopClosure clds(oops, ClassLoaderData::_claim_none);
