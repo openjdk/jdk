@@ -153,15 +153,21 @@ public final class EventWriter {
     private void putStringValue(String s) {
         int length = s.length();
         long size = 1L + 5L + 3L * length;
-        if (usedSize() + size > MAX_EVENT_SIZE) {
-            valid = false;
-            return;
+        long remaining = MAX_EVENT_SIZE - usedSize();
+        if (size > remaining) {
+            // The worst case size estimate is above the remaining event budget.
+            // Calculate the exact size to determine if it is valid.
+            size = encodedStringSize(s, length, remaining);
+            if (size > remaining) {
+                valid = false;
+                return;
+            }
         }
         if (isValidForSize((int)size)) {
-            putUncheckedByte(StringParser.Encoding.CHAR_ARRAY.byteValue()); // 1 byte
-            putUncheckedInt(length); // max 5 bytes
+            putUncheckedByte(StringParser.Encoding.CHAR_ARRAY.byteValue()); // 1-byte
+            putUncheckedInt(length); // 1-5 bytes
             for (int i = 0; i < length; i++) {
-                putUncheckedChar(s.charAt(i)); // max 3 bytes
+                putUncheckedChar(s.charAt(i)); // 1-3 bytes per character
             }
         }
     }
@@ -370,5 +376,37 @@ public final class EventWriter {
     private void putUncheckedByte(byte i) {
         unsafe.putByte(currentPosition, i);
         ++currentPosition;
+    }
+
+    // Returns the exact string varint encoded size, or a value above limit
+    // once overflow of the remaining event budget is established.
+    private static long encodedStringSize(String s, int length, long limit) {
+        // Encoding tag + first length byte + at least one byte per character.
+        long size = 2L + length;
+
+        // The string length is encoded as varint, which can take up to five bytes.
+        // Count the additional bytes beyond the first one already included.
+        for (int n = length; n >= 0x80; n >>>= 7) {
+            ++size;
+        }
+        if (size > limit) {
+            return size;
+        }
+
+        // Each character uses one, two, or three varint bytes.
+        // Its first byte has already been counted.
+        for (int i = 0; i < length; i++) {
+            char c = s.charAt(i);
+            if (c >= 0x80) {
+                ++size;
+            }
+            if (c >= 0x4000) {
+                ++size;
+            }
+            if (size > limit) {
+                return size;
+            }
+        }
+        return size;
     }
 }

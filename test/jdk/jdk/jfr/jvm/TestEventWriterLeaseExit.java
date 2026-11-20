@@ -49,11 +49,15 @@ public class TestEventWriterLeaseExit {
     // than the entire thread-local buffer to acquire a large buffer lease.
     private static final int LEASE_LENGTH = Math.max(StringPool.MAX_LIMIT, THREAD_BUFFER_SIZE + 1);
 
-    // EventWriter.putStringValue() reserves up to three bytes per character.
-    // The size check in putStringValue() must fail for the reject field, and this rejection is what we target.
-    // That rejection leaves the outstanding buffer lease that was acquired when writing the lease string hanging until thread exit.
-    // With CompactStrings, the reject Java string itself occupies about 85 MiB.
-    private static final int REJECT_LENGTH = MAX_EVENT_SIZE / 3 + 1;
+    // Each reject character uses two varint bytes but one byte with CompactStrings.
+    private static final char REJECT_CHAR = '\u0080';
+
+    // Including the one-byte encoding tag and four-byte encoded length, this field
+    // alone occupies MAX_EVENT_SIZE bytes. The preceding string event field, lease,
+    // takes the total over the limit, so the exact-size check must reject it before
+    // allocating a larger native buffer. The lease acquired for the first field, lease,
+    // remains outstanding. The reject Java string itself occupies about 128 MiB.
+    private static final int REJECT_LENGTH = (MAX_EVENT_SIZE - 1 - 4) / 2;
 
     static class TwoStringsEvent extends Event {
         // Declaration order matters: lease must be serialized before reject,
@@ -65,7 +69,7 @@ public class TestEventWriterLeaseExit {
     public static void main(String[] args) throws Throwable {
         TwoStringsEvent oversized = new TwoStringsEvent();
         oversized.lease = "a".repeat(LEASE_LENGTH);
-        oversized.reject = "b".repeat(REJECT_LENGTH);
+        oversized.reject = String.valueOf(REJECT_CHAR).repeat(REJECT_LENGTH);
 
         TestThread worker = new TestThread(oversized::commit, "lease-exit-worker");
         boolean[] workerEnded = {false};
