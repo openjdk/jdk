@@ -13624,20 +13624,6 @@ instruct orL_rReg_rReg_imm_ndd(rRegL dst, rRegL src1, immL32 src2, rFlagsReg cr)
   ins_pipe(ialu_reg);
 %}
 
-instruct orL_rReg_imm_rReg_ndd(rRegL dst, immL32 src1, rRegL src2, rFlagsReg cr)
-%{
-  predicate(UseAPX);
-  match(Set dst (OrL src1 src2));
-  effect(KILL cr);
-  flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag, PD::Flag_ndd_demotable_opr1);
-
-  format %{ "eorq     $dst, $src2, $src1\t# long ndd" %}
-  ins_encode %{
-    __ eorq($dst$$Register, $src2$$Register, $src1$$constant, false);
-  %}
-  ins_pipe(ialu_reg);
-%}
-
 // Or Register with Memory
 instruct orL_rReg_mem(rRegL dst, memory src, rFlagsReg cr)
 %{
@@ -13744,7 +13730,7 @@ instruct xorL_rReg_im1(rRegL dst, immL_M1 imm)
   ins_pipe(ialu_reg);
 %}
 
-instruct xorL_rReg_im1_ndd(rRegL dst,rRegL src, immL_M1 imm)
+instruct xorL_rReg_im1_ndd(rRegL dst, rRegL src, immL_M1 imm)
 %{
   predicate(UseAPX);
   match(Set dst (XorL src imm));
@@ -13773,7 +13759,7 @@ instruct xorL_rReg_imm(rRegL dst, immL32 src, rFlagsReg cr)
   ins_pipe(ialu_reg);
 %}
 
-instruct xorL_rReg_rReg_imm(rRegL dst, rRegL src1, immL32 src2, rFlagsReg cr)
+instruct xorL_rReg_rReg_imm_ndd(rRegL dst, rRegL src1, immL32 src2, rFlagsReg cr)
 %{
   // Strict predicate check to make selection of xorL_rReg_im1_ndd cost agnostic if immL32 src2 is -1.
   predicate(UseAPX && n->in(2)->bottom_type()->as_long()->get_con() != -1L);
