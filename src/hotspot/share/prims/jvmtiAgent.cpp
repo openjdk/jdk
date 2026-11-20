@@ -582,7 +582,6 @@ static bool invoke_Agent_OnAttach(JvmtiAgent* agent, outputStream* st) {
   return true;
 }
 
-#if INCLUDE_CDS
 static void check_cds_dump(JvmtiAgent* agent) {
   if (CDSConfig::new_aot_flags_used()) { // JEP 483
     // Agents are allowed with -XX:AOTMode=record and -XX:AOTMode=required/auto.
@@ -593,7 +592,6 @@ static void check_cds_dump(JvmtiAgent* agent) {
     vm_exit_during_cds_dumping("JVMTI agents are not allowed when dumping CDS archives");
   }
 }
-#endif // INCLUDE_CDS
 
 // Loading the agent by invoking Agent_OnLoad.
 static bool invoke_Agent_OnLoad(JvmtiAgent* agent) {
@@ -601,11 +599,9 @@ static bool invoke_Agent_OnLoad(JvmtiAgent* agent) {
   assert(!agent->is_xrun(), "invariant");
   assert(!agent->is_dynamic(), "invariant");
   assert(JvmtiEnvBase::get_phase() == JVMTI_PHASE_ONLOAD, "invariant");
-#if INCLUDE_CDS
   if (CDSConfig::is_dumping_archive()) {
     check_cds_dump(agent);
   }
-#endif
   OnLoadEntry_t on_load_entry = lookup_Agent_OnLoad_entry_point(agent, /* vm exit on error */ true);
   assert(on_load_entry != nullptr, "invariant");
   // Invoke the Agent_OnLoad function

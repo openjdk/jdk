@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -607,7 +607,7 @@ final class KeyShareExtension {
                             String name = ((NamedParameterSpec)
                                     ng.keAlgParamSpec).getName();
                             KAKeyDerivation handshakeKD = new KAKeyDerivation(
-                                    name, ng, shc, null, null,
+                                    name, shc, null, null,
                                     kcred.getKeyShare());
                             var encaped = handshakeKD.encapsulate(
                                     "TlsHandshakeSecret", xp.getRandom());
