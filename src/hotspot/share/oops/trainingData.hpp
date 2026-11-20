@@ -251,6 +251,10 @@ public:
       _pending_visit_list.append(td);
     }
     template <typename FUNC> void finish(FUNC f);
+    template <typename FUNC>
+    void iterate_visited(FUNC f) const {
+      _visited.iterate_all([&](TrainingData* td, bool unused) { f(td); });
+    }
   };
 
   typedef OffsetCompactHashtable<const TrainingData::Key*, TrainingData*, TrainingData::Key::equals> TrainingDataDictionary;
@@ -294,7 +298,7 @@ private:
 
   static bool have_data() { return AOTReplayTraining;  } // Going to read
   static bool need_data() { return AOTRecordTraining;  } // Going to write
-  static bool assembling_data() { return have_data() && CDSConfig::is_dumping_final_static_archive() && CDSConfig::is_dumping_aot_linked_classes(); }
+  static bool assembling_data() { return have_data() && CDSConfig::is_dumping_aot_cache() && CDSConfig::is_dumping_aot_linked_classes(); }
 
   static bool is_klass_loaded(Klass* k) {
     if (have_data()) {
@@ -330,10 +334,12 @@ private:
   virtual void prepare(Visitor& visitor) = 0;
   virtual void merge(Visitor& visitor) = 0;
   virtual void cleanup(Visitor& visitor) = 0;
+  virtual void remove_invalid_references() = 0;
+  virtual bool is_valid() const = 0;
 
   static void initialize() NOT_CDS_RETURN;
 
-  static void verify();
+  static void verify() NOT_CDS_RETURN;
 
   // Widget for recording dependencies, as an N-to-M graph relation,
   // possibly cyclic.
@@ -353,15 +359,6 @@ private:
         }
         _deps = nullptr;
       }
-    }
-    void at_put(int i, E dep) const {
-      TrainingDataLocker::assert_locked_or_snapshotted();
-      assert(i >= 0 && i < length(), "oob");
-      if (_deps_dyn != nullptr) {
-        return _deps_dyn->at_put(i, dep);
-      } else if (_deps != nullptr) {
-        return _deps->at_put(i, dep);
-      } else ShouldNotReachHere();
     }
   public:
     DepList() {
@@ -384,6 +381,15 @@ private:
         return _deps->at(i);
       } else ShouldNotReachHere();
     }
+    void at_put(int i, E dep) const {
+      TrainingDataLocker::assert_locked_or_snapshotted();
+      assert(i >= 0 && i < length(), "oob");
+      if (_deps_dyn != nullptr) {
+        return _deps_dyn->at_put(i, dep);
+      } else if (_deps != nullptr) {
+        return _deps->at_put(i, dep);
+      } else ShouldNotReachHere();
+    }
     bool append_if_missing(E dep) {
       TrainingDataLocker::assert_can_add();
       copy_on_write_if_necessary();
@@ -404,7 +410,7 @@ private:
       return false;
     }
     void clear() {
-      TrainingDataLocker::assert_can_add();
+      TrainingDataLocker::assert_locked_or_snapshotted();
       if (_deps_dyn != nullptr)  {
         _deps_dyn->clear();
       }
@@ -441,6 +447,14 @@ private:
         append(new_dep);
       }
     }
+    void trunc_to(int length) {
+      TrainingDataLocker::assert_locked_or_snapshotted();
+      assert(length >= 0 && length <= this->length(), "oob");
+      if (length != this->length()) {
+        copy_on_write_if_necessary();
+        _deps_dyn->trunc_to(length);
+      }
+    }
 
 #if INCLUDE_CDS
     void remove_unshareable_info() {
@@ -475,7 +489,7 @@ private:
     return nullptr;
   }
 
-  static void cleanup_after_redefinition();
+  static void cleanup_after_redefinition() NOT_CDS_RETURN;
 };
 
 // Training data that is associated with an InstanceKlass
@@ -536,6 +550,8 @@ class KlassTrainingData : public TrainingData {
   virtual void prepare(Visitor& visitor);
   virtual void merge(Visitor& visitor);
   virtual void cleanup(Visitor& visitor) NOT_CDS_RETURN;
+  virtual void remove_invalid_references() NOT_CDS_RETURN;
+  virtual bool is_valid() const;
 
   MetaspaceObj::Type type() const {
     return KlassTrainingDataType;
@@ -564,8 +580,8 @@ class KlassTrainingData : public TrainingData {
   template<typename Function>
   void iterate_comp_deps(Function fn) const { // lambda enabled API
     TrainingDataLocker l;
-    for (int i = 0; i < comp_dep_count(); i++) {
-      fn(comp_dep(i));
+    for (int i = 0; i < _comp_deps.length(); i++) {
+      fn(_comp_deps.at(i));
     }
   }
 };
@@ -665,6 +681,7 @@ public:
       bool operator==(const Arguments<>&) const { return true; }
       void metaspace_pointers_do(MetaspaceClosure *iter) { }
       void prepare(Visitor& visitor) { }
+      bool is_valid() const { return true; }
     };
     template <typename T, typename... Ts> class Arguments<T, Ts...> {
     private:
@@ -698,6 +715,14 @@ public:
       void prepare(Visitor& visitor) {
         _remaining.prepare(visitor);
       }
+      template<typename U = T, ENABLE_IF(std::is_pointer<U>::value && std::is_base_of<TrainingData, typename std::remove_pointer<U>::type>::value)>
+      bool is_valid() const {
+        return (_first == nullptr || _first->is_valid()) && _remaining.is_valid();
+      }
+      template<typename U = T, ENABLE_IF(!(std::is_pointer<U>::value && std::is_base_of<TrainingData, typename std::remove_pointer<U>::type>::value))>
+      bool is_valid() const {
+        return _remaining.is_valid();
+      }
     };
 
     template <typename ReturnType, typename... Args> class ciMemoizedFunction : public StackObj {
@@ -723,6 +748,7 @@ public:
         bool operator==(const Record& that) { return _arguments == that._arguments; }
         void metaspace_pointers_do(MetaspaceClosure *iter) { _arguments.metaspace_pointers_do(iter); }
         void prepare(Visitor& visitor) { _arguments.prepare(visitor); }
+        bool is_valid() const { return _arguments.is_valid(); }
       };
       DepList<Record> _data;
     public:
@@ -752,6 +778,22 @@ public:
         }
         _data.prepare();
       }
+      void remove_invalid_references() {
+        int j = 0;
+        for (int i = 0; i < _data.length(); i++) {
+          Record record = _data.at(i);
+          if (record.is_valid()) {
+            if (i != j) {
+              _data.at_put(j, record);
+            }
+            j++;
+          }
+        }
+        _data.trunc_to(j);
+      }
+      void clear() {
+        _data.clear();
+      }
       void metaspace_pointers_do(MetaspaceClosure *iter) {
         _data.metaspace_pointers_do(iter);
       }
@@ -770,6 +812,12 @@ public:
 #endif
     void prepare(Visitor& visitor) {
       ciMethod__inline_instructions_size.prepare(visitor);
+    }
+    void remove_invalid_references() {
+      ciMethod__inline_instructions_size.remove_invalid_references();
+    }
+    void clear() {
+      ciMethod__inline_instructions_size.clear();
     }
     void metaspace_pointers_do(MetaspaceClosure *iter) {
       ciMethod__inline_instructions_size.metaspace_pointers_do(iter);
@@ -836,6 +884,9 @@ public:
   virtual void prepare(Visitor& visitor);
   virtual void merge(Visitor& visitor);
   virtual void cleanup(Visitor& visitor) NOT_CDS_RETURN;
+  virtual void remove_invalid_references() NOT_CDS_RETURN;
+  // Validity depends on the method's holder surviving cleanup.
+  virtual bool is_valid() const;
 
   void print_on(outputStream* st, bool name_only) const;
   virtual void print_on(outputStream* st) const { print_on(st, false); }
@@ -889,7 +940,6 @@ class MethodTrainingData : public TrainingData {
   };
   TrainingIteration _iterations[2]; // CURRENT and NEXT
   // metadata snapshots of final state:
-  MethodCounters* _final_counters;
   MethodData*     _final_profile;
 
   int _invocation_count;
@@ -971,6 +1021,8 @@ class MethodTrainingData : public TrainingData {
   virtual void prepare(Visitor& visitor);
   virtual void merge(Visitor& visitor);
   virtual void cleanup(Visitor& visitor) NOT_CDS_RETURN;
+  virtual void remove_invalid_references() NOT_CDS_RETURN;
+  virtual bool is_valid() const;
 
   template<typename Function>
   void iterate_compiles(Function fn) const { // lambda enabled API
@@ -1008,4 +1060,9 @@ class MethodTrainingData : public TrainingData {
     return TrainingData::allocate<MethodTrainingData>(m, ktd);
   }
 };
+
+inline bool KlassTrainingData::is_valid() const { return has_holder(); }
+inline bool CompileTrainingData::is_valid() const { return method()->has_holder(); }
+inline bool MethodTrainingData::is_valid() const { return has_holder(); }
+
 #endif // SHARE_OOPS_TRAININGDATA_HPP

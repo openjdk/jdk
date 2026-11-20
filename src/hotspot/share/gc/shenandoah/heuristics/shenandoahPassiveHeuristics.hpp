@@ -42,13 +42,10 @@ public:
 
   bool should_start_gc() override;
 
+protected:
   void choose_collection_set_from_regiondata(ShenandoahCollectionSet* set,
                                              RegionData* data, size_t data_size,
                                              size_t free) override;
-
-  const char* name() override     { return "Passive"; }
-  bool is_diagnostic() override   { return true; }
-  bool is_experimental() override { return false; }
 };
 
 #endif // SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHPASSIVEHEURISTICS_HPP

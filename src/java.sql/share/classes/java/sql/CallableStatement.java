@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1095,7 +1095,7 @@ public interface CallableStatement extends PreparedStatement {
      * or {@code Array}, the driver should pass it to the database as a
      * value of the corresponding SQL type.
      * <P>
-     * Note that this method may be used to pass datatabase-
+     * Note that this method may be used to pass database-
      * specific abstract data types.
      *
      * @param parameterName the name of the parameter

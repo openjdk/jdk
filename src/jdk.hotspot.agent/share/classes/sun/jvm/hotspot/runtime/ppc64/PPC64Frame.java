@@ -337,7 +337,25 @@ public class PPC64Frame extends Frame {
     Address unextendedSP = addressOfStackSlot(INTERPRETER_FRAME_SENDER_SP_OFFSET).getAddressAt(0);
     Address sp = getSenderSP();
 
-    return new PPC64Frame(sp, unextendedSP, getLink(), getSenderPC());
+    Address senderPC = getSenderPC();
+
+    if (Continuation.isReturnBarrierEntry(senderPC)) {
+      // We assume WalkContinuation is "WalkContinuation::skip".
+      // It is same with c'tor arguments of RegisterMap in frame::next_frame().
+      //
+      // frame::sender_for_interpreter_frame() in cpu/ppc/frame_ppc.cpp:
+      //
+      //   if (Continuation::is_return_barrier_entry(sender_pc)) {
+      //     if (map->walk_cont()) { // about to walk into an h-stack
+      //       return Continuation::top_frame(*this, map);
+      //     } else {
+      //       return Continuation::continuation_bottom_sender(map->thread(), *this, sender_sp);
+      //     }
+      //   }
+      return Continuation.continuationBottomSender(map.getThread(), this, sp);
+    }
+
+    return new PPC64Frame(sp, unextendedSP, getLink(), senderPC);
   }
 
   private Frame senderForCompiledFrame(PPC64RegisterMap map, CodeBlob cb) {

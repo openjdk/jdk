@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2025, NTT DATA
+ * Copyright (c) 2025, 2026, NTT DATA
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 /**
  * @test
- * @bug 8369505
+ * @bug 8369505 8396232
  * @requires vm.hasSA
  * @requires vm.gc != "Z"
  * @library /test/lib
@@ -61,6 +61,7 @@ public class TestJhsdbJstackWithVirtualThread {
 
         out.stderrShouldBeEmptyIgnoreVMWarnings();
         out.shouldNotContain("must have non-zero frame size");
+        out.shouldNotContain("Error occurred during stack walking");
     }
 
     public static void main(String... args) throws Exception {

@@ -130,7 +130,8 @@ public class ExternalSpecsWriter extends HtmlDocletWriter {
                         }
                         selectHost();
                         """).asContent())
-                .setFooter(getFooter()));
+                .setFooter(getFooter())
+                .toContent());
         printHtmlDocument(null, "external specifications", body);
 
         if (configuration.indexBuilder != null) {
