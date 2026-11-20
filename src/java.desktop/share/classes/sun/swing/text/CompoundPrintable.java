@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ class CompoundPrintable implements CountingPrintable {
         this.printables = new LinkedList<CountingPrintable>(printables);
     }
 
+    @Override
     public int print(final Graphics graphics,
                      final PageFormat pf,
                      final int pageIndex) throws PrinterException {
@@ -66,6 +67,7 @@ class CompoundPrintable implements CountingPrintable {
      *
      * @return the number of pages.
      */
+    @Override
     public int getNumberOfPages() {
         return offset;
     }
