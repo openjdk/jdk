@@ -3390,7 +3390,7 @@ int VM_Version::cpu_features_size() {
   return sizeof(VM_Features);
 }
 
-void VM_Version::store_cpu_features(void* buf) {
+void VM_Version::cpu_features_for_aot_cache(void* buf) {
   assert(is_aligned(buf, cpu_features_alignment()), "sanity check");
   VM_Features copy = _features.aot_code_cache_features();
   memcpy(buf, &copy, sizeof(VM_Features));

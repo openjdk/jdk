@@ -847,7 +847,7 @@ bool AOTCodeCache::Header::verify_cpu_features(AOTCodeCache* cache) const {
       ResourceMark rm; // required for stringStream::as_string()
       load_failure_log().print_cr("AOT Code Cache disabled: cpu features are incompatible");
       char* runtime_cpu_features = NEW_RESOURCE_ARRAY(char, VM_Version::cpu_features_size());
-      VM_Version::store_cpu_features(runtime_cpu_features);
+      VM_Version::cpu_features_for_aot_cache(runtime_cpu_features);
 
       stringStream missing_features;
       VM_Version::get_missing_features_name(cached_cpu_features_buffer, runtime_cpu_features, missing_features);
