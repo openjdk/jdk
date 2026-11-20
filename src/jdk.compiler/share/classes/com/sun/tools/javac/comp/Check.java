@@ -5843,6 +5843,8 @@ public class Check {
                 }
             }
             case JCTypeCast typeCast -> checkIfIdentityIsExpected(typeCast.clazz.pos(), typeCast.clazz.type, lint);
+            case JCRecordPattern recordPattern ->
+                checkIfIdentityIsExpected(recordPattern.deconstructor.pos(), recordPattern.deconstructor.type, lint);
             case JCBindingPattern bindingPattern -> {
                 if (bindingPattern.var.vartype != null) {
                     checkIfIdentityIsExpected(bindingPattern.var.vartype.pos(), bindingPattern.var.vartype.type, lint);

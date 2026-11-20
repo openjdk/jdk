@@ -1,6 +1,6 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 8354556
+ * @bug 8354556 8397894
  * @summary Expand value-based class warnings to java.lang.ref API
  * @compile --patch-module java.base=${test.src} RequiresIdentityHelper.java
  * @compile/fail/ref=RequiresIdentityTest.out --patch-module java.base=${test.src} -Werror -XDrawDiagnostics -Xlint:identity RequiresIdentityTest.java
@@ -86,5 +86,33 @@ public class RequiresIdentityTest extends RequiresIdentityHelper<Integer> // sho
         RequiresIdentityHelper<Object> var1 = new <Object>RequiresIdentityHelper<Object>(i);
         RequiresIdentityHelper<Object> var2 = new <Integer>RequiresIdentityHelper<Object>(o);
         RequiresIdentityHelper<Integer> var3 = new <Object>RequiresIdentityHelper<Integer>(o);
+    }
+
+    record RecordBox<T>(String label) {}
+    @SuppressWarnings("identity")
+    record Wrapper(RecordBox<RequiresIdentityHelper<Integer>> box) {}
+
+    boolean explicit(@SuppressWarnings("identity") RecordBox<RequiresIdentityHelper<Integer>> box) {
+        return box instanceof RecordBox<RequiresIdentityHelper<Integer>>(var label);
+    }
+
+    boolean inferred(@SuppressWarnings("identity") RecordBox<RequiresIdentityHelper<Integer>> box) {
+        return box instanceof RecordBox(var label);
+    }
+
+    boolean nested(Wrapper wrapper) {
+        return switch (wrapper) {
+            case Wrapper(RecordBox<RequiresIdentityHelper<Integer>>(var label)) -> true;
+            default -> false;
+        };
+    }
+
+    boolean valid(RecordBox<RequiresIdentityHelper<String>> box) {
+        return box instanceof RecordBox<RequiresIdentityHelper<String>>(var label);
+    }
+
+    @SuppressWarnings("identity")
+    boolean suppressed(RecordBox<RequiresIdentityHelper<Integer>> box) {
+        return box instanceof RecordBox<RequiresIdentityHelper<Integer>>(var label);
     }
 }
