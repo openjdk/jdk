@@ -2,6 +2,7 @@
  * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2024, Red Hat Inc. All rights reserved.
  * Copyright 2026 Arm Limited and/or its affiliates.
+ * Copyright 2024 IBM Corporation. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1977,10 +1978,6 @@ void MacroAssembler::lookup_secondary_supers_table_slow_path(Register r_sub_klas
     r_bitmap = noreg;
 
     bind(L_huge);
-
-  // mov(rscratch1, (uintptr_t)&blah);
-  // mov(r_array_index, 1);
-  // ldadd(xword, r_array_index, r_array_index, rscratch1);
 
     // Calculate an initial probe in the hash table.
     assert(Klass::full_hash_size() == sizeof (u2), "must be");

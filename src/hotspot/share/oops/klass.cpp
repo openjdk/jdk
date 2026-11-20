@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2024 IBM Corporation. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,12 +59,6 @@
 #include "utilities/quickSort.hpp"
 #include "utilities/rotate_bits.hpp"
 #include "utilities/stack.inline.hpp"
-
-#include <algorithm>
-#include <array>
-#include <functional>
-#include <iostream>
-#include <string_view>
 
 #if INCLUDE_JFR
 #include "jfr/jfr.hpp"
