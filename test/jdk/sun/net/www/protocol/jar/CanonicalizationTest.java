@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8197849
+ * @bug 8197849 8396940
  * @summary Sanity test the special canonicalization logic for jar resources
  *
  * @run main CanonicalizationTest
