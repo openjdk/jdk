@@ -77,10 +77,39 @@ public class ImagingLib {
     public static native int transformRaster(Raster src, Raster dst,
                                              double[] matrix,
                                              int interpType);
-    public static native int convolveBI(BufferedImage src, BufferedImage dst,
-                                        Kernel kernel, int edgeHint);
-    public static native int convolveRaster(Raster src, Raster dst,
-                                            Kernel kernel, int edgeHint);
+    public static native int convolveBINative(BufferedImage src, BufferedImage dst,
+                                        int width, int height, float[] data, int edgeHint);
+    public static int convolveBI(BufferedImage src, BufferedImage dst,
+                             Kernel kernel, int edgeHint) {
+        int width = kernel.getWidth();
+        int height = kernel.getHeight();
+        float[] data = kernel.getKernelData(null);
+
+        if (width <= 0 || height <= 0 ||
+                (long) width * height != data.length) {
+            return 0;
+        }
+
+        return convolveBINative(src, dst, width, height, data, edgeHint);
+    }
+
+    public static native int convolveRasterNative(Raster src, Raster dst,
+                                            int width, int height, float[] data, int edgeHint);
+
+    public static int convolveRaster(Raster src, Raster dst,
+                                 Kernel kernel, int edgeHint) {
+        int width = kernel.getWidth();
+        int height = kernel.getHeight();
+        float[] data = kernel.getKernelData(null);
+
+        if (width <= 0 || height <= 0 ||
+                (long) width * height != data.length) {
+            return 0;
+        }
+
+        return convolveRasterNative(src, dst, width, height, data, edgeHint);
+    }
+
     public static native int lookupByteBI(BufferedImage src, BufferedImage dst,
                                         byte[][] table);
     public static native int lookupByteRaster(Raster src, Raster dst,
@@ -180,13 +209,10 @@ public class ImagingLib {
 
           case CONVOLVE_OP:
             ConvolveOp cOp = (ConvolveOp) op;
-            if (convolveRaster(src, dst,
-                               cOp.getKernel(), cOp.getEdgeCondition()) > 0) {
+            if (convolveRaster(src, dst, cOp.getKernel(),
+                            cOp.getEdgeCondition()) > 0) {
                 retRaster = dst;
             }
-            break;
-
-          default:
             break;
         }
 
@@ -248,12 +274,9 @@ public class ImagingLib {
           case CONVOLVE_OP:
             ConvolveOp cOp = (ConvolveOp) op;
             if (convolveBI(src, dst, cOp.getKernel(),
-                           cOp.getEdgeCondition()) > 0) {
+                        cOp.getEdgeCondition()) > 0) {
                 retBI = dst;
             }
-            break;
-
-          default:
             break;
         }
 
