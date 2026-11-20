@@ -880,10 +880,14 @@ void PhaseCFG::needed_for_next_call(Block* block, Node* this_call, VectorSet& ne
 
 //------------------------------add_call_kills-------------------------------------
 // helper function that adds caller save registers to MachProjNode
-static void add_call_kills(MachProjNode *proj, RegMask& regs, const char* save_policy, bool exclude_soe) {
+static void add_call_kills(MachProjNode *proj, RegMask& regs, const char* save_policy, bool exclude_soe, bool stub_call = false) {
   // Fill in the kill mask for the call
   for( OptoReg::Name r = OptoReg::Name(0); r < _last_Mach_Reg; r=OptoReg::add(r,1) ) {
     if (!regs.member(r)) { // Not already defined by the call
+      // Stubs may preserve registers that the C calling convention does not.
+      if (stub_call && Matcher::is_reg_preserved_by_stub(r)) {
+        continue;
+      }
       // Save-on-call register?
       if ((save_policy[r] == 'C') ||
           (save_policy[r] == 'A') ||
@@ -974,7 +978,8 @@ uint PhaseCFG::sched_call(Block* block, uint node_cnt, Node_List<Node>& worklist
   // references but there no way to handle oops differently than other
   // pointers as far as the kill mask goes.
   bool exclude_soe = op == Op_CallRuntime;
-  add_call_kills(proj, regs, save_policy, exclude_soe);
+  bool stub_call = mcall->is_MachCallLeaf() && mcall->as_MachCallLeaf()->_no_egprs;
+  add_call_kills(proj, regs, save_policy, exclude_soe, stub_call);
 
   return node_cnt;
 }
