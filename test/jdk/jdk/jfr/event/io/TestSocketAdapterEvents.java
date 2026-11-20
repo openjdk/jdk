@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.ByteBuffer;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.time.Duration;
@@ -82,7 +83,8 @@ public class TestSocketAdapterEvents {
                     public void xrun() throws IOException {
                         byte[] bs = new byte[4];
                         try (SocketChannel sc = ssc.accept(); Socket s = sc.socket();
-                             InputStream is = s.getInputStream()) {
+                            InputStream is = s.getInputStream()) {
+                            OutputStream os = s.getOutputStream();
 
                             int readInt = is.read();
                             assertEquals(readInt, writeInt, "Wrong readInt");
@@ -99,8 +101,51 @@ public class TestSocketAdapterEvents {
                             // Try to read more, but writer have closed. Should
                             // get EOF.
                             readInt = is.read();
-                            assertEquals(readInt, -1, "Wrong readInt at EOF");
+                            assertEquals(readInt, -1, "Wrong readInt for read() at EOF");
                             addExpectedEvent(IOEvent.createSocketReadEvent(-1, s));
+
+                            s.close();
+                            try {
+                                readInt = is.read();
+                                throw new AssertionError("Missing ClosedChannelException for is.read()");
+                            } catch (ClosedChannelException cce) {
+                                addExpectedEvent(IOEvent.createSocketReadEvent(0, s));
+                            }
+
+                            try {
+                                readInt = is.read(bs);
+                                throw new AssertionError("Missing ClosedChannelException for is.read(byte[])");
+                            } catch (ClosedChannelException cce) {
+                                addExpectedEvent(IOEvent.createSocketReadEvent(0, s));
+                            }
+
+                            try {
+                                readInt = is.read(bs, 0, 3);
+                                throw new AssertionError("Missing ClosedChannelException for is.read(byte[], int, int)");
+                            } catch (ClosedChannelException cce) {
+                                addExpectedEvent(IOEvent.createSocketReadEvent(0, s));
+                            }
+
+                            try {
+                                os.write(42);
+                                throw new AssertionError("Missing ClosedChannelException for os.write(int)");
+                            } catch (ClosedChannelException cce) {
+                                addExpectedEvent(IOEvent.createSocketWriteEvent(0, s));
+                            }
+
+                            try {
+                                os.write(bs);
+                                throw new AssertionError("Missing ClosedChannelException for os.write(byte[])");
+                            } catch (ClosedChannelException cce) {
+                                addExpectedEvent(IOEvent.createSocketWriteEvent(0, s));
+                            }
+
+                            try {
+                                os.write(bs, 0, 3);
+                                throw new AssertionError("Missing ClosedChannelException for os.write(byte[], int, int)");
+                            } catch (ClosedChannelException cce) {
+                                addExpectedEvent(IOEvent.createSocketWriteEvent(0, s));
+                            }
                         }
                     }
                 });

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,9 @@ import static jdk.test.lib.Asserts.assertEquals;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.nio.ByteBuffer;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.time.Duration;
@@ -79,15 +81,16 @@ public class TestSocketChannelEvents {
                         ByteBuffer bufA = ByteBuffer.allocate(bufSizeA);
                         ByteBuffer bufB = ByteBuffer.allocate(bufSizeB);
                         try (SocketChannel sc = ssc.accept()) {
+                            Socket s = sc.socket();
                             int readSize = sc.read(bufA);
                             assertEquals(readSize, bufSizeA, "Wrong readSize bufA");
-                            addExpectedEvent(IOEvent.createSocketReadEvent(bufSizeA, sc.socket()));
+                            addExpectedEvent(IOEvent.createSocketReadEvent(bufSizeA, s));
 
                             bufA.clear();
                             bufA.limit(1);
                             readSize = (int) sc.read(new ByteBuffer[] { bufA, bufB });
                             assertEquals(readSize, 1 + bufSizeB, "Wrong readSize 1+bufB");
-                            addExpectedEvent(IOEvent.createSocketReadEvent(readSize, sc.socket()));
+                            addExpectedEvent(IOEvent.createSocketReadEvent(readSize, s));
 
                             // We try to read, but client have closed. Should
                             // get EOF.
@@ -95,7 +98,36 @@ public class TestSocketChannelEvents {
                             bufA.limit(1);
                             readSize = sc.read(bufA);
                             assertEquals(readSize, -1, "Wrong readSize at EOF");
-                            addExpectedEvent(IOEvent.createSocketReadEvent(-1, sc.socket()));
+                            addExpectedEvent(IOEvent.createSocketReadEvent(-1, s));
+
+                            sc.close();
+                            try {
+                                sc.read(bufA);
+                                throw new AssertionError("Missing ClosedChannelException for sc.read(ByteBuffer)");
+                            } catch (ClosedChannelException cce) {
+                                addExpectedEvent(IOEvent.createSocketReadEvent(0, s));
+                            }
+
+                            try {
+                                sc.read(new ByteBuffer[] { bufA, bufB }, 0, 2);
+                                throw new AssertionError("Missing ClosedChannelException for sc.read(ByteBuffer[], int, int)");
+                            } catch (ClosedChannelException cce) {
+                                addExpectedEvent(IOEvent.createSocketReadEvent(0, s));
+                            }
+
+                            try {
+                                sc.write(bufA);
+                                throw new AssertionError("Missing ClosedChannelException for sc.write(ByteBuffer)");
+                            } catch (ClosedChannelException cce) {
+                                addExpectedEvent(IOEvent.createSocketWriteEvent(0, s));
+                            }
+
+                            try {
+                                sc.write(new ByteBuffer[] { bufA, bufB }, 0, 2);
+                                throw new AssertionError("Missing ClosedChannelException for sc.write(ByteBuffer[], int, int)");
+                            } catch (ClosedChannelException cce) {
+                                addExpectedEvent(IOEvent.createSocketWriteEvent(0, s));
+                            }
                         }
                     }
                 });
