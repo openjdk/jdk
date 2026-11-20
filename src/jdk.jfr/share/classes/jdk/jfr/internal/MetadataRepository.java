@@ -299,8 +299,9 @@ public final class MetadataRepository {
 
     synchronized Instant updateLastMillis() {
         long chunkStart = JVMSupport.getChunkStartNanos();
-        lastMillis = Utils.epochNanosToInstant(chunkStart).toEpochMilli();
-        return Utils.epochNanosToInstant(chunkStart);
+        Instant instant =  Utils.epochNanosToInstant(chunkStart);
+        lastMillis = instant.toEpochMilli();
+        return instant;
     }
 
     // Lock around setOutput ensures that other threads don't
