@@ -83,9 +83,8 @@ JfrThreadLocal::JfrThreadLocal() :
   _dead(false),
   _sampling_critical_section(false)
 #ifdef LINUX
-  ,_cpu_timer(nullptr),
+  , _cpu_sampler_state(),
   _has_cpu_time_jfr_requests(false),
-  _cpu_time_jfr_queue(0),
   _do_async_processing_of_cpu_time_jfr_requests(false)
 #endif
   {
@@ -582,23 +581,8 @@ Arena* JfrThreadLocal::dcmd_arena(JavaThread* jt) {
 
 #ifdef LINUX
 
-void JfrThreadLocal::set_cpu_timer(timer_t* timer) {
-  if (_cpu_timer == nullptr) {
-    _cpu_timer = JfrCHeapObj::new_array<timer_t>(1);
-  }
-  *_cpu_timer = *timer;
-}
-
-void JfrThreadLocal::unset_cpu_timer() {
-  if (_cpu_timer != nullptr) {
-    timer_delete(*_cpu_timer);
-    JfrCHeapObj::free(_cpu_timer, sizeof(timer_t));
-    _cpu_timer = nullptr;
-  }
-}
-
-timer_t* JfrThreadLocal::cpu_timer() const {
-  return _cpu_timer;
+JfrCPUSamplerState& JfrThreadLocal::cpu_sampler_state() {
+  return _cpu_sampler_state;
 }
 
 void JfrThreadLocal::set_has_cpu_time_jfr_requests(bool has_requests) {
@@ -607,10 +591,6 @@ void JfrThreadLocal::set_has_cpu_time_jfr_requests(bool has_requests) {
 
 bool JfrThreadLocal::has_cpu_time_jfr_requests() {
   return AtomicAccess::load_acquire(&_has_cpu_time_jfr_requests);
-}
-
-JfrCPUTimeTraceQueue& JfrThreadLocal::cpu_time_jfr_queue() {
-  return _cpu_time_jfr_queue;
 }
 
 void JfrThreadLocal::set_do_async_processing_of_cpu_time_jfr_requests(bool wants) {
