@@ -219,8 +219,8 @@ public class ForkJoinWorkerThread extends Thread {
                 (q = wt.workQueue) != null &&
                 (i = q.source) >= 0 && // check local and current source queues
                 (((qs = p.queues) != null && qs.length > i &&
-                  (sq = qs[i]) != null && sq.top - sq.base > 0) ||
-                 q.top - q.base > 0));
+                  (sq = qs[i]) != null && sq.queueSize() > 0) ||
+                 q.queueSize() > 0));
     }
 
     /**
