@@ -38,6 +38,7 @@ class OopMap;
 class ciValueKlass;
 class SigEntry;
 class VMRegPair;
+class CompiledEntrySignature;
 
 class MacroAssembler: public Assembler {
  public:

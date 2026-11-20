@@ -2169,17 +2169,19 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     assert(vep_offset != -1,        "Must be set");
 #endif
 
+    CodeOffsets offsets;
+    offsets.set_value(CodeOffsets::Verified_Entry, vep_offset);
+    offsets.set_value(CodeOffsets::Frame_Complete, frame_complete);
+    offsets.set_value(CodeOffsets::Exceptions, exception_offset);
     // Code will be copied. No ICache sync required.
     nmethod* nm = nmethod::new_native_nmethod(method,
                                               compile_id,
                                               masm->code(),
-                                              vep_offset,
-                                              frame_complete,
+                                              offsets,
                                               stack_slots,
                                               in_ByteSize(-1),
                                               in_ByteSize(-1),
-                                              oop_maps,
-                                              exception_offset);
+                                              oop_maps);
     if (nm == nullptr) return nm;
     if (method->is_continuation_enter_intrinsic()) {
       ContinuationEntry::set_enter_code(nm, interpreted_entry_offset);
@@ -2200,11 +2202,13 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     int frame_complete = ((intptr_t)__ pc()) - start;  // not complete, period
     // Code will be copied. No ICache sync required.
     int stack_slots = SharedRuntime::out_preserve_stack_slots();  // no out slots at all, actually
+    CodeOffsets offsets;
+    offsets.set_value(CodeOffsets::Verified_Entry, vep_offset);
+    offsets.set_value(CodeOffsets::Frame_Complete, frame_complete);
     return nmethod::new_native_nmethod(method,
                                        compile_id,
                                        masm->code(),
-                                       vep_offset,
-                                       frame_complete,
+                                       offsets,
                                        stack_slots / VMRegImpl::slots_per_word,
                                        in_ByteSize(-1),
                                        in_ByteSize(-1),
@@ -2824,11 +2828,13 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
 
   // Code will be copied. No ICache sync required.
 
+  CodeOffsets offsets;
+  offsets.set_value(CodeOffsets::Verified_Entry, vep_start_pc-start_pc);
+  offsets.set_value(CodeOffsets::Frame_Complete, frame_done_pc-start_pc);
   nmethod *nm = nmethod::new_native_nmethod(method,
                                             compile_id,
                                             masm->code(),
-                                            vep_start_pc-start_pc,
-                                            frame_done_pc-start_pc,
+                                            offsets,
                                             stack_slots / VMRegImpl::slots_per_word,
                                             (method_is_static ? in_ByteSize(klass_offset) : in_ByteSize(receiver_offset)),
                                             in_ByteSize(lock_offset),
@@ -3875,6 +3881,12 @@ RuntimeStub* SharedRuntime::generate_return_value_stub(address destination) {
   Unimplemented();
   return nullptr;
 }
+
+RuntimeStub* SharedRuntime::generate_buffer_value_args_stub(address destination, bool allocate_receiver) {
+  Unimplemented();
+  return nullptr;
+}
+
 #if INCLUDE_JFR
 
 // For c2: c_rarg0 is junk, call to runtime to write a checkpoint.

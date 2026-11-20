@@ -177,8 +177,8 @@ static void set_immediate(nmethod* nm, jint val, int bit_mask) {
   if (!nm->is_osr_method() && nm->method()->has_scalarized_args()) {
     // nmethods with scalarized arguments have multiple entry points that each have an own nmethod entry barrier
     assert(nm->verified_entry_point() != nm->verified_value_entry_point(), "scalarized entry point not found");
-    address method_body = nm->is_compiled_by_c1() ? nm->verified_value_entry_point() : nm->verified_entry_point();
-    address entry_point2 = nm->is_compiled_by_c1() ? nm->verified_entry_point() : nm->verified_value_entry_point();
+    address method_body = (nm->is_compiled_by_c1() || nm->is_native_method()) ? nm->verified_value_entry_point() : nm->verified_entry_point();
+    address entry_point2 = (nm->is_compiled_by_c1() || nm->is_native_method()) ? nm->verified_entry_point() : nm->verified_value_entry_point();
 
     int barrier_offset = reinterpret_cast<address>(cmp1) - method_body;
     NativeNMethodCmpBarrier* cmp2 = reinterpret_cast<NativeNMethodCmpBarrier*>(entry_point2 + barrier_offset);

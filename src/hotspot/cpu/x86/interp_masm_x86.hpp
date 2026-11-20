@@ -197,6 +197,8 @@ class InterpreterMacroAssembler: public MacroAssembler {
   // narrow int return value
   void narrow(Register result);
 
+  void return_value_as_fields();
+
   // Returning from interpreted functions
   //
   // Removes the current activation (incl. unlocking of monitors)

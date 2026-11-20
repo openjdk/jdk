@@ -88,6 +88,7 @@
   );
 
   void null_check(Register r, Label *Lnull = nullptr);
+  void build_frame_helper(int frame_size_in_bytes, int sp_offset_for_orig_pc, bool reset_orig_pc);
 
 
 #endif // CPU_PPC_C1_MACROASSEMBLER_PPC_HPP

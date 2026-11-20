@@ -516,6 +516,20 @@ ValueKlass* SignatureStream::as_value_klass(InstanceKlass* holder) {
   }
 }
 
+bool SignatureStream::maybe_value_klass(InstanceKlass* holder) {
+  assert(ValueTypePassFieldsAsArgs || ValueTypeReturnedAsFields, "Not needed");
+  if (!is_reference()) {
+    return false;
+  }
+  ThreadInVMfromUnknown tiv;
+  JavaThread* THREAD = JavaThread::current();
+  HandleMark hm(THREAD);
+  Handle class_loader(THREAD, holder->class_loader());
+  Klass* k = as_klass(class_loader, SignatureStream::CachedOrNull, THREAD);
+  assert(!HAS_PENDING_EXCEPTION, "Should never throw");
+  return k == nullptr || k->is_value_klass();
+}
+
 Klass* SignatureStream::as_klass(Handle class_loader, FailureMode failure_mode, TRAPS) {
   if (!is_reference()) {
     return nullptr;

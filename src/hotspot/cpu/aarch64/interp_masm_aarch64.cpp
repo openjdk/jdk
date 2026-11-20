@@ -484,6 +484,12 @@ void InterpreterMacroAssembler::dispatch_via(TosState state, address* table) {
   dispatch_base(state, table);
 }
 
+void InterpreterMacroAssembler::return_value_as_fields() {
+  maybe_return_value_as_fields();
+  // Check above kills sender esp in rscratch2. Reload it.
+  ldr(rscratch2, Address(rfp, frame::interpreter_frame_sender_sp_offset * wordSize));
+}
+
 // remove activation
 //
 // Unlock the receiver if this is a synchronized method.
@@ -688,35 +694,7 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
   }
 
   if (state == atos && ValueTypeReturnedAsFields) {
-    Label skip;
-    Label not_null;
-    cbnz(r0, not_null);
-    // Returned value is null, zero all return registers because they may belong to oop fields
-    mov(j_rarg0, zr);
-    mov(j_rarg1, zr);
-    mov(j_rarg2, zr);
-    mov(j_rarg3, zr);
-    mov(j_rarg4, zr);
-    mov(j_rarg5, zr);
-    mov(j_rarg6, zr);
-    mov(j_rarg7, zr);
-    b(skip);
-    bind(not_null);
-
-    // Check if we are returning a non-null value type and load its fields into registers
-    test_oop_is_not_value_type(r0, rscratch2, skip, /* can_be_null= */ false);
-
-    // Load fields from a buffered value with a value class specific handler
-    load_klass(rscratch1 /*dst*/, r0 /*src*/, rscratch2 /*tmp*/);
-    ldr(rscratch1, Address(rscratch1, ValueKlass::adr_members_offset()));
-    ldr(rscratch1, Address(rscratch1, ValueKlass::unpack_handler_offset()));
-    // Unpack handler can be null if value type is not scalarizable in returns
-    cbz(rscratch1, skip);
-
-    blr(rscratch1);
-    bind(skip);
-    // Check above kills sender esp in rscratch2. Reload it.
-    ldr(rscratch2, Address(rfp, frame::interpreter_frame_sender_sp_offset * wordSize));
+    return_value_as_fields();
   }
 
   // remove frame anchor

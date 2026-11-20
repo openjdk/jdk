@@ -65,5 +65,6 @@
 
   // This platform only uses signal-based null checks. The Label is not needed.
   void null_check(Register r, Label *Lnull = nullptr) { MacroAssembler::null_check(r); }
+  void build_frame_helper(int frame_size_in_bytes, int sp_offset_for_orig_pc, bool reset_orig_pc);
 
 #endif // CPU_ARM_C1_MACROASSEMBLER_ARM_HPP

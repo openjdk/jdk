@@ -120,11 +120,11 @@ class NativeNMethodBarrier {
     // points, each with their own nmethod entry barrier.
     if (!nm->is_osr_method() && nm->method()->has_scalarized_args()) {
       assert(nm->verified_entry_point() != nm->verified_value_entry_point(), "scalarized entry point not found");
-      address method_body = nm->is_compiled_by_c1() ? nm->verified_value_entry_point() : nm->verified_entry_point();
+      address method_body = (nm->is_compiled_by_c1() || nm->is_native_method()) ? nm->verified_value_entry_point() : nm->verified_entry_point();
       int barrier_offset = _default_entry_instruction - method_body;
 
       // Set the first alternative entry point.
-      address entry_point2 = nm->is_compiled_by_c1() ? nm->verified_entry_point() : nm->verified_value_entry_point();
+      address entry_point2 = (nm->is_compiled_by_c1() || nm->is_native_method()) ? nm->verified_entry_point() : nm->verified_value_entry_point();
       _verified_alt1_instruction = entry_point2 + barrier_offset;
       assert(_default_entry_instruction != _verified_alt1_instruction, "sanity");
       _verified_alt1_guard = decode_guard_from_instruction(nm, _verified_alt1_instruction);
