@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,14 @@
 
 /**
  * @test
- * @bug 8214114
+ * @bug 8214114 8396810 8396813
  * @summary Verify try-catch inside a switch expression works properly.
  * @compile TryCatch.java
  * @run main TryCatch
  */
+
+import java.util.Objects;
+
 public class TryCatch {
     public static void main(String[] args) {
         {
@@ -326,6 +329,57 @@ public class TryCatch {
                 throw new AssertionError("Unexpected result: " + res);
             }
         }
+        {
+            int[] variants = new int[] {0, 1, 2};
+            long[] exp = new long[] {100, 1, 1000};
+            interface MethodPrototype {
+                public long run(long a, int v);
+            }
+            MethodPrototype[] methods = new MethodPrototype[] {
+                new TryCatch()::switchTargetType1,
+                new TryCatch()::switchTargetType2
+            };
+
+            for (MethodPrototype method : methods) {
+                for (int i = 0; i < variants.length; i++) {
+                    long res = method.run(10_000L, variants[i]);
+
+                    if (res != exp[i] + 10_000L) {
+                        throw new AssertionError("Unexpected result: " + res);
+                    }
+                }
+            }
+        }
+        {
+            int[] variants = new int[] {0, 1, 2};
+            float[] exp = new float[] {100, 1, 1000};
+            interface MethodPrototype {
+                public float run(float a, int v);
+            }
+            MethodPrototype[] methods = new MethodPrototype[] {
+                new TryCatch()::switchTargetType3,
+                new TryCatch()::switchTargetType4
+            };
+
+            for (MethodPrototype method : methods) {
+                for (int i = 0; i < variants.length; i++) {
+                    float res = method.run(10_000, variants[i]);
+
+                    if (res != exp[i] + 10_000) {
+                        throw new AssertionError("Unexpected result: " + res);
+                    }
+                }
+            }
+        }
+
+        assertEquals("test", testCastedSwitchExpression(0, "test"));
+
+        try {
+            testCastedSwitchExpression(0, 1);
+            throw new AssertionError("Expected a ClassCastException, but got none.");
+        } catch (ClassCastException cce) {
+            //ok
+        }
     }
 
     static class FieldHolder {
@@ -403,6 +457,70 @@ public class TryCatch {
         };
     }
 
+    long switchTargetType1(long a, int v) {
+        return switch (v) {
+            case 0, 1 -> {
+                try {
+                    yield idOrThrow(v);
+                } catch (Exception e) {
+                    yield 100;
+                }
+            }
+            default -> 1_000;
+        } + a;
+    }
+
+    long switchTargetType2(long a, int v) {
+        return a + switch (v) {
+            case 0, 1 -> {
+                try {
+                    yield idOrThrow(v);
+                } catch (Exception e) {
+                    yield 100;
+                }
+            }
+            default -> 1_000;
+        };
+    }
+
+    float switchTargetType3(float a, int v) {
+        return switch (v) {
+            case 0, 1 -> {
+                try {
+                    yield idOrThrow(v);
+                } catch (Exception e) {
+                    yield 100;
+                }
+            }
+            default -> 1_000;
+        } + a;
+    }
+
+    float switchTargetType4(float a, int v) {
+        return a + switch (v) {
+            case 0, 1 -> {
+                try {
+                    yield idOrThrow(v);
+                } catch (Exception e) {
+                    yield 100;
+                }
+            }
+            default -> 1_000;
+        };
+    }
+
+    static String testCastedSwitchExpression(int i, Object value) {
+        return (String) switch (i) {
+            default -> {
+                try {
+                    yield value;
+                } catch (RuntimeException e) {
+                    yield "fallback";
+                }
+            }
+        };
+    }
+
     private int id(int i) {
         return i;
     }
@@ -414,6 +532,21 @@ public class TryCatch {
     private void throwException() {
         throw new RuntimeException();
     }
+
+    private int idOrThrow(int i) {
+        if (i == 0) {
+            throw new RuntimeException();
+        }
+        return i;
+    }
+
+    private static void assertEquals(Object expected, Object actual) {
+        if (!Objects.equals(expected, actual)) {
+            throw new AssertionError("Expected: " + expected +
+                                     ", actual: " + actual);
+        }
+    }
+
     enum E {
         A, B, C;
         public E next() {
