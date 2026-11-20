@@ -105,7 +105,7 @@ public interface StackFrame extends Mirror, Locatable {
      * @apiNote The instance fields of {@linkplain Class#isValue() value classes}
      * are strictly-initialized. Consequently, {@link OpaqueFrameException} will be
      * thrown if this stack frame is for a constructor whose declaring class or any of its
-     * superclasses is a value class.
+     * superclasses is a value class with one or more instance fields.
      *
      * @return an {@link ObjectReference}, or null if the frame represents
      * a native or static method.
