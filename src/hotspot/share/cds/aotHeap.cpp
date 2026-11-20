@@ -614,6 +614,11 @@ bool AOTHeap::archive_object(oop obj, oop referrer, KlassSubGraphInfo* subgraph_
     return true;
   }
 
+  if (java_lang_String::is_instance(obj) &&
+      java_lang_String::equals(obj, "InternedStringSharedValueTestApp", 32)) {
+    tty->print_cr("Hello");
+  }
+
   if (is_too_large_to_archive(obj)) {
     log_debug(aot, heap)("Cannot archive, object (" PTR_FORMAT ") is too large: %zu",
                          p2i(obj), obj->size());
