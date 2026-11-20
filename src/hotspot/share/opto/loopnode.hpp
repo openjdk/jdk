@@ -1052,7 +1052,7 @@ public:
   Node* deepest_ctrl_of_inputs(Node* n, Node* early, uint start);
   Node* get_early_ctrl_of_data_inputs(Node* n);
   Node* get_early_ctrl(Node* n);
-  Node* get_early_ctrl_for_expensive(Node* n, Node* earliest);
+  Node* find_ctrl_input_for_expensive(Node* n, Node* earliest);
   void hoist_expensive_node(Node* n);
   void optimize_and_set_early_ctrl(Node* n, bool update_body);
   void set_subtree_ctrl(Node* n, bool update_body);

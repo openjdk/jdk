@@ -156,7 +156,7 @@ Node* PhaseIdealLoop::get_early_ctrl_of_data_inputs(Node* n) {
 }
 
 // How far up the dominator tree an expensive node may move.
-Node* PhaseIdealLoop::get_early_ctrl_for_expensive(Node* n, Node* earliest) {
+Node* PhaseIdealLoop::find_ctrl_input_for_expensive(Node* n, Node* earliest) {
   assert(n->in(0) && n->is_expensive(), "expensive node with control input here");
   assert(OptimizeExpensiveOps, "optimization off?");
 
@@ -165,8 +165,8 @@ Node* PhaseIdealLoop::get_early_ctrl_for_expensive(Node* n, Node* earliest) {
   uint min_dom_depth = dom_depth(earliest);
 #ifdef ASSERT
   if (!is_dominator(ctl, earliest) && !is_dominator(earliest, ctl)) {
-    dump_bad_graph("Bad graph detected in get_early_ctrl_for_expensive", n, earliest, ctl);
-    assert(false, "Bad graph detected in get_early_ctrl_for_expensive");
+    dump_bad_graph("Bad graph detected in find_ctrl_input_for_expensive", n, earliest, ctl);
+    assert(false, "Bad graph detected in find_ctrl_input_for_expensive");
   }
 #endif
   if (dom_depth(ctl) < min_dom_depth) {
@@ -247,7 +247,7 @@ Node* PhaseIdealLoop::get_early_ctrl_for_expensive(Node* n, Node* earliest) {
 void PhaseIdealLoop::hoist_expensive_node(Node* n) {
   assert(n->is_expensive(), "only for expensive nodes");
   assert(!_verify_only && _verify_me == nullptr, "must not modify the graph when verifying");
-  Node* ctl = get_early_ctrl_for_expensive(n, get_early_ctrl_of_data_inputs(n));
+  Node* ctl = find_ctrl_input_for_expensive(n, get_early_ctrl_of_data_inputs(n));
   if (ctl != n->in(0)) {
     _igvn.replace_input_of(n, 0, ctl);
     _igvn.hash_insert(n);
