@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -823,14 +823,31 @@ public final class Float16
 
     /**
      * {@return the value of this {@code Float16} as a {@code short}
-     * after a narrowing primitive conversion}
+     * after a direct conversion to {@code short}}
      *
-     * @jls 5.1.3 Narrowing Primitive Conversion
+     * {@code Float16} values numerically greater than or equal to
+     * {@link Short#MAX_VALUE} are mapped to {@code Short.MAX_VALUE}.
+     * {@code Float16} values numerically less than or equal to
+     * {@link Short#MIN_VALUE} are mapped to {@code Short.MIN_VALUE}.
+     * A {@code Float16} NaN value is mapped to 0.
+     * Otherwise, the floating-point value is rounded to an integer
+     * value using the round toward zero rounding policy and this
+     * value is returned as a {@code short}.
+     *
+     * @apiNote
+     * The semantics of this method differ from a Java language
+     * narrowing primitive conversion (JLS {@jls 5.1.3}) to {@code
+     * short} since that conversion would require an intermediate step
+     * of converting the {@code Float16} value to {@code int} before
+     * converting the {@code int} to {@code short}. An intermeidate
+     * conversion to {@code int} could yield different results for
+     * {@code Float16} values larger in magnitude than {@link
+     * Short#MAX_VALUE}.
      */
     @Override
     @ForceInline
     public short shortValue() {
-        return (short)floatValue();
+        return (short)Math.clamp(intValue(), Short.MIN_VALUE, Short.MAX_VALUE);
     }
 
     /**
