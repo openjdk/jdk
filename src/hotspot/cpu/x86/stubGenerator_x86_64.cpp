@@ -4934,6 +4934,7 @@ address StubGenerator::generate_lookup_secondary_supers_table_slow_path_stub() {
 
   Label L_success;
   __ lookup_secondary_supers_table_slow_path(r_super_klass, r_array_base, r_array_index, r_bitmap,
+                                             r_sub_klass,
                                              rcx, rdi, // temps
                                              &L_success);
   // bind(L_failure);

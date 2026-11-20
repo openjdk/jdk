@@ -1183,7 +1183,8 @@ public:
                                      Register temp2,
                                      Register result);
 
-  void lookup_secondary_supers_table_slow_path(Register r_super_klass,
+  void lookup_secondary_supers_table_slow_path(Register r_sub_klass,
+                                               Register r_super_klass,
                                                Register r_array_base,
                                                Register r_array_index,
                                                Register r_bitmap,
