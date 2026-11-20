@@ -28,43 +28,43 @@
 #include "memory/memoryReserver.hpp"
 #include "utilities/spinYield.hpp"
 
-bool ShenandoahTaskQueueChunk::is_empty() {
+bool ShenandoahTaskQueueStack::is_empty() {
   return _top == 0;
 }
 
-void ShenandoahTaskQueueChunk::clear() {
+void ShenandoahTaskQueueStack::clear() {
   _top = 0;
 }
 
 ShenandoahTaskQueue::ShenandoahTaskQueue(ShenandoahTaskQueueSet* qs) :
   _qs(qs) {
-  _chunk = _qs->flip_from_free();
+  _stack = _qs->flip_from_free();
 }
 
 ShenandoahTaskQueue::~ShenandoahTaskQueue() {
-  _chunk->clear();
-  _qs->flip_to_free(_chunk);
+  _stack->clear();
+  _qs->flip_to_free(_stack);
 }
 
 bool ShenandoahTaskQueue::is_empty() {
-  return _chunk->is_empty();
+  return _stack->is_empty();
 }
 
 void ShenandoahTaskQueue::clear() {
-  _chunk->clear();
+  _stack->clear();
 }
 
 void ShenandoahTaskQueue::flush_to_shared() {
-  if (!_chunk->is_empty()) {
-    _qs->flip_to_shared(_chunk);
-    _chunk = _qs->flip_from_free();
+  if (!_stack->is_empty()) {
+    _qs->flip_to_shared(_stack);
+    _stack = _qs->flip_from_free();
   }
 }
 
 void ShenandoahTaskQueue::compact() {
-  if (_chunk->is_empty()) {
-    _qs->flip_to_free(_chunk);
-    _chunk = _qs->flip_from_free();
+  if (_stack->is_empty()) {
+    _qs->flip_to_free(_stack);
+    _stack = _qs->flip_from_free();
   }
 }
 
@@ -89,14 +89,14 @@ void ShenandoahTaskQueueSegment::destroy(ShenandoahTaskQueueSegment* seg) {
 ShenandoahTaskQueueSegment::ShenandoahTaskQueueSegment(size_t seg_idx, ReservedSpace& rs) :
   _free_bm(right_n_bits(SEGMENT_SIZE)), _shared_bm(0), _rs(rs) {
   for (size_t i = 0; i < SEGMENT_SIZE; i++) {
-    ::new (&_chunks[i]) ShenandoahTaskQueueChunk((seg_idx << SEGMENT_SIZE_SHIFT) + i);
+    ::new (&_stacks[i]) ShenandoahTaskQueueStack((seg_idx << SEGMENT_SIZE_SHIFT) + i);
   }
 }
 
 void ShenandoahTaskQueueSegment::clear() {
   uint64_t shared = _shared_bm.load_relaxed();
   for (uint64_t m = shared; m != 0; m &= m - 1) {
-    _chunks[count_trailing_zeros(m)].clear();
+    _stacks[count_trailing_zeros(m)].clear();
   }
   _shared_bm.store_relaxed(0);
   _free_bm.store_relaxed(_free_bm.load_relaxed() | shared);
@@ -113,8 +113,8 @@ ShenandoahTaskQueueSet::ShenandoahTaskQueueSet(uint queue_count) :
   _shared_count(0) {
 
   // Size up for the absolute worst case: one 8-byte task per smallest 8-byte object
-  size_t alignment = MAX3(CHUNK_SIZE, os::vm_allocation_granularity(), os::vm_page_size());
-  _max_segments = align_up(MaxHeapSize, alignment) / CHUNK_SIZE / ShenandoahTaskQueueSegment::SEGMENT_SIZE;
+  size_t alignment = MAX3(STACK_SIZE, os::vm_allocation_granularity(), os::vm_page_size());
+  _max_segments = align_up(MaxHeapSize, alignment) / STACK_SIZE / ShenandoahTaskQueueSegment::SEGMENT_SIZE;
   _segments = NEW_C_HEAP_ARRAY(ShenandoahTaskQueueSegment*, _max_segments, mtGC);
   memset(_segments, 0, _max_segments * sizeof(ShenandoahTaskQueueSegment*));
 

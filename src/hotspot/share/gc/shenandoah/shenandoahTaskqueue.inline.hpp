@@ -30,71 +30,71 @@
 #include "gc/shenandoah/shenandoahTaskqueue.hpp"
 
 void ShenandoahTaskQueue::push(ShenandoahTask task) {
-  if (!_chunk->push(task)) {
-    _qs->flip_to_shared(_chunk);
-    _chunk = _qs->flip_from_free();
-    bool succ = _chunk->push(task);
+  if (!_stack->push(task)) {
+    _qs->flip_to_shared(_stack);
+    _stack = _qs->flip_from_free();
+    bool succ = _stack->push(task);
     assert(succ, "Must succeed");
   }
 }
 
 bool ShenandoahTaskQueue::pop(ShenandoahTask& task) {
-  if (_chunk->pop(task)) {
+  if (_stack->pop(task)) {
     return true;
   }
 
   auto chunk = _qs->flip_from_shared();
   if (chunk != nullptr) {
-    _qs->flip_to_free(_chunk);
-    _chunk = chunk;
-    return _chunk->pop(task);
+    _qs->flip_to_free(_stack);
+    _stack = chunk;
+    return _stack->pop(task);
   }
 
   return false;
 }
 
 inline void ShenandoahTaskQueue::share_work() {
-  if (_chunk->is_sliceable()) {
+  if (_stack->is_sliceable()) {
     auto top_chunk = _qs->flip_from_free();
-    _chunk->slice_top(top_chunk);
-    _qs->flip_to_shared(_chunk);
-    _chunk = top_chunk;
+    _stack->slice_top(top_chunk);
+    _qs->flip_to_shared(_stack);
+    _stack = top_chunk;
   }
 }
 
-inline ShenandoahTaskQueueChunk* ShenandoahTaskQueueSegment::flip_from(Atomic<uint64_t>* bm) {
+inline ShenandoahTaskQueueStack* ShenandoahTaskQueueSegment::flip_from(Atomic<uint64_t>* bm) {
   uint64_t cur = bm->load_relaxed();
   while (cur != 0) {
     int idx = count_trailing_zeros(cur);
     uint64_t prev = bm->compare_exchange(cur, cur & ~nth_bit(idx));
     if (prev == cur) {
-      return &_chunks[idx];
+      return &_stacks[idx];
     }
     cur = prev;
   }
   return nullptr;
 }
 
-inline void ShenandoahTaskQueueSegment::flip_to(ShenandoahTaskQueueChunk* chunk, Atomic<uint64_t>* bm) {
+inline void ShenandoahTaskQueueSegment::flip_to(ShenandoahTaskQueueStack* chunk, Atomic<uint64_t>* bm) {
   int local_idx = checked_cast<int>(chunk->index() & (SEGMENT_SIZE - 1));
   uint64_t mask = nth_bit<uint64_t>(local_idx);
   uint64_t prev = bm->fetch_then_or(mask);
   assert((prev & mask) == 0, "Must not have been set");
 }
 
-ShenandoahTaskQueueChunk* ShenandoahTaskQueueSegment::flip_from_shared() {
+ShenandoahTaskQueueStack* ShenandoahTaskQueueSegment::flip_from_shared() {
   return flip_from(&_shared_bm);
 }
 
-ShenandoahTaskQueueChunk* ShenandoahTaskQueueSegment::flip_from_free() {
+ShenandoahTaskQueueStack* ShenandoahTaskQueueSegment::flip_from_free() {
   return flip_from(&_free_bm);
 }
 
-void ShenandoahTaskQueueSegment::flip_to_shared(ShenandoahTaskQueueChunk* chunk) {
+void ShenandoahTaskQueueSegment::flip_to_shared(ShenandoahTaskQueueStack* chunk) {
   flip_to(chunk, &_shared_bm);
 }
 
-void ShenandoahTaskQueueSegment::flip_to_free(ShenandoahTaskQueueChunk* chunk) {
+void ShenandoahTaskQueueSegment::flip_to_free(ShenandoahTaskQueueStack* chunk) {
   flip_to(chunk, &_free_bm);
 }
 
@@ -102,7 +102,7 @@ inline bool ShenandoahTaskQueueSet::is_shared_empty() {
   return _shared_count.load_relaxed() == 0;
 }
 
-inline ShenandoahTaskQueueChunk* ShenandoahTaskQueueSet::flip_from_shared() {
+inline ShenandoahTaskQueueStack* ShenandoahTaskQueueSet::flip_from_shared() {
   if (_shared_count.load_relaxed() == 0) {
     return nullptr;
   }
@@ -117,7 +117,7 @@ inline ShenandoahTaskQueueChunk* ShenandoahTaskQueueSet::flip_from_shared() {
   return nullptr;
 }
 
-inline ShenandoahTaskQueueChunk* ShenandoahTaskQueueSet::flip_from_free() {
+inline ShenandoahTaskQueueStack* ShenandoahTaskQueueSet::flip_from_free() {
   while (true) {
     size_t n = _num_segments.load_acquire();
     for (size_t s = 0; s < n; s++) {
@@ -130,7 +130,7 @@ inline ShenandoahTaskQueueChunk* ShenandoahTaskQueueSet::flip_from_free() {
   }
 }
 
-inline void ShenandoahTaskQueueSet::flip_to_shared(ShenandoahTaskQueueChunk* chunk) {
+inline void ShenandoahTaskQueueSet::flip_to_shared(ShenandoahTaskQueueStack* chunk) {
   assert(!chunk->is_empty(), "Do not share empty chunks");
   // For the sake of proper termination, we need to bump shared work count
   // before publishing the chunk.
@@ -141,7 +141,7 @@ inline void ShenandoahTaskQueueSet::flip_to_shared(ShenandoahTaskQueueChunk* chu
   seg->flip_to_shared(chunk);
 }
 
-inline void ShenandoahTaskQueueSet::flip_to_free(ShenandoahTaskQueueChunk* chunk) {
+inline void ShenandoahTaskQueueSet::flip_to_free(ShenandoahTaskQueueStack* chunk) {
   assert(chunk->is_empty(), "Do not free non-empty chunks");
   size_t sub_idx = chunk->index() >> ShenandoahTaskQueueSegment::SEGMENT_SIZE_SHIFT;
   auto seg = _segments[sub_idx];
@@ -149,7 +149,7 @@ inline void ShenandoahTaskQueueSet::flip_to_free(ShenandoahTaskQueueChunk* chunk
   seg->flip_to_free(chunk);
 }
 
-bool ShenandoahTaskQueueChunk::push(ShenandoahTask t) {
+bool ShenandoahTaskQueueStack::push(ShenandoahTask t) {
   if (_top < MAX_SIZE) {
     _tasks[_top++] = t;
     return true;
@@ -157,7 +157,7 @@ bool ShenandoahTaskQueueChunk::push(ShenandoahTask t) {
   return false;
 }
 
-bool ShenandoahTaskQueueChunk::pop(ShenandoahTask& t) {
+bool ShenandoahTaskQueueStack::pop(ShenandoahTask& t) {
   if (_top > 0) {
     t = _tasks[--_top];
     return true;
@@ -165,7 +165,7 @@ bool ShenandoahTaskQueueChunk::pop(ShenandoahTask& t) {
   return false;
 }
 
-inline void ShenandoahTaskQueueChunk::slice_top(ShenandoahTaskQueueChunk* to_chunk) {
+inline void ShenandoahTaskQueueStack::slice_top(ShenandoahTaskQueueStack* to_chunk) {
   assert(is_sliceable(), "Filtered by caller");
   assert(to_chunk->is_empty(), "Must be empty");
   size_t slice = _top / 2;
@@ -174,7 +174,7 @@ inline void ShenandoahTaskQueueChunk::slice_top(ShenandoahTaskQueueChunk* to_chu
   memcpy(to_chunk->_tasks, &_tasks[_top], slice * sizeof(ShenandoahTask));
 }
 
-inline bool ShenandoahTaskQueueChunk::is_sliceable() {
+inline bool ShenandoahTaskQueueStack::is_sliceable() {
   return _top >= MIN_SIZE * 2;
 }
 

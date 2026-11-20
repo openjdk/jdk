@@ -273,11 +273,15 @@ public:
 #pragma warning(pop)
 #endif
 
-class ShenandoahTaskQueueChunk {
-  // Target 1x4K page per chunk for full chunks.
+// Stack is the unit of load balancing.
+//
+// Each stack can be:
+//   used:   currently in use by a single thread
+//   shared: not in use by any thread, has tasks to share
+//   free:   not in use by any thread, has no tasks
+//
+class ShenandoahTaskQueueStack {
   static const int MAX_SIZE = 510;
-
-  // Split the chunks down to this size if needed.
   static const int MIN_SIZE = 1;
 
   size_t _top;
@@ -285,8 +289,8 @@ class ShenandoahTaskQueueChunk {
   size_t _index;
 
 public:
-  ShenandoahTaskQueueChunk() {}
-  ShenandoahTaskQueueChunk(size_t index) : _top(0), _index(index) {}
+  ShenandoahTaskQueueStack() {}
+  ShenandoahTaskQueueStack(size_t index) : _top(0), _index(index) {}
 
   ALWAYSINLINE
   bool push(ShenandoahTask t);
@@ -300,12 +304,56 @@ public:
   size_t index() { return _index; }
 
   bool is_sliceable();
-  void slice_top(ShenandoahTaskQueueChunk* to_chunk);
+  void slice_top(ShenandoahTaskQueueStack* to_chunk);
 };
 
+// Segment is the unit of allocation.
+//
+// Each segment is committed in full, carries the storage for stacks, plus small bitmaps
+// that describe the stack state. Segment is aligned by its size, which prevents false sharing
+// between adjacent segments and any chunks within the segment or outside the segment.
+//
+class ShenandoahTaskQueueSegment {
+public:
+  static const int SEGMENT_SIZE_SHIFT = 6;
+  static const int SEGMENT_SIZE = 1 << SEGMENT_SIZE_SHIFT;
+  static_assert(SEGMENT_SIZE <= 64, "Bitmap encoding");
+
+  ShenandoahTaskQueueStack _stacks[SEGMENT_SIZE];
+
+  shenandoah_padding(0);
+  Atomic<uint64_t> _free_bm;
+  shenandoah_padding(1);
+  Atomic<uint64_t> _shared_bm;
+  shenandoah_padding(2);
+
+  ReservedSpace _rs;
+
+  static ShenandoahTaskQueueSegment* create(size_t seg_idx);
+  static void destroy(ShenandoahTaskQueueSegment* seg);
+
+  inline ShenandoahTaskQueueStack* flip_from(Atomic<uint64_t>* bm);
+  inline ShenandoahTaskQueueStack* flip_from_shared();
+  inline ShenandoahTaskQueueStack* flip_from_free();
+
+  inline void flip_to(ShenandoahTaskQueueStack* stack, Atomic<uint64_t>* bm);
+  inline void flip_to_shared(ShenandoahTaskQueueStack* stack);
+  inline void flip_to_free(ShenandoahTaskQueueStack* stack);
+
+  bool are_all_free() const;
+
+  void clear();
+
+private:
+  ShenandoahTaskQueueSegment(size_t seg_idx, ReservedSpace& rs);
+};
+
+// TaskQueue is the external interface: worker threads use push/pop from it,
+// and the rest is wired up automatically.
+//
 class ShenandoahTaskQueue : public CHeapObj<mtGC> {
   shenandoah_padding(0);
-  ShenandoahTaskQueueChunk* _chunk;
+  ShenandoahTaskQueueStack* _stack;
   ShenandoahTaskQueueSet* const _qs;
   shenandoah_padding(1);
 
@@ -328,44 +376,9 @@ public:
   void share_work();
 };
 
-class ShenandoahTaskQueueSegment {
-public:
-  static const int SEGMENT_SIZE_SHIFT = 6;
-  static const int SEGMENT_SIZE = 1 << SEGMENT_SIZE_SHIFT;
-  static_assert(SEGMENT_SIZE <= 64, "Bitmap encoding");
-
-  ShenandoahTaskQueueChunk _chunks[SEGMENT_SIZE];
-
-  shenandoah_padding(0);
-  Atomic<uint64_t> _free_bm;
-  shenandoah_padding(1);
-  Atomic<uint64_t> _shared_bm;
-  shenandoah_padding(2);
-
-  ReservedSpace _rs;
-
-  static ShenandoahTaskQueueSegment* create(size_t seg_idx);
-  static void destroy(ShenandoahTaskQueueSegment* seg);
-
-  inline ShenandoahTaskQueueChunk* flip_from(Atomic<uint64_t>* bm);
-  inline ShenandoahTaskQueueChunk* flip_from_shared();
-  inline ShenandoahTaskQueueChunk* flip_from_free();
-
-  inline void flip_to(ShenandoahTaskQueueChunk* chunk, Atomic<uint64_t>* bm);
-  inline void flip_to_shared(ShenandoahTaskQueueChunk* chunk);
-  inline void flip_to_free(ShenandoahTaskQueueChunk* chunk);
-
-  bool are_all_free() const;
-
-  void clear();
-
-private:
-  ShenandoahTaskQueueSegment(size_t seg_idx, ReservedSpace& rs);
-};
-
 class ShenandoahTaskQueueSet : public CHeapObj<mtGC> {
-  static const size_t CHUNK_SIZE = sizeof(ShenandoahTaskQueueChunk);
-  static_assert(is_power_of_2(CHUNK_SIZE));
+  static const size_t STACK_SIZE = sizeof(ShenandoahTaskQueueStack);
+  static_assert(is_power_of_2(STACK_SIZE));
 
   ShenandoahTaskQueue** _queues;
   size_t _queue_count;
@@ -384,11 +397,11 @@ public:
   ShenandoahTaskQueueSet(uint queue_count);
   ~ShenandoahTaskQueueSet();
 
-  inline ShenandoahTaskQueueChunk* flip_from_shared();
-  inline ShenandoahTaskQueueChunk* flip_from_free();
+  inline ShenandoahTaskQueueStack* flip_from_shared();
+  inline ShenandoahTaskQueueStack* flip_from_free();
 
-  inline void flip_to_shared(ShenandoahTaskQueueChunk* chunk);
-  inline void flip_to_free(ShenandoahTaskQueueChunk* chunk);
+  inline void flip_to_shared(ShenandoahTaskQueueStack* chunk);
+  inline void flip_to_free(ShenandoahTaskQueueStack* chunk);
 
   ShenandoahTaskQueue* queue(uint i) {
     return _queues[i];
@@ -400,7 +413,6 @@ public:
   void clear();
   void flush_to_shared();
   void trim();
-
 };
 
 class ShenandoahTaskTerminator {
