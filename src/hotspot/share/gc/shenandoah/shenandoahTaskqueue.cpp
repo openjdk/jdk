@@ -108,9 +108,7 @@ bool ShenandoahTaskQueueSegment::are_all_free() const {
 }
 
 ShenandoahTaskQueueSet::ShenandoahTaskQueueSet(uint queue_count) :
-  _queue_count(queue_count),
-  _num_segments(0),
-  _shared_count(0) {
+  _queue_count(queue_count), _num_segments(0), _peak_segments(0), _shared_count(0) {
 
   // Size up for the absolute worst case: one 8-byte task per smallest 8-byte object
   size_t alignment = MAX3(STACK_SIZE, os::vm_allocation_granularity(), os::vm_page_size());
@@ -166,10 +164,13 @@ void ShenandoahTaskQueueSet::trim() {
     queue(i)->compact();
   }
 
-  // Delete free segments from the tail.
-  size_t min = align_up(_queue_count, ShenandoahTaskQueueSegment::SEGMENT_SIZE) / ShenandoahTaskQueueSegment::SEGMENT_SIZE + 1;
+  // Delete free segments from the tail. Simple hysteresis: only trim to half peak.
+  _peak_segments = MAX2(_peak_segments / 2, _num_segments.load_relaxed());
+  size_t min_for_queues = align_up(_queue_count, ShenandoahTaskQueueSegment::SEGMENT_SIZE) / ShenandoahTaskQueueSegment::SEGMENT_SIZE + 1;
+  size_t keep = MAX2(_peak_segments, min_for_queues);
+
   size_t s = _num_segments.load_relaxed() - 1;
-  while (s > min && _segments[s]->are_all_free()) {
+  while (s > keep && _segments[s]->are_all_free()) {
     ShenandoahTaskQueueSegment::destroy(_segments[s]);
     AtomicAccess::store(&_segments[s], (ShenandoahTaskQueueSegment*)nullptr);
     _num_segments.fetch_then_sub((size_t)1);

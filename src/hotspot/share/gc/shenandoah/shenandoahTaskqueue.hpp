@@ -386,6 +386,7 @@ class ShenandoahTaskQueueSet : public CHeapObj<mtGC> {
 
   ShenandoahTaskQueueSegment** _segments;
   Atomic<size_t> _num_segments;
+  size_t _peak_segments;
   size_t _max_segments;
 
   shenandoah_padding(0);
