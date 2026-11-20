@@ -264,6 +264,7 @@ public final class PlatformRecorder {
             }
             currentChunk = newChunk;
             JVM.beginRecording();
+            MetadataRepository.getInstance().updateLastMillis();
             startNanos = JVMSupport.getChunkStartNanos();
             startTime = Utils.epochNanosToInstant(startNanos);
             if (currentChunk != null) {
