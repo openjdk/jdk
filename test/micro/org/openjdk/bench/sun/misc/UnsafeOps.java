@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,6 +60,7 @@ public class UnsafeOps {
         valueOffset = U.objectFieldOffset(f);
 
         address = U.allocateMemory(1000);
+        U.putLong(null, address, 0);
     }
 
     @TearDown
@@ -69,12 +70,12 @@ public class UnsafeOps {
 
     @Benchmark
     public void putLongOnHeap() {
-        U.putLong(object, 0, 99);
+        U.putLong(object, valueOffset, 99);
     }
 
     @Benchmark
     public long getLongOnHeap() {
-        return U.getLong(object, 0);
+        return U.getLong(object, valueOffset);
     }
 
     @Benchmark
