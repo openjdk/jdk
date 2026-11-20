@@ -27,8 +27,8 @@
  * @summary Sanity test the special canonicalization logic for jar resources
  *
  * @run main CanonicalizationTest
- * @run main/othervm -Djdk.net.urlDisableNormalizeOptimization=true CanonicalizationTest
- * @run main/othervm -Djdk.net.urlDisableNormalizeOptimization=false CanonicalizationTest
+ * @run main/othervm -Djdk.net.url.useLegacyNormalization=true CanonicalizationTest
+ * @run main/othervm -Djdk.net.url.useLegacyNormalization=false CanonicalizationTest
  */
 
 import java.net.URL;
