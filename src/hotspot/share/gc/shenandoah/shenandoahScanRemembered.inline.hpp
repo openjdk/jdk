@@ -389,7 +389,7 @@ ShenandoahScanRemembered::process_region_slice(ShenandoahHeapRegion *region, siz
   }
 }
 
-inline bool ShenandoahRegionChunkIterator::next(struct ShenandoahRegionChunk *assignment) {
+inline bool ShenandoahRegionChunkIterator::next(ShenandoahRegionChunk *assignment) {
   while (true) {
     size_t cur_index = _index.load_relaxed();
     if (cur_index >= _total_chunks) {

@@ -306,22 +306,20 @@ void ShenandoahConcurrentGC::entry_complete_abbreviated_cycle() {
   ShenandoahConcurrentSubphase gc_phase(msg, ShenandoahPhaseTimings::complete_abbreviated);
   EventMark em("%s", msg);
 
-  ShenandoahWorkerScope scope(heap->workers(),
-                              ShenandoahWorkerPolicy::calc_workers_for_conc_evac(),
-                              msg);
-
   heap->try_inject_pin();
   // We chose not to evacuate because we found sufficient immediate garbage.
   // However, there may still be regions to promote in place, so do that now.
   if (heap->old_generation()->has_in_place_promotions()) {
+    ShenandoahWorkerScope scope(heap->workers(), heap->max_workers(), heap->eligible_workers(), msg);
     ShenandoahTimingsTracker timing(ShenandoahPhaseTimings::complete_abbreviated_promote_in_place);
     ShenandoahGCWorkerPhase worker_phase(ShenandoahPhaseTimings::complete_abbreviated_promote_in_place);
-    heap->promote_regions_in_place(_generation);
+    heap->promote_regions_in_place();
   }
 
   // At this point, the cycle is effectively complete. If the cycle has been cancelled here,
   // the control thread will detect it on its next iteration.
   if (!heap->cancelled_gc() && !_generation->is_old()) {
+    ShenandoahWorkerScope scope(heap->workers(), heap->eligible_workers(), msg);
     ShenandoahTimingsTracker tracker(ShenandoahPhaseTimings::complete_abbreviated_update_region_ages);
     heap->update_region_ages(_generation->complete_marking_context());
   }
@@ -515,8 +513,9 @@ void ShenandoahConcurrentGC::entry_mark() {
   ShenandoahConcurrentSubphase gc_phase(msg, ShenandoahPhaseTimings::conc_mark);
   EventMark em("%s", msg);
 
-  ShenandoahWorkerScope scope(heap->workers(),
-                              ShenandoahWorkerPolicy::calc_workers_for_conc_marking(),
+  // Start max workers. Only calc_workers_for_conc_marking will begin doing work. The remainder
+  // will be held in reserve and enlisted only when there are allocation stalls.
+  ShenandoahWorkerScope scope(heap->workers(), heap->max_workers(), heap->eligible_workers(),
                               "concurrent marking");
 
   update_phase(ShenandoahController::MARK);
@@ -631,10 +630,7 @@ void ShenandoahConcurrentGC::entry_evacuate() {
   ShenandoahConcurrentSubphase gc_phase(msg, ShenandoahPhaseTimings::conc_evac);
   EventMark em("%s", msg);
 
-  ShenandoahWorkerScope scope(heap->workers(),
-                              ShenandoahWorkerPolicy::calc_workers_for_conc_evac(),
-                              "concurrent evacuation");
-
+  ShenandoahWorkerScope scope(heap->workers(), heap->max_workers(), heap->eligible_workers(), "concurrent evacuation");
   update_phase(ShenandoahController::EVAC);
   heap->try_inject_alloc_failure();
   heap->try_inject_pin();
@@ -652,6 +648,7 @@ void ShenandoahConcurrentGC::entry_self_forward_stranded_objects() {
                               ShenandoahWorkerPolicy::calc_workers_for_conc_evac(),
                               "concurrent self forwarding");
 
+  update_phase(ShenandoahController::EVAC);
   heap->try_inject_alloc_failure();
   heap->try_inject_pin();
   op_self_forward_stranded_objects();
@@ -677,8 +674,7 @@ void ShenandoahConcurrentGC::entry_update_refs() {
   ShenandoahConcurrentSubphase gc_phase(msg, ShenandoahPhaseTimings::conc_update_refs);
   EventMark em("%s", msg);
 
-  ShenandoahWorkerScope scope(heap->workers(),
-                              ShenandoahWorkerPolicy::calc_workers_for_conc_update_ref(),
+  ShenandoahWorkerScope scope(heap->workers(), heap->max_workers(), heap->eligible_workers(),
                               "concurrent reference update");
 
   update_phase(ShenandoahController::UPDATE_REFS);

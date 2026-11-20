@@ -31,8 +31,7 @@
 #include "utilities/stack.inline.hpp"
 
 void ShenandoahObjToScanQueueSet::clear() {
-  uint size = GenericTaskQueueSet<ShenandoahObjToScanQueue, mtGC>::size();
-  for (uint index = 0; index < size; index ++) {
+  for (uint index = 0, num_queues = size(); index < num_queues; ++index) {
     ShenandoahObjToScanQueue* q = queue(index);
     assert(q != nullptr, "Sanity");
     q->clear();
@@ -40,8 +39,7 @@ void ShenandoahObjToScanQueueSet::clear() {
 }
 
 bool ShenandoahObjToScanQueueSet::is_empty() {
-  uint size = GenericTaskQueueSet<ShenandoahObjToScanQueue, mtGC>::size();
-  for (uint index = 0; index < size; index ++) {
+  for (uint index = 0, num_queues = size(); index < num_queues; ++index) {
     ShenandoahObjToScanQueue* q = queue(index);
     assert(q != nullptr, "Sanity");
     if (!q->is_empty()) {
@@ -151,8 +149,4 @@ void ShenandoahObjToScanQueueSet::rebalance(size_t target_queues) {
   }
   assert(total == total_after, "Lost elements: %zu vs %zu", total, total_after);
 #endif
-}
-
-bool ShenandoahTerminatorTerminator::should_exit_termination() {
-  return _heap->cancelled_gc();
 }
