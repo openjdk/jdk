@@ -26,6 +26,8 @@
 package com.sun.tools.javac.jvm;
 
 import java.io.*;
+import java.lang.reflect.AccessFlag;
+import java.lang.reflect.ClassFileFormatVersion;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.CharBuffer;
@@ -61,12 +63,10 @@ import com.sun.tools.javac.file.PathFileObject;
 import com.sun.tools.javac.jvm.ClassFile.Version;
 import com.sun.tools.javac.jvm.PoolConstant.NameAndType;
 import com.sun.tools.javac.main.Option;
-import com.sun.tools.javac.resources.CompilerProperties;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.resources.CompilerProperties.Fragments;
 import com.sun.tools.javac.resources.CompilerProperties.LintWarnings;
 import com.sun.tools.javac.resources.CompilerProperties.Warnings;
-import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.ByteBuffer.UnderflowException;
 import com.sun.tools.javac.util.DefinedBy.Api;
@@ -78,7 +78,6 @@ import static com.sun.tools.javac.code.Kinds.Kind.*;
 
 import com.sun.tools.javac.code.Scope.LookupKind;
 
-import static com.sun.tools.javac.code.Scope.LookupKind.NON_RECURSIVE;
 import static com.sun.tools.javac.code.TypeTag.ARRAY;
 import static com.sun.tools.javac.code.TypeTag.CLASS;
 import static com.sun.tools.javac.code.TypeTag.TYPEVAR;
@@ -3326,9 +3325,17 @@ public class ClassReader {
  ***********************************************************************/
 
     long adjustFieldFlags(long flags) {
+        int maxMajor = MAX().major;
+        var version = ClassFileFormatVersion.fromMajor(
+                Math.min(majorVersion, ClassFileFormatVersion.latest().major())
+        );
         boolean previewClassFile = minorVersion == ClassFile.PREVIEW_MINOR_VERSION;
-        if (allowValueClasses && previewClassFile && (flags & ACC_STRICT) != 0) {
-            flags &= ~ACC_STRICT;
+        boolean strictInit = allowValueClasses
+                && majorVersion == maxMajor
+                && previewClassFile
+                && (flags & ACC_STRICT) != 0;
+        flags &= AccessFlag.Location.FIELD.flagsMask(version);
+        if (strictInit) {
             flags |= STRICT;
         }
         return flags;
