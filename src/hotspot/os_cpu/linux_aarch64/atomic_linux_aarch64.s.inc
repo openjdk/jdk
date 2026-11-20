@@ -21,8 +21,14 @@
 // or visit www.oracle.com if you need additional information or have any
 // questions.
 
-// ARMv8.1 LSE versions of the atomic routines used by
+// LSE and non-LSE versions of the atomic routines used by
 // AtomicAccess::PlatformXX.
+// This file contains source for both. Define __ARM_FEATURE_ATOMICS if
+// you want to generate LSE versions.
+// "LSE" here refers to FEAT_LSE, Large System Extensions, which are
+// optional for Armv8.0 and mandatory for Armv8.1 onwards.
+
+//
 //
 // NB: For memory_order_conservative we need a trailing membar after
 // LSE atomic operations but not a leading membar.
