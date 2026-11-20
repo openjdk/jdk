@@ -1,0 +1,12 @@
+PrimitiveTargetConstraints.java:11:20: compiler.err.prob.found.req: (compiler.misc.incompatible.bounds: U, (compiler.misc.eq.bounds: java.lang.Boolean), (compiler.misc.upper.bounds: PrimitiveTargetConstraints.Constraint<U>))
+PrimitiveTargetConstraints.java:12:17: compiler.err.prob.found.req: (compiler.misc.incompatible.bounds: U, (compiler.misc.eq.bounds: java.lang.Byte), (compiler.misc.upper.bounds: PrimitiveTargetConstraints.Constraint<U>))
+PrimitiveTargetConstraints.java:13:18: compiler.err.prob.found.req: (compiler.misc.incompatible.bounds: U, (compiler.misc.eq.bounds: java.lang.Short), (compiler.misc.upper.bounds: PrimitiveTargetConstraints.Constraint<U>))
+PrimitiveTargetConstraints.java:14:17: compiler.err.prob.found.req: (compiler.misc.incompatible.bounds: U, (compiler.misc.eq.bounds: java.lang.Character), (compiler.misc.upper.bounds: PrimitiveTargetConstraints.Constraint<U>))
+PrimitiveTargetConstraints.java:15:16: compiler.err.prob.found.req: (compiler.misc.incompatible.bounds: U, (compiler.misc.eq.bounds: java.lang.Integer), (compiler.misc.upper.bounds: PrimitiveTargetConstraints.Constraint<U>))
+PrimitiveTargetConstraints.java:16:17: compiler.err.prob.found.req: (compiler.misc.incompatible.bounds: U, (compiler.misc.eq.bounds: java.lang.Long), (compiler.misc.upper.bounds: PrimitiveTargetConstraints.Constraint<U>))
+PrimitiveTargetConstraints.java:17:18: compiler.err.prob.found.req: (compiler.misc.incompatible.bounds: U, (compiler.misc.eq.bounds: java.lang.Float), (compiler.misc.upper.bounds: PrimitiveTargetConstraints.Constraint<U>))
+PrimitiveTargetConstraints.java:18:19: compiler.err.prob.found.req: (compiler.misc.incompatible.bounds: U, (compiler.misc.eq.bounds: java.lang.Double), (compiler.misc.upper.bounds: PrimitiveTargetConstraints.Constraint<U>))
+PrimitiveTargetConstraints.java:26:43: compiler.err.prob.found.req: (compiler.misc.incompatible.bounds: U, (compiler.misc.eq.bounds: java.lang.Integer), (compiler.misc.upper.bounds: IntegralConstraint<U>))
+- compiler.note.unchecked.filename: PrimitiveTargetConstraints.java
+- compiler.note.unchecked.recompile
+9 errors
