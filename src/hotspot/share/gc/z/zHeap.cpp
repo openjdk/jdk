@@ -488,6 +488,7 @@ bool ZHeap::print_location(outputStream* st, zaddress addr) const {
   }
 
   if (LocationPrinter::is_valid_obj((void*)untype(addr))) {
+    ResourceMark rm;
     to_oop(addr)->print_on(st);
     return true;
   }
@@ -538,6 +539,7 @@ bool ZHeap::print_location(outputStream* st, zpointer ptr) const {
   }
 
   if (LocationPrinter::is_valid_obj((void*)untype(addr))) {
+    ResourceMark rm;
     to_oop(addr)->print_on(st);
     return true;
   }

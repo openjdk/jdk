@@ -42,10 +42,7 @@ extern "C" {
 
 #endif
 
-#define TranslateError(err) "JVMTI error"
-
 #define PASSED 0
-#define FAILED 2
 
 static const char *EXC_CNAME = "java/lang/Exception";
 

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,10 +65,6 @@ public class FramesDecoder {
 
     private final ArrayDeque<ByteBuffer> tailBuffers = new ArrayDeque<>();
     private int tailSize = 0;
-
-    private boolean slicedToDataFrame = false;
-
-    private final List<ByteBuffer> prepareToRelease = new ArrayList<>();
 
     // if true  - Frame Header was parsed (9 bytes consumed) and subsequent fields have meaning
     // otherwise - stopped at frames boundary
@@ -155,7 +152,6 @@ public class FramesDecoder {
         while ((frame = nextFrame()) != null) {
             if (debug.on()) debug.log("Got frame: %s", frame);
             frameProcessor.processFrame(frame);
-            frameProcessed();
         }
     }
 
@@ -202,10 +198,6 @@ public class FramesDecoder {
         }
     }
 
-    private void frameProcessed() {
-        prepareToRelease.clear();
-    }
-
     private void parseFrameHeader() throws IOException {
         int x = getInt();
         this.frameLength = (x >>> 8) & 0x00ffffff;
@@ -219,10 +211,6 @@ public class FramesDecoder {
     // move next buffer from tailBuffers to currentBuffer if required
     private void nextBuffer() {
         if (!currentBuffer.hasRemaining()) {
-            if (!slicedToDataFrame) {
-                prepareToRelease.add(currentBuffer);
-            }
-            slicedToDataFrame = false;
             currentBuffer = tailBuffers.poll();
             if (currentBuffer != null) {
                 tailSize -= currentBuffer.remaining();
@@ -280,17 +268,11 @@ public class FramesDecoder {
         while (bytecount > 0) {
             int remaining = currentBuffer.remaining();
             int extract = Math.min(remaining, bytecount);
-            ByteBuffer extractedBuf;
+            ByteBuffer extractedBuf = Utils.sliceWithLimitedCapacity(currentBuffer, extract);
             if (isDataFrame) {
-                extractedBuf = Utils.sliceWithLimitedCapacity(currentBuffer, extract)
-                                    .asReadOnlyBuffer();
-                slicedToDataFrame = true;
-            } else {
-                // Header frames here
-                // HPACK decoding should performed under lock and immediately after frame decoding.
-                // in that case it is safe to release original buffer,
-                // because of sliced buffer has a very short life
-                extractedBuf = Utils.sliceWithLimitedCapacity(currentBuffer, extract);
+                // HttpResponse.BodySubscriber implementation note indicates that
+                // "data containing the response body is immutable".
+                extractedBuf = extractedBuf.asReadOnlyBuffer();
             }
             res.add(extractedBuf);
             bytecount -= extract;
@@ -562,21 +544,30 @@ public class FramesDecoder {
     }
 
     private Http2Frame parseAltSvcFrame(int frameLength, int frameStreamid, int frameFlags) {
+        if (frameLength < 2) {
+            return new MalformedFrame(ErrorFrame.FRAME_SIZE_ERROR,
+                    "AltSvcFrame length is " + frameLength + ", should be >= 2");
+        }
         var len = getShort();
+        if (len > frameLength - 2) {
+            return new MalformedFrame(ErrorFrame.FRAME_SIZE_ERROR,
+                    "AltSvcFrame origin length " + len + " > payload");
+        }
         byte[] origin;
         Optional<String> originUri = Optional.empty();
         if (len > 0) {
             origin = getBytes(len);
             if (!isUSAscii(origin)) {
-                return new MalformedFrame(ErrorFrame.PROTOCOL_ERROR, frameStreamid,
-                        "illegal character in AltSvcFrame");
+                Log.logTrace("Ignoring AltSvcFrame with illegal character in origin");
+                skipBytes(frameLength - 2 - len);
+                return null;
             }
             originUri = Optional.of(new String(origin, StandardCharsets.US_ASCII));
         }
         byte[] altbytes = getBytes(frameLength - 2 - len);
         if (!isUSAscii(altbytes)) {
-            return new MalformedFrame(ErrorFrame.PROTOCOL_ERROR, frameStreamid,
-                    "illegal character in AltSvcFrame");
+            Log.logTrace("Ignoring AltSvcFrame with illegal character in value");
+            return null;
         }
         String altSvc = new String(altbytes, StandardCharsets.US_ASCII);
         return new AltSvcFrame(frameStreamid, 0, originUri, altSvc);

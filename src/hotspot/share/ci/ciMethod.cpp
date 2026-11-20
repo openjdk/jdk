@@ -1309,7 +1309,6 @@ bool ciMethod::is_not_reached(int bci) {
 // ------------------------------------------------------------------
 // ciMethod::was_never_executed
 bool ciMethod::was_executed_more_than(int times) {
-#if INCLUDE_CDS
   if (CURRENT_ENV->is_aot_compile()) { // Look only on training data
     // Invocation counter is reset when the Method* is compiled.
     // If the method has compiled code we therefore assume it has
@@ -1321,7 +1320,6 @@ bool ciMethod::was_executed_more_than(int times) {
     }
     return (method_data()->invocation_count() > times);
   }
-#endif
   VM_ENTRY_MARK;
   return get_Method()->was_executed_more_than(times);
 }

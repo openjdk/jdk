@@ -37,10 +37,10 @@ public class RuntimeVisibleAnnotations extends Annotations {
     /**
      * Constructs a new instance.
      *
-     * @param nameIndex Index pointing to the name <em>Code</em>
-     * @param length Content length in bytes
-     * @param input Input stream
-     * @param constantPool Array of constants
+     * @param nameIndex Index pointing to the name <em>Code</em>.
+     * @param length Content length in bytes.
+     * @param input Input stream.
+     * @param constantPool Array of constants.
      * @throws IOException Thrown when an I/O exception of some sort has occurred.
      */
     public RuntimeVisibleAnnotations(final int nameIndex, final int length, final DataInput input, final ConstantPool constantPool) throws IOException {
