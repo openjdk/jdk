@@ -22,6 +22,7 @@
  *
  */
 
+#include "c1/c1_CodeStubs.hpp"
 #include "c1/c1_Compilation.hpp"
 #include "c1/c1_Defs.hpp"
 #include "c1/c1_FrameMap.hpp"
@@ -355,7 +356,6 @@ LateControlFlowDiamond::LateControlFlowDiamond(LIRGenerator* lir_gen, Instructio
 , _taken(make_late_block())
 , _continuation(make_late_block())
 , _outer_continuation(_continuation) {
-  assert(!_gen->compilation()->bailed_out(), "must check for bailiout before LateControlFlowDiamond");
   assert(_instr->is_pinned(), "LateControlFlowDiamond can only insert blocks for pinned instructions");
   assert(!_origin->is_set(BlockBegin::late_block_flag) || _origin->end()->as_LateBlockEnd() == nullptr,
          "use the nested ctor for nesting late control flow");
@@ -2812,8 +2812,8 @@ void LIRGenerator::do_LoadIndexed(LoadIndexed* x) {
     LIR_Opr result = rlock_result(x, x->delayed()->field()->type()->basic_type());
     access_sub_element(array, index, result, x->delayed()->field(), x->delayed()->offset());
   } else {
+    // The result operand can be used across block boundaries because is locked to one register.
     LIR_Opr result = rlock_result(x, x->elt_type());
-    LoadFlattenedArrayStub* slow_path = nullptr;
 
     if (x->should_profile() && x->array()->maybe_null_free_array()) {
       profile_null_free_array(array, md, data);
@@ -2821,21 +2821,39 @@ void LIRGenerator::do_LoadIndexed(LoadIndexed* x) {
 
     if (x->elt_type() == T_OBJECT && x->array()->maybe_flat_array()) {
       assert(x->delayed() == nullptr, "Delayed LoadIndexed only apply to loaded_flat_arrays");
-      index.load_item();
-      // if we are loading from a flat array, load it using a runtime call
-      slow_path = new LoadFlattenedArrayStub(array.result(), index.result(), result, state_for(x, x->state_before()));
-      check_flat_array(array.result(), slow_path);
+      LateControlFlowDiamond lcfd(this, x, [&](BlockBegin* taken, BlockBegin* not_taken) {
+        const LIR_Condition cond = is_array_flat(array, new CodeEmitInfo(range_check_info));
+        __ branch(cond, taken);
+        __ jump(not_taken);
+      });
+      {
+        LateControlFlowDiamond::TakenBlock taken(lcfd);
+        LIRItem array(x->array(), this);
+        LIRItem index(x->index(), this);
+        array.load_item();
+        index.load_item();
+        // If we are loading from a flat array, load it using a runtime call
+        LoadFlattenedArrayStub* stub = new LoadFlattenedArrayStub(array.result(), index.result(), result, lcfd.info());
+        __ jump(stub);
+        __ branch_destination(stub->continuation());
+      } {
+        LateControlFlowDiamond::NotTakenBlock not_taken(lcfd);
+        LIRItem array(x->array(), this);
+        LIRItem index(x->index(), this);
+        array.load_item();
+        index.load_item();
+        DecoratorSet decorators = IN_HEAP | IS_ARRAY;
+        access_load_at(decorators, x->elt_type(),
+                       array, index.result(), result,
+                       nullptr, null_check_info);
+      }
+    } else {
+      // Normal array access.
+      DecoratorSet decorators = IN_HEAP | IS_ARRAY;
+      access_load_at(decorators, x->elt_type(),
+                     array, index.result(), result,
+                     nullptr, null_check_info);
     }
-
-    DecoratorSet decorators = IN_HEAP | IS_ARRAY;
-    access_load_at(decorators, x->elt_type(),
-                   array, index.result(), result,
-                   nullptr, null_check_info);
-
-    if (slow_path != nullptr) {
-      __ branch_destination(slow_path->continuation());
-    }
-
     element = x;
   }
 
