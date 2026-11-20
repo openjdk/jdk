@@ -62,10 +62,11 @@ private:
   Atomic<size_t> _promoted_reserve;
 
   // Bytes of old-gen memory expended on promotions. This may be modified concurrently
-  // by mutators and gc workers when promotion LABs are retired during evacuation. It
-  // is therefore always accessed through atomic operations. This is increased when a
-  // PLAB is allocated for promotions. The value is decreased by the amount of memory
-  // remaining in a PLAB when it is retired.
+  // by mutators and gc workers during evacuation. It is therefore always accessed through
+  // atomic operations. This is increased when a PLAB is allocated for promotions or when an
+  // object is promoted through shared allocation. The value is decreased by the amount of
+  // memory remaining in a PLAB when it is retired or when a shared promotion's allocation
+  // fails after the promotion budget was charged.
   shenandoah_padding(0);
   Atomic<size_t> _promoted_expended;
   shenandoah_padding(1);

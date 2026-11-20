@@ -150,12 +150,9 @@ void ShenandoahOldGeneration::maybe_log_promotion_failure_stats(bool concurrent)
       AggregatePromotionFailuresClosure() : _total_count(0), _total_words(0) {}
 
       void do_thread(Thread* thread) override {
-        ShenandoahPLAB* plab = ShenandoahThreadLocalData::shenandoah_plab(thread);
-        if (plab != nullptr) {
-          _total_count += plab->get_promotion_failure_count();
-          _total_words += plab->get_promotion_failure_words();
-          plab->reset_promotion_failures();
-        }
+        _total_count += ShenandoahThreadLocalData::get_promotion_failure_count(thread);
+        _total_words += ShenandoahThreadLocalData::get_promotion_failure_words(thread);
+        ShenandoahThreadLocalData::reset_promotion_failures(thread);
       }
 
       size_t total_count() const { return _total_count; }
@@ -604,13 +601,7 @@ void ShenandoahOldGeneration::handle_failed_evacuation() {
 void ShenandoahOldGeneration::handle_failed_promotion(Thread* thread, size_t size) const {
   LogTarget(Info, gc, plab) plab_info;
   if (plab_info.is_enabled()) {
-    ShenandoahPLAB* plab = ShenandoahThreadLocalData::shenandoah_plab(thread);
-    if (plab != nullptr) {
-      plab->record_promotion_failure(size);
-    } else {
-      ResourceMark for_thread_name;
-      log_debug(gc, plab)("Thread: %s has no plab", thread->name());
-    }
+    ShenandoahThreadLocalData::record_promotion_failure(thread, size);
   }
 
   LogTarget(Debug, gc, plab) plab_debug;

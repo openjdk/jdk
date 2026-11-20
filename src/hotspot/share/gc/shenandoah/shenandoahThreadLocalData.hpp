@@ -53,16 +53,21 @@ private:
   CardTable::CardValue*   _card_table;
 
   // Thread-local allocation buffer for object evacuations.
+  // Used by GC worker threads.
   // In generational mode, it is exclusive to the young generation.
   PLAB* _gclab;
   size_t _gclab_size;
   bool _has_evac_failures;
 
   // Thread-local allocation buffer only used in generational mode.
-  // Used both by mutator threads and by GC worker threads
+  // Used by GC worker threads
   // for evacuations within the old generation and
   // for promotions from the young generation into the old generation.
   ShenandoahPLAB* _shenandoah_plab;
+
+  // Track failed promotion attempts per thread
+  size_t _promotion_failure_count;
+  size_t _promotion_failure_words;
 
   ShenandoahEvacuationStats* _evacuation_stats;
 
@@ -176,6 +181,22 @@ public:
 
   static ShenandoahPLAB* shenandoah_plab(Thread* thread) {
     return data(thread)->_shenandoah_plab;
+  }
+
+  // Track failed promotion attempts
+  static void record_promotion_failure(Thread* thread, size_t size) {
+    data(thread)->_promotion_failure_count++;
+    data(thread)->_promotion_failure_words += size;
+  }
+
+  // Get failed promotion count for aggregation
+  static size_t get_promotion_failure_count(Thread* thread) { return data(thread)->_promotion_failure_count; }
+  // Get failed promotion words for aggregation
+  static size_t get_promotion_failure_words(Thread* thread) { return data(thread)->_promotion_failure_words; }
+  // Reset failure tracking for new evacuation phase
+  static void reset_promotion_failures(Thread* thread) {
+    data(thread)->_promotion_failure_count = 0;
+    data(thread)->_promotion_failure_words = 0;
   }
 
   // Offsets

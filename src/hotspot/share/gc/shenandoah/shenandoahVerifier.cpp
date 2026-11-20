@@ -897,7 +897,7 @@ public:
 
   void do_thread(Thread* t) override {
     if (t->is_Java_thread()) {
-      verify_labs(t, true);
+      verify_labs(t, false);
     } else if (t->is_Worker_thread()) {
       ShenandoahIsGCWorkerClosure cl(t);
       _workers->threads_do(&cl);
