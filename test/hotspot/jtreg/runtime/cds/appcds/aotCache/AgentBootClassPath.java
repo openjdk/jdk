@@ -24,17 +24,18 @@
 
 /*
  * @test
- * @summary The boot classpath appended by the Boot-Class-Path attribute of a -javaagent
- *          JAR in the training run must be passed to the child JVM process that
- *          assembles the AOT cache.
+ * @summary The boot classpath(s) appended by the Boot-Class-Path attribute of a -javaagent
+ *          JAR in the training run, as well as classes loaded from there, must be excluded from
+ *          the AOT configuration file.
+ * @bug 8397866
  * @requires vm.cds.supports.aot.class.linking
  * @requires vm.jvmti
- * @library /test/lib
- * @build AgentBootClassPath
- * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar AgentBootClassPathApp
+ * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds/test-classes
+ * @build AgentBootClassPath Child Super
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar AgentBootClassPathApp Super Child
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar boot1.jar AgentBootClassPathBoot1
- * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar boot2.jar AgentBootClassPathBoot2
- * @run driver AgentBootClassPath AOT --one-step-training
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar boot2.jar AgentBootClassPathBoot2 Super
+ * @run driver AgentBootClassPath AOT
  */
 
 import jdk.test.lib.cds.CDSAppTester;
@@ -90,17 +91,28 @@ public class AgentBootClassPath {
         @Override
         public void checkExecution(OutputAnalyzer out, RunMode runMode) {
             if (runMode == RunMode.TRAINING) {
-                out.shouldContain("Skipping AgentBootClassPathAgent: Unsupported location");
-                out.shouldContain("Skipping AgentBootClassPathBoot2: Unsupported location");
+                out.shouldContain("Skipping AgentBootClassPathBoot2: Unsupported location"); // from AddToBootstrapClassLoaderSearch
+                out.shouldContain("Skipping AgentBootClassPathAgent: Unsupported location"); // from AddToSystemClassLoaderSearch
+                out.shouldContain("Skipping Super: Unsupported location"); // from AddToBootstrapClassLoaderSearch
+                out.shouldContain("Skipping Child: super Super is excluded");
+            }
+            if (runMode == RunMode.ASSEMBLY) {
+                // Make sure boot2.jar is not included in the classpath(s) of the config file
+                out.shouldContain("Reading classpath(s) from AgentBootClassPathApp.aotconfig (size = 3)");
+                out.shouldMatch("class,path.*boot.* .1. = .*/boot1.jar");
+                out.shouldMatch("class,path.*app.* .2. = .*/app.jar");
             }
             if (runMode.isApplicationExecuted()) {
                 out.shouldContain("AgentBootClassPathBoot1 loader = null");
                 out.shouldContain("AgentBootClassPathBoot2 loader = null");
             }
             if (runMode.isProductionRun()) {
-                out.shouldMatch("AgentBootClassPathBoot1 source: (shared objects file|.*boot1.jar)");
-                out.shouldMatch("AgentBootClassPathBoot2 source: (shared objects file|.*boot2.jar)");
+                out.shouldMatch("AgentBootClassPathBoot2 source: .*boot2.jar");
+                out.shouldMatch("AgentBootClassPathAgent source: .*agent.jar");
+                out.shouldContain("AgentBootClassPathBoot1 source: shared objects file");
                 out.shouldContain("AgentBootClassPathApp source: shared objects file");
+                out.shouldMatch("Super source: .*boot2.jar");
+                out.shouldMatch("Child source: .*app.jar");
             }
         }
     }
@@ -120,6 +132,14 @@ class AgentBootClassPathApp {
             if (c.getClassLoader() != null) {
                 throw new RuntimeException(name + " should be loaded by the boot loader");
             }
+        }
+        Class<?> c = Class.forName("Child");
+        Class<?> s = Class.forName("Super");
+        if (c.getClassLoader() != AgentBootClassPathApp.class.getClassLoader()) {
+            throw new RuntimeException("Child should be loaded by the app loader");
+        }
+        if (s.getClassLoader() != null) {
+            throw new RuntimeException("Super should be loaded by the boot loader (shadowed by the agent's Boot-Class-Path)");
         }
     }
 }

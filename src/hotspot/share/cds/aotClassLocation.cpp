@@ -111,9 +111,10 @@ class BootCpClassLocationStream : public ClassLocationStream {
 public:
   BootCpClassLocationStream() : ClassLocationStream() {
     assert(_boot_classpath, "must have been initialized");
-    // Arguments::get_boot_class_path() contains $JAVA_HOME/lib/modules, but we treat that separately
     for (const char* bootcp = _boot_classpath; *bootcp != '\0'; ++bootcp) {
       if (*bootcp == *os::path_separator()) {
+        // Note: this skips the very first element of _boot_classpath ($JAVA_HOME/lib/modules)
+        // which is not handled by AllClassLocationStreams.
         ++bootcp;
         add_paths_in_classpath(bootcp);
         break;
