@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,8 @@ class PdhDll: public AllStatic {
   static LONG       _initialized;
   static HMODULE    _hModule;
   static void       initialize();
+  static PDH_STATUS (WINAPI *_PdhAddEnglishCounter)(HQUERY, LPCWSTR, DWORD_PTR, HCOUNTER*);
+  static PDH_STATUS (WINAPI *_PdhGetRawCounterValue)(HCOUNTER, LPDWORD, PPDH_RAW_COUNTER);
   static PDH_STATUS (WINAPI *_PdhAddCounter)(HQUERY, LPCSTR, DWORD, HCOUNTER*);
   static PDH_STATUS (WINAPI *_PdhOpenQuery)(LPCWSTR, DWORD, HQUERY*);
   static DWORD      (WINAPI *_PdhCloseQuery)(HQUERY);
@@ -48,6 +50,8 @@ class PdhDll: public AllStatic {
   static PDH_STATUS (WINAPI *_PdhExpandWildCardPath)(LPCSTR, LPCSTR, PZZSTR, LPDWORD, DWORD);
 
  public:
+  static PDH_STATUS PdhAddEnglishCounterW(HQUERY, LPCWSTR, DWORD_PTR, HCOUNTER*);
+  static PDH_STATUS PdhGetRawCounterValue(HCOUNTER, LPDWORD, PPDH_RAW_COUNTER);
   static PDH_STATUS PdhAddCounter(HQUERY, LPCSTR, DWORD, HCOUNTER*);
   static PDH_STATUS PdhOpenQuery(LPCWSTR, DWORD, HQUERY*);
   static DWORD      PdhCloseQuery(HQUERY);
