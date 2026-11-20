@@ -651,16 +651,11 @@ void ZBarrierSetAssembler::patch_barrier_relocation(address addr, int format) {
   int bytes;
   switch (format) {
     case ZBarrierRelocationFormatLoadBadMask:
-      // The load bad mask is a single bit; the shamt computation below depends on it.
-      guarantee(is_power_of_2((uintptr_t)value), "load bad mask must be a single bit");
-      if (MacroAssembler::is_slli_at(addr)) {
-        // ZPointerLoadBadMask is ZPointerRemapped under the inverted remap encoding: a single bit,
-        // which the slli shifts into the sign bit (bit 63 on RV64)
-        Assembler::patch(addr, 25, 20, 63 - exact_log2((uintptr_t)value));
-        bytes = MacroAssembler::instruction_size;
-        break;
-      }
-      // fall through
+      assert(MacroAssembler::is_slli_at(addr), "invalid zgc barrier");
+      // Shift the load-bad bit into the sign bit for bgez.
+      Assembler::patch(addr, 25, 20, 63 - exact_log2(value));
+      bytes = MacroAssembler::instruction_size;
+      break;
     case ZBarrierRelocationFormatMarkBadMask:
     case ZBarrierRelocationFormatStoreGoodBits:
     case ZBarrierRelocationFormatStoreBadMask:
