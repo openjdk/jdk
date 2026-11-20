@@ -104,6 +104,8 @@ public class ApplicableIRRulesPrinter {
         "avx512bw",
         "avx512dq",
         "avx512vl",
+        "avx512_bitalg",
+        "avx512_vpopcntdq",
         "avx512f",
         "avx512_fp16",
         "avx512_vnni",
