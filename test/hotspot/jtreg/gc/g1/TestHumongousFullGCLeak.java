@@ -25,7 +25,7 @@ package gc.g1;
 
 /*
  * @test TestHumongousFullGCLeak
- * @bug 8394730
+ * @bug 8394730 8396503
  * @summary Compaction of humongous objects during Full GC should not leak card set memory.
  * @requires vm.gc.G1
  * @requires vm.flagless
@@ -34,7 +34,8 @@ package gc.g1;
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -Xmx64M -Xms64M -Xmn6M
  *                   -XX:MaxTenuringThreshold=0 -XX:+UseG1GC -XX:+WhiteBoxAPI -XX:NativeMemoryTracking=summary
- *                   -XX:G1HeapRegionSize=1M gc.g1.TestHumongousFullGCLeak
+ *                   -XX:G1HeapRegionSize=1M -XX:+UnlockExperimentalVMOptions -XX:G1RemSetFreeMemoryKeepExcessRatio=0
+ *                   gc.g1.TestHumongousFullGCLeak
  */
 
 import jdk.test.lib.Asserts;
@@ -48,6 +49,10 @@ public class TestHumongousFullGCLeak {
     private static final int M = 1024 * 1024;
 
     static int nmt() throws Exception {
+        // Before gathering NMT, give the card set memory reclamation thread some time to reclaim
+        // excess data.
+        Thread.sleep(100);
+
         OutputAnalyzer output = new JMXExecutor().execute("VM.native_memory summary scale=1", true);
 
         String stdout = output.getStdout();
