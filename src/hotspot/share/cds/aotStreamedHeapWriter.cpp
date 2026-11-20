@@ -159,6 +159,28 @@ void AOTStreamedHeapWriter::order_source_objs(GrowableArrayCHeap<oop, mtClassSha
     _roots_highest_dfs[i] = dfs_order;
   }
 
+  for (int x = 0; x < 2; x++) {
+    tty->print_cr("============================== check phase %d", x);
+    for (int i = 0; i < _source_objs->length(); ++i) {
+      oop obj = _source_objs->at(i);
+      if (java_lang_String::is_instance(obj) &&
+          java_lang_String::equals(obj, "InternedStringSharedValueTestApp", 32)) {
+        tty->print_cr("[%d] is interned %d", i, AOTHeap::is_interned_string(obj));
+        oop value = java_lang_String::value(obj);
+
+        int ds = *_dfs_order_table->get(cast_from_oop<void*>(obj));
+        int dv = *_dfs_order_table->get(cast_from_oop<void*>(value));
+
+        tty->print_cr("  ds = %d", ds);
+        tty->print_cr("  dv = %d", dv);
+
+        if (x == 1 && AOTHeap::is_interned_string(obj)) {
+          assert(ds == dv - 1, "Huh");
+        }
+      }
+    }
+  }
+
   _source_objs->sort(cmp_dfs_order);
 }
 
