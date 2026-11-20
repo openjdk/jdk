@@ -83,7 +83,6 @@ class GCMemoryManager;
 class G1HeapRegion;
 class MemoryPool;
 class nmethod;
-class PartialArrayStateManager;
 class ReferenceProcessor;
 class STWGCTimer;
 class WorkerThreads;
@@ -631,6 +630,8 @@ public:
   // Register the given region to be part of the collection set.
   inline void register_humongous_candidate_region_with_region_attr(uint index);
 
+  inline void register_humongous_non_candidate_region_with_region_attr(uint index);
+
   void set_humongous_metadata(G1HeapRegion* first_hr,
                               uint num_regions,
                               size_t word_size,
@@ -824,9 +825,8 @@ public:
   // The concurrent refiner.
   G1ConcurrentRefine* _cr;
 
-  // Reusable parallel task queues and partial array manager.
+  // Reusable parallel task queues.
   G1ScannerTasksQueueSet* _task_queues;
-  PartialArrayStateManager* _partial_array_state_manager;
 
   // ("Weak") Reference processing support.
   //
@@ -891,8 +891,6 @@ public:
 
   G1ScannerTasksQueueSet* task_queues() const;
   G1ScannerTasksQueue* task_queue(uint i) const;
-
-  PartialArrayStateManager* partial_array_state_manager() const;
 
   // Create a G1CollectedHeap.
   // Must call the initialize method afterwards.

@@ -187,7 +187,7 @@ TEST_VM(G1IHOPControl, allocation_tracker_incr) {
     return;
   }
 
-  size_t initial_ihop = InitiatingHeapOccupancyPercent;
+  size_t initial_ihop = G1IHOP;
   G1IHOPTestController ctrl(false /* adaptive */, initial_ihop, 100 /* target_occupancy */);
   double const time_step_s = 1.0;
   double gc_start_time_s = time_step_s;
@@ -237,7 +237,7 @@ TEST_VM(G1IHOPControl, non_adaptive_ihop) {
     return;
   }
 
-  size_t initial_ihop = InitiatingHeapOccupancyPercent;
+  size_t initial_ihop = G1IHOP;
 
   G1IHOPTestController ctrl(false /* adaptive */, initial_ihop, 100 /* target_occupancy */);
 
@@ -258,7 +258,7 @@ TEST_VM(G1IHOPControl, adaptive_ihop_not_enough_samples) {
     return;
   }
 
-  size_t initial_ihop = InitiatingHeapOccupancyPercent;
+  size_t initial_ihop = G1IHOP;
 
   G1IHOPTestController ctrl(true /* adaptive */, initial_ihop, 100 /* target_occupancy */);
 
@@ -279,7 +279,7 @@ TEST_VM(G1IHOPControl, adaptive_ihop_non_humongous_only) {
     return;
   }
 
-  size_t initial_ihop = InitiatingHeapOccupancyPercent;
+  size_t initial_ihop = G1IHOP;
   // G1Predictions require 5 or more samples to skip special considerations for
   // small samples.
   size_t num_samples = 5;
@@ -311,7 +311,7 @@ TEST_VM(G1IHOPControl, adaptive_ihop_peak_humongous_only) {
     return;
   }
 
-  size_t initial_ihop = InitiatingHeapOccupancyPercent;
+  size_t initial_ihop = G1IHOP;
   // G1Predictions require 5 or more samples to skip special considerations for
   // small samples.
   size_t num_samples = 5;
@@ -342,7 +342,7 @@ TEST_VM(G1IHOPControl, adaptive_ihop_combined) {
     return;
   }
 
-  size_t initial_ihop = InitiatingHeapOccupancyPercent;
+  size_t initial_ihop = G1IHOP;
   // G1Predictions require 5 or more samples to skip special considerations for
   // small samples.
   size_t num_samples = 5;
@@ -373,7 +373,7 @@ TEST_VM(G1IHOPControl, adaptive_ihop_high_alloc_pressure) {
     return;
   }
 
-  size_t initial_ihop = InitiatingHeapOccupancyPercent;
+  size_t initial_ihop = G1IHOP;
   // G1Predictions require 5 or more samples to skip special considerations for
   // small samples.
   size_t num_samples = 5;
@@ -399,7 +399,7 @@ TEST_VM(G1IHOPControl, adaptive_ihop_young_reserve) {
     return;
   }
 
-  size_t initial_ihop = InitiatingHeapOccupancyPercent;
+  size_t initial_ihop = G1IHOP;
   // G1Predictions require 5 or more samples to skip special considerations for
   // small samples.
   size_t num_samples = 5;
@@ -449,7 +449,7 @@ TEST_VM(G1IHOPControl, adaptive_ihop_recovers_after_spike) {
     return;
   }
 
-  size_t initial_ihop = InitiatingHeapOccupancyPercent;
+  size_t initial_ihop = G1IHOP;
   // G1Predictions require 5 or more samples to skip special considerations for
   // small samples.
 
@@ -495,7 +495,7 @@ TEST_VM(G1IHOPControl, adaptive_ihop_reuse_eagerly_reclaimed) {
     return;
   }
 
-  size_t initial_ihop = InitiatingHeapOccupancyPercent;
+  size_t initial_ihop = G1IHOP;
 
   size_t target_occupancy = 100;
   size_t young_reserve    = 10;
@@ -556,7 +556,7 @@ TEST_VM(G1IHOPControl, adaptive_ihop_eager_reclaim_reduces_extra_humongous_occup
     return;
   }
 
-  size_t initial_ihop = InitiatingHeapOccupancyPercent;
+  size_t initial_ihop = G1IHOP;
   // G1Predictions require 5 or more samples to skip special considerations for
   // small samples.
   size_t num_samples = 5;
@@ -626,7 +626,7 @@ TEST_VM(G1IHOPControl, adaptive_ihop_cycle_duration) {
     return;
   }
 
-  size_t initial_ihop = InitiatingHeapOccupancyPercent;
+  size_t initial_ihop = G1IHOP;
   // G1Predictions require 5 or more samples to skip special considerations for
   // small samples.
   size_t num_samples = 5;
@@ -660,7 +660,7 @@ TEST_VM(G1IHOPControl, adaptive_ihop_cycle_duration_scales) {
     return;
   }
 
-  size_t initial_ihop = InitiatingHeapOccupancyPercent;
+  size_t initial_ihop = G1IHOP;
   // G1Predictions require 5 or more samples to skip special considerations for
   // small samples.
   size_t num_samples = 5;
@@ -715,7 +715,7 @@ TEST_VM(G1IHOPControl, adaptive_ihop_gc_humongous_allocation) {
     return;
   }
 
-  size_t initial_ihop = InitiatingHeapOccupancyPercent;
+  size_t initial_ihop = G1IHOP;
   // G1Predictions require 5 or more samples to skip special considerations for
   // small samples.
   size_t num_samples = 5;
@@ -786,7 +786,7 @@ TEST_VM(G1IHOPControl, adaptive_ihop_humongous_allocation_causes_conc_start) {
     return;
   }
 
-  size_t initial_ihop = InitiatingHeapOccupancyPercent;
+  size_t initial_ihop = G1IHOP;
 
   size_t target_occupancy = 100;
 

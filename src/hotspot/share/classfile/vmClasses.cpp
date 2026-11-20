@@ -84,7 +84,6 @@ bool vmClasses::contain(Klass* k) {
 bool vmClasses::resolve(vmClassID id, TRAPS) {
   InstanceKlass** klassp = &_klasses[as_int(id)];
 
-#if INCLUDE_CDS
   if (CDSConfig::is_using_archive() && !JvmtiExport::should_post_class_prepare()) {
     InstanceKlass* k = *klassp;
     assert(k->defined_by_boot_loader(), "must be");
@@ -93,7 +92,6 @@ bool vmClasses::resolve(vmClassID id, TRAPS) {
     resolve_shared_class(k, loader_data, Handle(), CHECK_false);
     return true;
   }
-#endif // INCLUDE_CDS
 
   if (!is_loaded(*klassp)) {
     int sid = vm_class_name_ids[as_int(id)];
@@ -125,11 +123,9 @@ void vmClasses::resolve_all(TRAPS) {
   // after vmSymbols::initialize() is called but before any classes are pre-loaded.
   ClassLoader::classLoader_init2(THREAD);
 
-#if INCLUDE_CDS
   if (CDSConfig::is_using_aot_linked_classes()) {
     AOTLinkedClassBulkLoader::preload_classes(THREAD);
   }
-#endif
 
   // Preload commonly used klasses
   vmClassID scan = vmClassID::FIRST;

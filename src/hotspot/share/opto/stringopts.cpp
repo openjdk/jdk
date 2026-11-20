@@ -554,7 +554,7 @@ StringConcat* PhaseStringOpts::build_candidate(CallStaticJavaNode* call) {
       }
       // Find the constructor call
       Node* result = alloc->result_cast();
-      if (result == nullptr || !result->is_CheckCastPP() || alloc->in(TypeFunc::Memory)->is_top()) {
+      if (!Node::is<CheckCastPPNode>(result) || alloc->in(TypeFunc::Memory)->is_top()) {
         // strange looking allocation
 #ifndef PRODUCT
         if (PrintOptimizeStringConcat) {
@@ -598,7 +598,7 @@ StringConcat* PhaseStringOpts::build_candidate(CallStaticJavaNode* call) {
               // StringBuilder(int) case.
               Node* parm = use->in(TypeFunc::Parms + 1);
               assert(parm != nullptr, "must exist");
-              const TypeInt* type = _gvn->type(parm)->is_int();
+              const TypeInt* type = _gvn->type(parm)->as_int();
               if (type->_hi < 0) {
                 // Initial capacity argument is always negative in which case StringBuilder(int) throws
                 // a NegativeArraySizeException. Bail out from string opts.
@@ -932,8 +932,8 @@ bool StringConcat::validate_mem_flow() {
               ctrl = copy->is_copy();
             } else { // a cast
               assert(ctrl->req() == 3 &&
-                     ctrl->in(1) != nullptr && ctrl->in(1)->is_Proj() &&
-                     ctrl->in(2) != nullptr && ctrl->in(2)->is_Proj() &&
+                     Node::is<ProjNode>(ctrl->in(1)) &&
+                     Node::is<ProjNode>(ctrl->in(2)) &&
                      ctrl->in(1)->in(0) == ctrl->in(2)->in(0) &&
                      ctrl->in(1)->in(0) != nullptr && ctrl->in(1)->in(0)->is_If(),
                      "must be a simple diamond");
@@ -1160,10 +1160,10 @@ bool StringConcat::validate_control_flow() {
         continue;
       }
       if (ptr->req() == 3 &&
-          ptr->in(1) != nullptr && ptr->in(1)->is_Proj() &&
-          ptr->in(2) != nullptr && ptr->in(2)->is_Proj() &&
+          Node::is<ProjNode>(ptr->in(1)) &&
+          Node::is<ProjNode>(ptr->in(2)) &&
           ptr->in(1)->in(0) == ptr->in(2)->in(0) &&
-          ptr->in(1)->in(0) != nullptr && ptr->in(1)->in(0)->is_If()) {
+          Node::is<IfNode>(ptr->in(1)->in(0))) {
         // Simple diamond.
         // XXX should check for possibly merging stores.  simple data merges are ok.
         // The IGVN will make this simple diamond go away when it
@@ -1452,7 +1452,7 @@ void PhaseStringOpts::getChars(GraphKit& kit, Node* arg, Node* dst_array, BasicT
   Node* ch = __ AddI(r, __ intcon('0'));
   Node* st = __ store_to_memory(kit.control(), kit.array_element_address(dst_array, index, T_BYTE),
                                 ch, bt, MemNode::unordered, false /* require_atomic_access */,
-                                false /* unaligned */, (bt != T_BYTE) /* mismatched */);
+                                false /* unaligned */, (bt != T_BYTE) /* mismatched */, false, false, 0);
 
   iff = kit.create_and_map_if(head, __ Bool(__ CmpI(q, __ intcon(0)), BoolTest::ne),
                               PROB_FAIR, COUNT_UNKNOWN);
@@ -1491,7 +1491,7 @@ void PhaseStringOpts::getChars(GraphKit& kit, Node* arg, Node* dst_array, BasicT
     Node* index = __ SubI(charPos, __ intcon((bt == T_BYTE) ? 1 : 2));
     st = __ store_to_memory(kit.control(), kit.array_element_address(dst_array, index, T_BYTE),
                             sign, bt, MemNode::unordered, false /* require_atomic_access */, false /* unaligned */,
-                            (bt != T_BYTE) /* mismatched */);
+                            (bt != T_BYTE) /* mismatched */, false, false, 0);
 
     final_merge->init_req(merge_index + 1, kit.control());
     final_mem->init_req(merge_index + 1, st);
@@ -1588,7 +1588,7 @@ void PhaseStringOpts::arraycopy(GraphKit& kit, IdealKit& ideal, Node* src_array,
   bool aligned = (arrayOopDesc::base_offset_in_bytes(T_BYTE) % HeapWordSize == 0);
   // If true, then check if dst array address is aligned to HeapWordSize
   if (aligned) {
-    const TypeInt* tdst = __ gvn().type(start)->is_int();
+    const TypeInt* tdst = __ gvn().type(start)->as_int();
     aligned = tdst->is_con() && ((arrayOopDesc::base_offset_in_bytes(T_BYTE) +
                                   tdst->get_con() * type2aelembytes(T_BYTE)) % HeapWordSize == 0);
   }
@@ -1824,7 +1824,7 @@ Node* PhaseStringOpts::allocate_byte_array(GraphKit& kit, IdealKit* ideal, Node*
 
 jbyte PhaseStringOpts::get_constant_coder(GraphKit& kit, Node* str) {
   assert(str->is_Con(), "String must be constant");
-  const TypeOopPtr* str_type = kit.gvn().type(str)->isa_oopptr();
+  const TypeOopPtr* str_type = kit.gvn().type(str)->as_oopptr();
   ciInstance* str_instance = str_type->const_oop()->as_instance();
   jbyte coder = str_instance->field_value_by_offset(java_lang_String::coder_offset()).as_byte();
   assert(CompactStrings || (coder == java_lang_String::CODER_UTF16), "Strings must be UTF16 encoded");
@@ -1838,7 +1838,7 @@ int PhaseStringOpts::get_constant_length(GraphKit& kit, Node* str) {
 
 ciTypeArray* PhaseStringOpts::get_constant_value(GraphKit& kit, Node* str) {
   assert(str->is_Con(), "String must be constant");
-  const TypeOopPtr* str_type = kit.gvn().type(str)->isa_oopptr();
+  const TypeOopPtr* str_type = kit.gvn().type(str)->as_oopptr();
   ciInstance* str_instance = str_type->const_oop()->as_instance();
   ciObject* src_array = str_instance->field_value_by_offset(java_lang_String::value_offset()).as_object();
   return src_array->as_type_array();
@@ -1922,7 +1922,7 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
       case StringConcat::NegativeIntCheckMode: {
         // Initial capacity argument might be negative in which case StringBuilder(int) throws
         // a NegativeArraySizeException. Insert a runtime check with an uncommon trap.
-        const TypeInt* type = kit.gvn().type(arg)->is_int();
+        const TypeInt* type = kit.gvn().type(arg)->as_int();
         assert(type->_hi >= 0 && type->_lo < 0, "no runtime int check needed");
         Node* p = __ Bool(__ CmpI(arg, kit.intcon(0)), BoolTest::ge);
         IfNode* iff = kit.create_and_map_if(kit.control(), p, PROB_MIN, COUNT_UNKNOWN);
@@ -2031,7 +2031,7 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
       }
       case StringConcat::CharMode: {
         // one character only
-        const TypeInt* t = kit.gvn().type(arg)->is_int();
+        const TypeInt* t = kit.gvn().type(arg)->as_int();
         if (!coder_fixed && t->is_con()) {
           // Constant char
           if (t->get_con() <= 255) {

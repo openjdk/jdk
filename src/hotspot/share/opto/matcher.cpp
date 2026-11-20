@@ -398,7 +398,7 @@ void Matcher::match( ) {
       // in find_base_for_derived().
       assert(_mach_null != nullptr || C->failure_is_artificial(), ""); // bailouts are handled below.
 
-      C->set_root(xroot->is_Root() ? xroot->as_Root() : nullptr);
+      C->set_root(xroot->isa_Root());
 
 #ifdef ASSERT
       verify_new_nodes_only(xroot);
@@ -1072,7 +1072,7 @@ Node *Matcher::xform( Node *n, int max_stack ) {
             if (C->failing())  return nullptr;
             if (m == nullptr) { Matcher::soft_match_failure(); return nullptr; }
           } else {                  // Nothing the matcher cares about
-            if (n->is_Proj() && n->in(0) != nullptr && n->in(0)->is_Multi()) {       // Projections?
+            if (n->is_Proj() && Node::is<MultiNode>(n->in(0))) {       // Projections?
               if (n->in(0)->is_Initialize() && n->as_Proj()->_con == TypeFunc::Memory) {
                 // Initialize may have multiple NarrowMem projections. They would all match to identical raw mem MachProjs.
                 // We don't need multiple MachProjs. Create one if none already exist, otherwise use existing one.
@@ -1239,8 +1239,8 @@ MachNode* Matcher::match_sfpt(SafePointNode* sfpt) {
     for (uint i = 0; i < static_java_call->req(); i++) {
       if (i == TypeFunc::Parms) {
         // Remove the trap request input edge.
-        assert(static_java_call->in(i)->bottom_type()->isa_int() &&
-               static_java_call->in(i)->bottom_type()->is_int()->is_con(), "incorrect trap request input");
+        assert(static_java_call->in(i)->bottom_type()->is_int() &&
+               static_java_call->in(i)->bottom_type()->as_int()->is_con(), "incorrect trap request input");
       } else {
         mn->add_req(static_java_call->in(i));
       }
@@ -1318,7 +1318,7 @@ MachNode* Matcher::match_sfpt(SafePointNode* sfpt) {
   OptoReg::Name out_arg_limit_per_call = begin_out_arg_area;
   // Calls to C may hammer extra stack slots above and beyond any arguments.
   // These are usually backing store for register arguments for varargs.
-  if( call != nullptr && call->is_CallRuntime() )
+  if (Node::is<CallRuntimeNode>(call))
     out_arg_limit_per_call = OptoReg::add(out_arg_limit_per_call,C->varargs_C_out_slots_killed());
 
 
@@ -1381,7 +1381,7 @@ MachNode* Matcher::match_sfpt(SafePointNode* sfpt) {
         continue;               // Avoid Halves
       }
       // Handle case where arguments are in vector registers.
-      if(call->in(TypeFunc::Parms + i)->bottom_type()->isa_vect()) {
+      if (call->in(TypeFunc::Parms + i)->bottom_type()->is_vect()) {
         OptoReg::Name reg_fst = OptoReg::as_OptoReg(first);
         OptoReg::Name reg_snd = OptoReg::as_OptoReg(second);
         assert (reg_fst <= reg_snd, "fst=%d snd=%d", reg_fst, reg_snd);
@@ -1801,7 +1801,7 @@ MachNode *Matcher::ReduceInst( State *s, int rule, Node *&mem ) {
         m = leaf;
       } else {
         m = _mem_node;
-        assert(m != nullptr && m->is_Mem(), "expecting memory node");
+        assert(Node::is<MemNode>(m), "expecting memory node");
       }
       const TypePtr* mach_at = mach->in_adr_type();
       // DecodeN node consumed by an address may have different type
@@ -2495,11 +2495,13 @@ void Matcher::find_shared_post_visit(Node* n, uint opcode) {
       break;
     }
     case Op_StoreLSpecial: {
-      if (n->req() > (MemNode::ValueIn + 1) && n->in(MemNode::ValueIn + 1) != nullptr) {
-        Node* pair = new BinaryNode(n->in(MemNode::ValueIn), n->in(MemNode::ValueIn + 1));
+      if (!n->in(StoreLSpecialNode::OopOffset)->is_top()) {
+        Node* pair = new BinaryNode(n->in(MemNode::ValueIn), n->in(StoreLSpecialNode::OopOffset));
         n->set_req(MemNode::ValueIn, pair);
-        n->del_req(MemNode::ValueIn + 1);
       }
+      n->del_req(StoreLSpecialNode::SecondOop);
+      n->del_req(StoreLSpecialNode::FirstOop);
+      n->del_req(StoreLSpecialNode::OopOffset);
       break;
     }
     default:
@@ -2561,7 +2563,7 @@ void Matcher::collect_null_checks( Node *proj, Node *orig_proj ) {
         _null_check_tests.push(proj);
         Node* val = cmp->in(1);
 #ifdef _LP64
-        if (val->bottom_type()->isa_narrowoop() &&
+        if (val->bottom_type()->is_narrowoop() &&
             !Matcher::narrow_oop_use_complex_address()) {
           //
           // Look for DecodeN node which should be pinned to orig_proj.
@@ -2657,19 +2659,19 @@ const RegMask* Matcher::regmask_for_ideal_register(uint ideal_reg, Node* ret) {
 
   Node* spill;
   switch (ideal_reg) {
-    case Op_RegN: spill = new LoadNNode(nullptr, mem, fp, atp, t->is_narrowoop(), mo); break;
-    case Op_RegI: spill = new LoadINode(nullptr, mem, fp, atp, t->is_int(),       mo); break;
-    case Op_RegP: spill = new LoadPNode(nullptr, mem, fp, atp, t->is_ptr(),       mo); break;
+    case Op_RegN: spill = new LoadNNode(nullptr, mem, fp, atp, t->as_narrowoop(), mo); break;
+    case Op_RegI: spill = new LoadINode(nullptr, mem, fp, atp, t->as_int(),       mo); break;
+    case Op_RegP: spill = new LoadPNode(nullptr, mem, fp, atp, t->as_ptr(),       mo); break;
     case Op_RegF: spill = new LoadFNode(nullptr, mem, fp, atp, t,                 mo); break;
     case Op_RegD: spill = new LoadDNode(nullptr, mem, fp, atp, t,                 mo); break;
-    case Op_RegL: spill = new LoadLNode(nullptr, mem, fp, atp, t->is_long(),      mo); break;
+    case Op_RegL: spill = new LoadLNode(nullptr, mem, fp, atp, t->as_long(),      mo); break;
 
     case Op_VecA: // fall-through
     case Op_VecS: // fall-through
     case Op_VecD: // fall-through
     case Op_VecX: // fall-through
     case Op_VecY: // fall-through
-    case Op_VecZ: spill = new LoadVectorNode(nullptr, mem, fp, atp, t->is_vect()); break;
+    case Op_VecZ: spill = new LoadVectorNode(nullptr, mem, fp, atp, t->as_vect()); break;
     case Op_RegVectMask: return Matcher::predicate_reg_mask();
 
     default: ShouldNotReachHere();
@@ -2680,7 +2682,7 @@ const RegMask* Matcher::regmask_for_ideal_register(uint ideal_reg, Node* ret) {
     return nullptr;
   }
   // Handle generic vector operand case
-  if (Matcher::supports_generic_vector_operands && t->isa_vect()) {
+  if (Matcher::supports_generic_vector_operands && t->is_vect()) {
     specialize_mach_node(mspill);
   }
   return &mspill->out_RegMask();
@@ -2728,7 +2730,7 @@ MachOper* Matcher::specialize_vector_operand(MachNode* m, uint opnd_idx) {
       }
     }
   }
-  assert(def->bottom_type()->isa_vect(), "not a vector");
+  assert(def->bottom_type()->is_vect(), "not a vector");
   uint ideal_vreg = def->bottom_type()->ideal_reg();
   return Matcher::pd_specialize_generic_vector_operand(m->_opnds[opnd_idx], ideal_vreg, false /*is_temp*/);
 }
@@ -2772,36 +2774,36 @@ void Matcher::specialize_generic_vector_operands() {
 }
 
 uint Matcher::vector_length(const Node* n) {
-  const TypeVect* vt = n->bottom_type()->is_vect();
+  const TypeVect* vt = n->bottom_type()->as_vect();
   return vt->length();
 }
 
 uint Matcher::vector_length(const MachNode* use, const MachOper* opnd) {
   int def_idx = use->operand_index(opnd);
   Node* def = use->in(def_idx);
-  return def->bottom_type()->is_vect()->length();
+  return def->bottom_type()->as_vect()->length();
 }
 
 uint Matcher::vector_length_in_bytes(const Node* n) {
-  const TypeVect* vt = n->bottom_type()->is_vect();
+  const TypeVect* vt = n->bottom_type()->as_vect();
   return vt->length_in_bytes();
 }
 
 uint Matcher::vector_length_in_bytes(const MachNode* use, const MachOper* opnd) {
   uint def_idx = use->operand_index(opnd);
   Node* def = use->in(def_idx);
-  return def->bottom_type()->is_vect()->length_in_bytes();
+  return def->bottom_type()->as_vect()->length_in_bytes();
 }
 
 BasicType Matcher::vector_element_basic_type(const Node* n) {
-  const TypeVect* vt = n->bottom_type()->is_vect();
+  const TypeVect* vt = n->bottom_type()->as_vect();
   return vt->element_basic_type();
 }
 
 BasicType Matcher::vector_element_basic_type(const MachNode* use, const MachOper* opnd) {
   int def_idx = use->operand_index(opnd);
   Node* def = use->in(def_idx);
-  return def->bottom_type()->is_vect()->element_basic_type();
+  return def->bottom_type()->as_vect()->element_basic_type();
 }
 
 bool Matcher::is_non_long_integral_vector(const Node* n) {
@@ -2811,10 +2813,8 @@ bool Matcher::is_non_long_integral_vector(const Node* n) {
 }
 
 bool Matcher::is_encode_and_store_pattern(const Node* n, const Node* m) {
-  if (n == nullptr ||
-      m == nullptr ||
-      n->Opcode() != Op_StoreN ||
-      !m->is_EncodeP() ||
+  if (!Node::is_exact<Op_StoreN>(n)   ||
+      !Node::is<EncodePNode>(m) ||
       n->as_Store()->barrier_data() == 0) {
     return false;
   }
@@ -2963,8 +2963,8 @@ bool Matcher::branches_to_uncommon_trap(const Node *n) {
     if (call &&
         call->entry_point() == OptoRuntime::uncommon_trap_blob()->entry_point()) {
       const Type* trtype = call->in(TypeFunc::Parms)->bottom_type();
-      if (trtype->isa_int() && trtype->is_int()->is_con()) {
-        jint tr_con = trtype->is_int()->get_con();
+      if (trtype->is_int() && trtype->as_int()->is_con()) {
+        jint tr_con = trtype->as_int()->get_con();
         Deoptimization::DeoptReason reason = Deoptimization::trap_request_reason(tr_con);
         Deoptimization::DeoptAction action = Deoptimization::trap_request_action(tr_con);
         assert((int)reason < (int)BitsPerInt, "recode bit map");

@@ -433,9 +433,6 @@ void AOTMapLogger::log_metaspace_objects_impl(address region_base, address regio
     case MetaspaceClosureType::MethodType:
       log_method((Method*)src, requested_addr, type_name, bytes, current);
       break;
-    case MetaspaceClosureType::MethodCountersType:
-      log_method_counters((MethodCounters*)src, requested_addr, type_name, bytes, current);
-      break;
     case MetaspaceClosureType::MethodDataType:
       log_method_data((MethodData*)src, requested_addr, type_name, bytes, current);
       break;
@@ -505,12 +502,6 @@ void AOTMapLogger::log_const_method(ConstMethod* cm, address requested_addr, con
                                     int bytes, Thread* current) {
   ResourceMark rm(current);
   log_debug(aot, map)(_LOG_PREFIX " %s", p2i(requested_addr), type_name, bytes,  cm->method()->external_name());
-}
-
-void AOTMapLogger::log_method_counters(MethodCounters* mc, address requested_addr, const char* type_name,
-                                      int bytes, Thread* current) {
-  ResourceMark rm(current);
-  log_debug(aot, map)(_LOG_PREFIX " %s", p2i(requested_addr), type_name, bytes,  mc->method()->external_name());
 }
 
 void AOTMapLogger::log_method_data(MethodData* md, address requested_addr, const char* type_name,

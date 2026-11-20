@@ -30,6 +30,7 @@ import com.sun.org.apache.xerces.internal.util.SecurityManager;
 import java.net.URI;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -84,8 +85,7 @@ public final class XMLSecurityManager implements Cloneable {
         CR_MAP = Collections.unmodifiableMap(map);
     }
 
-    // Valid values for Resource Access, and mappings between the string and
-    // integer values
+    // Canonical string representations of the Resource Access integer values
     static final Map<String, Integer> RA_MAP;
     // Source Level JDK 8
     static {
@@ -102,13 +102,17 @@ public final class XMLSecurityManager implements Cloneable {
     private static final IntegerMapper INTMAPPER = new IntegerMapper();
 
     // DTD value mapper
-    private static final StringMapper DTDMAPPER = new StringMapper(DTD_MAP);
+    private static final StringMapper DTDMAPPER = new StringMapper(JdkConstants.DTD_PROPNAME, DTD_MAP);
 
     // Catalog Resolve value mapper
-    private static final StringMapper CRMAPPER = new StringMapper(CR_MAP);
+    private static final StringMapper CRMAPPER = new StringMapper(JdkConstants.JDKCATALOG_RESOLVE, CR_MAP);
 
-    // Resource Access value mapper
-    private static final StringMapper RAMAPPER = new StringMapper(RA_MAP);
+    /**
+     * Resource Access value mapper
+     * AccessRule parses and validates the rules. This mapper provides string representations
+     * of the broad access cases: allow all and deny all.
+     */
+    private static final StringMapper RAMAPPER = new StringMapper(JdkConstants.RESOURCE_ACCESS, RA_MAP);
 
     /**
      * Limits managed by the security manager
@@ -483,7 +487,9 @@ public final class XMLSecurityManager implements Cloneable {
             if (state.compareTo(states[index]) >= 0) {
                 String ruleValue = (String)value;
                 AccessRule rule = new AccessRule(ruleValue);
-                int intValue = limit.mapper().toInt(ruleValue);
+                // AccessRule holds the actual rules. The integer value is used
+                // only for bookkeeping; access decisions use AccessRule.allows.
+                int intValue = ruleValue.trim().isEmpty() ? JdkConstants.DENY : JdkConstants.ALLOW;
                 accessRule = rule;
                 values[index] = intValue;
                 states[index] = state;
@@ -851,7 +857,7 @@ public final class XMLSecurityManager implements Cloneable {
     }
 
     private boolean isPropertyValuePresent(Limit limit, String value) {
-        return value != null && (!value.isEmpty() || limit == Limit.RESOURCE_ACCESS);
+        return value != null && (!value.isEmpty() || limit.mapper() instanceof StringMapper);
     }
 
     /**
@@ -892,10 +898,18 @@ public final class XMLSecurityManager implements Cloneable {
      * keys and values within the map.
      */
     public static class StringMapper extends ValueMapper {
+        private final String propertyName;
         private final Map<String, Integer> map;
         private final Map<Integer, String> reverseMap;
 
-        public StringMapper(Map<String, Integer> map) {
+        /**
+         * Creates a mapper for the named property.
+         *
+         * @param propertyName the name of the property
+         * @param map the value mappings, or null for numeric conversion
+         */
+        public StringMapper(String propertyName, Map<String, Integer> map) {
+            this.propertyName = propertyName;
             this.map = map;
             if (map != null) {
                 reverseMap = map.entrySet().stream()
@@ -907,18 +921,25 @@ public final class XMLSecurityManager implements Cloneable {
 
         /**
          * Finds the mapping int value with the specified property value. This
-         * method will try to convert the provided value to an integer if no
-         * mapping is found.
+         * method trims surrounding whitespace before looking up the value,
+         * or converts the value to an integer if no map is supplied.
          * @param value the property value
-         * @return the mapping int value if found, null otherwise
+         * @return the mapped or converted integer
+         * @throws IllegalArgumentException if the value is not in the provided map
+         * @throws NumberFormatException if numeric conversion is required and
+         * the value cannot be parsed as a number
          */
         @Override
         public int toInt(Object value) {
             Objects.requireNonNull(value);
             Integer iVal;
             if (map != null) {
-                iVal = map.get(((String)value).toLowerCase());
-                iVal = (iVal == null) ? 0 : iVal;
+                String stringValue = ((String)value).trim();
+                iVal = map.get(stringValue.toLowerCase(Locale.ROOT));
+                if (iVal == null) {
+                    throw new IllegalArgumentException("Invalid setting '" + value
+                            + "' for property '" + propertyName + "'.");
+                }
             } else {
                 try {
                     iVal = (int)Double.parseDouble((String)value);

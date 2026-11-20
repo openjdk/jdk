@@ -54,7 +54,7 @@ class nmethod;
                 p2i((_hr_)->bottom()), p2i((_hr_)->top()), p2i((_hr_)->end())
 
 // sentinel value for hrm_index
-#define G1_NO_HRM_INDEX ((uint) -1)
+#define G1_NO_HRM_INDEX (UINT_MAX)
 
 // A G1HeapRegion is the smallest piece of a G1CollectedHeap that
 // can be collected independently.

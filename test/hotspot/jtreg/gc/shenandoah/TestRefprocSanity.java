@@ -24,21 +24,21 @@
  */
 
 /*
- * @test id=default
+ * @test id=satb
  * @summary Test that null references/referents work fine
  * @requires vm.gc.Shenandoah
  *
  * @run main/othervm -Xmx128m -Xms128m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=satb
  *      -XX:+ShenandoahVerify
  *      TestRefprocSanity
  *
  * @run main/othervm -Xmx128m -Xms128m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=satb
  *      TestRefprocSanity
  *
  * @run main/othervm -Xmx128m -Xms128m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=satb -XX:ShenandoahGCHeuristics=aggressive
  *      TestRefprocSanity
  */
 

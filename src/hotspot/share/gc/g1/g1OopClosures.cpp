@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,14 +42,14 @@ G1ScanClosureBase::G1ScanClosureBase(G1CollectedHeap* g1h, G1ParScanThreadState*
 
 void G1CLDScanClosure::do_cld(ClassLoaderData* cld) {
   // If the class loader data has not been dirtied we know that there's
-  // no references into the young gen and we can skip it.
-  if (!_process_only_dirty || cld->has_modified_oops()) {
-
+  // no references into the young gen or humongous regions and we can skip it.
+  if (!_process_only_dirty || cld->has_modified_or_humongous_oops()) {
     // Tell the closure that this class loader data is the CLD to scavenge
-    // and is the one to dirty if oops are left pointing into the young gen.
+    // and is the one to dirty if oops are left pointing into the young gen
+    // or humongous regions.
     _closure->set_scanned_cld(cld);
-    // Clean modified oops since we're going to scavenge all the metadata.
-    cld->oops_do(_closure, ClassLoaderData::_claim_none, true /*clear_modified_oops*/);
+    // Clear the flag before iterating the oops - it will be set again if needed.
+    cld->oops_do(_closure, ClassLoaderData::_claim_none, true /* should_clear_modified_or_humongous_oops */);
 
     _closure->set_scanned_cld(nullptr);
 

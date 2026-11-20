@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -128,7 +128,7 @@ class CLDScanClosure: public CLDClosure {
     CLDOopClosure oop_closure{_g};
 
     // Clean the cld since we're going to scavenge all the metadata.
-    cld->oops_do(&oop_closure, ClassLoaderData::_claim_none, /*clear_modified_oops*/true);
+    cld->oops_do(&oop_closure, ClassLoaderData::_claim_none, true /* should_clear_modified_or_humongous_oops */);
 
     if (oop_closure._has_oops_into_young_gen) {
       cld->record_modified_oops();

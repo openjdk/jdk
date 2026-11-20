@@ -194,11 +194,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName draft="unconfirmed">iuan xinés extracontinental</displayName>
 				<displayName count="one" draft="unconfirmed">iuan xinés extracontinental</displayName>
 			</currency>
-			<currency type="CNX">
-				<displayName draft="unconfirmed">dòlar del Banc Popular Xinés</displayName>
-				<displayName count="one" draft="unconfirmed">dòlar del Banc Popular Xinés</displayName>
-				<displayName count="other" draft="unconfirmed">dòlars del Banc Popular Xinés</displayName>
-			</currency>
 			<currency type="CNY">
 				<displayName draft="unconfirmed">iuan xinés</displayName>
 				<displayName count="one" draft="unconfirmed">iuan xinés</displayName>

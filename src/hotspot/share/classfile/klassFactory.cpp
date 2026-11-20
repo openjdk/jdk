@@ -218,11 +218,9 @@ InstanceKlass* KlassFactory::create_from_stream(ClassFileStream* stream,
 
   JFR_ONLY(Jfr::on_klass_creation(result, parser, THREAD);)
 
-#if INCLUDE_CDS
   if (CDSConfig::is_dumping_archive()) {
     ClassLoader::record_result(THREAD, result, stream, old_stream != stream);
   }
-#endif // INCLUDE_CDS
 
   return result;
 }
