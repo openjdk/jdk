@@ -2017,6 +2017,14 @@ WB_ENTRY(jboolean, WB_IsUbsanEnabled(JNIEnv* env))
   return (jboolean) WhiteBox::is_ubsan_enabled();
 WB_END
 
+WB_ENTRY(jboolean, WB_IsReturnAddressProtectionEnabled(JNIEnv* env, jobject wb))
+#if defined(AARCH64) && !defined(ZERO)
+  return VM_Version::use_rop_protection();
+#else
+  return false;
+#endif
+WB_END
+
 WB_ENTRY(jlong, WB_getInUseMonitorCount(JNIEnv* env, jobject wb))
   return (jlong) WhiteBox::get_in_use_monitor_count();
 WB_END
@@ -3134,6 +3142,7 @@ static JNINativeMethod methods[] = {
   {CC"metaspaceCapacityUntilGC", CC"()J",             (void*)&WB_MetaspaceCapacityUntilGC },
   {CC"metaspaceSharedRegionAlignment", CC"()J",       (void*)&WB_AOTMetaspaceRegionAlignment },
   {CC"getCPUFeatures",     CC"()Ljava/lang/String;",  (void*)&WB_GetCPUFeatures     },
+  {CC"isReturnAddressProtectionEnabled", CC"()Z",     (void*)&WB_IsReturnAddressProtectionEnabled },
   {CC"getNMethod0",         CC"(Ljava/lang/reflect/Executable;Z)[Ljava/lang/Object;",
                                                       (void*)&WB_GetNMethod         },
   {CC"relocateNMethodFromMethod0", CC"(Ljava/lang/reflect/Executable;I)V",

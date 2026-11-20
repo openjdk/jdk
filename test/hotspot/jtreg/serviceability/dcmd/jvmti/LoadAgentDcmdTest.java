@@ -22,16 +22,11 @@
  */
 import java.io.*;
 import java.nio.file.*;
-import java.util.Arrays;
 import java.util.jar.Attributes;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
-import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import jdk.test.lib.Platform;
-import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.dcmd.*;
 import org.testng.annotations.Test;
 
@@ -102,47 +97,28 @@ public class LoadAgentDcmdTest {
         }
     }
 
-    static void checkWarningsOnly(OutputAnalyzer out) {
-        // stderr should be empty except for VM warnings.
-        if (!out.getStderr().isEmpty()) {
-            List<String> lines = Arrays.asList(out.getStderr().split("(\\r\\n|\\n|\\r)"));
-            Pattern p = Pattern.compile(".*VM warning.*");
-            for (String line : lines) {
-                Matcher m = p.matcher(line);
-                if (!m.matches()) {
-                    throw new RuntimeException("Stderr has output other than VM warnings");
-                }
-            }
-        }
-    }
-
     public void run(CommandExecutor executor)  {
         try{
 
             createJarFileForAgent();
 
             String libpath = getLibInstrumentPath();
-            OutputAnalyzer output = null;
 
             // Test 1: Native agent, no arguments
-            output = executor.execute("JVMTI.agent_load " +
-                                          libpath + " agent.jar");
-            checkWarningsOnly(output);
+            executor.execute("JVMTI.agent_load " + libpath + " agent.jar")
+                    .stderrShouldBeEmptyIgnoreVMWarnings();
 
             // Test 2: Native agent, with arguments
-            output = executor.execute("JVMTI.agent_load " +
-                                          libpath + " \"agent.jar=foo=bar\"");
-            checkWarningsOnly(output);
+            executor.execute("JVMTI.agent_load " + libpath + " \"agent.jar=foo=bar\"")
+                    .stderrShouldBeEmptyIgnoreVMWarnings();
 
             // Test 3: Java agent, no arguments
-            output = executor.execute("JVMTI.agent_load " +
-                                          "agent.jar");
-            checkWarningsOnly(output);
+            executor.execute("JVMTI.agent_load agent.jar")
+                    .stderrShouldBeEmptyIgnoreVMWarnings();
 
             // Test 4: Java agent, with arguments
-            output = executor.execute("JVMTI.agent_load " +
-                                          "\"agent.jar=foo=bar\"");
-            checkWarningsOnly(output);
+            executor.execute("JVMTI.agent_load \"agent.jar=foo=bar\"")
+                    .stderrShouldBeEmptyIgnoreVMWarnings();
 
         } catch (Exception e) {
             throw new RuntimeException(e);

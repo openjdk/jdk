@@ -387,6 +387,7 @@ jobs:
       architecture: 'ARM64'
       msvc-toolset-version: '14.51'
       configure-arguments: ${{ github.event.inputs.configure-arguments }}
+      extra-conf-options: '--enable-branch-protection'
       make-arguments: ${{ github.event.inputs.make-arguments }}
       dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
     if: needs.prepare.outputs.windows-aarch64 == 'true'

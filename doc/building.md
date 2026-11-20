@@ -174,8 +174,8 @@ In order to use Branch Protection features in the VM,
 support for `-mbranch-protection=standard` in GCC 9.1.0+ or Clang 10+ on
 Linux/AArch64 or for `/guard:signret` in Visual Studio 2019+ on Windows/ARM64.
 The resulting build can be run on both machines with and without support for
-branch protection in hardware. Branch Protection is fully supported for the
-Linux/AArch64 target and only partially supported for the Windows/ARM64 target.
+branch protection in hardware. Branch Protection is supported for the
+Linux/AArch64 and the Windows/ARM64 targets.
 
 ### Building on 32-bit ARM
 

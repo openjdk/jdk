@@ -39,7 +39,29 @@
 pauth_drop_signature_win_arm64
     mov      x9, x30
     mov      x30, x0
-    hint     #7
+    hint     #7         ; xpaclri
+    mov      x0, x30
+    mov      x30, x9
+    ret
+
+    ALIGN  4
+    EXPORT pauth_sign_win_arm64
+
+pauth_sign_win_arm64
+    mov      x9, x30
+    mov      x30, x0
+    hint     #26        ; pacibz
+    mov      x0, x30
+    mov      x30, x9
+    ret
+
+    ALIGN  4
+    EXPORT pauth_auth_win_arm64
+
+pauth_auth_win_arm64
+    mov      x9, x30
+    mov      x30, x0
+    hint     #30        ; autibz
     mov      x0, x30
     mov      x30, x9
     ret
