@@ -68,25 +68,29 @@ void ShenandoahTaskQueue::compact() {
   }
 }
 
-ShenandoahTaskQueueSegment::ShenandoahTaskQueueSegment(size_t seg_idx) :
-  _free_bm(right_n_bits(SEGMENT_SIZE)), _shared_bm(0) {
-
+ShenandoahTaskQueueSegment* ShenandoahTaskQueueSegment::create(size_t seg_idx) {
   size_t align = MAX2(os::vm_allocation_granularity(), os::vm_page_size());
-  size_t bytes = align_up(SEGMENT_SIZE * sizeof(ShenandoahTaskQueueChunk), align);
-  _rs_chunks = MemoryReserver::reserve(bytes, align, os::vm_page_size(), mtGC);
-  if (!_rs_chunks.is_reserved()) {
+  size_t bytes = align_up(sizeof(ShenandoahTaskQueueSegment), align);
+  ReservedSpace rs = MemoryReserver::reserve(bytes, align, os::vm_page_size(), mtGC);
+  if (!rs.is_reserved()) {
     vm_exit_out_of_memory(bytes, OOM_MMAP_ERROR, "Cannot reserve task queue segment");
   }
-  os::commit_memory_or_exit(_rs_chunks.base(), _rs_chunks.size(), !ExecMem, "");
+  os::commit_memory_or_exit(rs.base(), rs.size(), !ExecMem, "");
 
-  _chunks = reinterpret_cast<ShenandoahTaskQueueChunk*>(_rs_chunks.base());
+  return new (rs.base()) ShenandoahTaskQueueSegment(seg_idx, rs);
+}
+
+void ShenandoahTaskQueueSegment::destroy(ShenandoahTaskQueueSegment* seg) {
+  ReservedSpace rs = seg->_rs;
+  seg->~ShenandoahTaskQueueSegment();
+  MemoryReserver::release(rs);
+}
+
+ShenandoahTaskQueueSegment::ShenandoahTaskQueueSegment(size_t seg_idx, ReservedSpace& rs) :
+  _free_bm(right_n_bits(SEGMENT_SIZE)), _shared_bm(0), _rs(rs) {
   for (size_t i = 0; i < SEGMENT_SIZE; i++) {
     ::new (&_chunks[i]) ShenandoahTaskQueueChunk((seg_idx << SEGMENT_SIZE_SHIFT) + i);
   }
-}
-
-ShenandoahTaskQueueSegment::~ShenandoahTaskQueueSegment() {
-  MemoryReserver::release(_rs_chunks);
 }
 
 void ShenandoahTaskQueueSegment::clear() {
@@ -127,7 +131,7 @@ ShenandoahTaskQueueSet::~ShenandoahTaskQueueSet() {
   FREE_C_HEAP_ARRAY(_queues);
 
   for (size_t s = 0; s < _num_segments.load_relaxed(); s++) {
-    delete _segments[s];
+    ShenandoahTaskQueueSegment::destroy(_segments[s]);
   }
   FREE_C_HEAP_ARRAY(_segments);
 }
@@ -166,7 +170,7 @@ void ShenandoahTaskQueueSet::trim() {
   size_t min = align_up(_queue_count, ShenandoahTaskQueueSegment::SEGMENT_SIZE) / ShenandoahTaskQueueSegment::SEGMENT_SIZE + 1;
   size_t s = _num_segments.load_relaxed() - 1;
   while (s > min && _segments[s]->are_all_free()) {
-    delete _segments[s];
+    ShenandoahTaskQueueSegment::destroy(_segments[s]);
     AtomicAccess::store(&_segments[s], (ShenandoahTaskQueueSegment*)nullptr);
     _num_segments.fetch_then_sub((size_t)1);
     s--;

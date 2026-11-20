@@ -328,11 +328,13 @@ public:
   void share_work();
 };
 
-class ShenandoahTaskQueueSegment : public CHeapObj<mtGC> {
+class ShenandoahTaskQueueSegment {
 public:
   static const int SEGMENT_SIZE_SHIFT = 6;
   static const int SEGMENT_SIZE = 1 << SEGMENT_SIZE_SHIFT;
   static_assert(SEGMENT_SIZE <= 64, "Bitmap encoding");
+
+  ShenandoahTaskQueueChunk _chunks[SEGMENT_SIZE];
 
   shenandoah_padding(0);
   Atomic<uint64_t> _free_bm;
@@ -340,11 +342,10 @@ public:
   Atomic<uint64_t> _shared_bm;
   shenandoah_padding(2);
 
-  ReservedSpace _rs_chunks;
-  ShenandoahTaskQueueChunk* _chunks;
+  ReservedSpace _rs;
 
-  ShenandoahTaskQueueSegment(size_t seg_idx);
-  ~ShenandoahTaskQueueSegment();
+  static ShenandoahTaskQueueSegment* create(size_t seg_idx);
+  static void destroy(ShenandoahTaskQueueSegment* seg);
 
   inline ShenandoahTaskQueueChunk* flip_from(Atomic<uint64_t>* bm);
   inline ShenandoahTaskQueueChunk* flip_from_shared();
@@ -357,6 +358,9 @@ public:
   bool are_all_free() const;
 
   void clear();
+
+private:
+  ShenandoahTaskQueueSegment(size_t seg_idx, ReservedSpace& rs);
 };
 
 class ShenandoahTaskQueueSet : public CHeapObj<mtGC> {

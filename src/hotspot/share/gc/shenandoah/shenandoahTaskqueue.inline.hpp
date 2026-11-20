@@ -185,10 +185,10 @@ ShenandoahTaskQueueSegment* ShenandoahTaskQueueSet::try_grow(size_t n) {
 
   ShenandoahTaskQueueSegment* cand = nullptr;
   if (AtomicAccess::load_acquire(&_segments[n]) == nullptr) {
-    cand = new ShenandoahTaskQueueSegment(n);
+    cand = ShenandoahTaskQueueSegment::create(n);
     if (AtomicAccess::cmpxchg(&_segments[n], (ShenandoahTaskQueueSegment*)nullptr, cand) != nullptr) {
       // Someone else won the installation race.
-      delete cand;
+      ShenandoahTaskQueueSegment::destroy(cand);
       cand = nullptr;
     }
   }
