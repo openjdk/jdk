@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@ package common;
 
 import java.util.EnumSet;
 import java.util.Set;
+import java.util.stream.Stream;
+import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
@@ -33,36 +35,40 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.xpath.XPathFactory;
 import jdk.xml.internal.JdkProperty.ImplPropMap;
+import jdk.xml.internal.JdkProperty.State;
+import jdk.xml.internal.XMLSecurityManager;
 import jdk.xml.internal.XMLSecurityManager.BooleanMapper;
 import jdk.xml.internal.XMLSecurityManager.IntegerMapper;
 import jdk.xml.internal.XMLSecurityManager.Limit;
 import jdk.xml.internal.XMLSecurityManager.StringMapper;
 import jdk.xml.internal.XMLSecurityManager.ValueMapper;
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.w3c.dom.DOMConfiguration;
 import org.w3c.dom.bootstrap.DOMImplementationRegistry;
 import org.w3c.dom.ls.DOMImplementationLS;
 import org.w3c.dom.ls.LSSerializer;
 import org.xml.sax.XMLReader;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
 
 
 /*
  * @test
- * @bug 8265248
+ * @bug 8265248 8393346
  * @modules java.xml/com.sun.org.apache.xerces.internal.utils
  * @modules java.xml/jdk.xml.internal
- * @run testng common.ImplPropertyTest
+ * @run junit/othervm common.ImplPropertyTest
  * @summary Verifies Implementation-specific Features and Properties as specified
  * in the java.xml module summary.
  */
 public class ImplPropertyTest {
-
     private final DocumentBuilderFactory dbf = DocumentBuilderFactory.newDefaultInstance();
     private final XMLInputFactory xif = XMLInputFactory.newDefaultFactory();
     private final SchemaFactory sf = SchemaFactory.newDefaultInstance();
-
-
     private final XPathFactory xf = XPathFactory.newDefaultInstance();
 
     // as in the Processors table in java.xml module summary
@@ -77,6 +83,22 @@ public class ImplPropertyTest {
         DOMLS,
         XPATH
     };
+
+    // for testing invalid string values
+    private static Stream<Arguments> invalidStringProperties() {
+        return Stream.of(
+            Arguments.of(Limit.DTD, ""),
+            Arguments.of(Limit.DTD, "invalid"),
+            Arguments.of(Limit.DTD, " "),
+            Arguments.of(Limit.DTD, "0"),
+            Arguments.of(Limit.DTD, "strict"),
+            Arguments.of(Limit.JDKCATALOG_RESOLVE, ""),
+            Arguments.of(Limit.JDKCATALOG_RESOLVE, "invalid"),
+            Arguments.of(Limit.JDKCATALOG_RESOLVE, " "),
+            Arguments.of(Limit.JDKCATALOG_RESOLVE, "0"),
+            Arguments.of(Limit.JDKCATALOG_RESOLVE, "allow")
+        );
+    }
 
     /**
      * Verifies both the new and legacy property names. This test runs two cases:
@@ -110,6 +132,23 @@ public class ImplPropertyTest {
                 testProperties(p, limit.apiProperty(), value1, limit.systemProperty(), value2,
                     (limit.systemProperty() != null && !limit.apiProperty().equals(limit.systemProperty())));
             }
+        }
+    }
+
+    // Verifies that invalid values are rejected with IllegalArgumentException.
+    @ParameterizedTest
+    @MethodSource("invalidStringProperties")
+    public void testInvalidStringProperty(Limit limit, String value) {
+        XMLSecurityManager manager = new XMLSecurityManager();
+        assertThrows(IllegalArgumentException.class,
+                () -> manager.setLimit(limit.apiProperty(), State.APIPROPERTY, value));
+
+        for (Processor processor : EnumSet.of(Processor.DOM, Processor.SAX,
+                Processor.XMLREADER, Processor.StAX, Processor.VALIDATION,
+                Processor.TRANSFORM)) {
+            assertThrows(IllegalArgumentException.class,
+                    () -> testProperties(processor, limit.apiProperty(), value,
+                            null, null, false));
         }
     }
 
@@ -292,10 +331,10 @@ public class ImplPropertyTest {
         }
 
         // name1 is set, expected return value: value1 (set with the old name)
-        Assert.assertEquals(ret1, value1);
+        assertEquals(value1, ret1);
         if (differ) {
             // if both are set, expected value: value2 (set with the new name)
-            Assert.assertEquals(ret2, value2);
+            assertEquals(value2, ret2);
         }
     }
 
@@ -306,54 +345,54 @@ public class ImplPropertyTest {
         switch (processor) {
             case DOM:
                 dbf.setFeature(name1, value1);
-                Assert.assertEquals(dbf.getFeature(name1), value1);
+                assertEquals(value1, dbf.getFeature(name1));
                 if (differ) {
                     dbf.setFeature(name2, value2);
                     dbf.setFeature(name1, value1);
-                    Assert.assertEquals(dbf.getFeature(name2), value2);
+                    assertEquals(value2, dbf.getFeature(name2));
                 }
                 return;
             case SAX:
                 SAXParserFactory spf = SAXParserFactory.newDefaultInstance();
                 spf.setFeature(name1, value1);
-                Assert.assertEquals(spf.getFeature(name1), value1);
+                assertEquals(value1, spf.getFeature(name1));
                 if (differ) {
                     spf.setFeature(name2, value2);
                     spf.setFeature(name1, value1);
-                    Assert.assertEquals(spf.getFeature(name2), value2);
+                    assertEquals(value2, spf.getFeature(name2));
                 }
                 return;
             case VALIDATION:
                 sf.setFeature(name1, value1);
-                Assert.assertEquals(sf.getFeature(name1), value1);
+                assertEquals(value1, sf.getFeature(name1));
                 if (differ) {
                     sf.setFeature(name2, value2);
                     sf.setFeature(name1, value1);
-                    Assert.assertEquals(sf.getFeature(name2), value2);
+                    assertEquals(value2, sf.getFeature(name2));
                 }
                 return;
             case TRANSFORM:
                 TransformerFactory tf = TransformerFactory.newDefaultInstance();
                 tf.setFeature(name1, value1);
-                Assert.assertEquals(tf.getFeature(name1), value1);
+                assertEquals(value1, tf.getFeature(name1));
                 if (differ) {
                     tf.setFeature(name2, value2);
                     tf.setFeature(name1, value1);
-                    Assert.assertEquals(tf.getFeature(name2), value2);
+                    assertEquals(value2, tf.getFeature(name2));
                 }
                 return;
             case XPATH:
                 xf.setFeature(name1, value1);
-                Assert.assertEquals(xf.getFeature(name1), value1);
+                assertEquals(value1, xf.getFeature(name1));
                 if (differ) {
                     xf.setFeature(name2, value2);
                     xf.setFeature(name1, value1);
-                    Assert.assertEquals(xf.getFeature(name2), value2);
+                    assertEquals(value2, xf.getFeature(name2));
                 }
                 return;
         }
 
-        Assert.fail("Failed setting features for : " + processor);
+        fail("Failed setting features for : " + processor);
     }
 
 

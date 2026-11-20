@@ -522,13 +522,10 @@ void MacroAssembler::_verify_oop(Register reg, const char* s, const char* file, 
     ResourceMark rm;
     stringStream ss;
     ss.print("verify_oop: %s: %s (%s:%d)", reg->name(), s, file, line);
-#if INCLUDE_CDS
     if (AOTCodeCache::is_on_for_dump() && !code_section()->scratch_emit()) {
       // This will duplicate string to preserve it.
       b = AOTCodeCache::add_C_string(ss.as_string());
-    } else
-#endif
-    {
+    } else {
       b = code_string(ss.as_string());
     }
   }
@@ -713,13 +710,10 @@ void MacroAssembler::_verify_oop_addr(Address addr, const char* s, const char* f
     ResourceMark rm;
     stringStream ss;
     ss.print("verify_oop_addr: %s (%s:%d)", s, file, line);
-#if INCLUDE_CDS
     if (AOTCodeCache::is_on_for_dump() && !code_section()->scratch_emit()) {
       // This will duplicate string to preserve it.
       b = AOTCodeCache::add_C_string(ss.as_string());
-    } else
-#endif
-    {
+    } else {
       b = code_string(ss.as_string());
     }
   }
@@ -5681,13 +5675,11 @@ void MacroAssembler::get_thread(Register thread) {
 }
 
 void MacroAssembler::load_byte_map_base(Register reg) {
-#if INCLUDE_CDS
   if (AOTCodeCache::is_on_for_dump()) {
     address byte_map_base_adr = AOTRuntimeConstants::card_table_base_address();
     ld(reg, ExternalAddress(byte_map_base_adr));
     return;
   }
-#endif
   CardTableBarrierSet* ctbs = CardTableBarrierSet::barrier_set();
   // Strictly speaking the card table base isn't an address at all, and it might
   // even be negative. It is thus materialised as a constant.
@@ -5864,7 +5856,7 @@ address MacroAssembler::reloc_call(Address entry, Register tmp) {
   address target = entry.target();
 
   if (!in_scratch_emit_size()) {
-    address stub = emit_reloc_call_address_stub(offset(), target);
+    address stub = emit_address_stub(offset(), target);
     if (stub == nullptr) {
       postcond(pc() == badAddress);
       return nullptr; // CodeCache is full
@@ -5878,8 +5870,7 @@ address MacroAssembler::reloc_call(Address entry, Register tmp) {
   }
 #endif
 
-  // The relocation created while emitting the stub will ensure this
-  // call instruction is subsequently patched to call the stub.
+  // Relocation patches the auipc/ld pair to load the destination from the address stub.
   relocate(entry.rspec(), [&] {
     auipc(tmp, 0);
     ld(tmp, Address(tmp, 0));
@@ -5940,8 +5931,7 @@ int MacroAssembler::ic_check(int end_alignment) {
   return uep_offset;
 }
 
-// Emit an address stub for a call to a target which is too far away.
-// Note that we only put the target address of the call in the stub.
+// Emit an address-only stub holding the destination of a relocatable call.
 //
 // code sequences:
 //
@@ -5953,8 +5943,8 @@ int MacroAssembler::ic_check(int end_alignment) {
 //   alignment nop
 //   target address
 
-address MacroAssembler::emit_reloc_call_address_stub(int insts_call_instruction_offset, address dest) {
-  address stub = start_a_stub(max_reloc_call_address_stub_size());
+address MacroAssembler::emit_address_stub(int insts_call_instruction_offset, address dest) {
+  address stub = start_a_stub(max_address_stub_size());
   if (stub == nullptr) {
     return nullptr;  // CodeBuffer::expand failed
   }
@@ -5981,7 +5971,7 @@ address MacroAssembler::emit_reloc_call_address_stub(int insts_call_instruction_
   return stub_start_addr;
 }
 
-int MacroAssembler::max_reloc_call_address_stub_size() {
+int MacroAssembler::max_address_stub_size() {
   // Max stub size: alignment nop, target address.
   return 1 * MacroAssembler::instruction_size + wordSize;
 }

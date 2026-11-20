@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ class DeleteOnExitHook {
         // registered during shutdown in progress. So set the
         // registerShutdownInProgress parameter to true.
         SharedSecrets.getJavaLangAccess()
-            .registerShutdownHook(2 /* Shutdown hook invocation order */,
+            .registerShutdownHook(3 /* Shutdown hook invocation order */,
                 true /* register even if shutdown in progress */,
                 new Runnable() {
                     public void run() {

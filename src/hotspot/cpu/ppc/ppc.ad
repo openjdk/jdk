@@ -1336,35 +1336,21 @@ int ConstantTable::calculate_table_base_offset() const {
   return 0;  // absolute addressing, no offset
 }
 
-bool MachConstantBaseNode::requires_postalloc_expand() const { return true; }
-void MachConstantBaseNode::postalloc_expand(GrowableArray <Node *> *nodes, PhaseRegAlloc *ra_) {
-  iRegLdstOper *op_dst = new iRegLdstOper();
-  MachNode *m1 = new loadToc_hiNode();
-  MachNode *m2 = new loadToc_loNode();
-
-  m1->add_req(nullptr);
-  m2->add_req(nullptr, m1);
-  m1->_opnds[0] = op_dst;
-  m2->_opnds[0] = op_dst;
-  m2->_opnds[1] = op_dst;
-  ra_->set_pair(m1->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-  ra_->set_pair(m2->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-  nodes->push(m1);
-  nodes->push(m2);
-}
-
 void MachConstantBaseNode::emit(C2_MacroAssembler* masm, PhaseRegAlloc* ra_) const {
-  // Is postalloc expanded.
-  ShouldNotReachHere();
+  Register dst = as_Register(ra_->get_encode(this));
+  __ calculate_address_from_global_toc(dst, __ method_toc());
 }
 
 uint MachConstantBaseNode::size(PhaseRegAlloc* ra_) const {
-  return 0;
+  return 8;
 }
 
 #ifndef PRODUCT
 void MachConstantBaseNode::format(PhaseRegAlloc* ra_, outputStream* st) const {
-  st->print("-- \t// MachConstantBaseNode (empty encoding)");
+  char reg_str[128];
+  ra_->dump_register(this, reg_str, sizeof(reg_str));
+  st->print("ADDIS   %s, R29, DISP.hi \t// MachConstantBaseNode: load TOC hi\n\t"
+            "ADDI    %s, %s, DISP.lo \t// load TOC lo", reg_str, reg_str, reg_str);
 }
 #endif
 
@@ -1696,7 +1682,7 @@ uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *r
   if (src_lo == dst_lo && src_hi == dst_hi)
     return size;            // Self copy, no move.
 
-  if (bottom_type()->isa_vect() != nullptr && ideal_reg() == Op_VecX) {
+  if (bottom_type()->is_vect() && ideal_reg() == Op_VecX) {
     int src_offset = ra_->reg2offset(src_lo);
     int dst_offset = ra_->reg2offset(dst_lo);
     DEBUG_ONLY(int algm = MIN2(RegMask::num_registers(ideal_reg()), (int)Matcher::stack_alignment_in_slots()) * VMRegImpl::stack_slot_size);
@@ -2565,7 +2551,7 @@ loadConLNodesTuple loadConLNodesTuple_create(PhaseRegAlloc *ra_, Node *toc, immL
     nodes._large_lo = m2;
     nodes._small = nullptr;
     nodes._last = nodes._large_lo;
-    assert(m2->bottom_type()->isa_long(), "must be long");
+    assert(m2->bottom_type()->is_long(), "must be long");
   } else {
     loadConLNode *m2 = new loadConLNode();
 
@@ -2588,7 +2574,7 @@ loadConLNodesTuple loadConLNodesTuple_create(PhaseRegAlloc *ra_, Node *toc, immL
     nodes._large_lo = nullptr;
     nodes._small = m2;
     nodes._last = nodes._small;
-    assert(m2->bottom_type()->isa_long(), "must be long");
+    assert(m2->bottom_type()->is_long(), "must be long");
   }
 
   return nodes;
@@ -2660,7 +2646,7 @@ loadConLReplicatedNodesTuple loadConLReplicatedNodesTuple_create(Compile *C, Pha
     nodes._replicated = m4;
     nodes._small = nullptr;
     nodes._last = nodes._replicated;
-    assert(m2->bottom_type()->isa_long(), "must be long");
+    assert(m2->bottom_type()->is_long(), "must be long");
   } else {
     loadConLNode *m2 = new  loadConLNode();
     mtvsrdNode *m3 = new  mtvsrdNode();
@@ -2697,7 +2683,7 @@ loadConLReplicatedNodesTuple loadConLReplicatedNodesTuple_create(Compile *C, Pha
     nodes._moved = m3;
     nodes._replicated = m4;
     nodes._last = nodes._replicated;
-    assert(m2->bottom_type()->isa_long(), "must be long");
+    assert(m2->bottom_type()->is_long(), "must be long");
   }
 
   return nodes;
@@ -2721,7 +2707,7 @@ encode %{
 
     // some asserts
     assert(nodes->length() >= 1, "must have created at least 1 node");
-    assert(loadConLNodes._last->bottom_type()->isa_long(), "must be long");
+    assert(loadConLNodes._last->bottom_type()->is_long(), "must be long");
   %}
 
   enc_class enc_load_long_constP(iRegLdst dst, immP src, iRegLdst toc) %{
@@ -2828,7 +2814,7 @@ encode %{
 
       nodes->push(m1);
       nodes->push(m2);
-      assert(m2->bottom_type()->isa_ptr(), "must be ptr");
+      assert(m2->bottom_type()->is_ptr(), "must be ptr");
     } else {
       loadConPNode *m2 = new loadConPNode();
 
@@ -2844,7 +2830,7 @@ encode %{
       ra_->set_pair(m2->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
 
       nodes->push(m2);
-      assert(m2->bottom_type()->isa_ptr(), "must be ptr");
+      assert(m2->bottom_type()->is_ptr(), "must be ptr");
     }
   %}
 
@@ -2942,14 +2928,6 @@ encode %{
     __ bind(done);
   %}
 
-  enc_class enc_cmove_bso_stackSlotL(iRegLdst dst, flagsRegSrc crx, stackSlotL mem ) %{
-    int Idisp = $mem$$disp + frame_slots_bias($mem$$base, ra_);
-    Label done;
-    __ bso($crx$$CondRegister, done);
-    __ ld($dst$$Register, Idisp, $mem$$base$$Register);
-    __ bind(done);
-  %}
-
   enc_class enc_bc(flagsRegSrc crx, cmpOp cmp, Label lbl) %{
     Label d;   // dummy
     __ bind(d);
@@ -3022,7 +3000,7 @@ encode %{
     if (loadConLNodes._last)     nodes->push(loadConLNodes._last);
 
     assert(nodes->length() >= 1, "must have created at least 1 node");
-    assert(loadConLNodes._last->bottom_type()->isa_long(), "must be long");
+    assert(loadConLNodes._last->bottom_type()->is_long(), "must be long");
   %}
 
   enc_class postalloc_expand_load_replF_constant_vsx(vecX dst, immF src, iRegLdst toc, iRegLdst tmp) %{
@@ -4423,76 +4401,6 @@ operand indOffset16NarrowAlg4_klass(iRegNsrc reg, immL16Alg4 offset) %{
   %}
 %}
 
-//----------Special Memory Operands--------------------------------------------
-// Stack Slot Operand
-//
-// This operand is used for loading and storing temporary values on
-// the stack where a match requires a value to flow through memory.
-operand stackSlotI(sRegI reg) %{
-  constraint(ALLOC_IN_RC(stack_slots));
-  op_cost(100);
-  //match(RegI);
-  format %{ "[sp+$reg]" %}
-  interface(MEMORY_INTER) %{
-    base(0x1);   // R1_SP
-    index(0x0);
-    scale(0x0);
-    disp($reg);  // Stack Offset
-  %}
-%}
-
-operand stackSlotL(sRegL reg) %{
-  constraint(ALLOC_IN_RC(stack_slots));
-  op_cost(100);
-  //match(RegL);
-  format %{ "[sp+$reg]" %}
-  interface(MEMORY_INTER) %{
-    base(0x1);   // R1_SP
-    index(0x0);
-    scale(0x0);
-    disp($reg);  // Stack Offset
-  %}
-%}
-
-operand stackSlotP(sRegP reg) %{
-  constraint(ALLOC_IN_RC(stack_slots));
-  op_cost(100);
-  //match(RegP);
-  format %{ "[sp+$reg]" %}
-  interface(MEMORY_INTER) %{
-    base(0x1);   // R1_SP
-    index(0x0);
-    scale(0x0);
-    disp($reg);  // Stack Offset
-  %}
-%}
-
-operand stackSlotF(sRegF reg) %{
-  constraint(ALLOC_IN_RC(stack_slots));
-  op_cost(100);
-  //match(RegF);
-  format %{ "[sp+$reg]" %}
-  interface(MEMORY_INTER) %{
-    base(0x1);   // R1_SP
-    index(0x0);
-    scale(0x0);
-    disp($reg);  // Stack Offset
-  %}
-%}
-
-operand stackSlotD(sRegD reg) %{
-  constraint(ALLOC_IN_RC(stack_slots));
-  op_cost(100);
-  //match(RegD);
-  format %{ "[sp+$reg]" %}
-  interface(MEMORY_INTER) %{
-    base(0x1);   // R1_SP
-    index(0x0);
-    scale(0x0);
-    disp($reg);  // Stack Offset
-  %}
-%}
-
 // Operands for expressing Control Flow
 // NOTE: Label is a predefined operand which should not be redefined in
 //       the AD file. It is generically handled within the ADLC.
@@ -5320,33 +5228,6 @@ instruct loadD_unaligned(regD dst, memory mem) %{
 
 //----------Constants--------------------------------------------------------
 
-// Load MachConstantTableBase: add hi offset to global toc.
-// TODO: Handle hidden register r29 in bundler!
-instruct loadToc_hi(iRegLdst dst) %{
-  effect(DEF dst);
-  ins_cost(DEFAULT_COST);
-
-  format %{ "ADDIS   $dst, R29, DISP.hi \t// load TOC hi" %}
-  size(4);
-  ins_encode %{
-    __ calculate_address_from_global_toc_hi16only($dst$$Register, __ method_toc());
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-// Load MachConstantTableBase: add lo offset to global toc.
-instruct loadToc_lo(iRegLdst dst, iRegLdst src) %{
-  effect(DEF dst, USE src);
-  ins_cost(DEFAULT_COST);
-
-  format %{ "ADDI    $dst, $src, DISP.lo \t// load TOC lo" %}
-  size(4);
-  ins_encode %{
-    __ calculate_address_from_global_toc_lo16only($dst$$Register, __ method_toc());
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
 // Load 16-bit integer constant 0xssss????
 instruct loadConI16(iRegIdst dst, immI16 src) %{
   match(Set dst src);
@@ -6110,8 +5991,8 @@ instruct encodeP_narrow_oop_shift_0(iRegNdst dst, iRegPsrc src) %{
 //  shift != 0, base != 0
 instruct decodeN(iRegPdst dst, iRegNsrc src, flagsRegCR0 cr0) %{
   match(Set dst (DecodeN src));
-  predicate((n->bottom_type()->is_oopptr()->ptr() != TypePtr::NotNull &&
-             n->bottom_type()->is_oopptr()->ptr() != TypePtr::Constant) &&
+  predicate((n->bottom_type()->as_oopptr()->ptr() != TypePtr::NotNull &&
+             n->bottom_type()->as_oopptr()->ptr() != TypePtr::Constant) &&
             CompressedOops::shift() != 0 &&
             CompressedOops::base() != nullptr);
   ins_cost(4 * DEFAULT_COST); // Should be more expensive than decodeN_Disjoint_isel.
@@ -6145,8 +6026,8 @@ instruct decodeN_nullBase(iRegPdst dst, iRegNsrc src) %{
 instruct decodeN_Disjoint_notNull(iRegPdst dst, iRegNsrc src) %{
   match(Set dst (DecodeN src));
   effect(TEMP_DEF dst);
-  predicate((n->bottom_type()->is_oopptr()->ptr() == TypePtr::NotNull ||
-             n->bottom_type()->is_oopptr()->ptr() == TypePtr::Constant) &&
+  predicate((n->bottom_type()->as_oopptr()->ptr() == TypePtr::NotNull ||
+             n->bottom_type()->as_oopptr()->ptr() == TypePtr::Constant) &&
             CompressedOops::base_disjoint());
   ins_cost(DEFAULT_COST);
 
@@ -6162,8 +6043,8 @@ instruct decodeN_Disjoint_notNull(iRegPdst dst, iRegNsrc src) %{
 instruct decodeN_Disjoint_isel(iRegPdst dst, iRegNsrc src, flagsReg crx) %{
   match(Set dst (DecodeN src));
   effect(TEMP_DEF dst, TEMP crx);
-  predicate((n->bottom_type()->is_oopptr()->ptr() != TypePtr::NotNull &&
-             n->bottom_type()->is_oopptr()->ptr() != TypePtr::Constant) &&
+  predicate((n->bottom_type()->as_oopptr()->ptr() != TypePtr::NotNull &&
+             n->bottom_type()->as_oopptr()->ptr() != TypePtr::Constant) &&
             CompressedOops::base_disjoint());
   ins_cost(3 * DEFAULT_COST); // Has a lower latency than decodeN because of a better ILP.
 
@@ -6180,8 +6061,8 @@ instruct decodeN_Disjoint_isel(iRegPdst dst, iRegNsrc src, flagsReg crx) %{
 // src != 0, shift != 0, base != 0
 instruct decodeN_notNull_addBase(iRegPdst dst, iRegNsrc src) %{
   match(Set dst (DecodeN src));
-  predicate((n->bottom_type()->is_oopptr()->ptr() == TypePtr::NotNull ||
-             n->bottom_type()->is_oopptr()->ptr() == TypePtr::Constant) &&
+  predicate((n->bottom_type()->as_oopptr()->ptr() == TypePtr::NotNull ||
+             n->bottom_type()->as_oopptr()->ptr() == TypePtr::Constant) &&
             CompressedOops::shift() != 0 &&
             CompressedOops::base() != nullptr);
   ins_cost(2 * DEFAULT_COST);
@@ -8080,7 +7961,7 @@ instruct lShiftL_regI_immGE32(iRegLdst dst, iRegIorL2I src1, uimmI6_ge32 src2) %
 // Shift amounts >= 32 are handled by lShiftL_regI_immGE32.
 instruct scaledPositiveI2L_lShiftL_convI2L_reg_imm6(iRegLdst dst, iRegIorL2I src1, uimmI5 src2) %{
   match(Set dst (LShiftL (ConvI2L src1) src2));
-  predicate(((ConvI2LNode*)(_kids[0]->_leaf))->type()->is_long()->is_positive_int());
+  predicate(((ConvI2LNode*)(_kids[0]->_leaf))->type()->as_long()->is_positive_int());
 
   format %{ "SLDI    $dst, i2l(positive_int($src1)), $src2" %}
   size(4);
@@ -8927,10 +8808,9 @@ instruct andcL_reg_reg(iRegLdst dst, iRegLsrc src1, iRegLsrc src2) %{
 
 //----------Moves between int/long and float/double----------------------------
 //
-// The following rules move values from int/long registers/stack-locations
-// to float/double registers/stack-locations and vice versa, without doing any
-// conversions. These rules are used to implement the bit-conversion methods
-// of java.lang.Float/Double, e.g.
+// The following rules move values from int/long registers to float/double
+// registers and vice versa, without doing any value conversion. These rules are
+// used to implement the bit-conversion methods of java.lang.Float etc., e.g.
 //   int   floatToIntBits(float value)
 //   float intBitsToFloat(int bits)
 
@@ -8967,101 +8847,37 @@ instruct moveI2D_reg(regD dst, iRegIsrc src) %{
   ins_pipe(pipe_class_default);
 %}
 
-//---------- Chain stack slots between similar types --------
-
-// These are needed so that the rules below can match.
-
-// Load integer from stack slot
-instruct stkI_to_regI(iRegIdst dst, stackSlotI src) %{
-  match(Set dst src);
-  ins_cost(MEMORY_REF_COST);
-
-  format %{ "LWZ     $dst, $src" %}
-  size(4);
-  ins_encode( enc_lwz(dst, src) );
-  ins_pipe(pipe_class_memory);
-%}
-
-// Store integer to stack slot
-instruct regI_to_stkI(stackSlotI dst, iRegIsrc src) %{
-  match(Set dst src);
-  ins_cost(MEMORY_REF_COST);
-
-  format %{ "STW     $src, $dst \t// stk" %}
-  size(4);
-  ins_encode( enc_stw(src, dst) ); // rs=rt
-  ins_pipe(pipe_class_memory);
-%}
-
-// Load long from stack slot
-instruct stkL_to_regL(iRegLdst dst, stackSlotL src) %{
-  match(Set dst src);
-  ins_cost(MEMORY_REF_COST);
-
-  format %{ "LD      $dst, $src \t// long" %}
-  size(4);
-  ins_encode( enc_ld(dst, src) );
-  ins_pipe(pipe_class_memory);
-%}
-
-// Store long to stack slot
-instruct regL_to_stkL(stackSlotL dst, iRegLsrc src) %{
-  match(Set dst src);
-  ins_cost(MEMORY_REF_COST);
-
-  format %{ "STD     $src, $dst \t// long" %}
-  size(4);
-  ins_encode( enc_std(src, dst) ); // rs=rt
-  ins_pipe(pipe_class_memory);
-%}
-
 //----------Moves between int and float
-
-// Move float value from float stack-location to integer register.
-instruct moveF2I_stack_reg(iRegIdst dst, stackSlotF src) %{
+instruct moveF2I_reg_reg(iRegIdst dst, regF src, regF tmp) %{
   match(Set dst (MoveF2I src));
-  ins_cost(MEMORY_REF_COST);
+  effect(TEMP tmp);
 
-  format %{ "LWZ     $dst, $src \t// MoveF2I" %}
-  size(4);
-  ins_encode( enc_lwz(dst, src) );
-  ins_pipe(pipe_class_memory);
-%}
-
-// Move float value from float register to integer stack-location.
-instruct moveF2I_reg_stack(stackSlotI dst, regF src) %{
-  match(Set dst (MoveF2I src));
-  ins_cost(MEMORY_REF_COST);
-
-  format %{ "STFS    $src, $dst \t// MoveF2I" %}
-  size(4);
-  ins_encode( enc_stfs(src, dst) );
-  ins_pipe(pipe_class_memory);
-%}
-
-// Move integer value from integer stack-location to float register.
-instruct moveI2F_stack_reg(regF dst, stackSlotI src) %{
-  match(Set dst (MoveI2F src));
-  ins_cost(MEMORY_REF_COST);
-
-  format %{ "LFS     $dst, $src \t// MoveI2F" %}
-  size(4);
+  format %{ "XSCVDPSPN $tmp, $src \t// MoveF2I\n\t"
+            "MFVSRWZ   $dst, $tmp" %}
+  size(8);
   ins_encode %{
-    int Idisp = $src$$disp + frame_slots_bias($src$$base, ra_);
-    __ lfs($dst$$FloatRegister, Idisp, $src$$base$$Register);
+    __ floatToIntBits($dst$$Register, $src$$FloatRegister, $tmp$$FloatRegister);
   %}
-  ins_pipe(pipe_class_memory);
+  ins_pipe(pipe_class_default);
 %}
 
-// Move integer value from integer register to float stack-location.
-instruct moveI2F_reg_stack(stackSlotF dst, iRegIorL2I src) %{
+instruct moveI2F_reg_reg(regF dst, iRegIorL2I src) %{
   match(Set dst (MoveI2F src));
-  ins_cost(MEMORY_REF_COST);
 
-  format %{ "STW     $src, $dst \t// MoveI2F" %}
-  size(4);
-  ins_encode( enc_stw(src, dst) );
-  ins_pipe(pipe_class_memory);
+  format %{ $$template
+    if (PowerArchitecturePPC64 >= 9) {
+      $$emit$$"MTVSRWS   $dst, $src \t// MoveI2F\n\t"
+    } else {
+      $$emit$$"MTVSRWZ   $dst, $src \t// MoveI2F\n\t"
+      $$emit$$"XXSPLTW   $dst, $dst, 1\n\t"
+    }
+    $$emit$$"XSCVSPDPN $dst, $dst"
+  %}
+  size((PowerArchitecturePPC64 >= 9 ? 8 : 12));
+  ins_encode %{
+    __ intBitsToFloat($dst$$FloatRegister, $src$$Register);
+  %}
+  ins_pipe(pipe_class_default);
 %}
 
 //----------Register Move Instructions-----------------------------------------
@@ -9430,17 +9246,6 @@ instruct convL2I_reg(iRegIdst dst, iRegLsrc src) %{
   ins_pipe(pipe_class_default);
 %}
 
-instruct cmovI_bso_stackSlotL(iRegIdst dst, flagsRegSrc crx, stackSlotL src) %{
-  // no match-rule, false predicate
-  effect(DEF dst, USE crx, USE src);
-  predicate(false);
-
-  format %{ "CMOVI   $crx, $dst, $src" %}
-  size(8);
-  ins_encode( enc_cmove_bso_stackSlotL(dst, crx, src) );
-  ins_pipe(pipe_class_default);
-%}
-
 instruct cmovI_bso_reg_con0(iRegIdst dst, flagsRegSrc crx, regD src) %{
   // no match-rule, false predicate
   effect(DEF dst, USE crx, USE src);
@@ -9548,17 +9353,6 @@ instruct zeroExtendL_regL(iRegLdst dst, iRegLsrc src, immL_32bits mask) %{
   ins_encode %{
     __ clrldi($dst$$Register, $src$$Register, 32);
   %}
-  ins_pipe(pipe_class_default);
-%}
-
-instruct cmovL_bso_stackSlotL(iRegLdst dst, flagsRegSrc crx, stackSlotL src) %{
-  // no match-rule, false predicate
-  effect(DEF dst, USE crx, USE src);
-  predicate(false);
-
-  format %{ "CMOVL   $crx, $dst, $src" %}
-  size(8);
-  ins_encode( enc_cmove_bso_stackSlotL(dst, crx, src) );
   ins_pipe(pipe_class_default);
 %}
 
@@ -10774,7 +10568,7 @@ instruct indexOf_imm1_char_U(iRegIdst result, iRegPsrc haystack, iRegIorL2I hayc
 
   ins_encode %{
     immPOper *needleOper = (immPOper *)$needleImm;
-    const TypeOopPtr *t = needleOper->type()->isa_oopptr();
+    const TypeOopPtr* t = needleOper->type()->as_oopptr();
     ciTypeArray* needle_values = t->const_oop()->as_type_array();  // Pointer to live char *
     jchar chr;
 #ifdef VM_LITTLE_ENDIAN
@@ -10807,7 +10601,7 @@ instruct indexOf_imm1_char_L(iRegIdst result, iRegPsrc haystack, iRegIorL2I hayc
 
   ins_encode %{
     immPOper *needleOper = (immPOper *)$needleImm;
-    const TypeOopPtr *t = needleOper->type()->isa_oopptr();
+    const TypeOopPtr* t = needleOper->type()->as_oopptr();
     ciTypeArray* needle_values = t->const_oop()->as_type_array();  // Pointer to live char *
     jchar chr = (jchar)needle_values->element_value(0).as_byte();
     __ string_indexof_char($result$$Register,
@@ -10833,7 +10627,7 @@ instruct indexOf_imm1_char_UL(iRegIdst result, iRegPsrc haystack, iRegIorL2I hay
 
   ins_encode %{
     immPOper *needleOper = (immPOper *)$needleImm;
-    const TypeOopPtr *t = needleOper->type()->isa_oopptr();
+    const TypeOopPtr* t = needleOper->type()->as_oopptr();
     ciTypeArray* needle_values = t->const_oop()->as_type_array();  // Pointer to live char *
     jchar chr = (jchar)needle_values->element_value(0).as_byte();
     __ string_indexof_char($result$$Register,
@@ -10852,15 +10646,15 @@ instruct indexOf_imm1_U(iRegIdst result, iRegPsrc haystack, iRegIorL2I haycnt,
   effect(USE_KILL needle, TEMP tmp1, TEMP tmp2, KILL cr0, KILL cr1, KILL ctr);
   // Required for EA: check if it is still a type_array.
   predicate(((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::UU &&
-            n->in(3)->in(1)->bottom_type()->is_aryptr()->const_oop() &&
-            n->in(3)->in(1)->bottom_type()->is_aryptr()->const_oop()->is_type_array());
+            n->in(3)->in(1)->bottom_type()->as_aryptr()->const_oop() &&
+            n->in(3)->in(1)->bottom_type()->as_aryptr()->const_oop()->is_type_array());
   ins_cost(180);
 
   format %{ "String IndexOf SCL1 $haystack[0..$haycnt], $needle[0..$needlecntImm]"
             " -> $result \t// KILL $haycnt, $needle, $tmp1, $tmp2, $cr0, $cr1" %}
   ins_encode %{
     Node *ndl = in(operand_index($needle));  // The node that defines needle.
-    ciTypeArray* needle_values = ndl->bottom_type()->is_aryptr()->const_oop()->as_type_array();
+    ciTypeArray* needle_values = ndl->bottom_type()->as_aryptr()->const_oop()->as_type_array();
     guarantee(needle_values, "sanity");
     jchar chr;
 #ifdef VM_LITTLE_ENDIAN
@@ -10886,15 +10680,15 @@ instruct indexOf_imm1_L(iRegIdst result, iRegPsrc haystack, iRegIorL2I haycnt,
   effect(USE_KILL needle, TEMP tmp1, TEMP tmp2, KILL cr0, KILL cr1, KILL ctr);
   // Required for EA: check if it is still a type_array.
   predicate(((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::LL &&
-            n->in(3)->in(1)->bottom_type()->is_aryptr()->const_oop() &&
-            n->in(3)->in(1)->bottom_type()->is_aryptr()->const_oop()->is_type_array());
+            n->in(3)->in(1)->bottom_type()->as_aryptr()->const_oop() &&
+            n->in(3)->in(1)->bottom_type()->as_aryptr()->const_oop()->is_type_array());
   ins_cost(180);
 
   format %{ "String IndexOf SCL1 $haystack[0..$haycnt], $needle[0..$needlecntImm]"
             " -> $result \t// KILL $haycnt, $needle, $tmp1, $tmp2, $cr0, $cr1" %}
   ins_encode %{
     Node *ndl = in(operand_index($needle));  // The node that defines needle.
-    ciTypeArray* needle_values = ndl->bottom_type()->is_aryptr()->const_oop()->as_type_array();
+    ciTypeArray* needle_values = ndl->bottom_type()->as_aryptr()->const_oop()->as_type_array();
     guarantee(needle_values, "sanity");
     jchar chr = (jchar)needle_values->element_value(0).as_byte();
     __ string_indexof_char($result$$Register,
@@ -10913,15 +10707,15 @@ instruct indexOf_imm1_UL(iRegIdst result, iRegPsrc haystack, iRegIorL2I haycnt,
   effect(USE_KILL needle, TEMP tmp1, TEMP tmp2, KILL cr0, KILL cr1, KILL ctr);
   // Required for EA: check if it is still a type_array.
   predicate(((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::UL &&
-            n->in(3)->in(1)->bottom_type()->is_aryptr()->const_oop() &&
-            n->in(3)->in(1)->bottom_type()->is_aryptr()->const_oop()->is_type_array());
+            n->in(3)->in(1)->bottom_type()->as_aryptr()->const_oop() &&
+            n->in(3)->in(1)->bottom_type()->as_aryptr()->const_oop()->is_type_array());
   ins_cost(180);
 
   format %{ "String IndexOf SCL1 $haystack[0..$haycnt], $needle[0..$needlecntImm]"
             " -> $result \t// KILL $haycnt, $needle, $tmp1, $tmp2, $cr0, $cr1" %}
   ins_encode %{
     Node *ndl = in(operand_index($needle));  // The node that defines needle.
-    ciTypeArray* needle_values = ndl->bottom_type()->is_aryptr()->const_oop()->as_type_array();
+    ciTypeArray* needle_values = ndl->bottom_type()->as_aryptr()->const_oop()->as_type_array();
     guarantee(needle_values, "sanity");
     jchar chr = (jchar)needle_values->element_value(0).as_byte();
     __ string_indexof_char($result$$Register,
@@ -10979,15 +10773,15 @@ instruct indexOf_imm_U(iRegIdst result, iRegPsrc haystack, rscratch1RegI haycnt,
          TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, TEMP tmp5, KILL cr0, KILL cr1, KILL cr6, KILL ctr);
   // Required for EA: check if it is still a type_array.
   predicate(((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::UU &&
-            n->in(3)->in(1)->bottom_type()->is_aryptr()->const_oop() &&
-            n->in(3)->in(1)->bottom_type()->is_aryptr()->const_oop()->is_type_array());
+            n->in(3)->in(1)->bottom_type()->as_aryptr()->const_oop() &&
+            n->in(3)->in(1)->bottom_type()->as_aryptr()->const_oop()->is_type_array());
   ins_cost(250);
 
   format %{ "String IndexOf SCL $haystack[0..$haycnt], $needle[0..$needlecntImm]"
             " -> $result \t// KILL $haycnt, $tmp1, $tmp2, $tmp3, $tmp4, $tmp5, $cr0, $cr1" %}
   ins_encode %{
     Node *ndl = in(operand_index($needle));  // The node that defines needle.
-    ciTypeArray* needle_values = ndl->bottom_type()->is_aryptr()->const_oop()->as_type_array();
+    ciTypeArray* needle_values = ndl->bottom_type()->as_aryptr()->const_oop()->as_type_array();
 
     __ string_indexof($result$$Register,
                       $haystack$$Register, $haycnt$$Register,
@@ -11006,15 +10800,15 @@ instruct indexOf_imm_L(iRegIdst result, iRegPsrc haystack, rscratch1RegI haycnt,
          TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, TEMP tmp5, KILL cr0, KILL cr1, KILL cr6, KILL ctr);
   // Required for EA: check if it is still a type_array.
   predicate(((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::LL &&
-            n->in(3)->in(1)->bottom_type()->is_aryptr()->const_oop() &&
-            n->in(3)->in(1)->bottom_type()->is_aryptr()->const_oop()->is_type_array());
+            n->in(3)->in(1)->bottom_type()->as_aryptr()->const_oop() &&
+            n->in(3)->in(1)->bottom_type()->as_aryptr()->const_oop()->is_type_array());
   ins_cost(250);
 
   format %{ "String IndexOf SCL $haystack[0..$haycnt], $needle[0..$needlecntImm]"
             " -> $result \t// KILL $haycnt, $tmp1, $tmp2, $tmp3, $tmp4, $tmp5, $cr0, $cr1" %}
   ins_encode %{
     Node *ndl = in(operand_index($needle));  // The node that defines needle.
-    ciTypeArray* needle_values = ndl->bottom_type()->is_aryptr()->const_oop()->as_type_array();
+    ciTypeArray* needle_values = ndl->bottom_type()->as_aryptr()->const_oop()->as_type_array();
 
     __ string_indexof($result$$Register,
                       $haystack$$Register, $haycnt$$Register,
@@ -11033,15 +10827,15 @@ instruct indexOf_imm_UL(iRegIdst result, iRegPsrc haystack, rscratch1RegI haycnt
          TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, TEMP tmp5, KILL cr0, KILL cr1, KILL cr6, KILL ctr);
   // Required for EA: check if it is still a type_array.
   predicate(((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::UL &&
-            n->in(3)->in(1)->bottom_type()->is_aryptr()->const_oop() &&
-            n->in(3)->in(1)->bottom_type()->is_aryptr()->const_oop()->is_type_array());
+            n->in(3)->in(1)->bottom_type()->as_aryptr()->const_oop() &&
+            n->in(3)->in(1)->bottom_type()->as_aryptr()->const_oop()->is_type_array());
   ins_cost(250);
 
   format %{ "String IndexOf SCL $haystack[0..$haycnt], $needle[0..$needlecntImm]"
             " -> $result \t// KILL $haycnt, $tmp1, $tmp2, $tmp3, $tmp4, $tmp5, $cr0, $cr1" %}
   ins_encode %{
     Node *ndl = in(operand_index($needle));  // The node that defines needle.
-    ciTypeArray* needle_values = ndl->bottom_type()->is_aryptr()->const_oop()->as_type_array();
+    ciTypeArray* needle_values = ndl->bottom_type()->as_aryptr()->const_oop()->as_type_array();
 
     __ string_indexof($result$$Register,
                       $haystack$$Register, $haycnt$$Register,
@@ -12088,19 +11882,18 @@ instruct repl4I_immIminus1(vecX dst, immI_minus1 src) %{
   ins_pipe(pipe_class_default);
 %}
 
-// Move float to int register via stack, replicate.
+// Move float to int register, replicate.
 instruct repl2F_reg_Ex(iRegLdst dst, regF src) %{
   match(Set dst (Replicate src));
   predicate(n->as_Vector()->length() == 2 &&
             Matcher::vector_element_basic_type(n) == T_FLOAT);
-  ins_cost(2 * MEMORY_REF_COST + DEFAULT_COST);
+  ins_cost(3 * DEFAULT_COST);
   expand %{
-    stackSlotL tmpS;
     iRegIdst tmpI;
-    moveF2I_reg_stack(tmpS, src);   // Move float to stack.
-    moveF2I_stack_reg(tmpI, tmpS);  // Move stack to int reg.
-    moveReg(dst, tmpI);             // Move int to long reg.
-    repl32(dst);                    // Replicate bitpattern.
+    regF tmpF;
+    moveF2I_reg_reg(tmpI, src, tmpF); // Move float bits to int reg.
+    moveReg(dst, tmpI);               // Move int to long reg.
+    repl32(dst);                      // Replicate bitpattern.
   %}
 %}
 

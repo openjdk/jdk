@@ -99,6 +99,7 @@ public class ApplicableIRRulesPrinter {
         // Intel AVX
         "avx",
         "avx2",
+        "gfni",
         "avx512",
         "avx512bw",
         "avx512dq",
