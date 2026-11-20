@@ -216,7 +216,13 @@ public final class EventWriter {
             return false;
         }
         if (currentPosition + requestedSize > maxPosition) {
-            flush(usedSize(), requestedSize);
+            int used = usedSize();
+            // Do not provision a larger buffer for a request beyond the event-size limit.
+            if ((long) used + requestedSize > MAX_EVENT_SIZE) {
+                valid = false;
+                return false;
+            }
+            flush(used, requestedSize);
             // retry
             if (!valid) {
                 return false;
