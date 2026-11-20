@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -29,6 +29,7 @@
 #include "memory/resourceArea.hpp"
 // #define LOG_PLEASE
 #include "metaspaceGtestCommon.hpp"
+#include "gtestRandom.hpp"
 
 using metaspace::BlockTree;
 using metaspace::MemRangeCounter;
@@ -341,7 +342,7 @@ class BlockTreeTest {
     for (int i = 0; i < iterations; i++) {
       int taker = 0;
       int giver = 1;
-      if ((os::random() % 10) > 5) {
+      if ((GtestRandom::random() % 10) > 5) {
         giver = 0; taker = 1;
       }
       size_t s =_rgen.get();

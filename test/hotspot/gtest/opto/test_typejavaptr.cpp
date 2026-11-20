@@ -25,6 +25,7 @@
 #include "nmt/memTag.hpp"
 #include "opto/type.hpp"
 #include "opto/typejavaptr.hpp"
+#include "gtestRandom.hpp"
 #include "unittest.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -1942,7 +1943,7 @@ static void test_meet_join() {
   // Running all instances takes a lot of time, so we only run a fraction of them regularly
   auto sample_hit = [] {
     constexpr double sampling_prob = 0.02;
-    return uint(os::random()) < max_juint * sampling_prob;
+    return uint(GtestRandom::random()) < max_juint * sampling_prob;
   };
 
   GrowableArray<const PtrType*> type_samples(samples_size, MemTag::mtOther);

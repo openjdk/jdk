@@ -23,7 +23,7 @@
  */
 
 #include "gc/g1/g1CommittedRegionMap.inline.hpp"
-#include "runtime/os.hpp"
+#include "gtestRandom.hpp"
 #include "unittest.hpp"
 
 class G1CommittedRegionMapSerial : public G1CommittedRegionMap {
@@ -41,7 +41,7 @@ protected:
 };
 
 static bool mutate() {
-  return os::random() % 2 == 0;
+  return GtestRandom::random() % 2 == 0;
 }
 
 static void generate_random_map(G1CommittedRegionMap* map) {
