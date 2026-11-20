@@ -712,9 +712,7 @@ public class ExhaustivenessComputer {
             Type seltype = types.erasure(componentType);
             Type pattype = types.erasure(bp.type);
 
-            return seltype.isPrimitive() || pattype.isPrimitive()
-                    ? types.isSameType(seltype, pattype)
-                    : types.isSubtype(seltype, pattype);
+            return types.isTypePatternUnconditional(pattype, seltype);
         }
         return false;
     }
@@ -970,15 +968,8 @@ public class ExhaustivenessComputer {
     private boolean patternDominated(PatternDescription existingPattern, PatternDescription currentPattern) {
         Type existingPatternType = types.erasure(existingPattern.type());
         Type currentPatternType = types.erasure(currentPattern.type());
-        if (existingPatternType.isPrimitive() ^ currentPatternType.isPrimitive()) {
+        if (!types.isTypePatternUnconditional(existingPatternType, currentPatternType)) {
             return false;
-        }
-        if (existingPatternType.isPrimitive()) {
-            return types.isSameType(existingPatternType, currentPatternType);
-        } else {
-            if (!types.isSubtype(currentPatternType, existingPatternType)) {
-                return false;
-            }
         }
         if (currentPattern instanceof BindingPattern) {
             return existingPattern instanceof BindingPattern;

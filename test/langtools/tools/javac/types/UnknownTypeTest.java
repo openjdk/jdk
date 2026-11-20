@@ -72,6 +72,7 @@ public class UnknownTypeTest extends TypeHarness {
             types::isConvertible,
             types::isSameType,
             types::isSubtype,
+            types::isTypePatternUnconditional,
             types::isSuperType,
             (t1, _) -> types.isArray(t1),
             (t1, _) -> types.isDerivedRaw(t1),

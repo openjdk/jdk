@@ -4910,15 +4910,8 @@ public class Check {
         private boolean patternDominated(JCPattern existingPattern, JCPattern currentPattern) {
             Type existingPatternType = types.erasure(existingPattern.type);
             Type currentPatternType = types.erasure(currentPattern.type);
-            if (existingPatternType.isPrimitive() ^ currentPatternType.isPrimitive()) {
+            if (!types.isTypePatternUnconditional(existingPatternType, currentPatternType)) {
                 return false;
-            }
-            if (existingPatternType.isPrimitive()) {
-                return types.isSameType(existingPatternType, currentPatternType);
-            } else {
-                if (!types.isSubtype(currentPatternType, existingPatternType)) {
-                    return false;
-                }
             }
             if (currentPattern instanceof JCBindingPattern ||
                 currentPattern instanceof JCAnyPattern) {

@@ -1081,6 +1081,19 @@ public class Types {
     public final boolean isSubtypeNoCapture(Type t, Type s) {
         return isSubtype(t, s, false);
     }
+
+    /**
+     * Is a type pattern of type patternType unconditional for targetType?
+     */
+    public boolean isTypePatternUnconditional(Type patternType, Type targetType) {
+        if (patternType.isPrimitive() != targetType.isPrimitive()) {
+            return false;
+        }
+        return patternType.isPrimitive() ?
+                isSameType(patternType, targetType) :
+                isSubtype(targetType, patternType);
+    }
+
     public boolean isSubtype(Type t, Type s, boolean capture) {
         if (t.equalsIgnoreMetadata(s))
             return true;
