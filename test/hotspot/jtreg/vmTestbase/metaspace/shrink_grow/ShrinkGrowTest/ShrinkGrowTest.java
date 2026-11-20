@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,9 +56,6 @@ import java.util.Map;
  * them in map), then checks that loading new classes causes OOM.
  * After that it does cleanup loaded classes and then expect the new classes
  * could be loaded again.
- *
- * <b>Note</b>: Don't forget to limit the metaspace size by giving
- * -XX:MaxMetaspaceSize=100k vm option.
  */
 public class ShrinkGrowTest {
 
