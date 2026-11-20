@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,6 @@
     NSWindow *nsWindow;
     AWTWindow *ownerWindow;
     jint preFullScreenLevel;
-    BOOL preFullScreenHasShadow;
     NSRect standardFrame;
     BOOL isMinimizing;
     BOOL keyNotificationRecd;
@@ -61,7 +60,6 @@
 @property (nonatomic) jint styleBits;
 @property (nonatomic) BOOL isEnabled;
 @property (nonatomic) jint preFullScreenLevel;
-@property (nonatomic) BOOL preFullScreenHasShadow;
 @property (nonatomic) NSRect standardFrame;
 @property (nonatomic) BOOL isMinimizing;
 @property (nonatomic) BOOL keyNotificationRecd;

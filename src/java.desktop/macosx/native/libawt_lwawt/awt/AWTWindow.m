@@ -190,7 +190,6 @@ AWT_NS_WINDOW_IMPLEMENTATION
 @synthesize isEnabled;
 @synthesize ownerWindow;
 @synthesize preFullScreenLevel;
-@synthesize preFullScreenHasShadow;
 @synthesize standardFrame;
 @synthesize isMinimizing;
 @synthesize keyNotificationRecd;
@@ -1715,13 +1714,9 @@ JNI_COCOA_ENTER(env);
         CGDirectDisplayID aID = [screenID intValue];
 
         if (CGDisplayCapture(aID) == kCGErrorSuccess) {
-            window.preFullScreenHasShadow = [nsWindow hasShadow];
-
             // remove window decoration
             NSUInteger styleMask = [AWTWindow styleMaskForStyleBits:window.styleBits];
             [nsWindow setStyleMask:(styleMask & ~NSTitledWindowMask) | NSWindowStyleMaskBorderless];
-
-            [nsWindow setHasShadow:NO];
 
             int shieldLevel = CGShieldingWindowLevel();
             window.preFullScreenLevel = [nsWindow level];
@@ -1753,7 +1748,6 @@ JNI_COCOA_ENTER(env);
             NSUInteger styleMask = [AWTWindow styleMaskForStyleBits:window.styleBits];
             [nsWindow setStyleMask:styleMask];
             [nsWindow setLevel: window.preFullScreenLevel];
-            [nsWindow setHasShadow:window.preFullScreenHasShadow];
 
             // GraphicsDevice takes care of restoring pre full screen bounds
         } else {
