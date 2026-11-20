@@ -26,6 +26,7 @@
 #define SHARE_CI_CICALLPROFILE_HPP
 
 #include "ci/ciClassList.hpp"
+#include "compiler/compiler_globals.hpp"
 #include "memory/allocation.hpp"
 
 // ciCallProfile
@@ -61,17 +62,20 @@ public:
   int       morphism() const          { return _morphism; }
 
   int       count() const             { return _count; }
-  int       receiver_count(int i)  {
+  int       receiver_count(int i) const {
     assert(i < _limit, "out of Call Profile MorphismLimit");
     return _receiver_count[i];
   }
-  float     receiver_prob(int i)  {
+  float     receiver_prob(int i) const {
     assert(i < _limit, "out of Call Profile MorphismLimit");
     return (float)_receiver_count[i]/(float)_count;
   }
-  ciKlass*  receiver(int i)        {
+  ciKlass*  receiver(int i) const       {
     assert(i < _limit, "out of Call Profile MorphismLimit");
     return _receiver[i];
+  }
+  bool has_major_receiver() const {
+    return has_receiver(0) && (100.*receiver_prob(0) >= (float)TypeProfileMajorReceiverPercent);
   }
 };
 
