@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@ class JfrOptionSet : public AllStatic {
   static jlong _num_global_buffers;
   static jlong _old_object_queue_size;
   static u4 _stack_depth;
+  static u4 _native_stack_depth;
   static jboolean _retransform;
   static jboolean _sample_protection;
 
@@ -67,6 +68,8 @@ class JfrOptionSet : public AllStatic {
   static void set_old_object_queue_size(jlong value);
   static u4 stackdepth();
   static void set_stackdepth(u4 depth);
+  static u4 native_stack_depth();
+  static void set_native_stack_depth(u4 depth);
   static bool can_retransform();
   static void set_retransform(jboolean value);
   static bool compressed_integers();

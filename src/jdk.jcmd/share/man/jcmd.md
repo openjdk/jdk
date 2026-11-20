@@ -353,6 +353,9 @@ The following commands are available:
         greater than the default of 64 may cause a performance degradation.
         This value cannot be changed once JFR has been initialized.  (LONG, 64)
 
+    -   `nativestackdepth`: (Optional) Maximum number of native frames recorded
+        in stack traces. The default of 0 disables native frames. (LONG, 0)
+
     -   `thread_buffer_size`: (Optional) Local buffer size for each thread in bytes if one
         of the following suffixes is not used: 'k' or 'K' for kilobytes or 'm' or 'M'
         for megabytes. Overriding this parameter could reduce performance and is

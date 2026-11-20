@@ -289,7 +289,12 @@ public final class PrettyWriter extends EventPrintWriter {
         int depth = 0;
         while (i < frames.size() && depth < getStackDepth()) {
             RecordedFrame frame = frames.get(i);
-            if (frame.isJavaFrame() && !frame.getMethod().isHidden()) {
+            if (!frame.isJavaFrame()) {
+                printIndent();
+                printNativeFrame(frame, "");
+                println();
+                depth++;
+            } else if (!frame.getMethod().isHidden()) {
                 printIndent();
                 printJavaFrame(frame, "");
                 println();
@@ -354,6 +359,7 @@ public final class PrettyWriter extends EventPrintWriter {
             case RecordedClass rc -> printClass(rc, postFix);
             case RecordedClassLoader rcl -> printClassLoader(rcl, postFix);
             case RecordedFrame rf when rf.isJavaFrame() -> printJavaFrame(rf, postFix);
+            case RecordedFrame rf -> printNativeFrame(rf, postFix);
             case RecordedMethod rm -> println(formatMethod(rm));
             case RecordedObject ro when field.getTypeName().equals(TYPE_OLD_OBJECT) -> printOldObject(ro);
             default -> print(struct, postFix);
@@ -455,6 +461,11 @@ public final class PrettyWriter extends EventPrintWriter {
         if (line >= 0) {
             print(" line: " + line);
         }
+        print(postFix);
+    }
+
+    private void printNativeFrame(RecordedFrame f, String postFix) {
+        print(ValueFormatter.formatNativeFunction(f.getValue("nativeFunction")));
         print(postFix);
     }
 
