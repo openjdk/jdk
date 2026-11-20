@@ -40,6 +40,7 @@
  * @run junit/othervm/native --enable-native-access=ALL-UNNAMED -agentlib:GetCtorLocalStrictInitFields ${test.main.class}
  */
 
+import java.lang.ref.Reference;
 import jdk.test.lib.helpers.StrictInit;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Nested;
@@ -464,6 +465,7 @@ class GetCtorLocalStrictInitFields {
                     test.ready = true;
                     while (!test.canContinue) {}
                 }
+                Reference.reachabilityFence(this);
             }
         }
 
