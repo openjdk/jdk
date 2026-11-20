@@ -94,22 +94,15 @@ void ShenandoahSTWMark::mark() {
   TASKQUEUE_STATS_ONLY(task_queues()->reset_taskqueue_stats());
 
   {
-    // Mark
-    if (_generation->is_young()) {
-      // But only scan the remembered set for young generation.
-      _generation->scan_remembered_set(false /* is_concurrent */);
-    }
-
+    assert(_generation->is_global(), "Only full gc uses STW mark, generation must be global");
     ShenandoahSTWMarkTask task(this);
     heap->workers()->run_task(&task);
 
     assert(task_queues()->is_empty(), "Should be empty");
 
-    if (!generation()->is_old()) {
-      // Lastly, ensure all the invisible roots are marked.
-      ShenandoahInvisibleRootsMarkClosure cl;
-      Threads::java_threads_do(&cl);
-    }
+    // Lastly, ensure all the invisible roots are marked.
+    ShenandoahInvisibleRootsMarkClosure cl;
+    Threads::java_threads_do(&cl);
   }
 
   _generation->set_mark_complete();
@@ -146,6 +139,14 @@ void ShenandoahSTWMark::mark_roots(uint worker_id) {
 void ShenandoahSTWMark::finish_mark(uint worker_id) {
   ShenandoahPhaseTimings::Phase phase = ShenandoahPhaseTimings::full_gc_mark;
   ShenandoahWorkerTimingsTracker timer(phase, ShenandoahPhaseTimings::Work, worker_id);
-
-  mark_loop(worker_id, &_terminator, _generation->type(), false /* not cancellable */);
+  switch (_generation->type()) {
+    case NON_GEN:
+      mark_loop<NON_GEN, false /* not cancellable */>(worker_id, &_terminator);
+      break;
+    case GLOBAL:
+      mark_loop<GLOBAL, false /* not cancellable */>(worker_id, &_terminator);
+      break;
+    default:
+      ShouldNotReachHere();
+  }
 }

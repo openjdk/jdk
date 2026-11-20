@@ -345,24 +345,6 @@ ShenandoahObjToScanQueueSet* ShenandoahGeneration::old_gen_task_queues() const {
   return nullptr;
 }
 
-void ShenandoahGeneration::scan_remembered_set(bool is_concurrent) {
-  assert(is_young(), "Should only scan remembered set for young generation.");
-
-  ShenandoahGenerationalHeap* const heap = ShenandoahGenerationalHeap::heap();
-  uint nworkers = heap->workers()->active_workers();
-
-  ShenandoahReferenceProcessor* rp = ref_processor();
-  ShenandoahRegionChunkIterator work_list(heap);
-  ShenandoahScanRememberedTask task(task_queues(), rp, &work_list, is_concurrent);
-  heap->assert_gc_workers(nworkers);
-  heap->workers()->run_task(&task);
-  if (ShenandoahEnableCardStats) {
-    ShenandoahScanRemembered* scanner = heap->old_generation()->card_scan();
-    assert(scanner != nullptr, "Not generational");
-    scanner->log_card_stats(nworkers, CARD_STAT_SCAN_RS);
-  }
-}
-
 size_t ShenandoahGeneration::available() const {
   size_t result = available(max_capacity());
   return result;

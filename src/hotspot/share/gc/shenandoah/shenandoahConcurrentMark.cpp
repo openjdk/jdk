@@ -58,7 +58,7 @@ public:
     ShenandoahConcurrentWorkerSession worker_session(worker_id);
     ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::conc_mark, ShenandoahPhaseTimings::Work, worker_id, true);
     SuspendibleThreadSetJoiner stsj;
-    _cm->mark_loop(worker_id, _terminator, GENERATION, true /*cancellable*/);
+    _cm->mark_loop<GENERATION, true /*cancellable*/>(worker_id, _terminator);
   }
 };
 
@@ -75,7 +75,7 @@ public:
   void work(uint worker_id) {
     ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::finish_mark, ShenandoahPhaseTimings::Work, worker_id, true);
     ShenandoahParallelWorkerSession worker_session(worker_id);
-    _cm->mark_loop(worker_id, _terminator, GENERATION, false /*not cancellable*/);
+    _cm->mark_loop<GENERATION, false /* not cancellable */>(worker_id, _terminator);
     assert(_cm->task_queues()->is_empty(), "Should be empty");
   }
 };
@@ -132,6 +132,8 @@ void ShenandoahConcurrentMark::mark_concurrent_roots() {
   WorkerThreads* workers = heap->workers();
   ShenandoahReferenceProcessor* rp = _generation->ref_processor();
 
+  TASKQUEUE_STATS_ONLY(task_queues()->reset_taskqueue_stats());
+
   switch (_generation->type()) {
     case YOUNG: {
       auto old_queues = _bootstrapping ? old_task_queues() : nullptr;
@@ -175,6 +177,10 @@ void ShenandoahConcurrentMark::concurrent_mark() {
   }
 
   ShenandoahGenerationType gen_type = _generation->type();
+  if (gen_type == YOUNG) {
+    _remembered_set_scanner.reset();
+  }
+
   ShenandoahSATBMarkQueueSet& qset = ShenandoahBarrierSet::satb_mark_queue_set();
   ShenandoahFlushSATBHandshakeClosure flush_satb(qset);
   for (uint flushes = 0; flushes < ShenandoahMaxSATBBufferFlushes; flushes++) {
@@ -223,6 +229,13 @@ void ShenandoahConcurrentMark::concurrent_mark() {
       break;
     }
   }
+
+  if (gen_type == YOUNG && ShenandoahEnableCardStats) {
+    ShenandoahScanRemembered* scanner = heap->old_generation()->card_scan();
+    assert(scanner != nullptr, "Not generational");
+    scanner->log_card_stats(nworkers, CARD_STAT_SCAN_RS);
+  }
+
   assert(task_queues()->is_empty() || heap->cancelled_gc(), "Should be empty when not cancelled");
 }
 
@@ -231,6 +244,7 @@ void ShenandoahConcurrentMark::finish_mark() {
   assert(Thread::current()->is_VM_thread(), "Must by VM Thread");
   finish_mark_work();
   assert(task_queues()->is_empty(), "Should be empty");
+  assert(!_generation->is_young() || !_remembered_set_scanner.has_next(), "Remembered set scan has chunks remaining.");
   TASKQUEUE_STATS_ONLY(task_queues()->print_and_reset_taskqueue_stats(""));
 
   _generation->set_concurrent_mark_in_progress(false);

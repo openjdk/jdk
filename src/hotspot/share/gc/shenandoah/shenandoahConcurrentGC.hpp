@@ -86,7 +86,6 @@ protected:
   // for concurrent operation.
   void entry_reset();
   void entry_mark_roots();
-  void entry_scan_remembered_set();
   void entry_mark();
   void entry_thread_roots();
   void entry_weak_refs();

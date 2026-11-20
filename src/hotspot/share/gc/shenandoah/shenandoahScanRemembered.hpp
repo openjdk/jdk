@@ -655,6 +655,14 @@ public:
                                HeapWord* tams, HeapWord* end_range_of_interest) const;
 };
 
+// A ShenandoahRegionChunk represents a contiguous interval of a ShenandoahHeapRegion, typically representing
+// work to be done by a worker thread.
+struct ShenandoahRegionChunk {
+  ShenandoahHeapRegion* _r;      // The region of which this represents a chunk
+  size_t _chunk_offset;          // HeapWordSize offset
+  size_t _chunk_size;            // HeapWordSize qty
+};
+
 // ShenandoahScanRemembered is a concrete class representing the
 // ability to scan the old-gen remembered set for references to
 // objects residing in young-gen memory.
@@ -841,6 +849,9 @@ public:
                                   HeapWord* end_of_range, ClosureType* oops, bool use_write_table);
 
   template <typename ClosureType>
+  void process_chunk_for_mark(const ShenandoahRegionChunk& assignment, ClosureType* cl, uint worker_id);
+
+  template <typename ClosureType>
   void process_region_slice(ShenandoahHeapRegion* region, size_t offset, size_t clusters, HeapWord* end_of_range,
                             ClosureType* cl, bool use_write_table, uint worker_id);
 
@@ -878,15 +889,6 @@ private:
 
   // Merge the stats from worked_id into the given summary stats, and clear the worker_id's stats.
   void merge_worker_card_stats_cumulative(HdrSeq* worker_stats, HdrSeq* sum_stats) PRODUCT_RETURN;
-};
-
-
-// A ShenandoahRegionChunk represents a contiguous interval of a ShenandoahHeapRegion, typically representing
-// work to be done by a worker thread.
-struct ShenandoahRegionChunk {
-  ShenandoahHeapRegion* _r;      // The region of which this represents a chunk
-  size_t _chunk_offset;          // HeapWordSize offset
-  size_t _chunk_size;            // HeapWordSize qty
 };
 
 // ShenandoahRegionChunkIterator divides the total remembered set scanning effort into ShenandoahRegionChunks
@@ -934,25 +936,16 @@ public:
   // Fills in assignment with next chunk of work and returns true iff there is more work.
   // Otherwise, returns false.  This is multi-thread-safe. Chunk assignments pertain only to
   // memory affiliated with the Old generation.
-  inline bool next(struct ShenandoahRegionChunk* assignment);
-};
+  inline bool next(ShenandoahRegionChunk* assignment);
 
+  // Reset the iterator for a new remembered set scan. Not safe when workers are using the iterator.
+  void reset() {
+    _index.store_relaxed(0);
+  }
 
-class ShenandoahScanRememberedTask : public WorkerTask {
- private:
-  ShenandoahObjToScanQueueSet* _queue_set;
-  ShenandoahReferenceProcessor* _rp;
-  ShenandoahRegionChunkIterator* _work_list;
-  bool _is_concurrent;
-
- public:
-  ShenandoahScanRememberedTask(ShenandoahObjToScanQueueSet* queue_set,
-                               ShenandoahReferenceProcessor* rp,
-                               ShenandoahRegionChunkIterator* work_list,
-                               bool is_concurrent);
-
-  void work(uint worker_id);
-  void do_work(uint worker_id);
+  bool has_next() const {
+    return _index.load_relaxed() < _total_chunks;
+  }
 };
 
 // After Full GC is done, reconstruct the remembered set by iterating over OLD regions,

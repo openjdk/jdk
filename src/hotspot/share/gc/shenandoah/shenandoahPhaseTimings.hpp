@@ -61,8 +61,6 @@ class outputStream;
   SHENANDOAH_SIMPLE_PHASE_DEF(f, init_transfer_satb,                              "  Transfer Old From SATB")        \
   SHENANDOAH_SIMPLE_PHASE_DEF(f, init_update_region_states,                       "  Update Region States")          \
   SHENANDOAH_SIMPLE_PHASE_DEF(f, init_propagate_gc_state,                         "  Propagate GC State")            \
-  SHENANDOAH_WORKER_PHASE_DEF(f, init_scan_rset,                                  "Concurrent Scan Remembered Set",  \
-                                                                                  "  RS: ")                          \
   SHENANDOAH_WORKER_PHASE_DEF(f, conc_mark_roots,                                 "Concurrent Mark Roots",           \
                                                                                   "  CMR: ")                         \
   SHENANDOAH_WORKER_PHASE_DEF(f, conc_mark,                                       "Concurrent Marking",              \
