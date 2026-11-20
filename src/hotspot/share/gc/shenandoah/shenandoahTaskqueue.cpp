@@ -70,9 +70,23 @@ void ShenandoahTaskQueue::compact() {
 
 ShenandoahTaskQueueSegment::ShenandoahTaskQueueSegment(size_t seg_idx) :
   _free_bm(right_n_bits(SEGMENT_SIZE)), _shared_bm(0) {
+
+  size_t align = MAX2(os::vm_allocation_granularity(), os::vm_page_size());
+  size_t bytes = align_up(SEGMENT_SIZE * sizeof(ShenandoahTaskQueueChunk), align);
+  _rs_chunks = MemoryReserver::reserve(bytes, align, os::vm_page_size(), mtGC);
+  if (!_rs_chunks.is_reserved()) {
+    vm_exit_out_of_memory(bytes, OOM_MMAP_ERROR, "Cannot reserve task queue segment");
+  }
+  os::commit_memory_or_exit(_rs_chunks.base(), _rs_chunks.size(), !ExecMem, "");
+
+  _chunks = reinterpret_cast<ShenandoahTaskQueueChunk*>(_rs_chunks.base());
   for (size_t i = 0; i < SEGMENT_SIZE; i++) {
     ::new (&_chunks[i]) ShenandoahTaskQueueChunk((seg_idx << SEGMENT_SIZE_SHIFT) + i);
   }
+}
+
+ShenandoahTaskQueueSegment::~ShenandoahTaskQueueSegment() {
+  MemoryReserver::release(_rs_chunks);
 }
 
 void ShenandoahTaskQueueSegment::clear() {

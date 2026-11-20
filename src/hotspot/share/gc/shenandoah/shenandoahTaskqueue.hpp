@@ -340,9 +340,11 @@ public:
   Atomic<uint64_t> _shared_bm;
   shenandoah_padding(2);
 
-  ShenandoahTaskQueueChunk _chunks[SEGMENT_SIZE];
+  ReservedSpace _rs_chunks;
+  ShenandoahTaskQueueChunk* _chunks;
 
   ShenandoahTaskQueueSegment(size_t seg_idx);
+  ~ShenandoahTaskQueueSegment();
 
   inline ShenandoahTaskQueueChunk* flip_from(Atomic<uint64_t>* bm);
   inline ShenandoahTaskQueueChunk* flip_from_shared();
