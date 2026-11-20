@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -136,6 +136,7 @@ public abstract class InliningBase extends DumpReplayBase {
         String nmethodStart = "<nmethod";
         List<InlineEntry> inlinees = new ArrayList<>();
         int foundLines = 0;
+        Pattern inliningHeader = Pattern.compile("[\\s!sm]*@ .*");
         try (var br = Files.newBufferedReader(Paths.get(logFile))) {
             String line;
             boolean nmethodLine = false;
@@ -144,6 +145,11 @@ public abstract class InliningBase extends DumpReplayBase {
                 if (nmethodLine) {
                     // Ignore other entries which could be in between nmethod entry and inlining statements
                     if (line.startsWith("             ")) {
+                        if (!inliningHeader.matcher(line).matches()) {
+                            // Continuation lines belong to the preceding call site.
+                            Asserts.assertTrue(inlinineLine, "must find an inlinee before its continuation");
+                            continue;
+                        }
                         inlinineLine = true;
                         Pattern p = Pattern.compile("(\\S+)::(\\S+).*bytes\\)\s+(.*)");
                         Matcher matcher = p.matcher(line);
