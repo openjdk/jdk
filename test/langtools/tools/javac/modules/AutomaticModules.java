@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8155026 8178011 8220702 8261625 8390284
+ * @bug 8155026 8178011 8220702 8261625 8390284 8390305
  * @summary Test automatic modules
  * @library /tools/lib
  * @modules
@@ -42,6 +42,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.jar.Attributes.Name;
 import java.util.jar.JarOutputStream;
@@ -1148,6 +1149,68 @@ public class AutomaticModules extends ModuleTestBase {
         if (exportedPackages.size() != 1 ||
             !exportedPackages.contains("aut")) {
             throw new AssertionError("Unexpected exportedPackages: " + exportedPackages);
+        }
+    }
+
+    @Test //JDK-8390305
+    public void testAutomaticModuleWithUnnamedPackage(Path base) throws Exception {
+        Path modulePath = base.resolve("module-path");
+
+        Files.createDirectories(modulePath);
+
+        Path automaticSrc = base.resolve("automaticSrc");
+        tb.writeJavaFiles(automaticSrc,
+                          "public class Aut1 { }",
+                          "public class Aut2 { }");
+        Path automaticClasses = base.resolve("automaticClasses");
+        tb.createDirectories(automaticClasses);
+
+        new JavacTask(tb)
+            .outdir(automaticClasses)
+            .files(findJavaFiles(automaticSrc))
+            .run()
+            .writeAll()
+            .getOutput(Task.OutputKind.DIRECT);
+
+        Path automaticJar = modulePath.resolve("automatic-1.0.jar");
+
+        try (ZipOutputStream out = new ZipOutputStream(Files.newOutputStream(automaticJar))) {
+            out.putNextEntry(new ZipEntry("Aut1.class"));
+            Files.copy(automaticClasses.resolve("Aut1.class"), out);
+            out.putNextEntry(new ZipEntry("Aut2.class"));
+            Files.copy(automaticClasses.resolve("Aut2.class"), out);
+        }
+
+        Path src = base.resolve("src");
+
+        tb.writeJavaFiles(src,
+                          """
+                          package test;
+                          public class Test {
+                          }
+                          """);
+
+        Path classes = base.resolve("classes");
+
+        Files.createDirectories(classes);
+
+        List<String> expected = List.of(
+            "- compiler.err.unnamed.pkg.not.allowed.automatic.modules: automatic",
+            "1 error"
+        );
+
+        List<String> log = new JavacTask(tb)
+                .options("--module-path", modulePath.toString(),
+                         "-XDrawDiagnostics",
+                         "--add-modules", "automatic")
+                .outdir(classes)
+                .files(findJavaFiles(src))
+                .run(Task.Expect.FAIL)
+                .writeAll()
+                .getOutputLines(Task.OutputKind.DIRECT);
+
+        if (!Objects.equals(expected, log)) {
+            throw new AssertionError("Unexpected output: " + log);
         }
     }
 

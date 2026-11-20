@@ -715,11 +715,15 @@ public class Modules extends JCTree.Visitor {
                                   ListBuffer<ExportsDirective> exports) throws IOException {
             for (JavaFileObject clazz : fileManager.list(location, "", fileObjectKinds, true)) {
                 String binName = fileManager.inferBinaryName(location, clazz);
-                String pack = binName.lastIndexOf('.') != (-1) ? binName.substring(0, binName.lastIndexOf('.')) : ""; //unnamed package????
-                if (seenPackages.add(pack)) {
-                    ExportsDirective d = new ExportsDirective(syms.enterPackage(msym, names.fromString(pack)), null);
-                    directives.add(d);
-                    exports.add(d);
+                if (binName.lastIndexOf('.') != (-1)) {
+                    String pack = binName.substring(0, binName.lastIndexOf('.'));
+                    if (seenPackages.add(pack)) {
+                        ExportsDirective d = new ExportsDirective(syms.enterPackage(msym, names.fromString(pack)), null);
+                        directives.add(d);
+                        exports.add(d);
+                    }
+                } else if (seenPackages.add("")) {
+                    log.error(Errors.UnnamedPkgNotAllowedAutomaticModules(msym));
                 }
             }
         }
