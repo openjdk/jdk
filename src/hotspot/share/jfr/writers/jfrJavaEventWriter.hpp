@@ -49,6 +49,7 @@ class JfrJavaEventWriter : AllStatic {
   static void include(traceid tid, const JavaThread* jt);
   static jobject event_writer(JavaThread* t);
   static jobject new_event_writer(TRAPS);
+  static void return_lease(jobject writer, JavaThread* jt);
   static void flush(jobject writer, jint used, jint requested, JavaThread* jt);
   static jlong commit(jlong next_position, JavaThread* jt);
 };

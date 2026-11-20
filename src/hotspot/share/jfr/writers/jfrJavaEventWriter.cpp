@@ -144,6 +144,10 @@ void JfrJavaEventWriter::flush(jobject writer, jint used, jint requested, JavaTh
   }
 }
 
+void JfrJavaEventWriter::return_lease(jobject writer, JavaThread* jt) {
+  flush(writer, 0, 0, jt);
+}
+
 jlong JfrJavaEventWriter::commit(jlong next_position, JavaThread* jt) {
   assert(next_position != 0, "invariant");
   assert(jt != nullptr, "invariant");
