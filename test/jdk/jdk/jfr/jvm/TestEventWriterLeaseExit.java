@@ -37,8 +37,7 @@ import jdk.test.lib.thread.TestThread;
  * @requires vm.flagless & vm.hasJFR
  * @library /test/lib
  * @modules jdk.jfr/jdk.jfr.internal
- * @run main/othervm -Xmx192m -XX:+CompactStrings
- *      -XX:FlightRecorderOptions=threadbuffersize=8k jdk.jfr.jvm.TestEventWriterLeaseExit
+ * @run main/othervm -XX:+CompactStrings -XX:FlightRecorderOptions=threadbuffersize=8k jdk.jfr.jvm.TestEventWriterLeaseExit
  */
 public class TestEventWriterLeaseExit {
     private static final int THREAD_BUFFER_SIZE = 8 * 1024;
