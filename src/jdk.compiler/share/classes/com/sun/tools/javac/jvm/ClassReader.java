@@ -3327,7 +3327,7 @@ public class ClassReader {
     long adjustFieldFlags(long flags) {
         int maxMajor = MAX().major;
         var version = ClassFileFormatVersion.fromMajor(
-                Math.min(majorVersion, ClassFileFormatVersion.latest().major())
+                Math.clamp(majorVersion, Version.MIN().major, ClassFileFormatVersion.latest().major())
         );
         boolean previewClassFile = minorVersion == ClassFile.PREVIEW_MINOR_VERSION;
         boolean strictInit = allowValueClasses
