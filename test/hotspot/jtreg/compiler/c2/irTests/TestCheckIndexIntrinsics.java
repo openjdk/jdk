@@ -359,6 +359,12 @@ public class TestCheckIndexIntrinsics {
         assertIsCompiled(m);
     }
 
+    // Reason_intrinsic for the non-negative guards. Reason_range_check for the unsigned range checks.
+    private static int getPreconditionsTrapCount() {
+        return WHITE_BOX.getDeoptCount("intrinsic", "none")
+                + WHITE_BOX.getDeoptCount("range_check", "none");
+    }
+
     public static ClassLoader newClassLoader() {
         try {
             return new URLClassLoader(new URL[] {
@@ -390,9 +396,10 @@ public class TestCheckIndexIntrinsics {
         return m;
     }
 
-    private static void testShouldDeoptAndThrow(Method method, Object[] args) throws Exception {
+    private static void testShouldTrapAndThrow(Method method, Object[] args) throws Exception {
         Method m = loadAndCompileCopyOfMethod(method);
 
+        int trapsBefore = getPreconditionsTrapCount();
         try {
             m.invoke(null, args);
             throw new AssertionError(String.format("%s(%s): should have thrown", method, Arrays.toString(args)));
@@ -401,10 +408,15 @@ public class TestCheckIndexIntrinsics {
                 throw new AssertionError("unexpected exception", e);
             }
         }
-        assertIsNotCompiled(m);
+        assertIsCompiled(m);
+        if (getPreconditionsTrapCount() - trapsBefore != 1) {
+            throw new AssertionError(String.format("%s(%s): expected exactly one uncommon trap",
+                    method, Arrays.toString(args)));
+        }
 
-        // compile and invoke again to make sure trap was properly recorded
-        compile(m);
+        // A repeated invocation still enter the intrinsic code, traps again, but should not
+        // deoptimize the method.
+        trapsBefore = getPreconditionsTrapCount();
         try {
             m.invoke(null, args);
             throw new AssertionError(String.format("%s(%s): should have thrown", method, Arrays.toString(args)));
@@ -413,11 +425,15 @@ public class TestCheckIndexIntrinsics {
                 throw new AssertionError("unexpected exception", e);
             }
 
-            assertIsCompiled(m); // no more de-opt
+            assertIsCompiled(m); // no de-opt of the compiled code
+            if (getPreconditionsTrapCount() - trapsBefore != 1) {
+                throw new AssertionError(String.format("%s(%s): expected the repeated invocation to trap again",
+                        method, Arrays.toString(args)));
+            }
         }
     }
 
-    private static void assertEqual(Method groundTruth, Method intrinsified, boolean expectDeopt, Object[] args)
+    private static void assertEqual(Method groundTruth, Method intrinsified, boolean expectTrap, Object[] args)
             throws Exception {
         try {
             boolean oob = false;
@@ -435,21 +451,20 @@ public class TestCheckIndexIntrinsics {
             // if out-of-bound happens, we need to make sure intrinsic de-opts and throws an
             // obb
             if (oob) {
-                testShouldDeoptAndThrow(intrinsified, args);
+                testShouldTrapAndThrow(intrinsified, args);
                 return;
             }
 
             // load a new copy with clean method states
             intrinsified = loadAndCompileCopyOfMethod(intrinsified);
-            Object observed = intrinsified.invoke(null, args);
 
-            if (expectDeopt) {
-                assertIsNotCompiled(intrinsified);
-                System.err.printf("Warning: edge case de-opt observed on %s(%s)\n",
-                        intrinsified.getName(), Arrays.toString(args));
-            } else {
-                assertIsCompiled(intrinsified);
+            int trapsBefore = getPreconditionsTrapCount();
+            Object observed = intrinsified.invoke(null, args);
+            if (getPreconditionsTrapCount() - trapsBefore != (expectTrap ? 1 : 0)) {
+                throw new AssertionError(String.format("%s(%s): expected %s",
+                        intrinsified.getName(), Arrays.toString(args), expectTrap ? "one trap" : "no traps"));
             }
+            assertIsCompiled(intrinsified);
 
             if (!expected.equals(observed)) {
                 throw new AssertionError(String.format("expected %s, got %s", expected, observed));
@@ -551,9 +566,9 @@ public class TestCheckIndexIntrinsics {
         };
 
         for (long[] input : inputs) {
-            // deopt edge case: from == to (empty range)
-            boolean expectDeopt = input[0] == input[1];
-            assertEqual(groundTruth, intrinsified, expectDeopt, testLongVariant
+            // trap edge case: from == to (empty range)
+            boolean expectTrap = input[0] == input[1];
+            assertEqual(groundTruth, intrinsified, expectTrap, testLongVariant
                     ? new Object[] { input[0], input[1], input[2] }
                     : new Object[] { (int) input[0], (int) input[1], (int) input[2] });
         }
@@ -601,9 +616,9 @@ public class TestCheckIndexIntrinsics {
         };
 
         for (long[] input : inputs) {
-            // deopt edge case: size == 0
-            boolean expectDeopt = input[1] == 0;
-            assertEqual(groundTruth, intrinsified, expectDeopt, testLongVariant
+            // trap edge case: size == 0
+            boolean expectTrap = input[1] == 0;
+            assertEqual(groundTruth, intrinsified, expectTrap, testLongVariant
                     ? new Object[] { input[0], input[1], input[2] }
                     : new Object[] { (int) input[0], (int) input[1], (int) input[2] });
         }

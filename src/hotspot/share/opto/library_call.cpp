@@ -1450,7 +1450,7 @@ bool LibraryCallKit::inline_preconditions_checkFromToIndex(BasicType bt) {
   Node* to_minus_from_minus_one = _gvn.transform(SubNode::make(to, from, bt));
   to_minus_from_minus_one = _gvn.transform(SubNode::make(to_minus_from_minus_one, _gvn.integercon(1, bt), bt));
   insert_unsigned_range_check(*this, to_minus_from_minus_one, casted_length, bt);
-  if (stopped()) {
+  if (to_minus_from_minus_one == nullptr) {
     return true;
   }
 
