@@ -69,6 +69,9 @@ public final class GetProfileDataAfterTransform {
                     ICC_Profile profileTo = to.getProfile();
 
                     List<String> cmd = new ArrayList<>();
+                    // Run the subprocess headless so macOS AppKit does not print a
+                    // state-restoration line to stderr (checked empty below).
+                    cmd.add("-Djava.awt.headless=true");
                     cmd.add(GetProfileDataAfterTransform.class.getSimpleName());
 
                     cmd.add(String.valueOf(csFrom));
