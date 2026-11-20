@@ -38,3 +38,10 @@
 # Compiler:
 
 # Runtime:
+
+# Serviceability:
+
+vmTestbase/vm/mlvm/meth/func/jdi/breakpoint/Test.java                      8395763 generic-all
+vmTestbase/vm/mlvm/meth/func/jdi/breakpointOtherStratum/Test.java          8395763 generic-all
+vmTestbase/vm/mlvm/meth/stress/jdi/breakpointInCompiledCode/Test.java      8395763 generic-all
+
