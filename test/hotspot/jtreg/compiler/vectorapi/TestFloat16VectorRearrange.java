@@ -106,6 +106,8 @@ public class TestFloat16VectorRearrange {
     @Test
     @IR(counts = {IRNode.REARRANGE_VS, IRNode.VECTOR_SIZE_4, " >0 "},
         applyIfCPUFeatureAnd = {"avx512bw", "true", "avx512vl", "true"})
+    @IR(counts = {IRNode.REARRANGE_VS, IRNode.VECTOR_SIZE_4, " >0 "},
+        applyIfCPUFeature = {"asimd", "true"})
     public void rearrange64() {
         VectorShuffle<Float16> id = VectorShuffle.fromArray(S64, ID64, 0);
         VectorShuffle<Float16> irr = VectorShuffle.fromArray(S64, IRR64, 0);
@@ -124,6 +126,8 @@ public class TestFloat16VectorRearrange {
     @Test
     @IR(counts = {IRNode.REARRANGE_VS, IRNode.VECTOR_SIZE_4, " >0 "},
         applyIfCPUFeatureAnd = {"avx512bw", "true", "avx512vl", "true"})
+    @IR(counts = {IRNode.REARRANGE_VS, IRNode.VECTOR_SIZE_4, " >0 "},
+        applyIfCPUFeature = {"asimd", "true"})
     public void rearrange64Masked() {
         VectorShuffle<Float16> id = VectorShuffle.fromArray(S64, ID64, 0);
         VectorShuffle<Float16> irr = VectorShuffle.fromArray(S64, IRR64, 0);
@@ -143,6 +147,8 @@ public class TestFloat16VectorRearrange {
     @Test
     @IR(counts = {IRNode.REARRANGE_VS, IRNode.VECTOR_SIZE_8, " >0 "},
         applyIfCPUFeatureAnd = {"avx512bw", "true", "avx512vl", "true"})
+    @IR(counts = {IRNode.REARRANGE_VS, IRNode.VECTOR_SIZE_8, " >0 "},
+        applyIfCPUFeature = {"asimd", "true"})
     public void rearrange128() {
         VectorShuffle<Float16> id = VectorShuffle.fromArray(S128, ID128, 0);
         VectorShuffle<Float16> irr = VectorShuffle.fromArray(S128, IRR128, 0);
@@ -161,6 +167,8 @@ public class TestFloat16VectorRearrange {
     @Test
     @IR(counts = {IRNode.REARRANGE_VS, IRNode.VECTOR_SIZE_8, " >0 "},
         applyIfCPUFeatureAnd = {"avx512bw", "true", "avx512vl", "true"})
+    @IR(counts = {IRNode.REARRANGE_VS, IRNode.VECTOR_SIZE_8, " >0 "},
+        applyIfCPUFeature = {"asimd", "true"})
     public void rearrange128Masked() {
         VectorShuffle<Float16> id = VectorShuffle.fromArray(S128, ID128, 0);
         VectorShuffle<Float16> irr = VectorShuffle.fromArray(S128, IRR128, 0);
@@ -180,6 +188,8 @@ public class TestFloat16VectorRearrange {
     @Test
     @IR(counts = {IRNode.REARRANGE_VS, IRNode.VECTOR_SIZE_16, " >0 "},
         applyIfCPUFeatureAnd = {"avx512bw", "true", "avx512vl", "true"})
+    @IR(counts = {IRNode.REARRANGE_VS, IRNode.VECTOR_SIZE_16, " >0 "},
+        applyIfCPUFeature = {"sve", "true"}, applyIf = {"MaxVectorSize", ">= 32"})
     public void rearrange256() {
         VectorShuffle<Float16> id = VectorShuffle.fromArray(S256, ID256, 0);
         VectorShuffle<Float16> irr = VectorShuffle.fromArray(S256, IRR256, 0);
@@ -198,6 +208,8 @@ public class TestFloat16VectorRearrange {
     @Test
     @IR(counts = {IRNode.REARRANGE_VS, IRNode.VECTOR_SIZE_16, " >0 "},
         applyIfCPUFeatureAnd = {"avx512bw", "true", "avx512vl", "true"})
+    @IR(counts = {IRNode.REARRANGE_VS, IRNode.VECTOR_SIZE_16, " >0 "},
+        applyIfCPUFeature = {"sve", "true"}, applyIf = {"MaxVectorSize", ">= 32"})
     public void rearrange256Masked() {
         VectorShuffle<Float16> id = VectorShuffle.fromArray(S256, ID256, 0);
         VectorShuffle<Float16> irr = VectorShuffle.fromArray(S256, IRR256, 0);
@@ -217,6 +229,8 @@ public class TestFloat16VectorRearrange {
     @Test
     @IR(counts = {IRNode.REARRANGE_VS, IRNode.VECTOR_SIZE_32, " >0 "},
         applyIfCPUFeature = {"avx512bw", "true"})
+    @IR(counts = {IRNode.REARRANGE_VS, IRNode.VECTOR_SIZE_32, " >0 "},
+        applyIfCPUFeature = {"sve", "true"}, applyIf = {"MaxVectorSize", ">= 64"})
     public void rearrange512() {
         VectorShuffle<Float16> id = VectorShuffle.fromArray(S512, ID512, 0);
         VectorShuffle<Float16> irr = VectorShuffle.fromArray(S512, IRR512, 0);
@@ -235,6 +249,8 @@ public class TestFloat16VectorRearrange {
     @Test
     @IR(counts = {IRNode.REARRANGE_VS, IRNode.VECTOR_SIZE_32, " >0 "},
         applyIfCPUFeature = {"avx512bw", "true"})
+    @IR(counts = {IRNode.REARRANGE_VS, IRNode.VECTOR_SIZE_32, " >0 "},
+        applyIfCPUFeature = {"sve", "true"}, applyIf = {"MaxVectorSize", ">= 64"})
     public void rearrange512Masked() {
         VectorShuffle<Float16> id = VectorShuffle.fromArray(S512, ID512, 0);
         VectorShuffle<Float16> irr = VectorShuffle.fromArray(S512, IRR512, 0);
