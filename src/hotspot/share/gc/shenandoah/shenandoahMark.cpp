@@ -94,13 +94,13 @@ bool ShenandoahMark::try_process_remembered_set_chunks(uint worker_id, Shenandoa
 
   uintx chunks_scanned = 0;
   do {
-    // Always try to scan at least one chunk. Continue scanning until there is mark work,
-    // or until we have scanned too many empty chunks.
+    // Always try to scan at least one chunk. Continue scanning until there is sufficient
+    // mark work, or until we have scanned too many chunks.
     if (!try_process_remembered_set_chunk(worker_id, heap, &rset_closure)) {
       return false;
     }
     ++chunks_scanned;
-  } while (q->is_empty() && chunks_scanned < ShenandoahRememberedSetLoopStride);
+  } while (q->full_size() < ShenandoahMarkLoopStride && chunks_scanned < ShenandoahRememberedSetLoopStride);
   return true;
 }
 
