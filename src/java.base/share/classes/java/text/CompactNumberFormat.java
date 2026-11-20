@@ -108,8 +108,8 @@ import java.util.stream.Collectors;
  * falls back to it, is referred to as general number formatting. This uses the formatting provided by {@link
  * DecimalFormat} with the {@code decimalPattern} provided to the {@code CompactNumberFormat}. Such formatting
  * never produces fractional digits, even if the underlying decimal pattern has been composed to use fractional digits.
- * Changes to the {@code CompactNumberFormat}, such as setting {@link #setGroupingUsed(boolean)
- * setGroupingUsed(true)} will not change the behavior for general number formatting.
+ * Changes to the {@code CompactNumberFormat}, such as calling {@link #setGroupingUsed(boolean)
+ * setGroupingUsed(true)}, will not change the behavior for general number formatting.
  *
  * <h3>Compact Number Formatting</h3>
  * The default compact number formatting behavior does not produce fractional digits.
