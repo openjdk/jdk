@@ -164,11 +164,12 @@ void ShenandoahTaskQueueSet::trim() {
     queue(i)->compact();
   }
 
-  // Delete free segments from the tail. Simple hysteresis: only trim to half peak.
+  // Simple hysteresis: only trim to half peak.
   _peak_segments = MAX2(_peak_segments / 2, _num_segments.load_relaxed());
   size_t min_for_queues = align_up(_queue_count, ShenandoahTaskQueueSegment::SEGMENT_SIZE) / ShenandoahTaskQueueSegment::SEGMENT_SIZE + 1;
   size_t keep = MAX2(_peak_segments, min_for_queues);
 
+  // Delete free segments from the tail.
   size_t s = _num_segments.load_relaxed() - 1;
   while (s > keep && _segments[s]->are_all_free()) {
     ShenandoahTaskQueueSegment::destroy(_segments[s]);
