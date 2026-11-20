@@ -313,6 +313,10 @@ class StackOverflow {
 
   bool stack_guard_zone_unused() const { return _stack_guard_state == stack_guard_unused; }
 
+  bool stack_reserved_zone_disabled() const {
+    return _stack_guard_state == stack_guard_reserved_disabled;
+  }
+
   bool stack_yellow_reserved_zone_disabled() const {
     return _stack_guard_state == stack_guard_yellow_reserved_disabled;
   }
