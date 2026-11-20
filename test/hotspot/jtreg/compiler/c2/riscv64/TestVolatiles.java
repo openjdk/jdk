@@ -54,10 +54,18 @@ import jdk.test.lib.process.ProcessTools;
 // parses the PrintOptoAssembly output checking that the generated code
 // is correct, i.e. that the access is annotated and the membars around
 // it elided exactly when Zalasr is in use, and that neither happens
-// when it is not.
+// when it is not. RVWMO is always tested; RVTSO is tested as well when
+// the VM reports that the hardware supports Ztso.
 
 public class TestVolatiles {
     public void runtest(String classname, String testType) throws Throwable {
+        runtest(classname, testType, false);
+        if (probeZtso()) {
+            runtest(classname, testType, true);
+        }
+    }
+
+    private void runtest(String classname, String testType, boolean ztso) throws Throwable {
         // n.b. clients omit the package name for the class
         String fullclassname = "compiler.c2.riscv64." + classname;
 
@@ -65,8 +73,8 @@ public class TestVolatiles {
         // what it settled on rather than forcing the flag on: forcing it
         // where the extension is not implemented would just make the JIT
         // emit instructions which trap.
-        boolean zalasr = probeZalasr();
-        System.out.println("UseZalasr=" + zalasr);
+        boolean zalasr = probeZalasr(ztso);
+        System.out.println("UseZtso=" + ztso + ", UseZalasr=" + zalasr);
 
         // build up a command line for the spawned JVM
         String[] procArgs;
@@ -96,7 +104,7 @@ public class TestVolatiles {
         // fill in arguments common to all cases
         procArgs[1] = "-XX:+UnlockExperimentalVMOptions";
         procArgs[2] = "-XX:+UnlockDiagnosticVMOptions";
-        procArgs[3] = "-XX:-UseZtso";
+        procArgs[3] = ztso ? "-XX:+UseZtso" : "-XX:-UseZtso";
         procArgs[4] = "-XX:-BackgroundCompilation";
         procArgs[5] = "-XX:-TieredCompilation";
         procArgs[6] = "-XX:+PrintOptoAssembly";
@@ -109,32 +117,32 @@ public class TestVolatiles {
         // membar/fence sequence can be checked
         procArgs[0] = "-XX:+UseCompressedOops";
         procArgs[argcount - 2] = "-XX:-UseZalasr";
-        runtest(classname, testType, true, false, procArgs);
+        runtest(classname, testType, true, ztso, false, procArgs);
 
         procArgs[0] = "-XX:-UseCompressedOops";
-        runtest(classname, testType, false, false, procArgs);
+        runtest(classname, testType, false, ztso, false, procArgs);
 
         // the second round enables Zalasr and checks the annotated
         // sequence, wherever the hardware provides the extension
         if (zalasr) {
             procArgs[0] = "-XX:+UseCompressedOops";
             procArgs[argcount - 2] = "-XX:+UseZalasr";
-            runtest(classname, testType, true, true, procArgs);
+            runtest(classname, testType, true, ztso, true, procArgs);
 
             procArgs[0] = "-XX:-UseCompressedOops";
-            runtest(classname, testType, false, true, procArgs);
+            runtest(classname, testType, false, ztso, true, procArgs);
         }
     }
 
     // probe what the VM settles UseZalasr to under the flags common to
     // every run above. this also keeps the test honest about the gating
     // in VM_Version::initialize(), where Zalasr is switched off again on
-    // a JVM built by a pre-psABI toolchain and under Ztso.
-    private boolean probeZalasr() throws Throwable
+    // a JVM built by a pre-psABI toolchain.
+    private boolean probeZalasr(boolean ztso) throws Throwable
     {
         String[] procArgs = {
             "-XX:+UnlockExperimentalVMOptions",
-            "-XX:-UseZtso",
+            ztso ? "-XX:+UseZtso" : "-XX:-UseZtso",
             "-XX:+PrintFlagsFinal",
             "-version"
         };
@@ -153,7 +161,33 @@ public class TestVolatiles {
         throw new RuntimeException("UseZalasr not found in -XX:+PrintFlagsFinal output!\n\n" + output.getOutput());
     }
 
-    public void runtest(String classname, String testType, boolean useCompressedOops, boolean zalasr, String[] procArgs) throws Throwable {
+    // Do not force Ztso merely to exercise code generation: unlike Zalasr it
+    // adds no instruction that would trap on unsupported hardware, so doing so
+    // could silently run the test under a memory model the CPU does not provide.
+    private boolean probeZtso() throws Throwable
+    {
+        String[] procArgs = {
+            "-XX:+UnlockExperimentalVMOptions",
+            "-XX:+PrintFlagsFinal",
+            "-version"
+        };
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(procArgs);
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.shouldHaveExitValue(0);
+
+        for (String line : output.asLines()) {
+            if (line.matches("^\\s*bool\\s+UseZtso\\s+=\\s+true.*")) {
+                return true;
+            }
+            if (line.matches("^\\s*bool\\s+UseZtso\\s+=\\s+false.*")) {
+                return false;
+            }
+        }
+        throw new RuntimeException("UseZtso not found in -XX:+PrintFlagsFinal output!\n\n" + output.getOutput());
+    }
+
+    public void runtest(String classname, String testType, boolean useCompressedOops,
+                        boolean ztso, boolean zalasr, String[] procArgs) throws Throwable {
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(procArgs);
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
@@ -164,7 +198,7 @@ public class TestVolatiles {
         // check the output for the correct asm sequence as
         // appropriate to test class, test type and whether Zalasr
         // was in use
-        checkoutput(output, classname, testType, useCompressedOops, zalasr);
+        checkoutput(output, classname, testType, useCompressedOops, ztso, zalasr);
     }
 
     // skip through output returning a line containing the desired
@@ -242,7 +276,8 @@ public class TestVolatiles {
     }
 
     // check for expected asm output from a volatile load
-    private void checkload(OutputAnalyzer output, boolean useCompressedOops, boolean zalasr) throws Throwable
+    private void checkload(OutputAnalyzer output, boolean useCompressedOops,
+                           boolean ztso, boolean zalasr) throws Throwable
     {
         List<String> lines = output.asLines();
         ListIterator<String> iter = lines.listIterator();
@@ -259,19 +294,29 @@ public class TestVolatiles {
             // the oop load may be matched by a GC specific rule --
             // Shenandoah has an acquiring variant ahead of its barrier --
             // but it emits the same l{w|d}.aq.
+            String acquireMembar = ztso ? "#@unnecessary_membar_rvtso"
+                                        : "#@unnecessary_membar_acquire_rvwmo";
             matches = new String[] {
                 "lw\\.aq",
-                "#@unnecessary_membar_acquire_rvwmo",
+                acquireMembar,
                 "#@Ret"
             };
-            forbidden = new String[] { "#@membar_acquire_rvwmo" };
+            forbidden = new String[] { "#@membar_acquire_rvwmo", "fence r, rw" };
             checkCompile(lines, iter, "testInt", matches, forbidden, output);
 
             matches = new String[] {
                 useCompressedOops ? "lw\\.aq" : "ld\\.aq",
-                "#@unnecessary_membar_acquire_rvwmo",
+                acquireMembar,
                 "#@Ret"
             };
+            checkCompile(lines, iter, "testObj", matches, forbidden, output);
+        } else if (ztso) {
+            matches = new String[] {
+                "#@unnecessary_membar_rvtso",
+                "#@Ret"
+            };
+            forbidden = new String[] { "\\.aq\\b", "\\.rl\\b", "fence r, rw" };
+            checkCompile(lines, iter, "testInt", matches, forbidden, output);
             checkCompile(lines, iter, "testObj", matches, forbidden, output);
         } else {
             matches = new String[] {
@@ -286,7 +331,8 @@ public class TestVolatiles {
     }
 
     // check for expected asm output from a volatile store
-    private void checkstore(OutputAnalyzer output, boolean useCompressedOops, boolean zalasr) throws Throwable
+    private void checkstore(OutputAnalyzer output, boolean useCompressedOops,
+                            boolean ztso, boolean zalasr) throws Throwable
     {
         List<String> lines = output.asLines();
         ListIterator<String> iter = lines.listIterator();
@@ -297,27 +343,44 @@ public class TestVolatiles {
         if (zalasr) {
             // s{w|d}.rl orders the store against everything before it,
             // so the leading MemBarRelease goes away, and the trailing
-            // MemBarVolatile follows it because RCsc release-acquire
+            // MemBarVolatile goes away because RCsc release-acquire
             // pairs supply the StoreLoad edge a volatile store needs.
             //
             // the oop store may be matched by a GC specific rule -- G1
             // and Shenandoah both have releasing variants -- but both of
             // them end up emitting the same s{w|d}.rl.
+            String releaseMembar = ztso ? "#@unnecessary_membar_rvtso"
+                                        : "#@unnecessary_membar_release_rvwmo";
             matches = new String[] {
-                "#@unnecessary_membar_release_rvwmo",
+                releaseMembar,
                 "sw\\.rl",
-                "#@unnecessary_membar_volatile_rvwmo",
+                "#@unnecessary_membar_volatile",
                 "#@Ret"
             };
-            forbidden = new String[] { "#@membar_release_rvwmo", "#@membar_volatile_rvwmo" };
+            forbidden = new String[] {
+                "#@membar_release_rvwmo",
+                "#@membar_volatile_rvwmo",
+                "#@membar_volatile_rvtso",
+                "fence w, r"
+            };
             checkCompile(lines, iter, "testInt", matches, forbidden, output);
 
             matches = new String[] {
-                "#@unnecessary_membar_release_rvwmo",
+                releaseMembar,
                 useCompressedOops ? "sw\\.rl" : "sd\\.rl",
-                "#@unnecessary_membar_volatile_rvwmo",
+                "#@unnecessary_membar_volatile",
                 "#@Ret"
             };
+            checkCompile(lines, iter, "testObj", matches, forbidden, output);
+        } else if (ztso) {
+            matches = new String[] {
+                "#@unnecessary_membar_rvtso",
+                "#@membar_volatile_rvtso",
+                "fence w, r",
+                "#@Ret"
+            };
+            forbidden = new String[] { "\\.aq\\b", "\\.rl\\b" };
+            checkCompile(lines, iter, "testInt", matches, forbidden, output);
             checkCompile(lines, iter, "testObj", matches, forbidden, output);
         } else {
             matches = new String[] {
@@ -334,23 +397,25 @@ public class TestVolatiles {
     }
 
     // perform a check appropriate to the classname
-    private void checkoutput(OutputAnalyzer output, String classname, String testType, boolean useCompressedOops, boolean zalasr) throws Throwable
+    private void checkoutput(OutputAnalyzer output, String classname, String testType,
+                             boolean useCompressedOops, boolean ztso, boolean zalasr) throws Throwable
     {
         // trace call to allow eyeball check of what is being checked
         System.out.println("checkoutput(" +
                            classname + ", " +
                            testType + ", UseCompressedOops=" + useCompressedOops +
+                           ", UseZtso=" + ztso +
                            ", UseZalasr=" + zalasr + ")\n" +
                            output.getOutput());
 
         switch (classname) {
         case "TestVolatileLoad":
         case "TestUnsafeVolatileLoad":
-            checkload(output, useCompressedOops, zalasr);
+            checkload(output, useCompressedOops, ztso, zalasr);
             break;
         case "TestVolatileStore":
         case "TestUnsafeVolatileStore":
-            checkstore(output, useCompressedOops, zalasr);
+            checkstore(output, useCompressedOops, ztso, zalasr);
             break;
         default:
             throw new RuntimeException("unexpected test class " + classname);
