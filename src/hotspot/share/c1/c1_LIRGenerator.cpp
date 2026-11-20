@@ -1916,18 +1916,38 @@ void LIRGenerator::do_StoreField(StoreField* x) {
 
     // Zero the payload
     BasicType bt = vk->atomic_size_to_basic_type(field->is_null_free());
-    LIR_Opr payload = new_register((bt == T_LONG) ? bt : T_INT);
+    Value payload_value = make_lir_temporary((bt == T_LONG) ? T_LONG : T_INT);
+    LIR_Opr payload = payload_value->operand();
     LIR_Opr zero = (bt == T_LONG) ? LIR_OprFact::longConst(0) : LIR_OprFact::intConst(0);
     __ move(zero, payload);
 
-    bool is_constant_null = value.is_constant() && value.value()->is_null_obj();
-    if (!is_constant_null) {
-      LabelObj* L_isNull = new LabelObj();
-      bool needs_null_check = !value.is_constant();
-      if (needs_null_check) {
-        __ cmp(lir_cond_equal, value.result(), LIR_OprFact::oopConst(nullptr));
-        __ branch(lir_cond_equal, L_isNull->label());
+    if (!value.is_constant()) {
+      {
+        LateControlFlowDiamond lcfd(this, x, [&](BlockBegin* taken, BlockBegin* not_taken) {
+          __ cmp(lir_cond_equal, value.result(), LIR_OprFact::oopConst(nullptr));
+          __ branch(lir_cond_equal, taken);
+          __ jump(not_taken);
+        });
+        {
+          LateControlFlowDiamond::NotTakenBlock not_taken(lcfd);
+          LIRItem value(x->value(), this);
+          value.load_item();
+
+          // Load payload (if not empty) and set null marker (if not null-free)
+          if (!vk->is_empty()) {
+            access_load_at(decorators, bt, value, LIR_OprFact::intConst(vk->payload_offset()), payload, nullptr, nullptr, vk);
+          }
+          if (!field->is_null_free()) {
+            __ logical_or(payload, null_marker_mask(bt, field), payload);
+          }
+        }
       }
+      // Restore LIRItems in the continuation block.
+      value.set_instruction(x->value());
+      object.set_instruction(x->obj());
+      value.load_item();
+      object.load_item();
+    } else if (value.is_constant() && !value.value()->is_null_obj()) {
       // Load payload (if not empty) and set null marker (if not null-free)
       if (!vk->is_empty()) {
         access_load_at(decorators, bt, value, LIR_OprFact::intConst(vk->payload_offset()), payload, nullptr, nullptr, vk);
@@ -1935,10 +1955,8 @@ void LIRGenerator::do_StoreField(StoreField* x) {
       if (!field->is_null_free()) {
         __ logical_or(payload, null_marker_mask(bt, field), payload);
       }
-      if (needs_null_check) {
-        __ branch_destination(L_isNull->label());
-      }
     }
+
     access_store_at(decorators, bt, object, LIR_OprFact::intConst(x->offset()), payload,
                     // Make sure to emit an implicit null check and pass the information
                     // that this is a flat store that might require gc barriers for oop fields.
