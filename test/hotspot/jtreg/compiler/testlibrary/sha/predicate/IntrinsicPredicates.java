@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -130,9 +130,19 @@ public class IntrinsicPredicates {
                                 IntrinsicPredicates.isIntrinsicAvailable("sun.security.provider.SHA", "implCompress0"));
     }
 
+    public static BooleanSupplier isSHA1MultiBlockIntrinsicAvailable() {
+        return new AndPredicate(IntrinsicPredicates.COMPILABLE_BY_C2,
+                                IntrinsicPredicates.isIntrinsicAvailable("sun.security.provider.DigestBase", "implCompressMultiBlock0"));
+    }
+
     public static BooleanSupplier isSHA256IntrinsicAvailable() {
         return new AndPredicate(IntrinsicPredicates.COMPILABLE_BY_C2,
                                 IntrinsicPredicates.isIntrinsicAvailable("sun.security.provider.SHA2", "implCompress0"));
+    }
+
+    public static BooleanSupplier isSHA256MultiBlockIntrinsicAvailable() {
+        return new AndPredicate(IntrinsicPredicates.COMPILABLE_BY_C2,
+                                IntrinsicPredicates.isIntrinsicAvailable("sun.security.provider.DigestBase", "implCompressMultiBlock0"));
     }
 
     public static BooleanSupplier isSHA512IntrinsicAvailable() {
@@ -140,17 +150,48 @@ public class IntrinsicPredicates {
                                 IntrinsicPredicates.isIntrinsicAvailable("sun.security.provider.SHA5", "implCompress0"));
     }
 
+    public static BooleanSupplier isSHA512MultiBlockIntrinsicAvailable() {
+        return new AndPredicate(IntrinsicPredicates.COMPILABLE_BY_C2,
+                                IntrinsicPredicates.isIntrinsicAvailable("sun.security.provider.DigestBase", "implCompressMultiBlock0"));
+    }
+
     public static BooleanSupplier isSHA3IntrinsicAvailable() {
         return new AndPredicate(IntrinsicPredicates.COMPILABLE_BY_C2,
                                 IntrinsicPredicates.isIntrinsicAvailable("sun.security.provider.SHA3", "implCompress0"));
     }
 
+    public static BooleanSupplier isSHA3MultiBlockIntrinsicAvailable() {
+        return new AndPredicate(IntrinsicPredicates.COMPILABLE_BY_C2,
+                                IntrinsicPredicates.isIntrinsicAvailable("sun.security.provider.DigestBase", "implCompressMultiBlock0"));
+    }
+
+    public static BooleanSupplier isSHA3DoubleKeccakIntrinsicAvailable() {
+        return new AndPredicate(IntrinsicPredicates.COMPILABLE_BY_C2,
+                                IntrinsicPredicates.isIntrinsicAvailable("sun.security.provider.SHA3Parallel", "doubleKeccak"));
+    }
+
+    public static BooleanSupplier isSHA3QuadKeccakIntrinsicAvailable() {
+        return new AndPredicate(IntrinsicPredicates.COMPILABLE_BY_C2,
+                                IntrinsicPredicates.isIntrinsicAvailable("sun.security.provider.SHA3Parallel", "quadKeccak"));
+    }
+
     private static BooleanSupplier isIntrinsicAvailable(String klass, String method) {
         try {
-            Method m = Class.forName(klass).getDeclaredMethod(method, byte[].class, int.class);
-            return () -> WHITE_BOX.isIntrinsicAvailable(m, (int)IntrinsicPredicates.TIERED_MAX_LEVEL);
+            Method m;
+            if (method.equals("implCompress0") == true) {
+                m = Class.forName(klass).getDeclaredMethod(method, byte[].class, int.class);
+            } else if (method.equals("implCompressMultiBlock0") == true) {
+                m = Class.forName(klass).getDeclaredMethod(method, byte[].class, int.class, int.class);
+            } else if (method.equals("doubleKeccak") == true) {
+                m = Class.forName(klass).getDeclaredMethod(method, long[].class, long[].class);
+            } else if (method.equals("quadKeccak") == true) {
+                m = Class.forName(klass).getDeclaredMethod(method, long[].class, long[].class, long[].class, long[].class);
+            } else {
+                throw new Exception("Unknown method encountered!");
+            }
+            return () -> WHITE_BOX.isIntrinsicAvailable(m, (int) IntrinsicPredicates.TIERED_MAX_LEVEL);
         } catch (Exception e) {
-            throw new RuntimeException("Intrinsified method " +  klass + "::" + method + " not found!");
+            throw new RuntimeException("Intrinsified method " +  klass + "::" + method + " not found!", e);
         }
     };
 }

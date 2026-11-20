@@ -189,15 +189,12 @@ public class TestDigest {
                 System.out.println("TestDigest Error: ");
                 showArray(expectedHash, "expectedHash");
                 showArray(hash,         "computedHash");
-                //System.exit(1);
                 throw new Exception("TestDigest Error");
             } else {
                 showArray(hash, "hash");
             }
         } catch (Exception e) {
-            System.out.println("Exception: " + e);
-            //System.exit(1);
-            throw new Exception(e);
+            throw new Exception("Exception: " + e, e);
         }
     }
 
