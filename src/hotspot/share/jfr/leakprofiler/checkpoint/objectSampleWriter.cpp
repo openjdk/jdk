@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,9 @@
 #include "jfr/metadata/jfrSerializer.hpp"
 #include "jfr/writers/jfrTypeWriterHost.hpp"
 #include "jfrfiles/jfrTypes.hpp"
+#include "oops/flatArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/valueKlass.inline.hpp"
 #include "oops/symbol.hpp"
 #include "utilities/growableArray.hpp"
 
@@ -75,6 +77,7 @@ class ObjectSampleRootDescriptionData {
 class OldObjectSampleData {
  public:
   oop _object;
+  const Klass* _value_klass;
   traceid _reference_id;
 };
 
@@ -202,9 +205,18 @@ static int __write_sample_info__(JfrCheckpointWriter* writer, const void* si) {
   assert(writer != nullptr, "invariant");
   assert(si != nullptr, "invariant");
   const OldObjectSampleInfo* const oosi = (const OldObjectSampleInfo*)si;
+  writer->write(oosi->_id);
+  if (oosi->_data._value_klass != nullptr) {
+    // An embedded value has no independent heap object,
+    // hence no object address and no descriptor.
+    writer->write<u8>(0);
+    writer->write(oosi->_data._value_klass);
+    writer->write(static_cast<const char*>(nullptr));
+    writer->write(oosi->_data._reference_id);
+    return 1;
+  }
   oop object = oosi->_data._object;
   assert(object != nullptr, "invariant");
-  writer->write(oosi->_id);
   writer->write(cast_from_oop<u8>(object));
   writer->write(const_cast<const Klass*>(object->klass()));
   ObjectSampleDescription od(object);
@@ -293,24 +305,13 @@ static int __write_field_info__(JfrCheckpointWriter* writer, const void* fi) {
   return 1;
 }
 
-static traceid get_field_info_id(const Edge& edge) {
-  if (edge.is_root()) {
-    return 0;
-  }
-  assert(!EdgeUtils::is_array_element(edge), "invariant");
-  jshort field_modifiers;
-  const Symbol* const field_name_symbol = EdgeUtils::field_name(edge, &field_modifiers);
-  if (field_name_symbol == nullptr) {
-    return 0;
-  }
+static traceid get_field_info_id(const EdgeField& field) {
   if (field_infos == nullptr) {
     field_infos = new FieldTable();
   }
-  assert(field_infos != nullptr, "invariant");
   ObjectSampleFieldInfo* const osfi = new ObjectSampleFieldInfo();
-  assert(osfi != nullptr, "invariant");
-  osfi->_field_name_symbol = field_name_symbol;
-  osfi->_field_modifiers = field_modifiers;
+  osfi->_field_name_symbol = field._name;
+  osfi->_field_modifiers = field._modifiers;
   return field_infos->store(osfi);
 }
 
@@ -524,6 +525,7 @@ static void add_old_object_sample_info(const StoredEdge* current, traceid id) {
   assert(oosi != nullptr, "invariant");
   oosi->_id = id;
   oosi->_data._object = current->pointee();
+  oosi->_data._value_klass = nullptr;
   oosi->_data._reference_id = current->parent() == nullptr ? 0 : id;
   sample_infos->store(oosi);
 }
@@ -540,7 +542,7 @@ static void add_reference_info(const StoredEdge* current, traceid id, traceid pa
 
   ri->_id = id;
   ri->_data._array_info_id =  current->is_skip_edge() ? 0 : get_array_info_id(*current, id);
-  ri->_data._field_info_id = ri->_data._array_info_id != 0 || current->is_skip_edge() ? 0 : get_field_info_id(*current);
+  ri->_data._field_info_id = 0;
   ri->_data._old_object_sample_id = parent_id;
   ri->_data._skip = current->skip_length();
   ref_infos->store(ri);
@@ -557,13 +559,75 @@ static traceid add_gc_root_info(const StoredEdge* root, traceid id) {
   return get_gc_root_description_info_id(*root, id);
 }
 
+static void add_logical_value(traceid id, const Klass* klass) {
+  assert(sample_infos != nullptr && klass != nullptr, "invariant");
+  OldObjectSampleInfo* const info = new OldObjectSampleInfo();
+  info->_id = id;
+  info->_data._object = nullptr;
+  info->_data._value_klass = klass;
+  info->_data._reference_id = id;
+  sample_infos->store(info);
+}
+
+static void add_logical_reference(traceid id, traceid parent_id,
+                                  traceid field_id, traceid array_id) {
+  if (ref_infos == nullptr) {
+    ref_infos = new RefInfo();
+  }
+  ReferenceInfo* const info = new ReferenceInfo();
+  info->_id = id;
+  info->_data._field_info_id = field_id;
+  info->_data._array_info_id = array_id;
+  info->_data._old_object_sample_id = parent_id;
+  info->_data._skip = 0;
+  ref_infos->store(info);
+}
+
+// Record the logical reference path corresponding to this physical edge.
+// Caller needs ResourceMark.
+void ObjectSampleWriter::add_logical_reference_chain(const StoredEdge* edge,
+                                                     traceid id,
+                                                     traceid parent_id) {
+  assert(edge != nullptr, "invariant");
+  assert(edge->parent() != nullptr, "invariant");
+
+  GrowableArray<EdgeField> fields(4);
+
+  // Expand only fully resolved, unskipped edges. Traversal and physical
+  // skip distances stay unchanged; these are logical presentation nodes only.
+  if (edge->is_skip_edge() || !EdgeUtils::field_path(*edge, &fields)) {
+    add_reference_info(edge, id, parent_id);
+    return;
+  }
+
+  const oop owner = edge->reference_owner();
+  if (owner->is_flatArray()) {
+    const flatArrayOop array = static_cast<flatArrayOop>(owner);
+    const traceid value_id = ++EdgeStore::_edge_id_counter;
+    add_logical_value(value_id, array->klass()->element_klass());
+    add_logical_reference(value_id, parent_id, 0, get_array_info_id(*edge, value_id));
+    parent_id = value_id;
+  }
+
+  for (int i = 0; i < fields.length() - 1; ++i) {
+    const EdgeField& field = fields.at(i);
+    assert(field._value_klass != nullptr, "invariant");
+    const traceid value_id = ++EdgeStore::_edge_id_counter;
+    add_logical_value(value_id, field._value_klass);
+    add_logical_reference(value_id, parent_id, get_field_info_id(field), 0);
+    parent_id = value_id;
+  }
+
+  add_logical_reference(id, parent_id, get_field_info_id(fields.last()), 0);
+}
+
 void ObjectSampleWriter::write(const StoredEdge* edge) {
   assert(edge != nullptr, "invariant");
   const traceid id = _store->get_id(edge);
   add_old_object_sample_info(edge, id);
   const StoredEdge* const parent = edge->parent();
   if (parent != nullptr) {
-    add_reference_info(edge, id, _store->get_id(parent));
+    add_logical_reference_chain(edge, id, _store->get_id(parent));
     return;
   }
   if (is_gc_root(edge)) {

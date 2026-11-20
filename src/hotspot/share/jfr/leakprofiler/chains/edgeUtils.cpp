@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,10 +28,13 @@
 #include "jfr/leakprofiler/chains/edgeUtils.hpp"
 #include "jfr/leakprofiler/utilities/unifiedOopRef.inline.hpp"
 #include "oops/fieldStreams.inline.hpp"
+#include "oops/flatArrayOop.inline.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oopsHierarchy.hpp"
+#include "oops/valueKlass.inline.hpp"
+#include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/handles.inline.hpp"
 
 static bool is_static_field(const oop ref_owner, const InstanceKlass* ik, int offset) {
@@ -53,33 +56,68 @@ static int field_offset(const Edge& edge, const oop ref_owner) {
   return (int)offset;
 }
 
-const Symbol* EdgeUtils::field_name(const Edge& edge, jshort* modifiers) {
-  assert(!edge.is_root(), "invariant");
-  assert(!EdgeUtils::is_array_element(edge), "invariant");
-  assert(modifiers != nullptr, "invariant");
-  const oop ref_owner = edge.reference_owner();
-  assert(ref_owner != nullptr, "invariant");
-  assert(ref_owner->klass()->is_instance_klass(), "invariant");
-  const InstanceKlass* ik = InstanceKlass::cast(ref_owner->klass());
-  const int offset = field_offset(edge, ref_owner);
-  if (is_static_field(ref_owner, ik, offset)) {
-    assert(ik->is_mirror_instance_klass(), "invariant");
-    assert(java_lang_Class::as_Klass(ref_owner)->is_instance_klass(), "invariant");
-    ik = java_lang_Class::as_InstanceKlass(ref_owner);
-  }
+static bool resolve_field_path(const InstanceKlass* ik, int offset, bool is_static,
+  GrowableArray<EdgeField>* fields) {
   while (ik != nullptr) {
-    JavaFieldStream jfs(ik);
-    while (!jfs.done()) {
-      if (offset == jfs.offset()) {
-        *modifiers = jfs.access_flags().as_field_flags();
-        return jfs.name();
-      }
-      jfs.next();
+    fieldDescriptor fd;
+    // Flattened field: the known reference slot lies within its payload.
+    // Append this enclosing field to the path, translate the slot's offset
+    // into the value class's layout, and continue resolving within that layout.
+    // Check containment before exact offsets: the first embedded reference
+    // can share the flattened field's starting offset.
+    if (!is_static && ik->find_flat_field_containing_offset(offset, &fd)) {
+      const ValueKlass* const vk = fd.field_holder()->value_field_info(fd.index()).klass();
+      fields->append(EdgeField(fd.name(), fd.access_flags().as_field_flags(), vk));
+      offset = offset - fd.offset() + vk->payload_offset();
+      ik = vk;
+      continue;
     }
+
+    // Ordinary reference field: identify the field naming the known slot,
+    // append it to the path, and complete the resolution.
+    if (ik->find_local_field_from_offset(offset, is_static, &fd)) {
+      assert(!fd.is_flat(), "invariant");
+      assert(is_reference_type(fd.field_type()), "invariant");
+      fields->append(EdgeField(fd.name(), fd.access_flags().as_field_flags()));
+      return true;
+    }
+
     ik = ik->super();
   }
-  *modifiers = 0;
-  return nullptr;
+  fields->clear();
+  return false;
+}
+
+bool EdgeUtils::field_path(const Edge& edge, GrowableArray<EdgeField>* fields) {
+  assert(fields != nullptr && fields->is_empty(), "invariant");
+  if (edge.is_root()) {
+    return false;
+  }
+  const oop owner = edge.reference_owner();
+  assert(owner != nullptr, "invariant");
+  // Take note! Flat arrays also satisfy owner->is_array().
+  // We must therefore handle owner->is_flatArray() before the general array check below,
+  // which would otherwise return false without resolving the fields within their elements.
+  if (owner->is_flatArray()) {
+    const flatArrayOop array = static_cast<flatArrayOop>(owner);
+    const size_t stride = array->klass()->element_byte_size();
+    const size_t displacement = pointer_delta(edge.reference().addr<HeapWord*>(), array->base(), 1);
+    assert(displacement / stride < static_cast<size_t>(array->length()), "invariant");
+    const ValueKlass* vk = array->klass()->element_klass();
+    const size_t offset = displacement % stride + vk->payload_offset();
+    assert(offset <= static_cast<size_t>(INT_MAX), "invariant");
+    return resolve_field_path(vk, static_cast<int>(offset), false, fields);
+  }
+  if (owner->is_array()) {
+    return false;
+  }
+  const InstanceKlass* ik = InstanceKlass::cast(owner->klass());
+  const int offset = field_offset(edge, owner);
+  const bool is_static = is_static_field(owner, ik, offset);
+  if (is_static) {
+    ik = java_lang_Class::as_InstanceKlass(owner);
+  }
+  return resolve_field_path(ik, offset, is_static, fields);
 }
 
 bool EdgeUtils::is_array_element(const Edge& edge) {
@@ -97,9 +135,17 @@ static int array_offset(const Edge& edge) {
   assert(!reference.is_null(), "invariant");
   assert(ref_owner->is_array(), "invariant");
   const objArrayOop ref_owner_array = static_cast<objArrayOop>(ref_owner);
-  const int offset = (int)pointer_delta(reference.addr<HeapWord*>(), ref_owner_array->base(), heapOopSize);
-  assert(offset >= 0 && offset < ref_owner_array->length(), "invariant");
-  return offset;
+  const void* base = ref_owner_array->base();
+  size_t element_size = heapOopSize;
+  if (ref_owner->is_flatArray()) {
+    const flatArrayOop flat_array = static_cast<flatArrayOop>(ref_owner);
+    base = flat_array->base();
+    element_size = flat_array->klass()->element_byte_size();
+  }
+  // A reference embedded in a flat element maps to its containing array index.
+  const size_t index = pointer_delta(reference.addr<HeapWord*>(), base, element_size);
+  assert(index < static_cast<size_t>(ref_owner_array->length()), "invariant");
+  return static_cast<int>(index);
 }
 
 int EdgeUtils::array_index(const Edge& edge) {
