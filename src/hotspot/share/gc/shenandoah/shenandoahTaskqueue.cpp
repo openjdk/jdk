@@ -38,12 +38,12 @@ void ShenandoahTaskQueueStack::clear() {
 
 ShenandoahTaskQueue::ShenandoahTaskQueue(ShenandoahTaskQueueSet* qs) :
   _qs(qs) {
-  _stack = _qs->flip_from_free();
+  _stack = _qs->pick_free();
 }
 
 ShenandoahTaskQueue::~ShenandoahTaskQueue() {
   _stack->clear();
-  _qs->flip_to_free(_stack);
+  _qs->mark_free(_stack);
 }
 
 bool ShenandoahTaskQueue::is_empty() {
@@ -56,15 +56,15 @@ void ShenandoahTaskQueue::clear() {
 
 void ShenandoahTaskQueue::flush_to_shared() {
   if (!_stack->is_empty()) {
-    _qs->flip_to_shared(_stack);
-    _stack = _qs->flip_from_free();
+    _qs->mark_shared(_stack);
+    _stack = _qs->pick_free();
   }
 }
 
 void ShenandoahTaskQueue::compact() {
   if (_stack->is_empty()) {
-    _qs->flip_to_free(_stack);
-    _stack = _qs->flip_from_free();
+    _qs->mark_free(_stack);
+    _stack = _qs->pick_free();
   }
 }
 
@@ -87,7 +87,7 @@ void ShenandoahTaskQueueSegment::destroy(ShenandoahTaskQueueSegment* seg) {
 }
 
 ShenandoahTaskQueueSegment::ShenandoahTaskQueueSegment(size_t seg_idx, ReservedSpace& rs) :
-  _free_bm(right_n_bits(SEGMENT_SIZE)), _shared_bm(0), _rs(rs) {
+  _free_bm(right_n_bits(SEGMENT_SIZE)), _shared_bm(0), _rs(rs), _segment_index(seg_idx) {
   for (size_t i = 0; i < SEGMENT_SIZE; i++) {
     ::new (&_stacks[i]) ShenandoahTaskQueueStack((seg_idx << SEGMENT_SIZE_SHIFT) + i);
   }

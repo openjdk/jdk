@@ -304,14 +304,14 @@ public:
   size_t index() { return _index; }
 
   bool is_sliceable();
-  void slice_top(ShenandoahTaskQueueStack* to_chunk);
+  void slice_top(ShenandoahTaskQueueStack* to_stack);
 };
 
 // Segment is the unit of allocation.
 //
 // Each segment is committed in full, carries the storage for stacks, plus small bitmaps
 // that describe the stack state. Segment is aligned by its size, which prevents false sharing
-// between adjacent segments and any chunks within the segment or outside the segment.
+// between adjacent segments and any stacks within the segment or outside the segment.
 //
 class ShenandoahTaskQueueSegment {
 public:
@@ -328,17 +328,18 @@ public:
   shenandoah_padding(2);
 
   ReservedSpace _rs;
+  size_t _segment_index;
 
   static ShenandoahTaskQueueSegment* create(size_t seg_idx);
   static void destroy(ShenandoahTaskQueueSegment* seg);
 
-  inline ShenandoahTaskQueueStack* flip_from(Atomic<uint64_t>* bm);
-  inline ShenandoahTaskQueueStack* flip_from_shared();
-  inline ShenandoahTaskQueueStack* flip_from_free();
+  inline ShenandoahTaskQueueStack* pick(Atomic<uint64_t>* bm);
+  inline ShenandoahTaskQueueStack* pick_shared();
+  inline ShenandoahTaskQueueStack* pick_free();
 
-  inline void flip_to(ShenandoahTaskQueueStack* stack, Atomic<uint64_t>* bm);
-  inline void flip_to_shared(ShenandoahTaskQueueStack* stack);
-  inline void flip_to_free(ShenandoahTaskQueueStack* stack);
+  inline void mark(ShenandoahTaskQueueStack* stack, Atomic<uint64_t>* bm);
+  inline void mark_shared(ShenandoahTaskQueueStack* stack);
+  inline void mark_free(ShenandoahTaskQueueStack* stack);
 
   bool are_all_free() const;
 
@@ -397,11 +398,11 @@ public:
   ShenandoahTaskQueueSet(uint queue_count);
   ~ShenandoahTaskQueueSet();
 
-  inline ShenandoahTaskQueueStack* flip_from_shared();
-  inline ShenandoahTaskQueueStack* flip_from_free();
+  inline ShenandoahTaskQueueStack* pick_shared();
+  inline ShenandoahTaskQueueStack* pick_free();
 
-  inline void flip_to_shared(ShenandoahTaskQueueStack* chunk);
-  inline void flip_to_free(ShenandoahTaskQueueStack* chunk);
+  inline void mark_shared(ShenandoahTaskQueueStack* stack);
+  inline void mark_free(ShenandoahTaskQueueStack* stack);
 
   ShenandoahTaskQueue* queue(uint i) {
     return _queues[i];
