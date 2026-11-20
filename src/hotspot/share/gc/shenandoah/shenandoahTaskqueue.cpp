@@ -135,7 +135,7 @@ ShenandoahTaskQueueSet::~ShenandoahTaskQueueSet() {
 }
 
 bool ShenandoahTaskQueueSet::is_empty() {
-  for (size_t i = 0; i < _queue_count; i++) {
+  for (uint i = 0; i < _queue_count; i++) {
     ShenandoahTaskQueue* q = queue(i);
     assert(q != nullptr, "Sanity");
     if (!q->is_empty()) {
@@ -146,7 +146,7 @@ bool ShenandoahTaskQueueSet::is_empty() {
 }
 
 void ShenandoahTaskQueueSet::clear() {
-  for (size_t i = 0; i < _queue_count; i++) {
+  for (uint i = 0; i < _queue_count; i++) {
     ShenandoahTaskQueue* q = queue(i);
     assert(q != nullptr, "Sanity");
     q->clear();
@@ -160,7 +160,7 @@ void ShenandoahTaskQueueSet::clear() {
 
 void ShenandoahTaskQueueSet::trim() {
   // Rearrange the chunks to the left-most segments.
-  for (size_t i = 0; i < _queue_count; i++) {
+  for (uint i = 0; i < _queue_count; i++) {
     queue(i)->compact();
   }
 
@@ -180,7 +180,7 @@ void ShenandoahTaskQueueSet::trim() {
 }
 
 void ShenandoahTaskQueueSet::flush_to_shared() {
-  for (size_t i = 0; i < _queue_count; i++) {
+  for (uint i = 0; i < _queue_count; i++) {
     ShenandoahTaskQueue* q = queue(i);
     assert(q != nullptr, "Sanity");
     q->flush_to_shared();
