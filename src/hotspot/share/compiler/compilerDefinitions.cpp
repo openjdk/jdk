@@ -35,6 +35,7 @@
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
 #include "utilities/defaultStream.hpp"
+#include "utilities/ticks.hpp"
 
 const char* compilertype2name_tab[compiler_number_of_types] = {
   "",
@@ -466,6 +467,10 @@ void CompilerConfig::ergo_initialize() {
 
   set_legacy_emulation_flags();
   set_compilation_policy_flags();
+
+  if ((StressExcludeCompilation || StressExcludeInlining) && FLAG_IS_DEFAULT(StressSeed)) {
+    FLAG_SET_ERGO(StressSeed, static_cast<uint>(Ticks::now().nanoseconds()));
+  }
 
   if (UseOnStackReplacement && !UseLoopCounter) {
     warning("On-stack-replacement requires loop counters; enabling loop counters");
