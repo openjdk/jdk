@@ -67,9 +67,7 @@ public class TestFloat16ConstantInferencing {
     // A constant zero lane folds to TypeH::ZERO, i.e. a ConH feeding the Replicate.
     @Test
     @IR(counts = {IRNode.CON_H, " >0 ", IRNode.REPLICATE_S, " >0 "},
-        applyIfCPUFeatureOr = {"avx512_fp16", "true", "zvfh", "true", "sve", "true"})
-    @IR(counts = {IRNode.CON_H, " >0 ", IRNode.REPLICATE_S, " >0 "},
-        applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
+        applyIfCPUFeatureOr = {"avx512_fp16", "true", "zvfh", "true", "asimd", "true"})
     void broadcastZeroFloat16() {
         for (int i = 0; i < SPECIES.loopBound(LEN); i += SPECIES.length()) {
             Float16Vector.broadcast(SPECIES, FP16_ZERO).intoArray(output, i);
@@ -87,9 +85,7 @@ public class TestFloat16ConstantInferencing {
     // A constant one lane folds to TypeH::ONE, i.e. a ConH feeding the Replicate.
     @Test
     @IR(counts = {IRNode.CON_H, " >0 ", IRNode.REPLICATE_S, " >0 "},
-        applyIfCPUFeatureOr = {"avx512_fp16", "true", "zvfh", "true", "sve", "true"})
-    @IR(counts = {IRNode.CON_H, " >0 ", IRNode.REPLICATE_S, " >0 "},
-        applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
+        applyIfCPUFeatureOr = {"avx512_fp16", "true", "zvfh", "true", "asimd", "true"})
     void broadcastOneFloat16() {
         for (int i = 0; i < SPECIES.loopBound(LEN); i += SPECIES.length()) {
             Float16Vector.broadcast(SPECIES, FP16_ONE).intoArray(output, i);
@@ -107,10 +103,7 @@ public class TestFloat16ConstantInferencing {
     @Test
     @IR(failOn = {IRNode.CON_H},
         counts = {IRNode.REPLICATE_S, " >0 "},
-        applyIfCPUFeatureOr = {"avx512_fp16", "true", "zvfh", "true", "sve", "true"})
-    @IR(failOn = {IRNode.CON_H},
-        counts = {IRNode.REPLICATE_S, " >0 "},
-        applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
+        applyIfCPUFeatureOr = {"avx512_fp16", "true", "zvfh", "true", "asimd", "true"})
     void broadcastVariableFloat16() {
         for (int i = 0; i < SPECIES.loopBound(LEN); i += SPECIES.length()) {
             Float16Vector.broadcast(SPECIES, FP16_VAR).intoArray(output, i);
