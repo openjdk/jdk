@@ -214,6 +214,9 @@ public class ImagingLib {
                 retRaster = dst;
             }
             break;
+
+          default:
+            break;
         }
 
         if (retRaster != null) {
@@ -277,6 +280,9 @@ public class ImagingLib {
                         cOp.getEdgeCondition()) > 0) {
                 retBI = dst;
             }
+            break;
+
+          default:
             break;
         }
 
