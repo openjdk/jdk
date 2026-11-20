@@ -968,7 +968,13 @@ public class TypeAnnotations {
                     if (v.getKind() != ElementKind.FIELD) {
                         appendTypeAnnotationsToOwner(v, v.getRawTypeAttributes());
                     }
-                    switch (v.getKind()) {
+                    ElementKind vKind = v.getKind();
+                    if (vKind == ElementKind.PARAMETER && contextTree instanceof JCCatch c && c.param.sym == v) {
+                        vKind = ElementKind.EXCEPTION_PARAMETER;
+                    } else if (vKind == ElementKind.LOCAL_VARIABLE && contextTree instanceof JCTry t && t.resources.contains(frame)) {
+                        vKind = ElementKind.RESOURCE_VARIABLE;
+                    }
+                    switch (vKind) {
                         case BINDING_VARIABLE:
                         case LOCAL_VARIABLE:
                             return TypeAnnotationPosition
@@ -1314,8 +1320,9 @@ public class TypeAnnotations {
             }
 
             scan(tree.mods);
-            scan(tree.vartype);
-            if (!sigOnly) {
+            if (sigOnly) {
+                scan(tree.vartype);
+            } else {
                 scan(tree.init);
             }
 

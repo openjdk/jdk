@@ -759,16 +759,34 @@ public class TypeAnnotationsOnVariables {
                               @Target(ElementType.TYPE_USE)
                               @interface TypeAnno { }
 
-                              private void test1() {
-                                  try {
-                                      new Object();
-                                  } catch (@TypeAnno Exception ex1) {}
+                              static class C1 {
+                                  static {
+                                      try {
+                                          new Object();
+                                      } catch (@TypeAnno Exception ex1) {}
+                                  }
                               }
 
-                              private void test2() {
+                              static class C2 {
+                                  static {
+                                      try {
+                                          new Object();
+                                      } catch (java.lang.@TypeAnno Exception ex2) {}
+                                  }
+                              }
+
+                              static class C3 {
+                                  static {
+                                      try {
+                                          throw new IOException();
+                                      } catch (java.io.IOException | java.lang.@TypeAnno RuntimeException ex3) {}
+                                  }
+                              }
+
+                              void test(Exception param) {
                                   try {
-                                      throw new IOException();
-                                  } catch (java.io.IOException | java.lang.@TypeAnno RuntimeException ex2) {}
+                                      new Object();
+                                  } catch (@TypeAnno Exception ex4) {}
                               }
                           }
                           """);
@@ -800,7 +818,10 @@ public class TypeAnnotationsOnVariables {
 
         List<String> expected = List.of(
             "ex1: java.lang.@Test.TypeAnno Exception",
-            "ex2: java.io.IOException | java.lang.@Test.TypeAnno RuntimeException"
+            "ex2: java.lang.@Test.TypeAnno Exception",
+            "ex3: java.io.IOException | java.lang.@Test.TypeAnno RuntimeException",
+            "param: java.lang.Exception",
+            "ex4: java.lang.@Test.TypeAnno Exception"
         );
 
         actual.forEach(System.out::println);
@@ -812,14 +833,139 @@ public class TypeAnnotationsOnVariables {
         TestClassDesc testClassDesc = TestClassDesc.create(testClass);
 
         checkTypeAnnotations(testClassDesc,
-                             "test1",
+                             "test",
                              this::getAnnotationsFromCode,
                              "        0: LTest$TypeAnno;(): EXCEPTION_PARAMETER, exception_index=0",
                              "          Test$TypeAnno");
-        checkTypeAnnotations(testClassDesc,
-                             "test2",
+
+        Path c1 = classes.resolve("Test$C1.class");
+        TestClassDesc testClassDescC1 = TestClassDesc.create(c1);
+
+        checkTypeAnnotations(testClassDescC1,
+                             "<clinit>",
+                             this::getAnnotationsFromCode,
+                             "        0: LTest$TypeAnno;(): EXCEPTION_PARAMETER, exception_index=0",
+                             "          Test$TypeAnno");
+
+        Path c2 = classes.resolve("Test$C2.class");
+        TestClassDesc testClassDescC2 = TestClassDesc.create(c2);
+
+        checkTypeAnnotations(testClassDescC2,
+                             "<clinit>",
+                             this::getAnnotationsFromCode,
+                             "        0: LTest$TypeAnno;(): EXCEPTION_PARAMETER, exception_index=0",
+                             "          Test$TypeAnno");
+
+        Path c3 = classes.resolve("Test$C3.class");
+        TestClassDesc testClassDescC3 = TestClassDesc.create(c3);
+
+        checkTypeAnnotations(testClassDescC3,
+                             "<clinit>",
                              this::getAnnotationsFromCode,
                              "        0: LTest$TypeAnno;(): EXCEPTION_PARAMETER, exception_index=1",
+                             "          Test$TypeAnno");
+    }
+
+    @Test
+    void resourceVariable() throws Exception {
+        Path src = base.resolve("src");
+        Path classes = base.resolve("classes");
+        tb.writeJavaFiles(src,
+                          """
+                          import java.io.IOException;
+                          import java.lang.annotation.ElementType;
+                          import java.lang.annotation.Target;
+
+                          class Test {
+                              @Target(ElementType.TYPE_USE)
+                              @interface TypeAnno { }
+
+                              static class C1 {
+                                  static {
+                                      try (@TypeAnno AutoCloseable ac1 = null) {
+                                      } catch (Exception ex) {}
+                                  }
+                              }
+
+                              static class C2 {
+                                  static {
+                                      try (java.lang. @TypeAnno AutoCloseable ac2 = null) {
+                                      } catch (Exception ex) {}
+                                  }
+                              }
+
+                              void test(Exception param) {
+                                  try (@TypeAnno AutoCloseable ac3 = null) {
+                                  } catch (Exception ex) {}
+                              }
+                          }
+                          """);
+        Files.createDirectories(classes);
+        List<String> actual = new ArrayList<>();
+        new JavacTask(tb)
+                .options("-d", classes.toString())
+                .files(tb.findJavaFiles(src))
+                .callback(task -> {
+                    task.addTaskListener(new TaskListener() {
+                        @Override
+                        public void finished(TaskEvent e) {
+                            if (e.getKind() != TaskEvent.Kind.ANALYZE) {
+                                return ;
+                            }
+                            Trees trees = Trees.instance(task);
+                            new TreePathScanner<Void, Void>() {
+                                @Override
+                                public Void visitVariable(VariableTree node, Void p) {
+                                    actual.add(node.getName() + ": " + typeToString(trees.getTypeMirror(getCurrentPath())));
+                                    return super.visitVariable(node, p);
+                                }
+                            }.scan(e.getCompilationUnit(), null);
+                        }
+                    });
+                })
+                .run()
+                .writeAll();
+
+        List<String> expected = List.of(
+            "ac1: java.lang.@Test.TypeAnno AutoCloseable",
+            "ex: java.lang.Exception",
+            "ac2: java.lang.@Test.TypeAnno AutoCloseable",
+            "ex: java.lang.Exception",
+            "param: java.lang.Exception",
+            "ac3: java.lang.@Test.TypeAnno AutoCloseable",
+            "ex: java.lang.Exception"
+        );
+
+        actual.forEach(System.out::println);
+        if (!expected.equals(actual)) {
+            throw new AssertionError("Expected: " + expected + ", but got: " + actual);
+        }
+
+        Path testClass = classes.resolve("Test.class");
+        TestClassDesc testClassDesc = TestClassDesc.create(testClass);
+
+        checkTypeAnnotations(testClassDesc,
+                             "test",
+                             this::getAnnotationsFromCode,
+                             "        0: LTest$TypeAnno;(): RESOURCE_VARIABLE, {start_pc=2, length=10, index=2}",
+                             "          Test$TypeAnno");
+
+        Path c1 = classes.resolve("Test$C1.class");
+        TestClassDesc testClassDescC1 = TestClassDesc.create(c1);
+
+        checkTypeAnnotations(testClassDescC1,
+                             "<clinit>",
+                             this::getAnnotationsFromCode,
+                             "        0: LTest$TypeAnno;(): RESOURCE_VARIABLE, {start_pc=2, length=10, index=0}",
+                             "          Test$TypeAnno");
+
+        Path c2 = classes.resolve("Test$C2.class");
+        TestClassDesc testClassDescC2 = TestClassDesc.create(c2);
+
+        checkTypeAnnotations(testClassDescC2,
+                             "<clinit>",
+                             this::getAnnotationsFromCode,
+                             "        0: LTest$TypeAnno;(): RESOURCE_VARIABLE, {start_pc=2, length=10, index=0}",
                              "          Test$TypeAnno");
     }
 
@@ -901,7 +1047,11 @@ public class TypeAnnotationsOnVariables {
             }
         }
 
-        List<List<String>> methodContents = feature2Text.entrySet().stream().filter(e -> e.getKey().contains(" " + nameOfMethodToCheck + "(")).map(Entry::getValue).toList();
+        String methodKey = "<clinit>".equals(nameOfMethodToCheck)
+                ? " static {"
+                : " " + nameOfMethodToCheck + "(";
+
+        List<List<String>> methodContents = feature2Text.entrySet().stream().filter(e -> e.getKey().contains(methodKey)).map(Entry::getValue).toList();
 
         assertEquals(1, methodContents.size(), methodContents.toString());
 
