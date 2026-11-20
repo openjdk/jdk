@@ -105,10 +105,10 @@ public class TestFloat16ConstantInferencing {
     }
 
     @Test
-    @IR(failOn = {IRNode.REINTERPRET_S2HF, IRNode.CON_H},
+    @IR(failOn = {IRNode.CON_H},
         counts = {IRNode.REPLICATE_S, " >0 "},
         applyIfCPUFeatureOr = {"avx512_fp16", "true", "zvfh", "true", "sve", "true"})
-    @IR(failOn = {IRNode.REINTERPRET_S2HF, IRNode.CON_H},
+    @IR(failOn = {IRNode.CON_H},
         counts = {IRNode.REPLICATE_S, " >0 "},
         applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
     void broadcastVariableFloat16() {
