@@ -136,6 +136,9 @@ If a `@Test` annotated method has multiple preconditions (for example `applyIf` 
 
 Platform attributes are evaluated as a logical conjunction, and take precedence over VM Flag attributes. An example with both `applyIfPlatformXXX` and `applyIfXXX` can be found in [TestPreconditions](../../../testlibrary_tests/ir_framework/tests/TestPreconditions.java) (internal framework test).
 
+#### Disable IR Rules Due to Compiler Problems
+If an IR rule is failing due to compiler problems (e.g. not emitting the expected shape, compile phase wrongly skipped etc.) without having an immediate fix, it is preferred to additionally specify the `skip` attribute of [@IR](./IR.java): `@IR(skip = true, ...)` to disable IR matching of that particular IR rule over commenting it out. This allows to still perform IR matching for skipped IR rules on demand by passing the property flag `-DIgnoreSkipIR=true`. This can be useful when trying to quickly verify if a disabled IR rule is still failing or not.
+
 #### Implicitly Skipping IR Verification
 An IR verification cannot always be performed. Certain VM flags explicitly disable IR verification, change the IR shape in unexpected ways letting IR rules fail or even make IR verification impossible:
 
@@ -193,6 +196,7 @@ The framework provides various stress and debug flags. They should mainly be use
 - `-DIgnoreCompilerControls=true`: Ignore all compiler controls applied in the framework. This includes any compiler control annotations (`@DontCompile`, `@DontInline`, `@ForceCompile`, `@ForceInline`, `@ForceCompileStaticInitializer`), the exclusion of `@Run` and `@Check` methods from compilation, and the directive to not inline `@Test` annotated methods.
 - `-DPreferCommandLineFlags=true`: Prefer flags set via the command line over flags specified by the tests.
 - `-DIgnoreSkip=true`: Additionally run all skipped tests (i.e. tests with a `@Skip` annotation).
+- `-DIgnoreSkipIR=true`: Additionally perform IR matching of all skipped `@IR` rules (i.e. `@IR` rules with `@IR(skip = true, ...)`).
 
 ## 3. Test Framework Execution
 This section gives an overview of how the framework is executing a JTreg test that calls the framework from within its `main()` method.
