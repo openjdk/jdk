@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,14 +30,18 @@ import static compiler.lib.ir_framework.IRNode.*;
 
 /*
  * @test
- * @bug 8276162
+ * @bug 8276162 8397406
  * @summary Test that unsigned comparison transformation works as intended.
  * @library /test/lib /
  * @run driver compiler.c2.irTests.TestUnsignedComparison
  */
 public class TestUnsignedComparison {
     private static final int INT_MIN = Integer.MIN_VALUE;
+    private static final int INT_MAX = Integer.MAX_VALUE;
     private static final long LONG_MIN = Long.MIN_VALUE;
+    private static final long LONG_MAX = Long.MAX_VALUE;
+    private static final int TRUE_RESULT = 1;
+    private static final int FALSE_RESULT = -1;
 
     // Integers are sorted in unsignedly increasing order
     private static final int[] INT_DATA = {
@@ -209,6 +213,101 @@ public class TestUnsignedComparison {
             Asserts.assertEquals(testIntConGE(INT_DATA[i]),
                                  i >= CONST_INDEX);
         }
+    }
+
+    /*
+     * The decrement-and-compare methods return `int` instead of `boolean` to prevent further
+     * optimization, such as `is_x2logic`, from changing the IR that needs to be checked.
+     */
+
+    @Test
+    @IR(failOn = {CMP_U, ADD_I, SUB_I})
+    @IR(counts = {CMP_I, "1"})
+    public int testIntSubOneLT(int x) {
+        return Integer.compareUnsigned(x - 1, x) < 0 ? TRUE_RESULT : FALSE_RESULT;
+    }
+
+    @Test
+    @IR(failOn = {CMP_U, ADD_I, SUB_I})
+    @IR(counts = {CMP_I, "1"})
+    public int testIntSubOneLE(int x) {
+        return Integer.compareUnsigned(x - 1, x) <= 0 ? TRUE_RESULT : FALSE_RESULT;
+    }
+
+    @Test
+    @IR(failOn = {CMP_U, ADD_I, SUB_I})
+    @IR(counts = {CMP_I, "1"})
+    public int testIntSubOneGT(int x) {
+        return Integer.compareUnsigned(x - 1, x) > 0 ? TRUE_RESULT : FALSE_RESULT;
+    }
+
+    @Test
+    @IR(failOn = {CMP_U, ADD_I, SUB_I})
+    @IR(counts = {CMP_I, "1"})
+    public int testIntSubOneGE(int x) {
+        return Integer.compareUnsigned(x - 1, x) >= 0 ? TRUE_RESULT : FALSE_RESULT;
+    }
+
+    @Run(test = {"testIntSubOneLT", "testIntSubOneLE", "testIntSubOneGT", "testIntSubOneGE"})
+    public void checkTestIntSubOne() {
+        for (int x : INT_DATA) {
+            assertTestIntSubOne(x);
+        }
+        assertTestIntSubOne(INT_MAX);
+        assertTestIntSubOne(RunInfo.getRandom().nextInt());
+    }
+
+    @DontCompile
+    private void assertTestIntSubOne(int x) {
+        Asserts.assertEquals(testIntSubOneLT(x), x != 0 ? TRUE_RESULT : FALSE_RESULT);
+        Asserts.assertEquals(testIntSubOneLE(x), x != 0 ? TRUE_RESULT : FALSE_RESULT);
+        Asserts.assertEquals(testIntSubOneGT(x), x == 0 ? TRUE_RESULT : FALSE_RESULT);
+        Asserts.assertEquals(testIntSubOneGE(x), x == 0 ? TRUE_RESULT : FALSE_RESULT);
+    }
+
+    @Test
+    @IR(failOn = {CMP_UL, ADD_L, SUB_L})
+    @IR(counts = {CMP_L, "1"})
+    public int testLongSubOneLT(long x) {
+        return Long.compareUnsigned(x - 1, x) < 0 ? TRUE_RESULT : FALSE_RESULT;
+    }
+
+    @Test
+    @IR(failOn = {CMP_UL, ADD_L, SUB_L})
+    @IR(counts = {CMP_L, "1"})
+    public int testLongSubOneLE(long x) {
+        return Long.compareUnsigned(x - 1, x) <= 0 ? TRUE_RESULT : FALSE_RESULT;
+    }
+
+    @Test
+    @IR(failOn = {CMP_UL, ADD_L, SUB_L})
+    @IR(counts = {CMP_L, "1"})
+    public int testLongSubOneGT(long x) {
+        return Long.compareUnsigned(x - 1, x) > 0 ? TRUE_RESULT : FALSE_RESULT;
+    }
+
+    @Test
+    @IR(failOn = {CMP_UL, ADD_L, SUB_L})
+    @IR(counts = {CMP_L, "1"})
+    public int testLongSubOneGE(long x) {
+        return Long.compareUnsigned(x - 1, x) >= 0 ? TRUE_RESULT : FALSE_RESULT;
+    }
+
+    @Run(test = {"testLongSubOneLT", "testLongSubOneLE", "testLongSubOneGT", "testLongSubOneGE"})
+    public void checkTestLongSubOne() {
+        for (long x : LONG_DATA) {
+            assertTestLongSubOne(x);
+        }
+        assertTestLongSubOne(LONG_MAX);
+        assertTestLongSubOne(RunInfo.getRandom().nextLong());
+    }
+
+    @DontCompile
+    private void assertTestLongSubOne(long x) {
+        Asserts.assertEquals(testLongSubOneLT(x), x != 0 ? TRUE_RESULT : FALSE_RESULT);
+        Asserts.assertEquals(testLongSubOneLE(x), x != 0 ? TRUE_RESULT : FALSE_RESULT);
+        Asserts.assertEquals(testLongSubOneGT(x), x == 0 ? TRUE_RESULT : FALSE_RESULT);
+        Asserts.assertEquals(testLongSubOneGE(x), x == 0 ? TRUE_RESULT : FALSE_RESULT);
     }
 
     @Test
