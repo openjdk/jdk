@@ -153,7 +153,7 @@ public final class EventWriter {
     private void putStringValue(String s) {
         int length = s.length();
         long size = 1L + 5L + 3L * length;
-        if (size > Integer.MAX_VALUE) {
+        if (usedSize() + size > MAX_EVENT_SIZE) {
             valid = false;
             return;
         }
