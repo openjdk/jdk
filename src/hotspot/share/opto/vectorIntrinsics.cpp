@@ -3141,11 +3141,6 @@ bool LibraryCallKit::inline_vector_compress_expand() {
     return false;
   }
 
-  if (!is_supported_lane_type(vltype)) {
-    log_if_needed("  ** unsupported lane type =%s", VectorSupport::lanetype2name(vltype));
-    return false;
-  }
-
   int num_elem = vlen->get_con();
   BasicType elem_bt = get_vector_primitive_lane_type(vltype);
   int opc = VectorSupport::vop2ideal(opr->get_con(), vltype);
