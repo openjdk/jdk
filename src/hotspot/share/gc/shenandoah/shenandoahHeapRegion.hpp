@@ -247,13 +247,9 @@ private:
   // compact memory representation. If you change/rearrange the fields here, check the new
   // layout with pahole. ShenandoahHeap::initialize() statically asserts the size limit.
 
-  // We split fields in two groups to hit two different cache lines (assuming 64-byte lines,
-  // see SHENANDOAH_CACHE_LINE_SIZE). The first cache line contains fields that are read very
-  // often but written rarely: the immutable region bounds, the region state (a few transitions
-  // per GC cycle, but consulted on every state check) and per-cycle GC bookkeeping. The second
-  // cache line contains fields updated frequently during allocation and marking, where
-  // contention is unfortunate but at least contained, plus the small flags and counters that
-  // fit in the remaining bytes.
+  // We split fields in two groups to hit two different cache lines. The first cache line contains fields
+  // that are read very often but written rarely. The second cache line contains fields updated frequently
+  // during allocation and marking, where/ contention is unfortunate but at least contained.
 
   HeapWord* const _bottom;
   HeapWord* const _end;

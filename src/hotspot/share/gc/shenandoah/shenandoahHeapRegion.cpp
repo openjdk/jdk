@@ -44,6 +44,7 @@
 #include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 size_t ShenandoahHeapRegion::RegionCount = 0;
@@ -62,6 +63,7 @@ ShenandoahHeapRegion::ShenandoahHeapRegion(HeapWord* start, size_t index, bool c
   _index(checked_cast<uint32_t>(index)),
   _humongous_start_region_index(UndefinedRegionIndex),
   _state(committed ? _empty_committed : _empty_uncommitted),
+  _has_self_forwards(false),
   _age(0),
   _needs_bitmap_reset(false),
   _promoted_in_place(false),
@@ -77,15 +79,14 @@ ShenandoahHeapRegion::ShenandoahHeapRegion(HeapWord* start, size_t index, bool c
   _live_data(0),
   _tlab_allocs(0),
   _gclab_allocs(0),
-  _plab_allocs(0)
+  _plab_allocs(0),
+  _recycling(false)
 {
   assert(Universe::on_page_boundary(_bottom) && Universe::on_page_boundary(_end),
          "invalid space boundaries");
   if (ZapUnusedHeapArea && committed) {
     SpaceMangler::mangle_region(MemRegion(_bottom, _end));
   }
-  _recycling.release_store(false);
-  _has_self_forwards.release_store(false);
 }
 
 void ShenandoahHeapRegion::report_illegal_transition(const char *method) {
