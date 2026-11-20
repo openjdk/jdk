@@ -147,13 +147,16 @@ SplashDecodePng(Splash * splash, png_rw_ptr read_func, void *io_ptr)
         malloc(sizeof(SplashImage) * splash->frameCount);
 
     if (splash->frames == NULL) {
+        splash->frameCount = 0;
         goto done;
     }
 
     splash->loopCount = 1;
-    splash->frames[0].bitmapBits = malloc(stride * splash->height);
+    splash->frames[0].bitmapBits = malloc((size_t) stride * splash->height);
     if (splash->frames[0].bitmapBits == NULL) {
         free(splash->frames);
+        splash->frames = NULL;
+        splash->frameCount = 0;
         goto done;
     }
     splash->frames[0].delay = 0;
