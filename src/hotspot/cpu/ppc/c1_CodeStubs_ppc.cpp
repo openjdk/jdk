@@ -173,11 +173,11 @@ void LoadFlattenedArrayStub::emit_code(LIR_Assembler* ce) {
 
 // Implementation of StoreFlatNonatomicFieldStub
 
-StoreFlatNonatomicFieldStub::StoreFlatNonatomicFieldStub(LIR_Opr dest, LIR_Opr src, LIR_Opr field_entry, CodeEmitInfo* info) {
+StoreFlatNonAtomicFieldStub::StoreFlatNonAtomicFieldStub(LIR_Opr dest, LIR_Opr src, LIR_Opr field_entry, CodeEmitInfo* info) {
   Unimplemented();
 }
 
-void StoreFlatNonatomicFieldStub::emit_code(LIR_Assembler* ce) {
+void StoreFlatNonAtomicFieldStub::emit_code(LIR_Assembler* ce) {
   Unimplemented();
 }
 

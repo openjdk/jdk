@@ -1711,7 +1711,7 @@ void LIRGenerator::do_StoreField(StoreField* x) {
       // The stub requires three arguments, but a store normally only requires two. So, we extend the
       // reserved argument area.
       frame_map()->update_reserved_argument_area_size(3 * BytesPerWord);
-      CodeStub* stub = new StoreFlatNonatomicFieldStub(object.result(), value.result(), field_entry,
+      CodeStub* stub = new StoreFlatNonAtomicFieldStub(object.result(), value.result(), field_entry,
                                                      state_for(x, state));
       __ jump(stub);
       __ branch_destination(stub->continuation());
