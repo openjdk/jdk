@@ -13040,19 +13040,6 @@ instruct orI_rReg_rReg_imm_ndd(rRegI dst, rRegI src1, immI src2, rFlagsReg cr)
   ins_pipe(ialu_reg);
 %}
 
-instruct orI_rReg_imm_rReg_ndd(rRegI dst, immI src1, rRegI src2, rFlagsReg cr)
-%{
-  predicate(UseAPX);
-  match(Set dst (OrI src1 src2));
-  effect(KILL cr);
-  flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag, PD::Flag_ndd_demotable_opr1);
-
-  format %{ "eorl     $dst, $src2, $src1\t# int ndd" %}
-  ins_encode %{
-    __ eorl($dst$$Register, $src2$$Register, $src1$$constant, false);
-  %}
-  ins_pipe(ialu_reg);
-%}
 
 // Or Register with Memory
 instruct orI_rReg_mem(rRegI dst, memory src, rFlagsReg cr)
