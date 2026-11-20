@@ -71,8 +71,6 @@ compiler/escapeAnalysis/TestBCEscapeAnalyzerOverflow.java 8387392 windows-aarch6
 
 compiler/igvn/TestIncorrectDeadPathTypeNode.java 8392354 generic-all
 
-compiler/c1/TestMemoryEffects.java 8397213 generic-aarch64
-
 #############################################################################
 
 # :hotspot_gc
@@ -89,8 +87,6 @@ gc/stress/jfr/TestStressAllocationGCEventsWithShenandoah.java#generational 83869
 gc/stress/jfr/TestStressAllocationGCEventsWithShenandoah.java#default 8386964 generic-all
 gc/stress/jfr/TestStressBigAllocationGCEventsWithShenandoah.java#generational 8386964 generic-all
 gc/stress/jfr/TestStressBigAllocationGCEventsWithShenandoah.java#default 8386964 generic-all
-gc/shenandoah/generational/TestGenerationalReferenceProcessing.java#young 8396415 generic-all
-gc/shenandoah/generational/TestGenerationalReferenceProcessing.java#young-no-compressed-oops 8396415 generic-all
 
 #############################################################################
 

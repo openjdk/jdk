@@ -1820,11 +1820,6 @@ int ConstantTable::calculate_table_base_offset() const {
   return 0;  // absolute addressing, no offset
 }
 
-bool MachConstantBaseNode::requires_postalloc_expand() const { return false; }
-void MachConstantBaseNode::postalloc_expand(GrowableArray <Node *> *nodes, PhaseRegAlloc *ra_) {
-  ShouldNotReachHere();
-}
-
 void MachConstantBaseNode::emit(C2_MacroAssembler* masm, PhaseRegAlloc* ra_) const {
   // Empty encoding
 }
@@ -14799,8 +14794,7 @@ instruct rep_stos(rcx_RegL cnt, rdi_RegP base, regD tmp, immL0 zero, rax_RegL va
                   Universe dummy, rFlagsReg cr)
 %{
   predicate((UseAVX <= 2) &&
-            !((ClearArrayNode*)n)->is_large() &&
-            ((ClearArrayNode*)n)->is_zero_fill());
+            !((ClearArrayNode*)n)->is_large());
   match(Set dummy (ClearArray (Binary cnt base) zero));
   effect(USE_KILL cnt, USE_KILL base, TEMP tmp, KILL val, KILL cr);
 
@@ -14921,8 +14915,7 @@ instruct rep_stos_evex(rcx_RegL cnt, rdi_RegP base, legRegD tmp, kReg ktmp, immL
                        Universe dummy, rFlagsReg cr)
 %{
   predicate((UseAVX > 2) &&
-            !((ClearArrayNode*)n)->is_large() &&
-            ((ClearArrayNode*)n)->is_zero_fill());
+            !((ClearArrayNode*)n)->is_large());
   match(Set dummy (ClearArray (Binary cnt base) zero));
   ins_cost(125);
   effect(USE_KILL cnt, USE_KILL base, TEMP tmp, TEMP ktmp, KILL val, KILL cr);
@@ -15045,8 +15038,7 @@ instruct rep_stos_large(rcx_RegL cnt, rdi_RegP base, regD tmp, immL0 zero, rax_R
                         Universe dummy, rFlagsReg cr)
 %{
   predicate((UseAVX <= 2) &&
-            ((ClearArrayNode*)n)->is_large() &&
-            ((ClearArrayNode*)n)->is_zero_fill());
+            ((ClearArrayNode*)n)->is_large());
   match(Set dummy (ClearArray (Binary cnt base) zero));
   effect(USE_KILL cnt, USE_KILL base, TEMP tmp, KILL val, KILL cr);
 
@@ -15147,8 +15139,7 @@ instruct rep_stos_large_evex(rcx_RegL cnt, rdi_RegP base, legRegD tmp, kReg ktmp
                              Universe dummy, rFlagsReg cr)
 %{
   predicate((UseAVX > 2) &&
-            ((ClearArrayNode*)n)->is_large() &&
-            ((ClearArrayNode*)n)->is_zero_fill());
+            ((ClearArrayNode*)n)->is_large());
   match(Set dummy (ClearArray (Binary cnt base) zero));
   effect(USE_KILL cnt, USE_KILL base, TEMP tmp, TEMP ktmp, KILL val, KILL cr);
 
@@ -15249,8 +15240,7 @@ instruct rep_stos_im(immL cnt, rRegP base, regD tmp, immL0 zero, rRegI val, kReg
 %{
   predicate((MaxVectorSize >= 32) &&
             VM_Version::supports_avx512vl() &&
-            !((ClearArrayNode*)n)->is_large() &&
-            ((ClearArrayNode*)n)->is_zero_fill());
+            !((ClearArrayNode*)n)->is_large());
   match(Set dummy (ClearArray (Binary cnt base) zero));
   ins_cost(100);
   effect(TEMP tmp, TEMP val, TEMP ktmp, KILL cr);
