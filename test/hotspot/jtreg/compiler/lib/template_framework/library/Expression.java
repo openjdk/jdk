@@ -33,6 +33,7 @@ import java.util.stream.Collectors;
 
 import compiler.lib.template_framework.Template;
 import compiler.lib.template_framework.TemplateToken;
+import compiler.lib.template_framework.InternalTemplateFrameworkException;
 import static compiler.lib.template_framework.Template.scope;
 
 /**
@@ -74,7 +75,7 @@ public class Expression {
                       List<String> strings,
                       Info info) {
         if (argumentTypes.size() + 1 != strings.size()) {
-            throw new RuntimeException("Must have one more string than argument.");
+            throw new InternalTemplateFrameworkException("Must have one more string than argument.");
         }
         this.returnType = returnType;
         this.argumentTypes = List.copyOf(argumentTypes);
