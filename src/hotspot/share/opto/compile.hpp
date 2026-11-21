@@ -615,7 +615,7 @@ public:
   bool              do_superword() const        { return _options._do_superword; }
   bool              do_stringopts() const       { return _options._do_stringopts; }
 
-  bool              is_aot_compile()      const { return _options._aot_compile; }
+  bool              is_aot_compile()      const { return CDS_ONLY(_options._aot_compile) NOT_CDS(false); }
   bool              do_clinit_barriers()  const { return _options._for_aot_preload; }
   bool              for_aot_preload()     const { return _options._for_aot_preload; }
 
