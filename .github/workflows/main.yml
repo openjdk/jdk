@@ -44,6 +44,14 @@ on:
       dry-run:
         description: 'Dry run: skip actual builds and tests'
         required: false
+      test-tier:
+        description: 'Test tier'
+        required: true
+        default: 'tier1'
+        type: choice
+        options:
+          - tier1
+          - tier2
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -73,6 +81,7 @@ jobs:
       windows-aarch64: ${{ steps.include.outputs.windows-aarch64 }}
       docs: ${{ steps.include.outputs.docs }}
       dry-run: ${{ steps.include.outputs.dry-run }}
+      test-tier: ${{ steps.include.outputs.test-tier }}
 
     steps:
       - name: 'Checkout the scripts'
@@ -175,6 +184,16 @@ jobs:
             echo 'false'
           }
 
+          function check_test_tier() {
+            if [[ $GITHUB_EVENT_NAME == workflow_dispatch ]]; then
+              # Take the user-specified one.
+              echo '${{ github.event.inputs.test-tier }}'
+              return
+            fi
+
+            echo 'tier1'
+          }
+
           echo "linux-x64=$(check_platform linux-x64 linux x64)" >> $GITHUB_OUTPUT
           echo "linux-x64-variants=$(check_platform linux-x64-variants variants)" >> $GITHUB_OUTPUT
           echo "linux-aarch64=$(check_platform linux-aarch64 linux aarch64)" >> $GITHUB_OUTPUT
@@ -186,6 +205,7 @@ jobs:
           echo "windows-aarch64=$(check_platform windows-aarch64 windows aarch64)" >> $GITHUB_OUTPUT
           echo "docs=$(check_platform docs)" >> $GITHUB_OUTPUT
           echo "dry-run=$(check_dry_run)" >> $GITHUB_OUTPUT
+          echo "test-tier=$(check_test_tier)" >> $GITHUB_OUTPUT
 
   ###
   ### Build jobs
@@ -424,6 +444,7 @@ jobs:
       runs-on: ubuntu-24.04
       dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
       debug-suffix: -debug
+      test-tier: ${{ needs.prepare.outputs.test-tier }}
 
   test-linux-x64-static:
     name: linux-x64-static
@@ -438,6 +459,7 @@ jobs:
       runs-on: ubuntu-24.04
       dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
       static-suffix: "-static"
+      test-tier: ${{ needs.prepare.outputs.test-tier }}
 
   test-linux-aarch64:
     name: linux-aarch64
@@ -451,6 +473,7 @@ jobs:
       runs-on: ubuntu-24.04-arm
       dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
       debug-suffix: -debug
+      test-tier: ${{ needs.prepare.outputs.test-tier }}
 
   test-macos-aarch64:
     name: macos-aarch64
@@ -465,6 +488,7 @@ jobs:
       dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
       xcode-toolset-version: '16.4'
       debug-suffix: -debug
+      test-tier: ${{ needs.prepare.outputs.test-tier }}
 
   test-windows-x64:
     name: windows-x64
@@ -479,6 +503,7 @@ jobs:
       runs-on: windows-2022
       dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
       debug-suffix: -debug
+      test-tier: ${{ needs.prepare.outputs.test-tier }}
 
   test-windows-aarch64:
     name: windows-aarch64
@@ -493,3 +518,4 @@ jobs:
       runs-on: windows-11-arm
       dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
       debug-suffix: -debug
+      test-tier: ${{ needs.prepare.outputs.test-tier }}
