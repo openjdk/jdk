@@ -28,6 +28,7 @@
 #define CPU_AARCH64_NATIVEINST_AARCH64_HPP
 
 #include "asm/assembler.hpp"
+#include "memory/heap.hpp"
 #include "runtime/icache.hpp"
 #include "runtime/os.hpp"
 #include "runtime/os.hpp"
@@ -597,56 +598,149 @@ inline NativeLdSt<T>* NativeLdSt_at(address addr) {
   return (NativeLdSt<T>*)addr;
 }
 
-// A NativePostCallNop takes the form of three instructions:
-//     nop; movk zr, lo; movk zr, hi
+// A NativePostCallNop takes the form of NOP followed by one instruction slot
+// holding metadata represented as an instruction with no side effects.
 //
-// The nop is patchable for a deoptimization trap. The two movk
-// instructions execute as nops but have a 16-bit payload in which we
-// can store an offset from the initial nop to the nmethod.
-
+// The NOP is patchable for a deoptimization trap.
+//
+// The options for the second instruction are:
+//  - Inlined form. MOVK or MOVZ with the inlined metadata values:
+//    - cb_blocks_offset - 10 bits - represents the offset from the start of the code
+//      heap's space allocated for the method in HeapBlock::minimum_alignment() blocks,
+//      rounded down to the block size.
+//    - oopmap_slot - 9 bits.
+//  - Stub form. MOVN with inlined offset from the MOVN instruction to a 32-bit word,
+//    containing the metadata values, which is positioned after the main code. The unit
+//    of the offset value is 4 bytes, and the offset field takes 18 bits.
+//    Both cb_blocks_offset and oopmap_slot take 16 bits each. This option is used only
+//    for C2-compiled code.
+//
+// For the inlined form, the metadata can be marked "empty": cb_blocks_offset and oopmap_slot
+// are both set to 0.
 class NativePostCallNop: public NativeInstruction {
 private:
-  static bool is_movk_to_zr(uint32_t insn) {
-    return ((insn & 0xffe0001f) == 0xf280001f);
+  static bool is_match_direct_form(uint32_t metadata_slot) {
+    // Metadata slot is in form of MOVK/MOVZ XZR, <data>.
+    return (metadata_slot & 0xdf80001f) == 0xd280001f;
+  }
+
+  static bool is_match_stub_form(uint32_t metadata_slot) {
+    // Metadata slot is in form of MOVN XZR, <data>.
+    return (metadata_slot & 0xff80001f) == 0x9280001f;
+  }
+
+  static bool is_match(uint32_t metadata_slot) {
+    return is_match_direct_form(metadata_slot) || is_match_stub_form(metadata_slot);
+  }
+
+  int32_t compute_cb_blocks_offset(int32_t cb_offset) {
+    constexpr int32_t block_size = HeapBlock::minimum_alignment();
+    constexpr int32_t header_size = CodeHeap::header_size();
+
+#ifdef ASSERT
+    uintptr_t code_blob_address = (uintptr_t) this - cb_offset;
+    uint32_t code_blob_offset_from_segment = code_blob_address % block_size;
+
+    assert(block_size <= CodeCacheSegmentSize, "incorrect block size value");
+    assert(header_size == code_blob_offset_from_segment, "unexpected offset value");
+#endif
+
+    return (cb_offset + header_size) / block_size;
   }
 
 public:
   enum AArch64_specific_constants {
     // The two parts should be checked separately to prevent out of bounds access in case
     // the return address points to the deopt handler stub code entry point which could be
-    // at the end of page.
+    // at the end of a page.
     first_check_size = instruction_size
   };
 
   bool check() const {
-    // Check the first instruction is NOP.
+    // Check for a NOP followed by a metadata container.
+    // This sequence only ever appears in a post-call NOP.
     if (is_nop()) {
-      uint32_t insn = *(uint32_t*)addr_at(first_check_size);
-      // Check next instruction is MOVK zr, xx.
-      // These instructions only ever appear together in a post-call
-      // NOP, so it's unnecessary to check that the third instruction is
-      // a MOVK as well.
-      return is_movk_to_zr(insn);
+      uint32_t metadata_slot = *(uint32_t*)addr_at(first_check_size);
+      return is_match(metadata_slot);
     }
 
     return false;
   }
 
   bool decode(int32_t& oopmap_slot, int32_t& cb_offset) const {
-    uint64_t movk_insns = *(uint64_t*)addr_at(4);
-    uint32_t lo = (movk_insns >> 5) & 0xffff;
-    uint32_t hi = (movk_insns >> (5 + 32)) & 0xffff;
-    uint32_t data = (hi << 16) | lo;
-    if (data == 0) {
-      return false; // no information encoded
+    address metadata_slot_addr = addr_at(first_check_size);
+    const uint32_t metadata_slot = *(uint32_t*)metadata_slot_addr;
+
+    int32_t cb_blocks_offset;
+
+    assert(is_match(metadata_slot), "unexpected format");
+
+    uint32_t field_shift = Instruction_aarch64::extract(metadata_slot, 22, 21);
+    uint32_t field_imm = Instruction_aarch64::extract(metadata_slot, 20, 5);
+    if (is_match_direct_form(metadata_slot)) {
+      uint32_t field_opcode = Instruction_aarch64::extract(metadata_slot, 29, 29) ^ 1;
+
+      uint32_t slot_value = (((field_imm << 2) | field_shift) << 1) | field_opcode;
+      cb_blocks_offset = static_cast<int32_t>((slot_value) & 0x3ff);
+      oopmap_slot = static_cast<int32_t>((slot_value >> 10) & 0x1ff);
+
+      if (cb_blocks_offset == 0) {
+        if (oopmap_slot == 0) {
+          return false; // no information stored
+        }
+
+        oopmap_slot--;
+      }
+    } else {
+      uint32_t stub_offset = (field_imm << 2) | field_shift;
+      stub_offset *= instruction_size;
+
+      address stub_slot = metadata_slot_addr + stub_offset;
+      uint32_t stub_slot_value = *(uint32_t*)stub_slot;
+
+      oopmap_slot = stub_slot_value >> 16;
+      cb_blocks_offset = stub_slot_value & 0xffff;
     }
-    cb_offset = (data & 0xffffff);
-    oopmap_slot = (data >> 24) & 0xff;
-    return true; // decoding succeeded
+
+    constexpr int32_t block_size = HeapBlock::minimum_alignment();
+    constexpr int32_t header_size = CodeHeap::header_size();
+    cb_offset = cb_blocks_offset * block_size;
+    cb_offset += static_cast<int32_t>((intptr_t) this % block_size);
+    cb_offset -= header_size;
+
+    return true;
   }
 
   bool patch(int32_t oopmap_slot, int32_t cb_offset);
+  bool patch_stub(uint32_t* out_stub_slot_value, int32_t oopmap_slot,
+                  int32_t cb_offset, address stub_slot);
   void make_deopt();
+
+#ifdef ASSERT
+  void patch_precondition(int32_t oopmap_slot, int32_t cb_offset, bool allow_non_empty) {
+    uint32_t metadata_slot = *(uint32_t*)addr_at(first_check_size);
+    assert(is_match_direct_form(metadata_slot), "unexpected input form");
+
+    int32_t test_oopmap_slot;
+    int32_t test_cb_offset;
+    if (decode(test_oopmap_slot, test_cb_offset)) {
+      assert(allow_non_empty, "unexpected input data");
+
+      // If not empty, it can be a copy of the nmethod, in which case the
+      // contents should already match the values requested from this method.
+      assert(test_oopmap_slot == oopmap_slot, "oopmap_slot mismatch");
+      assert(test_cb_offset == cb_offset, "cb_offset mismatch");
+    }
+  }
+
+  void verify(int32_t cb_offset, int32_t oopmap_slot) const {
+    int32_t test_oopmap_slot;
+    int32_t test_cb_offset;
+    assert(decode(test_oopmap_slot, test_cb_offset), "unpacking values failed");
+    assert(test_oopmap_slot == oopmap_slot, "oopmap_slot mismatch");
+    assert(test_cb_offset == cb_offset, "cb_offset mismatch");
+  }
+#endif
 };
 
 inline NativePostCallNop* nativePostCallNop_at(address address) {

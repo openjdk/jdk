@@ -1277,6 +1277,10 @@ void nmethod::post_init() {
 
   finalize_relocations();
 
+#ifdef ASSERT
+  verify_post_call_nops();
+#endif
+
   // Flush generated code
   ICache::invalidate_range(code_begin(), code_size());
 
@@ -1291,6 +1295,36 @@ void nmethod::post_init() {
 
   CodeCache::commit(this);
 }
+
+#ifdef ASSERT
+void nmethod::verify_post_call_nops() {
+  if (Continuations::enabled() && _oop_maps != nullptr) {
+    for (int pair_index = 0; pair_index < _oop_maps->count(); pair_index++) {
+      const ImmutableOopMapPair* pair = _oop_maps->pair_at(pair_index);
+      address safepoint_addr = code_begin() + pair->pc_offset();
+      NativePostCallNop* nop = nativePostCallNop_at(safepoint_addr);
+
+      int32_t decoded_offset;
+      int32_t decoded_slot;
+
+      if (nop == nullptr) continue;
+
+      if (!nop->decode(decoded_slot, decoded_offset)) {
+        int32_t cb_offset = (safepoint_addr - (address) (CodeBlob*) this);
+        // If the values are representable, this would modify the instruction sequence,
+        // which is not a problem because in that case the assertion would be triggered.
+        bool can_patch = nop->patch(pair_index, cb_offset);
+        assert(!can_patch, "if can be patched, it should have been patched already");
+      } else {
+        CodeBlob* cb = (CodeBlob*) (safepoint_addr - decoded_offset);
+
+        assert(cb == this && decoded_slot == pair_index,
+               "mismatch with the post-call NOP metadata");
+      }
+    }
+  }
+}
+#endif
 
 // For native wrappers
 nmethod::nmethod(

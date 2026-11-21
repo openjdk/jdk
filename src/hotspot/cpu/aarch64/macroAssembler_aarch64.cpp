@@ -1153,7 +1153,21 @@ void MacroAssembler::post_call_nop() {
   InlineSkippedInstructionsCounter skipCounter(this);
   nop();
   movk(zr, 0);
+}
+
+bool MacroAssembler::post_call_nop(int32_t oopmap_slot, int32_t cb_offset) {
+  assert(Continuations::enabled(), "should not be called");
+
+  InstructionMark im(this);
+  InlineSkippedInstructionsCounter skipCounter(this);
+  address post_call_nop_addr = pc();
+  nop();
   movk(zr, 0);
+  if (oopmap_slot == -1) {
+    return false;
+  }
+
+  return nativePostCallNop_at(post_call_nop_addr)->patch(oopmap_slot, cb_offset);
 }
 
 // these are no-ops overridden by InterpreterMacroAssembler
