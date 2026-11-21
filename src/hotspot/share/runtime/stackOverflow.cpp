@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,6 +66,21 @@ void StackOverflow::initialize_stack_zone_sizes() {
   _stack_shadow_zone_size = align_up(StackShadowPages * unit, page_size);
 }
 
+size_t StackOverflow::stack_yellow_reserved_zone_size() {
+#ifdef _WINDOWS
+  const size_t minimum_guarantee = _stack_red_zone_size +
+      _stack_yellow_zone_size - os::vm_page_size();
+  const size_t guarantee_expansion = os::win32::stack_guarantee_size() -
+      minimum_guarantee;
+
+  // Physical yellow contains logical yellow plus any amount by which Windows
+  // enlarged the requested guarantee plus one terminal-overflow trigger page.
+  return _stack_yellow_zone_size + guarantee_expansion + os::vm_page_size();
+#else
+  return _stack_yellow_zone_size + _stack_reserved_zone_size;
+#endif
+}
+
 bool StackOverflow::stack_guards_enabled() const {
 #ifdef ASSERT
   if (os::uses_stack_guard_pages() &&
@@ -85,6 +100,16 @@ void StackOverflow::create_stack_guard_pages() {
   }
   address low_addr = stack_end();
   size_t len = stack_guard_zone_size();
+
+#ifdef _WINDOWS
+  size_t effective_guarantee = 0;
+  if (!os::win32::install_stack_guarantee(
+          os::win32::stack_guarantee_size(), &effective_guarantee) ||
+      effective_guarantee != os::win32::stack_guarantee_size()) {
+    warning("Unable to install the required Windows stack guarantee");
+    return;
+  }
+#endif
 
   assert(is_aligned(low_addr, os::vm_page_size()), "Stack base should be the start of a page");
   assert(is_aligned(len, os::vm_page_size()), "Stack size should be a multiple of page size");
