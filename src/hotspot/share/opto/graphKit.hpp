@@ -754,26 +754,18 @@ class GraphKit : public Phase {
   // The optional klass is the one causing the trap.
   // The optional reason is debug information written to the compile log.
   // Optional must_throw is the same as with add_safepoint_edges.
+  // keep_exact_action == false allows replacing the action with Action_none.
   Node* uncommon_trap(int trap_request,
                      ciKlass* klass = nullptr, const char* reason_string = nullptr,
-                     bool must_throw = false, bool keep_exact_action = false);
+                     bool must_throw = false, bool keep_exact_action = true);
 
   // Shorthand, to avoid saying "Deoptimization::" so many times.
   Node* uncommon_trap(Deoptimization::DeoptReason reason,
                      Deoptimization::DeoptAction action,
                      ciKlass* klass = nullptr, const char* reason_string = nullptr,
-                     bool must_throw = false, bool keep_exact_action = false) {
+                     bool must_throw = false, bool keep_exact_action = true) {
     return uncommon_trap(Deoptimization::make_trap_request(reason, action),
                   klass, reason_string, must_throw, keep_exact_action);
-  }
-
-  // Bail out to the interpreter and keep exact action (avoid switching to Action_none).
-  Node* uncommon_trap_exact(Deoptimization::DeoptReason reason,
-                           Deoptimization::DeoptAction action,
-                           ciKlass* klass = nullptr, const char* reason_string = nullptr,
-                           bool must_throw = false) {
-    return uncommon_trap(Deoptimization::make_trap_request(reason, action),
-                  klass, reason_string, must_throw, /*keep_exact_action=*/true);
   }
 
   // SP when bytecode needs to be reexecuted.

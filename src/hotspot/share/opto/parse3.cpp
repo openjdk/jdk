@@ -63,7 +63,7 @@ void Parse::do_field_access(bool is_get, bool is_field) {
       !(method()->holder() == field_holder && method()->is_object_constructor())) {
     uncommon_trap(Deoptimization::Reason_unhandled,
                   Deoptimization::Action_reinterpret,
-                  nullptr, "put to call site target field");
+                  nullptr, "put to call site target field", false, /*keep_exact_action=*/false);
     return;
   }
 
@@ -365,14 +365,14 @@ void Parse::do_newarray() {
     // Generate uncommon_trap for unloaded array_class
     uncommon_trap(Deoptimization::Reason_unloaded,
                   Deoptimization::Action_reinterpret,
-                  array_klass);
+                  array_klass, nullptr, false, /*keep_exact_action=*/false);
     return;
   } else if (array_klass->element_klass() != nullptr &&
              array_klass->element_klass()->is_value_klass() &&
              !array_klass->element_klass()->as_value_klass()->is_initialized()) {
     uncommon_trap(Deoptimization::Reason_uninitialized,
                   Deoptimization::Action_reinterpret,
-                  nullptr);
+                  nullptr, nullptr, false, /*keep_exact_action=*/false);
     return;
   }
 
@@ -446,7 +446,7 @@ void Parse::do_multianewarray() {
     inc_sp(ndimensions);
     uncommon_trap(Deoptimization::Reason_uninitialized,
                   Deoptimization::Action_reinterpret,
-                  nullptr);
+                  nullptr, nullptr, false, /*keep_exact_action=*/false);
     return;
   }
 

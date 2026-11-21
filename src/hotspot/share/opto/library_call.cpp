@@ -1430,7 +1430,7 @@ Node* LibraryCallKit::make_indexOf_node(Node* src_start, Node* src_count, Node* 
 
 //-----------------------------inline_string_indexOfChar-----------------------
 bool LibraryCallKit::inline_string_indexOfChar(StrIntrinsicNode::ArgEnc ae) {
-  if (too_many_traps(Deoptimization::Reason_intrinsic)) {
+  if (too_many_traps_or_recompiles(Deoptimization::Reason_intrinsic)) {
     return false;
   }
   if (!Matcher::match_rule_supported(Op_StrIndexOfChar)) {
@@ -2813,7 +2813,7 @@ bool LibraryCallKit::inline_unsafe_flat_access(bool is_store, AccessKind kind) {
         if (!array_klass->is_loaded()) {
           uncommon_trap(Deoptimization::Reason_unloaded,
                         Deoptimization::Action_reinterpret,
-                        array_klass, "Flat array class meta-data unavailable");
+                        array_klass, "Flat array class meta-data unavailable", false, /*keep_exact_action=*/false);
           return true;
         } else {
           Node* new_base = cast_to_flat_array(base, array_klass, true);
@@ -4618,7 +4618,7 @@ bool LibraryCallKit::inline_Class_cast() {
   }
 
   // Bailout intrinsic and do normal inlining if exception path is frequent.
-  if (too_many_traps(Deoptimization::Reason_intrinsic)) {
+  if (too_many_traps_or_recompiles(Deoptimization::Reason_intrinsic)) {
     return false;
   }
 
@@ -5164,7 +5164,7 @@ bool LibraryCallKit::inline_unsafe_newArray(bool uninitialized) {
 //----------------------inline_native_getLength--------------------------
 // public static native int java.lang.reflect.Array.getLength(Object array);
 bool LibraryCallKit::inline_native_getLength() {
-  if (too_many_traps(Deoptimization::Reason_intrinsic))  return false;
+  if (too_many_traps_or_recompiles(Deoptimization::Reason_intrinsic))  return false;
 
   Node* array = null_check(argument(0));
   // If array is dead, only null-path is taken.
@@ -5196,7 +5196,7 @@ bool LibraryCallKit::inline_native_getLength() {
 // public static <T,U> T[] java.util.Arrays.copyOf(     U[] original, int newLength,         Class<? extends T[]> newType);
 // public static <T,U> T[] java.util.Arrays.copyOfRange(U[] original, int from,      int to, Class<? extends T[]> newType);
 bool LibraryCallKit::inline_array_copyOf(bool is_copyOfRange) {
-  if (too_many_traps(Deoptimization::Reason_intrinsic))  return false;
+  if (too_many_traps_or_recompiles(Deoptimization::Reason_intrinsic))  return false;
 
   // Get the arguments.
   Node* original          = argument(0);
@@ -6267,7 +6267,7 @@ void LibraryCallKit::copy_to_clone(Node* obj, Node* alloc_obj, Node* obj_size, b
 // can be sharply typed as an object array, a type array, or an instance.
 //
 bool LibraryCallKit::inline_native_clone(bool is_virtual) {
-  if (too_many_traps(Deoptimization::Reason_intrinsic)) {
+  if (too_many_traps_or_recompiles(Deoptimization::Reason_intrinsic)) {
     return false;
   }
 
@@ -6739,7 +6739,7 @@ void LibraryCallKit::create_new_uncommon_trap(CallStaticJavaNode* uncommon_trap_
   PreserveJVMState pjvms(this);
   set_control(uncommon_trap_call->in(0));
   uncommon_trap(Deoptimization::trap_request_reason(trap_request),
-                Deoptimization::trap_request_action(trap_request));
+                Deoptimization::trap_request_action(trap_request), nullptr, nullptr, false, /*keep_exact_action=*/false);
   assert(stopped(), "Should be stopped");
   _gvn.hash_delete(uncommon_trap_call);
   uncommon_trap_call->set_req(0, top()); // not used anymore, kill it
@@ -10086,8 +10086,8 @@ bool LibraryCallKit::inline_profileBoolean() {
 
     if (false_cnt + true_cnt == 0) {
       // According to profile, never executed.
-      uncommon_trap_exact(Deoptimization::Reason_intrinsic,
-                          Deoptimization::Action_reinterpret);
+      uncommon_trap(Deoptimization::Reason_intrinsic,
+                    Deoptimization::Action_reinterpret);
       return true;
     }
 
@@ -10115,8 +10115,8 @@ bool LibraryCallKit::inline_profileBoolean() {
         set_control(slow_path);
         set_i_o(i_o());
 
-        uncommon_trap_exact(Deoptimization::Reason_intrinsic,
-                            Deoptimization::Action_reinterpret);
+        uncommon_trap(Deoptimization::Reason_intrinsic,
+                      Deoptimization::Action_reinterpret);
       }
       // The guard for never seen value enables sharpening of the result and
       // returning a constant. It allows to eliminate branches on the same value

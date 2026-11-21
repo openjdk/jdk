@@ -189,7 +189,7 @@ void Parse::do_monitor_enter() {
   {
     // Synchronizing on a value type is not allowed
     BuildCutout unless(this, value_type_test(obj, /* is_value = */ false), PROB_MAX);
-    uncommon_trap_exact(Deoptimization::Reason_class_check, Deoptimization::Action_none);
+    uncommon_trap(Deoptimization::Reason_class_check, Deoptimization::Action_none);
   }
 
   // the monitor object is not part of debug info expression stack

@@ -439,7 +439,7 @@ void Parse::load_interpreter_state(Node* osr_buf) {
     // This x will be typed as Integer if notReached is not yet linked.
     // It could also happen due to a problem in ciTypeFlow analysis.
     uncommon_trap(Deoptimization::Reason_constraint,
-                  Deoptimization::Action_reinterpret);
+                  Deoptimization::Action_reinterpret, nullptr, nullptr, false, /*keep_exact_action=*/false);
     set_map(types_are_good);
   }
 }
@@ -1940,7 +1940,7 @@ void Parse::do_one_block() {
         set_parse_bci(block()->start());
         uncommon_trap(Deoptimization::Reason_unreached,
                       Deoptimization::Action_reinterpret,
-                      nullptr, "dead catch block");
+                      nullptr, "dead catch block", false, /*keep_exact_action=*/false);
         return;
       }
     }
@@ -1975,7 +1975,7 @@ void Parse::do_one_block() {
       // to produce successors for trapping blocks.
       int trap_index = block()->flow()->trap_index();
       assert(trap_index != 0, "trap index must be valid");
-      uncommon_trap(trap_index);
+      uncommon_trap(trap_index, nullptr, nullptr, false, /*keep_exact_action=*/false);
       break;
     }
 
