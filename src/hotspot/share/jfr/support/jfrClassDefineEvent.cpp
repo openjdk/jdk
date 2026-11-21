@@ -221,10 +221,7 @@ void JfrClassDefineEvent::on_restoration(const InstanceKlass* ik, JavaThread* jt
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(jt);)
   assert(is_not_retransforming(ik, jt), "invariant");
   if (!ik->defined_by_other_loaders()) {
-    const int index = ik->shared_classpath_index();
-    assert(index >= 0, "invariant");
-    const AOTClassLocation* const cl = AOTClassLocationConfig::runtime()->class_location_at(index);
-    assert(cl != nullptr, "invariant");
+    const AOTClassLocation* cl = AOTClassLocationConfig::runtime()->class_location_not_null(ik);
     if (cl->is_modules_image()) {
       JfrTraceId::set_preload_bootloader_bit(ik);
     }

@@ -31,6 +31,7 @@
 #include "oops/oop.hpp"
 #include "oops/oopHandle.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/vmEnums.hpp"
 #if INCLUDE_JFR
 #include "jfr/support/jfrTraceIdExtension.hpp"
 #endif
@@ -172,7 +173,7 @@ private:
   // indicate the AOTClassLocation where this class is loaded from during
   // dump time. If a class is not loaded from the AOT cache, this field is
   // -1.
-  s2 _shared_class_path_index;
+  AOTClassLocationID _aot_class_location_id;
 
 #if INCLUDE_CDS
   // Various attributes for shared classes. Should be zero for a non-shared class.
@@ -315,12 +316,12 @@ protected:
   ClassLoaderData* class_loader_data() const               { return _class_loader_data; }
   void set_class_loader_data(ClassLoaderData* loader_data) {  _class_loader_data = loader_data; }
 
-  s2 shared_classpath_index() const   {
-    return _shared_class_path_index;
+  AOTClassLocationID aot_class_location_id() const   {
+    return _aot_class_location_id;
   };
 
-  void set_shared_classpath_index(s2 index) {
-    _shared_class_path_index = index;
+  void set_aot_class_location_id(AOTClassLocationID id) {
+    _aot_class_location_id = id;
   };
 
   bool has_archived_mirror_index() const {

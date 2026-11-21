@@ -35,6 +35,7 @@
 #include "utilities/hashTable.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
+#include "utilities/vmEnums.hpp"
 #if INCLUDE_JFR
 #include "jfr/support/jfrTraceIdExtension.hpp"
 #endif
@@ -73,7 +74,7 @@ private:
 
   Symbol* _version;                    // module version number
   Symbol* _location;                   // module location
-  CDS_ONLY(int _shared_path_index;)    // >=0 if classes in this module are in CDS archive
+  CDS_ONLY(AOTClassLocationID _aot_class_location_id;)
   bool _can_read_all_unnamed;
   bool _has_default_read_edges;        // JVMTI redefine/retransform support
   bool _must_walk_reads;               // walk module's reads list at GC safepoints to purge out dead modules
@@ -158,12 +159,9 @@ public:
     return prev;
   }
 
-  void set_is_patched() {
-      _is_patched = true;
-      CDS_ONLY(_shared_path_index = -1); // Mark all shared classes in this module invisible.
-  }
+  void set_is_patched();
   bool is_patched() {
-      return _is_patched;
+    return _is_patched;
   }
 
   // iteration support for readability
@@ -192,7 +190,7 @@ public:
   void print(outputStream* st = tty) const;
   void verify();
 
-  CDS_ONLY(int shared_path_index() { return _shared_path_index;})
+  CDS_ONLY(AOTClassLocationID aot_class_location_id() { return _aot_class_location_id;})
 
   JFR_ONLY(DEFINE_TRACE_ID_METHODS;)
 

@@ -34,10 +34,17 @@
 #include "utilities/ostream.hpp"
 
 class AllClassLocationStreams;
+class ClassFileStream;
 class ClassLocationStream;
 class ClassPathZipEntry;
 class ModulePathClassLocationStream;
 class LogStream;
+
+enum class AOTClassLocationID : s2 {
+  UNREGISTERED = -9999,
+  INVALID = -1,
+  MODULES_IMAGE = 0,
+};
 
 // An AOTClassLocation is a location where the application is configured to load Java classes
 // from. It can be:
@@ -144,6 +151,14 @@ class AOTClassLocationConfig : public CHeapObj<mtClassShared> {
     size_t runtime_lcp_len;
   };
 
+  static AOTClassLocationID to_aot_location_id(int path_index) {
+    precond(path_index >= 0 && path_index <= max_jshort);
+    return static_cast<AOTClassLocationID>(checked_cast<s2>(path_index));
+  }
+  static int to_path_index(AOTClassLocationID id) {
+    return static_cast<int>(id);
+  }
+
   // Note: both of the following are non-null if we are dumping a dynamic archive.
   static AOTClassLocationConfig* _dumptime_instance;
   static const AOTClassLocationConfig* _runtime_instance;
@@ -172,6 +187,12 @@ class AOTClassLocationConfig : public CHeapObj<mtClassShared> {
   void add_class_location(JavaThread* current, GrowableClassLocationArray& tmp_array, const char* path,
                        Group group, bool parse_manifest, bool from_cpattr);
   void dumptime_init_helper(TRAPS);
+
+  bool is_valid_path_index(int path_index, InstanceKlass* ik);
+  static int get_path_index_from_table(const char* path, bool is_named_module);
+  static int compute_path_index(InstanceKlass* ik, const ClassFileStream* stream);
+  static void update_aot_class_location_id(InstanceKlass* ik, int path_index, bool redefined);
+  static void record_hidden_class(InstanceKlass* ik);
 
   bool validate_helper(const char* cache_filename, bool has_aot_linked_classes, bool has_full_module_graph, RuntimePathInfo& path_info) const;
   bool check_jrt(bool has_aot_linked_classes) const;
@@ -231,7 +252,7 @@ public:
     return _runtime_instance;
   }
 
-  const char* get_runtime_path(int shared_path_index, const char* path) const;
+  const char* get_runtime_path(int path_index, const char* path) const;
 
   // Common accessors
   int boot_cp_start_index()          const { return 1; }
@@ -251,10 +272,14 @@ public:
   }
 
   const AOTClassLocation* class_location_at(int index) const;
-  int get_module_shared_path_index(Symbol* location) const;
+  const AOTClassLocation* class_location_not_null(const InstanceKlass* ik) const;
+  AOTClassLocationID get_module_location_id(Symbol* location) const;
 
   // Functions used only during dumptime
   static void dumptime_init(JavaThread* current) NOT_CDS_RETURN;
+
+  static void on_klass_creation(InstanceKlass* ik, const ClassFileStream* stream,
+                                bool redefined) NOT_CDS_RETURN;
 
   static void dumptime_set_has_app_classes() {
     _dumptime_instance->_has_app_classes = true;
@@ -282,15 +307,14 @@ public:
   template <typename FUNC> static void dumptime_iterate(FUNC func) {
     _dumptime_instance->dumptime_iterate_helper(func);
   }
-  static int dumptime_get_class_location_index(const char* path, bool is_named_module);
 
   AOTClassLocationConfig* write_to_archive() const;
 
   // Functions used only during runtime
   bool validate(const char* cache_filename, bool has_aot_linked_classes, bool has_full_module_graph) const;
 
-  bool is_valid_classpath_index(int classpath_index, InstanceKlass* ik);
-
+  static int get_path_index(const InstanceKlass* ik);
+  int get_boot_classpath_index(const InstanceKlass* ik) const;
   static void print();
 };
 

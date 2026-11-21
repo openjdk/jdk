@@ -175,7 +175,7 @@ void LambdaProxyClassDictionary::add_lambda_proxy_class(InstanceKlass* caller_ik
 
   MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
 
-  lambda_ik->set_shared_classpath_index(caller_ik->shared_classpath_index());
+  lambda_ik->set_aot_class_location_id(caller_ik->aot_class_location_id());
   InstanceKlass* nest_host = caller_ik->nest_host(CHECK);
   assert(nest_host != nullptr, "unexpected nullptr nest_host");
 
