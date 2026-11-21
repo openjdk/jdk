@@ -1,6 +1,6 @@
 //
-// Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
-// Copyright (c) 2025 SAP SE. All rights reserved.
+// Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2026 SAP SE. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -209,7 +209,7 @@ instruct zStorePNull(memoryAlg4 mem, immP_0 zero, iRegPdst tmp, flagsRegCR0 cr0)
   ins_pipe(pipe_class_default);
 %}
 
-instruct zCompareAndSwapP(iRegIdst res, iRegPdst mem, iRegPsrc oldval, iRegPsrc newval,
+instruct zCompareAndSwapP(iRegIdst res, indirect mem, iRegPsrc oldval, iRegPsrc newval,
                           iRegPdst tmp1, iRegPdst tmp2, flagsRegCR0 cr0) %{
   match(Set res (CompareAndSwapP mem (Binary oldval newval)));
   match(Set res (WeakCompareAndSwapP mem (Binary oldval newval)));
@@ -221,14 +221,14 @@ instruct zCompareAndSwapP(iRegIdst res, iRegPdst mem, iRegPsrc oldval, iRegPsrc 
   format %{ "CMPXCHG $res, $mem, $oldval, $newval; as bool; ptr" %}
   ins_encode %{
     z_compare_and_swap(masm, this,
-                       $res$$Register, $mem$$Register, $oldval$$Register, $newval$$Register,
+                       $res$$Register, $mem$$base$$Register, $oldval$$Register, $newval$$Register,
                        $tmp1$$Register, $tmp2$$Register,
                        false /* acquire */);
   %}
   ins_pipe(pipe_class_default);
 %}
 
-instruct zCompareAndSwapP_acq(iRegIdst res, iRegPdst mem, iRegPsrc oldval, iRegPsrc newval,
+instruct zCompareAndSwapP_acq(iRegIdst res, indirect mem, iRegPsrc oldval, iRegPsrc newval,
                               iRegPdst tmp1, iRegPdst tmp2, flagsRegCR0 cr0) %{
   match(Set res (CompareAndSwapP mem (Binary oldval newval)));
   match(Set res (WeakCompareAndSwapP mem (Binary oldval newval)));
@@ -240,14 +240,14 @@ instruct zCompareAndSwapP_acq(iRegIdst res, iRegPdst mem, iRegPsrc oldval, iRegP
   format %{ "CMPXCHG acq $res, $mem, $oldval, $newval; as bool; ptr" %}
   ins_encode %{
     z_compare_and_swap(masm, this,
-                       $res$$Register, $mem$$Register, $oldval$$Register, $newval$$Register,
+                       $res$$Register, $mem$$base$$Register, $oldval$$Register, $newval$$Register,
                        $tmp1$$Register, $tmp2$$Register,
                        true /* acquire */);
   %}
   ins_pipe(pipe_class_default);
 %}
 
-instruct zCompareAndExchangeP(iRegPdst res, iRegPdst mem, iRegPsrc oldval, iRegPsrc newval,
+instruct zCompareAndExchangeP(iRegPdst res, indirect mem, iRegPsrc oldval, iRegPsrc newval,
                               iRegPdst tmp, flagsRegCR0 cr0) %{
   match(Set res (CompareAndExchangeP mem (Binary oldval newval)));
   effect(TEMP_DEF res, TEMP tmp, KILL cr0);
@@ -261,13 +261,13 @@ instruct zCompareAndExchangeP(iRegPdst res, iRegPdst mem, iRegPsrc oldval, iRegP
   format %{ "CMPXCHG $res, $mem, $oldval, $newval; as ptr; ptr" %}
   ins_encode %{
     z_compare_and_exchange(masm, this,
-                           $res$$Register, $mem$$Register, $oldval$$Register, $newval$$Register, $tmp$$Register,
+                           $res$$Register, $mem$$base$$Register, $oldval$$Register, $newval$$Register, $tmp$$Register,
                            false /* acquire */);
   %}
   ins_pipe(pipe_class_default);
 %}
 
-instruct zCompareAndExchangeP_acq(iRegPdst res, iRegPdst mem, iRegPsrc oldval, iRegPsrc newval,
+instruct zCompareAndExchangeP_acq(iRegPdst res, indirect mem, iRegPsrc oldval, iRegPsrc newval,
                                   iRegPdst tmp, flagsRegCR0 cr0) %{
   match(Set res (CompareAndExchangeP mem (Binary oldval newval)));
   effect(TEMP_DEF res, TEMP tmp, KILL cr0);
@@ -281,13 +281,13 @@ instruct zCompareAndExchangeP_acq(iRegPdst res, iRegPdst mem, iRegPsrc oldval, i
   format %{ "CMPXCHG acq $res, $mem, $oldval, $newval; as ptr; ptr" %}
   ins_encode %{
     z_compare_and_exchange(masm, this,
-                           $res$$Register, $mem$$Register, $oldval$$Register, $newval$$Register, $tmp$$Register,
+                           $res$$Register, $mem$$base$$Register, $oldval$$Register, $newval$$Register, $tmp$$Register,
                            true /* acquire */);
   %}
   ins_pipe(pipe_class_default);
 %}
 
-instruct zGetAndSetP(iRegPdst res, iRegPdst mem, iRegPsrc newval, iRegPdst tmp, flagsRegCR0 cr0) %{
+instruct zGetAndSetP(iRegPdst res, indirect mem, iRegPsrc newval, iRegPdst tmp, flagsRegCR0 cr0) %{
   match(Set res (GetAndSetP mem newval));
   effect(TEMP_DEF res, TEMP tmp, KILL cr0);
 
@@ -296,8 +296,8 @@ instruct zGetAndSetP(iRegPdst res, iRegPdst mem, iRegPsrc newval, iRegPdst tmp, 
   format %{ "GetAndSetP $res, $mem, $newval" %}
   ins_encode %{
     Register rnew_zpointer = $tmp$$Register, result = $res$$Register;
-    z_store_barrier(masm, this, $mem$$Register, 0, $newval$$Register, rnew_zpointer, true /* is_atomic */);
-    __ getandsetd(result, rnew_zpointer, $mem$$Register, MacroAssembler::cmpxchgx_hint_atomic_update());
+    z_store_barrier(masm, this, $mem$$base$$Register, 0, $newval$$Register, rnew_zpointer, true /* is_atomic */);
+    __ getandsetd(result, rnew_zpointer, $mem$$base$$Register, MacroAssembler::cmpxchgx_hint_atomic_update());
     z_uncolor(masm, result);
 
     if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
