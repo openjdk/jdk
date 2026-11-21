@@ -1182,6 +1182,9 @@ public class TypeEnter implements Completer {
             if (isRecord) {
                 addRecordMembersIfNeeded(tree, env);
             }
+            if ((tree.mods.flags & Flags.SINGLEOBJECT) != 0) {
+                addSingleObjectMembers(tree, env);
+            }
             if (tree.sym.isAnnotationType()) {
                 Assert.check(tree.sym.isCompleted());
                 tree.sym.setAnnotationTypeMetadata(new AnnotationTypeMetadata(tree.sym, annotate.annotationTypeSourceCompleter()));
@@ -1189,6 +1192,36 @@ public class TypeEnter implements Completer {
 
             if ((tree.sym.flags() & (INTERFACE | VALUE_CLASS)) == 0) {
                 tree.sym.flags_field |= IDENTITY_TYPE;
+            }
+        }
+
+        private void addSingleObjectMembers(JCClassDecl tree, Env<AttrContext> env) {
+            make.at(tree.pos);
+            JCExpression classType = make.Type(tree.sym.type);
+            JCVariableDecl instanceField = make.VarDef(
+                make.Modifiers(Flags.PRIVATE | Flags.STATIC | Flags.FINAL | Flags.GENERATED_MEMBER),
+                names.dollarInstance,
+                classType,
+                make.NewClass(null, List.nil(), make.Ident(tree.name), List.nil(), null)
+            );
+            tree.defs = tree.defs.append(instanceField);
+            memberEnter.memberEnter(instanceField, env);
+
+            MethodSymbol existing = lookupMethod(tree.sym, names.getInstance, List.nil());
+            if (existing == null) {
+                JCBlock body = make.Block(0, List.of(make.Return(make.Ident(names.dollarInstance))));
+                JCMethodDecl getInstanceMethod = make.MethodDef(
+                    make.Modifiers(Flags.PUBLIC | Flags.STATIC | Flags.FINAL),
+                    names.getInstance,
+                    make.Type(tree.sym.type),
+                    List.nil(),
+                    List.nil(),
+                    List.nil(),
+                    body,
+                    null
+                );
+                tree.defs = tree.defs.append(getInstanceMethod);
+                memberEnter.memberEnter(getInstanceMethod, env);
             }
         }
 
@@ -1378,9 +1411,10 @@ public class TypeEnter implements Completer {
         public MethodSymbol constructorSymbol() {
             if (constructorSymbol == null) {
                 long flags;
-                if ((owner().flags() & ENUM) != 0 &&
-                    (types.supertype(owner().type).tsym == syms.enumSym)) {
-                    // constructors of true enums are private
+                if (((owner().flags() & ENUM) != 0 &&
+                    (types.supertype(owner().type).tsym == syms.enumSym)) ||
+                    (owner().flags() & SINGLEOBJECT) != 0) {
+                    // constructors of true enums and singleobject classes are private
                     flags = PRIVATE | GENERATEDCONSTR;
                 } else {
                     flags = (owner().flags() & AccessFlags) | GENERATEDCONSTR;
