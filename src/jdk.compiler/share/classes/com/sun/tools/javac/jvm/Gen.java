@@ -1987,8 +1987,24 @@ public class Gen extends JCTree.Visitor {
         int tmpPos = code.pendingStatPos;
         if (tree.expr != null) {
             Assert.check(code.isStatementStart());
-            Item r = genExpr(tree.expr, pt).load();
-            if (hasFinally(env.enclMethod, env)) {
+            Item r = genExpr(tree.expr, pt);
+            var hasFinally = hasFinally(env.enclMethod, env);
+            if (r instanceof CondItem cond
+                    && !hasFinally
+                    && code.state.nlocks == 0) {
+                Chain falseJumps = cond.jumpFalse();
+                if (!cond.isFalse()) {
+                    code.resolve(cond.trueJumps);
+                    code.emitop0(iconst_1);
+                    code.pendingStatPos = tmpPos;
+                    code.emitop0(ireturn);
+                }
+                code.resolve(falseJumps);
+                r = items.makeImmediateItem(syms.booleanType, 0);
+            }
+            r = r.load();
+
+            if (hasFinally) {
                 r = makeTemp(pt);
                 r.store();
             }
