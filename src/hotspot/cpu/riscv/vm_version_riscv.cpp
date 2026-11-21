@@ -35,23 +35,6 @@
 
 #include <ctype.h>
 
-// The Zalasr (Table A.7 / RCsc) sequences emitted by the JIT for volatile
-// accesses only interoperate with C++ code compiled using the psABI atomics
-// mapping (A6S: seq_cst stores carry a trailing full fence), i.e.
-// gcc >= 13.3 or clang >= 19. libjvm itself and the bundled JDK native
-// libraries are the closest such C++ code, so gate UseZalasr on the
-// toolchain that built this VM. See riscv-elf-psabi-doc,
-// "RISC-V Atomics Mappings" (note 3: do not combine with older mappings).
-static constexpr bool toolchain_uses_psabi_atomics() {
-#if defined(__clang_major__)
-  return __clang_major__ >= 19;
-#elif defined(__GNUC__)
-  return (__GNUC__ > 13) || (__GNUC__ == 13 && __GNUC_MINOR__ >= 3);
-#else
-  return false;
-#endif
-}
-
 uint32_t VM_Version::_initial_vector_length = 0;
 VM_Version::AtomicAccessMode VM_Version::_atomic_access_mode = AtomicAccessMode::RVWMO;
 VM_Version::AtomicCasMode VM_Version::_atomic_cas_mode = AtomicCasMode::BASELINE;
@@ -103,41 +86,57 @@ void VM_Version::RVExtFeatureValue::update_flag() {
     return;
   }
 
-  DEBUG_ONLY(verify_deps());
-  if (!flag->is_default() && !flag->get_bool()) {
-    disable_feature();
-    return;
-  }
-
   // Direct writes preserve the flag origin, matching FLAG_SET_DEFAULT.
-  if (deps_all_enabled()) {
-    if (flag->is_default()) {
-      flag->write<bool>(true);
-    }
-    return;
+  if (flag->is_default()) {
+    flag->write<bool>(true);
   }
-
-  flag->write<bool>(false);
-  disable_feature();
-  stringStream ss;
-  ss.print("missing dependent extension(s): ");
-  deps_string(ss);
-  log_disabled(ss.as_string(true));
 }
 
-bool VM_Version::RVExtFeatureValue::deps_all_enabled() const {
+bool VM_Version::RVExtFeatureValue::flag_enabled() {
+  return _flag == INVALID_JVMFlagsEnum ? feature_enabled() : JVMFlag::flag_from_enum(_flag)->get_bool();
+}
+
+void VM_Version::RVExtFeatureValue::validate_flag() {
+  if (_flag == INVALID_JVMFlagsEnum) {
+    return;
+  }
+
+  DEBUG_ONLY(verify_deps());
+  JVMFlag* flag = JVMFlag::flag_from_enum(_flag);
+  if (flag->get_bool() && !deps_all_flags_enabled()) {
+    flag->write<bool>(false);
+    stringStream ss;
+    ss.print("missing dependent extension(s): ");
+    deps_flags_string(ss);
+    log_disabled(ss.base());
+  }
+}
+
+void VM_Version::RVExtFeatureValue::update_feature() {
+  if (_flag == INVALID_JVMFlagsEnum) {
+    return;
+  }
+
+  if (flag_enabled()) {
+    enable_feature();
+  } else {
+    disable_feature();
+  }
+}
+
+bool VM_Version::RVExtFeatureValue::deps_all_flags_enabled() const {
   for (RVExtFeatureValue* const* dep = _dependencies; *dep != nullptr; ++dep) {
-    if (!(*dep)->feature_enabled()) {
+    if (!(*dep)->flag_enabled()) {
       return false;
     }
   }
   return true;
 }
 
-void VM_Version::RVExtFeatureValue::deps_string(stringStream& ss) const {
+void VM_Version::RVExtFeatureValue::deps_flags_string(stringStream& ss) const {
   const char* sep = "";
   for (RVExtFeatureValue* const* dep = _dependencies; *dep != nullptr; ++dep) {
-    ss.print("%s%s (%s)", sep, (*dep)->pretty(), (*dep)->feature_enabled() ? "enabled" : "disabled");
+    ss.print("%s%s (%s)", sep, (*dep)->pretty(), (*dep)->flag_enabled() ? "enabled" : "disabled");
     sep = ", ";
   }
 }
@@ -147,7 +146,7 @@ void VM_Version::RVExtFeatureValue::verify_deps() const {
   for (RVExtFeatureValue* const* dep = _dependencies; *dep != nullptr; ++dep) {
     assert(cpu_feature_index() >= 0, "must");
     assert((*dep)->cpu_feature_index() >= 0, "must");
-    // Dependencies must precede their users so flag updates can run in one pass.
+    // Dependencies must precede their users so flag validation can run in one pass.
     assert(cpu_feature_index() > (*dep)->cpu_feature_index(), "Invalid");
   }
 }
@@ -167,30 +166,48 @@ void VM_Version::useRVA23U64Profile() {
 
 void VM_Version::initialize() {
   static_assert(ARRAY_SIZE(_ext_feature_list) == RVExtFeatureSet::CPU_FEATURE_COUNT);
-  common_initialize();
-#ifdef COMPILER2
-  c2_initialize();
-#endif // COMPILER2
-}
-
-void VM_Version::common_initialize() {
   _supports_atomic_getset4 = true;
   _supports_atomic_getadd4 = true;
   _supports_atomic_getset8 = true;
   _supports_atomic_getadd8 = true;
 
-  setup_cpu_available_features();
+  char* uarch = nullptr;
+  setup_cpu_feature_flags(uarch);
+  // Validation may disable flags with unmet dependencies; synchronize only
+  // afterwards so AOT matching sees the resulting feature set.
+  validate_cpu_feature_flags();
+  sync_cpu_features();
 
-  if (UseRVA20U64) {
-    useRVA20U64Profile();
-  }
-  if (UseRVA22U64) {
-    useRVA22U64Profile();
-  }
-  if (UseRVA23U64) {
-    useRVA23U64Profile();
-  }
+  // Check that the runtime features support the AOT cache, then restrict them
+  // to the archived feature set if compatible.
+  apply_aot_cache_cpu_features();
 
+  // AOT restrictions may disable flags and invalidate their dependents; validate
+  // and synchronize again before deriving ergonomics and publishing features.
+  validate_cpu_feature_flags();
+  sync_cpu_features();
+
+  // Ergonomics must use the AOT-restricted flags.
+  common_initialize();
+#ifdef COMPILER2
+  c2_initialize();
+#endif // COMPILER2
+  publish_cpu_features(uarch);
+}
+
+void VM_Version::validate_cpu_feature_flags() {
+  for (int i = 0; i < RVExtFeatureSet::CPU_FEATURE_COUNT; i++) {
+    _ext_feature_list[i]->validate_flag();
+  }
+}
+
+void VM_Version::sync_cpu_features() {
+  for (int i = 0; i < RVExtFeatureSet::CPU_FEATURE_COUNT; i++) {
+    _ext_feature_list[i]->update_feature();
+  }
+}
+
+void VM_Version::common_initialize() {
   if (!FLAG_IS_DEFAULT(CacheLineSize) && !is_power_of_2(CacheLineSize)) {
     warning("CacheLineSize must be a power of 2");
     FLAG_SET_DEFAULT(CacheLineSize, DEFAULT_CACHE_LINE_SIZE);
@@ -217,30 +234,6 @@ void VM_Version::common_initialize() {
     FLAG_SET_DEFAULT(UseSignumIntrinsic, true);
   }
 
-  if (UseRVC && !ext_c.feature_enabled()) {
-    warning("RVC is not supported on this CPU");
-    FLAG_SET_DEFAULT(UseRVC, false);
-
-    if (UseRVA20U64) {
-      warning("UseRVA20U64 is not supported on this CPU");
-      FLAG_SET_DEFAULT(UseRVA20U64, false);
-    }
-  }
-
-  if (UseZalasr && !toolchain_uses_psabi_atomics()) {
-    // A JVM built by a pre-psABI toolchain contains C++ atomics whose mapping
-    // is incompatible with the Zalasr sequences the JIT would emit; mixing them
-    // can break Java volatile semantics. Only warn when Zalasr was asked for
-    // explicitly: where the extension is detected it is enabled by default, and
-    // a plain start-up should stay quiet.
-    if (!FLAG_IS_DEFAULT(UseZalasr)) {
-      warning("UseZalasr requires a JVM built with a toolchain using the "
-              "psABI atomics mapping (gcc >= 13.3 or clang >= 19); "
-              "disabling Zalasr");
-    }
-    FLAG_SET_DEFAULT(UseZalasr, false);
-  }
-
   if (FLAG_IS_DEFAULT(AvoidUnalignedAccesses)) {
     FLAG_SET_DEFAULT(AvoidUnalignedAccesses,
       unaligned_scalar.value() != MISALIGNED_SCALAR_FAST);
@@ -261,28 +254,7 @@ void VM_Version::common_initialize() {
       (unaligned_scalar.value() == MISALIGNED_SCALAR_FAST));
   }
 
-#ifdef __riscv_ztso
-  // Hotspot is compiled with TSO support, it will only run on hardware which
-  // supports Ztso
-  if (FLAG_IS_DEFAULT(UseZtso)) {
-    FLAG_SET_DEFAULT(UseZtso, true);
-  }
-#endif
-
-  // Zalasr and Ztso are mutually exclusive. Under Ztso the acquire and release fences
-  // are elided anyway, see MacroAssembler::membar(), so all Zalasr would still buy is
-  // eliding the trailing StoreLoad fence of a volatile store, which is a separate
-  // optimization. Ztso takes precedence for now, so Zalasr is turned off.
-  if (UseZtso && UseZalasr) {
-    if (!FLAG_IS_DEFAULT(UseZalasr)) {
-      warning("UseZalasr is not supported together with UseZtso, disabling Zalasr.");
-    }
-    FLAG_SET_DEFAULT(UseZalasr, false);
-  }
-
-  // Latch the native AtomicAccess dispatch mode only after every UseZalasr and
-  // UseZtso adjustment above has settled. See the comment on
-  // _atomic_access_mode in vm_version_riscv.hpp.
+  // Native atomic dispatch must reflect the final flags, including AOT restrictions.
   if (UseZalasr && !UseZtso) {
     _atomic_access_mode = AtomicAccessMode::RVWMO_ZALASR;
   } else if (UseZtso) {
@@ -306,13 +278,6 @@ void VM_Version::common_initialize() {
   } else {
     FLAG_SET_DEFAULT(UsePopCountInstruction, false);
   }
-
-  if (UseRVV) {
-    // read vector length from vector CSR vlenb
-    _initial_vector_length = cpu_vector_length();
-  }
-
-  // Misc Intrinsics that could depend on RVV.
 
   if (!AvoidUnalignedAccesses && (UseZba || UseRVV)) {
     if (FLAG_IS_DEFAULT(UseCRC32Intrinsics)) {
@@ -356,21 +321,12 @@ void VM_Version::c2_initialize() {
                (int)MaxVectorSize, _initial_vector_length);
     }
     MaxVectorSize = _initial_vector_length;
-    if (MaxVectorSize < 16) {
-      warning("RVV does not support vector length less than 16 bytes. Disabling RVV.");
-      UseRVV = false;
-      FLAG_SET_DEFAULT(MaxVectorSize, 0);
-    }
   }
 
   if (FLAG_IS_DEFAULT(AlignVector)) {
     FLAG_SET_DEFAULT(AlignVector,
       unaligned_vector.value() != MISALIGNED_VECTOR_FAST);
   }
-
-  // NOTE: Make sure codes dependent on UseRVV are put after MaxVectorSize initialize,
-  //       as there are extra checks inside it which could disable UseRVV
-  //       in some situations.
 
   // Base64
   if (FLAG_IS_DEFAULT(UseBASE64Intrinsics)) {
@@ -650,7 +606,7 @@ bool VM_Version::verify_aot_code_cache_features(void* features_buffer) {
 // Print one feature using the same spelling as features_string(): single letter
 // extensions appear as "rvc"/"rvv" and multi-character extensions with a lower
 // case leading character ("Zba" -> "zba"). Must stay in sync with the feature
-// string built in VM_Version::setup_cpu_available_features().
+// string built in VM_Version::publish_cpu_features().
 void VM_Version::print_feature_name(stringStream& ss, RVFeatureValue* feature) {
   const char* pretty = feature->pretty();
   if (strlen(pretty) == 1) {
