@@ -251,6 +251,13 @@ public final class ThreadDump {
         }
 
         /**
+         * Returns the thread identity string.
+         */
+        public String identity() {
+            return threadObj.get("identity").asString();
+        }
+
+        /**
          * Returns the thread state.
          */
         public String state() {
@@ -423,7 +430,7 @@ public final class ThreadDump {
     public static ThreadDump parse(String json) {
         JSONValue threadDumpObj = JSONValue.parse(json).get("threadDump");
         int formatVersion = threadDumpObj.get("formatVersion").asInt();
-        if (formatVersion != 2) {
+        if (formatVersion != 3) {
             fail("Format " + formatVersion + " not supported");
         }
 
