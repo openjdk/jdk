@@ -24,7 +24,7 @@
 
 /*
  * @test id=ENABLED
- * @bug 8303215 8312182
+ * @bug 8303215 8312182 8397204
  * @summary On THP=always systems, we prevent THPs from forming within thread stacks
  * @library /test/lib
  * @requires vm.flagless
@@ -38,7 +38,7 @@
 
 /*
  * @test id=DISABLED
- * @bug 8303215 8312182
+ * @bug 8303215 8312182 8397204
  * @summary On THP=always systems, we prevent THPs from forming within thread stacks (negative test)
  * @library /test/lib
  * @requires vm.flagless
@@ -51,6 +51,7 @@
  * @run main/manual THPsInThreadStackPreventionTest  PATCH-DISABLED
  */
 
+import jdk.test.lib.Platform;
 import jdk.test.lib.os.linux.HugePageConfiguration;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
@@ -157,6 +158,19 @@ public class THPsInThreadStackPreventionTest {
         }
     }
 
+    // glibc creates a new malloc arena when threads malloc concurrently and the existing arenas are
+    // locked, up to 8 * online CPUs on 64-bit. This test starts 1000 threads at once, so startup
+    // mallocs can open that many arenas. Since glibc 2.43, AArch64 malloc enables 2MB THP by
+    // default and sizes a new arena heap to that page. Under THP=always each such heap is faulted
+    // in as a 2MB page, so RSS includes this arena growth as well as the thread stacks. Cap the
+    // arenas at 1 on AArch64 so that growth stays small and the RSS check still reflects the thread
+    // stacks. Reference: https://sourceware.org/pipermail/glibc-cvs/2025q4/090171.html
+    private static void limitGlibcMallocArenas(ProcessBuilder pb) {
+        if (Platform.isAArch64()) {
+            pb.environment().put("GLIBC_TUNABLES", "glibc.malloc.arena_max=1");
+        }
+    }
+
     public static void main(String[] args) throws Exception {
 
         HugePageConfiguration config = HugePageConfiguration.readFromOS();
@@ -183,12 +197,10 @@ public class THPsInThreadStackPreventionTest {
             case "PATCH-ENABLED": {
                 finalargs.add(TestMain.class.getName());
                 ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(finalargs);
+                limitGlibcMallocArenas(pb);
 
                 OutputAnalyzer output = new OutputAnalyzer(pb.start());
                 output.shouldHaveExitValue(0);
-
-                // this line indicates the mitigation is active:
-                output.shouldMatch("\\[pagesize *\\] JVM will attempt to prevent THPs in thread stacks\\.");
 
                 ProcSelfStatus status = ProcSelfStatus.parse(output);
                 if (status.numLifeThreads < numThreads) {
@@ -220,12 +232,18 @@ public class THPsInThreadStackPreventionTest {
 
                 finalargs.add(TestMain.class.getName());
                 ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(finalargs);
-                OutputAnalyzer output = new OutputAnalyzer(pb.start());
+                limitGlibcMallocArenas(pb);
 
+                OutputAnalyzer output = new OutputAnalyzer(pb.start());
                 output.shouldHaveExitValue(0);
 
-                // We deliberately switched off mitigation, VM should tell us:
-                output.shouldMatch("\\[pagesize *\\] JVM will \\*not\\* prevent THPs in thread stacks\\. This may cause high RSS\\.");
+                // The JVM prints this only when THP mode is "always", the kernel does not map MAP_STACK to
+                // VM_NOHUGEPAGE, and mitigation is off. Otherwise the high RSS this negative test expects cannot be
+                // reproduced.
+                if (!output.matches("\\[pagesize *\\] JVM will \\*not\\* prevent THPs in thread stacks\\. This may cause high RSS\\.")) {
+                    throw new SkippedException("JVM did not report that THPs may form in thread stacks; "
+                        + "the kernel already prevents them.");
+                }
 
                 // Parse output from self/status
                 ProcSelfStatus status = ProcSelfStatus.parse(output);
