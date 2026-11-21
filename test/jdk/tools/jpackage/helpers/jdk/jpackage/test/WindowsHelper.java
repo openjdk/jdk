@@ -310,6 +310,20 @@ public class WindowsHelper {
         return MsiDatabaseCache.INSTANCE.findProperty(cmd.outputBundle(), propertyName).orElseThrow();
     }
 
+    /**
+     * Returns the platform of an MSI package as stored in the "Template" summary
+     * information property, e.g. "x64" or "Arm64".
+     *
+     * @param cmd jpackage command that built the MSI package
+     * @return the platform of the MSI package
+     */
+    public static String getMsiPlatform(JPackageCommand cmd) {
+        cmd.verifyIsOfType(PackageType.WIN_MSI);
+        // https://learn.microsoft.com/en-us/windows/win32/msi/template-summary
+        var template = MsiDatabaseCache.INSTANCE.findSummaryProperty(cmd.outputBundle(), 7).orElseThrow();
+        return template.substring(0, template.indexOf(';'));
+    }
+
     public static MsiDatabase.UIAlterations getUIAlterations(JPackageCommand cmd) {
         cmd.verifyIsOfType(PackageType.WIN_MSI);
         return MsiDatabaseCache.INSTANCE.uiAlterations(cmd.outputBundle());
@@ -610,6 +624,10 @@ public class WindowsHelper {
 
         Optional<String> findProperty(Path msiPath, String propertyName) {
             return ensureTables(msiPath, MsiDatabase.Table.FIND_PROPERTY_REQUIRED_TABLES).findProperty(propertyName);
+        }
+
+        Optional<String> findSummaryProperty(Path msiPath, int propertyId) {
+            return ensureTables(msiPath, MsiDatabase.Table.FIND_SUMMARY_PROPERTY_REQUIRED_TABLES).findSummaryProperty(propertyId);
         }
 
         Collection<MsiDatabase.Shortcut> listShortcuts(Path msiPath) {

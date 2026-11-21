@@ -53,6 +53,11 @@ function exportTables(db, outputDir, requestedTableNames) {
     view.Close()
   }
 
+  // Summary information stream is exportable as a pseudo-table, but is not listed in "_Tables"
+  if (requestedTableNames.hasOwnProperty("_SummaryInformation")) {
+    tables["_SummaryInformation"] = "_SummaryInformation"
+  }
+
   var fso = new ActiveXObject("Scripting.FileSystemObject")
   for (var table in tables) {
     var idtFileName = table + ".idt"

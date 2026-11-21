@@ -36,6 +36,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
+import jdk.internal.util.Architecture;
 import jdk.jpackage.internal.util.PathUtils;
 
 /**
@@ -191,7 +192,7 @@ final class WixPipeline {
                 "-pdbtype", "none",
                 "-intermediatefolder", wixObjDir.toString(),
                 "-ext", "WixToolset.Util.wixext",
-                "-arch", WixFragmentBuilder.is64Bit() ? "x64" : "x86"
+                "-arch", wix4Arch()
         ));
 
         cmdline.addAll(lightOptions);
@@ -205,6 +206,17 @@ final class WixPipeline {
         cmdline.addAll(List.of("-out", msi.toString()));
 
         execute(cmdline);
+    }
+
+    // Value of the "-arch" option of the WiX v4+ "build" command for the current platform
+    private static String wix4Arch() {
+        return switch (Architecture.current()) {
+            case X64 -> "x64";
+            case X86 -> "x86";
+            case AARCH64 -> "arm64";
+            default -> throw new UnsupportedOperationException(
+                    String.format("Unsupported architecture: %s", Architecture.current()));
+        };
     }
 
     private void buildMsiWix3(Path msi) throws IOException {
