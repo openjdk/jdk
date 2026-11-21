@@ -38,7 +38,11 @@ import static compiler.vectorapi.reshape.utils.VectorReshapeHelper.*;
  * byte array will result in additional ReinterpretNodes if the vector element type is
  * not byte. As a result, arguments need to be arrays of the correct type.
  *
- * In each test, the ReinterpretNode is expected to appear exactly once.
+ * In each test, the ReinterpretNode is expected to appear exactly once, with the element type and
+ * the lane count of the destination species.
+ *
+ * The exception are the species with a single lane, i.e. L64 and D64, whose tests carry a negative
+ * rule instead. See the comment on those methods for why they can never be intrinsified.
  */
 public class TestVectorRebracket {
     @Test
@@ -66,15 +70,11 @@ public class TestVectorRebracket {
     }
 
     @Test
-    // Currently this test never runs because vectors of length 1 are not implemented.
-    // This test uses custom filtering which doesn't make it clear
-    // which tests are supposed to run in which environment.
-    // So to make it clear that this test never runs with the current implementation,
-    // we set the failOn condition to always fail because `*.` matches any IR node.
-    // JDK-8387061 plans to refactor tests like this so that filtering is based on `applyIf` rules.
-    // If vectors of length 1 are ever supported, this test will fail and the
-    // correct IR expectations will have to be defined and validated.
-    @IR(failOn = "*.")
+    // Never intrinsified: arch_supports_vector() rejects num_elem == 1 for all but
+    // Load/StoreVector, and that check is in shared code. No platform, CPU feature or flag
+    // can change it, so the rule needs no applyIf. If one lane vectors are ever supported
+    // it will fail, and a positive rule must replace it.
+    @IR(failOn = {IRNode.VECTOR_REINTERPRET_L})
     public static void testB64toL64(byte[] input, long[] output) {
         vectorRebracket(BSPEC64, LSPEC64, input, output);
     }
@@ -97,15 +97,11 @@ public class TestVectorRebracket {
     }
 
     @Test
-    // Currently this test never runs because vectors of length 1 are not implemented.
-    // This test uses custom filtering which doesn't make it clear
-    // which tests are supposed to run in which environment.
-    // So to make it clear that this test never runs with the current implementation,
-    // we set the failOn condition to always fail because `*.` matches any IR node.
-    // JDK-8387061 plans to refactor tests like this so that filtering is based on `applyIf` rules.
-    // If vectors of length 1 are ever supported, this test will fail and the
-    // correct IR expectations will have to be defined and validated.
-    @IR(failOn = "*.")
+    // Never intrinsified: arch_supports_vector() rejects num_elem == 1 for all but
+    // Load/StoreVector, and that check is in shared code. No platform, CPU feature or flag
+    // can change it, so the rule needs no applyIf. If one lane vectors are ever supported
+    // it will fail, and a positive rule must replace it.
+    @IR(failOn = {IRNode.VECTOR_REINTERPRET_D})
     public static void testB64toD64(byte[] input, double[] output) {
         vectorRebracket(BSPEC64, DSPEC64, input, output);
     }
@@ -140,15 +136,11 @@ public class TestVectorRebracket {
     }
 
     @Test
-    // Currently this test never runs because vectors of length 1 are not implemented.
-    // This test uses custom filtering which doesn't make it clear
-    // which tests are supposed to run in which environment.
-    // So to make it clear that this test never runs with the current implementation,
-    // we set the failOn condition to always fail because `*.` matches any IR node.
-    // JDK-8387061 plans to refactor tests like this so that filtering is based on `applyIf` rules.
-    // If vectors of length 1 are ever supported, this test will fail and the
-    // correct IR expectations will have to be defined and validated.
-    @IR(failOn = "*.")
+    // Never intrinsified: arch_supports_vector() rejects num_elem == 1 for all but
+    // Load/StoreVector, and that check is in shared code. No platform, CPU feature or flag
+    // can change it, so the rule needs no applyIf. If one lane vectors are ever supported
+    // it will fail, and a positive rule must replace it.
+    @IR(failOn = {IRNode.VECTOR_REINTERPRET_L})
     public static void testS64toL64(short[] input, long[] output) {
         vectorRebracket(SSPEC64, LSPEC64, input, output);
     }
@@ -171,15 +163,11 @@ public class TestVectorRebracket {
     }
 
     @Test
-    // Currently this test never runs because vectors of length 1 are not implemented.
-    // This test uses custom filtering which doesn't make it clear
-    // which tests are supposed to run in which environment.
-    // So to make it clear that this test never runs with the current implementation,
-    // we set the failOn condition to always fail because `*.` matches any IR node.
-    // JDK-8387061 plans to refactor tests like this so that filtering is based on `applyIf` rules.
-    // If vectors of length 1 are ever supported, this test will fail and the
-    // correct IR expectations will have to be defined and validated.
-    @IR(failOn = "*.")
+    // Never intrinsified: arch_supports_vector() rejects num_elem == 1 for all but
+    // Load/StoreVector, and that check is in shared code. No platform, CPU feature or flag
+    // can change it, so the rule needs no applyIf. If one lane vectors are ever supported
+    // it will fail, and a positive rule must replace it.
+    @IR(failOn = {IRNode.VECTOR_REINTERPRET_D})
     public static void testS64toD64(short[] input, double[] output) {
         vectorRebracket(SSPEC64, DSPEC64, input, output);
     }
@@ -214,15 +202,11 @@ public class TestVectorRebracket {
     }
 
     @Test
-    // Currently this test never runs because vectors of length 1 are not implemented.
-    // This test uses custom filtering which doesn't make it clear
-    // which tests are supposed to run in which environment.
-    // So to make it clear that this test never runs with the current implementation,
-    // we set the failOn condition to always fail because `*.` matches any IR node.
-    // JDK-8387061 plans to refactor tests like this so that filtering is based on `applyIf` rules.
-    // If vectors of length 1 are ever supported, this test will fail and the
-    // correct IR expectations will have to be defined and validated.
-    @IR(failOn = "*.")
+    // Never intrinsified: arch_supports_vector() rejects num_elem == 1 for all but
+    // Load/StoreVector, and that check is in shared code. No platform, CPU feature or flag
+    // can change it, so the rule needs no applyIf. If one lane vectors are ever supported
+    // it will fail, and a positive rule must replace it.
+    @IR(failOn = {IRNode.VECTOR_REINTERPRET_L})
     public static void testI64toL64(int[] input, long[] output) {
         vectorRebracket(ISPEC64, LSPEC64, input, output);
     }
@@ -245,15 +229,11 @@ public class TestVectorRebracket {
     }
 
     @Test
-    // Currently this test never runs because vectors of length 1 are not implemented.
-    // This test uses custom filtering which doesn't make it clear
-    // which tests are supposed to run in which environment.
-    // So to make it clear that this test never runs with the current implementation,
-    // we set the failOn condition to always fail because `*.` matches any IR node.
-    // JDK-8387061 plans to refactor tests like this so that filtering is based on `applyIf` rules.
-    // If vectors of length 1 are ever supported, this test will fail and the
-    // correct IR expectations will have to be defined and validated.
-    @IR(failOn = "*.")
+    // Never intrinsified: arch_supports_vector() rejects num_elem == 1 for all but
+    // Load/StoreVector, and that check is in shared code. No platform, CPU feature or flag
+    // can change it, so the rule needs no applyIf. If one lane vectors are ever supported
+    // it will fail, and a positive rule must replace it.
+    @IR(failOn = {IRNode.VECTOR_REINTERPRET_D})
     public static void testI64toD64(int[] input, double[] output) {
         vectorRebracket(ISPEC64, DSPEC64, input, output);
     }
@@ -264,15 +244,11 @@ public class TestVectorRebracket {
     }
 
     @Test
-    // Currently this test never runs because vectors of length 1 are not implemented.
-    // This test uses custom filtering which doesn't make it clear
-    // which tests are supposed to run in which environment.
-    // So to make it clear that this test never runs with the current implementation,
-    // we set the failOn condition to always fail because `*.` matches any IR node.
-    // JDK-8387061 plans to refactor tests like this so that filtering is based on `applyIf` rules.
-    // If vectors of length 1 are ever supported, this test will fail and the
-    // correct IR expectations will have to be defined and validated.
-    @IR(failOn = "*.")
+    // Never intrinsified: arch_supports_vector() rejects num_elem == 1 for all but
+    // Load/StoreVector, and that check is in shared code. No platform, CPU feature or flag
+    // can change it, so the rule needs no applyIf. If one lane vectors are ever supported
+    // it will fail, and a positive rule must replace it.
+    @IR(failOn = {IRNode.VECTOR_REINTERPRET_B})
     public static void testL64toB64(long[] input, byte[] output) {
         vectorRebracket(LSPEC64, BSPEC64, input, output);
     }
@@ -283,15 +259,11 @@ public class TestVectorRebracket {
     }
 
     @Test
-    // Currently this test never runs because vectors of length 1 are not implemented.
-    // This test uses custom filtering which doesn't make it clear
-    // which tests are supposed to run in which environment.
-    // So to make it clear that this test never runs with the current implementation,
-    // we set the failOn condition to always fail because `*.` matches any IR node.
-    // JDK-8387061 plans to refactor tests like this so that filtering is based on `applyIf` rules.
-    // If vectors of length 1 are ever supported, this test will fail and the
-    // correct IR expectations will have to be defined and validated.
-    @IR(failOn = "*.")
+    // Never intrinsified: arch_supports_vector() rejects num_elem == 1 for all but
+    // Load/StoreVector, and that check is in shared code. No platform, CPU feature or flag
+    // can change it, so the rule needs no applyIf. If one lane vectors are ever supported
+    // it will fail, and a positive rule must replace it.
+    @IR(failOn = {IRNode.VECTOR_REINTERPRET_S})
     public static void testL64toS64(long[] input, short[] output) {
         vectorRebracket(LSPEC64, SSPEC64, input, output);
     }
@@ -302,15 +274,11 @@ public class TestVectorRebracket {
     }
 
     @Test
-    // Currently this test never runs because vectors of length 1 are not implemented.
-    // This test uses custom filtering which doesn't make it clear
-    // which tests are supposed to run in which environment.
-    // So to make it clear that this test never runs with the current implementation,
-    // we set the failOn condition to always fail because `*.` matches any IR node.
-    // JDK-8387061 plans to refactor tests like this so that filtering is based on `applyIf` rules.
-    // If vectors of length 1 are ever supported, this test will fail and the
-    // correct IR expectations will have to be defined and validated.
-    @IR(failOn = "*.")
+    // Never intrinsified: arch_supports_vector() rejects num_elem == 1 for all but
+    // Load/StoreVector, and that check is in shared code. No platform, CPU feature or flag
+    // can change it, so the rule needs no applyIf. If one lane vectors are ever supported
+    // it will fail, and a positive rule must replace it.
+    @IR(failOn = {IRNode.VECTOR_REINTERPRET_I})
     public static void testL64toI64(long[] input, int[] output) {
         vectorRebracket(LSPEC64, ISPEC64, input, output);
     }
@@ -321,15 +289,11 @@ public class TestVectorRebracket {
     }
 
     @Test
-    // Currently this test never runs because vectors of length 1 are not implemented.
-    // This test uses custom filtering which doesn't make it clear
-    // which tests are supposed to run in which environment.
-    // So to make it clear that this test never runs with the current implementation,
-    // we set the failOn condition to always fail because `*.` matches any IR node.
-    // JDK-8387061 plans to refactor tests like this so that filtering is based on `applyIf` rules.
-    // If vectors of length 1 are ever supported, this test will fail and the
-    // correct IR expectations will have to be defined and validated.
-    @IR(failOn = "*.")
+    // Never intrinsified: arch_supports_vector() rejects num_elem == 1 for all but
+    // Load/StoreVector, and that check is in shared code. No platform, CPU feature or flag
+    // can change it, so the rule needs no applyIf. If one lane vectors are ever supported
+    // it will fail, and a positive rule must replace it.
+    @IR(failOn = {IRNode.VECTOR_REINTERPRET_F})
     public static void testL64toF64(long[] input, float[] output) {
         vectorRebracket(LSPEC64, FSPEC64, input, output);
     }
@@ -340,15 +304,11 @@ public class TestVectorRebracket {
     }
 
     @Test
-    // Currently this test never runs because vectors of length 1 are not implemented.
-    // This test uses custom filtering which doesn't make it clear
-    // which tests are supposed to run in which environment.
-    // So to make it clear that this test never runs with the current implementation,
-    // we set the failOn condition to always fail because `*.` matches any IR node.
-    // JDK-8387061 plans to refactor tests like this so that filtering is based on `applyIf` rules.
-    // If vectors of length 1 are ever supported, this test will fail and the
-    // correct IR expectations will have to be defined and validated.
-    @IR(failOn = "*.")
+    // Never intrinsified: arch_supports_vector() rejects num_elem == 1 for all but
+    // Load/StoreVector, and that check is in shared code. No platform, CPU feature or flag
+    // can change it, so the rule needs no applyIf. If one lane vectors are ever supported
+    // it will fail, and a positive rule must replace it.
+    @IR(failOn = {IRNode.VECTOR_REINTERPRET_D})
     public static void testL64toD64(long[] input, double[] output) {
         vectorRebracket(LSPEC64, DSPEC64, input, output);
     }
@@ -395,15 +355,11 @@ public class TestVectorRebracket {
     }
 
     @Test
-    // Currently this test never runs because vectors of length 1 are not implemented.
-    // This test uses custom filtering which doesn't make it clear
-    // which tests are supposed to run in which environment.
-    // So to make it clear that this test never runs with the current implementation,
-    // we set the failOn condition to always fail because `*.` matches any IR node.
-    // JDK-8387061 plans to refactor tests like this so that filtering is based on `applyIf` rules.
-    // If vectors of length 1 are ever supported, this test will fail and the
-    // correct IR expectations will have to be defined and validated.
-    @IR(failOn = "*.")
+    // Never intrinsified: arch_supports_vector() rejects num_elem == 1 for all but
+    // Load/StoreVector, and that check is in shared code. No platform, CPU feature or flag
+    // can change it, so the rule needs no applyIf. If one lane vectors are ever supported
+    // it will fail, and a positive rule must replace it.
+    @IR(failOn = {IRNode.VECTOR_REINTERPRET_L})
     public static void testF64toL64(float[] input, long[] output) {
         vectorRebracket(FSPEC64, LSPEC64, input, output);
     }
@@ -414,15 +370,11 @@ public class TestVectorRebracket {
     }
 
     @Test
-    // Currently this test never runs because vectors of length 1 are not implemented.
-    // This test uses custom filtering which doesn't make it clear
-    // which tests are supposed to run in which environment.
-    // So to make it clear that this test never runs with the current implementation,
-    // we set the failOn condition to always fail because `*.` matches any IR node.
-    // JDK-8387061 plans to refactor tests like this so that filtering is based on `applyIf` rules.
-    // If vectors of length 1 are ever supported, this test will fail and the
-    // correct IR expectations will have to be defined and validated.
-    @IR(failOn = "*.")
+    // Never intrinsified: arch_supports_vector() rejects num_elem == 1 for all but
+    // Load/StoreVector, and that check is in shared code. No platform, CPU feature or flag
+    // can change it, so the rule needs no applyIf. If one lane vectors are ever supported
+    // it will fail, and a positive rule must replace it.
+    @IR(failOn = {IRNode.VECTOR_REINTERPRET_D})
     public static void testF64toD64(float[] input, double[] output) {
         vectorRebracket(FSPEC64, DSPEC64, input, output);
     }
@@ -433,15 +385,11 @@ public class TestVectorRebracket {
     }
 
     @Test
-    // Currently this test never runs because vectors of length 1 are not implemented.
-    // This test uses custom filtering which doesn't make it clear
-    // which tests are supposed to run in which environment.
-    // So to make it clear that this test never runs with the current implementation,
-    // we set the failOn condition to always fail because `*.` matches any IR node.
-    // JDK-8387061 plans to refactor tests like this so that filtering is based on `applyIf` rules.
-    // If vectors of length 1 are ever supported, this test will fail and the
-    // correct IR expectations will have to be defined and validated.
-    @IR(failOn = "*.")
+    // Never intrinsified: arch_supports_vector() rejects num_elem == 1 for all but
+    // Load/StoreVector, and that check is in shared code. No platform, CPU feature or flag
+    // can change it, so the rule needs no applyIf. If one lane vectors are ever supported
+    // it will fail, and a positive rule must replace it.
+    @IR(failOn = {IRNode.VECTOR_REINTERPRET_B})
     public static void testD64toB64(double[] input, byte[] output) {
         vectorRebracket(DSPEC64, BSPEC64, input, output);
     }
@@ -452,15 +400,11 @@ public class TestVectorRebracket {
     }
 
     @Test
-    // Currently this test never runs because vectors of length 1 are not implemented.
-    // This test uses custom filtering which doesn't make it clear
-    // which tests are supposed to run in which environment.
-    // So to make it clear that this test never runs with the current implementation,
-    // we set the failOn condition to always fail because `*.` matches any IR node.
-    // JDK-8387061 plans to refactor tests like this so that filtering is based on `applyIf` rules.
-    // If vectors of length 1 are ever supported, this test will fail and the
-    // correct IR expectations will have to be defined and validated.
-    @IR(failOn = "*.")
+    // Never intrinsified: arch_supports_vector() rejects num_elem == 1 for all but
+    // Load/StoreVector, and that check is in shared code. No platform, CPU feature or flag
+    // can change it, so the rule needs no applyIf. If one lane vectors are ever supported
+    // it will fail, and a positive rule must replace it.
+    @IR(failOn = {IRNode.VECTOR_REINTERPRET_S})
     public static void testD64toS64(double[] input, short[] output) {
         vectorRebracket(DSPEC64, SSPEC64, input, output);
     }
@@ -471,15 +415,11 @@ public class TestVectorRebracket {
     }
 
     @Test
-    // Currently this test never runs because vectors of length 1 are not implemented.
-    // This test uses custom filtering which doesn't make it clear
-    // which tests are supposed to run in which environment.
-    // So to make it clear that this test never runs with the current implementation,
-    // we set the failOn condition to always fail because `*.` matches any IR node.
-    // JDK-8387061 plans to refactor tests like this so that filtering is based on `applyIf` rules.
-    // If vectors of length 1 are ever supported, this test will fail and the
-    // correct IR expectations will have to be defined and validated.
-    @IR(failOn = "*.")
+    // Never intrinsified: arch_supports_vector() rejects num_elem == 1 for all but
+    // Load/StoreVector, and that check is in shared code. No platform, CPU feature or flag
+    // can change it, so the rule needs no applyIf. If one lane vectors are ever supported
+    // it will fail, and a positive rule must replace it.
+    @IR(failOn = {IRNode.VECTOR_REINTERPRET_I})
     public static void testD64toI64(double[] input, int[] output) {
         vectorRebracket(DSPEC64, ISPEC64, input, output);
     }
@@ -490,15 +430,11 @@ public class TestVectorRebracket {
     }
 
     @Test
-    // Currently this test never runs because vectors of length 1 are not implemented.
-    // This test uses custom filtering which doesn't make it clear
-    // which tests are supposed to run in which environment.
-    // So to make it clear that this test never runs with the current implementation,
-    // we set the failOn condition to always fail because `*.` matches any IR node.
-    // JDK-8387061 plans to refactor tests like this so that filtering is based on `applyIf` rules.
-    // If vectors of length 1 are ever supported, this test will fail and the
-    // correct IR expectations will have to be defined and validated.
-    @IR(failOn = "*.")
+    // Never intrinsified: arch_supports_vector() rejects num_elem == 1 for all but
+    // Load/StoreVector, and that check is in shared code. No platform, CPU feature or flag
+    // can change it, so the rule needs no applyIf. If one lane vectors are ever supported
+    // it will fail, and a positive rule must replace it.
+    @IR(failOn = {IRNode.VECTOR_REINTERPRET_L})
     public static void testD64toL64(double[] input, long[] output) {
         vectorRebracket(DSPEC64, LSPEC64, input, output);
     }
@@ -509,15 +445,11 @@ public class TestVectorRebracket {
     }
 
     @Test
-    // Currently this test never runs because vectors of length 1 are not implemented.
-    // This test uses custom filtering which doesn't make it clear
-    // which tests are supposed to run in which environment.
-    // So to make it clear that this test never runs with the current implementation,
-    // we set the failOn condition to always fail because `*.` matches any IR node.
-    // JDK-8387061 plans to refactor tests like this so that filtering is based on `applyIf` rules.
-    // If vectors of length 1 are ever supported, this test will fail and the
-    // correct IR expectations will have to be defined and validated.
-    @IR(failOn = "*.")
+    // Never intrinsified: arch_supports_vector() rejects num_elem == 1 for all but
+    // Load/StoreVector, and that check is in shared code. No platform, CPU feature or flag
+    // can change it, so the rule needs no applyIf. If one lane vectors are ever supported
+    // it will fail, and a positive rule must replace it.
+    @IR(failOn = {IRNode.VECTOR_REINTERPRET_F})
     public static void testD64toF64(double[] input, float[] output) {
         vectorRebracket(DSPEC64, FSPEC64, input, output);
     }

@@ -76,7 +76,6 @@ public class TestVectorReinterpret {
                                         .filter(ftype -> ftype != etype)
                                         .map(ftype -> VectorSpeciesPair.makePair(VectorSpecies.of(etype, shape),
                                                 VectorSpecies.of(ftype, shape)))))
-                        .filter(p -> p.isp().length() > 1 && p.osp().length() > 1)
         );
     }
 }
