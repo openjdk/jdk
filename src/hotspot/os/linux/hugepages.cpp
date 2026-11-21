@@ -26,6 +26,7 @@
 #include "hugepages.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/os.hpp"
 #include "utilities/debug.hpp"
@@ -326,6 +327,11 @@ void ShmemTHPSupport::print_on(outputStream* os) {
 ExplicitHugePageSupport HugePages::_explicit_hugepage_support;
 THPSupport HugePages::_thp_support;
 ShmemTHPSupport HugePages::_shmem_thp_support;
+bool HugePages::_is_requested_on{false};
+bool HugePages::_is_requested_off{false};
+bool HugePages::_is_thp_requested_on{false};
+bool HugePages::_is_thp_requested_off{false};
+
 
 size_t HugePages::thp_pagesize_fallback() {
     // Older kernels won't publish the THP page size. Fall back to default explicit huge page size,
@@ -340,7 +346,7 @@ size_t HugePages::thp_pagesize_fallback() {
     return 2 * M;
 }
 
-void HugePages::initialize() {
+void HugePages::scan_os() {
   _explicit_hugepage_support.scan_os();
   _thp_support.scan_os();
   _shmem_thp_support.scan_os();
