@@ -263,6 +263,7 @@ static void store_barrier_buffer_add(MacroAssembler* masm,
                                      Address ref_addr,
                                      Register temp1,
                                      Register temp2,
+                                     bool is_nokeepalive,
                                      Label& slow_path) {
 
   Address buffer(Z_thread, ZThreadLocalData::store_barrier_buffer_offset());
@@ -286,9 +287,13 @@ static void store_barrier_buffer_add(MacroAssembler* masm,
   __ load_address(temp1, ref_addr);
   __ z_stg(temp1, Address(temp2, in_bytes(ZStoreBarrierEntry::p_offset())));
 
-  // Load and log the prev value
-  __ z_lg(temp1, Address(temp1, 0));
-  __ z_stg(temp1, Address(temp2, in_bytes(ZStoreBarrierEntry::prev_offset())));
+  // No-keepalive stores only need to record the field address.
+  if (is_nokeepalive) {
+    __ z_mvghi(Address(temp2, in_bytes(ZStoreBarrierEntry::prev_offset())), 0);
+  } else {
+    __ z_lg(temp1, Address(temp1, 0));
+    __ z_stg(temp1, Address(temp2, in_bytes(ZStoreBarrierEntry::prev_offset())));
+  }
 }
 
 void ZBarrierSetAssembler::store_barrier_medium(MacroAssembler* masm,
@@ -297,6 +302,7 @@ void ZBarrierSetAssembler::store_barrier_medium(MacroAssembler* masm,
                                                 Register temp2,
                                                 bool is_native,
                                                 bool is_atomic,
+                                                bool is_nokeepalive,
                                                 Label& medium_path_continuation,
                                                 Label& slow_path,
                                                 Label& slow_path_continuation) const {
@@ -333,6 +339,7 @@ void ZBarrierSetAssembler::store_barrier_medium(MacroAssembler* masm,
                              ref_addr,
                              temp1,
                              temp2,
+                             is_nokeepalive,
                              slow_path);
     __ bind(slow_path_continuation);
     __ branch_optimized(Assembler::bcondAlways, medium_path_continuation);
@@ -377,6 +384,7 @@ void ZBarrierSetAssembler::store_at(MacroAssembler* masm,
                            temp2,
                            false /* is_native */,
                            false /* is_atomic */,
+                           false /* is_nokeepalive */,
                            medium_continuation,
                            slow,
                            slow_continuation);
@@ -462,7 +470,16 @@ void ZBarrierSetAssembler::copy_store_at_slow(MacroAssembler* masm,
   if (!dest_uninitialized) {
     Label slow_path, slow_path_continuation;
     __ bind(medium_path);
-    store_barrier_medium(masm, Address(addr, 0), Z_tmp_1, Z_tmp_2, false, false, continuation, slow_path, slow_path_continuation);
+    store_barrier_medium(masm,
+                         Address(addr, 0),
+                         Z_tmp_1,
+                         Z_tmp_2,
+                         false /* is_native */,
+                         false /* is_atomic */,
+                         false /* is_nokeepalive */,
+                         continuation,
+                         slow_path,
+                         slow_path_continuation);
     __ bind(slow_path);
     {
       ZRuntimeCallSpill rcs(masm, noreg);
@@ -766,6 +783,7 @@ void ZBarrierSetAssembler::generate_c1_store_barrier_stub(LIR_Assembler* ce,
                        scratch,
                        false /* is_native */,
                        stub->is_atomic(),
+                       false /* is_nokeepalive */,
                        *stub->continuation(),
                        slow,
                        slow_continuation);
@@ -937,6 +955,7 @@ void ZBarrierSetAssembler::generate_c2_store_barrier_stub(MacroAssembler* masm, 
                        Z_R1_scratch,
                        stub->is_native(),
                        stub->is_atomic(),
+                       stub->is_nokeepalive(),
                        *stub->continuation(),
                        slow,
                        slow_continuation);
