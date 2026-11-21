@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Scope;
+import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 
@@ -40,21 +41,22 @@ import org.openjdk.jmh.annotations.Warmup;
  */
 @Warmup(iterations = 5, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
-@State(Scope.Benchmark)
+@State(Scope.Thread)
 @Fork(1)
 public class CharBufferAppend {
 
     static final int SIZE = 32768;
 
-    static String str;
-    static StringBuffer strbuf;
-    static StringBuilder strbld;
-    static CharBuffer hbDst;
-    static CharBuffer hbSrc;
-    static CharBuffer dbSrc;
-    static CharBuffer dbDst;
+    String str;
+    StringBuffer strbuf;
+    StringBuilder strbld;
+    CharBuffer hbDst;
+    CharBuffer hbSrc;
+    CharBuffer dbSrc;
+    CharBuffer dbDst;
 
-    static {
+    @Setup
+    public void setup() {
         char[] chars = new char[SIZE];
         Arrays.fill(chars, (char)27);
 
@@ -73,7 +75,7 @@ public class CharBufferAppend {
         dbSrc = ByteBuffer.allocateDirect(2*SIZE).asCharBuffer();
         dbSrc.put(chars);
         dbSrc.clear();
-    };
+    }
 
     @Benchmark
     public CharBuffer appendDirectToDirect() {
