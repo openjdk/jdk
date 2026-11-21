@@ -5,6 +5,8 @@
 #ifndef SPA_PARAM_PROPS_H
 #define SPA_PARAM_PROPS_H
 
+#include <spa/param/param.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -13,8 +15,6 @@ extern "C" {
  * \addtogroup spa_param
  * \{
  */
-
-#include <spa/param/param.h>
 
 /** properties of SPA_TYPE_OBJECT_PropInfo */
 enum spa_prop_info {
@@ -55,6 +55,9 @@ enum spa_prop {
     SPA_PROP_quality,
     SPA_PROP_bluetoothAudioCodec,
     SPA_PROP_bluetoothOffloadActive,
+    SPA_PROP_clockId,
+    SPA_PROP_clockDevice,
+    SPA_PROP_clockInterface,
 
     SPA_PROP_START_Audio    = 0x10000,    /**< audio related properties */
     SPA_PROP_waveType,

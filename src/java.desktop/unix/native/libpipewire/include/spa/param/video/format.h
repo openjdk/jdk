@@ -5,6 +5,11 @@
 #ifndef SPA_PARAM_VIDEO_FORMAT_H
 #define SPA_PARAM_VIDEO_FORMAT_H
 
+#include <spa/param/format.h>
+#include <spa/param/video/raw.h>
+#include <spa/param/video/dsp.h>
+#include <spa/param/video/encoded.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -13,11 +18,6 @@ extern "C" {
  * \addtogroup spa_param
  * \{
  */
-
-#include <spa/param/format.h>
-#include <spa/param/video/raw.h>
-#include <spa/param/video/dsp.h>
-#include <spa/param/video/encoded.h>
 
 struct spa_video_info {
     uint32_t media_type;
