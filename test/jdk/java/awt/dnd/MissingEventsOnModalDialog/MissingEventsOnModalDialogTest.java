@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  */
 
 import java.awt.Dialog;
+import java.awt.EventQueue;
 import java.awt.Frame;
 import java.awt.Point;
 import java.awt.Robot;
@@ -46,6 +47,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 /*
@@ -60,7 +62,8 @@ public class MissingEventsOnModalDialogTest {
     private static final String RUN_PROCESS = "RUN_PROCESS";
     private static final String RUN_TEST = "RUN_TEST";
     private static boolean exception = false;
-    private static volatile boolean passed = false;
+    private static final CountDownLatch CLICKED = new CountDownLatch(1);
+    private static final int CLICK_TIMEOUT_SECONDS = 5;
 
     public static void main(String[] args) throws Exception {
         String command = args.length < 1 ? RUN_TEST : args[0];
@@ -100,20 +103,18 @@ public class MissingEventsOnModalDialogTest {
         robot.mouseMove(point.x, point.y);
         robot.waitForIdle();
 
-        mouseDragAndDrop(robot, point, getCenterPoint(targetFrame));
+        try {
+            mouseDragAndDrop(robot, point, getCenterPoint(targetFrame));
 
-        long time = System.currentTimeMillis() + 2000;
-
-        while (!passed) {
-            if (time < System.currentTimeMillis()) {
-                sourceFrame.dispose();
-                targetFrame.dispose();
+            if (!CLICKED.await(CLICK_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
                 throw new RuntimeException("Mouse clicked event is lost!");
             }
-            Thread.sleep(10);
+        } finally {
+            EventQueue.invokeAndWait(() -> {
+                sourceFrame.dispose();
+                targetFrame.dispose();
+            });
         }
-        sourceFrame.dispose();
-        targetFrame.dispose();
     }
 
     private static Frame createFrame(String title, int x, int y) {
@@ -220,8 +221,8 @@ public class MissingEventsOnModalDialogTest {
 
             @Override
             public void mouseClicked(MouseEvent e) {
-                passed = true;
                 dialog.dispose();
+                CLICKED.countDown();
             }
         });
 
@@ -255,8 +256,6 @@ public class MissingEventsOnModalDialogTest {
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
         } catch (Exception e) {
             throw new RuntimeException(e);
-        } finally {
-            dialog.dispose();
         }
     }
 

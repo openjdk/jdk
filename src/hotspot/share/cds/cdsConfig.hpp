@@ -103,7 +103,7 @@ public:
   static bool check_vm_args_consistency(bool patch_mod_javabase, bool mode_flag_cmd_line) NOT_CDS_RETURN_(true);
   static const char* type_of_archive_being_loaded();
   static const char* type_of_archive_being_written();
-  static void prepare_for_dumping();
+  static void prepare_for_dumping() NOT_CDS_RETURN;
 
   static bool is_at_aot_safepoint()                          { return CDS_ONLY(_is_at_aot_safepoint) NOT_CDS(false); }
   static void set_is_at_aot_safepoint(bool value)            { CDS_ONLY(_is_at_aot_safepoint = value); }

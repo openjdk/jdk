@@ -239,6 +239,7 @@ final class SessionTicketExtension {
 
                 ByteBuffer aad = ByteBuffer.allocate(Integer.BYTES + 1);
                 aad.putInt(key.num).put(compressed);
+                aad.flip();
                 c.updateAAD(aad);
 
                 encrypted = c.doFinal(data);
@@ -281,6 +282,7 @@ final class SessionTicketExtension {
                 byte compressed = data.get();
                 ByteBuffer aad = ByteBuffer.allocate(Integer.BYTES + 1);
                 aad.putInt(keyID).put(compressed);
+                aad.flip();
                 c.updateAAD(aad);
 
                 // use getOutputSize to avoid a ShortBufferException
