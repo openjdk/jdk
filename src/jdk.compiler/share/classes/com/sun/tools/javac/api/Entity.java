@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,9 +33,9 @@ import com.sun.tools.javac.util.StringUtils;
 /**
  * Table of entities defined in HTML 5.2.
  *
- * <p> Derived from the
- * <a href="https://www.w3.org/TR/html52/syntax.html#named-character-references">Named character references</a>
- * section of the HTML 5.2 specification.
+ * <p>Derived from the
+ * <a href="https://html.spec.whatwg.org/multipage/named-characters.html#named-character-references">
+ * Named character references</a> section of the HTML Living Standard.
  *
  * <p><b>This is NOT part of any supported API.
  * If you write code that depends on this, you do so at your own
@@ -2193,7 +2193,8 @@ class Entity {
                 if (Character.isDefined(v)
                         && (!Character.isISOControl(v) || Character.isSpaceChar(v))
                         && (v < 0xd800 || v > 0xdfff)) {
-                    return String.valueOf((char) v);
+                    // Entity may represent a supplementary code point
+                    return new String(Character.toChars(v));
                 }
             } catch (NumberFormatException ex) {
                 //ignore
