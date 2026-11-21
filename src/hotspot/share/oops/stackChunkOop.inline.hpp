@@ -45,8 +45,6 @@
 #include "utilities/macros.hpp"
 #include CPU_HEADER_INLINE(stackChunkOop)
 
-DEF_HANDLE_CONSTR(stackChunk, is_stackChunk_noinline)
-
 inline stackChunkOop stackChunkOopDesc::cast(oop obj) {
   assert(obj == nullptr || obj->is_stackChunk(), "Wrong type");
   return stackChunkOop(obj);
