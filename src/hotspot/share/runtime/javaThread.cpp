@@ -408,8 +408,6 @@ JavaThread::JavaThread(MemTag mem_tag) :
   _class_to_be_initialized(nullptr),
   _class_being_initialized(nullptr),
 
-  _SleepEvent(ParkEvent::Allocate(this)),
-
 #if INCLUDE_JFR
   _last_freeze_fail_result(freeze_ok),
 #endif
@@ -451,7 +449,7 @@ void JavaThread::interrupt() {
   WINDOWS_ONLY(osthread()->set_interrupted(true);)
 
   // For Thread.sleep
-  _SleepEvent->unpark();
+  _SleepEvent.unpark();
 
   // For JSR166 LockSupport.park
   parker()->unpark();
@@ -565,10 +563,6 @@ JavaThread::~JavaThread() {
 
   // Enqueue OopHandles for release by the service thread.
   add_oop_handles_for_release();
-
-  // Return the sleep event to the free list
-  ParkEvent::Release(_SleepEvent);
-  _SleepEvent = nullptr;
 
   // Free any remaining  previous UnrollBlock
   vframeArray* old_array = vframe_array_last();
@@ -1861,7 +1855,7 @@ bool JavaThread::sleep_nanos(jlong nanos) {
   assert(this == Thread::current(),  "thread consistency check");
   assert(nanos >= 0, "nanos are in range");
 
-  ParkEvent * const slp = this->_SleepEvent;
+  ParkEvent * const slp = &this->_SleepEvent;
   // Because there can be races with thread interruption sending an unpark()
   // to the event, we explicitly reset it here to avoid an immediate return.
   // The actual interrupt state will be checked before we park().

@@ -1724,6 +1724,14 @@ PlatformEvent::PlatformEvent() {
   _nParked = 0;
 }
 
+PlatformEvent::~PlatformEvent() {
+  assert(_nParked == 0, "%d thread(s) still parked", _nParked);
+  int status = pthread_cond_destroy(_cond);
+  assert_status(status == 0, status, "cond_destroy");
+  status = pthread_mutex_destroy(_mutex);
+  assert_status(status == 0, status, "mutex_destroy");
+}
+
 void PlatformEvent::park() {       // AKA "down()"
   // Transitions for _event:
   //   -1 => -1 : illegal

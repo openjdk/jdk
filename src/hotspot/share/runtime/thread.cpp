@@ -105,14 +105,8 @@ Thread::Thread(MemTag mem_tag) {
   _hashStateZ = 0x8767;    // (int)(3579807591LL & 0xffff) ;
   _hashStateW = 273326509;
 
-  // Many of the following fields are effectively final - immutable
-  // Note that nascent threads can't use the Native Monitor-Mutex
-  // construct until the _MutexEvent is initialized ...
-  // CONSIDER: instead of using a fixed set of purpose-dedicated ParkEvents
-  // we might instead use a stack of ParkEvents that we could provision on-demand.
-  // The stack would act as a cache to avoid calls to ParkEvent::Allocate()
-  // and ::Release()
-  _ParkEvent   = ParkEvent::Allocate(this);
+  // Create a new ParkEvent and set its usage counter to one.
+  _ParkEvent = new ParkEvent();
 
 #ifdef CHECK_UNHANDLED_OOPS
   if (CheckUnhandledOops) {
@@ -288,7 +282,10 @@ Thread::~Thread() {
   delete last_handle_mark();
   assert(last_handle_mark() == nullptr, "check we have reached the end");
 
-  ParkEvent::Release(_ParkEvent);
+  // Drop the usage counter. If the _ParkEvent is currently retained
+  // by an unparker, its destruction will be postponed until the
+  // usage counter drops to zero.
+  _ParkEvent->drop_usage();
   // Set to null as a termination indicator for has_terminated().
   AtomicAccess::store(&_ParkEvent, (ParkEvent*)nullptr);
 

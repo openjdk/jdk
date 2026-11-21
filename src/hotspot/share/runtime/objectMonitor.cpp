@@ -1520,22 +1520,27 @@ void ObjectMonitor::exit_epilog(JavaThread* current, ObjectWaiter* Wakee) {
   assert(has_owner(current), "invariant");
 
   // Exit protocol:
-  // 1. ST _succ = wakee
-  // 2. membar #loadstore|#storestore;
-  // 2. ST _owner = nullptr
-  // 3. unpark(wakee)
+  // 1. retain usage of wakee's park event
+  // 2. ST _succ = wakee
+  // 3. membar #loadstore|#storestore;
+  // 4. ST _owner = nullptr
+  // 5. unpark(wakee)
+  // 6. drop usage of wakee's park event
 
   oop vthread = nullptr;
   ParkEvent * Trigger;
   if (!Wakee->is_vthread()) {
     JavaThread* t = Wakee->thread();
     assert(t != nullptr, "");
-    Trigger = t->_ParkEvent;
+    // Make sure we keep the park event alive (retain usage) until
+    // after we unpark a platform thread.
+    Trigger = t->_ParkEvent->retain_usage();
     set_successor(t);
   } else {
     assert_not_at_safepoint();
     vthread = Wakee->vthread();
     assert(vthread != nullptr, "");
+    // The vthread park event is immortal, so no need to retain its usage.
     Trigger = ObjectMonitor::vthread_unparker_ParkEvent();
     set_successor(vthread);
   }
@@ -1553,10 +1558,12 @@ void ObjectMonitor::exit_epilog(JavaThread* current, ObjectWaiter* Wakee) {
   DTRACE_MONITOR_PROBE(contended__exit, this, object(), current);
 
   if (vthread == nullptr) {
-    // Platform thread case.
-    Trigger->unpark();
+    // Unpark a platform thread. Dropping the usage means that we no
+    // longer need to keep the park event live.
+    Trigger->unpark_and_drop_usage();
   } else if (java_lang_VirtualThread::set_onWaitingList(vthread, vthread_list_head())) {
-    // Virtual thread case.
+    // Unpark a virtual thread. No need to drop the usage, since the
+    // park event for virtual threads is immortal.
     Trigger->unpark();
   }
 }
@@ -2570,7 +2577,7 @@ void ObjectMonitor::Initialize() {
 // We can't call this during Initialize() because BarrierSet needs to be set.
 void ObjectMonitor::Initialize2() {
   _vthread_list_head = OopHandle(JavaThread::thread_oop_storage(), nullptr);
-  _vthread_unparker_ParkEvent = ParkEvent::Allocate(nullptr);
+  _vthread_unparker_ParkEvent = new ParkEvent();
 }
 
 void ObjectMonitor::print_on(outputStream* st) const {
