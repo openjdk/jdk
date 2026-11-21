@@ -45,7 +45,16 @@ public final class LinuxAARCH64CFrame extends DwarfCFrame {
       Address fp = getreg.apply(AARCH64ThreadContext.FP);
       Address lr = getreg.apply(AARCH64ThreadContext.LR);
       Address cfa = null;
-      DwarfParser dwarf = createDwarfParser(linuxDbg, pc);
+      DwarfParser dwarf;
+      try {
+        dwarf = createDwarfParser(linuxDbg, pc);
+      } catch (DebuggerException e) {
+        if (linuxDbg.findLibPtrByAddress(pc) != null) {
+          // Return the frame when the PC is within a known native library
+          return new LinuxAARCH64CFrame(linuxDbg, sp, fp, cfa, pc, null /* no DWARF */);
+        }
+        throw e;
+      }
 
       if (dwarf != null) { // Native frame
         cfa = getreg.apply(dwarf.getCFARegister())
