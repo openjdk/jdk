@@ -425,6 +425,10 @@ address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state, i
   return entry;
 }
 
+address TemplateInterpreterGenerator::generate_cont_popframe_reexecute_entry() {
+  return nullptr;
+}
+
 address TemplateInterpreterGenerator::generate_result_handler_for(BasicType type) {
   address entry = __ pc();
 

@@ -99,6 +99,11 @@
            "do not map the archive")                                        \
            range(0, 2)                                                      \
                                                                             \
+  product(bool, AOTStressArchiveUnmapping, false, DIAGNOSTIC,               \
+           "Iff ArchiveRelocationMode is 1, always map the archive at  "    \
+           "the preferred address, unmap it, and then map at alternative "  \
+           "address")                                                       \
+                                                                            \
   /*========== New "AOT" flags =========================================*/  \
   /* The following 3 flags are aliases of -Xshare:dump,                 */  \
   /* -XX:SharedArchiveFile=..., etc. See CDSConfig::check_flag_aliases()*/  \
@@ -176,6 +181,11 @@
                                                                             \
   develop(bool, TestAOTAdapterLinkFailure, false,                           \
           "Test failure of adapter linking when loading from AOT cache.")   \
+                                                                            \
+  product(bool, UseAOTCacheCpuFeaturesOnly, false,                          \
+          "Enable only the cpu features recorded in the AOTCache if the "   \
+          "runtime cpu features are a super set of the cached features")    \
+
 
 // end of CDS_FLAGS
 

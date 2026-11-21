@@ -22,7 +22,7 @@ package com.sun.org.apache.bcel.internal.generic;
 import com.sun.org.apache.bcel.internal.Const;
 
 /**
- * Instances of this class may be used, e.g., to generate typed versions of instructions. Its main purpose is to be used
+ * Instances of this class may be used, for example, to generate typed versions of instructions. Its main purpose is to be used
  * as the byte code generating backend of a compiler. You can subclass it to add your own create methods.
  * <p>
  * Note: The static createXXX methods return singleton instances from the {@link InstructionConst} class.
@@ -71,7 +71,10 @@ public class InstructionFactory {
             new MethodObject(FQCN_STRING_BUFFER, APPEND, Type.STRINGBUFFER, new Type[] { Type.LONG })};
 
     /**
-     * @param type type of elements of array, i.e., array.getElementType()
+     * Creates an array load instruction for the given type.
+     *
+     * @param type type of elements of array, that is, array.getElementType().
+     * @return The array load instruction.
      */
     public static ArrayInstruction createArrayLoad(final Type type) {
         switch (type.getType()) {
@@ -99,7 +102,10 @@ public class InstructionFactory {
     }
 
     /**
-     * @param type type of elements of array, i.e., array.getElementType()
+     * Creates an array store instruction for the given type.
+     *
+     * @param type type of elements of array, that is, array.getElementType().
+     * @return The array store instruction.
      */
     public static ArrayInstruction createArrayStore(final Type type) {
         switch (type.getType()) {
@@ -190,10 +196,10 @@ public class InstructionFactory {
     /**
      * Create an invokedynamic instruction.
      *
-     * @param bootstrap_index index into the bootstrap_methods array
-     * @param name name of the called method
-     * @param ret_type return type of method
-     * @param argTypes argument types of method
+     * @param bootstrap_index index into the bootstrap_methods array.
+     * @param name name of the called method.
+     * @param ret_type return type of method.
+     * @param argTypes argument types of method.
      * @see Const
      */
 
@@ -238,6 +244,8 @@ public class InstructionFactory {
      * Create binary operation for simple basic types, such as int and float.
      *
      * @param op operation, such as "+", "*", "&lt;&lt;", etc.
+     * @param type The operand type.
+     * @return The binary arithmetic instruction.
      */
     public static ArithmeticInstruction createBinaryOperation(final String op, final Type type) {
         final char first = op.charAt(0);
@@ -261,6 +269,10 @@ public class InstructionFactory {
     /**
      * Create branch instruction by given opcode, except LOOKUPSWITCH and TABLESWITCH. For those you should use the SWITCH
      * compound instruction.
+     *
+     * @param opcode The branch opcode.
+     * @param target The target instruction handle.
+     * @return The branch instruction.
      */
     public static BranchInstruction createBranchInstruction(final short opcode, final InstructionHandle target) {
         switch (opcode) {
@@ -310,28 +322,41 @@ public class InstructionFactory {
     }
 
     /**
-     * @param size size of operand, either 1 (int, e.g.) or 2 (double)
+     * Creates a DUP instruction.
+     *
+     * @param size size of operand, either 1 (int, for example) or 2 (double).
+     * @return The DUP instruction.
      */
     public static StackInstruction createDup(final int size) {
         return size == 2 ? InstructionConst.DUP2 : InstructionConst.DUP;
     }
 
     /**
-     * @param size size of operand, either 1 (int, e.g.) or 2 (double)
+     * Creates a DUP_X1 instruction.
+     *
+     * @param size size of operand, either 1 (int, for example) or 2 (double).
+     * @return The DUP instruction.
      */
     public static StackInstruction createDup_1(final int size) {
         return size == 2 ? InstructionConst.DUP2_X1 : InstructionConst.DUP_X1;
     }
 
     /**
-     * @param size size of operand, either 1 (int, e.g.) or 2 (double)
+     * Creates a DUP_X2 instruction.
+     *
+     * @param size size of operand, either 1 (int, for example) or 2 (double).
+     * @return The DUP instruction.
      */
     public static StackInstruction createDup_2(final int size) {
         return size == 2 ? InstructionConst.DUP2_X2 : InstructionConst.DUP_X2;
     }
 
     /**
-     * @param index index of local variable
+     * Creates a load instruction for the given type.
+     *
+     * @param type The variable type.
+     * @param index index of local variable.
+     * @return The load instruction.
      */
     public static LocalVariableInstruction createLoad(final Type type, final int index) {
         switch (type.getType()) {
@@ -356,7 +381,10 @@ public class InstructionFactory {
     }
 
     /**
-     * Create "null" value for reference types, 0 for basic types like int
+     * Create "null" value for reference types, 0 for basic types like int.
+     *
+     * @param type The type.
+     * @return The null or zero instruction.
      */
     public static Instruction createNull(final Type type) {
         switch (type.getType()) {
@@ -383,14 +411,20 @@ public class InstructionFactory {
     }
 
     /**
-     * @param size size of operand, either 1 (int, e.g.) or 2 (double)
+     * Creates a pop instruction.
+     *
+     * @param size size of operand, either 1 (int, for example) or 2 (double).
+     * @return The pop instruction.
      */
     public static StackInstruction createPop(final int size) {
         return size == 2 ? InstructionConst.POP2 : InstructionConst.POP;
     }
 
     /**
-     * Create typed return
+     * Create typed return.
+     *
+     * @param type The return type.
+     * @return The return instruction.
      */
     public static ReturnInstruction createReturn(final Type type) {
         switch (type.getType()) {
@@ -417,7 +451,11 @@ public class InstructionFactory {
     }
 
     /**
-     * @param index index of local variable
+     * Creates a store instruction.
+     *
+     * @param type The variable type.
+     * @param index index of local variable.
+     * @return The store instruction.
      */
     public static LocalVariableInstruction createStore(final Type type, final int index) {
         switch (type.getType()) {
@@ -442,7 +480,9 @@ public class InstructionFactory {
     }
 
     /**
-     * Create reference to 'this'
+     * Create reference to 'this'.
+     *
+     * @return reference to 'this'.
      */
     public static Instruction createThis() {
         return new ALOAD(0);
@@ -465,24 +505,40 @@ public class InstructionFactory {
     protected ConstantPoolGen cp;
 
     /**
-     * Initialize with ClassGen object
+     * Initialize with ClassGen object.
+     *
+     * @param cg The class generator.
      */
     public InstructionFactory(final ClassGen cg) {
         this(cg, cg.getConstantPool());
     }
 
+    /**
+     * Constructs an InstructionFactory.
+     *
+     * @param cg The class generator.
+     * @param cp The constant pool generator.
+     */
     public InstructionFactory(final ClassGen cg, final ConstantPoolGen cp) {
         this.cg = cg;
         this.cp = cp;
     }
 
     /**
-     * Initialize just with ConstantPoolGen object
+     * Initialize just with ConstantPoolGen object.
+     *
+     * @param cp The constant pool generator.
      */
     public InstructionFactory(final ConstantPoolGen cp) {
         this(null, cp);
     }
 
+    /**
+     * Creates an append instruction for the given type.
+     *
+     * @param type The type to append.
+     * @return The append instruction.
+     */
     public Instruction createAppend(final Type type) {
         final byte t = type.getType();
         if (isString(type)) {
@@ -507,8 +563,12 @@ public class InstructionFactory {
     }
 
     /**
-     * Create conversion operation for two stack operands, this may be an I2C, instruction, e.g., if the operands are basic
+     * Create conversion operation for two stack operands, this may be an I2C, instruction, for example, if the operands are basic
      * types and CHECKCAST if they are reference types.
+     *
+     * @param srcType The source type.
+     * @param destType The destination type.
+     * @return The conversion instruction.
      */
     public Instruction createCast(final Type srcType, final Type destType) {
         if (srcType instanceof BasicType && destType instanceof BasicType) {
@@ -520,7 +580,7 @@ public class InstructionFactory {
             final String name = "com.sun.org.apache.bcel.internal.generic." + SHORT_NAMES[src - Const.T_CHAR] + "2" + SHORT_NAMES[dest - Const.T_CHAR];
             Instruction i = null;
             try {
-                i = (Instruction) Class.forName(name).getDeclaredConstructor().newInstance();;
+                i = (Instruction) Class.forName(name).getConstructor().newInstance();
             } catch (final Exception e) {
                 throw new IllegalArgumentException("Could not find instruction: " + name, e);
             }
@@ -535,6 +595,12 @@ public class InstructionFactory {
         return new CHECKCAST(cp.addClass(((ObjectType) destType).getClassName()));
     }
 
+    /**
+     * Creates a CHECKCAST instruction.
+     *
+     * @param t The reference type.
+     * @return The CHECKCAST instruction.
+     */
     public CHECKCAST createCheckCast(final ReferenceType t) {
         if (t instanceof ArrayType) {
             return new CHECKCAST(cp.addArrayClass((ArrayType) t));
@@ -545,10 +611,11 @@ public class InstructionFactory {
     /**
      * Uses PUSH to push a constant value onto the stack.
      *
-     * @param value must be of type Number, Boolean, Character or String
+     * @param value must be of type Number, Boolean, Character or String.
+     * @return The instruction.
      */
     public Instruction createConstant(final Object value) {
-        PUSH push;
+        final PUSH push;
         if (value instanceof Number) {
             push = new PUSH(cp, (Number) value);
         } else if (value instanceof String) {
@@ -566,16 +633,16 @@ public class InstructionFactory {
     /**
      * Create a field instruction.
      *
-     * @param className name of the accessed class
-     * @param name name of the referenced field
-     * @param type type of field
-     * @param kind how to access, i.e., GETFIELD, PUTFIELD, GETSTATIC, PUTSTATIC
+     * @param className class name containing the field.
+     * @param name name of the referenced field.
+     * @param type type of field.
+     * @param kind how to access, that is, GETFIELD, PUTFIELD, GETSTATIC, PUTSTATIC.
+     * @return A field instruction.
      * @see Const
      */
     public FieldInstruction createFieldAccess(final String className, final String name, final Type type, final short kind) {
-        int index;
         final String signature = type.getSignature();
-        index = cp.addFieldref(className, name, signature);
+        final int index = cp.addFieldref(className, name, signature);
         switch (kind) {
         case Const.GETFIELD:
             return new GETFIELD(index);
@@ -590,14 +657,36 @@ public class InstructionFactory {
         }
     }
 
+    /**
+     * Creates a GETFIELD instruction.
+     *
+     * @param className The class name.
+     * @param name The field name.
+     * @param t The field type.
+     * @return The GETFIELD instruction.
+     */
     public GETFIELD createGetField(final String className, final String name, final Type t) {
         return new GETFIELD(cp.addFieldref(className, name, t.getSignature()));
     }
 
+    /**
+     * Creates a GETSTATIC instruction.
+     *
+     * @param className The class name.
+     * @param name The field name.
+     * @param t The field type.
+     * @return The GETSTATIC instruction.
+     */
     public GETSTATIC createGetStatic(final String className, final String name, final Type t) {
         return new GETSTATIC(cp.addFieldref(className, name, t.getSignature()));
     }
 
+    /**
+     * Creates an INSTANCEOF instruction.
+     *
+     * @param t The reference type.
+     * @return The INSTANCEOF instruction.
+     */
     public INSTANCEOF createInstanceOf(final ReferenceType t) {
         if (t instanceof ArrayType) {
             return new INSTANCEOF(cp.addArrayClass((ArrayType) t));
@@ -612,11 +701,12 @@ public class InstructionFactory {
     /**
      * Create an invoke instruction. (Except for invokedynamic.)
      *
-     * @param className name of the called class
-     * @param name name of the called method
-     * @param retType return type of method
-     * @param argTypes argument types of method
-     * @param kind how to invoke, i.e., INVOKEINTERFACE, INVOKESTATIC, INVOKEVIRTUAL, or INVOKESPECIAL
+     * @param className name of the called class.
+     * @param name name of the called method.
+     * @param retType return type of method.
+     * @param argTypes argument types of method.
+     * @param kind how to invoke, that is, INVOKEINTERFACE, INVOKESTATIC, INVOKEVIRTUAL, or INVOKESPECIAL.
+     * @return The invoke instruction.
      * @see Const
      */
     public InvokeInstruction createInvoke(final String className, final String name, final Type retType, final Type[] argTypes, final short kind) {
@@ -626,12 +716,12 @@ public class InstructionFactory {
     /**
      * Create an invoke instruction. (Except for invokedynamic.)
      *
-     * @param className name of the called class
-     * @param name name of the called method
-     * @param retType return type of method
-     * @param argTypes argument types of method
-     * @param kind how to invoke: INVOKEINTERFACE, INVOKESTATIC, INVOKEVIRTUAL, or INVOKESPECIAL
-     * @param useInterface force use of InterfaceMethodref
+     * @param className name of the called class.
+     * @param name name of the called method.
+     * @param retType return type of method.
+     * @param argTypes argument types of method.
+     * @param kind how to invoke: INVOKEINTERFACE, INVOKESTATIC, INVOKEVIRTUAL, or INVOKESPECIAL.
+     * @param useInterface force use of InterfaceMethodref.
      * @return A new InvokeInstruction.
      * @since 6.5.0
      */
@@ -641,7 +731,7 @@ public class InstructionFactory {
             && kind != Const.INVOKEDYNAMIC) {
             throw new IllegalArgumentException("Unknown invoke kind: " + kind);
         }
-        int index;
+        final int index;
         int nargs = 0;
         final String signature = Type.getMethodSignature(retType, argTypes);
         if (argTypes != null) {
@@ -671,10 +761,22 @@ public class InstructionFactory {
         }
     }
 
+    /**
+     * Creates a NEW instruction.
+     *
+     * @param t The object type.
+     * @return The NEW instruction.
+     */
     public NEW createNew(final ObjectType t) {
         return new NEW(cp.addClass(t));
     }
 
+    /**
+     * Creates a NEW instruction.
+     *
+     * @param s The class name.
+     * @return The NEW instruction.
+     */
     public NEW createNew(final String s) {
         return createNew(ObjectType.getInstance(s));
     }
@@ -682,7 +784,9 @@ public class InstructionFactory {
     /**
      * Create new array of given size and type.
      *
-     * @return an instruction that creates the corresponding array at runtime, i.e. is an AllocationInstruction
+     * @param t The array element type.
+     * @param dim The array dimensions.
+     * @return An instruction that creates the corresponding array at runtime, for example is an AllocationInstruction.
      */
     public Instruction createNewArray(final Type t, final short dim) {
         if (dim == 1) {
@@ -694,7 +798,7 @@ public class InstructionFactory {
             }
             return new NEWARRAY(t.getType());
         }
-        ArrayType at;
+        final ArrayType at;
         if (t instanceof ArrayType) {
             at = (ArrayType) t;
         } else {
@@ -706,7 +810,8 @@ public class InstructionFactory {
     /**
      * Create a call to the most popular System.out.println() method.
      *
-     * @param s the string to print
+     * @param s The string to print.
+     * @return The instruction list.
      */
     public InstructionList createPrintln(final String s) {
         final InstructionList il = new InstructionList();
@@ -717,26 +822,62 @@ public class InstructionFactory {
         return il;
     }
 
+    /**
+     * Creates a PUTFIELD instruction.
+     *
+     * @param className The class name.
+     * @param name The field name.
+     * @param t The field type.
+     * @return The PUTFIELD instruction.
+     */
     public PUTFIELD createPutField(final String className, final String name, final Type t) {
         return new PUTFIELD(cp.addFieldref(className, name, t.getSignature()));
     }
 
+    /**
+     * Creates a PUTSTATIC instruction.
+     *
+     * @param className The class name.
+     * @param name The field name.
+     * @param t The field type.
+     * @return The PUTSTATIC instruction.
+     */
     public PUTSTATIC createPutStatic(final String className, final String name, final Type t) {
         return new PUTSTATIC(cp.addFieldref(className, name, t.getSignature()));
     }
 
+    /**
+     * Gets the class generator.
+     *
+     * @return The class generator.
+     */
     public ClassGen getClassGen() {
         return cg;
     }
 
+    /**
+     * Gets the constant pool generator.
+     *
+     * @return The constant pool generator.
+     */
     public ConstantPoolGen getConstantPool() {
         return cp;
     }
 
+    /**
+     * Sets the class generator.
+     *
+     * @param c The class generator.
+     */
     public void setClassGen(final ClassGen c) {
         cg = c;
     }
 
+    /**
+     * Sets the constant pool generator.
+     *
+     * @param c The constant pool generator.
+     */
     public void setConstantPool(final ConstantPoolGen c) {
         cp = c;
     }

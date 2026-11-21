@@ -38,13 +38,10 @@ public:
 
   bool should_start_gc() override;
 
+protected:
   void choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
                                              RegionData* data, size_t size,
                                              size_t free) override;
-
-  const char* name() override     { return "Static"; }
-  bool is_diagnostic() override   { return false; }
-  bool is_experimental() override { return false; }
 };
 
 #endif // SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHSTATICHEURISTICS_HPP

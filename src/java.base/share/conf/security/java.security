@@ -490,6 +490,39 @@ sun.security.krb5.disableReferrals=false
 sun.security.krb5.maxReferrals=5
 
 #
+# Policy for Kerberos service transited field checking:
+#
+# In cross-realm authentication, if the service ticket includes a non-empty
+# transited field but the ticket flags do not have TRANSIT-POLICY-CHECKED set,
+# the application server should perform the transited-realm checks itself.
+# This is required in Section 2.7 of RFC 4120.
+#
+# This property determines whether the server performs the transited-realm
+# check when the service ticket does not have the TRANSIT-POLICY-CHECKED flag
+# set. If the value is set to "true", the JDK performs the check when
+# GSSContext.acceptSecContext is called to process the incoming context-
+# establishment token, which contains the service ticket.
+#
+# The check uses the explicit paths configured in the [capaths] section of
+# krb5.conf, or if that is not configured, uses an implicit hierarchical
+# relationship between realm names. If any of the realms encoded in the
+# transited field are not allowed, the context establishment will fail.
+# If the value is set to "false", no check is performed. The default value
+# of this property is "true".
+#
+# This property should be used at your own risk.
+#
+# If a system property of the same name is also specified, it supersedes the
+# security property value defined here.
+#
+# Note: This property is currently used by the Java Kerberos GSS-API mechanism
+# of the JDK Reference implementation. An application using native GSS-API
+# does not use this property; instead it follows the policy of the underlying
+# native GSS library. Support for this property is not guaranteed in other
+# Java SE implementations.
+sun.security.krb5.acceptor.checkTransitedPolicy = true
+
+#
 # This property contains a list of disabled EC Named Curves that can be included
 # in the jdk.[tls|certpath|jar].disabledAlgorithms properties.  To include this
 # list in any of the disabledAlgorithms properties, add the property name as
