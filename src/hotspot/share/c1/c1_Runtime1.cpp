@@ -1257,7 +1257,7 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* current, StubId stub_id ))
           Klass* ek = caller_method->constants()->klass_at(anew.index(), CHECK);
           k = ek->array_klass(CHECK);
           if (k->is_unrefined_objArray_klass()) {
-            k = ObjArrayKlass::cast(k)->klass_with_properties(ArrayProperties::Default(), THREAD);
+            k = ObjArrayKlass::klass_with_properties(ek, ArrayProperties::Default(), THREAD);
           }
           if (k->is_flatArray_klass()) {
             deoptimize_for_flat = true;
