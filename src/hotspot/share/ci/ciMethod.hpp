@@ -367,6 +367,10 @@ class ciMethod : public ciMetadata {
   bool is_unboxing_method() const;
   bool is_object_constructor() const;
   bool is_vector_method() const;
+  // True if a Vector API payload type (jdk.internal.vm.vector.VectorPayload
+  // subclass, i.e. a vector or a mask) is the return type or a declared
+  // parameter type of this method.
+  bool has_vector_payload_in_signature() const;
   bool is_scoped() const;
   bool is_old() const;
 

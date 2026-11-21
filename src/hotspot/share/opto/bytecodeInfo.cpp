@@ -112,6 +112,21 @@ static bool is_unboxing_method(ciMethod* callee_method, Compile* C) {
   return C->eliminate_boxing() && callee_method->is_unboxing_method();
 }
 
+/**
+ *  A Vector API value that crosses a method boundary C2 does not inline is
+ *  materialized on the heap: the callee is compiled separately, so the value
+ *  cannot stay in a SIMD register across the boundary. This holds for a vector
+ *  passed as an argument and for a vector returned by the callee. Inlining lets
+ *  the existing vector scalar-replacement machinery eliminate that materialization,
+ *  which is vector-specific (an equivalent plain-object value is not scalar
+ *  replaced). Such callees are therefore exempted from the bytecode-size inlining
+ *  heuristics; they remain bounded by the graph-growth limits that apply to every
+ *  inlined method.
+ */
+static bool has_vector_payload_in_signature(ciMethod* callee_method) {
+  return EnableVectorSupport && callee_method->has_vector_payload_in_signature();
+}
+
 // positive filter: should callee be inlined?
 bool InlineTree::should_inline(ciMethod* callee_method, ciMethod* caller_method,
                                JVMState* caller_jvms, bool& should_delay, ciCallProfile& profile) {
@@ -167,6 +182,18 @@ bool InlineTree::should_inline(ciMethod* callee_method, ciMethod* caller_method,
   if ((freq >= InlineFrequencyRatio) ||
       is_unboxing_method(callee_method, C) ||
       is_init_with_ea(callee_method, caller_method, C)) {
+
+    // A hot callee with a Vector API payload in its signature (argument or
+    // return) must not be rejected on bytecode size: inlining is what lets the
+    // vector scalar-replacement machinery remove the boundary materialization.
+    // See has_vector_payload_in_signature().
+    if (has_vector_payload_in_signature(callee_method)) {
+      if (TraceFrequencyInlining) {
+        outputStream* stream = C->inline_printer()->record(callee_method, caller_jvms, InliningResult::SUCCESS);
+        stream->print("Inlined vector-signature method (size=%d):", size);
+      }
+      return true;
+    }
 
     max_inline_size = C->freq_inline_size();
     if (size <= max_inline_size && TraceFrequencyInlining) {
@@ -272,7 +299,8 @@ bool InlineTree::should_not_inline(ciMethod* callee_method, ciMethod* caller_met
   }
 
   if (callee_method->has_compiled_code() &&
-      callee_method->inline_instructions_size() > InlineSmallCode) {
+      callee_method->inline_instructions_size() > InlineSmallCode &&
+      !has_vector_payload_in_signature(callee_method)) {
     set_msg("already compiled into a big method");
     return true;
   }
