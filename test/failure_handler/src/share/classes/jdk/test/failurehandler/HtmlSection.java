@@ -77,6 +77,14 @@ public class HtmlSection {
         }
     }
 
+    /**
+     * Records ids that are already present in the output file, so ids issued
+     * by this root never repeat them. Root section only.
+     */
+    void preregisterIds(java.util.Collection<String> ids) {
+        sectionIds.addAll(ids);
+    }
+
     public HtmlSection createChildren(String section) {
         if (child != null) {
             if (child.name.equals(section)) {
