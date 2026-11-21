@@ -38,6 +38,11 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import jdk.internal.access.JavaUtilLoggingAccess;
+import jdk.internal.access.SharedSecrets;
+import jdk.internal.logger.dynamic.DormantLogger;
+import sun.util.logging.PlatformLogger;
 import sun.util.logging.internal.LoggingProviderImpl;
 import static jdk.internal.logger.DefaultLoggerFinder.isSystem;
 
@@ -183,6 +188,7 @@ public class LogManager {
     private volatile int globalHandlersState; // = STATE_INITIALIZED;
     // A concurrency lock for reset(), readConfiguration() and Cleaner.
     private final ReentrantLock configurationLock = new ReentrantLock();
+    private static final JavaUtilLoggingAccess jla = setupAccess();
 
     // This list contains the loggers for which some handlers have been
     // explicitly configured in the configuration file.
@@ -242,9 +248,118 @@ public class LogManager {
         if (mgr == null) {
             mgr = new LogManager();
         }
+        SharedSecrets.setJavaUtilLoggingAccess(jla);
         return mgr;
     }
 
+    private static JavaUtilLoggingAccess setupAccess() {
+        return new JavaUtilLoggingAccess() {
+            @Override
+            public void setLevel(String loggerName, String levelName) {
+                Logger logger = Logger.getLogger(loggerName);
+                Level level = Level.parse(levelName);
+                configureLogger(logger, level);
+                DormantLogger.notifyLevelChange(loggerName);
+            }
+            @Override
+            public void removeDormantLoggerHandlers(String loggerName) {
+                Logger logger = getLogManager().getLogger(loggerName);
+                if (logger != null) {
+                    LogManager.removeDormantLoggerHandlers(logger);
+                }
+            }
+            @Override
+            public PlatformLogger.Level getLevel(String loggerName) {
+                Level level = Logger.getLogger(loggerName).getLevel();
+                if (level == null) {
+                    // default level of dormant logger
+                    return PlatformLogger.Level.OFF;
+                }
+                return PlatformLogger.Level.valueOf(level.intValue());
+            }
+        };
+    }
+
+    /**
+     * Configures a logger. If no suitable Handler exists in the hierarchy,
+     * a new custom ConsoleHandler is added. The logger's own level is set.
+     * Switching OFF removes only handlers installed by Dormant Logger.
+     */
+    private static void configureLogger(Logger logger, Level level) {
+        Level maxHandlerLevel = Level.OFF;
+        // configure handler if logging requested
+        if (level != Level.OFF) {
+            List<Handler> handlers = getAllHandlersInHierarchy(logger);
+            boolean suitableHandlerExists = false;
+            for (Handler handler : handlers) {
+                if (handler.getLevel().intValue() <= level.intValue()) {
+                    suitableHandlerExists = true;
+                    break;
+                } else if (handler.getLevel().intValue()
+                        < maxHandlerLevel.intValue()) {
+                    maxHandlerLevel = handler.getLevel();
+                }
+            }
+
+            if (!suitableHandlerExists) {
+                // avoid double logging on backend. We may be configuring
+                // a Handler to manage verbose logs even though another
+                // Handler may be handling e.g. INFO level
+                // Use custom Handler for this purpose
+                ConsoleHandler handler = new DormantLoggerHandler(maxHandlerLevel);
+                handler.setLevel(Level.ALL);
+                logger.addHandler(handler);
+            }
+        }
+        logger.setLevel(level);
+        if (level == Level.OFF) {
+            removeDormantLoggerHandlers(logger);
+        }
+    }
+
+    private static void removeDormantLoggerHandlers(Logger logger) {
+        for (Handler handler : logger.getHandlers()) {
+            if (handler instanceof DormantLoggerHandler) {
+                logger.removeHandler(handler);
+                handler.close();
+            }
+        }
+    }
+
+    // A Handler which won't publish LogRecords if it knows of
+    // another Handler configured to handle such LogRecords
+    private static final class DormantLoggerHandler extends ConsoleHandler {
+        final Level otherHandlerLevel;
+
+        DormantLoggerHandler(Level l) {
+            this.otherHandlerLevel = l;
+        }
+
+        @Override
+        public void publish(LogRecord record) {
+            if (record.getLevel().intValue() < otherHandlerLevel.intValue()) {
+                super.publish(record);
+                flush();
+            }
+        }
+    }
+
+    /**
+     * Returns all handlers up the logger hierarchy, stopping at useParentHandlers=false.
+     */
+    private static List<Handler> getAllHandlersInHierarchy(Logger logger) {
+        List<Handler> handlers = new ArrayList<>();
+        while (logger != null) {
+            for (Handler handler : logger.getHandlers()) {
+                handlers.add(handler);
+            }
+            if (!logger.getUseParentHandlers()) {
+                break;
+            }
+            logger = logger.getParent();
+        }
+        return handlers;
+    }
 
     // This private class is used as a shutdown hook.
     // It does a "reset" to close all open handlers.

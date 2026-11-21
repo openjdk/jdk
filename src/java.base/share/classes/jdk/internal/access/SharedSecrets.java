@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,6 +97,7 @@ public class SharedSecrets {
     @Stable private static JavaUtilCollectionAccess javaUtilCollectionAccess;
     @Stable private static JavaUtilConcurrentTLRAccess javaUtilConcurrentTLRAccess;
     @Stable private static JavaUtilConcurrentFJPAccess javaUtilConcurrentFJPAccess;
+    @Stable private static JavaUtilLoggingAccess javaUtilLoggingAccess;
     @Stable private static JavaUtilJarAccess javaUtilJarAccess;
     @Stable private static JavaUtilZipFileAccess javaUtilZipFileAccess;
     @Stable private static JavaUtilResourceBundleAccess javaUtilResourceBundleAccess;
@@ -163,6 +164,14 @@ public class SharedSecrets {
 
     public static void setJavaUtilJarAccess(JavaUtilJarAccess access) {
         javaUtilJarAccess = access;
+    }
+
+    public static void setJavaUtilLoggingAccess(JavaUtilLoggingAccess access) {
+        javaUtilLoggingAccess = access;
+    }
+
+    public static JavaUtilLoggingAccess getJavaUtilLoggingAccess() {
+        return javaUtilLoggingAccess;
     }
 
     public static void setJavaLangAccess(JavaLangAccess jla) {

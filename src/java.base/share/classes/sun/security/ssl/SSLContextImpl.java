@@ -386,7 +386,10 @@ public abstract class SSLContextImpl extends SSLContextSpi {
         List<String> disabledSuites = null;
         List<String> unAvailableSuites = null;
 
-        if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSLCTX)) {
+        // Snapshot dynamic logging so diagnostic list allocation and use agree.
+        final boolean loggingEnabled =
+                SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSLCTX);
+        if (loggingEnabled) {
             disabledSuites = new ArrayList<>();
             unAvailableSuites = new ArrayList<>();
         }
@@ -394,8 +397,7 @@ public abstract class SSLContextImpl extends SSLContextSpi {
         if (protocols != null && (!protocols.isEmpty())) {
             for (CipherSuite suite : allowedCipherSuites) {
                 if (!suite.isAvailable()) {
-                    if (SSLLogger.isOn() &&
-                            SSLLogger.isOn(SSLLogger.Opt.SSLCTX)) {
+                    if (loggingEnabled) {
                         unAvailableSuites.add(suite.name);
                     }
                     continue;
@@ -411,8 +413,7 @@ public abstract class SSLContextImpl extends SSLContextSpi {
                             EnumSet.of(CryptoPrimitive.KEY_AGREEMENT),
                             suite.name, null)) {
                         suites.add(suite);
-                    } else if (SSLLogger.isOn() &&
-                            SSLLogger.isOn(SSLLogger.Opt.SSLCTX)) {
+                    } else if (loggingEnabled) {
                         disabledSuites.add(suite.name);
                     }
 
@@ -421,7 +422,7 @@ public abstract class SSLContextImpl extends SSLContextSpi {
             }
         }
 
-        if(SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSLCTX)) {
+        if (loggingEnabled) {
             logSuites("Ignore disabled cipher suites for protocols: ",
                     protocols, disabledSuites);
             logSuites("Ignore unavailable cipher suites for protocols: ",

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,11 @@
 
 package java.util.logging;
 
+import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
-import java.util.ArrayList;
+
+import jdk.internal.logger.dynamic.DormantLogger;
 
 /**
  * Logging is the implementation class of LoggingMXBean.
@@ -46,7 +48,6 @@ import java.util.ArrayList;
  */
 @SuppressWarnings("deprecation") // implements LoggingMXBean
 final class Logging implements LoggingMXBean {
-
     private static LogManager logManager = LogManager.getLogManager();
 
     /** Constructor of Logging which is the implementation class
@@ -104,6 +105,7 @@ final class Logging implements LoggingMXBean {
         }
 
         logger.setLevel(level);
+        DormantLogger.notifyLevelChange(loggerName);
     }
 
     @Override
