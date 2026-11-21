@@ -1197,6 +1197,11 @@ InstanceKlass* SystemDictionary::load_shared_class(InstanceKlass* ik,
   assert(AtomicAccess::add(&ik->_shared_class_load_count, 1) == 1, "shared class loaded more than once");
   Symbol* class_name = ik->name();
 
+  // Avoid loading non-boot classes when an alternate system class loader is used.
+  if (AOTSystemDictionary::is_excluded_by_alternate_system_loader(ik)) {
+    return nullptr;
+  }
+
   if (!is_shared_class_visible(class_name, ik, pkg_entry, class_loader)) {
     ik->set_shared_loading_failed();
     return nullptr;

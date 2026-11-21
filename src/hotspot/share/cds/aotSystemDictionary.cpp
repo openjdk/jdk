@@ -412,6 +412,10 @@ bool AOTSystemDictionary::check_self_exclusion(InstanceKlass* k) {
 
 const char* AOTSystemDictionary::check_self_exclusion_helper(InstanceKlass* k, bool& log_warning) {
   assert_lock_strong(DumpTimeTable_lock);
+  if (AOTSystemDictionary::is_excluded_by_alternate_system_loader(k)) {
+    return "Not defined in boot class loader";
+  }
+
   if (CDSConfig::is_dumping_with_input_archive() && k->defined_by_other_loaders()
       && k->in_aot_cache()) {
     return nullptr; // Do not exclude: unregistered classes are passed from input archive to output archive..
@@ -1041,6 +1045,13 @@ void AOTSystemDictionary::set_excluded(InstanceKlass* k) {
   assert(CDSConfig::is_dumping_archive(), "sanity");
   DumpTimeClassInfo* info = get_info(k);
   info->set_excluded();
+}
+
+bool AOTSystemDictionary::is_excluded_by_alternate_system_loader(InstanceKlass* ik) {
+  // When using an alternate system loader, there are no guarantees that
+  // the loader will delegate to built in loaders, so only the boot classes
+  // should be archived and restored.
+  return CDSConfig::using_alternate_system_loader() && !ik->defined_by_boot_loader();
 }
 
 void AOTSystemDictionary::set_class_has_failed_verification(InstanceKlass* ik) {
