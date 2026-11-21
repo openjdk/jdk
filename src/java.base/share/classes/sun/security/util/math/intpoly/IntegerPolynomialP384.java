@@ -26,6 +26,8 @@
 package sun.security.util.math.intpoly;
 
 import java.math.BigInteger;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
+
 public final class IntegerPolynomialP384 extends IntegerPolynomial {
     private static final int BITS_PER_LIMB = 55;
     private static final int NUM_LIMBS = 7;
@@ -227,6 +229,7 @@ public final class IntegerPolynomialP384 extends IntegerPolynomial {
      * @param b [in] the limb operand to multiply.
      * @param r [out] the product of the limbs operands that is fully reduced.
      */
+    @IntrinsicCandidate
     protected void mult(long[] a, long[] b, long[] r) {
         // multiplication result digits for each column
         long c0, c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13;
@@ -686,6 +689,7 @@ public final class IntegerPolynomialP384 extends IntegerPolynomial {
      * @param a [in] the limb operand to square.
      * @param r [out] the resulting square of the limb which is fully reduced.
      */
+    @IntrinsicCandidate
     protected void square(long[] a, long[] r) {
         long aa0 = a[0];
         long aa1 = a[1];
