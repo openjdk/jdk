@@ -166,6 +166,15 @@
   do_arch_entry(aarch64, final, atomic_entry_points,                    \
                 atomic_xchg_8_impl, atomic_xchg_8_impl)                 \
   do_arch_entry(aarch64, final, atomic_entry_points,                    \
+                atomic_xchg_1_relaxed_impl,                             \
+                atomic_xchg_1_relaxed_impl)                             \
+  do_arch_entry(aarch64, final, atomic_entry_points,                    \
+                atomic_xchg_4_relaxed_impl,                             \
+                atomic_xchg_4_relaxed_impl)                             \
+  do_arch_entry(aarch64, final, atomic_entry_points,                    \
+                atomic_xchg_8_relaxed_impl,                             \
+                atomic_xchg_8_relaxed_impl)                             \
+  do_arch_entry(aarch64, final, atomic_entry_points,                    \
                 atomic_cmpxchg_1_impl, atomic_cmpxchg_1_impl)           \
   do_arch_entry(aarch64, final, atomic_entry_points,                    \
                 atomic_cmpxchg_4_impl, atomic_cmpxchg_4_impl)           \

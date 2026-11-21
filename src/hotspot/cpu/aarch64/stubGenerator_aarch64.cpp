@@ -12392,10 +12392,16 @@ class StubGenerator: public StubCodeGenerator {
     __ ret(lr);
   }
 
-  void gen_swpal_entry(Assembler::operand_size size) {
+  void gen_swp_entry(Assembler::operand_size size, atomic_memory_order order) {
     Register prev = r2, addr = c_rarg0, incr = c_rarg1;
-    __ swpal(size, incr, prev, addr);
-    __ membar(Assembler::StoreStore|Assembler::StoreLoad);
+    // If not relaxed, then default to conservative.  Relaxed is the only
+    // case we use enough to be worth specializing.
+    if (order == memory_order_relaxed) {
+      __ swp(size, incr, prev, addr);
+    } else {
+      __ swpal(size, incr, prev, addr);
+      __ membar(Assembler::StoreStore|Assembler::StoreLoad);
+    }
     if (size == Assembler::xword) {
       __ mov(r0, prev);
     } else {
@@ -12423,6 +12429,9 @@ class StubGenerator: public StubCodeGenerator {
       aarch64_atomic_xchg_1_impl = (aarch64_atomic_stub_t)entries.at(idx++);
       aarch64_atomic_xchg_4_impl = (aarch64_atomic_stub_t)entries.at(idx++);
       aarch64_atomic_xchg_8_impl = (aarch64_atomic_stub_t)entries.at(idx++);
+      aarch64_atomic_xchg_1_relaxed_impl = (aarch64_atomic_stub_t)entries.at(idx++);
+      aarch64_atomic_xchg_4_relaxed_impl = (aarch64_atomic_stub_t)entries.at(idx++);
+      aarch64_atomic_xchg_8_relaxed_impl = (aarch64_atomic_stub_t)entries.at(idx++);
       aarch64_atomic_cmpxchg_1_impl = (aarch64_atomic_stub_t)entries.at(idx++);
       aarch64_atomic_cmpxchg_4_impl = (aarch64_atomic_stub_t)entries.at(idx++);
       aarch64_atomic_cmpxchg_8_impl = (aarch64_atomic_stub_t)entries.at(idx++);
@@ -12460,13 +12469,26 @@ class StubGenerator: public StubCodeGenerator {
 
     // XCHG, memory_order_conservative
     AtomicStubMark mark_xchg_1(_masm, &aarch64_atomic_xchg_1_impl);
-    gen_swpal_entry(Assembler::byte);
+    gen_swp_entry(Assembler::byte, memory_order_conservative);
 
     AtomicStubMark mark_xchg_4(_masm, &aarch64_atomic_xchg_4_impl);
-    gen_swpal_entry(Assembler::word);
+    gen_swp_entry(Assembler::word, memory_order_conservative);
 
     AtomicStubMark mark_xchg_8(_masm, &aarch64_atomic_xchg_8_impl);
-    gen_swpal_entry(Assembler::xword);
+    gen_swp_entry(Assembler::xword, memory_order_conservative);
+
+    // XCHG, memory_order_relaxed
+    AtomicStubMark mark_xchg_1_relaxed
+      (_masm, &aarch64_atomic_xchg_1_relaxed_impl);
+    gen_swp_entry(Assembler::byte, memory_order_relaxed);
+
+    AtomicStubMark mark_xchg_4_relaxed
+      (_masm, &aarch64_atomic_xchg_4_relaxed_impl);
+    gen_swp_entry(Assembler::word, memory_order_relaxed);
+
+    AtomicStubMark mark_xchg_8_relaxed
+      (_masm, &aarch64_atomic_xchg_8_relaxed_impl);
+    gen_swp_entry(Assembler::xword, memory_order_relaxed);
 
     // CAS, memory_order_conservative
     AtomicStubMark mark_cmpxchg_1(_masm, &aarch64_atomic_cmpxchg_1_impl);
@@ -12523,6 +12545,9 @@ class StubGenerator: public StubCodeGenerator {
     entries.append((address)aarch64_atomic_xchg_1_impl);
     entries.append((address)aarch64_atomic_xchg_4_impl);
     entries.append((address)aarch64_atomic_xchg_8_impl);
+    entries.append((address)aarch64_atomic_xchg_1_relaxed_impl);
+    entries.append((address)aarch64_atomic_xchg_4_relaxed_impl);
+    entries.append((address)aarch64_atomic_xchg_8_relaxed_impl);
     entries.append((address)aarch64_atomic_cmpxchg_1_impl);
     entries.append((address)aarch64_atomic_cmpxchg_4_impl);
     entries.append((address)aarch64_atomic_cmpxchg_8_impl);
@@ -14183,6 +14208,9 @@ DEFAULT_ATOMIC_OP(fetch_add, 8, _relaxed)
 DEFAULT_ATOMIC_OP(xchg, 1, )
 DEFAULT_ATOMIC_OP(xchg, 4, )
 DEFAULT_ATOMIC_OP(xchg, 8, )
+DEFAULT_ATOMIC_OP(xchg, 1, _relaxed)
+DEFAULT_ATOMIC_OP(xchg, 4, _relaxed)
+DEFAULT_ATOMIC_OP(xchg, 8, _relaxed)
 DEFAULT_ATOMIC_OP(cmpxchg, 1, )
 DEFAULT_ATOMIC_OP(cmpxchg, 4, )
 DEFAULT_ATOMIC_OP(cmpxchg, 8, )
