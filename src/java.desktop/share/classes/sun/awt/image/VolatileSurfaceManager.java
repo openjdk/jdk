@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,6 +138,10 @@ public abstract class VolatileSurfaceManager
     }
 
     public SurfaceData getPrimarySurfaceData() {
+        if (sdCurrent == null) {
+            // create backup only when it is actually needed
+            sdCurrent = getBackupSurface();
+        }
         return sdCurrent;
     }
 
@@ -352,11 +356,11 @@ public abstract class VolatileSurfaceManager
             // display mode.
             sdBackup = null;
             // Now, invalidate the old hardware-based SurfaceData
-            // Note that getBackupSurface may set sdAccel to null so we have to invalidate it before
             SurfaceData oldData = sdAccel;
             sdAccel = null;
             oldData.invalidate();
-            sdCurrent = getBackupSurface();
+            // initialize it only when it is actually needed
+            sdCurrent = null;
         }
         // Update graphicsConfig for the vImg in case it changed due to
         // this display change event
@@ -425,7 +429,7 @@ public abstract class VolatileSurfaceManager
         }
         @Override
         public boolean isAccelerated() {
-            return (sdCurrent == sdAccel);
+            return (sdAccel != null && sdCurrent == sdAccel);
         }
         @Override
         public boolean isTrueVolatile() {
