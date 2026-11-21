@@ -64,10 +64,23 @@ public sealed class ArenaImpl implements Arena {
 
         private static final long POOL_SIZE = ConfinedSegmentPool.pooledMemorySize();
 
+        // The two fields below are set together only when a platform-thread arena
+        // acquires a cached pool.
+        // The pool is detached from the cache while owned by the arena. Its original
+        // slot is normally empty at close, but another arena may have occupied it.
+        // Virtual-thread and locally allocated pools leave `poolCache` null.
+        // This field is set at most once but its content can change arbitarly so it
+        // cannot be @Stable
+        private long[] poolCache;
+        // This field is set at most once so it can be @Stable. Use a plus-one strategy
+        // to unlock stability for the common zero case.
+        @Stable
+        private byte poolCacheIndexPlusOne;
+
         // Set at most once: an arena never switches backing pools.
         @Stable
         private long pool;
-        private long poolSp;
+        private int poolSp;
 
         OfConfined(ConfinedSession session) {
             super(session);
@@ -83,7 +96,11 @@ public sealed class ArenaImpl implements Arena {
                 // Cleanup actions can access the backing region through globally scoped
                 // cleanup segments, so clear and release the pool only after they have run.
                 if (pool != 0) {
-                    ConfinedSegmentPool.release(pool, poolSp);
+                    if (poolCache != null) {
+                        ConfinedSegmentPool.releaseToRememeberedPoolSlot(poolCache, poolCacheIndexPlusOne - 1, pool, poolSp);
+                    } else {
+                        ConfinedSegmentPool.release(pool, poolSp);
+                    }
                 }
             }
         }
@@ -107,7 +124,7 @@ public sealed class ArenaImpl implements Arena {
                 session.checkValidState();
                 long pool = this.pool;
                 if (pool == 0) {
-                    pool = ConfinedSegmentPool.acquire();
+                    pool = ConfinedSegmentPool.acquire(this);
                     if (pool == 0) {
                         pool = ConfinedSegmentPool.allocateLocal();
                     }
@@ -132,10 +149,18 @@ public sealed class ArenaImpl implements Arena {
             final long start = Utils.alignUp(pool + poolSp, byteAlignment) - pool;
             if (start + byteSize <= POOL_SIZE) {
                 // The backing memory is zeroed on initial allocation and on each pool release.
-                poolSp = start + byteSize;
+                // The (int) cast is safe because the preceding bounds check limits it to
+                // "small" configured pool sizes.
+                poolSp = (int) (start + byteSize);
                 return pool + start;
             }
             return 0;
+        }
+
+        @ForceInline
+        void rememberPoolCacheAndIndex(long[] poolCache, int poolCacheIndex) {
+            this.poolCache = poolCache;
+            this.poolCacheIndexPlusOne = (byte) (poolCacheIndex + 1);
         }
 
     }
