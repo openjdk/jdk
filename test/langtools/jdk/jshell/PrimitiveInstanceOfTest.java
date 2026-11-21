@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 /*
  * @test
  * @bug 8304487 8325257
- * @summary Compiler Implementation for Primitive types in patterns, instanceof, and switch (Preview)
+ * @summary Reject withdrawn primitive instanceof constructs while retaining reference tests
  * @build KullaTesting TestingInputStream
  * @run junit PrimitiveInstanceOfTest
  */
@@ -40,8 +40,8 @@ public class PrimitiveInstanceOfTest extends KullaTesting {
     @Test
     public void testInstanceOf() {
         assertEval("int i = 42;");
-        assertEval("i instanceof Integer");
-        assertEval("i instanceof int");
+        assertEvalFail("i instanceof Integer");
+        assertEvalFail("i instanceof int");
     }
 
     @Test
@@ -54,14 +54,14 @@ public class PrimitiveInstanceOfTest extends KullaTesting {
     @Test
     public void testInstanceOfObjectToPrimitive() {
         assertEval("Object o = 1L;");
-        assertEval("o instanceof long");
+        assertEvalFail("o instanceof long");
         assertEval("o instanceof Long");
     }
 
     @Test
     public void testInstanceOfPrimitiveToPrimitiveInvokingExactnessMethod() {
         assertEval("int b = 1024;");
-        assertEval("b instanceof byte");
+        assertEvalFail("b instanceof byte");
     }
 
     @BeforeEach

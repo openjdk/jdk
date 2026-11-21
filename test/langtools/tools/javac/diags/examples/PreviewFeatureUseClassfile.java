@@ -21,29 +21,7 @@
  * questions.
  */
 
-/*
- * @test
- * @summary Verify constant locals used in binding patterns are materialized in temps
- * @enablePreview
- * @compile PrimitiveInstanceOfConstantLocalVerifyError.java
- * @compile -g:none PrimitiveInstanceOfConstantLocalVerifyError.java
- * @run main PrimitiveInstanceOfConstantLocalVerifyError
- */
+// key: compiler.warn.preview.feature.use.classfile
+// options: --enable-preview --source ${jdk.version} -Xlint:preview
 
-public class PrimitiveInstanceOfConstantLocalVerifyError {
-    void run() {
-        final int x = 42;
-        if (!(x instanceof byte b) || b != 42) {
-            throw new AssertionError("primitive pattern failed");
-        }
-
-        final String s = "hi";
-        if (!(s instanceof CharSequence cs) || !cs.toString().equals("hi")) {
-            throw new AssertionError("reference pattern failed");
-        }
-    }
-
-    public static void main(String[] args) {
-        new PrimitiveInstanceOfConstantLocalVerifyError().run();
-    }
-}
+record PreviewFeatureUseClassfile() {}

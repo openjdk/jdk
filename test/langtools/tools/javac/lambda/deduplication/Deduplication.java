@@ -175,9 +175,6 @@ public class Deduplication {
         groupEquals((Function<Object, Integer>) x -> x instanceof R(Integer i1, int i2) ? i2 : -1,
               (Function<Object, Integer>) x -> x instanceof R(Integer i1, int i2) ? i2 : -1 );
 
-        groupEquals((Function<Object, Integer>) x -> x instanceof int i2 ? i2 : -1,
-              (Function<Object, Integer>) x -> x instanceof int i2 ? i2 : -1);
-
         groupEquals((Function<Object, Integer>) x -> switch (x) { case String s -> s.length(); default -> -1; },
               (Function<Object, Integer>) x -> switch (x) { case String s -> s.length(); default -> -1; });
 
