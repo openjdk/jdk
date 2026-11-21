@@ -1123,7 +1123,7 @@ bool LoadNode::is_immutable_value(Node* adr) {
 //----------------------------LoadNode::make-----------------------------------
 // Polymorphic factory method:
 Node* LoadNode::make(PhaseGVN& gvn, Node* ctl, Node* mem, Node* adr, const TypePtr* adr_type, const Type* rt, BasicType bt, MemOrd mo,
-                     ControlDependency control_dependency, bool require_atomic_access, bool unaligned, bool mismatched, bool unsafe, uint8_t barrier_data) {
+                     ControlDependency control_dependency, bool require_atomic_access, bool unaligned, bool mismatched, bool unsafe, uint8_t barrier_data, bool special) {
   Compile* C = gvn.C;
   assert(adr->is_top() || C->get_alias_index(gvn.type(adr)->as_ptr(), true) == C->get_alias_index(adr_type, true), "adr and adr_type must agree");
 
@@ -1139,6 +1139,8 @@ Node* LoadNode::make(PhaseGVN& gvn, Node* ctl, Node* mem, Node* adr, const TypeP
           // oop will be recorded in oop map if load crosses safepoint
           rt->is_oopptr() || is_immutable_value(adr),
           "raw memory operations should have control edge");
+  assert(!special || bt == T_LONG, "Special loads are T_LONG");
+
   LoadNode* load = nullptr;
   switch (bt) {
   case T_BOOLEAN: load = new LoadUBNode(ctl, mem, adr, adr_type, rt->as_int(),  mo, control_dependency); break;
@@ -1146,10 +1148,17 @@ Node* LoadNode::make(PhaseGVN& gvn, Node* ctl, Node* mem, Node* adr, const TypeP
   case T_INT:     load = new LoadINode (ctl, mem, adr, adr_type, rt->as_int(),  mo, control_dependency); break;
   case T_CHAR:    load = new LoadUSNode(ctl, mem, adr, adr_type, rt->as_int(),  mo, control_dependency); break;
   case T_SHORT:   load = new LoadSNode (ctl, mem, adr, adr_type, rt->as_int(),  mo, control_dependency); break;
-  case T_LONG:    load = new LoadLNode (ctl, mem, adr, adr_type, rt->as_long(), mo, control_dependency, require_atomic_access); break;
   case T_FLOAT:   load = new LoadFNode (ctl, mem, adr, adr_type, rt,            mo, control_dependency); break;
   case T_DOUBLE:  load = new LoadDNode (ctl, mem, adr, adr_type, rt,            mo, control_dependency, require_atomic_access); break;
   case T_ADDRESS: load = new LoadPNode (ctl, mem, adr, adr_type, rt->as_ptr(),  mo, control_dependency); break;
+  case T_LONG: {
+    if (special) {
+      load = new LoadLSpecialNode(ctl, mem, adr, adr_type, mo, control_dependency);
+    } else {
+      load = new LoadLNode (ctl, mem, adr, adr_type, rt->as_long(), mo, control_dependency, require_atomic_access);
+    }
+    break;
+  }
   case T_ARRAY:
   case T_OBJECT:
   case T_NARROWOOP:
@@ -1887,8 +1896,10 @@ bool LoadNode::can_split_through_phi_base(PhaseGVN* phase) {
 // Split instance or boxed field load through Phi.
 Node* LoadNode::split_through_phi(PhaseGVN* phase, bool ignore_missing_instance_id) {
   if (req() > 3) {
-    assert(is_LoadVector() && Opcode() != Op_LoadVector, "load has too many inputs");
-    // LoadVector subclasses such as LoadVectorMasked have extra inputs that the logic below doesn't take into account
+    assert(Opcode() == Op_LoadLSpecial ||
+           (is_LoadVector() && Opcode() != Op_LoadVector), "load has too many inputs");
+    // LoadVector subclasses such as LoadVectorMasked and LoadLSpecial
+    // have extra inputs that the logic below doesn't take into account
     return nullptr;
   }
   Node* mem     = in(Memory);

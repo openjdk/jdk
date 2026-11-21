@@ -123,6 +123,28 @@ instruct load_N_Volatile_shenandoah(iRegNNoSp dst, indirect mem, rFlagsReg cr)
   ins_pipe(pipe_class_memory);
 %}
 
+instruct loadLSpecial_shenandoah(iRegLNoSp dst, immI off, indirect mem, iRegPNoSp tmp, rFlagsReg cr)
+%{
+  match(Set dst (LoadLSpecial mem off));
+  predicate(UseShenandoahGC);
+  effect(TEMP_DEF dst, TEMP tmp, KILL cr);
+  // The main load is a candidate to implement implicit null checks.
+  ins_is_late_expanded_null_check_candidate(true);
+  format %{ "shenandoah_load_special $dst, $mem" %}
+  ins_encode %{
+    ShenandoahBarrierSet::assembler()->load_c2_special(this, masm,
+        $dst$$Register,
+        Address($mem$$Register),
+        $off$$constant,
+        $tmp$$Register,
+        rscratch1,
+        rscratch2
+    );
+  %}
+  ins_cost(3*INSN_COST);
+  ins_pipe(pipe_class_memory);
+%}
+
 
 // ---------------------------------- STORES ---------------------------------------
 //
@@ -238,6 +260,46 @@ instruct encodePAndStoreN_Volatile_shenandoah(indirect mem, iRegP src, iRegPNoSp
       $src$$Register,          /* src_narrow  = */ false,
       $tmp$$Register, rscratch1, rscratch2,
       /* is_volatile = */ true);
+  %}
+  ins_cost(4*INSN_COST);
+  ins_pipe(pipe_class_memory);
+%}
+
+instruct storeLSpecial_both_shenandoah(indirect mem, iRegL src, iRegLNoSp tmp, rFlagsReg cr)
+%{
+  match(Set mem (StoreLSpecial mem src));
+  predicate(UseShenandoahGC);
+  effect(TEMP tmp, KILL cr);
+  format %{ "shenandoah_store_special $mem, $src\t# both oops" %}
+  ins_encode %{
+    ShenandoahBarrierSet::assembler()->store_c2_special(this, masm,
+      Address($mem$$Register),
+      $src$$Register,
+      (int)-1,
+      $tmp$$Register,
+      rscratch1,
+      rscratch2
+   );
+  %}
+  ins_cost(4*INSN_COST);
+  ins_pipe(pipe_class_memory);
+%}
+
+instruct storeLSpecial_single_shenandoah(indirect mem, iRegL src, immI off, iRegLNoSp tmp, rFlagsReg cr)
+%{
+  match(Set mem (StoreLSpecial mem (Binary src off)));
+  predicate(UseShenandoahGC);
+  effect(TEMP tmp, KILL cr);
+  format %{ "shenandoah_store_special $mem, $src\t# single oop" %}
+  ins_encode %{
+    ShenandoahBarrierSet::assembler()->store_c2_special(this, masm,
+      Address($mem$$Register),
+      $src$$Register,
+      (int)$off$$constant,
+      $tmp$$Register,
+      rscratch1,
+      rscratch2
+    );
   %}
   ins_cost(4*INSN_COST);
   ins_pipe(pipe_class_memory);
