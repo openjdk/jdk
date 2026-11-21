@@ -49,7 +49,7 @@
 #include "utilities/powerOfTwo.hpp"
 
 template <class T, class OT, ShenandoahGenerationType GENERATION, bool STRING_DEDUP>
-void ShenandoahMark::do_task(ShenandoahObjToScanQueue* q, T* cl, ShenandoahLiveData* live_data, StringDedup::Requests* const req, ShenandoahMarkTask* task, uint worker_id) {
+void ShenandoahMark::do_task(ShenandoahTaskQueue* q, T* cl, ShenandoahLiveData* live_data, StringDedup::Requests* const req, ShenandoahTask* task, uint worker_id) {
   oop obj = task->obj();
 
   shenandoah_assert_not_forwarded(nullptr, obj);
@@ -194,7 +194,7 @@ void ShenandoahMark::count_liveness(ShenandoahLiveData* live_data, oop obj, Klas
 }
 
 template <class T, class OT>
-void ShenandoahMark::do_chunked_array_start(ShenandoahObjToScanQueue* q, T* cl, oop obj, Klass* klass, bool weak) {
+void ShenandoahMark::do_chunked_array_start(ShenandoahTaskQueue* q, T* cl, oop obj, Klass* klass, bool weak) {
   assert(obj->is_refArray(), "expect ref array");
   refArrayOop array = refArrayOop(obj);
   int len = array->length();
@@ -230,21 +230,19 @@ void ShenandoahMark::do_chunked_array_start(ShenandoahObjToScanQueue* q, T* cl, 
       pow--;
       chunk = 2;
       last_idx = (1 << pow);
-      bool pushed = q->push(ShenandoahMarkTask(array, true, weak, 1, pow));
-      assert(pushed, "overflow queue should always succeed pushing");
+      q->push(ShenandoahTask(array, true, weak, 1, pow));
     }
 
-    // Split out tasks, as suggested in ShenandoahMarkTask docs. Record the last
+    // Split out tasks, as suggested in ShenandoahTask docs. Record the last
     // successful right boundary to figure out the irregular tail.
     while ((1 << pow) > (int)ObjArrayMarkingStride &&
-           (chunk*2 < ShenandoahMarkTask::chunk_size())) {
+           (chunk*2 < ShenandoahTask::chunk_size())) {
       pow--;
       int left_chunk = chunk*2 - 1;
       int right_chunk = chunk*2;
       int left_chunk_end = left_chunk * (1 << pow);
       if (left_chunk_end < len) {
-        bool pushed = q->push(ShenandoahMarkTask(array, true, weak, left_chunk, pow));
-        assert(pushed, "overflow queue should always succeed pushing");
+        q->push(ShenandoahTask(array, true, weak, left_chunk, pow));
         chunk = right_chunk;
         last_idx = left_chunk_end;
       } else {
@@ -261,17 +259,16 @@ void ShenandoahMark::do_chunked_array_start(ShenandoahObjToScanQueue* q, T* cl, 
 }
 
 template <class T, class OT>
-void ShenandoahMark::do_chunked_array(ShenandoahObjToScanQueue* q, T* cl, oop obj, Klass* klass, int chunk, int pow, bool weak) {
+void ShenandoahMark::do_chunked_array(ShenandoahTaskQueue* q, T* cl, oop obj, Klass* klass, int chunk, int pow, bool weak) {
   assert(obj->is_refArray(), "expect ref array");
   refArrayOop array = refArrayOop(obj);
 
-  // Split out tasks, as suggested in ShenandoahMarkTask docs. Avoid pushing tasks that
+  // Split out tasks, as suggested in ShenandoahTask docs. Avoid pushing tasks that
   // are known to start beyond the array.
-  while ((1 << pow) > (int)ObjArrayMarkingStride && (chunk*2 < ShenandoahMarkTask::chunk_size())) {
+  while ((1 << pow) > (int)ObjArrayMarkingStride && (chunk*2 < ShenandoahTask::chunk_size())) {
     pow--;
     chunk *= 2;
-    bool pushed = q->push(ShenandoahMarkTask(array, true, weak, chunk - 1, pow));
-    assert(pushed, "overflow queue should always succeed pushing");
+    q->push(ShenandoahTask(array, true, weak, chunk - 1, pow));
   }
 
   int chunk_size = 1 << pow;
@@ -291,12 +288,12 @@ void ShenandoahMark::do_chunked_array(ShenandoahObjToScanQueue* q, T* cl, oop ob
 template <ShenandoahGenerationType GENERATION>
 class ShenandoahSATBBufferClosure : public SATBBufferClosure {
 private:
-  ShenandoahObjToScanQueue* _queue;
-  ShenandoahObjToScanQueue* _old_queue;
+  ShenandoahTaskQueue* _queue;
+  ShenandoahTaskQueue* _old_queue;
   ShenandoahHeap* _heap;
   ShenandoahMarkingContext* const _mark_context;
 public:
-  ShenandoahSATBBufferClosure(ShenandoahObjToScanQueue* q, ShenandoahObjToScanQueue* old_q) :
+  ShenandoahSATBBufferClosure(ShenandoahTaskQueue* q, ShenandoahTaskQueue* old_q) :
     _queue(q),
     _old_queue(old_q),
     _heap(ShenandoahHeap::heap()),
@@ -330,7 +327,7 @@ bool ShenandoahMark::in_generation(ShenandoahHeap* const heap, oop obj) {
 }
 
 template<class T, ShenandoahGenerationType GENERATION, bool REDIRTY>
-void ShenandoahMark::mark_through_ref(T *p, ShenandoahObjToScanQueue* q, ShenandoahObjToScanQueue* old_q, ShenandoahMarkingContext* const mark_context, bool weak) {
+void ShenandoahMark::mark_through_ref(T *p, ShenandoahTaskQueue* q, ShenandoahTaskQueue* old_q, ShenandoahMarkingContext* const mark_context, bool weak) {
   static_assert(GENERATION != NON_GEN, "Should use the non-generational specialization");
   static_assert(!REDIRTY || GENERATION == YOUNG, "Redirty is only valid for young marking");
 
@@ -370,19 +367,19 @@ void ShenandoahMark::mark_through_ref(T *p, ShenandoahObjToScanQueue* q, Shenand
 
 template<>
 ALWAYSINLINE
-void ShenandoahMark::mark_through_ref<oop, NON_GEN, false>(oop *p, ShenandoahObjToScanQueue* q, ShenandoahObjToScanQueue* old_q, ShenandoahMarkingContext* const mark_context, bool weak) {
+void ShenandoahMark::mark_through_ref<oop, NON_GEN, false>(oop *p, ShenandoahTaskQueue* q, ShenandoahTaskQueue* old_q, ShenandoahMarkingContext* const mark_context, bool weak) {
   mark_non_generational_ref(p, q, mark_context, weak);
 }
 
 template<>
 ALWAYSINLINE
-void ShenandoahMark::mark_through_ref<narrowOop, NON_GEN, false>(narrowOop *p, ShenandoahObjToScanQueue* q, ShenandoahObjToScanQueue* old_q, ShenandoahMarkingContext* const mark_context, bool weak) {
+void ShenandoahMark::mark_through_ref<narrowOop, NON_GEN, false>(narrowOop *p, ShenandoahTaskQueue* q, ShenandoahTaskQueue* old_q, ShenandoahMarkingContext* const mark_context, bool weak) {
   mark_non_generational_ref(p, q, mark_context, weak);
 }
 
 template<class T>
-void ShenandoahMark::mark_non_generational_ref(T* p, ShenandoahObjToScanQueue* q,
-                                               ShenandoahMarkingContext* const mark_context, bool weak) {
+void ShenandoahMark::mark_non_generational_ref(T* p, ShenandoahTaskQueue* q,
+                                                      ShenandoahMarkingContext* const mark_context, bool weak) {
   oop o = RawAccess<>::oop_load(p);
   if (!CompressedOops::is_null(o)) {
     oop obj = CompressedOops::decode_not_null(o);
@@ -391,7 +388,7 @@ void ShenandoahMark::mark_non_generational_ref(T* p, ShenandoahObjToScanQueue* q
 }
 
 template<class T>
-inline void ShenandoahMark::mark_ref(T* p, ShenandoahObjToScanQueue* q,
+inline void ShenandoahMark::mark_ref(T* p, ShenandoahTaskQueue* q,
                                      ShenandoahMarkingContext* const mark_context,
                                      bool weak, oop obj) {
   bool skip_live = false;
@@ -407,20 +404,19 @@ inline void ShenandoahMark::mark_ref(T* p, ShenandoahObjToScanQueue* q,
     shenandoah_assert_not_in_cset_except(p, obj, ShenandoahHeap::heap()->cancelled_gc() || ShenandoahHeap::heap()->has_self_forwarded_objects());
     shenandoah_assert_marked(p, obj);
 
-    bool pushed = q->push(ShenandoahMarkTask(obj, skip_live, weak));
-    assert(pushed, "overflow queue should always succeed pushing");
+    q->push(ShenandoahTask(obj, skip_live, weak));
   }
 }
 
-ShenandoahObjToScanQueueSet* ShenandoahMark::task_queues() const {
+ShenandoahTaskQueueSet* ShenandoahMark::task_queues() const {
   return _task_queues;
 }
 
-ShenandoahObjToScanQueue* ShenandoahMark::get_queue(uint index) const {
+ShenandoahTaskQueue* ShenandoahMark::get_queue(uint index) const {
   return _task_queues->queue(index);
 }
 
-ShenandoahObjToScanQueue* ShenandoahMark::get_old_queue(uint index) const {
+ShenandoahTaskQueue* ShenandoahMark::get_old_queue(uint index) const {
   if (_old_gen_task_queues != nullptr) {
     return _old_gen_task_queues->queue(index);
   }

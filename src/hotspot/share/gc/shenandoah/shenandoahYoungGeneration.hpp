@@ -30,7 +30,7 @@
 
 class ShenandoahYoungGeneration : public ShenandoahGeneration {
 private:
-  ShenandoahObjToScanQueueSet* _old_gen_task_queues;
+  ShenandoahTaskQueueSet* _old_gen_task_queues;
   ShenandoahYoungHeuristics* _young_heuristics;
 
 public:
@@ -59,10 +59,10 @@ public:
   bool contains(ShenandoahHeapRegion* region) const override;
   bool contains(oop obj) const override;
 
-  void set_old_gen_task_queues(ShenandoahObjToScanQueueSet* old_gen_queues) {
+  void set_old_gen_task_queues(ShenandoahTaskQueueSet* old_gen_queues) {
     _old_gen_task_queues = old_gen_queues;
   }
-  ShenandoahObjToScanQueueSet* old_gen_task_queues() const override {
+  ShenandoahTaskQueueSet* old_gen_task_queues() const override {
     return _old_gen_task_queues;
   }
 

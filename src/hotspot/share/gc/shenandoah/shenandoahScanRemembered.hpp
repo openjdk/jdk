@@ -940,13 +940,13 @@ public:
 
 class ShenandoahScanRememberedTask : public WorkerTask {
  private:
-  ShenandoahObjToScanQueueSet* _queue_set;
+  ShenandoahTaskQueueSet* _queue_set;
   ShenandoahReferenceProcessor* _rp;
   ShenandoahRegionChunkIterator* _work_list;
   bool _is_concurrent;
 
  public:
-  ShenandoahScanRememberedTask(ShenandoahObjToScanQueueSet* queue_set,
+  ShenandoahScanRememberedTask(ShenandoahTaskQueueSet* queue_set,
                                ShenandoahReferenceProcessor* rp,
                                ShenandoahRegionChunkIterator* work_list,
                                bool is_concurrent);

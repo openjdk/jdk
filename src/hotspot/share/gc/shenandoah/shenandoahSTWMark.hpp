@@ -35,7 +35,7 @@ class ShenandoahSTWMark : public ShenandoahMark {
 
 private:
   ShenandoahSTWRootScanner      _root_scanner;
-  TaskTerminator                _terminator;
+  ShenandoahTaskTerminator      _terminator;
 public:
  ShenandoahSTWMark(ShenandoahGeneration* generation);
  void mark();

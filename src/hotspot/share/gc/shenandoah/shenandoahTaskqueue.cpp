@@ -25,134 +25,190 @@
 
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.inline.hpp"
-#include "logging/log.hpp"
-#include "logging/logStream.hpp"
-#include "memory/resourceArea.hpp"
-#include "utilities/stack.inline.hpp"
+#include "memory/memoryReserver.hpp"
+#include "utilities/spinYield.hpp"
 
-void ShenandoahObjToScanQueueSet::clear() {
-  uint size = GenericTaskQueueSet<ShenandoahObjToScanQueue, mtGC>::size();
-  for (uint index = 0; index < size; index ++) {
-    ShenandoahObjToScanQueue* q = queue(index);
-    assert(q != nullptr, "Sanity");
-    q->clear();
+bool ShenandoahTaskQueueStack::is_empty() {
+  return _top == 0;
+}
+
+void ShenandoahTaskQueueStack::clear() {
+  _top = 0;
+}
+
+ShenandoahTaskQueue::ShenandoahTaskQueue(ShenandoahTaskQueueSet* qs) :
+  _qs(qs) {
+  _stack = _qs->pick_free();
+}
+
+ShenandoahTaskQueue::~ShenandoahTaskQueue() {
+  _stack->clear();
+  _qs->mark_free(_stack);
+}
+
+bool ShenandoahTaskQueue::is_empty() {
+  return _stack->is_empty();
+}
+
+void ShenandoahTaskQueue::clear() {
+  _stack->clear();
+}
+
+void ShenandoahTaskQueue::flush_to_shared() {
+  if (!_stack->is_empty()) {
+    _qs->mark_shared(_stack);
+    _stack = _qs->pick_free();
   }
 }
 
-bool ShenandoahObjToScanQueueSet::is_empty() {
-  uint size = GenericTaskQueueSet<ShenandoahObjToScanQueue, mtGC>::size();
-  for (uint index = 0; index < size; index ++) {
-    ShenandoahObjToScanQueue* q = queue(index);
+void ShenandoahTaskQueue::compact() {
+  if (_stack->is_empty()) {
+    _qs->mark_free(_stack);
+    _stack = _qs->pick_free();
+  }
+}
+
+ShenandoahTaskQueueSegment* ShenandoahTaskQueueSegment::create(size_t seg_idx) {
+  size_t align = MAX2(os::vm_allocation_granularity(), os::vm_page_size());
+  size_t bytes = align_up(sizeof(ShenandoahTaskQueueSegment), align);
+  ReservedSpace rs = MemoryReserver::reserve(bytes, align, os::vm_page_size(), mtGC);
+  if (!rs.is_reserved()) {
+    vm_exit_out_of_memory(bytes, OOM_MMAP_ERROR, "Cannot reserve task queue segment");
+  }
+  os::commit_memory_or_exit(rs.base(), rs.size(), !ExecMem, "");
+
+  return new (rs.base()) ShenandoahTaskQueueSegment(seg_idx, rs);
+}
+
+void ShenandoahTaskQueueSegment::destroy(ShenandoahTaskQueueSegment* seg) {
+  ReservedSpace rs = seg->_rs;
+  seg->~ShenandoahTaskQueueSegment();
+  MemoryReserver::release(rs);
+}
+
+ShenandoahTaskQueueSegment::ShenandoahTaskQueueSegment(size_t seg_idx, ReservedSpace& rs) :
+  _free_bm(right_n_bits(SEGMENT_SIZE)), _shared_bm(0), _rs(rs), _segment_index(seg_idx) {
+  for (size_t i = 0; i < SEGMENT_SIZE; i++) {
+    ::new (&_stacks[i]) ShenandoahTaskQueueStack((seg_idx << SEGMENT_SIZE_SHIFT) + i);
+  }
+}
+
+void ShenandoahTaskQueueSegment::clear() {
+  uint64_t shared = _shared_bm.load_relaxed();
+  for (uint64_t m = shared; m != 0; m &= m - 1) {
+    _stacks[count_trailing_zeros(m)].clear();
+  }
+  _shared_bm.store_relaxed(0);
+  _free_bm.store_relaxed(_free_bm.load_relaxed() | shared);
+}
+
+bool ShenandoahTaskQueueSegment::are_all_free() const {
+  return _shared_bm.load_relaxed() == 0 &&
+         _free_bm.load_relaxed() == (uint64_t)right_n_bits(SEGMENT_SIZE);
+}
+
+ShenandoahTaskQueueSet::ShenandoahTaskQueueSet(uint queue_count) :
+  _queue_count(queue_count), _num_segments(0), _peak_segments(0), _shared_count(0) {
+
+  // Size up for the absolute worst case: one 8-byte task per smallest 8-byte object
+  size_t alignment = MAX3(STACK_SIZE, os::vm_allocation_granularity(), os::vm_page_size());
+  _max_segments = align_up(MaxHeapSize, alignment) / STACK_SIZE / ShenandoahTaskQueueSegment::SEGMENT_SIZE;
+  _segments = NEW_C_HEAP_ARRAY(ShenandoahTaskQueueSegment*, _max_segments, mtGC);
+  memset(_segments, 0, _max_segments * sizeof(ShenandoahTaskQueueSegment*));
+
+  _queues = NEW_C_HEAP_ARRAY(ShenandoahTaskQueue*, _queue_count, mtGC);
+  for (size_t i = 0; i < _queue_count; i++) {
+    _queues[i] = new ShenandoahTaskQueue(this);
+  }
+}
+
+ShenandoahTaskQueueSet::~ShenandoahTaskQueueSet() {
+  for (size_t i = 0; i < _queue_count; i++) {
+    delete _queues[i];
+  }
+  FREE_C_HEAP_ARRAY(_queues);
+
+  for (size_t s = 0; s < _num_segments.load_relaxed(); s++) {
+    ShenandoahTaskQueueSegment::destroy(_segments[s]);
+  }
+  FREE_C_HEAP_ARRAY(_segments);
+}
+
+bool ShenandoahTaskQueueSet::is_empty() {
+  for (uint i = 0; i < _queue_count; i++) {
+    ShenandoahTaskQueue* q = queue(i);
     assert(q != nullptr, "Sanity");
     if (!q->is_empty()) {
       return false;
     }
   }
-  return true;
+  return is_shared_empty();
 }
 
-void ShenandoahObjToScanQueueSet::rebalance(size_t target_queues) {
-  assert(target_queues > 0 && target_queues <= size(), "Should be in bounds: %zu", target_queues);
-
-  // Figure out the population target.
-  size_t total = 0;
-  for (uint i = 0; i < GenericTaskQueueSet::size(); i++) {
-    ShenandoahObjToScanQueue* q = queue(i);
+void ShenandoahTaskQueueSet::clear() {
+  for (uint i = 0; i < _queue_count; i++) {
+    ShenandoahTaskQueue* q = queue(i);
     assert(q != nullptr, "Sanity");
-    total += q->full_size();
-  }
-  if (total == 0) {
-    // Nothing to do.
-    return;
+    q->clear();
   }
 
-  size_t target_size = total / target_queues;
-
-  // Redistribute the work between queues.
-  // Do two passes to make sure all queues had a chance to push and pop.
-  Stack<ShenandoahMarkTask, mtGC> ts;
-  ShenandoahMarkTask t;
-
-  for (int p = 0; p < 2; p++) {
-    for (uint i = 0; i < GenericTaskQueueSet::size(); i++) {
-      ShenandoahObjToScanQueue* q = queue(i);
-
-      // Push and pop targets relative to expected average size.
-      size_t q_size = q->full_size();
-      size_t to_pop  = (q_size > target_size) ? (q_size - target_size) : 0;
-      size_t to_push = (q_size < target_size) ? MIN2(ts.size(), target_size - q_size) : 0;
-
-      if (i >= target_queues) {
-        // Queue must be emptied out.
-        to_pop = q_size;
-        to_push = 0;
-      }
-
-      for (size_t c = 0; c < to_pop; c++) {
-        bool succ = q->pop(t);
-        assert(succ, "Must succeed");
-        ts.push(t);
-      }
-      assert(q->full_size() <= target_size,
-             "After pops, queue size (%zu) must fit the target (%zu)",
-             q->full_size(), target_size);
-
-      for (size_t c = 0; c < to_push; c++) {
-        assert(!ts.is_empty(), "Must not be empty");
-        bool succ = q->push(ts.pop());
-        assert(succ, "Must succeed");
-      }
-    }
+  for (size_t s = 0; s < _num_segments.load_relaxed(); s++) {
+    _segments[s]->clear();
   }
-
-  // Round-robin the remaining elements.
-  assert(ts.size() <= target_queues,
-        "Only a small tail (%zu) should remain for %zu queues",
-        ts.size(), target_queues);
-  uint rr_idx = 0;
-  while (!ts.is_empty()) {
-    queue(rr_idx)->push(ts.pop());
-    if (++rr_idx >= target_queues) {
-      rr_idx = 0;
-    }
-  }
-
-  // Every queue is now balanced population-wise. Balance the split between overflow
-  // stack and local queue. This exposes tasks to work-stealing. Avoid filling out
-  // the local queue completely: leave some space for local pushes.
-  for (uint i = 0; i < target_queues; i++) {
-    ShenandoahObjToScanQueue* q = queue(i);
-    size_t q_limit = q->capacity() / 4 * 3;
-    size_t q_free  = (q_limit > q->size()) ? (q_limit - q->size()) : 0;
-    size_t to_balance = MIN2<size_t>(q->overflow_stack()->size(), q_free);
-    for (size_t c = 0; c < to_balance; c++) {
-      bool succ_pop = q->pop_overflow(t);
-      assert(succ_pop, "Must succeed");
-      bool succ_push = q->push(t);
-      assert(succ_push, "Must succeed");
-    }
-  }
-
-#ifdef ASSERT
-  // Final checks.
-  assert(ts.is_empty(), "Must be empty");
-  size_t total_after = 0;
-  for (uint i = 0; i < GenericTaskQueueSet::size(); i++) {
-    ShenandoahObjToScanQueue* q = queue(i);
-    if (i < target_queues) {
-      size_t full_size = q->full_size();
-      assert((target_size <= full_size + 1) && (full_size <= target_size + 1),
-             "Queue size (%zu) is off the target (%zu)",
-              full_size, target_size);
-      total_after += full_size;
-    } else {
-      assert(q->is_empty(), "Queue must be empty");
-    }
-  }
-  assert(total == total_after, "Lost elements: %zu vs %zu", total, total_after);
-#endif
+  _shared_count.store_relaxed(0);
 }
 
-bool ShenandoahTerminatorTerminator::should_exit_termination() {
-  return _heap->cancelled_gc();
+void ShenandoahTaskQueueSet::trim() {
+  // Rearrange the chunks to the left-most segments.
+  for (uint i = 0; i < _queue_count; i++) {
+    queue(i)->compact();
+  }
+
+  // Simple hysteresis: only trim to half peak.
+  _peak_segments = MAX2(_peak_segments / 2, _num_segments.load_relaxed());
+  size_t min_for_queues = align_up(_queue_count, ShenandoahTaskQueueSegment::SEGMENT_SIZE) / ShenandoahTaskQueueSegment::SEGMENT_SIZE + 1;
+  size_t keep = MAX2(_peak_segments, min_for_queues);
+
+  // Delete free segments from the tail.
+  size_t s = _num_segments.load_relaxed() - 1;
+  while (s > keep && _segments[s]->are_all_free()) {
+    ShenandoahTaskQueueSegment::destroy(_segments[s]);
+    AtomicAccess::store(&_segments[s], (ShenandoahTaskQueueSegment*)nullptr);
+    _num_segments.fetch_then_sub((size_t)1);
+    s--;
+  }
 }
+
+void ShenandoahTaskQueueSet::flush_to_shared() {
+  for (uint i = 0; i < _queue_count; i++) {
+    ShenandoahTaskQueue* q = queue(i);
+    assert(q != nullptr, "Sanity");
+    q->flush_to_shared();
+  }
+}
+
+ShenandoahTaskTerminator::ShenandoahTaskTerminator(int workers, ShenandoahTaskQueueSet *queues) :
+  _heap(ShenandoahHeap::heap()), _queues(queues), _active_workers(workers), _total_workers(workers) {}
+
+bool ShenandoahTaskTerminator::offer_termination(bool cancellable) {
+  _active_workers.fetch_then_sub((size_t)1, memory_order_relaxed);
+  SpinYield spin;
+  while (true) {
+    if (_active_workers.load_relaxed() == 0) {
+      // Consensus: everyone terminated
+      assert(_queues->is_shared_empty(), "No more shared work");
+      return true;
+    }
+    if (cancellable && _heap->cancelled_gc()) {
+      // Requested termination
+      return true;
+    }
+    if (!_queues->is_shared_empty()) {
+      // New work appeared, no termination
+      _active_workers.fetch_then_add((size_t)1, memory_order_relaxed);
+      return false;
+    }
+    spin.wait();
+  }
+}
+

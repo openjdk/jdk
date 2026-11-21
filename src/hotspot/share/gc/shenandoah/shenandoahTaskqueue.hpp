@@ -26,55 +26,19 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHTASKQUEUE_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHTASKQUEUE_HPP
 
-#include "gc/shared/taskqueue.hpp"
-#include "gc/shared/taskTerminator.hpp"
 #include "gc/shenandoah/shenandoahPadding.hpp"
+#include "memory/reservedSpace.hpp"
+#include "memory/virtualspace.hpp"
 #include "nmt/memTag.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/atomicAccess.hpp"
-#include "runtime/javaThread.hpp"
 #include "runtime/mutex.hpp"
+#include "utilities/bitMap.hpp"
 #include "utilities/debug.hpp"
 
+class ShenandoahTaskQueueSet;
 class ShenandoahHeap;
 
-template<class E, MemTag MT, unsigned int N = TASKQUEUE_SIZE>
-class BufferedOverflowTaskQueue: public OverflowTaskQueue<E, MT, N>
-{
-public:
-  typedef OverflowTaskQueue<E, MT, N> taskqueue_t;
-
-  BufferedOverflowTaskQueue() : _buf_empty(true) {};
-
-  TASKQUEUE_STATS_ONLY(using taskqueue_t::stats;)
-
-  // Push task t into the queue. Returns true on success.
-  ALWAYSINLINE
-  bool push(E t);
-
-  // Attempt to pop from the queue. Returns true on success.
-  ALWAYSINLINE
-  bool pop(E &t);
-
-  inline void clear();
-
-  inline bool is_empty()        const {
-    return _buf_empty && taskqueue_t::is_empty();
-  }
-
-  NOINLINE
-  void pop_more_overflow();
-
-  inline size_t full_size();
-
-  inline size_t capacity() const;
-
-private:
-  bool _buf_empty;
-  E _elem;
-};
-
-// ShenandoahMarkTask
+// ShenandoahTask
 //
 // Encodes both regular oops, and the array oops plus chunking data for parallel array processing.
 // The design goal is to make the regular oop ops very fast, because that would be the prevailing
@@ -141,13 +105,13 @@ private:
 #endif
 
 #ifdef _LP64
-#define SHENANDOAH_OPTIMIZED_MARKTASK 1
+#define SHENANDOAH_OPTIMIZED_TASK 1
 #else
-#define SHENANDOAH_OPTIMIZED_MARKTASK 0
+#define SHENANDOAH_OPTIMIZED_TASK 0
 #endif
 
-#if SHENANDOAH_OPTIMIZED_MARKTASK
-class ShenandoahMarkTask
+#if SHENANDOAH_OPTIMIZED_TASK
+class ShenandoahTask
 {
 private:
   // Everything is encoded into this field...
@@ -217,7 +181,7 @@ private:
   }
 
 public:
-  ShenandoahMarkTask(oop o = nullptr, bool skip_live = false, bool weak = false) {
+  ShenandoahTask(oop o = nullptr, bool skip_live = false, bool weak = false) {
     uintptr_t enc = encode_oop(o, skip_live, weak);
     assert(decode_oop(enc) == o,     "oop encoding should work: " PTR_FORMAT, p2i(o));
     assert(decode_cnt_live(enc) == !skip_live, "skip_live encoding should work");
@@ -226,7 +190,7 @@ public:
     _obj = enc;
   }
 
-  ShenandoahMarkTask(oop o, bool skip_live, bool weak, int chunk, int pow) {
+  ShenandoahTask(oop o, bool skip_live, bool weak, int chunk, int pow) {
     uintptr_t enc_oop = encode_oop(o, skip_live, weak);
     uintptr_t enc_chunk = encode_chunk(chunk);
     uintptr_t enc_pow = encode_pow(pow);
@@ -262,7 +226,7 @@ public:
   }
 };
 #else
-class ShenandoahMarkTask
+class ShenandoahTask
 {
 private:
   static const uint8_t chunk_bits  = 10;
@@ -278,7 +242,7 @@ private:
   int _pow;
 
 public:
-  ShenandoahMarkTask(oop o = nullptr, bool skip_live = false, bool weak = false, int chunk = 0, int pow = 0):
+  ShenandoahTask(oop o = nullptr, bool skip_live = false, bool weak = false, int chunk = 0, int pow = 0):
     _obj(o), _skip_live(skip_live), _weak(weak), _chunk(chunk), _pow(pow) {
     assert(0 <= chunk && chunk <= chunk_max, "chunk is in range: %d", chunk);
     assert(0 <= pow && pow <= pow_max, "pow is in range: %d", pow);
@@ -303,31 +267,167 @@ public:
     return nth_bit(chunk_bits);
   }
 };
-#endif // SHENANDOAH_OPTIMIZED_MARKTASK
+#endif // SHENANDOAH_OPTIMIZED_TASK
 
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif
 
-typedef BufferedOverflowTaskQueue<ShenandoahMarkTask, mtGC> ShenandoahBufferedOverflowTaskQueue;
-typedef Padded<ShenandoahBufferedOverflowTaskQueue> ShenandoahObjToScanQueue;
+// Stack is the unit of load balancing.
+//
+// Each stack can be:
+//   used:   currently in use by a single thread
+//   shared: not in use by any thread, has tasks to share
+//   free:   not in use by any thread, has no tasks
+//
+class ShenandoahTaskQueueStack {
+  static const int MAX_SIZE = 510;
+  static const int MIN_SIZE = 1;
 
-class ShenandoahObjToScanQueueSet: public GenericTaskQueueSet<ShenandoahObjToScanQueue, mtGC> {
+  size_t _top;
+  ShenandoahTask _tasks[MAX_SIZE];
+  size_t _index;
+
 public:
-  ShenandoahObjToScanQueueSet(int n) : GenericTaskQueueSet<ShenandoahObjToScanQueue, mtGC>(n) {}
+  ShenandoahTaskQueueStack() {}
+  ShenandoahTaskQueueStack(size_t index) : _top(0), _index(index) {}
 
-  void rebalance(size_t target_queues);
+  ALWAYSINLINE
+  bool push(ShenandoahTask t);
+
+  ALWAYSINLINE
+  bool pop(ShenandoahTask& t);
 
   bool is_empty();
   void clear();
+
+  size_t index() { return _index; }
+
+  bool is_sliceable();
+  void slice_top(ShenandoahTaskQueueStack* to_stack);
 };
 
-class ShenandoahTerminatorTerminator : public TerminatorTerminator {
-private:
-  ShenandoahHeap* _heap;
+// Segment is the unit of allocation.
+//
+// Each segment is committed in full, carries the storage for stacks, plus small bitmaps
+// that describe the stack state. Segment is aligned by its size, which prevents false sharing
+// between adjacent segments and any stacks within the segment or outside the segment.
+//
+class ShenandoahTaskQueueSegment {
 public:
-  ShenandoahTerminatorTerminator(ShenandoahHeap* const heap) : _heap(heap) { }
-  virtual bool should_exit_termination();
+  static const int SEGMENT_SIZE_SHIFT = 6;
+  static const int SEGMENT_SIZE = 1 << SEGMENT_SIZE_SHIFT;
+  static_assert(SEGMENT_SIZE <= 64, "Bitmap encoding");
+
+  ShenandoahTaskQueueStack _stacks[SEGMENT_SIZE];
+
+  shenandoah_padding(0);
+  Atomic<uint64_t> _free_bm;
+  shenandoah_padding(1);
+  Atomic<uint64_t> _shared_bm;
+  shenandoah_padding(2);
+
+  ReservedSpace _rs;
+  size_t _segment_index;
+
+  static ShenandoahTaskQueueSegment* create(size_t seg_idx);
+  static void destroy(ShenandoahTaskQueueSegment* seg);
+
+  inline ShenandoahTaskQueueStack* pick(Atomic<uint64_t>* bm);
+  inline ShenandoahTaskQueueStack* pick_shared();
+  inline ShenandoahTaskQueueStack* pick_free();
+
+  inline void mark(ShenandoahTaskQueueStack* stack, Atomic<uint64_t>* bm);
+  inline void mark_shared(ShenandoahTaskQueueStack* stack);
+  inline void mark_free(ShenandoahTaskQueueStack* stack);
+
+  bool are_all_free() const;
+
+  void clear();
+
+private:
+  ShenandoahTaskQueueSegment(size_t seg_idx, ReservedSpace& rs);
+};
+
+// TaskQueue is the external interface: worker threads use push/pop from it,
+// and the rest is wired up automatically.
+//
+class ShenandoahTaskQueue : public CHeapObj<mtGC> {
+  shenandoah_padding(0);
+  ShenandoahTaskQueueStack* _stack;
+  ShenandoahTaskQueueSet* const _qs;
+  shenandoah_padding(1);
+
+public:
+  ShenandoahTaskQueue(ShenandoahTaskQueueSet* qs);
+  ~ShenandoahTaskQueue();
+
+  ALWAYSINLINE
+  void push(ShenandoahTask task);
+
+  ALWAYSINLINE
+  bool pop(ShenandoahTask& task);
+
+  void flush_to_shared();
+  void compact();
+  void clear();
+
+  bool is_empty();
+
+  void share_work();
+};
+
+class ShenandoahTaskQueueSet : public CHeapObj<mtGC> {
+  static const size_t STACK_SIZE = sizeof(ShenandoahTaskQueueStack);
+  static_assert(is_power_of_2(STACK_SIZE));
+
+  ShenandoahTaskQueue** _queues;
+  size_t _queue_count;
+
+  ShenandoahTaskQueueSegment** _segments;
+  Atomic<size_t> _num_segments;
+  size_t _peak_segments;
+  size_t _max_segments;
+
+  shenandoah_padding(0);
+  Atomic <size_t> _shared_count;
+  shenandoah_padding(1);
+
+  inline ShenandoahTaskQueueSegment* try_grow(size_t n);
+
+public:
+  ShenandoahTaskQueueSet(uint queue_count);
+  ~ShenandoahTaskQueueSet();
+
+  inline ShenandoahTaskQueueStack* pick_shared();
+  inline ShenandoahTaskQueueStack* pick_free();
+
+  inline void mark_shared(ShenandoahTaskQueueStack* stack);
+  inline void mark_free(ShenandoahTaskQueueStack* stack);
+
+  ShenandoahTaskQueue* queue(uint i) {
+    return _queues[i];
+  }
+
+  bool is_empty();
+  inline bool is_shared_empty();
+
+  void clear();
+  void flush_to_shared();
+  void trim();
+};
+
+class ShenandoahTaskTerminator {
+  ShenandoahHeap* _heap;
+  ShenandoahTaskQueueSet* _queues;
+  Atomic<size_t> _active_workers;
+  size_t _total_workers;
+
+public:
+  ShenandoahTaskTerminator(int workers, ShenandoahTaskQueueSet* queues);
+
+  bool offer_termination(bool cancellable);
+  bool has_waiters();
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHTASKQUEUE_HPP
