@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ import java.nio.charset.StandardCharsets;
 
 /*
  * @test
- * @bug 8077559 8321180
+ * @bug 8077559 8321180 8390026
  * @summary Tests Compact String for maximum size strings
  * @requires os.maxMemory >= 8g & vm.bits == 64
  * @requires vm.flagless
@@ -146,5 +146,37 @@ public class MaxSizeUTF16String {
             OutOfMemoryError ex = assertThrows(OutOfMemoryError.class, () -> s2.getBytes(StandardCharsets.UTF_8));
             ex.printStackTrace();
         };
+    }
+
+    @Test
+    public void testMaxUTF16EncodedLength() {
+        int length = MAX_UTF16_STRING_LENGTH - 1;
+        String s = "a".repeat(length);
+        assertEquals(length * 2 + 2, s.encodedLength(StandardCharsets.UTF_16));
+        assertEquals(length * 2, s.encodedLength(StandardCharsets.UTF_16LE));
+        assertEquals(length * 2, s.encodedLength(StandardCharsets.UTF_16BE));
+
+        try {
+            length = MAX_UTF16_STRING_LENGTH;
+            String s1 = "a".repeat(length);
+            assertThrows(OutOfMemoryError.class, () -> s1.encodedLength(StandardCharsets.UTF_16));
+            assertEquals(length * 2, s1.encodedLength(StandardCharsets.UTF_16LE));
+            assertEquals(length * 2, s1.encodedLength(StandardCharsets.UTF_16BE));
+
+            length = MAX_UTF16_STRING_LENGTH + 1;
+            String s2 = "a".repeat(length);
+            assertThrows(OutOfMemoryError.class, () -> s2.encodedLength(StandardCharsets.UTF_16));
+            assertThrows(OutOfMemoryError.class, () -> s2.encodedLength(StandardCharsets.UTF_16LE));
+            assertThrows(OutOfMemoryError.class, () -> s2.encodedLength(StandardCharsets.UTF_16BE));
+        } catch (OutOfMemoryError ex) {
+            if (ex.getMessage().equals(UNEXPECTED_JAVA_HEAP_SPACE)) {
+                // Insufficient heap size
+                throw ex;
+            }
+            if (!ex.getMessage().startsWith(EXPECTED_OOME_MESSAGE) &&
+                    !ex.getMessage().startsWith(EXPECTED_VM_LIMIT_MESSAGE)) {
+                fail("Failed: Not the OutOfMemoryError expected", ex);
+            }
+        }
     }
 }
