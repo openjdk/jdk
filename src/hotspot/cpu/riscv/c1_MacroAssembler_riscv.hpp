@@ -119,5 +119,6 @@ using MacroAssembler::null_check;
   void c1_cmp_branch(int cmpFlag, Register op1, Register op2, Label& label, BasicType type, bool is_far);
   void c1_float_cmp_branch(int cmpFlag, FloatRegister op1, FloatRegister op2, Label& label,
                            bool is_far, bool is_unordered = false);
+  void build_frame_helper(int frame_size_in_bytes, int sp_offset_for_orig_pc, bool reset_orig_pc);
 
 #endif // CPU_RISCV_C1_MACROASSEMBLER_RISCV_HPP

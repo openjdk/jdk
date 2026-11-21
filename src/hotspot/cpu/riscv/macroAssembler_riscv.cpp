@@ -7509,3 +7509,10 @@ void MacroAssembler::fast_unlock(Register obj, Register tmp1, Register tmp2, Reg
 
   bind(unlocked);
 }
+
+int MacroAssembler::scalarized_entry(const CompiledEntrySignature* ces, int frame_size_in_bytes,
+                                     int bang_size_in_bytes, int sp_offset_for_orig_pc,
+                                     Label& verified_value_entry_label, bool is_value_ro_entry,
+                                     bool for_native_wrapper) {
+  Unimplemented();
+}

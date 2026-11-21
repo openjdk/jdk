@@ -230,6 +230,8 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void jump_from_interpreted(Register method, Register temp);
 
 
+  void return_value_as_fields();
+
   // Returning from interpreted functions
   //
   // Removes the current activation (incl. unlocking of monitors)

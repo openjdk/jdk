@@ -1028,25 +1028,6 @@ OopMapSet* Runtime1::generate_code_for(StubId id, StubAssembler* sasm) {
       break;
 
 
-    case StubId::c1_buffer_value_args_id:
-    case StubId::c1_buffer_value_args_no_receiver_id:
-      {
-        const char* name = (id == StubId::c1_buffer_value_args_id) ?
-          "buffer_value_args" : "buffer_value_args_no_receiver";
-        StubFrame f(sasm, name, dont_gc_arguments);
-        OopMap* map = save_live_registers(sasm, 2);
-        Register method = rbx;
-        address entry = (id == StubId::c1_buffer_value_args_id) ?
-          CAST_FROM_FN_PTR(address, buffer_value_args) :
-          CAST_FROM_FN_PTR(address, buffer_value_args_no_receiver);
-        int call_offset = __ call_RT(rax, noreg, entry, method);
-        oop_maps = new OopMapSet();
-        oop_maps->add_gc_map(call_offset, map);
-        restore_live_registers_except_rax(sasm);
-        __ verify_oop(rax);  // rax: an array of buffered value objects
-      }
-      break;
-
     case StubId::c1_register_finalizer_id:
       {
         __ set_info("register_finalizer", dont_gc_arguments);

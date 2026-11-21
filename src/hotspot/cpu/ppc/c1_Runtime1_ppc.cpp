@@ -490,24 +490,6 @@ OopMapSet* Runtime1::generate_code_for(StubId id, StubAssembler* sasm) {
       }
       break;
 
-    case StubId::c1_buffer_value_args_id:
-    case StubId::c1_buffer_value_args_no_receiver_id:
-      {
-        address entry = (id == StubId::c1_buffer_value_args_id) ?
-          CAST_FROM_FN_PTR(address, buffer_value_args) :
-          CAST_FROM_FN_PTR(address, buffer_value_args_no_receiver);
-
-        __ unimplemented("c1_buffer_value_args"); // TODO: handle arguments and return value
-        OopMap* oop_map = save_live_registers(sasm);
-        int call_offset = __ call_RT(noreg, noreg, entry, R3_ARG1);
-
-        oop_maps = new OopMapSet();
-        oop_maps->add_gc_map(call_offset, oop_map);
-        restore_live_registers(sasm, R3_RET, noreg);
-        __ blr();
-      }
-      break;
-
     case StubId::c1_load_flat_array_id:
       oop_maps = stub_call_with_stack_parms(sasm, R3_RET, CAST_FROM_FN_PTR(address, load_flat_array), 2);
       break;

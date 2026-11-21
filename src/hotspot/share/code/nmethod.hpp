@@ -334,7 +334,7 @@ private:
   }
 
   // Initialize fields to their default values
-  void init_defaults(CodeBuffer *code_buffer, CodeOffsets* offsets);
+  void init_defaults(CodeBuffer *code_buffer, const CodeOffsets* offsets);
 
   // Post initialization
   void post_init();
@@ -344,7 +344,7 @@ private:
           CompilerType type,
           int nmethod_size,
           int compile_id,
-          CodeOffsets* offsets,
+          const CodeOffsets* offsets,
           CodeBuffer *code_buffer,
           int frame_size,
           ByteSize basic_lock_owner_sp_offset, /* synchronized natives only */
@@ -361,7 +361,7 @@ private:
           int compile_id,
           int entry_bci,
           address immutable_data,
-          CodeOffsets* offsets,
+          const CodeOffsets* offsets,
           int orig_pc_offset,
           DebugInformationRecorder *recorder,
           Dependencies* dependencies,
@@ -644,13 +644,11 @@ public:
   static nmethod* new_native_nmethod(const methodHandle& method,
                                      int compile_id,
                                      CodeBuffer *code_buffer,
-                                     int vep_offset,
-                                     int frame_complete,
+                                     const CodeOffsets& offsets,
                                      int frame_size,
                                      ByteSize receiver_sp_offset,
                                      ByteSize basic_lock_sp_offset,
-                                     OopMapSet* oop_maps,
-                                     int exception_handler = -1);
+                                     OopMapSet* oop_maps);
 
   Method* method       () const { return _method; }
   uint16_t entry_bci   () const { return _entry_bci; }

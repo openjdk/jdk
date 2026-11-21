@@ -41,6 +41,7 @@ class ciValueKlass;
 // Instructions for which a 'better' code sequence exists depending
 // on arguments should also go in here.
 
+class CompiledEntrySignature;
 class MacroAssembler: public Assembler {
   friend class LIR_Assembler;
   friend class Runtime1;      // as_Address()
@@ -2121,6 +2122,9 @@ public:
   void restore_legacy_gprs();
   void load_aotrc_address(Register reg, address a);
   void setcc(Assembler::Condition comparison, Register dst);
+  void maybe_return_value_as_fields();
+protected:
+  void build_frame_helper(int frame_size_in_bytes, int sp_offset_for_orig_pc, bool reset_orig_pc);
 };
 
 #endif // CPU_X86_MACROASSEMBLER_X86_HPP

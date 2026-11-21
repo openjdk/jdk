@@ -10766,3 +10766,118 @@ void MacroAssembler::setcc(Assembler::Condition comparison, Register dst) {
   setb(comparison, dst);
   movzbl(dst, dst);
 }
+
+int MacroAssembler::scalarized_entry(const CompiledEntrySignature* ces, int frame_size_in_bytes,
+                                     int bang_size_in_bytes, int sp_offset_for_orig_pc,
+                                     Label& verified_value_entry_label, bool is_value_ro_entry,
+                                     bool for_native_wrapper) {
+  assert(ValueTypePassFieldsAsArgs, "sanity");
+  // Make sure there is enough stack space for this method's activation.
+  assert(bang_size_in_bytes >= frame_size_in_bytes, "stack bang size incorrect");
+  generate_stack_overflow_check(bang_size_in_bytes);
+
+  GrowableArray<SigEntry>* sig    = ces->sig();
+  GrowableArray<SigEntry>* sig_cc = is_value_ro_entry ? ces->sig_cc_ro() : ces->sig_cc();
+  VMRegPair* regs      = ces->regs();
+  VMRegPair* regs_cc   = is_value_ro_entry ? ces->regs_cc_ro() : ces->regs_cc();
+  int args_on_stack    = ces->args_on_stack();
+  int args_on_stack_cc = is_value_ro_entry ? ces->args_on_stack_cc_ro() : ces->args_on_stack_cc();
+
+  assert(sig->length() <= sig_cc->length(), "Zero-sized value class not allowed!");
+  BasicType* sig_bt = NEW_RESOURCE_ARRAY(BasicType, sig_cc->length());
+  int args_passed = sig->length();
+  int args_passed_cc = SigEntry::fill_sig_bt(sig_cc, sig_bt);
+
+  // Create a temp frame so we can call into the runtime. It must be properly set up to accommodate GC.
+  if (for_native_wrapper) {
+    enter();
+    subptr(rsp, frame_size_in_bytes - 2*wordSize);
+  } else {
+    build_frame_helper(frame_size_in_bytes, sp_offset_for_orig_pc, true);
+  }
+
+  // The runtime call might safepoint, make sure nmethod entry barrier is executed
+  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  // C1 code is not hot enough to micro optimize the nmethod entry barrier with an out-of-line stub
+  bs->nmethod_entry_barrier(this, nullptr /* slow_path */, nullptr /* continuation */);
+
+  mov_metadata(rbx, ces->method());
+  if (is_value_ro_entry) {
+    call(RuntimeAddress(SharedRuntime::buffer_value_args_no_receiver_entry()));
+  } else {
+    call(RuntimeAddress(SharedRuntime::buffer_value_args_entry()));
+  }
+  int rt_call_offset = offset();
+
+  // Remove the temp frame
+  if (for_native_wrapper) {
+    leave();
+  } else {
+    addptr(rsp, frame_size_in_bytes);
+    pop(rbp);
+  }
+
+  assert(args_on_stack <= args_on_stack_cc, "Sanity check");
+
+  shuffle_value_args(true, is_value_ro_entry, sig_cc,
+                     args_passed_cc, args_on_stack_cc, regs_cc, // from
+                     args_passed, args_on_stack, regs,          // to
+                     0, rax);
+
+  // Create the real frame. Below jump will then skip over the stack banging and frame
+  // setup code in the verified_value_entry (which has a different real_frame_size).
+  if (for_native_wrapper) {
+    enter();
+    subptr(rsp, frame_size_in_bytes - 2*wordSize);
+  } else {
+    build_frame_helper(frame_size_in_bytes, sp_offset_for_orig_pc, false);
+  }
+
+  jmp(verified_value_entry_label);
+  return rt_call_offset;
+}
+
+void MacroAssembler::build_frame_helper(int frame_size_in_bytes, int sp_offset_for_orig_pc, bool reset_orig_pc) {
+  push(rbp);
+
+  if (PreserveFramePointer) {
+    mov(rbp, rsp);
+  }
+  decrement(rsp, frame_size_in_bytes);
+
+  if (reset_orig_pc) {
+    // Zero orig_pc to detect deoptimization during buffering in the entry points
+    movptr(Address(rsp, sp_offset_for_orig_pc), 0);
+  }
+}
+
+void MacroAssembler::maybe_return_value_as_fields() {
+  Label skip;
+  Label not_null;
+  testptr(rax, rax);
+  jcc(Assembler::notZero, not_null);
+  // Returned value is null, zero all return registers because they may belong to oop fields
+  xorq(j_rarg0, j_rarg0);
+  xorq(j_rarg1, j_rarg1);
+  xorq(j_rarg2, j_rarg2);
+  xorq(j_rarg3, j_rarg3);
+  xorq(j_rarg4, j_rarg4);
+  xorq(j_rarg5, j_rarg5);
+  jmp(skip);
+  bind(not_null);
+
+  // Check if we are returning a non-null value type and load its fields into registers
+  test_oop_is_not_value_type(rax, rscratch1, skip, /* can_be_null= */ false);
+
+  // Load fields from a buffered value with a value class specific handler
+  load_klass(rdi, rax, rscratch1);
+  movptr(rdi, Address(rdi, ValueKlass::adr_members_offset()));
+  movptr(rdi, Address(rdi, ValueKlass::unpack_handler_offset()));
+  // Unpack handler can be null if value type is not scalarizable in returns
+  testptr(rdi, rdi);
+  jcc(Assembler::zero, skip);
+  call(rdi);
+
+  bind(skip);
+}
+

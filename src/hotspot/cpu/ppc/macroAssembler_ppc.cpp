@@ -4974,3 +4974,10 @@ int MacroAssembler::extend_stack_for_value_args(int args_on_stack) {
 VMReg MacroAssembler::spill_reg_for(VMReg reg) {
   Unimplemented();
 }
+
+int MacroAssembler::scalarized_entry(const CompiledEntrySignature* ces, int frame_size_in_bytes,
+                                     int bang_size_in_bytes, int sp_offset_for_orig_pc,
+                                     Label& verified_value_entry_label, bool is_value_ro_entry,
+                                     bool for_native_wrapper) {
+  Unimplemented();
+}
