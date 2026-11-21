@@ -1004,6 +1004,13 @@ final class ByteVectorMax extends ByteVector {
     @ForceInline
     @Override
     final
+    ByteVector fromString0(String s, int offset) {
+        return super.fromString0Template(s, offset); // specialize
+    }
+
+    @ForceInline
+    @Override
+    final
     ByteVector fromMemorySegment0(MemorySegment ms, long offset) {
         return super.fromMemorySegment0Template(ms, offset);  // specialize
     }

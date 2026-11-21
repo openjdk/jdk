@@ -205,6 +205,13 @@ do
     masktype=${typeprefix}${Type}Mask${bits}
     shuffletype=${typeprefix}${Type}Shuffle${bits}
     bitsvectortype=${typeprefix}${Bitstype}Vector${bits}
+    bytevectortype=${typeprefix}ByteVector${bits}
+    case $bits in
+      128) halfbytevectortype=${typeprefix}ByteVector64 ;;
+      256) halfbytevectortype=${typeprefix}ByteVector128 ;;
+      512) halfbytevectortype=${typeprefix}ByteVector256 ;;
+      *)   halfbytevectortype=$bytevectortype ;;
+    esac
     fpvectortype=${typeprefix}${Fptype}Vector${bits}
 
     if [[ $bits == Max ]]; then
@@ -251,7 +258,7 @@ do
     if [[ "${vectortype}" == "IntVectorMax" ]]; then
       args="$args -KintAndMax"
     fi
-    bitargs="$args -Dbits=$bits -DBITS=$BITS -Dvectortype=$vectortype -Dmasktype=$masktype -Dshuffletype=$shuffletype -Dbitsvectortype=$bitsvectortype -Dfpvectortype=$fpvectortype -Dvectorindextype=$vectorindextype -Dshape=$shape -DShape=$Shape"
+    bitargs="$args -Dbits=$bits -DBITS=$BITS -Dvectortype=$vectortype -Dmasktype=$masktype -Dshuffletype=$shuffletype -Dbitsvectortype=$bitsvectortype -Dfpvectortype=$fpvectortype -Dvectorindextype=$vectorindextype -Dshape=$shape -DShape=$Shape -Dbytevectortype=$bytevectortype -Dhalfbytevectortype=$halfbytevectortype"
 
     case $vectortype in
     $CLASS_FILTER)

@@ -35,6 +35,7 @@ import jdk.internal.foreign.AbstractMemorySegmentImpl;
 import jdk.internal.misc.ScopedMemoryAccess;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.ForceInline;
+import jdk.internal.vm.vector.StringVectorSupport;
 import jdk.internal.vm.vector.VectorSupport;
 
 import static jdk.internal.vm.vector.VectorSupport.*;
@@ -3979,6 +3980,17 @@ public abstract sealed class ByteVector extends AbstractVector<Byte>
             a, offset, vsp,
             (arr, off, s, vm) -> s.ldOp(arr, (int) off, vm,
                                         (arr_, off_, i) -> (byte) (arr_[off_ + i] ? 1 : 0)));
+    }
+
+    /*package-private*/ abstract
+    ByteVector fromString0(String s, int offset);
+    @ForceInline
+    final
+    ByteVector fromString0Template(String s, int offset) {
+        ByteSpecies vsp = vspecies();
+        return StringVectorSupport.loadStringCodeUnits(
+                s, 1, vsp.vectorType(), vsp.laneCount(), offset, vsp,
+                (str, idx, sp) -> sp.ldOp(str, (int) idx, (s_, off_, i) -> (byte) s_.charAt(off_ + i)));
     }
 
     abstract
