@@ -337,6 +337,75 @@ inline T AtomicAccess::PlatformCmpxchg<8>::operator()(T volatile* dest,
   return old;
 }
 
+//-----------------------
+// AtomicAccess::bitops
+//-----------------------
+// LOAD AND AND/OR/EXCLUSIVE OR (LAN/LAO/LAX, 32 bit; LANG/LAOG/LAXG, 64 bit)
+// of the interlocked-access facility 1 (z196) atomically update the memory
+// operand and return its previous value.
+
+#define Z_LOAD_AND_BITOP(OPC32, OPC64)                                         \
+    T old_value;                                                               \
+    const bool full_fence = (order == memory_order_conservative) ||            \
+                            (order == memory_order_seq_cst);                   \
+    if (full_fence) { z196_fast_sync(); }                                      \
+    if constexpr (byte_size == 4) {                                            \
+      __asm__ __volatile__ (                                                   \
+        "   .insn    rsy," OPC32 ",%[old],%[bits],%[mem] \n\t"                 \
+        : [old]  "=&d" (old_value) /* write-only, previous value */            \
+        , [mem]  "+Q"  (*dest)     /* read/write, updated atomically */        \
+        : [bits] "d"   (bits)      /* read-only */                             \
+        : "cc", "memory"                                                       \
+      );                                                                       \
+    } else {                                                                   \
+      __asm__ __volatile__ (                                                   \
+        "   .insn    rsy," OPC64 ",%[old],%[bits],%[mem] \n\t"                 \
+        : [old]  "=&d" (old_value) /* write-only, previous value */            \
+        , [mem]  "+Q"  (*dest)     /* read/write, updated atomically */        \
+        : [bits] "d"   (bits)      /* read-only */                             \
+        : "cc", "memory"                                                       \
+      );                                                                       \
+    }                                                                          \
+    if (full_fence) { z196_fast_sync(); }                                      \
+    return old_value;
+
+template<size_t byte_size>
+class AtomicAccess::PlatformBitops<byte_size, true>
+  : public PostfetchBitopsUsingPrefetch {
+  static_assert(byte_size == 4 || byte_size == 8);
+
+public:
+  template<typename T>
+  T fetch_then_and(T volatile* dest, T bits, atomic_memory_order order) const {
+    static_assert(byte_size == sizeof(T));
+    Z_LOAD_AND_BITOP("0xeb00000000f4", "0xeb00000000e4") // LAN, LANG
+  }
+
+  template<typename T>
+  T fetch_then_or(T volatile* dest, T bits, atomic_memory_order order) const {
+    static_assert(byte_size == sizeof(T));
+    Z_LOAD_AND_BITOP("0xeb00000000f6", "0xeb00000000e6") // LAO, LAOG
+  }
+
+  template<typename T>
+  T fetch_then_xor(T volatile* dest, T bits, atomic_memory_order order) const {
+    static_assert(byte_size == sizeof(T));
+    Z_LOAD_AND_BITOP("0xeb00000000f7", "0xeb00000000e7") // LAX, LAXG
+  }
+};
+
+#undef Z_LOAD_AND_BITOP
+
+// There is no byte-sized load-and-and/or/xor that returns the old value. The
+// byte-sized NI/OI/XI of interlocked-access facility 2 (zEC12) are interlocked
+// but only set the condition code, so they cannot implement fetch_then_* or
+// *_then_fetch. Keep the default cmpxchg-based implementation.
+template<>
+class AtomicAccess::PlatformBitops<1, true>
+  : public PrefetchBitopsUsingCmpxchg,
+    public PostfetchBitopsUsingCmpxchg
+{};
+
 template<size_t byte_size>
 struct AtomicAccess::PlatformOrderedLoad<byte_size, X_ACQUIRE>
 {
