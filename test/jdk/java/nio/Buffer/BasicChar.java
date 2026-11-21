@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -559,20 +559,42 @@ public class BasicChar
     }
 
     private static void catchIndexOutOfBounds(Buffer b, Runnable thunk) {
-        tryCatch(b, IndexOutOfBoundsException.class, thunk);
+        tryCatch(b, IndexOutOfBoundsException.class, "null", thunk);
     }
 
-    private static void catchIndexOutOfBounds(char[] t, Runnable thunk) {
-        tryCatch(t, IndexOutOfBoundsException.class, thunk);
+    private static void catchIndexOutOfBoundsForIndex(Buffer b, Runnable thunk) {
+        tryCatch(b, IndexOutOfBoundsException.class, "Index [-]?\\d+ out of bounds for length \\d+", thunk);
+    }
+
+    private static void catchIndexOutOfBoundsForRange(Buffer b, Runnable thunk) {
+        tryCatch(b, IndexOutOfBoundsException.class, "Range .+ out of bounds for length \\d+", thunk);
+    }
+
+    private static void catchIndexOutOfBoundsForRange(char[] t, Runnable thunk) {
+        tryCatch(t, IndexOutOfBoundsException.class, "Range .+ out of bounds for length \\d+", thunk);
     }
 
     private static void tryCatch(Buffer b, Class<?> ex, Runnable thunk) {
+        tryCatch(b, ex, null, thunk);
+    }
+
+    private static void tryCatch(Buffer b, Class<?> ex, String messagePattern, Runnable thunk) {
         boolean caught = false;
         try {
             thunk.run();
         } catch (Throwable x) {
             if (ex.isAssignableFrom(x.getClass())) {
                 caught = true;
+                var message = x.getMessage();
+                if (message == null) {
+                    message = "null";
+                }
+                if (messagePattern != null && !message.matches(messagePattern)) {
+                    var reason = String.format(
+                        "%s message \"%s\" does not match pattern \"%s\"",
+                        ex.getName(), message, messagePattern);
+                    fail(reason, b);
+                }
             } else {
                 String s = x.getMessage();
                 if (s == null)
@@ -586,7 +608,11 @@ public class BasicChar
     }
 
     private static void tryCatch(char[] t, Class<?> ex, Runnable thunk) {
-        tryCatch(CharBuffer.wrap(t), ex, thunk);
+        tryCatch(CharBuffer.wrap(t), ex, null, thunk);
+    }
+
+    private static void tryCatch(char[] t, Class<?> ex, String messagePattern, Runnable thunk) {
+        tryCatch(CharBuffer.wrap(t), ex, messagePattern, thunk);
     }
 
     public static void test(int level, final CharBuffer b, boolean direct) {
@@ -656,10 +682,10 @@ public class BasicChar
                 // append() should throw IndexOutOfBoundsException
                 final CharBuffer cbIOOBE = f.apply(cslen + 1);
                 for (int[] bds : bounds)
-                    tryCatch(cbIOOBE, IndexOutOfBoundsException.class, () ->
+                    catchIndexOutOfBoundsForRange(cbIOOBE, () ->
                         cbIOOBE.append(csq, bds[0], bds[1]));
 
-                tryCatch(cb, IndexOutOfBoundsException.class, () ->
+                catchIndexOutOfBoundsForRange(cb, () ->
                     cb.append(csq.subSequence(0, 8), 4, 12));
 
                 // should append nothing
@@ -724,9 +750,9 @@ public class BasicChar
         tryCatch(b, BufferUnderflowException.class, () -> b.get());
         tryCatch(b, BufferOverflowException.class, () -> b.put((char)42));
         // The index must be non-negative and less than the buffer's limit.
-        catchIndexOutOfBounds(b, () -> b.get(b.limit()));
-        catchIndexOutOfBounds(b, () -> b.get(-1));
-        catchIndexOutOfBounds(b, () -> b.put(b.limit(), (char)42));
+        catchIndexOutOfBoundsForIndex(b, () -> b.get(b.limit()));
+        catchIndexOutOfBoundsForIndex(b, () -> b.get(-1));
+        catchIndexOutOfBoundsForIndex(b, () -> b.put(b.limit(), (char)42));
         tryCatch(b, InvalidMarkException.class,
                 () -> b.position(0).mark().compact().reset());
 
@@ -776,24 +802,24 @@ public class BasicChar
         catchNullArgument(b, () -> b.put(7, (char[])null, 0, 42));
 
         char[] tmpa = new char[42];
-        catchIndexOutOfBounds(b, () -> b.get(7, tmpa, -1, 42));
-        catchIndexOutOfBounds(b, () -> b.get(7, tmpa, 42, 1));
-        catchIndexOutOfBounds(b, () -> b.get(7, tmpa, 41, -1));
-        catchIndexOutOfBounds(b, () -> b.get(-1, tmpa, 0, 1));
-        catchIndexOutOfBounds(b, () -> b.get(b.limit(), tmpa, 0, 1));
-        catchIndexOutOfBounds(b, () -> b.get(b.limit() - 41, tmpa, 0, 42));
+        catchIndexOutOfBoundsForRange(b, () -> b.get(7, tmpa, -1, 42));
+        catchIndexOutOfBoundsForRange(b, () -> b.get(7, tmpa, 42, 1));
+        catchIndexOutOfBoundsForRange(b, () -> b.get(7, tmpa, 41, -1));
+        catchIndexOutOfBoundsForRange(b, () -> b.get(-1, tmpa, 0, 1));
+        catchIndexOutOfBoundsForRange(b, () -> b.get(b.limit(), tmpa, 0, 1));
+        catchIndexOutOfBoundsForRange(b, () -> b.get(b.limit() - 41, tmpa, 0, 42));
 
-        catchIndexOutOfBounds(b, () -> b.put(7, tmpa, -1, 42));
-        catchIndexOutOfBounds(b, () -> b.put(7, tmpa, 42, 1));
-        catchIndexOutOfBounds(b, () -> b.put(7, tmpa, 41, -1));
-        catchIndexOutOfBounds(b, () -> b.put(-1, tmpa, 0, 1));
-        catchIndexOutOfBounds(b, () -> b.put(b.limit(), tmpa, 0, 1));
-        catchIndexOutOfBounds(b, () -> b.put(b.limit() - 41, tmpa, 0, 42));
+        catchIndexOutOfBoundsForRange(b, () -> b.put(7, tmpa, -1, 42));
+        catchIndexOutOfBoundsForRange(b, () -> b.put(7, tmpa, 42, 1));
+        catchIndexOutOfBoundsForRange(b, () -> b.put(7, tmpa, 41, -1));
+        catchIndexOutOfBoundsForRange(b, () -> b.put(-1, tmpa, 0, 1));
+        catchIndexOutOfBoundsForRange(b, () -> b.put(b.limit(), tmpa, 0, 1));
+        catchIndexOutOfBoundsForRange(b, () -> b.put(b.limit() - 41, tmpa, 0, 42));
 
-        catchIndexOutOfBounds(b, () -> b.slice(-1, 7));
-        catchIndexOutOfBounds(b, () -> b.slice(b.limit() + 1, 7));
-        catchIndexOutOfBounds(b, () -> b.slice(0, -1));
-        catchIndexOutOfBounds(b, () -> b.slice(7, b.limit() - 7 + 1));
+        catchIndexOutOfBoundsForRange(b, () -> b.slice(-1, 7));
+        catchIndexOutOfBoundsForRange(b, () -> b.slice(b.limit() + 1, 7));
+        catchIndexOutOfBoundsForRange(b, () -> b.slice(0, -1));
+        catchIndexOutOfBoundsForRange(b, () -> b.slice(7, b.limit() - 7 + 1));
 
         // Values
 
@@ -1111,24 +1137,24 @@ public class BasicChar
         // The index, relative to the position, must be non-negative and
         // smaller than remaining().
         catchIndexOutOfBounds(b, () -> b.charAt(-1));
-        catchIndexOutOfBounds(b, () -> b.charAt(b.remaining()));
+        catchIndexOutOfBoundsForIndex(b, () -> b.charAt(b.remaining()));
         // The index must be non-negative and less than the buffer's limit.
-        catchIndexOutOfBounds(b, () -> b.get(b.limit()));
-        catchIndexOutOfBounds(b, () -> b.get(-1));
+        catchIndexOutOfBoundsForIndex(b, () -> b.get(b.limit()));
+        catchIndexOutOfBoundsForIndex(b, () -> b.get(-1));
         // The start must be non-negative and no larger than remaining().
-        catchIndexOutOfBounds(b, () -> b.subSequence(-1, b.remaining()));
-        catchIndexOutOfBounds(b, () -> b.subSequence(b.remaining() + 1, b.remaining()));
+        catchIndexOutOfBoundsForRange(b, () -> b.subSequence(-1, b.remaining()));
+        catchIndexOutOfBoundsForRange(b, () -> b.subSequence(b.remaining() + 1, b.remaining()));
 
         // The end must be no smaller than start and no larger than
         // remaining().
-        catchIndexOutOfBounds(b, () -> b.subSequence(2, 1));
-        catchIndexOutOfBounds(b, () -> b.subSequence(0, b.remaining() + 1));
+        catchIndexOutOfBoundsForRange(b, () -> b.subSequence(2, 1));
+        catchIndexOutOfBoundsForRange(b, () -> b.subSequence(0, b.remaining() + 1));
 
         // The offset must be non-negative and no larger than <array.length>.
-        catchIndexOutOfBounds(b, () -> CharBuffer.wrap(s, -1, s.length()));
-        catchIndexOutOfBounds(b, () -> CharBuffer.wrap(s, s.length() + 1, s.length()));
-        catchIndexOutOfBounds(b, () -> CharBuffer.wrap(s, 1, 0));
-        catchIndexOutOfBounds(b, () -> CharBuffer.wrap(s, 0, s.length() + 1));
+        catchIndexOutOfBoundsForRange(b, () -> CharBuffer.wrap(s, -1, s.length()));
+        catchIndexOutOfBoundsForRange(b, () -> CharBuffer.wrap(s, s.length() + 1, s.length()));
+        catchIndexOutOfBoundsForRange(b, () -> CharBuffer.wrap(s, 1, 0));
+        catchIndexOutOfBoundsForRange(b, () -> CharBuffer.wrap(s, 0, s.length() + 1));
     }
 
 
@@ -1143,10 +1169,10 @@ public class BasicChar
         ck(b, b.limit(), offset + length);
 
         // The offset must be non-negative and no larger than <array.length>.
-        catchIndexOutOfBounds(ba, () -> CharBuffer.wrap(ba, -1, ba.length));
-        catchIndexOutOfBounds(ba, () -> CharBuffer.wrap(ba, ba.length + 1, ba.length));
-        catchIndexOutOfBounds(ba, () -> CharBuffer.wrap(ba, 0, -1));
-        catchIndexOutOfBounds(ba, () -> CharBuffer.wrap(ba, 0, ba.length + 1));
+        catchIndexOutOfBoundsForRange(ba, () -> CharBuffer.wrap(ba, -1, ba.length));
+        catchIndexOutOfBoundsForRange(ba, () -> CharBuffer.wrap(ba, ba.length + 1, ba.length));
+        catchIndexOutOfBoundsForRange(ba, () -> CharBuffer.wrap(ba, 0, -1));
+        catchIndexOutOfBoundsForRange(ba, () -> CharBuffer.wrap(ba, 0, ba.length + 1));
 
         // A NullPointerException will be thrown if the array is null.
         tryCatch(ba, NullPointerException.class,

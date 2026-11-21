@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,5 +55,30 @@ class XXX {
         return innerLoopGet$Type$($ms${#if[view]?ByteBufferAs}$Type$Buffer{#if[view]?View}$SWAP$$RO$);
     }
 #end[byte]
+#if[char]
+#if[RO]
+
+    // -- $Ms$_{#if[view]?View}_$SWAP$_$RO$ `subSequence(int start, int end)`
+
+    @Benchmark
+    public $Type$Buffer test$Ms$SubSeqValidRange{#if[view]?View}$SWAP$$RO$() {
+        return $ms${#if[view]?ByteBufferAs}$Type$Buffer{#if[view]?View}$SWAP$$RO$.subSequence(
+                1, $ms${#if[view]?ByteBufferAs}$Type$Buffer{#if[view]?View}$SWAP$$RO$.length());
+    }
+
+    @Benchmark
+    public void test$Ms$SubSeqBogusRange{#if[view]?View}$SWAP$$RO$(Blackhole bh) {
+        try {
+            bh.consume(
+                    $ms${#if[view]?ByteBufferAs}$Type$Buffer{#if[view]?View}$SWAP$$RO$.subSequence(
+                        -1, $ms${#if[view]?ByteBufferAs}$Type$Buffer{#if[view]?View}$SWAP$$RO$.length()));
+            throw new AssertionError();
+        } catch (IndexOutOfBoundsException ioobe) {
+            bh.consume(ioobe);
+        }
+    }
+#end[RO]
+#end[char]
 #end
+
 }
