@@ -37,6 +37,7 @@
 #include "gc/shared/isGCActiveMark.hpp"
 #include "memory/universe.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/java.hpp"
 
 bool VM_G1CollectFull::skip_operation() const {
   // There is a race between the periodic collection task's checks for
@@ -131,6 +132,10 @@ void VM_G1CollectForAllocation::doit() {
     // An allocation had been requested. Do it, eventually trying a stronger
     // kind of GC.
     _result = g1h->satisfy_failed_allocation(_node_index, _word_size);
+
+    if (_result == nullptr && !is_vm_created()) {
+      Universe::heap()->oom_during_initialization();
+    }
   } else if (g1h->should_upgrade_to_full_gc()) {
     // There has been a request to perform a GC to free some space. We have no
     // information on how much memory has been asked for. In case there are

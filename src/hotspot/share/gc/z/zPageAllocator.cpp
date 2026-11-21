@@ -54,6 +54,7 @@
 #include "jfr/jfrEvents.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
+#include "memory/universe.hpp"
 #include "nmt/memTag.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/init.hpp"
@@ -2920,6 +2921,12 @@ void ZPageAllocator::notify_out_of_memory() {
     if (!has_alloc_seen_old(allocation)) {
       // Not out of memory, keep remaining allocation requests enqueued
       return;
+    }
+
+    if (!is_vm_created()) {
+      ZUnlocker<ZLock> unlocker(&_lock);
+      Universe::heap()->oom_safepoint_during_initialization();
+      ShouldNotReachHere();
     }
 
     // Out of memory, dequeue and fail allocation request

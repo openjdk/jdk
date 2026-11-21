@@ -31,6 +31,9 @@ class Handle;
 class JavaThread;
 class Symbol;
 
+// Whether JNI_CreateJavaVM has completed successfully.
+extern bool is_vm_created();
+
 // Execute code before all handles are released and thread is killed; prologue to vm_exit
 extern void before_exit(JavaThread * thread, bool halt = false);
 
