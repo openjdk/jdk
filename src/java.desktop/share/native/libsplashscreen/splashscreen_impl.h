@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -187,7 +187,7 @@ int BitmapToYXBandedRectangles(ImageRect * pSrcRect, RECT_T * out);
 
 #define SAFE_TO_ALLOC(c, sz)                                               \
     (((c) > 0) && ((sz) > 0) &&                                            \
-     ((0xffffffffu / ((unsigned int)(c))) > (unsigned int)(sz)))
+     ((c) <= INT_MAX / (sz)))
 
 #define dbgprintf printf
 
