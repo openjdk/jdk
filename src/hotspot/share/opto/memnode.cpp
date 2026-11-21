@@ -2387,7 +2387,6 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
     if (phase->type(value)->is_ptr() && _type->is_narrowoop()) {
       return phase->type(value)->make_narrowoop();
     } else if (value->bottom_type()->higher_equal(_type)) {
-      assert(value->bottom_type()->higher_equal(_type), "sanity");
       return phase->type(value);
     } else if (value->is_ConI()) {
       int con = value->get_int();
