@@ -999,6 +999,18 @@ inline void Assembler::z_vmae(   VectorRegister v1, VectorRegister v2, VectorReg
 inline void Assembler::z_vmale(  VectorRegister v1, VectorRegister v2, VectorRegister v3, VectorRegister v4, int64_t m5) {emit_48(VMALE_ZOPC | vreg(v1,  8) | vreg(v2, 12) | vreg(v3, 16) | vreg(v4, 32) | vesc_mask(m5, VRET_BYTE, VRET_FW, 20)); }
 inline void Assembler::z_vmao(   VectorRegister v1, VectorRegister v2, VectorRegister v3, VectorRegister v4, int64_t m5) {emit_48(VMAO_ZOPC  | vreg(v1,  8) | vreg(v2, 12) | vreg(v3, 16) | vreg(v4, 32) | vesc_mask(m5, VRET_BYTE, VRET_FW, 20)); }
 inline void Assembler::z_vmalo(  VectorRegister v1, VectorRegister v2, VectorRegister v3, VectorRegister v4, int64_t m5) {emit_48(VMALO_ZOPC | vreg(v1,  8) | vreg(v2, 12) | vreg(v3, 16) | vreg(v4, 32) | vesc_mask(m5, VRET_BYTE, VRET_FW, 20)); }
+inline void Assembler::z_vfma(   VectorRegister v1, VectorRegister v2, VectorRegister v3, VectorRegister v4, int64_t m6) {emit_48(VFMA_ZOPC  | vreg(v1,  8) | vreg(v2, 12) | vreg(v3, 16) | vreg(v4, 32) | vesc_mask(m6, VRET_FW,   VRET_DW, 20)); }
+inline void Assembler::z_vfmasb( VectorRegister v1, VectorRegister v2, VectorRegister v3, VectorRegister v4)             {z_vfma(v1, v2, v3, v4, VRET_FW); }
+inline void Assembler::z_vfmadb( VectorRegister v1, VectorRegister v2, VectorRegister v3, VectorRegister v4)             {z_vfma(v1, v2, v3, v4, VRET_DW); }
+inline void Assembler::z_vfnma(  VectorRegister v1, VectorRegister v2, VectorRegister v3, VectorRegister v4, int64_t m6) {emit_48(VFNMA_ZOPC  | vreg(v1,  8) | vreg(v2, 12) | vreg(v3, 16) | vreg(v4, 32) | vesc_mask(m6, VRET_FW,   VRET_DW, 20)); }
+inline void Assembler::z_vfnmasb(VectorRegister v1, VectorRegister v2, VectorRegister v3, VectorRegister v4)             {z_vfnma(v1, v2, v3, v4, VRET_FW); }
+inline void Assembler::z_vfnmadb(VectorRegister v1, VectorRegister v2, VectorRegister v3, VectorRegister v4)             {z_vfnma(v1, v2, v3, v4, VRET_DW); }
+inline void Assembler::z_vfms(   VectorRegister v1, VectorRegister v2, VectorRegister v3, VectorRegister v4, int64_t m6) {emit_48(VFMS_ZOPC  | vreg(v1,  8) | vreg(v2, 12) | vreg(v3, 16) | vreg(v4, 32) | vesc_mask(m6, VRET_FW,   VRET_DW, 20)); }
+inline void Assembler::z_vfmssb( VectorRegister v1, VectorRegister v2, VectorRegister v3, VectorRegister v4)             {z_vfms(v1, v2, v3, v4, VRET_FW); }
+inline void Assembler::z_vfmsdb( VectorRegister v1, VectorRegister v2, VectorRegister v3, VectorRegister v4)             {z_vfms(v1, v2, v3, v4, VRET_DW); }
+inline void Assembler::z_vfnms(  VectorRegister v1, VectorRegister v2, VectorRegister v3, VectorRegister v4, int64_t m6) {emit_48(VFNMS_ZOPC  | vreg(v1,  8) | vreg(v2, 12) | vreg(v3, 16) | vreg(v4, 32) | vesc_mask(m6, VRET_FW,   VRET_DW, 20)); }
+inline void Assembler::z_vfnmssb(VectorRegister v1, VectorRegister v2, VectorRegister v3, VectorRegister v4)             {z_vfnms(v1, v2, v3, v4, VRET_FW); }
+inline void Assembler::z_vfnmsdb(VectorRegister v1, VectorRegister v2, VectorRegister v3, VectorRegister v4)             {z_vfnms(v1, v2, v3, v4, VRET_DW); }
 
 // VECTOR SUM
 inline void Assembler::z_vsum(   VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t m4) {emit_48(VSUM_ZOPC  | vreg(v1,  8) | vreg(v2, 12) | vreg(v3, 16) | vesc_mask(m4, VRET_BYTE, VRET_HW, 32)); }
@@ -1212,32 +1224,56 @@ inline void Assembler::z_vistrfs(VectorRegister v1, VectorRegister v2)          
 //-------------------------------
 // ADD
 inline void Assembler::z_vfa(  VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t m4)   {emit_48(VFA_ZOPC   | vreg(v1,  8) | vreg(v2, 12) | vreg(v3, 16) | vesc_mask(m4, VRET_FW, VRET_QW, 32)); }
-inline void Assembler::z_vfasb(  VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vfa(v1, v2, v3, VRET_FW); }         // vector element type 'F'
-inline void Assembler::z_vfadb(  VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vfa(v1, v2, v3, VRET_DW); }         // vector element type 'G'
+inline void Assembler::z_vfasb(VectorRegister v1, VectorRegister v2, VectorRegister v3)               {z_vfa(v1, v2, v3, VRET_FW); }         // vector element type 'F'
+inline void Assembler::z_vfadb(VectorRegister v1, VectorRegister v2, VectorRegister v3)               {z_vfa(v1, v2, v3, VRET_DW); }         // vector element type 'G'
 
 // SUB
 inline void Assembler::z_vfs(  VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t m4)   {emit_48(VFS_ZOPC   | vreg(v1,  8) | vreg(v2, 12) | vreg(v3, 16) | vesc_mask(m4, VRET_FW, VRET_QW, 32)); }
-inline void Assembler::z_vfssb(  VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vfs(v1, v2, v3, VRET_FW); }         // vector element type 'F'
-inline void Assembler::z_vfsdb(  VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vfs(v1, v2, v3, VRET_DW); }         // vector element type 'G'
+inline void Assembler::z_vfssb(VectorRegister v1, VectorRegister v2, VectorRegister v3)               {z_vfs(v1, v2, v3, VRET_FW); }         // vector element type 'F'
+inline void Assembler::z_vfsdb(VectorRegister v1, VectorRegister v2, VectorRegister v3)               {z_vfs(v1, v2, v3, VRET_DW); }         // vector element type 'G'
 
 // MUL
 inline void Assembler::z_vfm(  VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t m4)   {emit_48(VFM_ZOPC   | vreg(v1,  8) | vreg(v2, 12) | vreg(v3, 16) | vesc_mask(m4, VRET_FW, VRET_QW, 32)); }
-inline void Assembler::z_vfmsb(  VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vfm(v1, v2, v3, VRET_FW); }         // vector element type 'F'
-inline void Assembler::z_vfmdb(  VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vfm(v1, v2, v3, VRET_DW); }         // vector element type 'G'
+inline void Assembler::z_vfmsb(VectorRegister v1, VectorRegister v2, VectorRegister v3)               {z_vfm(v1, v2, v3, VRET_FW); }         // vector element type 'F'
+inline void Assembler::z_vfmdb(VectorRegister v1, VectorRegister v2, VectorRegister v3)               {z_vfm(v1, v2, v3, VRET_DW); }         // vector element type 'G'
 
 // DIV
 inline void Assembler::z_vfd(  VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t m4)   {emit_48(VFD_ZOPC   | vreg(v1,  8) | vreg(v2, 12) | vreg(v3, 16) | vesc_mask(m4, VRET_FW, VRET_QW, 32)); }
-inline void Assembler::z_vfdsb(  VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vfd(v1, v2, v3, VRET_FW); }         // vector element type 'F'
-inline void Assembler::z_vfddb(  VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vfd(v1, v2, v3, VRET_DW); }         // vector element type 'G'
+inline void Assembler::z_vfdsb(VectorRegister v1, VectorRegister v2, VectorRegister v3)               {z_vfd(v1, v2, v3, VRET_FW); }         // vector element type 'F'
+inline void Assembler::z_vfddb(VectorRegister v1, VectorRegister v2, VectorRegister v3)               {z_vfd(v1, v2, v3, VRET_DW); }         // vector element type 'G'
 
 // square root
 inline void Assembler::z_vfsq(  VectorRegister v1, VectorRegister v2, int64_t m3)                     {emit_48(VFSQ_ZOPC   | vreg(v1,  8) | vreg(v2, 12) | vesc_mask(m3, VRET_FW, VRET_QW, 32)); }
-inline void Assembler::z_vfsqsb( VectorRegister v1, VectorRegister v2)                                {z_vfsq(v1, v2, VRET_FW); }
-inline void Assembler::z_vfsqdb( VectorRegister v1, VectorRegister v2)                                {z_vfsq(v1, v2, VRET_DW); }
+inline void Assembler::z_vfsqsb(VectorRegister v1, VectorRegister v2)                                 {z_vfsq(v1, v2, VRET_FW); }
+inline void Assembler::z_vfsqdb(VectorRegister v1, VectorRegister v2)                                 {z_vfsq(v1, v2, VRET_DW); }
 
 // vector fp load rounded
 inline void Assembler::z_vflr( VectorRegister v1, VectorRegister v2, int64_t m5, int64_t m3)          {emit_48(VFLR_ZOPC    | vreg(v1,  8) | vreg(v2, 12) | vesc_mask(m5, VRET_FW, 7, 24) | vesc_mask(m3, VRET_FW, VRET_QW, 32)); }
-inline void Assembler::z_vflrd( VectorRegister v1, VectorRegister v2, int64_t m5)                     {z_vflr(v1, v2, m5, VRET_DW); }
+inline void Assembler::z_vflrd(VectorRegister v1, VectorRegister v2, int64_t m5)                      {z_vflr(v1, v2, m5, VRET_DW); }
+
+// sign operations
+inline void Assembler::z_vfpso(  VectorRegister v1, VectorRegister v2, int64_t m3, int64_t m5)        {emit_48(VFPSO_ZOPC | vreg(v1, 8) | vreg(v2, 12) | vesc_mask(m5, 0, 2, 24) | vesc_mask(m3, VRET_FW, VRET_QW, 32)); }
+inline void Assembler::z_vfpsosb(VectorRegister v1, VectorRegister v2, int64_t m5)                    {z_vfpso(v1, v2, VRET_FW, m5); }
+inline void Assembler::z_vfpsodb(VectorRegister v1, VectorRegister v2, int64_t m5)                    {z_vfpso(v1, v2, VRET_DW, m5); }
+// Complement
+inline void Assembler::z_vflcsb( VectorRegister v1, VectorRegister v2)                                {z_vfpsosb(v1, v2, 0); }
+inline void Assembler::z_vflcdb( VectorRegister v1, VectorRegister v2)                                {z_vfpsodb(v1, v2, 0); }
+// Negative
+inline void Assembler::z_vflnsb( VectorRegister v1, VectorRegister v2)                                {z_vfpsosb(v1, v2, 1); }
+inline void Assembler::z_vflndb( VectorRegister v1, VectorRegister v2)                                {z_vfpsodb(v1, v2, 1); }
+// Positive
+inline void Assembler::z_vflpsb( VectorRegister v1, VectorRegister v2)                                {z_vfpsosb(v1, v2, 2); }
+inline void Assembler::z_vflpdb( VectorRegister v1, VectorRegister v2)                                {z_vfpsodb(v1, v2, 2); }
+
+// Max
+inline void Assembler::z_vfmax(  VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t m4) {emit_48(VFMAX_ZOPC | vreg(v1, 8) | vreg(v2, 12) | vreg(v3, 16) | vesc_mask(1, 1, 1, 24) | vesc_mask(m4, VRET_FW, VRET_QW, 32)); }
+inline void Assembler::z_vfmaxsb(VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vfmax(v1, v2, v3, VRET_FW); }
+inline void Assembler::z_vfmaxdb(VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vfmax(v1, v2, v3, VRET_DW); }
+
+// Min
+inline void Assembler::z_vfmin(  VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t m4) {emit_48(VFMIN_ZOPC | vreg(v1, 8) | vreg(v2, 12) | vreg(v3, 16) | vesc_mask(1, 1, 1, 24) | vesc_mask(m4, VRET_FW, VRET_QW, 32)); }
+inline void Assembler::z_vfminsb(VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vfmin(v1, v2, v3, VRET_FW); }
+inline void Assembler::z_vfmindb(VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vfmin(v1, v2, v3, VRET_DW); }
 
 //-------------------------------
 // FLOAT INSTRUCTIONS
