@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,8 @@ package sun.net.www;
 
 import java.io.*;
 import java.util.concurrent.locks.ReentrantLock;
-import sun.net.www.http.ChunkedInputStream;
 
+import jdk.internal.util.Preconditions;
 
 public class MeteredStream extends FilterInputStream {
 
@@ -37,7 +37,7 @@ public class MeteredStream extends FilterInputStream {
      * from subsequent read() 's
      */
     protected boolean closed = false;
-    protected long expected;
+    protected final long expected;
     protected long count = 0;
     protected long markedCount = 0;
     protected int markLimit = -1;
@@ -112,7 +112,10 @@ public class MeteredStream extends FilterInputStream {
     public int read() throws java.io.IOException {
         lock();
         try {
-            if (closed) return -1;
+            long remaining = expected - count;
+            if (closed || (expected >= 0 && remaining < 1)) {
+                return -1;
+            }
             int c = in.read();
             if (c != -1) {
                 justRead(1);
@@ -127,11 +130,20 @@ public class MeteredStream extends FilterInputStream {
 
     public int read(byte b[], int off, int len)
                 throws java.io.IOException {
+        Preconditions.checkFromIndexSize(
+                off, len, b.length,     // Implicit null check on `b`
+                Preconditions.AIOOBE_FORMATTER);
+        if (len < 1) {
+            return 0;
+        }
         lock();
         try {
-            if (closed) return -1;
-
-            int n = in.read(b, off, len);
+            long remaining = expected - count;
+            if (closed || (expected >= 0 && remaining < 1)) {
+                return -1;
+            }
+            int trimmedLength = expected >= 0 ? (int) Math.min(len, remaining) : len;
+            int n = in.read(b, off, trimmedLength);
             justRead(n);
             return n;
         } finally {
@@ -140,20 +152,19 @@ public class MeteredStream extends FilterInputStream {
     }
 
     public long skip(long n) throws IOException {
+        if (n < 1) {
+            return 0;
+        }
         lock();
         try {
-            // REMIND: what does skip do on EOF????
-            if (closed) return 0;
-
-            if (in instanceof ChunkedInputStream) {
-                n = in.skip(n);
-            } else {
-                // just skip min(n, num_bytes_left)
-                long min = (n > expected - count) ? expected - count : n;
-                n = in.skip(min);
+            long remaining = expected - count;
+            if (closed || (expected >= 0 && remaining < 1)) {
+                return 0;
             }
-            justRead(n);
-            return n;
+            long maxSkip = expected >= 0 ? Math.min(n, remaining) : n;
+            long skipped = in.skip(maxSkip);
+            justRead(skipped);
+            return skipped;
         } finally {
             unlock();
         }
@@ -174,7 +185,10 @@ public class MeteredStream extends FilterInputStream {
     public int available() throws IOException {
         lock();
         try {
-            return closed ? 0 : in.available();
+            if (closed) return 0;
+            long remaining = expected - count;
+            int available = in.available();
+            return expected < 0 ? available : (int) Math.min(remaining, available);
         } finally {
             unlock();
         }
