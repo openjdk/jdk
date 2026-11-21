@@ -39,7 +39,10 @@
                                       do_arch_entry,                    \
                                       do_arch_entry_init,               \
                                       do_arch_entry_array)              \
-  do_arch_blob(initial, 10000)                                          \
+  do_arch_blob(initial, 16000)                                          \
+  do_stub(initial, updateBytesCRC32_scalar)                             \
+  do_arch_entry(riscv, initial, updateBytesCRC32_scalar,                \
+                updateBytesCRC32_scalar, updateBytesCRC32_scalar)        \
 
 
 #define STUBGEN_CONTINUATION_BLOBS_ARCH_DO(do_stub,                     \
