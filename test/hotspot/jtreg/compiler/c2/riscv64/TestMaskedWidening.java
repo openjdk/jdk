@@ -52,10 +52,16 @@ public class TestMaskedWidening {
     private static final String I2L = "convI2L_reg_reg";
     private static final String I2L_ANDI = "convI2L_andI_reg_imm";
     private static final String I2L_ZEXT_H = "convI2L_andI_16bits_b";
+    private static final String I2L_L2I_ANDI = "convI2L_andI_l2i_reg_imm";
 
     private static final int[] VALUES = {
         0, 1, -1, Integer.MIN_VALUE, Integer.MAX_VALUE,
         0x40000000, 0x80000001, 0x55555555, 0xaaaaaaaa
+    };
+
+    private static final long[] LONG_VALUES = {
+        0L, 1L, -1L, Long.MIN_VALUE, Long.MAX_VALUE,
+        0x1234_5678_9abc_def0L, 0xffff_ffff_8000_0000L
     };
 
     public static void main(String[] args) {
@@ -87,10 +93,33 @@ public class TestMaskedWidening {
         return (long) (value & 0xffff);
     }
 
-    @Run(test = {"maskImmediate", "maskNegativeImmediate", "maskOutOfRangeImmediate", "maskShort"})
+    @Test
+    @IR(counts = {I2L_L2I_ANDI, "1"}, failOn = {I2L}, phase = CompilePhase.FINAL_CODE)
+    static long maskImmediateFromLong(long value) {
+        return (int) value & 0x7ff;
+    }
+
+    @Test
+    @IR(counts = {I2L_L2I_ANDI, "0"}, phase = CompilePhase.FINAL_CODE)
+    static long maskNegativeImmediateFromLong(long value) {
+        return (int) value & -2048;
+    }
+
+    @Test
+    @IR(counts = {I2L_ZEXT_H, "1"}, failOn = {I2L},
+        applyIf = {"UseZbb", "true"}, phase = CompilePhase.FINAL_CODE)
+    static long maskShortFromLong(long value) {
+        return (int) value & 0xffff;
+    }
+
+    @Run(test = {"maskImmediate", "maskNegativeImmediate", "maskOutOfRangeImmediate", "maskShort",
+                 "maskImmediateFromLong", "maskNegativeImmediateFromLong", "maskShortFromLong"})
     static void runTests() {
         for (int value : VALUES) {
             verify(value);
+        }
+        for (long value : LONG_VALUES) {
+            verifyFromLong(value);
         }
     }
 
@@ -100,5 +129,12 @@ public class TestMaskedWidening {
         Asserts.assertEQ(maskNegativeImmediate(value), (long) (value & -2048));
         Asserts.assertEQ(maskOutOfRangeImmediate(value), (long) (value & 0xfff));
         Asserts.assertEQ(maskShort(value), (long) (value & 0xffff));
+    }
+
+    @DontCompile
+    static void verifyFromLong(long value) {
+        Asserts.assertEQ(maskImmediateFromLong(value), (long) ((int) value & 0x7ff));
+        Asserts.assertEQ(maskNegativeImmediateFromLong(value), (long) ((int) value & -2048));
+        Asserts.assertEQ(maskShortFromLong(value), (long) ((int) value & 0xffff));
     }
 }
