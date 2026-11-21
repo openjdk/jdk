@@ -23,6 +23,7 @@
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
@@ -40,6 +41,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @test
  * @bug 8154212 8154470 8392966
  * @summary Miscellaneous tests for java launcher
+ * @requires test.thread.factory != "Virtual"
+ * @requires vm.flagless
  * @library /test/lib
  * @build jdk.test.lib.process.ProcessTools jdk.test.lib.JDKToolFinder
  *        jdk.test.lib.process.OutputAnalyzer
@@ -79,7 +82,7 @@ public class MiscTests {
                 "-Djava.class.path=" + classPathDir,
                 mainClass
         );
-        final OutputAnalyzer oa = ProcessTools.executeTestJava(javaCmdArgs);
+        final OutputAnalyzer oa = launchJava(javaCmdArgs);
         oa.reportDiagnosticSummary();
         oa.shouldHaveExitValue(0);
     }
@@ -125,14 +128,27 @@ public class MiscTests {
         // once in headless mode and once headful
         for (boolean headless : new boolean[]{true, false}) {
             System.err.println("running with -Djava.awt.headless=" + headless);
-            final OutputAnalyzer oa = ProcessTools.executeTestJava(
+            final List<String> javaCmdArgs = List.of(
                     "-Djava.awt.headless=" + headless,
                     // force the error message from the launcher to be in English
                     "-Duser.language=en", "-Duser.country=US",
-                    "-jar", jarFile.toString());
+                    "-jar", jarFile.toString()
+            );
+            final OutputAnalyzer oa = launchJava(javaCmdArgs);
             oa.shouldNotHaveExitValue(0); // expected to fail with non-zero exit code
             // verify it failed for the right reason
             oa.shouldContain("Error: No manifest in JAR file");
         }
+    }
+
+    private static OutputAnalyzer launchJava(final List<String> javaCmdArgs) throws Exception {
+        final String javaLocation = JDKToolFinder.getJDKTool("java");
+        System.err.println("running test against " + javaLocation);
+        final List<String> cmd = new ArrayList<>();
+        cmd.add(javaLocation);
+        cmd.addAll(javaCmdArgs);
+        System.err.println("Launching " + cmd);
+        final ProcessBuilder pb = new ProcessBuilder(cmd);
+        return ProcessTools.executeCommand(pb);
     }
 }
