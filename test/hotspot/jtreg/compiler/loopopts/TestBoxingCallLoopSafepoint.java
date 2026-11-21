@@ -44,23 +44,30 @@ public class TestBoxingCallLoopSafepoint {
     static double limit;
     static long lFld;
     static double dFld;
+    static volatile boolean inTest;
 
     public static void main(String[] args) throws Exception {
         limit = 1;
         Double.valueOf(3.4); // Load Double class.
         test(); // Compile with C2 (-Xcomp).
+        inTest = false; // Reset: the warm-up call also set it.
 
         limit = Double.POSITIVE_INFINITY; // Make the loop run indefinitely.
         Thread thread = new Thread(TestBoxingCallLoopSafepoint::test);
         thread.setDaemon(true);
         thread.start();
-        Thread.sleep(100);
+        while (!inTest) {
+            Thread.onSpinWait();
+        }
+        // There is no safepoint poll between the store to inTest and the loop,
+        // so the thread can only reach this safepoint from inside the loop.
         System.gc(); // Trigger safepoint
     }
 
     static double test() {
         Double dBox = null;
         double d = 0;
+        inTest = true; // Signal main thread. No safepoint poll until the loop.
         for (double i = 0; i < limit; i++) { // Non-counted loop.
             // Non-inlined boxing call whose only use is the loop SafePoint.
             // Before the fix:
