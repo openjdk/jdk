@@ -99,9 +99,20 @@ import java.util.concurrent.CountedCompleter;
             super(null, 1);
             this.task = task;
         }
-        public final void compute() { }
-        public final void onCompletion(CountedCompleter<?> t) {
-            task.compute();
+        @Override public final void compute() { }
+        @Override public final void onCompletion(CountedCompleter<?> t) { task.compute(); }
+        @Override public final boolean onExceptionalCompletion(Throwable ex, CountedCompleter<?> caller) {
+            // The task is the only venue for exception propagation, as Relay does
+            // not have a completer, the only thing we can do if the task has already been
+            // completed is to return true and say that propagation is still needed, and false otherwise
+            boolean escalate;
+            if (!(escalate = task.isDone())) {
+                // Since completeExceptionally does not report back as to the completion
+                // succeeded or not, we cannot be 100% sure that it did, but it is the best
+                // we can do in this case.
+                task.completeExceptionally(ex);
+            }
+            return escalate;
         }
     }
 
