@@ -519,13 +519,13 @@ public interface ReferenceType
      * The Field must be valid for this type;
      * that is, it must be declared in this type, a superclass, a
      * superinterface, or an implemented interface.
-     * <div class="preview-block">
-     *      <div class="preview-comment">
+     *
+     * {@previewNote (jep=401)
      * This method does not prevent a
      * {@linkplain java.lang.reflect.Field#isStrictInit() strictly-initialized field}
      * from being read before it has been initialized.
-     *      </div>
-     * </div>
+     * }
+     *
      * @param field the field containing the requested value
      * @return the {@link Value} of the instance field.
      * @throws java.lang.IllegalArgumentException if the field is not valid for
@@ -539,13 +539,12 @@ public interface ReferenceType
      * The Fields must be valid for this type;
      * that is, they must be declared in this type, a superclass, a
      * superinterface, or an implemented interface.
-     * <div class="preview-block">
-     *      <div class="preview-comment">
+     *
+     * {@previewNote (jep=401)
      * This method does not prevent a
      * {@linkplain java.lang.reflect.Field#isStrictInit() strictly-initialized field}
      * from being read before it has been initialized.
-     *      </div>
-     * </div>
+     * }
      *
      * @param fields a list of {@link Field} objects containing the
      * requested values.
