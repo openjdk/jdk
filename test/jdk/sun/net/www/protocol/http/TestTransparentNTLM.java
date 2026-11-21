@@ -116,7 +116,9 @@ public class TestTransparentNTLM {
         static final String AUTH_STAGE_TWO =
                 "HTTP/1.1 401 Unauthorized\r\n" +
                 "Content-Length: 0\r\n" +
-                "WWW-Authenticate: NTLM TlRMTVNTUAACAAAAAAAAACgAAAABggAAU3J2Tm9uY2UAAAAAAAAAAA==\r\n\r\n";
+                "WWW-Authenticate: NTLM TlRMTVNTUAACAAAAAgACADgAAAAVgoriXva3" +
+                        "eirBoiYAAAAAAAAAACgAKAA6AAAACgD0ZQAAAA9EAAIAAgBEAAE" +
+                        "AAgBEAAQAAgBkAAMAAgBkAAcACAAAAAAAAAAAAAAAAAA=\r\n\r\n";
 
         static final String AUTH_SUCCESSFUL =
                 "HTTP/1.1 200 OK\r\n" +

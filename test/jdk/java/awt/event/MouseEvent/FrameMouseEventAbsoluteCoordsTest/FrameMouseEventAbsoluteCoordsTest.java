@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,7 @@ public class FrameMouseEventAbsoluteCoordsTest implements MouseListener
                                       button.getHeight()/2);
             robot.mouseMove(mousePositionAbsolute.x,
                             mousePositionAbsolute.y );
-            //            robot.delay(1000);
+            robot.delay(1000);
             robot.mousePress(InputEvent.BUTTON1_MASK);
             robot.mouseRelease(InputEvent.BUTTON1_MASK);
         }catch(AWTException e) {

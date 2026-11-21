@@ -3095,17 +3095,17 @@ bool LibraryCallKit::inline_unsafe_load_store(const BasicType type, const LoadSt
   if (is_reference_type(type)) {
     decorators |= IN_HEAP | ON_UNKNOWN_OOP_REF;
 
-    if (oldval != nullptr && oldval->is_ValueType()) {
+    if (ValueTypeNode* oldval_vt = Node::isa<ValueTypeNode>(oldval); oldval_vt != nullptr) {
       // Re-execute the unsafe access if allocation triggers deoptimization.
       PreserveReexecuteState preexecs(this);
       jvms()->set_should_reexecute(true);
-      oldval = oldval->as_ValueType()->buffer(this)->get_oop();
+      oldval = oldval_vt->buffer(this)->get_oop();
     }
-    if (newval != nullptr && newval->is_ValueType()) {
+    if (ValueTypeNode* newval_vt = Node::isa<ValueTypeNode>(newval); newval_vt != nullptr) {
       // Re-execute the unsafe access if allocation triggers deoptimization.
       PreserveReexecuteState preexecs(this);
       jvms()->set_should_reexecute(true);
-      newval = newval->as_ValueType()->buffer(this)->get_oop();
+      newval = newval_vt->buffer(this)->get_oop();
     }
 
     // Transformation of a value which could be null pointer (CastPP #null)
@@ -3998,7 +3998,7 @@ void LibraryCallKit::extend_setCurrentThread(Node* jt, Node* thread) {
   // False branch, is carrierThread.
   Node* thread_equal_carrierThread = _gvn.transform(new IfFalseNode(iff_thread_not_equal_carrierThread));
   // Store release
-  Node* vthread_false_memory = store_to_memory(thread_equal_carrierThread, vthread_offset, _gvn.intcon(0), T_BOOLEAN, MemNode::release, true);
+  Node* vthread_false_memory = store_to_memory(thread_equal_carrierThread, vthread_offset, _gvn.intcon(0), T_BOOLEAN, MemNode::release, true, false, false, false, false, 0);
 
   set_all_memory(input_memory_state);
 
@@ -4019,7 +4019,7 @@ void LibraryCallKit::extend_setCurrentThread(Node* jt, Node* thread) {
 
   // Store the vthread tid to the jfr thread local.
   Node* thread_id_offset = off_heap_plus_addr(jt, in_bytes(THREAD_LOCAL_OFFSET_JFR + VTHREAD_ID_OFFSET_JFR));
-  Node* tid_memory = store_to_memory(control(), thread_id_offset, tid, T_LONG, MemNode::unordered, true);
+  Node* tid_memory = store_to_memory(control(), thread_id_offset, tid, T_LONG, MemNode::unordered, true, false, false, false, false, 0);
 
   // Branch is_excluded to conditionalize updating the epoch .
   Node* excluded_cmp = _gvn.transform(new CmpINode(is_excluded, excluded_mask));
@@ -4041,7 +4041,7 @@ void LibraryCallKit::extend_setCurrentThread(Node* jt, Node* thread) {
 
   // Store the vthread epoch to the jfr thread local.
   Node* vthread_epoch_offset = off_heap_plus_addr(jt, in_bytes(THREAD_LOCAL_OFFSET_JFR + VTHREAD_EPOCH_OFFSET_JFR));
-  Node* included_memory = store_to_memory(control(), vthread_epoch_offset, epoch, T_CHAR, MemNode::unordered, true);
+  Node* included_memory = store_to_memory(control(), vthread_epoch_offset, epoch, T_CHAR, MemNode::unordered, true, false, false, false, false, 0);
 
   RegionNode* excluded_rgn = new RegionNode(PATH_LIMIT);
   record_for_igvn(excluded_rgn);
@@ -4064,10 +4064,10 @@ void LibraryCallKit::extend_setCurrentThread(Node* jt, Node* thread) {
 
   // Store the vthread exclusion state to the jfr thread local.
   Node* thread_local_excluded_offset = off_heap_plus_addr(jt, in_bytes(THREAD_LOCAL_OFFSET_JFR + VTHREAD_EXCLUDED_OFFSET_JFR));
-  store_to_memory(control(), thread_local_excluded_offset, _gvn.transform(exclusion), T_BOOLEAN, MemNode::unordered, true);
+  store_to_memory(control(), thread_local_excluded_offset, _gvn.transform(exclusion), T_BOOLEAN, MemNode::unordered, true, false, false, false, false, 0);
 
   // Store release
-  Node * vthread_true_memory = store_to_memory(control(), vthread_offset, _gvn.intcon(1), T_BOOLEAN, MemNode::release, true);
+  Node* vthread_true_memory = store_to_memory(control(), vthread_offset, _gvn.intcon(1), T_BOOLEAN, MemNode::release, true, false, false, false, false, 0);
 
   RegionNode* thread_compare_rgn = new RegionNode(PATH_LIMIT);
   record_for_igvn(thread_compare_rgn);
@@ -4233,7 +4233,7 @@ bool LibraryCallKit::inline_native_setCurrentThread() {
   // Change the _monitor_owner_id of the JavaThread
   Node* tid = load_field_from_object(arr, "tid", "J");
   Node* monitor_owner_id_offset = off_heap_plus_addr(thread, in_bytes(JavaThread::monitor_owner_id_offset()));
-  store_to_memory(control(), monitor_owner_id_offset, tid, T_LONG, MemNode::unordered, true);
+  store_to_memory(control(), monitor_owner_id_offset, tid, T_LONG, MemNode::unordered, true, false, false, false, false, 0);
 
   JFR_ONLY(extend_setCurrentThread(thread, arr);)
   return true;
@@ -5790,9 +5790,7 @@ IfNode* LibraryCallKit::hashcode_fast_path_if_from_identity_hash_code_call(Phase
     IfProjNode* if_proj = region->in(i)->as_IfProj();
     if (if_proj->_con != 1) continue;
 
-    assert(if_proj->in(0) != nullptr, "");
-    assert(if_proj->in(0)->is_If(), "");
-    IfNode* iff = if_proj->in(0)->as_If();
+    IfNode* iff = Node::as<IfNode>(if_proj->in(0));
 
     assert(iff->in(1) != nullptr, "");
     if (!iff->in(1)->is_Bool()) continue;
@@ -7104,7 +7102,7 @@ bool LibraryCallKit::inline_arraycopy() {
     }
 
     if (Arguments::is_valhalla_enabled()) {
-      // TODO 8251971 Improve this. What about atomicity? Make sure this is always folded for type arrays.
+      // TODO 8251971: Add speculative layout checks for src and dest array to enable more optimization opportunities.
       // If destination is null-restricted, source must be null-restricted as well: src_null_restricted || !dst_null_restricted
       Node* src_klass = load_object_klass(src);
       Node* adr_prop_src = basic_plus_adr(top(), src_klass, in_bytes(ArrayKlass::properties_offset()));
@@ -7127,7 +7125,7 @@ bool LibraryCallKit::inline_arraycopy() {
       Node* tst = _gvn.transform(new BoolNode(chk, BoolTest::ne));
       generate_fair_guard(tst, slow_region);
 
-      // TODO 8251971 This is too strong
+      // TODO 8397038: This is too strong
       if (UseArrayFlattening) {
         generate_fair_guard(flat_array_test(src), slow_region);
         generate_fair_guard(flat_array_test(dest), slow_region);

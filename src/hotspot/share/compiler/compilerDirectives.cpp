@@ -216,12 +216,10 @@ bool DirectiveSet::should_print_memstat() const {
 
 size_t DirectiveSet::mem_limit() const {
   size_t limit = MemLimitOption < 0 ? -MemLimitOption : MemLimitOption;
-#if INCLUDE_CDS
   if (CDSConfig::is_dumping_aot_code()) {
     // Double limit for AOT compilation because it generates more code.
     limit = limit * 2;
   }
-#endif
   return limit;
 }
 
