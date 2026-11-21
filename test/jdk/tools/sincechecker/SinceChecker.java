@@ -195,6 +195,12 @@ public class SinceChecker {
             elements.getModuleElement("java.base"); // forces module graph to be instantiated
             elements.getAllModuleElements().forEach(me ->
                     processModuleElement(me, version, ct));
+            if (i == 21) {
+                classDictionary.remove("class: com.sun.source.tree.EnhancedForLoopTree.DeclarationKind");
+                classDictionary.remove("field: com.sun.source.tree.EnhancedForLoopTree.DeclarationKind:VARIABLE");
+                classDictionary.remove("field: com.sun.source.tree.EnhancedForLoopTree.DeclarationKind:PATTERN");
+                classDictionary.remove("method: com.sun.source.tree.EnhancedForLoopTree.DeclarationKind com.sun.source.tree.EnhancedForLoopTree.getDeclarationKind()");
+            }
         }
     }
 

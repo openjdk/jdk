@@ -1,0 +1,24 @@
+- compiler.warn.preview.feature.use.classfile: Record.class, 28
+- compiler.warn.preview.feature.use.classfile: Integer.class, 28
+- compiler.warn.preview.feature.use.classfile: Byte.class, 28
+- compiler.warn.preview.feature.use.classfile: Character.class, 28
+- compiler.warn.preview.feature.use.classfile: Short.class, 28
+- compiler.warn.preview.feature.use.classfile: Long.class, 28
+- compiler.warn.preview.feature.use.classfile: Float.class, 28
+- compiler.warn.preview.feature.use.classfile: Double.class, 28
+- compiler.warn.preview.feature.use.classfile: Boolean.class, 28
+EnhancedVariableDeclAssignmentNR1S.java:29:18: compiler.warn.preview.feature.use.plural: (compiler.misc.feature.enhanced.variable.decls)
+EnhancedVariableDeclAssignmentNR1S.java:34:17: compiler.warn.preview.feature.use.plural: (compiler.misc.feature.enhanced.variable.decls)
+EnhancedVariableDeclAssignmentNR1S.java:38:16: compiler.warn.preview.feature.use.plural: (compiler.misc.feature.enhanced.variable.decls)
+EnhancedVariableDeclAssignmentNR1S.java:45:21: compiler.warn.preview.feature.use.plural: (compiler.misc.feature.enhanced.variable.decls)
+EnhancedVariableDeclAssignmentNR1S.java:52:17: compiler.warn.preview.feature.use.plural: (compiler.misc.feature.enhanced.variable.decls)
+EnhancedVariableDeclAssignmentNR1S.java:60:14: compiler.warn.preview.feature.use.plural: (compiler.misc.feature.enhanced.variable.decls)
+EnhancedVariableDeclAssignmentNR1S.java:66:27: compiler.warn.preview.feature.use.plural: (compiler.misc.feature.enhanced.variable.decls)
+EnhancedVariableDeclAssignmentNR1S.java:73:27: compiler.warn.preview.feature.use.plural: (compiler.misc.feature.enhanced.variable.decls)
+EnhancedVariableDeclAssignmentNR1S.java:80:16: compiler.warn.preview.feature.use.plural: (compiler.misc.feature.enhanced.variable.decls)
+EnhancedVariableDeclAssignmentNR1S.java:87:17: compiler.warn.preview.feature.use.plural: (compiler.misc.feature.enhanced.variable.decls)
+EnhancedVariableDeclAssignmentNR1S.java:99:15: compiler.warn.preview.feature.use.plural: (compiler.misc.feature.enhanced.variable.decls)
+EnhancedVariableDeclAssignmentNR1S.java:102:15: compiler.warn.preview.feature.use.plural: (compiler.misc.feature.enhanced.variable.decls)
+EnhancedVariableDeclAssignmentNR1S.java:107:26: compiler.warn.preview.feature.use.plural: (compiler.misc.feature.enhanced.variable.decls)
+- compiler.warn.preview.feature.use.classfile: Number.class, 28
+23 warnings

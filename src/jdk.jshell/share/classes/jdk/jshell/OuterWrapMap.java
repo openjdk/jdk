@@ -71,13 +71,14 @@ class OuterWrapMap {
         return new CompoundWrap(elems.toArray());
     }
 
-    OuterWrap wrapInClass(Set<Key> except, Collection<Snippet> plus,
+    OuterWrap wrapInClass(Set<Key> except, Collection<Snippet> plus, List<String> additionalExtraImports,
             List<Snippet> snippets, List<Wrap> wraps) {
         List<String> extraImports =
                 plus.stream()
                     .map(psi -> psi.importLine(state))
                     .toList();
-        String imports = state.maps.packageAndImportsExcept(except, extraImports);
+        String imports = state.maps.packageAndImportsExcept(except, extraImports) +
+                         additionalExtraImports.stream().collect(Collectors.joining("\n", "\n", ""));
         // className is unique to the set of snippets and their version (seq)
         String className = REPL_CLASS_PREFIX + snippets.stream()
                 .sorted((sn1, sn2) -> sn1.key().index() - sn2.key().index())
