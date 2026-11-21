@@ -406,6 +406,25 @@ JVMFlag::Error NodeLimitFudgeFactorConstraintFunc(intx value, bool verbose) {
 }
 #endif // COMPILER2
 
+JVMFlag::Error ProfileCaptureRatioConstraintFunc(int value, bool verbose) {
+#ifdef RANDOMIZED_PROFILE_CAPTURE
+  if (value < 1 || !is_power_of_2(value)) {
+    JVMFlag::printError(verbose,
+                        "ProfileCaptureRatio must be between 1 and 65536 "
+                        "and an exact power of 2\n");
+    return JVMFlag::VIOLATES_CONSTRAINT;
+  }
+#else
+  if (value != 1) {
+    JVMFlag::printError(verbose,
+                        "ProfileCaptureRatio != 1 is not supported on this target\n");
+    return JVMFlag::VIOLATES_CONSTRAINT;
+  }
+#endif
+
+  return JVMFlag::SUCCESS;
+}
+
 #ifdef COMPILER2
 JVMFlag::Error LoopStripMiningIterConstraintFunc(uintx value, bool verbose) {
   if (UseCountedLoopSafepoints && LoopStripMiningIter == 0) {

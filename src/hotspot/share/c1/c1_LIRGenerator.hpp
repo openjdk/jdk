@@ -544,6 +544,7 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   static LIR_Opr divInOpr();
   static LIR_Opr divOutOpr();
   static LIR_Opr remOutOpr();
+  static LIR_Opr profile_rng_opr();
 #ifdef S390
   // On S390 we can do ldiv, lrem without RT call.
   static LIR_Opr ldivInOpr();
