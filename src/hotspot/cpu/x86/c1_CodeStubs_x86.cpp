@@ -142,6 +142,28 @@ void LoadFlattenedArrayStub::emit_code(LIR_Assembler* ce) {
 }
 
 
+// Implementation of StoreFlatNonatomicFieldStub
+
+StoreFlatNonatomicFieldStub::StoreFlatNonatomicFieldStub(LIR_Opr dest, LIR_Opr src, LIR_Opr field_entry, CodeEmitInfo* info) {
+  _dest = dest;
+  _src = src;
+  _resolved_field_entry = field_entry;
+  _info = new CodeEmitInfo(info);
+}
+
+void StoreFlatNonatomicFieldStub::emit_code(LIR_Assembler* ce) {
+  assert(__ rsp_offset() == 0, "frame size should be fixed");
+  __ bind(_entry);
+  ce->store_parameter(_dest->as_register(), 2);
+  ce->store_parameter(_src->as_register(), 1);
+  ce->store_parameter(_resolved_field_entry->as_pointer_register(), 0);
+  __ call(RuntimeAddress(Runtime1::entry_for(StubId::c1_store_flat_nonatomic_field_id)));
+  ce->add_call_info_here(_info);
+  ce->verify_oop_map(_info);
+  __ jmp(_continuation);
+}
+
+
 // Implementation of StoreFlattenedArrayStub
 
 StoreFlattenedArrayStub::StoreFlattenedArrayStub(LIR_Opr array, LIR_Opr index, LIR_Opr value, CodeEmitInfo* info) {

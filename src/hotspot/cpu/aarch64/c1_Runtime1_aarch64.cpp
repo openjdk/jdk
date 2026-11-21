@@ -879,6 +879,24 @@ OopMapSet* Runtime1::generate_code_for(StubId id, StubAssembler* sasm) {
       }
       break;
 
+    case StubId::c1_store_flat_nonatomic_field_id:
+      {
+        StubFrame f(sasm, "store_flat_nonatomic_field", dont_gc_arguments);
+        OopMap* map = save_live_registers(sasm);
+
+        // Called with store_parameter and not C abi
+
+        f.load_argument(2, r0); // r0: dest
+        f.load_argument(1, r1); // r1: src
+        f.load_argument(0, r2); // r2: resolved field entry
+        int call_offset = __ call_RT(noreg, noreg, CAST_FROM_FN_PTR(address, store_flat_nonatomic_field), r0, r1, r2);
+
+        oop_maps = new OopMapSet();
+        oop_maps->add_gc_map(call_offset, map);
+        restore_live_registers(sasm);
+      }
+      break;
+
     case StubId::c1_store_flat_array_id:
       {
         StubFrame f(sasm, "store_flat_array", dont_gc_arguments);
