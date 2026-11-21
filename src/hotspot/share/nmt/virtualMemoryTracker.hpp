@@ -313,7 +313,6 @@ class VirtualMemoryTracker {
   void snapshot_thread_stacks();
   void apply_summary_diff(VMATree::SummaryDiff& diff);
   size_t committed_size(const VirtualMemoryRegion* rmr);
-  address thread_stack_uncommitted_bottom(const VirtualMemoryRegion* rmr);
 
   RegionsTree* tree() { return &_tree; }
 
@@ -338,8 +337,6 @@ class VirtualMemoryTracker {
     static void snapshot_thread_stacks();
     static void apply_summary_diff(VMATree::SummaryDiff& diff);
     static size_t committed_size(const VirtualMemoryRegion* rmr);
-    // uncommitted thread stack bottom, above guard pages if there is any.
-    static address thread_stack_uncommitted_bottom(const VirtualMemoryRegion* rgn);
 
     static RegionsTree* tree() { return _tracker->tree(); }
   };
