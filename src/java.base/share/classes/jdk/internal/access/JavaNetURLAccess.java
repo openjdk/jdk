@@ -29,4 +29,5 @@ import java.net.URLStreamHandler;
 
 public interface JavaNetURLAccess {
     URLStreamHandler getHandler(URL u);
+    String normalize(String path);
 }

@@ -50,6 +50,13 @@ import static jdk.internal.util.Exceptions.filterNonSocketInfo;
  * @since   1.0
  */
 public abstract class URLStreamHandler {
+
+    private static final boolean USE_LEGACY_NORMALIZATION;
+    static {
+        USE_LEGACY_NORMALIZATION =
+                Boolean.getBoolean("jdk.net.url.useLegacyNormalization");
+    }
+
     /**
      * Constructor for subclasses to call.
      */
@@ -288,7 +295,7 @@ public abstract class URLStreamHandler {
         if (path == null)
             path = "";
 
-        if (isRelPath) {
+        if (USE_LEGACY_NORMALIZATION && isRelPath) {
             // Remove embedded /./
             while ((i = path.indexOf("/./")) >= 0) {
                 path = path.substring(0, i) + path.substring(i + 2);
@@ -326,6 +333,8 @@ public abstract class URLStreamHandler {
             // Remove trailing .
             if (path.endsWith("/."))
                 path = path.substring(0, path.length() -1);
+        } else if (isRelPath) {
+            path = URI.normalize(path, '/', true);
         }
 
         setURL(u, protocol, host, port, authority, userInfo, path, query, ref);

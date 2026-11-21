@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,19 +23,33 @@
 
 /**
  * @test
- * @bug 8197849
+ * @bug 8197849 8396940
  * @summary Sanity test the special canonicalization logic for jar resources
+ *
+ * @run main CanonicalizationTest
+ * @run main/othervm -Djdk.net.url.useLegacyNormalization=true CanonicalizationTest
+ * @run main/othervm -Djdk.net.url.useLegacyNormalization=false CanonicalizationTest
  */
 
 import java.net.URL;
 
 public class CanonicalizationTest {
+    private static final boolean USE_LEGACY_NORMALIZATION;
+    static {
+        USE_LEGACY_NORMALIZATION =
+                Boolean.getBoolean("jdk.net.url.useLegacyNormalization");
+    }
+
     public static void main(String args[]) throws Exception {
         URL base = new URL("jar:file:/foo!/");
 
         check(new URL(base, ""), "jar:file:/foo!/");
         check(new URL(base, "."), "jar:file:/foo!/");
-        check(new URL(base, ".."), "jar:file:/foo!");
+        if (USE_LEGACY_NORMALIZATION) {
+            check(new URL(base, ".."), "jar:file:/foo!");
+        } else {
+            check(new URL(base, ".."), "jar:file:/foo!/");
+        }
         check(new URL(base, ".x"), "jar:file:/foo!/.x");
         check(new URL(base, "..x"), "jar:file:/foo!/..x");
         check(new URL(base, "..."), "jar:file:/foo!/...");
@@ -51,6 +65,7 @@ public class CanonicalizationTest {
         check(new URL(base, "foo/../,,/.."), "jar:file:/foo!/");
         check(new URL(base, "foo/../."), "jar:file:/foo!/");
         check(new URL(base, "foo/../.x"), "jar:file:/foo!/.x");
+        check(new URL(base, "./../../"), "jar:file:/foo!/");
     }
 
     private static void check(URL url, String expected) {
