@@ -880,10 +880,9 @@ void AOTClassLocationConfig::on_klass_creation(InstanceKlass* ik, const ClassFil
     return;
   }
 
-  assert(CDSConfig::is_dumping_archive(), "sanity");
   assert(stream != nullptr, "sanity");
   assert(dumptime_is_ready(), "sanity");
-  assert(ClassLoader::has_jrt_entry(), "CDS dumping does not support exploded JDK build");
+  assert(ClassLoader::has_jrt_entry(), "AOT does not support exploded JDK build");
 
   if (ik->is_hidden()) {
     record_hidden_class(ik);
@@ -959,7 +958,7 @@ void AOTClassLocationConfig::record_hidden_class(InstanceKlass* ik) {
 }
 
 int AOTClassLocationConfig::compute_path_index(InstanceKlass* ik, const ClassFileStream* stream) {
-  assert(CDSConfig::is_dumping_archive(), "");
+  precond(CDSConfig::is_dumping_archive());
   const char* src = stream->source();
   if (src == nullptr) {
     return -1;
