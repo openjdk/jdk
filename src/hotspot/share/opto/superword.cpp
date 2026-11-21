@@ -1490,7 +1490,7 @@ const AlignmentSolution* SuperWord::pack_alignment_solution(const Node_List<Node
 // that the packs impose. Remove packs that do not have a compatible solution.
 void SuperWord::filter_packs_for_alignment() {
   // We do not need to filter if no alignment is required.
-  if (!VLoop::vectors_should_be_aligned()) {
+  if (!VLoop::vectors_must_be_aligned()) {
     return;
   }
 
@@ -2715,7 +2715,7 @@ LoadNode::ControlDependency SuperWordVTransformBuilder::load_control_dependency(
 // determined (e.g. by SuperWord::filter_packs_for_alignment()).
 void VTransform::determine_vpointer_and_aw_for_main_loop_alignment() {
   if (_vpointer_for_main_loop_alignment != nullptr) {
-    assert(VLoop::vectors_should_be_aligned(), "vpointer_for_main_loop_alignment only set if filtered for alignment");
+    assert(VLoop::vectors_must_be_aligned(), "vpointer_for_main_loop_alignment only set if filtered for alignment");
     return;
   }
 
@@ -2775,7 +2775,7 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
          _aw_for_main_loop_alignment > 0,
          "must have alignment reference and aw");
 
-  if (!VLoop::vectors_should_be_aligned() && SuperWordAutomaticAlignment == 0) {
+  if (!VLoop::vectors_must_be_aligned() && SuperWordAutomaticAlignment == 0) {
 #ifdef ASSERT
     if (_trace._align_vector) {
       tty->print_cr("\nVTransform::adjust_pre_loop_limit_to_align_main_loop_vectors: disabled.");
@@ -2802,7 +2802,7 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   // Alternative: emit a runtime check that determines if we should align, based on the runtime trip count.
   // In an experiment, we emitted a CMove that decides between the two pre-loop limits, based on a runtime
   // check. But this had a big overhead for small iteration count loops, and there was no speedup.
-  if (!VLoop::vectors_should_be_aligned()) {
+  if (!VLoop::vectors_must_be_aligned()) {
     const float profiled_trip_count = cl()->profile_trip_cnt();
 
     if (cl()->is_profile_trip_failed() || profiled_trip_count == COUNT_UNKNOWN) {

@@ -171,7 +171,7 @@ public:
   int estimated_node_count()  const { return (int)(1.10 * phase()->C->unique()); };
 
   // Should we align vector memory references on this platform?
-  static bool vectors_should_be_aligned() { return !Matcher::misaligned_vectors_ok() || AlignVector; }
+  static bool vectors_must_be_aligned() { return !Matcher::misaligned_vectors_ok() || AlignVector; }
 
 #ifndef PRODUCT
   const VTrace& vtrace()           const { return _vtrace; }
