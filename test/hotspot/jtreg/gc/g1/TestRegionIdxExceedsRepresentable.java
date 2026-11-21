@@ -56,7 +56,7 @@ public class TestRegionIdxExceedsRepresentable {
 
         output.shouldNotHaveExitValue(0);
 
-        String pattern = "would exceed maximum region count 2147483648";
+        String pattern = "would exceed maximum number of regions 2147483648";
         output.shouldContain(pattern);
     }
 
