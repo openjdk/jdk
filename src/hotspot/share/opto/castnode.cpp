@@ -798,3 +798,7 @@ const TypeInteger* ConstraintCastNode::widen_type(const PhaseGVN* phase, const T
   }
   return this_type;
 }
+
+const Type* IdentityNode::Value(PhaseGVN* phase) const {
+  return phase->type(in(1));
+}
