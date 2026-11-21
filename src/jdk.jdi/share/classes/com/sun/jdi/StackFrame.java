@@ -93,24 +93,26 @@ public interface StackFrame extends Mirror, Locatable {
     ThreadReference thread();
 
     /**
-     * Returns the value of 'this' for the current frame.
+     * Returns the value of 'this' for this stack frame.
      * The {@link ObjectReference} for 'this' is only available for
      * non-native instance methods.
+     * <p>
+     * {@link OpaqueFrameException} is thrown if this stack frame is for a
+     * constructor whose declaring class or any of its superclasses has
+     * {@linkplain java.lang.reflect.Field#isStrictInit() strictly-initialized}
+     * instance fields.
      *
-     * <div class="preview-block">
-     *      <div class="preview-comment">
-     * If 'this' is a
-     * {@linkplain ObjectReference##valueObjects value object<sup class="preview-mark">PREVIEW</sup>}
-     * under construction, the returned {@code ObjectReference} will refer to a
-     * <em>snapshot</em> of the value object, not a reference
-     * to the actual value object under construction. Consequently, the returned
-     * {@code ObjectReference} will not reflect changes to the value object that
-     * happen later during construction.
-     *      </div>
-     * </div>
+     * @apiNote The instance fields of {@linkplain Class#isValue() value classes}
+     * are strictly-initialized. Consequently, {@link OpaqueFrameException} will be
+     * thrown if this stack frame is for a constructor whose declaring class or any of its
+     * superclasses is a value class with one or more instance fields.
      *
      * @return an {@link ObjectReference}, or null if the frame represents
      * a native or static method.
+     * @throws OpaqueFrameException if this stack frame is for a constructor whose
+     * declaring class or any of its superclasses has
+     * {@linkplain java.lang.reflect.Field#isStrictInit() strictly-initialized}
+     * instance fields.
      * @throws InvalidStackFrameException if this stack frame has become
      * invalid. Once the frame's thread is resumed, the stack frame is
      * no longer valid.

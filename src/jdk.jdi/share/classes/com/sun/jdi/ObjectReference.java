@@ -53,22 +53,6 @@ import com.sun.jdi.event.VMDisconnectEvent;
  * {@link ObjectCollectedException} if the mirrored object has been
  * garbage collected.
  *
- * <div class="preview-block">
- *      <div class="preview-comment">
- * <h2><a id=valueObjects>Value Objects</a></h2>
- * The Java Debug Interface (JDI) supports debugging of programs that use
- * {@linkplain Class#isValue() value objects}.
- * However, the support does in some cases deviate from identity object
- * support in behavior or expectations as noted below:
- * <p>
- * If an ObjectReference is obtained for a value object under construction,
- * it will be for a <em>snapshot</em> of the value object at that point in time.
- * Any further changes to the initialization state of the value object will not
- * be reflected in this ObjectReference. A new ObjectReference would need to
- * be obtained to see the updated state. See {@link StackFrame#thisObject}.
- *      </div>
- * </div>
- *
  * @author Robert Field
  * @author Gordon Hirsch
  * @author James McIlree
