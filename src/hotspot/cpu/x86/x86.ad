@@ -13573,7 +13573,7 @@ instruct orL_rReg_castP2X_ndd(rRegL dst, rRegL src1, any_RegP src2, rFlagsReg cr
   predicate(UseAPX);
   match(Set dst (OrL src1 (CastP2X src2)));
   effect(KILL cr);
-  flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag);
+  flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag, PD::Flag_ndd_demotable_opr1);
 
   format %{ "eorq     $dst, $src1, $src2\t# long ndd" %}
   ins_encode %{
