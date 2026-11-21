@@ -770,7 +770,9 @@ JNIEXPORT jlong JNICALL Java_apple_security_KeychainStore__1addItemToKeychain
 
         CFDataRef cfDataToImport = CFDataCreate(kCFAllocatorDefault, (UInt8 *)rawData, dataSize);
         CFArrayRef createdItems = NULL;
-
+        if (cfDataToImport == NULL) {
+            goto errOut;
+        }
         SecKeychainRef defaultKeychain = NULL;
         SecKeychainCopyDefault(&defaultKeychain);
 
@@ -789,11 +791,13 @@ JNIEXPORT jlong JNICALL Java_apple_security_KeychainStore__1addItemToKeychain
             if (passwordLen > 0) {
                 passwordChars = (*env)->GetCharArrayElements(env, passwordObj, NULL);
                 if (passwordChars == NULL) {
+                    CFRelease(cfDataToImport);
                     goto errOut;
                 }
 
                 passwordStrRef = CFStringCreateWithCharactersNoCopy(NULL, passwordChars, passwordLen, kCFAllocatorNull);
                 if (passwordStrRef == NULL) {
+                    CFRelease(cfDataToImport);
                     goto errOut;
                 }
             }
@@ -811,9 +815,7 @@ JNIEXPORT jlong JNICALL Java_apple_security_KeychainStore__1addItemToKeychain
 
         err = SecKeychainItemImport(cfDataToImport, NULL, &dataFormat, NULL,
                                     0, &paramBlock, defaultKeychain, &createdItems);
-        if (cfDataToImport != NULL) {
-            CFRelease(cfDataToImport);
-        }
+        CFRelease(cfDataToImport);
 
         if (err == noErr) {
             SecKeychainItemRef anItem = (SecKeychainItemRef)CFArrayGetValueAtIndex(createdItems, 0);
