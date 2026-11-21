@@ -79,7 +79,8 @@ public class SSLHandshake {
     @Param({
             "TLSv1.2-secp256r1",
             "TLSv1.3-x25519", "TLSv1.3-secp256r1", "TLSv1.3-secp384r1",
-            "TLSv1.3-X25519MLKEM768", "TLSv1.3-SecP256r1MLKEM768", "TLSv1.3-SecP384r1MLKEM1024"
+            "TLSv1.3-X25519MLKEM768", "TLSv1.3-SecP256r1MLKEM768", "TLSv1.3-SecP384r1MLKEM1024",
+            "TLSv1.3-MLKEM512", "TLSv1.3-MLKEM768", "TLSv1.3-MLKEM1024"
     })
     String versionAndGroup;
 
