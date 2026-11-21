@@ -4187,6 +4187,11 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
   case Op_CallLeafNoFP: {
     assert (n->is_Call(), "");
     CallNode *call = n->as_Call();
+    // For boxing/unboxing calls, guaranteed_safepoint() depends on is_macro()
+    // and is consumed by the matcher. Their macro flag is cleared in
+    // PhaseMacroExpand::eliminate_opaque_looplimit_macro_nodes().
+    assert(!(call->is_boxing_or_unboxing_call() && call->is_macro()),
+           "after macro expansion, a boxing/unboxing call must not be a macro node");
     // See if uncommon argument is shared
     if (call->is_CallStaticJava() && call->as_CallStaticJava()->_name) {
       Node *n = call->in(TypeFunc::Parms);
