@@ -405,6 +405,15 @@ static bool find_initial_Java_frame(JavaThread* thread,
       }
     }
 
+    if (candidate.is_upcall_stub_frame()) {
+      JavaFrameAnchor* jfa = candidate.cb()->as_upcall_stub()->jfa_for_frame(candidate);
+
+      // Check is_first_frame
+      if (!thread->is_in_usable_stack((address)jfa) || jfa->last_Java_sp() == nullptr) {
+        return false;
+      }
+    }
+
     if (candidate.is_interpreted_frame()) {
       if (is_decipherable_interpreted_frame(thread, &candidate, method_p, bci_p)) {
         *initial_frame_p = candidate;
