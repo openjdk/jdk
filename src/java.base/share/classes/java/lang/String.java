@@ -5274,7 +5274,7 @@ public final class String
 
     @ForceInline
     static int codeUnitSize(String s) {
-        return s.isLatin1() ? 1 : 2;
+        return (COMPACT_STRINGS && s.coder == LATIN1) ? 1 : 2;
     }
 
     @ForceInline
@@ -5289,7 +5289,8 @@ public final class String
         } else {
             throw new IllegalArgumentException("unexpected code unit size");
         }
-        if (s.coder() != expectedCoder) {
+        byte coder = COMPACT_STRINGS ? s.coder : UTF16;
+        if (coder != expectedCoder) {
             throw new IllegalArgumentException("unexpected code unit size");
         }
         if (byteLanes <= 0 || (byteLanes & expectedCoder) != 0) {
