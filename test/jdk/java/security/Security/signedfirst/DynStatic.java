@@ -78,6 +78,7 @@ public class DynStatic {
         // Run the DynSignedProvFirst test program
         ProcessTools.executeTestJava("-classpath",
             TEST_CLASSES.toString() + File.pathSeparator + "exp.jar",
+            "-Djdk.verifySignedJar=true",
             "DynSignedProvFirst")
             .shouldContain("test passed");
 
@@ -88,6 +89,7 @@ public class DynStatic {
         ProcessTools.executeTestJava("-classpath",
             TEST_CLASSES.toString() + File.pathSeparator + "exp.jar",
             "-Djava.security.properties=" + STATIC_PROPS.toUri(),
+            "-Djdk.verifySignedJar=true",
             "StaticSignedProvFirst")
             .shouldContain("test passed");
     }
