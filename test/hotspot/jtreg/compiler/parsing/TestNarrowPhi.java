@@ -22,6 +22,7 @@
  */
 package compiler.parsing;
 
+import compiler.whitebox.CompilerWhiteBoxTest;
 import java.io.IOException;
 import java.util.Objects;
 import jdk.test.lib.Asserts;
@@ -32,7 +33,7 @@ import jdk.test.lib.process.ProcessTools;
  * @test
  * @bug 8387328
  * @summary A Phi having a narrower Type than its inputs may result in incorrect scheduling
- * @library /test/lib
+ * @library /test/lib /
  * @requires vm.compiler2.enabled
  * @modules java.base/jdk.internal.misc
  * @build jdk.test.whitebox.WhiteBox
@@ -108,12 +109,15 @@ public class TestNarrowPhi {
         if (idx > 5) {
             Thread.sleep((idx - 5) * 10L);
         }
-        if (!WHITE_BOX.enqueueMethodForCompilation(testMethod, 4)) {
-            throw new RuntimeException("Could not enqueue the test method for C2 compilation");
+
+        // These are blocking with -Xbatch, the first compilation may fail due to C being loaded
+        // invalidating CHA computation
+        int c2Level = CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION;
+        if (!WHITE_BOX.enqueueMethodForCompilation(testMethod, c2Level) &&
+            !WHITE_BOX.enqueueMethodForCompilation(testMethod, c2Level)) {
+            throw new RuntimeException("Could not C2-compile the test method");
         }
-        while (WHITE_BOX.isMethodQueuedForCompilation(testMethod)) {
-            Thread.yield();
-        }
+
         P p = P.allocate();
         Asserts.assertEQ(0, testMethod(true, p, p, p));
         loader.join();
