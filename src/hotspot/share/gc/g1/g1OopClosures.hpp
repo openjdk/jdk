@@ -148,6 +148,7 @@ protected:
  public:
   void set_scanned_cld(ClassLoaderData* cld) { _scanned_cld = cld; }
   inline void do_cld_barrier(oop new_obj);
+  inline void do_cld_barrier_non_cset(G1HeapRegionAttr state);
 
   inline void trim_queue_partially();
 };

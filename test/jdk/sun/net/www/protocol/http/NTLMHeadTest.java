@@ -82,7 +82,9 @@ public class NTLMHeadTest {
 
     static final String RESP_SERVER_NTLM =
             "HTTP/1.1 401 Unauthorized\r\n" +
-            "WWW-Authenticate: NTLM TlRMTVNTUAACAAAAAAAAACgAAAABggAAU3J2Tm9uY2UAAAAAAAAAAA==\r\n" +
+            "WWW-Authenticate: NTLM TlRMTVNTUAACAAAAAgACADgAAAAVgoriXva3" +
+                    "eirBoiYAAAAAAAAAACgAKAA6AAAACgD0ZQAAAA9EAAIAAgBEAAE" +
+                    "AAgBEAAQAAgBkAAMAAgBkAAcACAAAAAAAAAAAAAAAAAA=\r\n" +
             "Connection: Keep-Alive\r\n" +
             "Content-Length: " + BODY_LEN + "\r\n" +
             "\r\n";
@@ -103,7 +105,9 @@ public class NTLMHeadTest {
 
     static final String RESP_PROXY_NTLM =
             "HTTP/1.1 407 Proxy Authentication Required\r\n" +
-            "Proxy-Authenticate: NTLM TlRMTVNTUAACAAAAAAAAACgAAAABggAAU3J2Tm9uY2UAAAAAAAAAAA==\r\n" +
+            "Proxy-Authenticate: NTLM TlRMTVNTUAACAAAAAgACADgAAAAVgoriXva3" +
+                    "eirBoiYAAAAAAAAAACgAKAA6AAAACgD0ZQAAAA9EAAIAAgBEAAEAA" +
+                    "gBEAAQAAgBkAAMAAgBkAAcACAAAAAAAAAAAAAAAAAA=\r\n" +
             "Proxy-Connection: Keep-Alive\r\n" +
             "Connection: Keep-Alive\r\n" +
             "Content-Length: " + BODY_LEN + "\r\n" +
@@ -120,7 +124,9 @@ public class NTLMHeadTest {
 
     static final String RESP_TUNNEL_NTLM =
             "HTTP/1.1 407 Proxy Authentication Required\r\n" +
-            "Proxy-Authenticate: NTLM TlRMTVNTUAACAAAAAAAAACgAAAABggAAU3J2Tm9uY2UAAAAAAAAAAA==\r\n" +
+            "Proxy-Authenticate: NTLM TlRMTVNTUAACAAAAAgACADgAAAAVgoriXva3" +
+                    "eirBoiYAAAAAAAAAACgAKAA6AAAACgD0ZQAAAA9EAAIAAgBEAAEAA" +
+                    "gBEAAQAAgBkAAMAAgBkAAcACAAAAAAAAAAAAAAAAAA=\r\n" +
             "Proxy-Connection: Keep-Alive\r\n" +
             "Connection: Keep-Alive\r\n" +
             "Content-Length: " + BODY_LEN + "\r\n" +

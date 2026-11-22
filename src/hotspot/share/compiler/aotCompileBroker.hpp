@@ -28,11 +28,9 @@
 #include "memory/allStatic.hpp"
 #include "utilities/exceptions.hpp"
 
-class ArchiveBuilder;
-
 class AOTCompileBroker : AllStatic  {
 public:
-  static void compile_aot_code(ArchiveBuilder* builder, TRAPS) NOT_CDS_RETURN;
+  static void compile_aot_code(TRAPS) NOT_CDS_RETURN;
 };
 
 #endif // SHARE_COMPILER_AOTCOMPILEBROKER_HPP

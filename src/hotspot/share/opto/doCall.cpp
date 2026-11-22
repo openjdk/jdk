@@ -48,6 +48,7 @@
 #include "opto/subnode.hpp"
 #include "opto/valuetypenode.hpp"
 #include "prims/methodHandles.hpp"
+#include "runtime/globals_extension.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
@@ -179,7 +180,7 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
         cg_intrinsic = cg;
         cg = nullptr;
       } else if (IncrementalInline && should_delay_vector_inlining(callee, jvms)) {
-        if (IncrementalInlineVector && allow_inline) {
+        if (allow_inline && should_inline_vector_fallback(callee)) {
           // Try to incrementally inline fallback implementation if intrinsification attempt fails.
           CallGenerator* fallback_cg;
           {
@@ -528,6 +529,16 @@ bool Compile::should_delay_vector_reboxing_inlining(ciMethod* call_method, JVMSt
   return EnableVectorSupport && (call_method->intrinsic_id() == vmIntrinsics::_VectorRebox);
 }
 
+bool Compile::should_inline_vector_fallback(ciMethod* call_method) {
+  // Left at its default value, so only the operations which need their fallback
+  // inlined to generate good code are selected.
+  if (FLAG_IS_DEFAULT(IncrementalInlineVector) &&
+      call_method->intrinsic_id() == vmIntrinsics::_VectorSlice) {
+    return true;
+  }
+  return IncrementalInlineVector;
+}
+
 // uncommon-trap call-sites where callee is unloaded, uninitialized or will not link
 bool Parse::can_not_compile_call_site(ciMethod *dest_method, ciInstanceKlass* klass) {
   // Additional inputs to consider...
@@ -856,18 +867,7 @@ void Parse::do_call() {
     // If the return type of the method is not loaded, assert that the
     // value we got is a null.  Otherwise, we need to recompile.
     if (!rtype->is_loaded()) {
-      if (PrintOpto && (Verbose || WizardMode)) {
-        method()->print_name(); tty->print_cr(" asserting nullness of result at bci: %d", bci());
-        cg->method()->print_name(); tty->cr();
-      }
-      if (C->log() != nullptr) {
-        C->log()->elem("assert_null reason='return' klass='%d'",
-                       C->log()->identify(rtype));
-      }
-      // If there is going to be a trap, put it at the next bytecode:
-      set_bci(iter().next_bci());
-      null_assert(peek());
-      set_bci(iter().cur_bci()); // put it back
+      null_assert_for_unloaded_type(peek(), rtype, "return", true, cg->method());
     }
     BasicType ct = ctype->basic_type();
     if (is_reference_type(ct)) {
@@ -948,7 +948,7 @@ void Parse::catch_call_exceptions(ciExceptionHandlerStream& handlers) {
 
   if (!default_handler) {
     bcis.append(-1);
-    const Type* extype = TypeOopPtr::make_from_klass(env()->Throwable_klass())->is_instptr();
+    const Type* extype = TypeOopPtr::make_from_klass(env()->Throwable_klass())->as_instptr();
     extype = extype->join(TypeInstPtr::NOTNULL);
     extypes.append(extype);
   }
@@ -971,7 +971,7 @@ void Parse::catch_call_exceptions(ciExceptionHandlerStream& handlers) {
     set_control(ctrl);
 
     // Create exception oop
-    const TypeInstPtr* extype = extypes.at(i)->is_instptr();
+    const TypeInstPtr* extype = extypes.at(i)->as_instptr();
     Node* ex_oop = _gvn.transform(new CreateExNode(extypes.at(i), ctrl, i_o));
 
     // Handle unloaded exception classes.
@@ -1037,7 +1037,7 @@ void Parse::catch_inline_exceptions(SafePointNode* ex_map) {
   const TypeInstPtr* ex_type = _gvn.type(ex_node)->isa_instptr();
   NOT_PRODUCT(if (ex_type==nullptr) tty->print_cr("*** Exception not InstPtr"));
   if (ex_type == nullptr)
-    ex_type = TypeOopPtr::make_from_klass(env()->Throwable_klass())->is_instptr();
+    ex_type = TypeOopPtr::make_from_klass(env()->Throwable_klass())->as_instptr();
 
   // determine potential exception handlers
   ciExceptionHandlerStream handlers(method(), bci(),
@@ -1127,7 +1127,7 @@ void Parse::catch_inline_exceptions(SafePointNode* ex_map) {
     Node* not_subtype_ctrl = gen_subtype_check(ex_klass_node, con);
     if (!stopped()) {
       PreserveJVMState pjvms(this);
-      const TypeInstPtr* tinst = TypeOopPtr::make_from_klass_unique(klass)->cast_to_ptr_type(TypePtr::NotNull)->is_instptr();
+      const TypeInstPtr* tinst = TypeOopPtr::make_from_klass_unique(klass)->cast_to_ptr_type(TypePtr::NotNull)->as_instptr();
       assert(klass->has_subklass() || tinst->klass_is_exact(), "lost exactness");
       Node* ex_oop = _gvn.transform(new CheckCastPPNode(control(), ex_node, tinst));
       if (PrintOpto && WizardMode) {
@@ -1255,18 +1255,18 @@ ciMethod* Compile::optimize_inlining(ciMethod* caller, ciInstanceKlass* klass, c
   ciInstanceKlass* actual_receiver = klass;
   // Array methods are all inherited from Object, and are monomorphic.
   // finalize() call on array is not allowed.
-  if (receiver_type->isa_aryptr() &&
+  if (receiver_type->is_aryptr() &&
       callee->holder() == env()->Object_klass() &&
       callee->name() != ciSymbols::finalize_method_name()) {
     return callee;
   }
 
   // All other interesting cases are instance klasses.
-  if (!receiver_type->isa_instptr()) {
+  if (!receiver_type->is_instptr()) {
     return nullptr;
   }
 
-  ciInstanceKlass* receiver_klass = receiver_type->is_instptr()->instance_klass();
+  ciInstanceKlass* receiver_klass = receiver_type->as_instptr()->instance_klass();
   if (receiver_klass->is_loaded() && receiver_klass->is_initialized() && !receiver_klass->is_interface() &&
       (receiver_klass == actual_receiver || receiver_klass->is_subtype_of(actual_receiver))) {
     // ikl is a same or better type than the original actual_receiver,

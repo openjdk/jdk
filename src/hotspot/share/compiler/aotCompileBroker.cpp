@@ -23,7 +23,6 @@
  */
 
 #include "cds/aotCacheAccess.hpp"
-#include "cds/archiveBuilder.hpp"
 #include "cds/cdsConfig.hpp"
 #include "code/aotCodeCache.hpp"
 #include "compiler/aotCompileBroker.hpp"
@@ -140,43 +139,18 @@ public:
     }
   }
 
-  void print_compilation_status(ArchiveBuilder* builder) {
+  void print_compilation_status(uint success_count) {
     LogStreamHandle(Info, aot, compilation) logi;
     if (!logi.is_enabled()) {
       return;
     }
-    int success_count = 0;
     const int log_comp_level = _comp_level + (_for_preload ? 1 : 0);
 
-    for (int i = 0; i < _methods.length(); i++) {
-      Method* m = _methods.at(i);
-
-      bool is_preloaded_code = m->has_compiled_code() && m->code()->aot_preloaded();
-      bool is_success = !m->is_not_compilable(_comp_level) &&
-                        m->has_compiled_code() && m->code()->is_aot();
-      // Successful preloaded AP4 code may mask failed normal A4 code later load.
-      if (is_success && is_preloaded_code != _for_preload) {
-        is_success = false;
-      }
-      if (is_success) {
-        success_count++;
-      }
-
-      LogStreamHandle(Debug, aot, compilation) log;
-      if (log.is_enabled()) {
-        ResourceMark rm;
-        log.print("[%4d] A%d Compiled %s [%p", i, log_comp_level, m->external_name(), m);
-        Method* requested_m = builder->to_requested(builder->get_buffered_addr(m));
-        log.print(" -> %p", requested_m);
-        log.print_cr("] {%d} [%d] (%s)", compile_id(m), AOTCodeCache::store_entries_cnt(), (is_success ? "success" : "FAILED"));
-      }
-    }
-
-    logi.print_cr("AOT Compilation for level A%d finished (%d successful out of %d total)",
+    logi.print_cr("AOT Compilation for level A%d finished (%u successful out of %d total)",
                   log_comp_level, success_count, _methods.length());
   }
 
-  void compile(ArchiveBuilder* builder, TRAPS) {
+  void compile(TRAPS) {
     _methods.sort(&compare_methods);
 
     intx tier2_invoke_notify_freq_log = Tier2InvokeNotifyFreqLog;
@@ -192,9 +166,11 @@ public:
       Tier2BackedgeNotifyFreqLog = CompilerConfig::jvmflag_scaled_freq_log(Tier2BackedgeNotifyFreqLog);
       restore_freq_logs_flags = true;
     }
+    uint aot_nmethod_cnt = AOTCodeCache::store_nmethod_cnt();
     schedule_compilations(THREAD);
     CompileBroker::wait_for_no_active_tasks();
-    print_compilation_status(builder);
+    uint success_count = AOTCodeCache::store_nmethod_cnt() - aot_nmethod_cnt;
+    print_compilation_status(success_count);
     if (restore_freq_logs_flags) {
       Tier2InvokeNotifyFreqLog = tier2_invoke_notify_freq_log;
       Tier2BackedgeNotifyFreqLog = tier2_backedge_notify_freq_log;
@@ -211,7 +187,7 @@ public:
 // Some JIT policy flags are forcibly adjusted to settings required by AOT code.
 // These include -FoldStableValues, +ForceUnreachable, -DelayCompilerStubsGeneration,
 // +AOTCompileEagerly, CompileThresholdScaling=1.0
-void AOTCompileBroker::compile_aot_code(ArchiveBuilder* builder, TRAPS) {
+void AOTCompileBroker::compile_aot_code(TRAPS) {
   assert(AOTCodeCache::is_dumping_code(), "sanity");
   assert(CDSConfig::is_dumping_aot_code(), "AOT compilation must be enabled");
   if (TrainingData::have_data()) {
@@ -226,7 +202,7 @@ void AOTCompileBroker::compile_aot_code(ArchiveBuilder* builder, TRAPS) {
       TrainingData::iterate([&](TrainingData* td) {
         aci.apply(td);
       });
-      aci.compile(builder, THREAD);
+      aci.compile(THREAD);
     }
 
     for (int level = CompLevel_simple; level <= highest_level; level++) {
@@ -235,7 +211,7 @@ void AOTCompileBroker::compile_aot_code(ArchiveBuilder* builder, TRAPS) {
         TrainingData::iterate([&](TrainingData* td) {
           aci.apply(td);
         });
-        aci.compile(builder, THREAD);
+        aci.compile(THREAD);
       }
     }
   }

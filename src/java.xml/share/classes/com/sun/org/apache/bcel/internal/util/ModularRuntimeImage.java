@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -42,6 +41,7 @@ import java.util.Map;
  * Wraps a Java 9 JEP 220 modular runtime image. Requires the JRT NIO file system.
  *
  * @since 6.3
+ * @LastModified: Nov 2026
  */
 public class ModularRuntimeImage implements Closeable {
 
@@ -63,8 +63,7 @@ public class ModularRuntimeImage implements Closeable {
      * Constructs an instance using the JRT file system implementation from a specific Java Home.
      *
      * @param javaHome Path to a Java 9 or greater home.
-     *
-     * @throws IOException an I/O error occurs accessing the file system
+     * @throws IOException Thrown if I/O error occurs accessing the file system.
      */
     public ModularRuntimeImage(final String javaHome) throws IOException {
         final Map<String, ?> emptyMap = Collections.emptyMap();
@@ -85,10 +84,19 @@ public class ModularRuntimeImage implements Closeable {
             classLoader.close();
         }
         if (fileSystem != null) {
-            fileSystem.close();
+            try {
+                fileSystem.close();
+            } catch (final UnsupportedOperationException e) {
+                // do nothing
+            }
         }
     }
 
+    /**
+     * Gets the file system.
+     *
+     * @return The file system.
+     */
     public FileSystem getFileSystem() {
         return fileSystem;
     }
@@ -97,8 +105,8 @@ public class ModularRuntimeImage implements Closeable {
      * Lists all entries in the given directory.
      *
      * @param dirPath directory path.
-     * @return a list of dir entries if an I/O error occurs
-     * @throws IOException an I/O error occurs accessing the file system
+     * @return A list of dir entries if an I/O error occurs.
+     * @throws IOException Thrown if I/O error occurs accessing the file system.
      */
     public List<Path> list(final Path dirPath) throws IOException {
         final List<Path> list = new ArrayList<>();
@@ -112,8 +120,8 @@ public class ModularRuntimeImage implements Closeable {
      * Lists all entries in the given directory.
      *
      * @param dirName directory path.
-     * @return a list of dir entries if an I/O error occurs
-     * @throws IOException an I/O error occurs accessing the file system
+     * @return A list of dir entries if an I/O error occurs.
+     * @throws IOException Thrown if I/O error occurs accessing the file system.
      */
     public List<Path> list(final String dirName) throws IOException {
         return list(fileSystem.getPath(dirName));
@@ -122,8 +130,8 @@ public class ModularRuntimeImage implements Closeable {
     /**
      * Lists all modules.
      *
-     * @return a list of modules
-     * @throws IOException an I/O error occurs accessing the file system
+     * @return A list of modules.
+     * @throws IOException Thrown if I/O error occurs accessing the file system.
      */
     public List<Path> modules() throws IOException {
         return list(MODULES_PATH);
@@ -132,8 +140,8 @@ public class ModularRuntimeImage implements Closeable {
     /**
      * Lists all packages.
      *
-     * @return a list of modules
-     * @throws IOException an I/O error occurs accessing the file system
+     * @return A list of modules.
+     * @throws IOException Thrown if I/O error occurs accessing the file system.
      */
     public List<Path> packages() throws IOException {
         return list(PACKAGES_PATH);

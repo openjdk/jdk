@@ -46,7 +46,6 @@ import com.sun.org.apache.bcel.internal.util.Args;
  * @see Code
  * @see StackMapEntry
  * @see StackMapType
- * @LastModified: Sept 2025
  */
 public final class StackMap extends Attribute {
 
@@ -55,11 +54,11 @@ public final class StackMap extends Attribute {
     /**
      * Constructs object from input stream.
      *
-     * @param nameIndex Index of name
-     * @param length Content length in bytes
-     * @param dataInput Input stream
-     * @param constantPool Array of constants
-     * @throws IOException if an I/O error occurs.
+     * @param nameIndex Index of name.
+     * @param length Content length in bytes.
+     * @param dataInput Input stream.
+     * @param constantPool Array of constants.
+     * @throws IOException Thrown if an I/O error occurs.
      */
     StackMap(final int nameIndex, final int length, final DataInput dataInput, final ConstantPool constantPool) throws IOException {
         this(nameIndex, length, (StackMapEntry[]) null, constantPool);
@@ -70,14 +69,13 @@ public final class StackMap extends Attribute {
         }
     }
 
-    /*
-     * @param nameIndex Index of name
+    /**
+     * Constructs a StackMap.
      *
-     * @param length Content length in bytes
-     *
-     * @param map Table of stack map entries
-     *
-     * @param constantPool Array of constants
+     * @param nameIndex Index of name.
+     * @param length Content length in bytes.
+     * @param table Table of stack map entries.
+     * @param constantPool Array of constants.
      */
     public StackMap(final int nameIndex, final int length, final StackMapEntry[] table, final ConstantPool constantPool) {
         super(Const.ATTR_STACK_MAP, nameIndex, length, constantPool);
@@ -89,7 +87,7 @@ public final class StackMap extends Attribute {
      * Called by objects that are traversing the nodes of the tree implicitly defined by the contents of a Java class.
      * I.e., the hierarchy of methods, fields, attributes, etc. spawns a tree of objects.
      *
-     * @param v Visitor object
+     * @param v Visitor object.
      */
     @Override
     public void accept(final Visitor v) {
@@ -97,7 +95,7 @@ public final class StackMap extends Attribute {
     }
 
     /**
-     * @return deep copy of this attribute
+     * @return deep copy of this attribute.
      */
     @Override
     public Attribute copy(final ConstantPool constantPool) {
@@ -109,33 +107,42 @@ public final class StackMap extends Attribute {
     }
 
     /**
-     * Dump stack map table attribute to file stream in binary format.
+     * Dumps stack map table attribute to file stream in binary format.
      *
-     * @param file Output file stream
-     * @throws IOException if an I/O error occurs.
+     * @param file Output file stream.
+     * @throws IOException Thrown if an I/O error occurs.
      */
     @Override
     public void dump(final DataOutputStream file) throws IOException {
         super.dump(file);
-        file.writeShort(table.length);
+        file.writeShort(Args.requireU2(table.length, "table.length"));
         for (final StackMapEntry entry : table) {
             entry.dump(file);
         }
     }
 
+    /**
+     * Gets the map length.
+     *
+     * @return The map length.
+     */
     public int getMapLength() {
         return table.length;
     }
 
     /**
-     * @return Array of stack map entries
+     * Gets the stack map.
+     *
+     * @return Array of stack map entries.
      */
     public StackMapEntry[] getStackMap() {
         return table;
     }
 
     /**
-     * @param table Array of stack map entries
+     * Sets the stack map.
+     *
+     * @param table Array of stack map entries.
      */
     public void setStackMap(final StackMapEntry[] table) {
         this.table = table != null ? table : StackMapEntry.EMPTY_ARRAY;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ public class SendSize {
 
     public static void main(String[] args) throws Exception {
         DatagramSocket serverSocket = new DatagramSocket(
-                new InetSocketAddress(InetAddress.getLocalHost(), 0)
+                new InetSocketAddress(InetAddress.getLoopbackAddress(), 0)
         );
         Thread server = new ServerThread(serverSocket);
         server.start();
@@ -99,7 +99,7 @@ public class SendSize {
 
         ClientThread(int serverPort)throws IOException {
             this.serverPort = serverPort;
-            this.host = InetAddress.getLocalHost();
+            this.host = InetAddress.getLoopbackAddress();
             this.client = new DatagramSocket();
         }
 

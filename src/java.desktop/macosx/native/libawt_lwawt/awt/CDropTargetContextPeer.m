@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,8 @@
 #import "ThreadUtilities.h"
 #import "JNIUtilities.h"
 
-jclass jc_CDropTargetContextPeer = NULL;
+DECLARE_CLASS_ONLY(jc_CDropTargetContextPeer);
+
 #define GET_DTCP_CLASS() \
     GET_CLASS(jc_CDropTargetContextPeer, "sun/lwawt/macosx/CDropTargetContextPeer");
 
