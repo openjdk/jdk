@@ -1665,8 +1665,15 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_storeCertificate
                 __leave;
             }
 
-            // Set no provider flags
-            keyProviderInfo.dwFlags = 0;
+            // Record whether the private key container is machine-specific
+            DWORD keysetType = 0;
+            DWORD keysetTypeLen = sizeof(keysetType);
+            if (!::CryptGetProvParam((HCRYPTPROV) hCryptProv,
+                PP_KEYSET_TYPE, (BYTE*) &keysetType, &keysetTypeLen, 0)) {
+                ThrowException(env, KEYSTORE_EXCEPTION, GetLastError());
+                __leave;
+            }
+            keyProviderInfo.dwFlags = keysetType;
 
             // Set no provider parameters
             keyProviderInfo.cProvParam = 0;
@@ -1893,10 +1900,10 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_removeCngKey
 /*
  * Class:     sun_security_mscapi_CKeyStore
  * Method:    destroyKeyContainer
- * Signature: (Ljava/lang/String;)V
+ * Signature: (Ljava/lang/String;J)V
  */
 JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_destroyKeyContainer
-  (JNIEnv *env, jobject clazz, jstring keyContainerName)
+  (JNIEnv *env, jobject clazz, jstring keyContainerName, jlong hKeyProv)
 {
     HCRYPTPROV hCryptProv = NULL;
     const char* pszKeyContainerName = NULL;
@@ -1915,13 +1922,22 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_destroyKeyContainer
             __leave;
         }
 
+        // Determine whether the private key container is machine-specific.
+        DWORD keysetType = 0;
+        DWORD keysetTypeLen = sizeof(keysetType);
+        if (!::CryptGetProvParam((HCRYPTPROV) hKeyProv,
+                PP_KEYSET_TYPE, (BYTE*) &keysetType, &keysetTypeLen, 0)) {
+            ThrowException(env, KEYSTORE_EXCEPTION, GetLastError());
+            __leave;
+        }
+
         // Acquire a CSP context (to the key container).
         if (::CryptAcquireContext( //deprecated
             &hCryptProv,
             pszKeyContainerName,
             NULL,
             PROV_RSA_FULL,
-            CRYPT_DELETEKEYSET) == FALSE)
+            CRYPT_DELETEKEYSET | keysetType) == FALSE)
         {
             ThrowExceptionWithMessageAndErrcode(env, KEYSTORE_EXCEPTION, "CryptAcquireContext failure", GetLastError());
             __leave;
@@ -2562,11 +2578,11 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_mscapi_CSignature_00024RSA_genera
 /*
  * Class:     sun_security_mscapi_CKeyStore
  * Method:    storePrivateKey
- * Signature: (Ljava/lang/String;[BLjava/lang/String;I)Lsun/security/mscapi/CPrivateKey;
+ * Signature: (Ljava/lang/String;[BLjava/lang/String;II)Lsun/security/mscapi/CPrivateKey;
  */
 JNIEXPORT jobject JNICALL Java_sun_security_mscapi_CKeyStore_storePrivateKey
     (JNIEnv *env, jobject clazz, jstring alg, jbyteArray keyBlob,
-     jstring keyContainerName, jint keySize)
+     jstring keyContainerName, jint keyStoreLocation, jint keySize)
 {
     HCRYPTPROV hCryptProv = NULL;
     HCRYPTKEY hKey = NULL;
@@ -2587,13 +2603,18 @@ JNIEXPORT jobject JNICALL Java_sun_security_mscapi_CKeyStore_storePrivateKey
             __leave;
         }
 
+        DWORD flags = CRYPT_NEWKEYSET;
+        if (keyStoreLocation == KEYSTORE_LOCATION_LOCALMACHINE) {
+            flags |= CRYPT_MACHINE_KEYSET;
+        }
+
         // Acquire a CSP context (create a new key container).
         if (::CryptAcquireContext( //deprecated
             &hCryptProv,
             pszKeyContainerName,
             NULL,
             PROV_RSA_FULL,
-            CRYPT_NEWKEYSET) == FALSE)
+            flags) == FALSE)
         {
             ThrowException(env, KEYSTORE_EXCEPTION, GetLastError());
             __leave;

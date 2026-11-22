@@ -148,7 +148,7 @@ abstract class CKeyStore extends KeyStoreSpi {
                     key.getCrtCoefficient().toByteArray());
 
             privateKey = storePrivateKey("RSA", Objects.requireNonNull(keyBlob),
-                    "{" + UUID.randomUUID().toString() + "}", keyBitLength);
+                    "{" + UUID.randomUUID().toString() + "}", storeLocation, keyBitLength);
         }
 
         /**
@@ -193,8 +193,8 @@ abstract class CKeyStore extends KeyStoreSpi {
             CKey privateKey = getPrivateKey();
             if (privateKey != null) {
                 if (privateKey.getHCryptKey() != 0) {
-                    destroyKeyContainer(
-                            CKey.getContainerName(privateKey.getHCryptProvider()));
+                    long hCryptProvider = privateKey.getHCryptProvider();
+                    destroyKeyContainer(CKey.getContainerName(hCryptProvider), hCryptProvider);
                 } else {
                     removeCngKey(privateKey.getHCryptProvider());
                 }
@@ -875,8 +875,9 @@ abstract class CKeyStore extends KeyStoreSpi {
      * Destroys the key container.
      *
      * @param keyContainerName The name of the key container.
+     * @param hCryptProvider The handle of the cryptographic provider.
      */
-    private native void destroyKeyContainer(String keyContainerName)
+    private native void destroyKeyContainer(String keyContainerName, long hCryptProvider)
             throws KeyStoreException;
 
     /**
@@ -901,5 +902,5 @@ abstract class CKeyStore extends KeyStoreSpi {
             byte[] crtCoefficient) throws InvalidKeyException;
 
     private native CPrivateKey storePrivateKey(String alg, byte[] keyBlob,
-            String keyContainerName, int keySize) throws KeyStoreException;
+            String keyContainerName, int location, int keySize) throws KeyStoreException;
 }
