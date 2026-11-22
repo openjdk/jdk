@@ -1513,6 +1513,8 @@ Java_sun_awt_windows_WPrinterJob__1startDoc(JNIEnv *env, jobject self,
     CATCH_BAD_ALLOC_RET(0);
 }
 
+static void DeletePrintDC(HDC printDC);
+
 /*
  * Class:     sun_awt_windows_WPrinterJob
  * Method:    endDoc
@@ -1527,6 +1529,7 @@ Java_sun_awt_windows_WPrinterJob_endDoc(JNIEnv *env, jobject self) {
     if (printDC != NULL){
         SAVE_CONTROLWORD
         ::EndDoc(printDC);
+        DeletePrintDC(printDC);
         AwtPrintControl::setPrintDC(env, self, (HDC)NULL);
         RESTORE_CONTROLWORD
     }

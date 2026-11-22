@@ -44,7 +44,9 @@ public class SaveDialogTitleTest {
         JobAttributes jobAttributes = new JobAttributes();
         jobAttributes.setDestination(JobAttributes.DestinationType.FILE);
         jobAttributes.setDefaultSelection(JobAttributes.DefaultSelectionType.RANGE);
-        jobAttributes.setPageRanges(new int[][]{new int[]{3,8}});
+        //jobAttributes.setPageRanges(new int[][]{new int[]{3,8}});
+        int[][] ranges = jobAttributes.getPageRanges();
+        System.out.println(ranges.length+ " " + ranges[0][0] + " " + ranges[0][1]);
         PageAttributes page = new PageAttributes();
         page.setMedia(PageAttributes.MediaType.LEGAL);
         page.setOrientationRequested(PageAttributes.
