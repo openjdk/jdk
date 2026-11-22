@@ -23,23 +23,31 @@
 
 package jdk.jfr.event.oldobject;
 
+import java.lang.ref.Reference;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.Instant;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.value.ValueClass;
 import jdk.internal.vm.annotation.LooselyConsistentValue;
 import jdk.internal.vm.annotation.NullRestricted;
 import jdk.jfr.Recording;
+import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.consumer.RecordedObject;
+import jdk.jfr.consumer.RecordingFile;
 import jdk.jfr.internal.test.WhiteBox;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.jfr.EventNames;
-import jdk.test.lib.jfr.Events;
 
 /**
  * @test
  * @bug 8389454
- * @summary Verify shared and distinct identities of flattened old-object holders
+ * @summary Verify shared and distinct identities of flattened old-object holders within and across recording dumps
  * @requires vm.hasJFR & vm.flagless & vm.bits == "64"
  * @library /test/lib /test/jdk
  * @modules java.base/jdk.internal.misc
@@ -95,6 +103,8 @@ public class TestFlatLogicalIdentity {
 
     private record Occurrence(long holder, int position, boolean nested) {}
 
+    private record Observation(Set<Long> identities, boolean complete, Instant lastEventTime) {}
+
     public static void main(String[] args) throws Exception {
         WhiteBox.setWriteAllObjectSamples(true);
         new Holder();
@@ -133,63 +143,93 @@ public class TestFlatLogicalIdentity {
     }
 
     private static void check(boolean arrayMode) throws Exception {
-        String ownerType = (arrayMode ? Outer[].class : Holder.class).getName();
-        // Each accepted recording must contain both references from both occurrences
-        // in one physical holder. Partial sampling evidence causes a retry.
-        for (int attempt = 0; ; attempt++) {
-            TestFlatArrayInformation.KEEP.clear();
-            try (Recording recording = new Recording()) {
-                recording.enable(EventNames.OldObjectSample).withoutStackTrace().with("cutoff", "infinity");
-                recording.start();
-                for (int i = 0; i < 16; i++) {
-                    allocate(arrayMode);
+        Path dump = Files.createTempFile("flat-logical-identity-", ".jfr");
+        try {
+            for (int attempt = 0; ; attempt++) {
+                if (attempt > 0) {
+                    System.out.println("Retrying logical identities, array=" + arrayMode + ", attempt=" + attempt);
                 }
-                recording.stop();
-                Map<Occurrence, Long> ids = new HashMap<>();
-                Map<Long, Occurrence> owners = new HashMap<>();
-                Map<Long, Integer> seen = new HashMap<>();
-                for (var event : Events.fromRecording(recording)) {
-                    RecordedObject sample = event.getValue("object");
-                    if (!sample.getClass("type").getName().equals(byte[].class.getName())) {
+                TestFlatArrayInformation.KEEP.clear();
+                try (Recording recording = new Recording()) {
+                    recording.enable(EventNames.OldObjectSample).withoutStackTrace().with("cutoff", "infinity");
+                    recording.start();
+                    var first = dumpAndVerify(recording, dump, arrayMode, Instant.MIN);
+                    if (!first.complete()) {
                         continue;
                     }
-                    int role = event.getInt("arrayElements") - OldObjects.MIN_SIZE;
-                    if (role < 0 || role > 3) {
+                    var second = dumpAndVerify(recording, dump, arrayMode, first.lastEventTime());
+                    if (second.identities().isEmpty()) {
                         continue;
                     }
-                    RecordedObject ref = sample.getValue("referrer");
-                    if (ref == null || !ref.getClass("object.type").getName().equals(Pair.class.getName())) {
-                        continue;
-                    }
-                    RecordedObject pair = TestFlatArrayInformation.verifyField(ref,
-                            (role & 1) == 0 ? "left" : "right", Pair.class, true);
-                    RecordedObject outer = TestFlatArrayInformation.verifyField(pair.getValue("referrer"),
-                            "nested", Outer.class, true);
-                    RecordedObject outerRef = outer.getValue("referrer");
-                    if (outerRef == null || !outerRef.getClass("object.type").getName().equals(ownerType)) {
-                        continue;
-                    }
-                    int position = role / 2;
-                    RecordedObject holder;
-                    if (arrayMode) {
-                        TestFlatArrayInformation.verifyArray(outerRef,
-                                position == 0 ? 0 : TestFlatArrayInformation.LENGTH - 1, Outer[].class);
-                        holder = outerRef.getValue("object");
-                    } else {
-                        holder = TestFlatArrayInformation.verifyField(outerRef, "value", Holder.class, false);
-                    }
-                    long address = holder.getLong("address");
-                    Asserts.assertEquals(address & TestFlatArrayInformation.ALIGNMENT_MASK, 0L);
-                    remember(ids, owners, new Occurrence(address, position, true), pair);
-                    remember(ids, owners, new Occurrence(address, position, false), outer);
-                    seen.merge(address, 1 << role, (a, b) -> a | b);
-                }
-                if (seen.containsValue(15)) {
-                    TestFlatArrayInformation.KEEP.clear();
+                    Asserts.assertTrue(Collections.disjoint(first.identities(), second.identities()),
+                        "Newly emitted logical nodes must not reuse identities from the first dump");
+                    System.out.println("Verified distinct logical identities across dumps, array="
+                        + arrayMode + ", first=" + first.identities().size() + ", second=" + second.identities().size());
                     return;
                 }
             }
-            System.out.println("Retrying logical identities, array=" + arrayMode + ", attempt=" + (attempt + 1));
+        } finally {
+            TestFlatArrayInformation.KEEP.clear();
+            Files.deleteIfExists(dump);
         }
+    }
+
+    private static Observation dumpAndVerify(Recording recording, Path dump,
+                                            boolean arrayMode, Instant cutoff) throws Exception {
+        List<Object> retainedHolders = TestFlatArrayInformation.KEEP;
+        for (int allocation = 0; allocation < 16; allocation++) {
+            allocate(arrayMode);
+        }
+        recording.dump(dump);
+        Reference.reachabilityFence(retainedHolders);
+        List<RecordedEvent> events = RecordingFile.readAllEvents(dump).stream()
+            .filter(event -> event.getEventType().getName().equals(EventNames.OldObjectSample))
+            .filter(event -> event.getStartTime().isAfter(cutoff))
+            .toList();
+        return verify(events, arrayMode);
+    }
+
+    private static Observation verify(List<RecordedEvent> events, boolean arrayMode) {
+        String ownerType = (arrayMode ? Outer[].class : Holder.class).getName();
+        Map<Occurrence, Long> ids = new HashMap<>();
+        Map<Long, Occurrence> owners = new HashMap<>();
+        Map<Long, Integer> seen = new HashMap<>();
+        for (var event : events) {
+            RecordedObject sample = event.getValue("object");
+            if (!sample.getClass("type").getName().equals(byte[].class.getName())) {
+                continue;
+            }
+            int role = event.getInt("arrayElements") - OldObjects.MIN_SIZE;
+            if (role < 0 || role > 3) {
+                continue;
+            }
+            RecordedObject ref = sample.getValue("referrer");
+            if (ref == null || !ref.getClass("object.type").getName().equals(Pair.class.getName())) {
+                continue;
+            }
+            RecordedObject pair = TestFlatArrayInformation.verifyField(ref, (role & 1) == 0
+                                    ? "left" : "right", Pair.class, true);
+            RecordedObject outer =
+                TestFlatArrayInformation.verifyField(pair.getValue("referrer"), "nested", Outer.class, true);
+            RecordedObject outerRef = outer.getValue("referrer");
+            if (outerRef == null || !outerRef.getClass("object.type").getName().equals(ownerType)) {
+                continue;
+            }
+            int position = role / 2;
+            RecordedObject holder;
+            if (arrayMode) {
+                TestFlatArrayInformation.verifyArray(outerRef, position == 0 ? 0 : TestFlatArrayInformation.LENGTH - 1, Outer[].class);
+                holder = outerRef.getValue("object");
+            } else {
+                holder = TestFlatArrayInformation.verifyField(outerRef, "value", Holder.class, false);
+            }
+            long address = holder.getLong("address");
+            Asserts.assertEquals(address & TestFlatArrayInformation.ALIGNMENT_MASK, 0L);
+            remember(ids, owners, new Occurrence(address, position, true), pair);
+            remember(ids, owners, new Occurrence(address, position, false), outer);
+            seen.merge(address, 1 << role, (a, b) -> a | b);
+        }
+        Instant lastEventTime = events.stream().map(RecordedEvent::getStartTime).max(Instant::compareTo).orElse(Instant.MIN);
+        return new Observation(Set.copyOf(owners.keySet()), seen.containsValue(15), lastEventTime);
     }
 }

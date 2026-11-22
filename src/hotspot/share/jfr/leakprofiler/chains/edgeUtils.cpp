@@ -65,7 +65,7 @@ static bool resolve_field_path(const InstanceKlass* ik, int offset, bool is_stat
     // into the value class's layout, and continue resolving within that layout.
     // Check containment before exact offsets: the first embedded reference
     // can share the flattened field's starting offset.
-    if (!is_static && ik->find_flat_field_containing_offset(offset, &fd)) {
+    if (!is_static && ik->find_local_flat_field_containing_offset(offset, &fd)) {
       const ValueKlass* const vk = fd.field_holder()->value_field_info(fd.index()).klass();
       fields->append(EdgeField(fd.name(), fd.access_flags().as_field_flags(), vk, fd.field_holder(), fd.index()));
       offset = offset - fd.offset() + vk->payload_offset();
