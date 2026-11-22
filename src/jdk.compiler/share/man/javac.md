@@ -1297,11 +1297,11 @@ Three different kinds of hierarchy are supported: a _package hierarchy_,
 a _module hierarchy_, and a _module source hierarchy_.
 
 While `javac` is fairly relaxed about the organization of source code,
-beyond the expectation that source will be organized in one or package
+beyond the expectation that source will be organized in one or more package
 hierarchies, and can generally accommodate organizations prescribed by
 development environments and build tools, Java tools in general,
 and `javac` and the Java launcher in particular, are more stringent
-regarding the organization of compiled class files, and will be
+regarding the organization of compiled class files, which must be
 organized in package hierarchies or module hierarchies, as appropriate.
 
 The location of these hierarchies are specified to `javac` with command-line

@@ -233,7 +233,6 @@ extern void trace_class_resolution(Klass* to_class) {
 // java.lang.System //////////////////////////////////////////////////////////////////////
 
 JVM_ENTRY(jboolean, JVM_AOTEndRecording(JNIEnv *env))
-#if INCLUDE_CDS
   if (CDSConfig::is_dumping_aot_configuration()) {
     if (!AOTMetaspace::aot_configuration_dumped()) {
       AOTMetaspace::dump_static_archive(THREAD);
@@ -241,9 +240,6 @@ JVM_ENTRY(jboolean, JVM_AOTEndRecording(JNIEnv *env))
     }
   }
   return JNI_FALSE;
-#else
-  return JNI_FALSE;
-#endif // INCLUDE_CDS
 JVM_END
 
 JVM_LEAF(jlong, JVM_CurrentTimeMillis(JNIEnv *env, jclass ignored))
@@ -2914,7 +2910,6 @@ static void thread_entry(JavaThread* thread, TRAPS) {
 
 
 JVM_ENTRY(void, JVM_StartThread(JNIEnv* env, jobject jthread))
-#if INCLUDE_CDS
   if (CDSConfig::allow_only_single_java_thread()) {
     // During java -Xshare:dump, if we allow multiple Java threads to
     // execute in parallel, symbols and classes may be loaded in
@@ -2933,7 +2928,6 @@ JVM_ENTRY(void, JVM_StartThread(JNIEnv* env, jobject jthread))
     }
     return;
   }
-#endif
   JavaThread *native_thread = nullptr;
 
   // We cannot hold the Threads_lock when we throw an exception,

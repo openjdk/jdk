@@ -677,13 +677,11 @@ void ClassLoader::setup_bootstrap_search_path_impl(JavaThread* current, const ch
   ClasspathStream cp_stream(class_path);
   bool set_base_piece = true;
 
-#if INCLUDE_CDS
   if (CDSConfig::is_dumping_archive()) {
     if (!Arguments::has_jimage()) {
       vm_exit_during_initialization("CDS is not supported in exploded JDK build", nullptr);
     }
   }
-#endif
 
   while (cp_stream.has_next()) {
     const char* path = cp_stream.get_next();

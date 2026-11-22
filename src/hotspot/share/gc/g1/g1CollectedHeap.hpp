@@ -630,6 +630,8 @@ public:
   // Register the given region to be part of the collection set.
   inline void register_humongous_candidate_region_with_region_attr(uint index);
 
+  inline void register_humongous_non_candidate_region_with_region_attr(uint index);
+
   void set_humongous_metadata(G1HeapRegion* first_hr,
                               uint num_regions,
                               size_t word_size,
