@@ -136,11 +136,16 @@ public class TestVectorDebugInfoDecode {
     private static void checkDecode(String pid) throws Exception {
         HotSpotAgent agent = new HotSpotAgent();
 
+        boolean vectorReboxingEnabled = true;
+
         Set<String> decodedVectorSet = new HashSet<>();
         Set<String> vectorLocationSet = new HashSet<>();
 
         try {
             agent.attach(Integer.parseInt(pid));
+
+            VM.Flag flag = VM.getVM().getCommandLineFlag("EnableVectorReboxing");
+            vectorReboxingEnabled = flag != null && flag.getBool();
 
             // Find the "main" thread, and find the compiled "test" frame.
             var threads = VM.getVM().getThreads();
@@ -233,14 +238,18 @@ public class TestVectorDebugInfoDecode {
             throw new RuntimeException("Missing decoded vectors. missing: " + missing);
         }
 
-        if (!vectorLocationSet.containsAll(MANDATORY_VECTOR_NAME_SET)) {
-            Set<String> missing = new HashSet<>(MANDATORY_VECTOR_NAME_SET);
-            missing.removeAll(vectorLocationSet);
-            Set<String> extra = new HashSet<>(vectorLocationSet);
-            extra.removeAll(MANDATORY_VECTOR_NAME_SET);
+        if (vectorReboxingEnabled) {
+            if (!vectorLocationSet.containsAll(MANDATORY_VECTOR_NAME_SET)) {
+                Set<String> missing = new HashSet<>(MANDATORY_VECTOR_NAME_SET);
+                missing.removeAll(vectorLocationSet);
+                Set<String> extra = new HashSet<>(vectorLocationSet);
+                extra.removeAll(MANDATORY_VECTOR_NAME_SET);
 
-            throw new RuntimeException("Mandatory vector locations not found." +
-                    " missing: " + missing + ", extra: " + extra);
+                throw new RuntimeException("Mandatory vector locations not found." +
+                        " missing: " + missing + ", extra: " + extra);
+            }
+        } else {
+            System.out.println("Skipping SIMD (Location::vector) expectation check: EnableVectorReboxing is off");
         }
     }
 
