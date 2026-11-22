@@ -3631,6 +3631,10 @@ public class JavacParser implements Parser {
                     flag = Flags.SEALED;
                     break;
                 }
+                if (isSingleObjectClassStart(false)) {
+                    flag = Flags.SINGLEOBJECT;
+                    break;
+                }
                 if (isValueModifier()) {
                     checkSourceLevel(Feature.VALUE_CLASSES);
                     flag = Flags.VALUE_CLASS;
@@ -3916,6 +3920,9 @@ public class JavacParser implements Parser {
             } else if (shouldWarn) {
                 log.warning(DiagnosticFlag.SYNTAX, pos, Warnings.RestrictedTypeNotAllowedPreview(name, Source.JDK15));
             }
+        }
+        if (name == names.singleobject) {
+            return Source.DEFAULT;
         }
         if (name == names.permits) {
             if (allowSealedTypes) {
@@ -5051,6 +5058,14 @@ public class JavacParser implements Parser {
             if (isValueModifier) {
                 return true;
             }
+        }
+        return false;
+    }
+
+    protected boolean isSingleObjectClassStart(boolean local) {
+        if (token.name() == names.singleobject) {
+            Token next = S.token(1);
+            return next.kind == CLASS;
         }
         return false;
     }

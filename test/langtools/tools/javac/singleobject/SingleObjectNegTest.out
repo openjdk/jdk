@@ -1,0 +1,4 @@
+SingleObjectNegTest.java:12:27: compiler.err.mod.not.allowed.here: abstract
+SingleObjectNegTest.java:15:30: compiler.err.cant.inherit.from.final: SingleObjectNegTest.S1
+SingleObjectNegTest.java:19:16: compiler.err.mod.not.allowed.here: public
+3 errors
