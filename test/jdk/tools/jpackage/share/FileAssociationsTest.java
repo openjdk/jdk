@@ -31,6 +31,7 @@ import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.FileAssociations;
 import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.JPackageCommand.MessageCategory;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.PackageType;
 import jdk.jpackage.test.TKit;
@@ -149,6 +150,9 @@ public class FileAssociationsTest {
                 .excludeTypes(PackageType.MAC)
                 .configureHelloApp()
                 .addInitializer(JPackageCommand::setFakeRuntime)
+                .addInitializer(cmd -> {
+                    cmd.enableMessageCategories(MessageCategory.ERRORS);
+                })
                 .setExpectedExitCode(1);
     }
 

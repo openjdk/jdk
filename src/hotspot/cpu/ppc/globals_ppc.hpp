@@ -77,8 +77,8 @@ define_pd_global(bool, CompactStrings, true);
 // 2x unrolled loop is shorter with more than 9 HeapWords.
 define_pd_global(intx, InitArrayShortSize, 9*BytesPerLong);
 
-define_pd_global(bool, InlineTypePassFieldsAsArgs, false);
-define_pd_global(bool, InlineTypeReturnedAsFields, false);
+define_pd_global(bool, ValueTypePassFieldsAsArgs, false);
+define_pd_global(bool, ValueTypeReturnedAsFields, false);
 
 // Platform dependent flag handling: flags only defined on this platform.
 #define ARCH_FLAGS(develop,                                                 \
@@ -96,7 +96,7 @@ define_pd_global(bool, InlineTypeReturnedAsFields, false);
   product(bool, ReoptimizeCallSequences, true, DIAGNOSTIC,                  \
           "Reoptimize code-sequences of calls at runtime.")                 \
                                                                             \
-  /* Power 8: Configure Data Stream Control Register. */                    \
+  /* Configure Data Stream Control Register. */                             \
   product(uint64_t, DSCR_PPC64, (uint64_t)-1,                               \
           "Power8 or later: Specify encoded value for Data Stream Control " \
           "Register")                                                       \

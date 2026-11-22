@@ -531,6 +531,8 @@ class SerializeClosure;
   template(big_endian_name,                           "BIG_ENDIAN")                               \
   template(use_unaligned_access_name,                 "UNALIGNED_ACCESS")                         \
   template(data_cache_line_flush_size_name,           "DATA_CACHE_LINE_FLUSH_SIZE")               \
+  template(hash_code_mask_name,                       "HASH_CODE_MASK")                           \
+  template(hash_code_no_hash_name,                    "HASH_CODE_NO_HASH")                        \
   template(during_unsafe_access_name,                 "during_unsafe_access")                     \
   template(checkIndex_name,                           "checkIndex")                               \
   template(jfr_epoch_name,                            "jfr_epoch")                                \
@@ -750,6 +752,7 @@ class SerializeClosure;
   template(dumpSharedArchive_signature,                     "(ZLjava/lang/String;)Ljava/lang/String;")            \
   template(generateLambdaFormHolderClasses,                 "generateLambdaFormHolderClasses")                    \
   template(generateLambdaFormHolderClasses_signature,       "([Ljava/lang/String;)[Ljava/lang/Object;")           \
+  template(getResource_name,                                "getResource")                                        \
   template(getResourceAsByteArray_name,                     "getResourceAsByteArray")                             \
   template(getResourceAsByteArray_signature,                "(Ljava/lang/String;)[B")                             \
   template(java_lang_Enum,                                  "java/lang/Enum")                                     \
@@ -759,6 +762,7 @@ class SerializeClosure;
   template(java_lang_invoke_DelegatingMethodHandle_Holder,  "java/lang/invoke/DelegatingMethodHandle$Holder")     \
   template(jdk_internal_loader_ClassLoaders,                "jdk/internal/loader/ClassLoaders")                   \
   template(jdk_internal_misc_CDS,                           "jdk/internal/misc/CDS")                              \
+  template(getResource_cds_signature,                       "(Ljava/lang/ClassLoader;Ljava/net/URL;Ljava/lang/String;)Ljava/net/URL;")\
   template(jdk_internal_vm_annotation_AOTSafeClassInitializer_signature, "Ljdk/internal/vm/annotation/AOTSafeClassInitializer;")\
   template(java_util_concurrent_ConcurrentHashMap,          "java/util/concurrent/ConcurrentHashMap")             \
   template(java_util_ArrayList,                             "java/util/ArrayList")                                \

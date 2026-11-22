@@ -177,7 +177,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
                     else if (p.cmpExItem(m, e) != m)
                         p = head;                  // missed; restart
                     else {                         // matched complementary node
-                        Thread w = p.waiter;
+                        Thread w = p.getVolatileWaiter();
                         cmpExHead(p, p.next);
                         LockSupport.unpark(w);
                         break outer;

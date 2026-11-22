@@ -101,10 +101,10 @@ public class FSFrame extends Frame {
         // fill color
 
         boolean colorCorrect = true;
-        colorCorrect &= checkColor(0, 0, bImg);
-        colorCorrect &= checkColor(0, bImg.getHeight() - 1, bImg);
-        colorCorrect &= checkColor(bImg.getWidth() - 1, 0, bImg);
-        colorCorrect &= checkColor(bImg.getWidth() - 1, bImg.getHeight() - 1, bImg);
+        colorCorrect &= checkColor(5, 5, bImg);
+        colorCorrect &= checkColor(5, bImg.getHeight() - 6, bImg);
+        colorCorrect &= checkColor(bImg.getWidth() - 6, 5, bImg);
+        colorCorrect &= checkColor(bImg.getWidth() - 6, bImg.getHeight() - 6, bImg);
         colorCorrect &= checkColor(bImg.getWidth() / 2, bImg.getHeight() / 2, bImg);
         if (!colorCorrect) {
             System.err.println("Test failed for mode: fsSupported="+fsSupported);

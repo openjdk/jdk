@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -340,12 +340,12 @@ inline traceid JfrSymbolTable::Impl::add(const Symbol* sym) {
   return _symbols->lookup_put(sym->identity_hash(), sym)->id();
 }
 
-traceid JfrSymbolTable::Impl::add(const char* str) {
+inline traceid JfrSymbolTable::Impl::add(const char* str) {
   assert(str != nullptr, "invariant");
   return _strings->lookup_put(string_hash(str), str)->id();
 }
 
-inline traceid JfrSymbolTable::add(const Symbol* sym) {
+traceid JfrSymbolTable::add(const Symbol* sym) {
   return this_epoch_table()->add(sym);
 }
 

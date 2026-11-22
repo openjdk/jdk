@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2018, 2026, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/shenandoahAllocRate.inline.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
+#include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
@@ -37,6 +38,26 @@
 #include "logging/logTag.hpp"
 #include "runtime/globals_extension.hpp"
 #include "utilities/quickSort.hpp"
+
+ShenandoahHeuristicsFlag::Heuristic ShenandoahHeuristicsFlag::_value = Heuristic::ADAPTIVE;
+void ShenandoahHeuristicsFlag::initialize() {
+  if (ShenandoahGCHeuristics == nullptr) {
+    vm_exit_during_initialization("Unknown -XX:ShenandoahGCHeuristics option (null)");
+  }
+  if (strcmp(ShenandoahGCHeuristics, "adaptive") == 0) {
+    _value = Heuristic::ADAPTIVE;
+  } else if (strcmp(ShenandoahGCHeuristics, "passive") == 0) {
+    _value = Heuristic::PASSIVE;
+  } else if (strcmp(ShenandoahGCHeuristics, "aggressive") == 0) {
+    _value = Heuristic::AGGRESSIVE;
+  } else if (strcmp(ShenandoahGCHeuristics, "static") == 0) {
+    _value = Heuristic::STATIC;
+  } else if (strcmp(ShenandoahGCHeuristics, "compact") == 0) {
+    _value = Heuristic::COMPACT;
+  } else {
+    vm_exit_during_initialization("Unknown -XX:ShenandoahGCHeuristics option");
+  }
+}
 
 // sort by decreasing garbage (so most garbage comes first)
 int ShenandoahHeuristics::compare_by_garbage(RegionData a, RegionData b) {
@@ -54,16 +75,14 @@ ShenandoahHeuristics::ShenandoahHeuristics(ShenandoahSpaceInfo* space_info) :
   _most_recent_planned_sleep_interval(0.0),
   _start_gc_is_pending(false),
   _declined_trigger_count(0),
-  _most_recent_declined_trigger_count(0),
   _space_info(space_info),
   _region_data(nullptr),
   _guaranteed_gc_interval(0),
-  _precursor_cycle_start(os::elapsedTime()),
-  _cycle_start(_precursor_cycle_start),
+  _cycle_start(os::elapsedTime()),
   _last_cycle_end(0),
   _gc_times_learned(0),
   _gc_time_penalties(0),
-  _metaspace_oom()
+  _bytes_used_at_end_of_gc(0)
 {
   size_t num_regions = ShenandoahHeap::heap()->num_regions();
   assert(num_regions > 0, "Sanity");
@@ -100,12 +119,11 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
   size_t free_regions = 0;
 
   for (size_t i = 0; i < num_regions; i++) {
-    ShenandoahHeapRegion* region = heap->get_region(i);
-
-    if (!_space_info->contains(region)) {
+    if (!_space_info->contains(heap->region_affiliation(i))) {
       continue;
     }
 
+    ShenandoahHeapRegion* region = heap->get_region(i);
     size_t garbage = region->garbage();
     total_garbage += garbage;
 
@@ -152,9 +170,10 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
 
   if (immediate_percent <= ShenandoahImmediateThreshold) {
     choose_collection_set_from_regiondata(collection_set, candidates, cand_idx, immediate_garbage + free);
-  } else if (heap->mode()->is_generational()) {
-    adjust_reserves_for_abbreviated(heap);
+  } else {
+    prepare_for_abbreviated_cycle();
   }
+
   collection_set->summarize(total_garbage, immediate_garbage, immediate_regions);
   ShenandoahTracer::report_evacuation_info(collection_set, free_regions, immediate_regions, immediate_garbage);
 }
@@ -163,28 +182,15 @@ void ShenandoahHeuristics::start_idle_span() {
   // do nothing
 }
 
-void ShenandoahHeuristics::adjust_reserves_for_abbreviated(ShenandoahHeap* heap) {
-  // We are not going to evacuate because this is an abbreviated cycle.  Reset the reserves.
-  heap->young_generation()->set_evacuation_reserve(0UL);
-  heap->old_generation()->set_evacuation_reserve(0UL);
-  heap->old_generation()->set_promoted_reserve(0UL);
-}
-
-void ShenandoahHeuristics::record_degenerated_cycle_start(bool out_of_cycle) {
-  if (out_of_cycle) {
-    _precursor_cycle_start = _cycle_start = os::elapsedTime();
-  } else {
-    _precursor_cycle_start = _cycle_start;
-    _cycle_start = os::elapsedTime();
-  }
-}
-
 void ShenandoahHeuristics::record_cycle_start() {
   _cycle_start = os::elapsedTime();
+  cancel_trigger_request();
+  log_debug(gc, ergo)("Declined trigger count at start: %zu", _declined_trigger_count.load_relaxed());
 }
 
 void ShenandoahHeuristics::record_cycle_end() {
   _last_cycle_end = os::elapsedTime();
+  _bytes_used_at_end_of_gc = _space_info->used();
 
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   if (!heap->mode()->is_generational()) {
@@ -194,8 +200,8 @@ void ShenandoahHeuristics::record_cycle_end() {
 }
 
 bool ShenandoahHeuristics::should_start_gc() {
-  if (_start_gc_is_pending) {
-    log_trigger("GC start is already pending");
+  if (_start_gc_is_pending.load_relaxed()) {
+    log_info(gc, ergo)("GC start is already pending");
     return true;
   }
   // Perform GC to cleanup metaspace
@@ -209,8 +215,8 @@ bool ShenandoahHeuristics::should_start_gc() {
   if (_guaranteed_gc_interval > 0) {
     double last_time_ms = (os::elapsedTime() - _last_cycle_end) * 1000;
     if (last_time_ms > _guaranteed_gc_interval) {
-      log_trigger("Time since last GC (%.0f ms) is larger than guaranteed interval (%zu ms)",
-                   last_time_ms, _guaranteed_gc_interval);
+      log_trigger("Guaranteed Interval. %.0f ms since last GC, above %zu ms guaranteed interval",
+                  last_time_ms, _guaranteed_gc_interval);
       accept_trigger();
       return true;
     }
@@ -219,33 +225,15 @@ bool ShenandoahHeuristics::should_start_gc() {
   return false;
 }
 
-bool ShenandoahHeuristics::should_degenerate_cycle() {
-  return ShenandoahHeap::heap()->shenandoah_policy()->consecutive_degenerated_gc_count() <= ShenandoahFullGCThreshold;
-}
-
 void ShenandoahHeuristics::adjust_penalty(intx step) {
-  assert(0 <= _gc_time_penalties && _gc_time_penalties <= 100,
-         "In range before adjustment: %zd", _gc_time_penalties);
-  if ((_most_recent_declined_trigger_count <= Penalty_Free_Declinations) && (step > 0)) {
-    // Don't penalize if heuristics are not responsible for a negative outcome.  Allow Penalty_Free_Declinations following
-    // previous GC for self calibration without penalty.
-    step = 0;
+  const intx adjusted = clamp(_gc_time_penalties + step, Min_Penalty, Max_Penalty);
+  if (adjusted != _gc_time_penalties) {
+    _gc_time_penalties = adjusted;
+    log_info(gc, ergo)("Adjusted heuristic penalty: %zd", _gc_time_penalties);
   }
-
-  intx new_val = _gc_time_penalties + step;
-  if (new_val < 0) {
-    new_val = 0;
-  }
-  if (new_val > 100) {
-    new_val = 100;
-  }
-  _gc_time_penalties = new_val;
-
-  assert(0 <= _gc_time_penalties && _gc_time_penalties <= 100,
-         "In range after adjustment: %zd", _gc_time_penalties);
 }
 
-void ShenandoahHeuristics::log_trigger(const char* fmt, ...) {
+void ShenandoahHeuristics::log_trigger(const char* fmt, ...) const {
   LogTarget(Info, gc) lt;
   if (lt.is_enabled()) {
     ResourceMark rm;
@@ -263,30 +251,36 @@ void ShenandoahHeuristics::log_trigger(const char* fmt, ...) {
   }
 }
 
-void ShenandoahHeuristics::record_success_concurrent() {
+ShenandoahHeuristics::PenaltyData ShenandoahHeuristics::consume_penalty_data() {
+  const size_t declines = _declined_trigger_count.exchange(0, memory_order_relaxed);
+  const bool stalls = _allocation_stalls.exchange(false, memory_order_relaxed);
+  log_debug(gc, ergo)("Declined trigger count at end: %zu", declines);
+  return { declines, stalls };
+}
+
+void ShenandoahHeuristics::record_concurrent_completion() {
   _gc_times_learned++;
-
-  adjust_penalty(Concurrent_Adjust);
-}
-
-void ShenandoahHeuristics::record_degenerated(bool is_generational_global) {
-
-  if (!is_generational_global) {
-    // We don't penalize generational GC heuristics for global GC because heuristics predict based on assumption of young GC.
-    _most_recent_declined_trigger_count = _declined_trigger_count;
-    _declined_trigger_count = 0;
-  } else {
-    _most_recent_declined_trigger_count = _declined_trigger_count = 0;
+  const PenaltyData data = consume_penalty_data();
+  if (!data.stalls) {
+    adjust_penalty(Concurrent_Adjust);
+  } else if (data.declined_triggers > Penalty_Free_Declinations) {
+    // There were stalls _and_ the trigger was lazy, penalize it.
+    adjust_penalty(Stall_Penalty);
   }
-  adjust_penalty(Degenerated_Penalty);
 }
 
-void ShenandoahHeuristics::record_success_full() {
-  adjust_penalty(Full_Penalty);
+void ShenandoahHeuristics::record_allocation_stall() {
+  _allocation_stalls.store_relaxed(true);
 }
 
-void ShenandoahHeuristics::record_allocation_failure_gc() {
-  // Do nothing.
+void ShenandoahHeuristics::record_full_gc(GCCause::Cause cause) {
+  const PenaltyData data = consume_penalty_data();
+  if (cause == GCCause::_shenandoah_upgrade_to_full_gc) {
+    adjust_penalty(Full_Penalty);
+  } else if (data.stalls && data.declined_triggers > Penalty_Free_Declinations) {
+    // There were stalls _and_ the trigger was lazy, penalize it.
+    adjust_penalty(Stall_Penalty);
+  }
 }
 
 void ShenandoahHeuristics::record_requested_gc() {
@@ -295,12 +289,6 @@ void ShenandoahHeuristics::record_requested_gc() {
 
 bool ShenandoahHeuristics::can_unload_classes() {
   return ClassUnloading;
-}
-
-bool ShenandoahHeuristics::should_unload_classes() {
-  if (!can_unload_classes()) return false;
-  if (has_metaspace_oom()) return true;
-  return ClassUnloadingWithConcurrentMark;
 }
 
 void ShenandoahHeuristics::initialize() {
@@ -315,13 +303,6 @@ double ShenandoahHeuristics::elapsed_cycle_time() const {
   return os::elapsedTime() - _cycle_start;
 }
 
-
-// Includes the time spent in abandoned concurrent GC cycle that may have triggered this degenerated cycle.
-double ShenandoahHeuristics::elapsed_degenerated_cycle_time() const {
-  double now = os::elapsedTime();
-  return now - _precursor_cycle_start;
-}
-
 #ifdef ASSERT
 void ShenandoahHeuristics::assert_humongous_mark_consistency(ShenandoahHeapRegion* region) {
   assert(region->is_humongous(), "Region %zu must be humongous", region->index());
@@ -334,3 +315,38 @@ void ShenandoahHeuristics::assert_humongous_mark_consistency(ShenandoahHeapRegio
          BOOL_TO_STR(reg_live), BOOL_TO_STR(bm_live), region->get_live_data_words());
 }
 #endif
+
+bool ShenandoahHeuristics::trigger_allocation_threshold(const size_t used, const size_t capacity) {
+  if (ShenandoahAllocationThreshold == 0) {
+    // Trigger is disabled
+    return false;
+  }
+
+  const size_t threshold_bytes_allocated = capacity / 100 * ShenandoahAllocationThreshold;
+  const size_t bytes_allocated = used > _bytes_used_at_end_of_gc ? used - _bytes_used_at_end_of_gc : 0;
+  log_debug(gc, ergo)("trigger allocation threshold: used: " PROPERFMT ", soft_max_capacity: "  PROPERFMT ", "
+                      "allocated_since_gc_start: "  PROPERFMT,
+                      PROPERFMTARGS(used), PROPERFMTARGS(capacity), PROPERFMTARGS(bytes_allocated));
+
+  if (bytes_allocated > threshold_bytes_allocated) {
+    log_trigger("Allocation. " PROPERFMT " allocated, above " PROPERFMT " threshold",
+                PROPERFMTARGS(bytes_allocated), PROPERFMTARGS(threshold_bytes_allocated));
+    accept_trigger();
+    return true;
+  }
+  return false;
+}
+
+bool ShenandoahHeuristics::trigger_min_free_threshold(const size_t available, const size_t capacity) {
+  const size_t min_threshold = capacity / 100 * ShenandoahMinFreeThreshold;
+  log_debug(gc, ergo)("trigger min free threshold: available: " PROPERFMT ", soft_max_capacity: "  PROPERFMT,
+                      PROPERFMTARGS(available), PROPERFMTARGS(capacity));
+
+  if (available < min_threshold) {
+    log_trigger("Occupancy. " PROPERFMT " free, below " PROPERFMT " threshold",
+                PROPERFMTARGS(available), PROPERFMTARGS(min_threshold));
+    accept_trigger();
+    return true;
+  }
+  return false;
+}

@@ -40,24 +40,24 @@
   bool is_reg_in_unpacked_fields(const GrowableArray<SigEntry>* sig, int sig_index, VMReg to, VMRegPair* regs_from,
                                  int regs_from_count, int from_index);
   RegState* init_reg_state(VMRegPair* regs, int num_regs, int sp_inc, int max_stack);
-  int unpack_inline_args(Compile* C, bool receiver_only);
-  void shuffle_inline_args(bool is_packing, bool receiver_only,
-                           const GrowableArray<SigEntry>* sig,
-                           int args_passed, int args_on_stack, VMRegPair* regs,
-                           int args_passed_to, int args_on_stack_to, VMRegPair* regs_to,
-                           int sp_inc, Register val_array);
-  bool shuffle_inline_args_spill(bool is_packing, const GrowableArray<SigEntry>* sig, int sig_index,
-                                 VMRegPair* regs_from, int from_index, int regs_from_count, RegState* reg_state);
+  int unpack_value_args(Compile* C, bool receiver_only);
+  void shuffle_value_args(bool is_packing, bool receiver_only,
+                          const GrowableArray<SigEntry>* sig,
+                          int args_passed, int args_on_stack, VMRegPair* regs,
+                          int args_passed_to, int args_on_stack_to, VMRegPair* regs_to,
+                          int sp_inc, Register val_array);
+  bool shuffle_value_args_spill(bool is_packing, const GrowableArray<SigEntry>* sig, int sig_index,
+                                VMRegPair* regs_from, int from_index, int regs_from_count, RegState* reg_state);
 
-  int store_inline_type_fields_to_buf(ciInlineKlass* vk, bool from_interpreter = true);
+  int store_value_type_fields_to_buf(ciValueKlass* vk, bool from_interpreter = true);
   bool move_helper(VMReg from, VMReg to, BasicType bt, RegState reg_state[]);
-  bool unpack_inline_helper(const GrowableArray<SigEntry>* sig, int& sig_index,
-                            VMReg from, int& from_index, VMRegPair* to, int to_count, int& to_index,
-                            RegState reg_state[]);
-  bool pack_inline_helper(const GrowableArray<SigEntry>* sig, int& sig_index, int vtarg_index,
-                          VMRegPair* from, int from_count, int& from_index, VMReg to,
-                          RegState reg_state[], Register val_array);
-  int extend_stack_for_inline_args(int args_on_stack);
+  bool unpack_value_helper(const GrowableArray<SigEntry>* sig, int& sig_index,
+                           VMReg from, int& from_index, VMRegPair* to, int to_count, int& to_index,
+                           RegState reg_state[]);
+  bool pack_value_helper(const GrowableArray<SigEntry>* sig, int& sig_index, int vtarg_index,
+                         VMRegPair* from, int from_count, int& from_index, VMReg to,
+                         RegState reg_state[], Register val_array);
+  int extend_stack_for_value_args(int args_on_stack);
   void remove_frame(int initial_framesize, bool needs_stack_repair);
   VMReg spill_reg_for(VMReg reg);
 

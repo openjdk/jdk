@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,21 @@ struct NameAndSig {
   NameAndSig(Symbol* n, Symbol* s) : _name(n), _signature(s) {}
 };
 
+inline unsigned int nameandsig_hash(NameAndSig const& field) {
+  Symbol* name = field._name;
+  return (unsigned int) name->identity_hash();
+}
+
+inline bool nameandsig_equals(NameAndSig const& f1, NameAndSig const& f2) {
+  return f1._name == f2._name &&
+          f1._signature == f2._signature;
+}
+
+// List of unset strict fields. The boolean value is a dummy so this acts as a set
+typedef HashTable<NameAndSig, bool, 17,
+                  AnyObj::RESOURCE_AREA, mtInternal,
+                  nameandsig_hash, nameandsig_equals> AssertUnsetFieldTable;
+
 // The verifier class
 class Verifier : AllStatic {
  public:
@@ -68,6 +83,8 @@ class Verifier : AllStatic {
 
   // Print output for class+resolve
   static void trace_class_resolution(Klass* resolve_class, InstanceKlass* verify_class);
+
+  static bool supports_strict_fields(InstanceKlass* klass);
 
  private:
   static Symbol* inference_verify(
@@ -165,7 +182,7 @@ class ErrorContext {
     STACK_UNDERFLOW,      // Attempt to pop and empty expression stack
     MISSING_STACKMAP,     // No stackmap for this location and there should be
     BAD_STACKMAP,         // Format error in stackmap
-    WRONG_INLINE_TYPE,    // Mismatched inline type
+    WRONG_VALUE_TYPE,     // Mismatched value type
     NO_FAULT,             // No error
     UNKNOWN
   } FaultType;
@@ -237,8 +254,8 @@ class ErrorContext {
   static ErrorContext bad_stackmap(int index, StackMapFrame* frame) {
     return ErrorContext(0, BAD_STACKMAP, TypeOrigin::frame(frame));
   }
-  static ErrorContext bad_inline_type(int bci, TypeOrigin type, TypeOrigin exp) {
-    return ErrorContext(bci, WRONG_INLINE_TYPE, type, exp);
+  static ErrorContext bad_value_type(int bci, TypeOrigin type, TypeOrigin exp) {
+    return ErrorContext(bci, WRONG_VALUE_TYPE, type, exp);
   }
 
   bool is_valid() const { return _fault != NO_FAULT; }
@@ -335,9 +352,11 @@ class ClassVerifier : public StackObj {
     u2 stackmap_index, int bci, StackMapFrame* current_frame,
     StackMapTable* stackmap_table, bool no_control_flow, TRAPS);
 
+  // broken_type: the type replaced by top in the exception frame's locals
+  // (invokespecial <init> on a broken object); else top, if none.
   void verify_exception_handler_targets(
-    int bci, bool this_uninit, StackMapFrame* current_frame,
-    StackMapTable* stackmap_table, TRAPS);
+    int bci, VerificationType broken_type,
+    StackMapFrame* current_frame, StackMapTable* stackmap_table, TRAPS);
 
   void verify_ldc(
     int opcode, u2 index, StackMapFrame *current_frame,
@@ -354,12 +373,12 @@ class ClassVerifier : public StackObj {
   void verify_invoke_init(
     RawBytecodeStream* bcs, u2 ref_index, VerificationType ref_class_type,
     StackMapFrame* current_frame, u4 code_length, bool in_try_block,
-    bool* this_uninit, const constantPoolHandle& cp, StackMapTable* stackmap_table,
+    bool* verified_exc_handlers, const constantPoolHandle& cp, StackMapTable* stackmap_table,
     TRAPS);
 
   void verify_invoke_instructions(
     RawBytecodeStream* bcs, u4 code_length, StackMapFrame* current_frame,
-    bool in_try_block, bool* this_uninit,
+    bool in_try_block, bool* verified_exc_handlers,
     const constantPoolHandle& cp, StackMapTable* stackmap_table, TRAPS);
 
   VerificationType get_newarray_type(u2 index, int bci, TRAPS);

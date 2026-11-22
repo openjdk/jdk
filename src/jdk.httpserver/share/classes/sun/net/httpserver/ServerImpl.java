@@ -59,10 +59,11 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
+import java.util.concurrent.RejectedExecutionHandler;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
@@ -110,7 +111,7 @@ class ServerImpl {
     static final long REQ_RSP_TIMER_SCHEDULE = ServerConfig.getReqRspTimerScheduleMillis();
     static final long MAX_REQ_TIME = getTimeMillis(ServerConfig.getMaxReqTime());
     static final long MAX_RSP_TIME = getTimeMillis(ServerConfig.getMaxRspTime());
-    static final boolean reqRspTimeoutEnabled = MAX_REQ_TIME != -1 || MAX_RSP_TIME != -1;
+    static final boolean HOST_VALIDATION_DISABLED = ServerConfig.isHostValidationDisabled();;
     // the maximum idle duration for a connection which is currently idle but has served
     // some request in the past
     static final long IDLE_INTERVAL = ServerConfig.getIdleIntervalMillis();
@@ -125,7 +126,7 @@ class ServerImpl {
                 : IDLE_INTERVAL;
     }
 
-    private Timer timer, timer1;
+    private final ScheduledExecutorService scheduler;
     private final Logger logger;
     private Thread dispatcherThread;
 
@@ -155,11 +156,15 @@ class ServerImpl {
         reqConnections = Collections.synchronizedSet(new HashSet<HttpConnection>());
         rspConnections = Collections.synchronizedSet(new HashSet<HttpConnection>());
         newlyAcceptedConnections = Collections.synchronizedSet(new HashSet<>());
-        timer = new Timer("idle-timeout-task", true);
-        timer.schedule(new IdleTimeoutTask(), IDLE_TIMER_TASK_SCHEDULE, IDLE_TIMER_TASK_SCHEDULE);
+        var reqRspTimeoutEnabled = MAX_REQ_TIME != -1 || MAX_RSP_TIME != -1;
+        scheduler = createScheduler(reqRspTimeoutEnabled ? 2 : 1, logger);
+        scheduler.scheduleWithFixedDelay(
+                new IdleTimeoutTask(),
+                IDLE_TIMER_TASK_SCHEDULE, IDLE_TIMER_TASK_SCHEDULE, TimeUnit.MILLISECONDS);
         if (reqRspTimeoutEnabled) {
-            timer1 = new Timer("req-rsp-timeout-task", true);
-            timer1.schedule(new ReqRspTimeoutTask(), REQ_RSP_TIMER_SCHEDULE, REQ_RSP_TIMER_SCHEDULE);
+            scheduler.scheduleWithFixedDelay(
+                    new ReqRspTimeoutTask(),
+                    REQ_RSP_TIMER_SCHEDULE, REQ_RSP_TIMER_SCHEDULE, TimeUnit.MILLISECONDS);
             logger.log(Level.DEBUG, "HttpServer request/response timeout task schedule ms: ",
                     REQ_RSP_TIMER_SCHEDULE);
             logger.log(Level.DEBUG, "MAX_REQ_TIME:  "+MAX_REQ_TIME);
@@ -167,6 +172,19 @@ class ServerImpl {
         }
         events = new ArrayList<>();
         logger.log(Level.DEBUG, "HttpServer created "+protocol+" "+ addr);
+    }
+
+    private static ScheduledExecutorService createScheduler(int threadCount, Logger logger) {
+        Thread.UncaughtExceptionHandler uncaughtExceptionHandler = (ignored, exception) ->
+                logger.log(Level.ERROR, "Scheduled task execution has failed", exception);
+        var threadFactory = Thread.ofPlatform()
+                .daemon()
+                .uncaughtExceptionHandler(uncaughtExceptionHandler)
+                .factory();
+        RejectedExecutionHandler rejectedExecutionHandler = (runnable, ignored) ->
+                logger.log(Level.ERROR, "Failed executing task: " + runnable);
+        return new ScheduledThreadPoolExecutor(
+                threadCount, threadFactory, rejectedExecutionHandler);
     }
 
     public void bind(InetSocketAddress addr, int backlog) throws IOException {
@@ -278,10 +296,7 @@ class ServerImpl {
             allConnections.clear();
             idleConnections.clear();
             newlyAcceptedConnections.clear();
-            timer.cancel();
-            if (reqRspTimeoutEnabled) {
-                timer1.cancel();
-            }
+            scheduler.shutdownNow();
             logger.log(Level.TRACE, "connections closed");
 
             if (dispatcherThread != null && dispatcherThread != Thread.currentThread()) {
@@ -790,7 +805,14 @@ class ServerImpl {
 
                 start = space+1;
                 String version = requestLine.substring(start);
-                Headers headers = req.headers();
+                Headers headers;
+                try {
+                    headers = req.headers();
+                } catch (ProtocolException pe) {
+                    reject(Code.HTTP_BAD_REQUEST, requestLine,
+                            "Failed to parse headers: " + pe.getMessage());
+                    return;
+                }
                 /* check key for illegal characters */
                 for (var k : headers.keySet()) {
                     if (!isValidName(k)) {
@@ -838,6 +860,25 @@ class ServerImpl {
                     }
                     if (clen == 0) {
                         requestCompleted(connection);
+                    }
+                }
+                /* check if there's a single Host header */
+                if (!HOST_VALIDATION_DISABLED) {
+                    List<String> hostValueList = headers.get("Host");
+                    if (hostValueList == null || hostValueList.isEmpty()) {
+                        if (!version.equalsIgnoreCase("http/1.0")) {
+                            reject(400, requestLine, "Missing Host header");
+                            return;
+                        }
+                    } else if (hostValueList.size() > 1) {
+                        reject(400, requestLine, "Multiple Host headers");
+                        return;
+                    } else {
+                        String host = hostValueList.get(0);
+                        if (host.indexOf(',') != -1) {
+                            reject(400, requestLine, "Multiple Host header values");
+                            return;
+                        }
                     }
                 }
                 ctx = contexts.findContext(protocol, uri.getPath());
@@ -1030,7 +1071,7 @@ class ServerImpl {
     }
 
     void requestStarted(HttpConnection c) {
-        c.reqStartedTime = System.currentTimeMillis();
+        c.reqStartedTime = monotonicMilliTicks();
         c.setState(State.REQUEST);
         reqConnections.add(c);
     }
@@ -1044,7 +1085,7 @@ class ServerImpl {
                 // instead set boolean and close outside the synchronized block
                 close = true;
             } else {
-                c.idleStartTime = System.currentTimeMillis();
+                c.idleStartTime = monotonicMilliTicks();
                 c.setState(State.IDLE);
                 idleConnections.add(c);
             }
@@ -1057,7 +1098,7 @@ class ServerImpl {
     }
 
     void markNewlyAccepted(HttpConnection c) {
-        c.idleStartTime = System.currentTimeMillis();
+        c.idleStartTime = monotonicMilliTicks();
         c.setState(State.NEWLY_ACCEPTED);
         newlyAcceptedConnections.add(c);
     }
@@ -1073,7 +1114,7 @@ class ServerImpl {
         State s = c.getState();
         assert s == State.REQUEST : "State is not REQUEST ("+s+")";
         reqConnections.remove(c);
-        c.rspStartedTime = System.currentTimeMillis();
+        c.rspStartedTime = monotonicMilliTicks();
         rspConnections.add(c);
         c.setState(State.RESPONSE);
     }
@@ -1088,10 +1129,22 @@ class ServerImpl {
 
     /**
      * Responsible for closing connections that have been idle.
-     * TimerTask run every CLOCK_TICK ms
      */
-    class IdleTimeoutTask extends TimerTask {
+    class IdleTimeoutTask implements Runnable {
+
+        @Override
         public void run() {
+            try {
+                run0();
+            } catch (Throwable throwable) {
+                var message = IdleTimeoutTask.class.getSimpleName() + " has failed";
+                logger.log(Level.ERROR, message, throwable);
+                // Rethrow to cancel the execution of the task
+                throw new RuntimeException(message, throwable);
+            }
+        }
+
+        private void run0() {
             closeConnections(idleConnections, IDLE_INTERVAL);
             // if any newly accepted connection has been idle (i.e. no byte has been sent on that
             // connection during the configured idle timeout period) then close it as well
@@ -1099,7 +1152,7 @@ class ServerImpl {
         }
 
         private void closeConnections(Set<HttpConnection> connections, long idleInterval) {
-            long currentTime = System.currentTimeMillis();
+            long currentTime = monotonicMilliTicks();
             ArrayList<HttpConnection> toClose = new ArrayList<>();
 
             connections.forEach(c -> {
@@ -1124,12 +1177,23 @@ class ServerImpl {
     /**
      * Responsible for closing connections which have timed out while in REQUEST or RESPONSE state
      */
-    class ReqRspTimeoutTask extends TimerTask {
+    class ReqRspTimeoutTask implements Runnable {
 
-        // runs every TIMER_MILLIS
+        @Override
         public void run() {
+            try {
+                run0();
+            } catch (Throwable throwable) {
+                var message = ReqRspTimeoutTask.class.getSimpleName() + " has failed";
+                logger.log(Level.ERROR, message, throwable);
+                // Rethrow to cancel the execution of the task
+                throw new RuntimeException(message, throwable);
+            }
+        }
+
+        private void run0() {
             ArrayList<HttpConnection> toClose = new ArrayList<>();
-            final long currentTime = System.currentTimeMillis();
+            final long currentTime = monotonicMilliTicks();
             synchronized (reqConnections) {
                 if (MAX_REQ_TIME != -1) {
                     for (HttpConnection c : reqConnections) {
@@ -1177,4 +1241,15 @@ class ServerImpl {
         // this handles potential numeric overflow that may have happened during conversion
         return milli > 0 ? milli : -1;
     }
+
+    /**
+     * A monotonic clock substitute of {@link System#currentTimeMillis()}, which
+     * uses wall clock, and hence, is unsuitable for elapsed time measurements.
+     */
+    private static long monotonicMilliTicks() {
+        return TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - START_INSTANT_NANOS);
+    }
+
+    private static final long START_INSTANT_NANOS = System.nanoTime();
+
 }

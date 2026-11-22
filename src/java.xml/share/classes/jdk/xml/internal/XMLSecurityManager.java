@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,11 @@ package jdk.xml.internal;
 
 
 import com.sun.org.apache.xerces.internal.util.SecurityManager;
+
+import java.net.URI;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -82,6 +85,16 @@ public final class XMLSecurityManager implements Cloneable {
         CR_MAP = Collections.unmodifiableMap(map);
     }
 
+    // Canonical string representations of the Resource Access integer values
+    static final Map<String, Integer> RA_MAP;
+    // Source Level JDK 8
+    static {
+        Map<String, Integer> map = new HashMap<>();
+        map.put("*", 0);
+        map.put("", 2);
+        RA_MAP = Collections.unmodifiableMap(map);
+    }
+
     // Value converter for properties of type Boolean
     private static final BooleanMapper BOOLMAPPER = new BooleanMapper();
 
@@ -89,10 +102,17 @@ public final class XMLSecurityManager implements Cloneable {
     private static final IntegerMapper INTMAPPER = new IntegerMapper();
 
     // DTD value mapper
-    private static final StringMapper DTDMAPPER = new StringMapper(DTD_MAP);
+    private static final StringMapper DTDMAPPER = new StringMapper(JdkConstants.DTD_PROPNAME, DTD_MAP);
 
     // Catalog Resolve value mapper
-    private static final StringMapper CRMAPPER = new StringMapper(CR_MAP);
+    private static final StringMapper CRMAPPER = new StringMapper(JdkConstants.JDKCATALOG_RESOLVE, CR_MAP);
+
+    /**
+     * Resource Access value mapper
+     * AccessRule parses and validates the rules. This mapper provides string representations
+     * of the broad access cases: allow all and deny all.
+     */
+    private static final StringMapper RAMAPPER = new StringMapper(JdkConstants.RESOURCE_ACCESS, RA_MAP);
 
     /**
      * Limits managed by the security manager
@@ -129,6 +149,8 @@ public final class XMLSecurityManager implements Cloneable {
         STAX_SUPPORT_DTD("supportDTD", XMLInputFactory.SUPPORT_DTD, null, null, 1, 1, Processor.PARSER, BOOLMAPPER),
         JDKCATALOG_RESOLVE("JDKCatalogResolve", JdkConstants.JDKCATALOG_RESOLVE, JdkConstants.JDKCATALOG_RESOLVE, null,
                 JdkConstants.CONTINUE, JdkConstants.CONTINUE, Processor.PARSER, CRMAPPER),
+        RESOURCE_ACCESS("ResourceAccess", JdkConstants.RESOURCE_ACCESS, JdkConstants.RESOURCE_ACCESS, null,
+                JdkConstants.ALLOW, JdkConstants.ALLOW, Processor.PARSER, RAMAPPER),
         ;
 
         final String key;
@@ -262,6 +284,8 @@ public final class XMLSecurityManager implements Cloneable {
     private final int indexEntityCountInfo = 10000;
     private String printEntityCountInfo = "";
 
+    private AccessRule accessRule = null;
+
     /**
      * Default constructor. Establishes default values for known security
      * vulnerabilities.
@@ -288,6 +312,11 @@ public final class XMLSecurityManager implements Cloneable {
                 values[limit.ordinal()] = limit.defaultValue();
                 states[limit.ordinal()] = State.DEFAULT;
             }
+        }
+        if (secureProcessing) {
+            accessRule = (Limit.RESOURCE_ACCESS.secureValue == JdkConstants.ALLOW) ? AccessRule.RULE_ALL : AccessRule.RULE_NONE;
+        } else {
+            accessRule = (Limit.RESOURCE_ACCESS.defaultValue() == JdkConstants.ALLOW) ? AccessRule.RULE_ALL : AccessRule.RULE_NONE;
         }
     }
 
@@ -380,6 +409,15 @@ public final class XMLSecurityManager implements Cloneable {
      * @return the limit's new name if found, null otherwise
      */
     public String find(String propertyName) {
+        /*
+         * Access property is unique in its value type. Using the SecurityManager
+         * infrastructure, but handles differently than other limits
+         */
+        if (Limit.RESOURCE_ACCESS.is(propertyName)) {
+            return (Limit.RESOURCE_ACCESS.systemProperty != null)
+                ? Limit.RESOURCE_ACCESS.systemProperty
+                : Limit.RESOURCE_ACCESS.apiProperty;
+        }
         for (Limit limit : Limit.values()) {
             if (limit.is(propertyName)) {
                 // current spec: new property name == systemProperty
@@ -440,6 +478,26 @@ public final class XMLSecurityManager implements Cloneable {
      * @param value the value of the property
      */
     public void setLimit(Limit limit, State state, Object value) {
+        /*
+         * Access property is unique in its value type. Using the SecurityManager
+         * infrastructure, but handles differently than other limits
+         */
+        if (limit == Limit.RESOURCE_ACCESS) {
+            int index = limit.ordinal();
+            if (state.compareTo(states[index]) >= 0) {
+                String ruleValue = (String)value;
+                AccessRule rule = new AccessRule(ruleValue);
+                // AccessRule holds the actual rules. The integer value is used
+                // only for bookkeeping; access decisions use AccessRule.allows.
+                int intValue = ruleValue.trim().isEmpty() ? JdkConstants.DENY : JdkConstants.ALLOW;
+                accessRule = rule;
+                values[index] = intValue;
+                states[index] = state;
+                isSet[index] = true;
+            }
+            return;
+        }
+
         int intValue = limit.mapper().toInt(value);
         if (intValue < 0) {
             intValue = 0;
@@ -469,6 +527,29 @@ public final class XMLSecurityManager implements Cloneable {
         }
     }
 
+    public AccessRule getAccessRule() {
+        return accessRule;
+    }
+
+    public boolean isAccessAllowed(String systemId) {
+        URI uri = Utils.createURI(systemId);
+        if (uri == null) return true;
+        return isAccessAllowed(uri);
+    }
+
+    /**
+     * Checks the RESOURCE_ACCESS property to see if access to the specified
+     * uri is allowed.
+     *
+     * @param uri the specified uri
+     * @return true if the RESOURCE_ACCESS property is set to allow access to the
+     * specified uri, false otherwise
+     */
+    public boolean isAccessAllowed(URI uri) {
+        return accessRule.allows(uri);
+    }
+
+
     /**
      * Return the value of the specified property
      *
@@ -477,6 +558,10 @@ public final class XMLSecurityManager implements Cloneable {
      * by this manager, its value shall not be null.
      */
     public String getLimitAsString(String propertyName) {
+        if (Limit.RESOURCE_ACCESS.is(propertyName)) {
+            return accessRule.toString();
+        }
+
         int index = getIndex(propertyName);
         if (index > -1) {
             return getLimitValueByIndex(index);
@@ -620,10 +705,10 @@ public final class XMLSecurityManager implements Cloneable {
     }
 
     /**
-     * Check against cumulated value
+     * Check limit against the cumulated value
      *
      * @param limit the type of the limit property
-     * @param size the size (count or length) of the entity
+     * @param limitAnalyzer the limit analyzer
      * @return true if the size is over the limit, false otherwise
      */
     public boolean isOverLimit(Limit limit, XMLLimitAnalyzer limitAnalyzer) {
@@ -739,7 +824,7 @@ public final class XMLSecurityManager implements Cloneable {
 
         try {
             String value = System.getProperty(sysPropertyName);
-            if (value != null && !value.equals("")) {
+            if (isPropertyValuePresent(limit, value)) {
                 setLimit(limit, State.SYSTEMPROPERTY, value);
                 return true;
             }
@@ -760,7 +845,7 @@ public final class XMLSecurityManager implements Cloneable {
     private boolean getPropertyConfig(Limit limit, String sysPropertyName) {
         try {
             String value = SecuritySupport.readConfig(sysPropertyName);
-            if (value != null && !value.equals("")) {
+            if (isPropertyValuePresent(limit, value)) {
                 setLimit(limit, State.JAXPDOTPROPERTIES, value);
                 return true;
             }
@@ -769,6 +854,10 @@ public final class XMLSecurityManager implements Cloneable {
             throw new NumberFormatException("Invalid setting for system property: " + limit.systemProperty());
         }
         return false;
+    }
+
+    private boolean isPropertyValuePresent(Limit limit, String value) {
+        return value != null && (!value.isEmpty() || limit.mapper() instanceof StringMapper);
     }
 
     /**
@@ -809,10 +898,18 @@ public final class XMLSecurityManager implements Cloneable {
      * keys and values within the map.
      */
     public static class StringMapper extends ValueMapper {
+        private final String propertyName;
         private final Map<String, Integer> map;
         private final Map<Integer, String> reverseMap;
 
-        public StringMapper(Map<String, Integer> map) {
+        /**
+         * Creates a mapper for the named property.
+         *
+         * @param propertyName the name of the property
+         * @param map the value mappings, or null for numeric conversion
+         */
+        public StringMapper(String propertyName, Map<String, Integer> map) {
+            this.propertyName = propertyName;
             this.map = map;
             if (map != null) {
                 reverseMap = map.entrySet().stream()
@@ -824,18 +921,25 @@ public final class XMLSecurityManager implements Cloneable {
 
         /**
          * Finds the mapping int value with the specified property value. This
-         * method will try to convert the provided value to an integer if no
-         * mapping is found.
+         * method trims surrounding whitespace before looking up the value,
+         * or converts the value to an integer if no map is supplied.
          * @param value the property value
-         * @return the mapping int value if found, null otherwise
+         * @return the mapped or converted integer
+         * @throws IllegalArgumentException if the value is not in the provided map
+         * @throws NumberFormatException if numeric conversion is required and
+         * the value cannot be parsed as a number
          */
         @Override
         public int toInt(Object value) {
             Objects.requireNonNull(value);
             Integer iVal;
             if (map != null) {
-                iVal = map.get(((String)value).toLowerCase());
-                iVal = (iVal == null) ? 0 : iVal;
+                String stringValue = ((String)value).trim();
+                iVal = map.get(stringValue.toLowerCase(Locale.ROOT));
+                if (iVal == null) {
+                    throw new IllegalArgumentException("Invalid setting '" + value
+                            + "' for property '" + propertyName + "'.");
+                }
             } else {
                 try {
                     iVal = (int)Double.parseDouble((String)value);

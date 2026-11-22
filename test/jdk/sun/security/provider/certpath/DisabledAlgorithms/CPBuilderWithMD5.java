@@ -29,7 +29,6 @@
  *
  * @bug 8030829
  * @summary Add MD5 to jdk.certpath.disabledAlgorithms security property
- * @enablePreview
  *
  * @run main/othervm CPBuilderWithMD5 trustAnchor_SHA1withRSA_1024 0 true
  * @run main/othervm CPBuilderWithMD5 trustAnchor_SHA1withRSA_512  0 true

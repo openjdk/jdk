@@ -125,7 +125,7 @@ private:
     void set_resolve_function() {
       // Size requirement to prevent word tearing
       // when functions pointers are updated.
-      STATIC_ASSERT(sizeof(_function[0]) == sizeof(void*));
+      static_assert(sizeof(_function[0]) == sizeof(void*));
       if (UseCompressedOops) {
         _function[KlassType::Kind] = &oop_oop_iterate<KlassType, narrowOop>;
       } else {
@@ -144,7 +144,7 @@ private:
 
     Table(){
       set_init_function<InstanceKlass>();
-      set_init_function<InlineKlass>();
+      set_init_function<ValueKlass>();
       set_init_function<InstanceRefKlass>();
       set_init_function<InstanceMirrorKlass>();
       set_init_function<InstanceClassLoaderKlass>();
@@ -210,7 +210,7 @@ private:
 
     Table(){
       set_init_function<InstanceKlass>();
-      set_init_function<InlineKlass>();
+      set_init_function<ValueKlass>();
       set_init_function<InstanceRefKlass>();
       set_init_function<InstanceMirrorKlass>();
       set_init_function<InstanceClassLoaderKlass>();
@@ -276,7 +276,7 @@ private:
 
     Table(){
       set_init_function<InstanceKlass>();
-      set_init_function<InlineKlass>();
+      set_init_function<ValueKlass>();
       set_init_function<InstanceRefKlass>();
       set_init_function<InstanceMirrorKlass>();
       set_init_function<InstanceClassLoaderKlass>();

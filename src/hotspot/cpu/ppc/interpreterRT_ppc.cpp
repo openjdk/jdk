@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,7 +127,7 @@ void InterpreterRuntime::SignatureHandlerGenerator::generate(uint64_t fingerprin
   __ load_const(R3_RET, AbstractInterpreter::result_handler(method()->result_type()));
   __ blr();
 
-  __ flush();
+  __ invalidate_icache();
 }
 
 #undef __

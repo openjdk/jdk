@@ -1152,6 +1152,24 @@ public class Utils {
     }
 
     /**
+     * {@return {@code true} if the {@code fileName} represents an HTML file}
+     * Note that the doc comment spec requires a lower-case extension.
+     * @param fileName the file name
+     */
+    public static boolean isHtmlFile(String fileName) {
+        return fileName.endsWith(".html");
+    }
+
+    /**
+     * {@return {@code true} if the {@code fileName} represents a Markdown file}
+     * Note that the doc comment spec requires a lower-case extension.
+     * @param fileName the file name
+     */
+    public static boolean isMarkdownFile(String fileName) {
+        return fileName.endsWith(".md");
+    }
+
+    /**
      * Return true if the given Element is deprecated.
      *
      * @param e the Element to check.

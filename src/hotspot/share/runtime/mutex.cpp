@@ -245,7 +245,14 @@ bool Monitor::wait(uint64_t timeout) {
   set_owner(nullptr);
 
   // Check safepoint state after resetting owner and possible NSV.
-  check_safepoint_state(self);
+  // Although the (HotSpot) monitor is logically released, the underlying
+  // OS monitor is still held. Do not execute GC-a-lot here because
+  // garbage collection may (in)directly require the current monitor to
+  // progress.
+  {
+    SkipGCALot sgcalot(self);
+    check_safepoint_state(self);
+  }
 
   int wait_status;
   InFlightMutexRelease ifmr(this);
@@ -287,7 +294,7 @@ Mutex::~Mutex() {
 Mutex::Mutex(Rank rank, const char * name, bool allow_vm_block) : _owner(nullptr) {
   assert(os::mutex_init_done(), "Too early!");
   assert(name != nullptr, "Mutex requires a name");
-  _name = os::strdup(name, mtInternal);
+  _name = os::strdup(name, mtSynchronizer);
 #ifdef ASSERT
   _allow_vm_block  = allow_vm_block;
   _rank            = rank;

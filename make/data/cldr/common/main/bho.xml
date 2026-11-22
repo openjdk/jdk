@@ -108,9 +108,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</timeFormatLength>
 				</timeFormats>
 				<dateTimeFormats>
-					<intervalFormats>
-						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
-					</intervalFormats>
+					<numericSeparators>
+						<numericDateSeparator draft="provisional">-</numericDateSeparator>
+						<numericTimeSeparator draft="provisional">:</numericTimeSeparator>
+					</numericSeparators>
+					<availableFormats>
+						<dateFormatItem id="yMMMMd" draft="contributed">y MMMM d</dateFormatItem>
+						<dateFormatItem id="yMMMMEd" draft="contributed">y MMMM d, EEE</dateFormatItem>
+					</availableFormats>
 				</dateTimeFormats>
 			</calendar>
 		</calendars>
@@ -118,6 +123,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<regionFormat>{0} टाइम</regionFormat>
 			<regionFormat type="daylight">{0} डेलाइट समय</regionFormat>
 			<regionFormat type="standard">{0} मानक समय</regionFormat>
+			<zone type="Etc/UTC">
+				<long>
+					<standard>समन्वित वैश्विक समय</standard>
+				</long>
+				<short>
+					<standard>यूटीसी</standard>
+				</short>
+			</zone>
 			<metazone type="GMT">
 				<long>
 					<standard>ग्रीनविच मीन टाइम</standard>

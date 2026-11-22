@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -26,7 +26,7 @@ import com.sun.org.apache.bcel.internal.classfile.JavaClass;
  * used in the Repository.setRepository method.
  *
  * @see com.sun.org.apache.bcel.internal.Repository
- * @LastModified: Sept 2025
+ * @LastModified: Nov 2026
  */
 public interface Repository {
 
@@ -37,30 +37,41 @@ public interface Repository {
 
     /**
      * Finds the class with the name provided, if the class isn't there, return NULL.
+     *
+     * @param className The class name.
+     * @return The JavaClass instance, or null.
      */
     JavaClass findClass(String className);
 
     /**
      * Finds the JavaClass instance for the given run-time class object.
      *
-     * @throws ClassNotFoundException if the class can't be found.
+     * @param clazz The class.
+     * @return The JavaClass instance.
+     * @throws ClassNotFoundException Thrown if the class can't be found.
      */
     JavaClass loadClass(Class<?> clazz) throws ClassNotFoundException;
 
     /**
      * Finds the class with the name provided, if the class isn't there, make an attempt to load it.
      *
-     * @throws ClassNotFoundException if the class can't be found.
+     * @param className The class name.
+     * @return The JavaClass instance.
+     * @throws ClassNotFoundException Thrown if the class can't be found.
      */
     JavaClass loadClass(String className) throws ClassNotFoundException;
 
     /**
-     * Removes class from repository
+     * Removes class from repository.
+     *
+     * @param clazz The class to remove.
      */
     void removeClass(JavaClass clazz);
 
     /**
-     * Stores the provided class under "clazz.getClassName()"
+     * Stores the provided class under "clazz.getClassName()".
+     *
+     * @param clazz The class to store.
      */
     void storeClass(JavaClass clazz);
 }

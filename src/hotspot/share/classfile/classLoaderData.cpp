@@ -46,7 +46,8 @@
 // The bootstrap loader (represented by null) also has a ClassLoaderData,
 // the singleton class the_null_class_loader_data().
 
-#include "cds/heapShared.hpp"
+#include "cds/aotHeap.hpp"
+#include "cds/aotSystemDictionary.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderDataGraph.inline.hpp"
 #include "classfile/dictionary.hpp"
@@ -55,7 +56,6 @@
 #include "classfile/packageEntry.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
-#include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -66,11 +66,11 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
-#include "oops/inlineKlass.inline.hpp"
 #include "oops/jmethodIDTable.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
+#include "oops/valueKlass.inline.hpp"
 #include "oops/verifyOopClosure.hpp"
 #include "oops/weakHandle.inline.hpp"
 #include "runtime/arguments.hpp"
@@ -81,6 +81,9 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
+#if INCLUDE_JFR
+#include "jfr/jfr.hpp"
+#endif
 
 ClassLoaderData * ClassLoaderData::_the_null_class_loader_data = nullptr;
 
@@ -139,7 +142,7 @@ ClassLoaderData::ClassLoaderData(Handle h_class_loader, bool has_class_mirror_ho
   _metaspace(nullptr),
   _metaspace_lock(new Mutex(Mutex::nosafepoint-2, "MetaspaceAllocation_lock")),
   _unloading(false), _has_class_mirror_holder(has_class_mirror_holder),
-  _modified_oops(true),
+  _has_modified_or_humongous_oops(true),
   // A non-strong hidden class loader data doesn't have anything to keep
   // it from being unloaded during parsing of the non-strong hidden class.
   // The null-class-loader should always be kept alive.
@@ -327,7 +330,7 @@ void ClassLoaderData::demote_strong_roots() {
       ShouldNotReachHere();
     }
   } cl;
-  oops_do(&cl, ClassLoaderData::_claim_none, false /* clear_mod_oops */);
+  oops_do(&cl, ClassLoaderData::_claim_none, false /* should_clear_modified_or_humongous_oops */);
 }
 
 // Non-strong hidden classes have their own ClassLoaderData that is marked to keep alive
@@ -357,10 +360,10 @@ void ClassLoaderData::dec_keep_alive_ref_count() {
   }
 }
 
-void ClassLoaderData::oops_do_slow(OopClosure* f, bool clear_mod_oops) {
-  // Only clear modified_oops after the ClassLoaderData is claimed.
-  if (clear_mod_oops) {
-    clear_modified_oops();
+void ClassLoaderData::oops_do_slow(OopClosure* f, bool should_clear_modified_or_humongous_oops) {
+  // Only clear _has_modified_or_humongous_oops after the ClassLoaderData is claimed.
+  if (should_clear_modified_or_humongous_oops) {
+    clear_modified_or_humongous_oops();
   }
 
   _handles.oops_do(f);
@@ -429,11 +432,11 @@ void ClassLoaderData::classes_do(void f(InstanceKlass*)) {
   }
 }
 
-void ClassLoaderData::inline_classes_do(void f(InlineKlass*)) {
+void ClassLoaderData::value_classes_do(void f(ValueKlass*)) {
   // Lock-free access requires load_acquire
   for (Klass* k = AtomicAccess::load_acquire(&_klasses); k != nullptr; k = k->next_link()) {
-    if (k->is_inline_klass()) {
-      f(InlineKlass::cast(k));
+    if (k->is_value_klass()) {
+      f(ValueKlass::cast(k));
     }
     assert(k != k->next_link(), "no loops!");
   }
@@ -617,7 +620,7 @@ void ClassLoaderData::unload() {
   // if they are not already on the _klasses list.
   free_deallocate_list_C_heap_structures();
 
-  inline_classes_do(InlineKlass::cleanup);
+  value_classes_do(ValueKlass::cleanup);
 
   // Clean up class dependencies and tell serviceability tools
   // these classes are unloading.  This must be called
@@ -896,13 +899,14 @@ void ClassLoaderData::free_deallocate_list() {
       if (m->is_method()) {
         MetadataFactory::free_metadata(this, (Method*)m);
       } else if (m->is_constantPool()) {
-        HeapShared::remove_scratch_resolved_references((ConstantPool*)m);
+        AOTHeap::remove_scratch_resolved_references((ConstantPool*)m);
         MetadataFactory::free_metadata(this, (ConstantPool*)m);
       } else if (m->is_klass()) {
-        if (!((Klass*)m)->is_inline_klass()) {
+        JFR_ONLY(Jfr::on_deallocation(static_cast<Klass*>(m));)
+        if (!((Klass*)m)->is_value_klass()) {
           MetadataFactory::free_metadata(this, (InstanceKlass*)m);
         } else {
-          MetadataFactory::free_metadata(this, (InlineKlass*)m);
+          MetadataFactory::free_metadata(this, (ValueKlass*)m);
         }
       } else {
         ShouldNotReachHere();
@@ -944,7 +948,7 @@ void ClassLoaderData::free_deallocate_list_C_heap_structures() {
       // this class (scratch or error class) in do_unloading().
       remove_class(ik);
       // But still have to remove it from the dumptime_table.
-      SystemDictionaryShared::handle_class_unloading(ik);
+      AOTSystemDictionary::handle_class_unloading(ik);
     }
   }
 }
@@ -1008,23 +1012,23 @@ public:
 void ClassLoaderData::print_on(outputStream* out) const {
   ResourceMark rm;
   out->print_cr("ClassLoaderData(" INTPTR_FORMAT ")", p2i(this));
-  out->print_cr(" - name                %s", loader_name_and_id());
+  out->print_cr(" - name                       %s", loader_name_and_id());
   if (!_holder.is_null()) {
-    out->print   (" - holder              ");
+    out->print   (" - holder                     ");
     _holder.print_on(out);
     out->print_cr("");
   }
   if (!_unloading) {
-    out->print_cr(" - class loader        " INTPTR_FORMAT, p2i(_class_loader.peek()));
+    out->print_cr(" - class loader               " INTPTR_FORMAT, p2i(_class_loader.peek()));
   } else {
-    out->print_cr(" - class loader        <unloading, oop is bad>");
+    out->print_cr(" - class loader               <unloading, oop is bad>");
   }
-  out->print_cr(" - metaspace           " INTPTR_FORMAT, p2i(_metaspace));
-  out->print_cr(" - unloading           %s", _unloading ? "true" : "false");
-  out->print_cr(" - class mirror holder %s", _has_class_mirror_holder ? "true" : "false");
-  out->print_cr(" - modified oops       %s", _modified_oops ? "true" : "false");
-  out->print_cr(" - _keep_alive_ref_count %d", _keep_alive_ref_count);
-  out->print   (" - claim               ");
+  out->print_cr(" - metaspace                  " INTPTR_FORMAT, p2i(_metaspace));
+  out->print_cr(" - unloading                  %s", _unloading ? "true" : "false");
+  out->print_cr(" - class mirror holder        %s", _has_class_mirror_holder ? "true" : "false");
+  out->print_cr(" - modified or humongous oops %s", _has_modified_or_humongous_oops ? "true" : "false");
+  out->print_cr(" - _keep_alive_ref_count      %d", _keep_alive_ref_count);
+  out->print   (" - claim                      ");
   switch(_claim) {
     case _claim_none:                       out->print_cr("none"); break;
     case _claim_finalizable:                out->print_cr("finalizable"); break;
@@ -1036,8 +1040,8 @@ void ClassLoaderData::print_on(outputStream* out) const {
     case _claim_other | _claim_strong:      out->print_cr("other and strong"); break;
     default:                                ShouldNotReachHere();
   }
-  out->print_cr(" - handles             %d", _handles.count());
-  out->print_cr(" - dependency count    %d", _dependency_count);
+  out->print_cr(" - handles                    %d", _handles.count());
+  out->print_cr(" - dependency count           %d", _dependency_count);
   out->print   (" - klasses             { ");
   if (Verbose) {
     PrintKlassClosure closure(out);
@@ -1117,7 +1121,7 @@ void ClassLoaderData::verify() {
 
   // Check the oops in the handles area
   VerifyHandleOops vho;
-  oops_do(&vho, _claim_none, false);
+  oops_do(&vho, _claim_none, false /* should_clear_modified_or_humongous_oops */);
 }
 
 bool ClassLoaderData::contains_klass(Klass* klass) {

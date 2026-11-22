@@ -32,6 +32,7 @@
 
 // Predefined classes
 class ciField;
+class ciFlatArrayKlass;
 class ValueStack;
 class InstructionPrinter;
 class IRScope;
@@ -454,7 +455,7 @@ class Instruction: public CompilationResourceObj {
   void set_needs_null_check(bool f)              { set_flag(NeedsNullCheckFlag, f); }
   bool needs_null_check() const                  { return check_flag(NeedsNullCheckFlag); }
   void set_null_free(bool f)                     { set_flag(NeverNullFlag, f); }
-  bool is_null_free() const                      { return check_flag(NeverNullFlag); }
+  bool is_null_free() const                      { return check_flag(NeverNullFlag) || (type()->is_constant() && !type()->as_ObjectType()->constant_value()->is_null_object()); }
   bool is_linked() const                         { return check_flag(IsLinkedInBlockFlag); }
   bool can_be_linked()                           { return as_Local() == nullptr && as_Phi() == nullptr; }
 
@@ -510,7 +511,8 @@ class Instruction: public CompilationResourceObj {
     return _next;
   }
 
-  bool is_loaded_flat_array() const;
+  ciFlatArrayKlass* as_loaded_flat_array_klass_or_null() const;
+  bool is_loaded_flat_array() const { return as_loaded_flat_array_klass_or_null() != nullptr; }
   bool maybe_flat_array() const;
   bool maybe_null_free_array() const;
 
@@ -1579,18 +1581,18 @@ BASE(AccessMonitor, StateSplit)
 
 
 LEAF(MonitorEnter, AccessMonitor)
-  bool _maybe_inlinetype;
+  bool _maybe_valuetype;
  public:
   // creation
-  MonitorEnter(Value obj, int monitor_no, ValueStack* state_before, bool maybe_inlinetype)
+  MonitorEnter(Value obj, int monitor_no, ValueStack* state_before, bool maybe_valuetype)
   : AccessMonitor(obj, monitor_no, state_before)
-  , _maybe_inlinetype(maybe_inlinetype)
+  , _maybe_valuetype(maybe_valuetype)
   {
     ASSERT_VALUES
   }
 
   // accessors
-  bool maybe_inlinetype() const                   { return _maybe_inlinetype; }
+  bool maybe_valuetype() const                   { return _maybe_valuetype; }
 
   // generic
   virtual bool can_trap() const                  { return true; }

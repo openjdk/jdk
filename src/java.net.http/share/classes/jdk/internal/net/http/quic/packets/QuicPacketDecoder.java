@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -888,26 +888,24 @@ public class QuicPacketDecoder {
 
         final int size;
         final int length;
-        final int tokenLength;
         final long packetNumber;
         final byte[] token;
         final List<QuicFrame> frames;
 
         IncomingInitialPacket(QuicConnectionId sourceId,
                               QuicConnectionId destinationId, int version,
-                              int tokenLength, byte[] token, int length,
+                              byte[] token, int length,
                               long packetNumber, List<QuicFrame> frames, int size) {
             super(sourceId, destinationId, version);
             this.size = size;
             this.length = length;
-            this.tokenLength = tokenLength;
             this.token = token;
             this.packetNumber = packetNumber;
             this.frames = List.copyOf(frames);
         }
 
         @Override
-        public int tokenLength() { return tokenLength; }
+        public int tokenLength() { return token != null ? token.length : 0; }
 
         @Override
         public byte[] token() { return token; }
@@ -968,7 +966,7 @@ public class QuicPacketDecoder {
             }
 
             // Get number of bytes needed to store the length of the token
-            var tokenLength = (int) reader.readTokenLength();
+            var tokenLength = reader.readTokenLength();
             if (debug.on()) {
                 debug.log("IncomingInitialPacket.decode(token-length(%d), %s)",
                         tokenLength, reader);
@@ -1051,7 +1049,7 @@ public class QuicPacketDecoder {
             assert size == reader.bytesRead() : size - reader.bytesRead();
 
             return new IncomingInitialPacket(sourceID, destinationID,
-                    version, tokenLength, token, (int)packetLength, packetNumber, frames, size);
+                    version, token, (int)packetLength, packetNumber, frames, size);
         }
 
     }
@@ -1572,16 +1570,18 @@ public class QuicPacketDecoder {
             return packetLength;
         }
 
-        public long readTokenLength() {
+        private long readTokenLength() {
             return readVariableLength();
         }
 
-        public byte[] readToken(int tokenLength) {
+        public byte[] readToken(long tokenLength) {
             // Check to ensure that tokenLength is within valid range
             if (tokenLength < 0 || tokenLength > buffer.remaining()) {
                 throw new BufferUnderflowException();
             }
-            byte[] token = tokenLength > 0 ? new byte[tokenLength] : null;
+            // `int` conversion is safe due to the `> buffer.remaining()` check above.
+            int tokenLengthInt = Math.toIntExact(tokenLength);
+            byte[] token = tokenLength > 0 ? new byte[tokenLengthInt] : null;
             if (tokenLength > 0) {
                 buffer.get(token);
             }

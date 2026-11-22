@@ -329,7 +329,7 @@ JVMFlag::Error TypeProfileLevelConstraintFunc(uint value, bool verbose) {
 }
 
 JVMFlag::Error VerifyIterativeGVNConstraintFunc(uint value, bool verbose) {
-  const int max_modes = 7;
+  const int max_modes = 6;
   uint original_value = value;
   for (int i = 0; i < max_modes; i++) {
     if (value % 10 > 1) {
@@ -450,6 +450,27 @@ JVMFlag::Error ControlIntrinsicConstraintFunc(ccstrlist value, bool verbose) {
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
 
+  return JVMFlag::SUCCESS;
+}
+
+JVMFlag::Error DisableAOTCodeConstraintFunc(uint value, bool verbose) {
+  const int max_modes = 5;
+  uint original_value = value;
+  for (int i = 0; i < max_modes; i++) {
+    if (value % 10 > 1) {
+      JVMFlag::printError(verbose,
+                          "Invalid value (" UINT32_FORMAT ") "
+                          "in DisableAOTCode at position %d\n", value, i);
+      return JVMFlag::VIOLATES_CONSTRAINT;
+    }
+    value = value / 10;
+  }
+  if (value != 0) {
+    JVMFlag::printError(verbose,
+                        "Invalid value (" UINT32_FORMAT ") "
+                        "for DisableAOTCode: maximal %d digits\n", original_value, max_modes);
+    return JVMFlag::VIOLATES_CONSTRAINT;
+  }
   return JVMFlag::SUCCESS;
 }
 

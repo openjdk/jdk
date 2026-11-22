@@ -327,7 +327,7 @@ public class IconTest {
             cmd.saveConsoleOutput(true);
             cmd.setFakeRuntime();
             cmd.addArguments(extraJPackageArgs);
-            cmd.setEnabledMessageCategories(MessageCategory.RESOURCES).setDisabledMessageCategories();
+            cmd.enableMessageCategories(MessageCategory.RESOURCES).setDisabledMessageCategories();
         });
     }
 

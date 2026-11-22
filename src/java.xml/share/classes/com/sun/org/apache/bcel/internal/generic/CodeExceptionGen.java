@@ -23,11 +23,11 @@ package com.sun.org.apache.bcel.internal.generic;
 import com.sun.org.apache.bcel.internal.classfile.CodeException;
 
 /**
- * This class represents an exception handler, i.e., specifies the region where a handler is active and an instruction
+ * This class represents an exception handler, that is, specifies the region where a handler is active and an instruction
  * where the actual handling is done. pool as parameters. Opposed to the JVM specification the end of the handled region
- * is set to be inclusive, i.e. all instructions between start and end are protected including the start and end
+ * is set to be inclusive, for example all instructions between start and end are protected including the start and end
  * instructions (handles) themselves. The end of the region is automatically mapped to be exclusive when calling
- * getCodeException(), i.e., there is no difference semantically.
+ * getCodeException(), that is, there is no difference semantically.
  *
  * @see MethodGen
  * @see CodeException
@@ -43,13 +43,13 @@ public final class CodeExceptionGen implements InstructionTargeter, Cloneable {
     private ObjectType catchType;
 
     /**
-     * Add an exception handler, i.e., specify region where a handler is active and an instruction where the actual handling
+     * Add an exception handler, that is, specify region where a handler is active and an instruction where the actual handling
      * is done.
      *
-     * @param startPc Start of handled region (inclusive)
-     * @param endPc End of handled region (inclusive)
-     * @param handlerPc Where handling is done
-     * @param catchType which exception is handled, null for ANY
+     * @param startPc Start of handled region (inclusive).
+     * @param endPc End of handled region (inclusive).
+     * @param handlerPc Where handling is done.
+     * @param catchType which exception is handled, null for ANY.
      */
     public CodeExceptionGen(final InstructionHandle startPc, final InstructionHandle endPc, final InstructionHandle handlerPc, final ObjectType catchType) {
         setStartPC(startPc);
@@ -68,25 +68,30 @@ public final class CodeExceptionGen implements InstructionTargeter, Cloneable {
     }
 
     /**
-     * @return true, if ih is target of this handler
+     * @return true, if ih is target of this handler.
      */
     @Override
     public boolean containsTarget(final InstructionHandle ih) {
         return startPc == ih || endPc == ih || handlerPc == ih;
     }
 
-    /** Gets the type of the Exception to catch, 'null' for ANY. */
+    /**
+     * Gets the type of the Exception to catch, 'null' for ANY.
+     *
+     * @return The type of the Exception to catch, 'null' for ANY.
+     */
     public ObjectType getCatchType() {
         return catchType;
     }
 
     /**
-     * Gets CodeException object.<BR>
+     * Gets CodeException object.
      *
      * This relies on that the instruction list has already been dumped to byte code or that the 'setPositions' methods
      * has been called for the instruction list.
      *
-     * @param cp constant pool
+     * @param cp constant pool.
+     * @return The CodeException object.
      */
     public CodeException getCodeException(final ConstantPoolGen cp) {
         return new CodeException(startPc.getPosition(), endPc.getPosition() + endPc.getInstruction().getLength(), handlerPc.getPosition(),
@@ -94,55 +99,65 @@ public final class CodeExceptionGen implements InstructionTargeter, Cloneable {
     }
 
     /**
-     * @return end of handled region (inclusive)
+     * Gets the end of handled region (inclusive).
+     *
+     * @return end of handled region (inclusive).
      */
     public InstructionHandle getEndPC() {
         return endPc;
     }
 
     /**
-     * @return start of handler
+     * Gets the start of handler.
+     *
+     * @return start of handler.
      */
     public InstructionHandle getHandlerPC() {
         return handlerPc;
     }
 
     /**
-     * @return start of handled region (inclusive)
+     * Gets the start of handled region (inclusive).
+     *
+     * @return start of handled region (inclusive).
      */
     public InstructionHandle getStartPC() {
         return startPc;
     }
 
-    /** Sets the type of the Exception to catch. Set 'null' for ANY. */
+    /**
+     * Sets the type of the Exception to catch. Set 'null' for ANY.
+     *
+     * @param catchType The type of the Exception to catch.
+     */
     public void setCatchType(final ObjectType catchType) {
         this.catchType = catchType;
     }
 
-    /*
-     * Sets end of handler
+    /**
+     * Sets end of handler.
      *
-     * @param endPc End of handled region (inclusive)
+     * @param endPc End of handled region (inclusive).
      */
     public void setEndPC(final InstructionHandle endPc) { // TODO could be package-protected?
         BranchInstruction.notifyTarget(this.endPc, endPc, this);
         this.endPc = endPc;
     }
 
-    /*
-     * Sets handler code
+    /**
+     * Sets handler code.
      *
-     * @param handlerPc Start of handler
+     * @param handlerPc Start of handler.
      */
     public void setHandlerPC(final InstructionHandle handlerPc) { // TODO could be package-protected?
         BranchInstruction.notifyTarget(this.handlerPc, handlerPc, this);
         this.handlerPc = handlerPc;
     }
 
-    /*
-     * Sets start of handler
+    /**
+     * Sets start of handler.
      *
-     * @param startPc Start of handled region (inclusive)
+     * @param startPc Start of handled region (inclusive).
      */
     public void setStartPC(final InstructionHandle startPc) { // TODO could be package-protected?
         BranchInstruction.notifyTarget(this.startPc, startPc, this);
@@ -155,8 +170,8 @@ public final class CodeExceptionGen implements InstructionTargeter, Cloneable {
     }
 
     /**
-     * @param oldIh old target, either start or end
-     * @param newIh new target
+     * @param oldIh old target, either start or end.
+     * @param newIh new target.
      */
     @Override
     public void updateTarget(final InstructionHandle oldIh, final InstructionHandle newIh) {

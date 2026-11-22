@@ -27,6 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.text.DateFormatSymbols;
+import java.time.OffsetTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -52,11 +53,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 /*
  * @test
  * @bug 8081022 8151876 8166875 8177819 8189784 8206980 8277049 8278434 8346948
- *      8174269 8371842 8388214
+ *      8174269 8371842 8388214 8392994 8384532
  * @key randomness
  */
 
@@ -66,13 +68,21 @@ import org.junit.jupiter.params.provider.MethodSource;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestZoneTextPrinterParser extends AbstractTestPrinterParser {
 
-    // Explicit dstOffset attributes from CLDR v48.2 metazone data.
-    private static final Map<String, ZoneOffset> CLDR_EXPLICIT_DST_OFFSETS = Map.of(
-            "Africa/Windhoek", ZoneOffset.of("+02:00"),
-            "America/Vancouver", ZoneOffset.of("-07:00"),
-            "Canada/Pacific", ZoneOffset.of("-07:00"),
-            "Europe/Dublin", ZoneOffset.of("+01:00"),
-            "Eire", ZoneOffset.of("+01:00"));
+    // Explicit dstOffset attributes from CLDR v49 metazone data.
+    private static final Map<String, ZoneOffset> CLDR_EXPLICIT_DST_OFFSETS = Map.ofEntries(
+            Map.entry("America/Coyhaique", ZoneOffset.of("-03:00")),
+            Map.entry("America/Edmonton", ZoneOffset.of("-06:00")),
+            Map.entry("America/Inuvik", ZoneOffset.of("-06:00")),
+            Map.entry("America/Punta_Arenas", ZoneOffset.of("-03:00")),
+            Map.entry("America/Rainy_River", ZoneOffset.of("-05:00")),
+            Map.entry("America/Vancouver", ZoneOffset.of("-07:00")),
+            Map.entry("America/Winnipeg", ZoneOffset.of("-05:00")),
+            Map.entry("America/Yellowknife", ZoneOffset.of("-06:00")),
+            Map.entry("Canada/Central", ZoneOffset.of("-05:00")),
+            Map.entry("Canada/Mountain", ZoneOffset.of("-06:00")),
+            Map.entry("Canada/Pacific", ZoneOffset.of("-07:00")),
+            Map.entry("Europe/Dublin", ZoneOffset.of("+01:00")),
+            Map.entry("Eire", ZoneOffset.of("+01:00")));
 
     private static final Locale[] SAMPLE_LOCALES = {
         Locale.US, Locale.UK, Locale.FRANCE, Locale.GERMANY, Locale.ITALY, Locale.forLanguageTag("es"),
@@ -216,6 +226,14 @@ public class TestZoneTextPrinterParser extends AbstractTestPrinterParser {
 
     }
 
+    // Explicitly tests localized GMT formats where the localized GMT text is a suffix
+    @Test
+    public void test_ParseText_GmtSuffix() {
+        DateTimeFormatter formatter = getFormatter(Locale.forLanguageTag("pt-BR"), TextStyle.FULL);
+        assertEquals(ZoneId.of("Etc/GMT+1"), formatter.parse("-01:00 GMT", TemporalQueries.zone()));
+        assertEquals(ZoneOffset.ofHours(-1), formatter.parse("-01:00", TemporalQueries.zone()));
+    }
+
 
     private void parseText(Set<String> zids, Locale locale, TextStyle style, boolean ci) {
         System.out.println("---------------------------------------");
@@ -299,5 +317,14 @@ public class TestZoneTextPrinterParser extends AbstractTestPrinterParser {
         dtf = new DateTimeFormatterBuilder().parseCaseInsensitive().appendPattern(pattern).toFormatter(Locale.US);
         assertEquals(input, dtf.format(ZonedDateTime.parse(input, dtf)));
         assertEquals(input, dtf.format(ZonedDateTime.parse(lc, dtf)));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"-07:00", "-08:00", "+09:00"})
+    public void test_offsetTimeUsesGenericZoneName(String offset) {
+        DateTimeFormatter format =
+            DateTimeFormatter.ofPattern("zzzz", Locale.US)
+                .withZone(ZoneId.of("America/Vancouver"));
+        assertEquals("Pacific Time", format.format(OffsetTime.parse("12:00" + offset)));
     }
 }

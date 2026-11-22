@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,15 +21,15 @@
  * questions.
  */
 
-import org.testng.annotations.Test;
 
 import java.lang.foreign.SymbolLookup;
 
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
 
 /*
  * @test
- * @run testng/othervm/native TestLoaderLookupJNI
+ * @run junit/othervm/native TestLoaderLookupJNI
  */
 public class TestLoaderLookupJNI {
 

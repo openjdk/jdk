@@ -35,6 +35,7 @@
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "utilities/align.hpp"
+#include "utilities/bytes.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/copy.hpp"
 
@@ -179,12 +180,12 @@ RelocIterator::RelocIterator(CodeSection* cs, address begin, address limit) {
 }
 
 RelocIterator::RelocIterator(CodeBlob* cb) {
-  initialize_misc();
   if (cb->is_nmethod()) {
-    _code = cb->as_nmethod();
-  } else {
-    _code = nullptr;
+    initialize(cb->as_nmethod(), nullptr, nullptr);
+    return;
   }
+  initialize_misc();
+  _code = nullptr;
   _current = cb->relocation_begin() - 1;
   _end     = cb->relocation_end();
   _addr    = cb->content_begin();
@@ -279,7 +280,7 @@ Relocation* RelocIterator::reloc() {
 // Verify all the destructors are trivial, so we don't need to worry about
 // destroying old contents of a RelocationHolder being assigned or destroyed.
 #define VERIFY_TRIVIALLY_DESTRUCTIBLE_AUX(Reloc) \
-  static_assert(std::is_trivially_destructible<Reloc>::value, "must be");
+  static_assert(std::is_trivially_destructible<Reloc>::value);
 
 #define VERIFY_TRIVIALLY_DESTRUCTIBLE(name) \
   VERIFY_TRIVIALLY_DESTRUCTIBLE_AUX(PASTE_TOKENS(name, _Relocation));
@@ -494,6 +495,27 @@ void trampoline_stub_Relocation::unpack_data() {
   _owner = address_from_scaled_offset(unpack_1_int(), base);
 }
 
+void address_stub_Relocation::pack_data_to(CodeSection* dest) {
+  short* p = (short*) dest->locs_end();
+  CodeSection* insts = dest->outer()->insts();
+  normalize_address(_owner, insts);
+  p = pack_1_int_to(p, scaled_offset(_owner, insts->start()));
+  dest->set_locs_end((relocInfo*) p);
+}
+
+void address_stub_Relocation::unpack_data() {
+  address base = binding()->section_start(CodeBuffer::SECT_INSTS);
+  _owner = address_from_scaled_offset(unpack_1_int(), base);
+}
+
+address address_stub_Relocation::destination() {
+  return reinterpret_cast<address>(Bytes::get_native<uintptr_t>(addr()));
+}
+
+void address_stub_Relocation::set_destination(address x) {
+  Bytes::put_native<uintptr_t>(addr(), reinterpret_cast<uintptr_t>(x));
+}
+
 void external_word_Relocation::pack_data_to(CodeSection* dest) {
   short* p = (short*) dest->locs_end();
   int index = ExternalsRecorder::find_index(_target);
@@ -567,6 +589,31 @@ void section_word_Relocation::unpack_data() {
 
   _section = sindex;
   _target  = address_from_scaled_offset(offset, base);
+}
+
+void patchable_barrier_Relocation::pack_data_to(CodeSection* dest) {
+  short* p = (short*) dest->locs_end();
+  *p++ = relocInfo::data0_from_int(_target_offset);
+  *p++ = relocInfo::data1_from_int(_target_offset);
+  *p++ = checked_cast<short>(_metadata);
+  dest->set_locs_end((relocInfo*)p);
+}
+
+void patchable_barrier_Relocation::unpack_data() {
+  assert(datalen() == 3, "Should be int+short fields");
+  short* d = data();
+  _target_offset = relocInfo::jint_from_data(&d[0]);
+  _metadata = checked_cast<uint16_t>(d[2]);
+}
+
+void patchable_barrier_Relocation::set_target_offset(int32_t target_offset) {
+  assert(!is_target_offset_resolved(), "Should be");
+  assert(datalen() == 3, "Should be int+short fields");
+  short* d = data();
+  d[0] = relocInfo::data0_from_int(target_offset);
+  d[1] = relocInfo::data1_from_int(target_offset);
+  _target_offset = target_offset;
+  assert(is_target_offset_resolved(), "Should be");
 }
 
 //// miscellaneous methods
@@ -756,6 +803,21 @@ address trampoline_stub_Relocation::get_trampoline_for(address call, nmethod* co
   return nullptr;
 }
 
+address address_stub_Relocation::get_stub_for(address call, nmethod* code) {
+  if (code->relocation_size() == 0) {
+    return nullptr;
+  }
+
+  RelocIterator iter(code, call);
+  while (iter.next()) {
+    if (iter.type() == relocInfo::address_stub_type &&
+        iter.address_stub_reloc()->owner() == call) {
+      return iter.addr();
+    }
+  }
+  return nullptr;
+}
+
 void static_stub_Relocation::clear_inline_cache() {
   // Call stub is only used when calling the interpreted code.
   // It does not really need to be cleared, except that we want to clean out the methodoop.
@@ -794,11 +856,11 @@ void internal_word_Relocation::fix_relocation_after_move(const CodeBuffer* src, 
   set_value(target);
 }
 
-void internal_word_Relocation::fix_relocation_after_aot_load(address orig_base_addr, address current_base_addr) {
+void internal_word_Relocation::fix_relocation_after_aot_load(address current_base_addr, int delta) {
   address target = _target;
   if (target == nullptr) {
     target = this->target();
-    target = current_base_addr + (target - orig_base_addr);
+    target = current_base_addr + delta;
   }
   set_value(target);
 }
@@ -864,8 +926,8 @@ void RelocIterator::print_current_on(outputStream* st) {
         raw_oop   = *oop_addr;
         oop_value = r->oop_value();
       }
-      st->print(" | [oop_addr=" INTPTR_FORMAT " *=" INTPTR_FORMAT "]",
-                 p2i(oop_addr), p2i(raw_oop));
+      st->print(" | [oop_addr=" INTPTR_FORMAT " *=" INTPTR_FORMAT " index=%d]",
+                 p2i(oop_addr), p2i(raw_oop), r->oop_index());
       // Do not print the oop by default--we want this routine to
       // work even during GC or other inconvenient times.
       if (WizardMode && oop_value != nullptr) {
@@ -887,8 +949,8 @@ void RelocIterator::print_current_on(outputStream* st) {
         raw_metadata   = *metadata_addr;
         metadata_value = r->metadata_value();
       }
-      st->print(" | [metadata_addr=" INTPTR_FORMAT " *=" INTPTR_FORMAT "]",
-                 p2i(metadata_addr), p2i(raw_metadata));
+      st->print(" | [metadata_addr=" INTPTR_FORMAT " *=" INTPTR_FORMAT " index=%d]",
+                 p2i(metadata_addr), p2i(raw_metadata), r->metadata_index());
       if (metadata_value != nullptr) {
         st->print("metadata_value=" INTPTR_FORMAT ": ", p2i(metadata_value));
         metadata_value->print_value_on(st);
@@ -928,7 +990,7 @@ void RelocIterator::print_current_on(outputStream* st) {
       } else {
         CodeBlob* cb = CodeCache::find_blob(dest);
         if (cb != nullptr) {
-          st->print(" %s", cb->name());
+          st->print(" Blob::%s", cb->name());
         } else {
           ResourceMark rm;
           const int buflen = 1024;
@@ -965,6 +1027,12 @@ void RelocIterator::print_current_on(outputStream* st) {
     {
       trampoline_stub_Relocation* r = (trampoline_stub_Relocation*) reloc();
       st->print(" | [trampoline owner=" INTPTR_FORMAT "]", p2i(r->owner()));
+      break;
+    }
+  case relocInfo::address_stub_type:
+    {
+      address_stub_Relocation* r = (address_stub_Relocation*) reloc();
+      st->print(" | [address stub owner=" INTPTR_FORMAT "]", p2i(r->owner()));
       break;
     }
   case relocInfo::opt_virtual_call_type:

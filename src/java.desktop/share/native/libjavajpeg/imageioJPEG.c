@@ -519,7 +519,7 @@ static int GET_ARRAYS(JNIEnv *env, imageIODataPtr data, const JOCTET **next_byte
 /*
  * Set up error handling to use setjmp/longjmp.  This is the third such
  * setup, as both the AWT jpeg decoder and the com.sun... JPEG classes
- * setup thier own.  Ultimately these should be integrated, as they all
+ * setup their own.  Ultimately these should be integrated, as they all
  * do pretty much the same thing.
  */
 
@@ -2358,7 +2358,7 @@ imageio_term_destination (j_compress_ptr cinfo)
     JNIEnv *env = (JNIEnv *)JNU_GetEnv(the_jvm, JNI_VERSION_1_2);
 
     /* find out how much needs to be written */
-    /* this conversion from size_t to jint is safe, because the lenght of the buffer is limited by jint */
+    /* this conversion from size_t to jint is safe, because the length of the buffer is limited by jint */
     jint datacount = (jint)(sb->bufferLength - dest->free_in_buffer);
 
     if (datacount != 0) {

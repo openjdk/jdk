@@ -42,8 +42,8 @@ template<>
 template<typename D, typename I>
 inline D AtomicAccess::PlatformAdd<4>::fetch_then_add(D volatile* dest, I add_value,
                                                       atomic_memory_order order) const {
-  STATIC_ASSERT(4 == sizeof(I));
-  STATIC_ASSERT(4 == sizeof(D));
+  static_assert(4 == sizeof(I));
+  static_assert(4 == sizeof(D));
   D old_value;
   __asm__ volatile (  "lock xaddl %0,(%2)"
                     : "=r" (old_value)
@@ -60,7 +60,7 @@ template<typename T>
 inline T AtomicAccess::PlatformXchg<4>::operator()(T volatile* dest,
                                                    T exchange_value,
                                                    atomic_memory_order order) const {
-  STATIC_ASSERT(4 == sizeof(T));
+  static_assert(4 == sizeof(T));
   __asm__ volatile (  "xchgl (%2),%0"
                     : "=r" (exchange_value)
                     : "0" (exchange_value), "r" (dest)
@@ -74,7 +74,7 @@ inline T AtomicAccess::PlatformCmpxchg<1>::operator()(T volatile* dest,
                                                       T compare_value,
                                                       T exchange_value,
                                                       atomic_memory_order /* order */) const {
-  STATIC_ASSERT(1 == sizeof(T));
+  static_assert(1 == sizeof(T));
   __asm__ volatile ("lock cmpxchgb %1,(%3)"
                     : "=a" (exchange_value)
                     : "q" (exchange_value), "a" (compare_value), "r" (dest)
@@ -88,7 +88,7 @@ inline T AtomicAccess::PlatformCmpxchg<4>::operator()(T volatile* dest,
                                                       T compare_value,
                                                       T exchange_value,
                                                       atomic_memory_order /* order */) const {
-  STATIC_ASSERT(4 == sizeof(T));
+  static_assert(4 == sizeof(T));
   __asm__ volatile ("lock cmpxchgl %1,(%3)"
                     : "=a" (exchange_value)
                     : "r" (exchange_value), "a" (compare_value), "r" (dest)
@@ -100,8 +100,8 @@ template<>
 template<typename D, typename I>
 inline D AtomicAccess::PlatformAdd<8>::fetch_then_add(D volatile* dest, I add_value,
                                                       atomic_memory_order order) const {
-  STATIC_ASSERT(8 == sizeof(I));
-  STATIC_ASSERT(8 == sizeof(D));
+  static_assert(8 == sizeof(I));
+  static_assert(8 == sizeof(D));
   D old_value;
   __asm__ __volatile__ ("lock xaddq %0,(%2)"
                         : "=r" (old_value)
@@ -114,7 +114,7 @@ template<>
 template<typename T>
 inline T AtomicAccess::PlatformXchg<8>::operator()(T volatile* dest, T exchange_value,
                                                    atomic_memory_order order) const {
-  STATIC_ASSERT(8 == sizeof(T));
+  static_assert(8 == sizeof(T));
   __asm__ __volatile__ ("xchgq (%2),%0"
                         : "=r" (exchange_value)
                         : "0" (exchange_value), "r" (dest)
@@ -128,7 +128,7 @@ inline T AtomicAccess::PlatformCmpxchg<8>::operator()(T volatile* dest,
                                                       T compare_value,
                                                       T exchange_value,
                                                       atomic_memory_order /* order */) const {
-  STATIC_ASSERT(8 == sizeof(T));
+  static_assert(8 == sizeof(T));
   __asm__ __volatile__ ("lock cmpxchgq %1,(%3)"
                         : "=a" (exchange_value)
                         : "r" (exchange_value), "a" (compare_value), "r" (dest)

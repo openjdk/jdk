@@ -50,6 +50,16 @@ import jdk.test.lib.Utils;
  * @run main compiler.debug.TestStressBailout -XX:VerifyIterativeGVN=1111
  */
 
+/*
+ * @test
+ * @key stress randomness
+ * @bug 8390121
+ * @requires vm.debug == true & vm.compiler2.enabled & (vm.opt.AbortVMOnCompilationFailure == "null" | !vm.opt.AbortVMOnCompilationFailure)
+ * @summary Bailouts between optimization phases must not reach IGVN verification
+ * @library /test/lib /
+ * @run main ${test.main.class} -XX:VerifyIterativeGVN=1110 -XX:+StressIGVN -XX:+StressIncrementalInlining
+ */
+
 public class TestStressBailout {
 
     static void runTest(int invprob, Stream<String> vmArgs) throws Exception {

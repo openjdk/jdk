@@ -67,8 +67,8 @@ define_pd_global(bool, RewriteFrequentPairs, true);
 
 define_pd_global(bool, PreserveFramePointer, false);
 
-define_pd_global(bool, InlineTypePassFieldsAsArgs, true);
-define_pd_global(bool, InlineTypeReturnedAsFields, true);
+define_pd_global(bool, ValueTypePassFieldsAsArgs, true);
+define_pd_global(bool, ValueTypeReturnedAsFields, true);
 
 define_pd_global(uintx, TypeProfileLevel, 111);
 
@@ -102,6 +102,8 @@ define_pd_global(intx, InlineSmallCode,          1000);
           "Use SIMD SHA3 instructions for SHA3 intrinsic")              \
   product(bool, AvoidUnalignedAccesses, false,                          \
           "Avoid generating unaligned memory accesses")                 \
+  product(bool, AvoidMLAChain, false, DIAGNOSTIC,                       \
+          "Avoid long dependency chains formed by MLA instructions")    \
   product(bool, UseLSE, false,                                          \
           "Use LSE instructions")                                       \
   product(uint, UseSVE, 0,                                              \

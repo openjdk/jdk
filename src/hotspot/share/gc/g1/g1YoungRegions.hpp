@@ -46,8 +46,8 @@ protected:
   NONCOPYABLE(G1YoungRegions);
 
 public:
-  uint regions_on_node(uint node_index) const {
-    return _regions_on_node.num_regions_per_node(node_index);
+  uint num_regions_on_node(uint node_index) const {
+    return _regions_on_node.num_regions_on_node(node_index);
   }
 
   void add_used_bytes(size_t used_bytes) { _used_bytes.add_then_fetch(used_bytes, memory_order_relaxed); }

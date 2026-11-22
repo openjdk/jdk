@@ -202,7 +202,11 @@ public class TestFloat16ToIntegralConv {
 
     @Test
     @IR(counts = {IRNode.X86_VCAST_HF2X, "> 0"}, phase = CompilePhase.FINAL_CODE,
-        applyIfCPUFeature = {"avx512_fp16", "true"})
+        applyIfCPUFeatureAnd = {"avx512_fp16", "true", "avx10_2", "false"})
+    @IR(counts = {IRNode.X86_VCONV_HF2F, "> 0"}, phase = CompilePhase.FINAL_CODE,
+        applyIfCPUFeature = {"avx10_2", "true"})
+    @IR(counts = {IRNode.X86_VCAST_F2X_AVX10_2, "> 0"}, phase = CompilePhase.FINAL_CODE,
+        applyIfCPUFeature = {"avx10_2", "true"})
     public void testVecConvHF2I() {
         for (int i = 0; i < SIZE; i++) {
             vecIout[i] = (int) Float.float16ToFloat(fp16inp[i]);
@@ -217,7 +221,11 @@ public class TestFloat16ToIntegralConv {
 
     @Test
     @IR(counts = {IRNode.X86_VCAST_HF2X, "> 0"}, phase = CompilePhase.FINAL_CODE,
-        applyIfCPUFeature = {"avx512_fp16", "true"})
+        applyIfCPUFeatureAnd = {"avx512_fp16", "true", "avx10_2", "false"})
+    @IR(counts = {IRNode.X86_VCONV_HF2F, "> 0"}, phase = CompilePhase.FINAL_CODE,
+        applyIfCPUFeature = {"avx10_2", "true"})
+    @IR(counts = {IRNode.X86_VCAST_F2X_AVX10_2, "> 0"}, phase = CompilePhase.FINAL_CODE,
+        applyIfCPUFeature = {"avx10_2", "true"})
     public void testVecConvHF2L() {
         for (int i = 0; i < SIZE; i++) {
             vecLout[i] = (long) Float.float16ToFloat(fp16inp[i]);
@@ -232,7 +240,11 @@ public class TestFloat16ToIntegralConv {
 
     @Test
     @IR(counts = {IRNode.X86_VCAST_HF2X, "> 0"}, phase = CompilePhase.FINAL_CODE,
-        applyIfCPUFeature = {"avx512_fp16", "true"})
+        applyIfCPUFeatureAnd = {"avx512_fp16", "true", "avx10_2", "false"})
+    @IR(counts = {IRNode.X86_VCONV_HF2F, "> 0"}, phase = CompilePhase.FINAL_CODE,
+        applyIfCPUFeature = {"avx10_2", "true"})
+    @IR(counts = {IRNode.X86_VCAST_F2X_AVX10_2, "> 0"}, phase = CompilePhase.FINAL_CODE,
+        applyIfCPUFeature = {"avx10_2", "true"})
     public void testVecConvHF2S() {
         for (int i = 0; i < SIZE; i++) {
             vecSout[i] = (short) Float.float16ToFloat(fp16inp[i]);
@@ -247,7 +259,11 @@ public class TestFloat16ToIntegralConv {
 
     @Test
     @IR(counts = {IRNode.X86_VCAST_HF2X, "> 0"}, phase = CompilePhase.FINAL_CODE,
-        applyIfCPUFeature = {"avx512_fp16", "true"})
+        applyIfCPUFeatureAnd = {"avx512_fp16", "true", "avx10_2", "false"})
+    @IR(counts = {IRNode.X86_VCONV_HF2F, "> 0"}, phase = CompilePhase.FINAL_CODE,
+        applyIfCPUFeature = {"avx10_2", "true"})
+    @IR(counts = {IRNode.X86_VCAST_F2X_AVX10_2, "> 0"}, phase = CompilePhase.FINAL_CODE,
+        applyIfCPUFeature = {"avx10_2", "true"})
     public void testVecConvHF2B() {
         for (int i = 0; i < SIZE; i++) {
             vecBout[i] = (byte) Float.float16ToFloat(fp16inp[i]);

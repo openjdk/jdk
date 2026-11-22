@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,16 +26,17 @@
  * @test
  * @summary Test passing of a structure which contains a double with 4 Byte alignment on AIX.
  *
- * @run testng/othervm/native --enable-native-access=ALL-UNNAMED Test4BAlignedDouble
+ * @run junit/othervm/native --enable-native-access=ALL-UNNAMED Test4BAlignedDouble
  */
 
 import java.lang.foreign.*;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import org.testng.annotations.Test;
 
 import static java.lang.foreign.ValueLayout.*;
+
+import org.junit.jupiter.api.Test;
 
 public class Test4BAlignedDouble {
 
@@ -82,7 +83,7 @@ public class Test4BAlignedDouble {
         FunctionDescriptor.of(platform_S_IDFLayout, ADDRESS, platform_S_IDFLayout));
 
     @Test
-    public static void testDowncall() {
+    public void testDowncall() {
         int p0 = 0;
         double p1 = 0.0d;
         float p2 = 0.0f;
@@ -113,7 +114,7 @@ public class Test4BAlignedDouble {
     }
 
     @Test
-    public static void testUpcall() {
+    public void testUpcall() {
         int p0 = 0;
         double p1 = 0.0d;
         float p2 = 0.0f;

@@ -356,7 +356,33 @@ void ZForwarding::relocated_remembered_fields_notify_concurrent_scan_of() {
   assert(res == ZPublishState::reject, "Unexpected value");
 }
 
-bool ZForwarding::relocated_remembered_fields_published_contains(volatile zpointer* p) {
+inline static int compare_zpointer(volatile zpointer* const& p1, volatile zpointer* const& p2) {
+  if (p1 < p2) {
+    return -1;
+  } else if (p1 > p2) {
+    return 1;
+  } else {
+    return 0;
+  }
+}
+
+inline static int compare_zpointer_elem(volatile zpointer** p1, volatile zpointer** p2) {
+  return compare_zpointer(*p1, *p2);
+}
+
+void ZForwarding::relocated_remembered_fields_published_sort() {
+  _relocated_remembered_fields_array.sort(compare_zpointer_elem);
+}
+
+bool ZForwarding::relocated_remembered_fields_published_contains(volatile zpointer* p, bool is_sorted) {
+  if (is_sorted) {
+    // Binary search
+    bool found = false;
+    _relocated_remembered_fields_array.find_sorted<volatile zpointer*, compare_zpointer>(p, found);
+    return found;
+  }
+
+  // Linear search
   for (volatile zpointer* const elem : _relocated_remembered_fields_array) {
     if (elem == p) {
       return true;

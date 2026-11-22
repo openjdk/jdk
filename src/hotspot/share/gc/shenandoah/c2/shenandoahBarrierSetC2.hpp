@@ -110,10 +110,6 @@ protected:
   virtual Node* atomic_xchg_at_resolved(C2AtomicParseAccess& access, Node* new_val, const Type* val_type) const;
 
 public:
-  static ShenandoahBarrierSetC2* bsc2();
-
-  ShenandoahBarrierSetC2State* state() const;
-
   // This is the entry-point for the backend to perform accesses through the Access API.
   virtual void clone(GraphKit* kit, Node* src_base, Node* dst_base, Node* size, bool is_array) const;
   virtual void clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* ac) const;
@@ -172,7 +168,16 @@ class ShenandoahBarrierStubC2 : public BarrierStubC2 {
 
   void maybe_far_jump_if_zero(MacroAssembler& masm, Register reg);
 
-  void enter_if_gc_state(MacroAssembler& masm, const char test_state, Register tmp);
+  void patchable_jump(MacroAssembler& masm, char gc_state, bool jump_when_state, Register tmp1, Register tmp2, Label* L_target);
+
+  void patchable_jump_if_gc_state(MacroAssembler& masm, const char gc_state, Register tmp1, Register tmp2, Label* L_target) {
+    patchable_jump(masm, gc_state, true, tmp1, tmp2, L_target);
+  }
+  void patchable_jump_if_not_gc_state(MacroAssembler& masm, const char gc_state, Register tmp1, Register tmp2, Label* L_target) {
+    patchable_jump(masm, gc_state, false, tmp1, tmp2, L_target);
+  }
+
+  void enter_if_gc_state(MacroAssembler& masm, const char test_state, Register tmp1, Register tmp2);
 
   void keepalive(MacroAssembler& masm, Label* L_done);
   void lrb(MacroAssembler& masm);

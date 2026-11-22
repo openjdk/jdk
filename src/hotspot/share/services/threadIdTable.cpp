@@ -32,7 +32,7 @@
 #include "utilities/concurrentHashTable.inline.hpp"
 #include "utilities/concurrentHashTableTasks.inline.hpp"
 
-typedef ConcurrentHashTable<ThreadIdTableConfig, mtInternal> ThreadIdTableHash;
+typedef ConcurrentHashTable<ThreadIdTableConfig, mtServiceability> ThreadIdTableHash;
 
 // 2^24 is max size
 static const size_t END_SIZE = 24;
@@ -47,7 +47,7 @@ static volatile size_t _items_count = 0;
 Atomic<bool> ThreadIdTable::_is_initialized {false};
 volatile bool ThreadIdTable::_has_work = false;
 
-class ThreadIdTableEntry : public CHeapObj<mtInternal> {
+class ThreadIdTableEntry : public CHeapObj<mtServiceability> {
 private:
   jlong _tid;
   JavaThread* _java_thread;
@@ -69,7 +69,7 @@ class ThreadIdTableConfig : public AllStatic {
     }
     static void* allocate_node(void* context, size_t size, Value const& value) {
       ThreadIdTable::item_added();
-      return AllocateHeap(size, mtInternal);
+      return AllocateHeap(size, mtServiceability);
     }
     static void free_node(void* context, void* memory, Value const& value) {
       delete value;

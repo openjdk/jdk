@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,8 +40,8 @@ class BaseTest extends AbstractTest {
     private final boolean waitForCompilation;
     private int invocationCounter;
 
-    public BaseTest(DeclaredTest test, boolean skip) {
-        super(test.getWarmupIterations(), skip);
+    public BaseTest(DeclaredTest test) {
+        super(test.getWarmupIterations());
         this.test = test;
         this.testMethod = test.getTestMethod();
         this.testInfo = new TestInfo(testMethod, test.getCompLevel());
@@ -53,7 +53,7 @@ class BaseTest extends AbstractTest {
 
     @Override
     public String toString() {
-        return "Base Test: @Test " + testMethod.getName();
+        return "@Test: " + testMethod.getName();
     }
 
     @Override

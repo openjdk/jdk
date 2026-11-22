@@ -27,8 +27,8 @@
 
 #include "gc/g1/g1ConcurrentRefineStats.hpp"
 
-inline jlong G1ConcurrentRefineStats::sweep_duration() const {
-  return _sweep_duration.load_relaxed() - yield_during_sweep_duration();
+inline jlong G1ConcurrentRefineStats::sweep_work_duration() const {
+  return _sweep_work_duration.load_relaxed();
 }
 
 inline jlong G1ConcurrentRefineStats::yield_during_sweep_duration() const {
@@ -80,7 +80,7 @@ inline size_t G1ConcurrentRefineStats::cards_to_cset() const {
 }
 
 inline void G1ConcurrentRefineStats::inc_sweep_duration(jlong t) {
-  _sweep_duration.fetch_then_add(t, memory_order_relaxed);
+  _sweep_work_duration.fetch_then_add(t, memory_order_relaxed);
 }
 
 inline void G1ConcurrentRefineStats::inc_yield_during_sweep_duration(jlong t) {

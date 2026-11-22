@@ -48,6 +48,7 @@ import static compiler.lib.template_framework.Template.scope;
 import static compiler.lib.template_framework.Template.let;
 import compiler.lib.template_framework.library.Expression;
 import compiler.lib.template_framework.library.Operations;
+import compiler.lib.template_framework.library.ShortCarriesFloat16Type;
 import compiler.lib.template_framework.library.TestFrameworkClass;
 
 public class TestExpressions {
@@ -88,6 +89,12 @@ public class TestExpressions {
             // precision results from some operators. We only compare the results if we know that the
             // result is deterministically the same.
             TemplateToken expressionToken = expression.asToken(expression.argumentTypes.stream().map(t -> t.con()).toList());
+            // Float16Vector lane()/reduceLanes() return a short carrier; box to Float16 so
+            // Verify.checkEQ canonicalizes NaN.
+            boolean float16CarrierResult = expression.returnType instanceof ShortCarriesFloat16Type;
+            List<Object> returnStmt = float16CarrierResult
+                ? List.of("return Float16.shortBitsToFloat16(", expressionToken, ");\n")
+                : List.of("return ", expressionToken, ";\n");
             return scope(
                 let("returnType", expression.returnType),
                 """
@@ -104,7 +111,7 @@ public class TestExpressions {
                 public static Object ${primitiveConTest}_compiled() {
                 try {
                 """,
-                    "return ", expressionToken, ";\n",
+                    returnStmt,
                     expression.info.exceptions.stream().map(exception ->
                         "} catch (" + exception + " e) { return e;\n"
                     ).toList(),
@@ -118,7 +125,7 @@ public class TestExpressions {
                 public static Object ${primitiveConTest}_reference() {
                 try {
                 """,
-                    "return ", expressionToken, ";\n",
+                    returnStmt,
                     expression.info.exceptions.stream().map(exception ->
                         "} catch (" + exception + " e) { return e;\n"
                     ).toList(),

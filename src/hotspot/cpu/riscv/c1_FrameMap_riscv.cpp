@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -183,10 +183,13 @@ LIR_Opr FrameMap::_caller_save_fpu_regs[] = {};
 // |---x2---|
 // |---x1---|
 // |---x0---|
-// |---x26--|<---pd_last_callee_saved_reg
+// |---x26--|
+// |---x25--|
+// |---x24--|
+// |---x22--|
 // |---..---|
 // |---x18--|
-// |---x9---|<---pd_first_callee_saved_reg
+// |---x9---|
 // |---x31--|
 // |---..---|
 // |---x28--|
@@ -214,8 +217,6 @@ void FrameMap::initialize() {
   map_register(i, x29); r29_opr = LIR_OprFact::single_cpu(i); i++;
   map_register(i, x30); r30_opr = LIR_OprFact::single_cpu(i); i++;
   map_register(i, x31); r31_opr = LIR_OprFact::single_cpu(i); i++;
-
-  // callee save register
   map_register(i, x9);  r9_opr  = LIR_OprFact::single_cpu(i); i++;
   map_register(i, x18); r18_opr = LIR_OprFact::single_cpu(i); i++;
   map_register(i, x19); r19_opr = LIR_OprFact::single_cpu(i); i++;
@@ -265,6 +266,15 @@ void FrameMap::initialize() {
   _caller_save_cpu_regs[i++]  = r29_opr;
   _caller_save_cpu_regs[i++]  = r30_opr;
   _caller_save_cpu_regs[i++]  = r31_opr;
+  _caller_save_cpu_regs[i++]  = r9_opr;
+  _caller_save_cpu_regs[i++]  = r18_opr;
+  _caller_save_cpu_regs[i++]  = r19_opr;
+  _caller_save_cpu_regs[i++]  = r20_opr;
+  _caller_save_cpu_regs[i++]  = r21_opr;
+  _caller_save_cpu_regs[i++]  = r22_opr;
+  _caller_save_cpu_regs[i++]  = r24_opr;
+  _caller_save_cpu_regs[i++]  = r25_opr;
+  _caller_save_cpu_regs[i++]  = r26_opr;
 
   _init_done = true;
 

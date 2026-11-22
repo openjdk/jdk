@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8325506
+ * @bug 8325506 8385968
  * @library /test/lib
  * @modules java.base/sun.security.util
  * @run main/othervm Deterministic
@@ -207,16 +207,19 @@ public class Deterministic {
 
     static KeyPair generateKeyPair(String alg, int offset) throws Exception {
         var g = KeyPairGenerator.getInstance(alg);
+        var random = new SeededSecureRandom(SEED + offset);
         var size = switch (g.getAlgorithm()) {
             case "RSA", "RSASSA-PSS", "DSA", "DiffieHellman" -> 1024;
             case "EC" -> 256;
             case "EdDSA", "Ed25519", "XDH", "X25519" -> 255;
             case "Ed448", "X448" -> 448;
             case "ML-KEM", "ML-KEM-768", "ML-KEM-512", "ML-KEM-1024",
-                 "ML-DSA", "ML-DSA-44", "ML-DSA-65", "ML-DSA-87" -> -1;
+                 "ML-DSA", "ML-DSA-44", "ML-DSA-65", "ML-DSA-87",
+                 "X25519MLKEM768", "SecP256r1MLKEM768",
+                 "SecP384r1MLKEM1024" -> -1;
             default -> throw new UnsupportedOperationException(alg);
         };
-        g.initialize(size, new SeededSecureRandom(SEED + offset));
+        g.initialize(size, random);
         return g.generateKeyPair();
     }
 

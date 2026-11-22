@@ -123,7 +123,7 @@ LoadFlattenedArrayStub::LoadFlattenedArrayStub(LIR_Opr array, LIR_Opr index, LIR
   _index = index;
   _result = result;
   // Tell the register allocator that the runtime call will scratch rax.
-  _scratch_reg = FrameMap::rax_oop_opr;
+  _stub_result_reg = FrameMap::rax_oop_opr;
   _info = new CodeEmitInfo(info);
 }
 
@@ -148,8 +148,6 @@ StoreFlattenedArrayStub::StoreFlattenedArrayStub(LIR_Opr array, LIR_Opr index, L
   _array = array;
   _index = index;
   _value = value;
-  // Tell the register allocator that the runtime call will scratch rax.
-  _scratch_reg = FrameMap::rax_oop_opr;
   _info = new CodeEmitInfo(info);
 }
 
@@ -173,7 +171,7 @@ SubstitutabilityCheckStub::SubstitutabilityCheckStub(LIR_Opr left, LIR_Opr right
   _left = left;
   _right = right;
   // Tell the register allocator that the runtime call will scratch rax.
-  _scratch_reg = FrameMap::rax_oop_opr;
+  _stub_result_reg = FrameMap::rax_oop_opr;
   _info = new CodeEmitInfo(info);
 }
 
@@ -272,7 +270,7 @@ void MonitorEnterStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
   if (_throw_ie_stub != nullptr) {
     // When we come here, _obj_reg has already been checked to be non-null.
-    const int is_value_mask = markWord::inline_type_pattern;
+    const int is_value_mask = markWord::value_type_pattern;
     Register mark = _scratch_reg->as_register();
     __ movptr(mark, Address(_obj_reg->as_register(), oopDesc::mark_offset_in_bytes()));
     __ andptr(mark, is_value_mask);

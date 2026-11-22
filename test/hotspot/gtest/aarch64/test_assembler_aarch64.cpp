@@ -568,7 +568,7 @@ struct GtestFriendToMacroAssembler {
                                       real_mode);
       masm.ret(lr);
 
-      masm.flush(); // icache invalidate
+      masm.invalidate_icache();
     }
 
     {
@@ -622,15 +622,20 @@ struct GtestFriendToMacroAssembler {
       build_and_run_encode_decode_klass((address)(right_n_bits(highest_xor_base_bit - lowest_xor_base_bit) << lowest_xor_base_bit),
           shift, MA::KlassDecodeXor);
 
-      // test movk-based
-      // Only bits in the third quadrant and not a valid immediate
-      build_and_run_encode_decode_klass((address)0x0000'A000'0000'0000ULL, 0, MA::KlassDecodeMovk);
-
       // test Fallback mode.
-      // base has low bits that intersect with nKlass, no other mode would work
-      build_and_run_encode_decode_klass((address)(0x5'0000'0000ULL + os::vm_page_size()),
+      // We take fallback mode if base has low bits that intersect with nKlass, and/or if it is not a
+      // valid logical immediate
+
+      // Not a logical immediate
+      build_and_run_encode_decode_klass((address)0x0000'A000'0000'0000ULL,
                                         shift, MA::KlassDecodeFallback);
-      build_and_run_encode_decode_klass((address)(0x5'0000'0000ULL - os::vm_page_size()),
+      build_and_run_encode_decode_klass((address)0x0000'0005'0000'0000ULL,
+                                        shift, MA::KlassDecodeFallback);
+
+      // Base spills into lower bits
+      build_and_run_encode_decode_klass((address)(0x2'0000'0000ULL + os::vm_page_size()),
+                                        shift, MA::KlassDecodeFallback);
+      build_and_run_encode_decode_klass((address)(0x2'0000'0000ULL - os::vm_page_size()),
                                         shift, MA::KlassDecodeFallback);
 
       // a base that has ones in all four quadrants to trigger the full movz+3*movk path
@@ -650,4 +655,147 @@ struct GtestFriendToMacroAssembler {
 TEST_VM(AssemblerAArch64, decode_encode_klass_not_null) {
   GtestFriendToMacroAssembler::test_decode_encode_klass();
 }
+TEST_VM(AssemblerAArch64, merge_simd_ldst) {
+  FlagSetting fs(AvoidUnalignedAccesses, false);
+  BufferBlob* b = BufferBlob::create("aarch64Test", 400);
+  CodeBuffer code(b);
+  MacroAssembler _masm(&code);
+
+  {
+    Label l;
+    __ ldrq(v0, Address(sp, 16));
+    __ ldrq(v1, Address(sp, 0));
+    __ nop();
+    __ strq(v0, Address(sp, 0));
+    __ strq(v1, Address(sp, 16));
+    __ nop();
+    __ ldrd(v0, Address(sp, 0));
+    __ ldrd(v1, Address(sp, 8));
+    __ nop();
+    __ strd(v0, Address(sp, 8));
+    __ strd(v1, Address(sp, 0));
+    __ nop();
+    __ ldrs(v0, Address(sp, 4));
+    __ ldrs(v1, Address(sp, 8));
+    __ nop();
+    __ strs(v1, Address(sp, 8));
+    __ strs(v0, Address(sp, 4));
+    __ nop();
+    __ ldr(v1, __ Q, Address(sp, 16));
+    __ ldr(v0, __ Q, Address(sp, 32));
+    __ nop();
+    __ str(v0, __ Q, Address(sp, 0));
+    __ str(v1, __ Q, Address(sp, 16));
+    __ nop();
+    __ ldr(v0, __ D, Address(sp, 0));
+    __ ldr(v1, __ D, Address(sp, 8));
+    __ nop();
+    __ str(v0, __ D, Address(sp, 8));
+    __ str(v1, __ D, Address(sp, 0));
+    __ nop();
+    __ ldr(v0, __ S, Address(sp, 4));
+    __ ldr(v1, __ S, Address(sp, 8));
+    __ nop();
+    __ str(v1, __ S, Address(sp, 8));
+    __ str(v0, __ S, Address(sp, 4));
+    __ nop();
+    // can not merge
+    __ strd(v0, Address(sp, 0));
+    __ bind(l);                     // block by label
+    __ strd(v1, Address(sp, 8));
+    __ nop();
+    __ ldrd(v0, Address(sp, 4));
+    __ ldrq(v1, Address(sp, 8));
+    __ nop();
+    __ ldrd(v0, Address(sp, 0));
+    __ ldrd(v0, Address(sp, 8));
+  }
+  asm_dump(code.insts()->start(), code.insts()->end());
+  static const unsigned int insns[] = {
+    0xad4003e1,        // ldp     q1, q0, [sp]
+    0xd503201f,        // nop
+    0xad0007e0,        // stp     q0, q1, [sp]
+    0xd503201f,        // nop
+    0x6d4007e0,        // ldp     d0, d1, [sp]
+    0xd503201f,        // nop
+    0x6d0003e1,        // stp     d1, d0, [sp]
+    0xd503201f,        // nop
+    0x2d4087e0,        // ldp     s0, s1, [sp, #4]
+    0xd503201f,        // nop
+    0x2d0087e0,        // stp     s0, s1, [sp, #4]
+    0xd503201f,        // nop
+    0xad4083e1,        // ldp     q1, q0, [sp, #16]
+    0xd503201f,        // nop
+    0xad0007e0,        // stp     q0, q1, [sp]
+    0xd503201f,        // nop
+    0x6d4007e0,        // ldp     d0, d1, [sp]
+    0xd503201f,        // nop
+    0x6d0003e1,        // stp     d1, d0, [sp]
+    0xd503201f,        // nop
+    0x2d4087e0,        // ldp     s0, s1, [sp, #4]
+    0xd503201f,        // nop
+    0x2d0087e0,        // stp     s0, s1, [sp, #4]
+    0xd503201f,        // nop
+    0xfd0003e0,        // str     d0, [sp]
+    0xfd0007e1,        // str     d1, [sp, #8]
+    0xd503201f,        // nop
+    0xfc4043e0,        // ldur    d0, [sp, #4]
+    0x3cc083e1,        // ldur    q1, [sp, #8]
+    0xd503201f,        // nop
+    0xfd4003e0,        // ldr     d0, [sp]
+    0xfd4007e0,        // ldr     d0, [sp, #8]
+  };
+  EXPECT_EQ(code.insts()->size(), (CodeSection::csize_t)(sizeof insns));
+  asm_check((const unsigned int *)code.insts()->start(), insns, sizeof insns / sizeof insns[0]);
+  BufferBlob::free(b);
+}
+
+TEST_VM(AssemblerAArch64, literal_register_load) {
+  ResourceMark rm;
+  BufferBlob* b = BufferBlob::create("aarch64Test", 400);
+  CodeBuffer code(b);
+  MacroAssembler _masm(&code);
+
+  {
+    __ ldrs(v2, InternalAddress(__ pc() + 8));
+    __ ldrq(v0, InternalAddress(__ pc() + 4));
+    __ ldrd(v1, InternalAddress(__ pc()));
+    __ nop();
+    __ ldr(v2, __ S, InternalAddress(__ pc() + 8));
+    __ ldr(v0, __ Q, InternalAddress(__ pc() + 4));
+    __ ldr(v1, __ D, InternalAddress(__ pc()));
+    __ nop();
+    __ ldrs(v2, r0);
+    __ ldrq(v0, r1);
+    __ ldrd(v1, r2);
+    __ nop();
+    __ ldr(v2, __ S, r0);
+    __ ldr(v0, __ Q, r1);
+    __ ldr(v1, __ D, r2);
+    __ nop();
+  }
+  asm_dump(code.insts()->start(), code.insts()->end());
+  static const unsigned int insns[] = {
+    0x1c000042,  // ldr     s2, <label>
+    0x9c000020,  // ldr     q0, <label>
+    0x5c000001,  // ldr     d1, <label>
+    0xd503201f,  // nop
+    0x1c000042,  // ldr     s2, <label>
+    0x9c000020,  // ldr     q0, <label>
+    0x5c000001,  // ldr     d1, <label>
+    0xd503201f,  // nop
+    0xbd400002,  // ldr     s2, [x0]
+    0x3dc00020,  // ldr     q0, [x1]
+    0xfd400041,  // ldr     d1, [x2]
+    0xd503201f,  // nop
+    0xbd400002,  // ldr     s2, [x0]
+    0x3dc00020,  // ldr     q0, [x1]
+    0xfd400041,  // ldr     d1, [x2]
+    0xd503201f,  // nop
+  };
+  EXPECT_EQ(code.insts()->size(), (CodeSection::csize_t)(sizeof insns));
+  asm_check((const unsigned int *)code.insts()->start(), insns, sizeof insns / sizeof insns[0]);
+  BufferBlob::free(b);
+}
+
 #endif  // AARCH64

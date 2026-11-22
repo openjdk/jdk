@@ -145,13 +145,11 @@ public:
     // If #2, then the symbol is dead (refcount==0)
     assert(value.is_permanent() || (value.refcount() == 1) || (value.refcount() == 0),
            "refcount %d", value.refcount());
-#if INCLUDE_CDS
     if (CDSConfig::is_dumping_static_archive()) {
       // We have allocated with AOTMetaspace::symbol_space_alloc(). No deallocation is needed.
       // Unreferenced Symbols will not be copied into the archive.
       return;
     }
-#endif
     if (value.refcount() == 1) {
       value.decrement_refcount();
       assert(value.refcount() == 0, "expected dead symbol");

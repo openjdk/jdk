@@ -213,6 +213,7 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
       WARNINGS_ENABLE_ADDITIONAL=""
       WARNINGS_ENABLE_ADDITIONAL_CXX=""
       WARNINGS_ENABLE_ADDITIONAL_JVM=""
+      WARNINGS_ENABLE_ADDITIONAL_JDK="-w34189"
       DISABLED_WARNINGS="4800 5105"
       CFLAGS_CONVERSION_WARNINGS=
       ;;
@@ -582,7 +583,7 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
 
     if test "x$OPENJDK_TARGET_OS" = xaix; then
       TOOLCHAIN_CFLAGS_JVM="$TOOLCHAIN_CFLAGS_JVM -ffunction-sections -ftls-model -fno-math-errno"
-      TOOLCHAIN_CFLAGS_JDK="-ffunction-sections -fsigned-char"
+      TOOLCHAIN_CFLAGS_JDK="-ffunction-sections"
     fi
 
     TOOLCHAIN_CFLAGS_JDK="$TOOLCHAIN_CFLAGS_JDK -fvisibility=hidden -fstack-protector"
@@ -623,8 +624,8 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
   ADLC_LANGSTD_CXXFLAGS="$LANGSTD_CXXFLAGS"
 
   # CFLAGS WARNINGS STUFF
-  WARNING_CFLAGS_JDK_CONLY="$WARNINGS_ENABLE_ALL"
-  WARNING_CFLAGS_JDK_CXXONLY="$WARNINGS_ENABLE_ALL_CXX"
+  WARNING_CFLAGS_JDK_CONLY="$WARNINGS_ENABLE_ALL $WARNINGS_ENABLE_ADDITIONAL_JDK"
+  WARNING_CFLAGS_JDK_CXXONLY="$WARNINGS_ENABLE_ALL_CXX $WARNINGS_ENABLE_ADDITIONAL_JDK"
   WARNING_CFLAGS_JVM="$WARNINGS_ENABLE_ALL_JVM"
 
   # Set some additional per-OS defines.
@@ -722,6 +723,12 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
       fi
     else
       AC_MSG_RESULT([no])
+    fi
+
+    if test "x$FLAGS_OS" = xlinux && test "x$FLAGS_CPU" = xriscv64; then
+      # SA needs asynchronous unwind tables to unwind native frames. They are
+      # not enabled by default on riscv64 before GCC 13 and Clang 17.
+      $1_CFLAGS_CPU="${$1_CFLAGS_CPU} -fasynchronous-unwind-tables"
     fi
   fi
 

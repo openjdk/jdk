@@ -47,6 +47,7 @@ import jdk.jpackage.test.ConfigurationTarget;
 import jdk.jpackage.test.Executor;
 import jdk.jpackage.test.HelloApp;
 import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.JPackageCommand.MessageCategory;
 import jdk.jpackage.test.JPackageOutputValidator;
 import jdk.jpackage.test.JPackageStringBundle;
 import jdk.jpackage.test.JavaAppDesc;
@@ -448,6 +449,7 @@ public final class BasicTest {
 
         if (TestTempType.TEMPDIR_NOT_EMPTY.equals(type)) {
             pkgTest.setExpectedExitCode(1).addInitializer(cmd -> {
+                cmd.enableMessageCategories(MessageCategory.ERRORS);
                 cmd.validateErr(JPackageCommand.makeError(
                         "error.parameter-not-empty-directory", cmd.getArgumentValue("--temp"), "--temp"));
             }).addBundleVerifier(cmd -> {

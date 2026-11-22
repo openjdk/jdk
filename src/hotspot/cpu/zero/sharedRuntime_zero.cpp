@@ -51,7 +51,7 @@ int SharedRuntime::java_return_convention(const BasicType *sig_bt,
   return 0;
 }
 
-BufferedInlineTypeBlob* SharedRuntime::generate_buffered_inline_type_adapter(const InlineKlass* vk) {
+BufferedValueTypeBlob* SharedRuntime::generate_buffered_value_type_adapter(const ValueKlass* vk) {
   Unimplemented();
   return nullptr;
 }
@@ -143,7 +143,7 @@ int SharedRuntime::vector_calling_convention(VMRegPair *regs,
 }
 
 // Call here from the interpreter or compiled code to store returned
-// values to a newly allocated inline type instance.
+// values to a newly allocated value type instance.
 RuntimeStub* SharedRuntime::generate_return_value_stub(address destination) {
   Unimplemented();
   return nullptr;

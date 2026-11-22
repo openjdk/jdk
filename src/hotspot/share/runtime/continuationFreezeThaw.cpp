@@ -37,15 +37,18 @@
 #include "interpreter/bytecodeStream.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
+#include "interpreter/oopMapCache.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/constantPool.inline.hpp"
 #include "oops/method.inline.hpp"
+#include "oops/methodData.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "oops/stackChunkOop.inline.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/continuation.hpp"
@@ -70,10 +73,14 @@
 #include "runtime/stackWatermarkSet.inline.hpp"
 #include "runtime/vframe.inline.hpp"
 #include "runtime/vframe_hp.hpp"
+#include "utilities/copy.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
+#if INCLUDE_SHENANDOAHGC
+#include "gc/shenandoah/shenandoahStackChunkGCData.inline.hpp"
+#endif
 #if INCLUDE_ZGC
 #include "gc/z/zStackChunkGCData.inline.hpp"
 #endif
@@ -1614,6 +1621,7 @@ stackChunkOop Freeze<ConfigT>::allocate_chunk(size_t stack_size, int argsize_md)
 #endif
 #if INCLUDE_SHENANDOAHGC
   if (UseShenandoahGC) {
+    ShenandoahStackChunkGCData::initialize(chunk);
     _barriers = chunk->requires_barriers();
   } else
 #endif
@@ -1710,6 +1718,68 @@ static void jvmti_mount_end(JavaThread* current, ContinuationWrapper& cont, fram
       current->set_contended_entered_monitor(nullptr);
     }
   JRT_BLOCK_END
+}
+
+static bool popframe_reexecutes_interpreted_caller(JavaThread* thread, const frame& f) {
+  if (!JvmtiExport::can_pop_frame() || !thread->popframe_forcing_deopt_reexecution()) {
+    return false;
+  }
+  if (!f.is_interpreted_frame()) {
+    assert(f.is_deoptimized_frame(), "popframe reexecution into a frozen compiled caller that was not deoptimized");
+    return false;
+  }
+  return true;
+}
+
+// Called after fix_thawed_frame in case we need to recover MemberName from local0.
+static void popframe_restore_args(JavaThread* thread, frame& f) {
+  // The expression stack already includes the callee arguments, since last_sp
+  // was saved after they were pushed.
+  int top_element = f.interpreter_frame_expression_stack_size() - 1;
+  // For a linkTo* call the trailing MemberName was consumed by the linker and
+  // is not among the preserved arguments. Take it from local 0 like the
+  // interpreter's popframe entry does.
+  Method* method = f.interpreter_frame_method();
+  address local0 = method->max_locals() > 0 ? (address)*f.interpreter_frame_local_at(0) : nullptr;
+  oop member_name = InterpreterRuntime::popframe_member_name_arg_or_null(local0, method, f.interpreter_frame_bcp());
+  int words = in_words(thread->popframe_preserved_args_size_in_words());
+#ifdef ASSERT
+  ResourceMark rm;
+  InterpreterOopMap mask;
+  f.interpreted_frame_oop_map(&mask);
+  assert(f.interpreter_frame_expression_stack_size() ==
+             mask.expression_stack_size() + words + (member_name != nullptr ? 1 : 0), "not enough room for arguments");
+#endif
+  if (words > 0) {
+    int first = top_element - (member_name != nullptr ? 1 : 0);
+    Copy::conjoint_jbytes(thread->popframe_preserved_args(), f.interpreter_frame_expression_stack_at(first), words * wordSize);
+    thread->popframe_free_preserved_args();
+  }
+  if (member_name != nullptr) {
+    *f.interpreter_frame_expression_stack_at(top_element) = cast_from_oop<intptr_t>(member_name);
+  }
+  if (ProfileInterpreter) {
+    // Call profiling moved the mdp past the invoke, set it back for the current bci
+    // like the interpreter's popframe entry does.
+    MethodData* mdo = method->method_data();
+    f.interpreter_frame_set_mdp(mdo != nullptr ? mdo->bci_to_dp(f.interpreter_frame_bci()) : nullptr);
+  }
+  thread->clear_popframe_condition();
+}
+
+// Check if the callee frame was popped by JVMTI PopFrame. If so, the interpreter's
+// popframe entry has preserved the arguments and set the deopt reexecution bit as for a
+// deoptimized caller. If the top frame is compiled, UpdateForPopTopFrameClosure already
+// marked it for deoptimization, so we just return and let the deoptimization code handle
+// the pop frame as usual. If the top frame is interpreted, we need to copy the arguments
+// back in the expression stack and patch the return address so that the invoke is reexecuted.
+static void popframe_reexecute_invoke(JavaThread* thread, frame& f) {
+  if (!popframe_reexecutes_interpreted_caller(thread, f)) {
+    return;
+  }
+  assert(Interpreter::cont_popframe_reexecute_entry() != nullptr, "PopFrame should have rejected this frame");
+  ContinuationHelper::Frame::patch_pc(f, Interpreter::cont_popframe_reexecute_entry());
+  popframe_restore_args(thread, f);
 }
 #endif // INCLUDE_JVMTI
 
@@ -2091,6 +2161,7 @@ protected:
   template<bool check_stub>
   int remove_top_compiled_frame_from_chunk(stackChunkOop chunk, int &argsize);
   int remove_scalarized_frames(StackChunkFrameStream<ChunkFrames::CompiledOnly>& scfs, int &argsize);
+  void check_top_for_deoptimization(stackChunkOop chunk);
   void copy_from_chunk(intptr_t* from, intptr_t* to, int size);
 
   void thaw_lockstack(stackChunkOop chunk);
@@ -2201,6 +2272,23 @@ public:
 inline void ThawBase::clear_chunk(stackChunkOop chunk) {
   chunk->set_sp(chunk->bottom());
   chunk->set_max_thawing_size(0);
+}
+
+void ThawBase::check_top_for_deoptimization(stackChunkOop chunk) {
+  StackChunkFrameStream<ChunkFrames::CompiledOnly> f(chunk);
+  if (f.is_stub()) {
+    f.next(SmallRegisterMap::instance_no_args(), true /* stop */);
+    assert(!f.is_done(), "");
+
+    f.get_cb();
+    assert(f.is_compiled(), "");
+    if (f.cb()->as_nmethod()->is_marked_for_deoptimization()) {
+      // The caller of the runtime stub when the continuation is preempted is not at a
+      // Java call instruction, and so cannot rely on nmethod patching for deopt.
+      log_develop_trace(continuations)("Deoptimizing runtime stub caller");
+      f.to_frame().deoptimize(nullptr); // the null thread simply avoids the assertion in deoptimize which we're not set up for
+    }
+  }
 }
 
 int ThawBase::remove_scalarized_frames(StackChunkFrameStream<ChunkFrames::CompiledOnly>& f, int &argsize) {
@@ -2340,6 +2428,9 @@ NOINLINE intptr_t* Thaw<ConfigT>::thaw_fast(stackChunkOop chunk) {
   if (LIKELY(!ForceSingleFrameThaw && (full_chunk_size < threshold))) {
     prefetch_chunk_pd(chunk->start_address(), full_chunk_size); // prefetch anticipating memcpy starting at highest address
 
+    if (check_stub) {
+      check_top_for_deoptimization(chunk);
+    }
     partial = false;
     argsize = chunk->argsize(); // must be called *before* clearing the chunk
     clear_chunk(chunk);
@@ -2434,7 +2525,9 @@ NOINLINE intptr_t* Thaw<ConfigT>::thaw_slow(stackChunkOop chunk, Continuation::t
         log_develop_trace(continuations, preempt)("Failed to acquire monitor, unmounting again");
         return push_cleanup_continuation();
       }
-      chunk = _cont.tail();  // reload oop in case of safepoint in resume_operation (if posting JVMTI events).
+      // Reload oop and _barriers in case of safepoint in resume_operation (if posting JVMTI events)
+      chunk = _cont.tail();
+      _barriers = chunk->requires_barriers();
       JVMTI_ONLY(assert(_thread->contended_entered_monitor() == nullptr || _thread->contended_entered_monitor() == mon, ""));
     } else {
       // Preemption cancelled on moniterenter or ObjectLocker case. We
@@ -2445,8 +2538,10 @@ NOINLINE intptr_t* Thaw<ConfigT>::thaw_slow(stackChunkOop chunk, Continuation::t
       preempt_kind = Continuation::monitorenter;
     }
 
-    // Call this first to avoid racing with GC threads later when modifying the chunk flags.
-    relativize_chunk_concurrently(chunk);
+    if (_barriers) {
+      // Call this first to avoid racing with GC threads later when modifying the chunk flags.
+      relativize_chunk_concurrently(chunk);
+    }
 
     if (chunk->at_klass_init()) {
       preempt_kind = Continuation::object_locker;
@@ -2461,7 +2556,7 @@ NOINLINE intptr_t* Thaw<ConfigT>::thaw_slow(stackChunkOop chunk, Continuation::t
     }
     chunk->set_preempted(false);
     retry_fast_path = true;
-  } else {
+  } else if (_barriers) {
     relativize_chunk_concurrently(chunk);
   }
 
@@ -2633,14 +2728,14 @@ inline void ThawBase::patch(frame& f, const frame& caller, bool bottom) {
   if (bottom) {
     ContinuationHelper::Frame::patch_pc(caller, _cont.is_empty() ? caller.pc()
                                                                  : StubRoutines::cont_returnBarrier());
-  } else if (_should_patch_caller_pc || caller.is_compiled_frame()) {
+  } else if (_should_patch_caller_pc) {
     // Caller was deoptimized during thaw but we've overwritten the return address when copying f from the heap.
     // Also, on some platforms, if the caller is interpreted but the callee not we also need to patch.
 
 #if defined(PPC64) || defined(S390)
-    assert(!_should_patch_caller_pc || caller.is_deoptimized_frame() || caller.is_interpreted_frame(), "");
+    assert(caller.is_deoptimized_frame() || caller.is_interpreted_frame(), "");
 #else
-    assert(!_should_patch_caller_pc || caller.is_deoptimized_frame(), "");
+    assert(caller.is_deoptimized_frame(), "");
 #endif
 
     ContinuationHelper::Frame::patch_pc(caller, caller.raw_pc());
@@ -3079,6 +3174,7 @@ void ThawBase::finish_thaw(frame& f) {
   } else {
     chunk->fix_thawed_frame(f, SmallRegisterMap::instance_no_args());
   }
+  JVMTI_ONLY(popframe_reexecute_invoke(_thread, f);)
 
   assert(_cont.is_empty() == _cont.last_frame().is_empty(), "");
 

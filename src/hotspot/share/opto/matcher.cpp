@@ -31,6 +31,7 @@
 #include "opto/addnode.hpp"
 #include "opto/callnode.hpp"
 #include "opto/idealGraphPrinter.hpp"
+#include "opto/machnode.hpp"
 #include "opto/matcher.hpp"
 #include "opto/memnode.hpp"
 #include "opto/movenode.hpp"
@@ -65,8 +66,6 @@ Matcher::Matcher()
   _dontcare(&_states_arena),
   _reduceOp(reduceOp), _leftOp(leftOp), _rightOp(rightOp),
   _swallowed(swallowed),
-  _begin_inst_chain_rule(_BEGIN_INST_CHAIN_RULE),
-  _end_inst_chain_rule(_END_INST_CHAIN_RULE),
   _must_clone(must_clone),
   _shared_nodes(C->comp_arena()),
 #ifndef PRODUCT
@@ -75,7 +74,6 @@ Matcher::Matcher()
   _reused(C->comp_arena()),
 #endif // !PRODUCT
   _allocation_started(false),
-  _ruleName(ruleName),
   _register_save_policy(register_save_policy),
   _c_reg_save_policy(c_reg_save_policy),
   _register_save_type(register_save_type),
@@ -142,11 +140,11 @@ OptoReg::Name Compile::compute_old_SP() {
 void Matcher::verify_new_nodes_only(Node* xroot) {
   // Make sure that the new graph only references new nodes
   ResourceMark rm;
-  Unique_Node_List worklist;
+  Unique_Node_List<const Node> worklist;
   VectorSet visited;
   worklist.push(xroot);
   while (worklist.size() > 0) {
-    Node* n = worklist.pop();
+    const Node* n = worklist.pop();
     if (visited.test_set(n->_idx)) {
       continue;
     }
@@ -166,7 +164,7 @@ void Matcher::verify_new_nodes_only(Node* xroot) {
 }
 #endif
 
-// Array of RegMask, one per returned values (inline type instances can
+// Array of RegMask, one per returned values (value type instances can
 // be returned as multiple return values, one per field)
 RegMask* Matcher::return_values_mask(const TypeFunc* tf) const {
   const TypeTuple* range = tf->range_cc();
@@ -223,6 +221,12 @@ void Matcher::match( ) {
   if (C->failing()) {
     return;
   }
+
+  // Compute the old incoming SP (may be called FP) as
+  //   OptoReg::stack0() + locks + in_preserve_stack_slots + pad2.
+  _old_SP = C->compute_old_SP();
+  assert( is_even(_old_SP), "must be even" );
+
   assert(_return_addr_mask.is_empty(),
          "return address mask must be empty initially");
   _return_addr_mask.insert(return_addr());
@@ -284,11 +288,6 @@ void Matcher::match( ) {
 #endif
 
   // Do some initial frame layout.
-
-  // Compute the old incoming SP (may be called FP) as
-  //   OptoReg::stack0() + locks + in_preserve_stack_slots + pad2.
-  _old_SP = C->compute_old_SP();
-  assert( is_even(_old_SP), "must be even" );
 
   // Compute highest incoming stack argument as
   //   _old_SP + out_preserve_stack_slots + incoming argument size.
@@ -399,7 +398,7 @@ void Matcher::match( ) {
       // in find_base_for_derived().
       assert(_mach_null != nullptr || C->failure_is_artificial(), ""); // bailouts are handled below.
 
-      C->set_root(xroot->is_Root() ? xroot->as_Root() : nullptr);
+      C->set_root(xroot->isa_Root());
 
 #ifdef ASSERT
       verify_new_nodes_only(xroot);
@@ -966,15 +965,15 @@ void Matcher::init_spill_mask( Node *ret ) {
 #ifdef ASSERT
 static void match_alias_type(Compile* C, Node* n, Node* m) {
   if (!VerifyAliases)  return;  // do not go looking for trouble by default
-  const TypePtr* nat = n->adr_type();
-  const TypePtr* mat = m->adr_type();
+  const TypePtr* nat = n->out_adr_type();
+  const TypePtr* mat = m->out_adr_type();
   int nidx = C->get_alias_index(nat);
   int midx = C->get_alias_index(mat);
   // Detune the assert for cases like (AndI 0xFF (LoadB p)).
   if (nidx == Compile::AliasIdxTop && midx >= Compile::AliasIdxRaw) {
     for (uint i = 1; i < n->req(); i++) {
       Node* n1 = n->in(i);
-      const TypePtr* n1at = n1->adr_type();
+      const TypePtr* n1at = n1->out_adr_type();
       if (n1at != nullptr) {
         nat = n1at;
         nidx = C->get_alias_index(n1at);
@@ -1072,11 +1071,8 @@ Node *Matcher::xform( Node *n, int max_stack ) {
             m = n->is_SafePoint() ? match_sfpt(n->as_SafePoint()):match_tree(n);
             if (C->failing())  return nullptr;
             if (m == nullptr) { Matcher::soft_match_failure(); return nullptr; }
-            if (n->is_MemBar()) {
-              m->as_MachMemBar()->set_adr_type(n->adr_type());
-            }
           } else {                  // Nothing the matcher cares about
-            if (n->is_Proj() && n->in(0) != nullptr && n->in(0)->is_Multi()) {       // Projections?
+            if (n->is_Proj() && Node::is<MultiNode>(n->in(0))) {       // Projections?
               if (n->in(0)->is_Initialize() && n->as_Proj()->_con == TypeFunc::Memory) {
                 // Initialize may have multiple NarrowMem projections. They would all match to identical raw mem MachProjs.
                 // We don't need multiple MachProjs. Create one if none already exist, otherwise use existing one.
@@ -1215,15 +1211,45 @@ OptoReg::Name Matcher::warp_outgoing_stk_arg( VMReg reg, OptoReg::Name begin_out
 // Helper function to match call instructions.  Calls match special.
 // They match alone with no children.  Their children, the incoming
 // arguments, match normally.
-MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
-  MachSafePointNode *msfpt = nullptr;
-  MachCallNode      *mcall = nullptr;
+MachNode* Matcher::match_sfpt(SafePointNode* sfpt) {
+  MachSafePointNode* msfpt = nullptr;
+  MachCallNode*      mcall = nullptr;
+  JVMState*          sfpt_jvms = nullptr;
   uint               cnt;
   // Split out case for SafePoint vs Call
-  CallNode *call;
-  const TypeTuple *domain;
+  CallNode* call = nullptr;
+  const TypeTuple* domain = nullptr;
   ciMethod*        method = nullptr;
-  if( sfpt->is_Call() ) {
+  if (Matcher::use_mach_uncommon_trap_node &&
+      !PreferCallBasedUncommonTraps &&
+      sfpt->is_CallStaticJava() &&
+      sfpt->as_CallStaticJava()->is_uncommon_trap()) {
+    const address entry_point = OptoRuntime::uncommon_trap_blob()->entry_point();
+    const CallStaticJavaNode* static_java_call = sfpt->as_CallStaticJava();
+    const int trap_request = static_java_call->uncommon_trap_request();
+
+    assert(trap_request != 0, "malformed uncommon trap");
+    assert(static_java_call->tf() == OptoRuntime::uncommon_trap_Type(), "unexpected uncommon trap call shape");
+    assert(static_java_call->entry_point() == entry_point, "unexpected uncommon trap entry point");
+    assert(static_java_call->jvms() != nullptr, "no map back into the interpreter state");
+    assert(static_java_call->req() > TypeFunc::Parms, "does not have the trap request input");
+    assert(static_java_call->in(TypeFunc::Parms) != nullptr, "missing trap request input edge");
+
+    MachUncommonTrapNode* mn = new MachUncommonTrapNode(trap_request);
+    for (uint i = 0; i < static_java_call->req(); i++) {
+      if (i == TypeFunc::Parms) {
+        // Remove the trap request input edge.
+        assert(static_java_call->in(i)->bottom_type()->is_int() &&
+               static_java_call->in(i)->bottom_type()->as_int()->is_con(), "incorrect trap request input");
+      } else {
+        mn->add_req(static_java_call->in(i));
+      }
+    }
+    msfpt = mn->as_MachSafePoint();
+    sfpt_jvms = sfpt->jvms()->clone_deep(C);
+    sfpt_jvms->adapt_position(-1);
+    cnt = TypeFunc::Parms;
+  } else if (sfpt->is_Call()) {
     call = sfpt->as_Call();
     domain = call->tf()->domain_cc();
     cnt = domain->cnt();
@@ -1260,23 +1286,19 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
     else if( mcall->is_MachCallRuntime() ) {
       MachCallRuntimeNode* mach_call_rt = mcall->as_MachCallRuntime();
       mach_call_rt->_name = call->as_CallRuntime()->_name;
-      mach_call_rt->_leaf_no_fp = call->is_CallLeafNoFP();
     }
     msfpt = mcall;
+    sfpt_jvms = sfpt->jvms();
   }
   // This is a non-call safepoint
   else {
-    call = nullptr;
-    domain = nullptr;
     MachNode *mn = match_tree(sfpt);
     if (C->failing())  return nullptr;
     msfpt = mn->as_MachSafePoint();
+    sfpt_jvms = sfpt->jvms();
     cnt = TypeFunc::Parms;
   }
   msfpt->_has_ea_local_in_scope = sfpt->has_ea_local_in_scope();
-
-  // Advertise the correct memory effects (for anti-dependence computation).
-  msfpt->set_adr_type(sfpt->adr_type());
 
   // Allocate a private array of RegMasks.  These RegMasks are not shared.
   msfpt->_in_rms = NEW_RESOURCE_ARRAY( RegMask, cnt );
@@ -1296,7 +1318,7 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
   OptoReg::Name out_arg_limit_per_call = begin_out_arg_area;
   // Calls to C may hammer extra stack slots above and beyond any arguments.
   // These are usually backing store for register arguments for varargs.
-  if( call != nullptr && call->is_CallRuntime() )
+  if (Node::is<CallRuntimeNode>(call))
     out_arg_limit_per_call = OptoReg::add(out_arg_limit_per_call,C->varargs_C_out_slots_killed());
 
 
@@ -1359,7 +1381,7 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
         continue;               // Avoid Halves
       }
       // Handle case where arguments are in vector registers.
-      if(call->in(TypeFunc::Parms + i)->bottom_type()->isa_vect()) {
+      if (call->in(TypeFunc::Parms + i)->bottom_type()->is_vect()) {
         OptoReg::Name reg_fst = OptoReg::as_OptoReg(first);
         OptoReg::Name reg_snd = OptoReg::as_OptoReg(second);
         assert (reg_fst <= reg_snd, "fst=%d snd=%d", reg_fst, reg_snd);
@@ -1403,7 +1425,7 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
   }
   // Transfer the safepoint information from the call to the mcall
   // Move the JVMState list
-  msfpt->set_jvms(sfpt->jvms());
+  msfpt->set_jvms(sfpt_jvms);
   for (JVMState* jvms = msfpt->jvms(); jvms; jvms = jvms->caller()) {
     jvms->set_map(sfpt);
   }
@@ -1779,26 +1801,26 @@ MachNode *Matcher::ReduceInst( State *s, int rule, Node *&mem ) {
         m = leaf;
       } else {
         m = _mem_node;
-        assert(m != nullptr && m->is_Mem(), "expecting memory node");
+        assert(Node::is<MemNode>(m), "expecting memory node");
       }
-      const Type* mach_at = mach->adr_type();
+      const TypePtr* mach_at = mach->in_adr_type();
       // DecodeN node consumed by an address may have different type
       // than its input. Don't compare types for such case.
-      if (m->adr_type() != mach_at &&
+      if (m->in_adr_type() != mach_at &&
           (m->in(MemNode::Address)->is_DecodeNarrowPtr() ||
            (m->in(MemNode::Address)->is_AddP() &&
             m->in(MemNode::Address)->in(AddPNode::Address)->is_DecodeNarrowPtr()) ||
            (m->in(MemNode::Address)->is_AddP() &&
             m->in(MemNode::Address)->in(AddPNode::Address)->is_AddP() &&
             m->in(MemNode::Address)->in(AddPNode::Address)->in(AddPNode::Address)->is_DecodeNarrowPtr()))) {
-        mach_at = m->adr_type();
+        mach_at = m->in_adr_type();
       }
-      if (m->adr_type() != mach_at) {
+      if (m->in_adr_type() != mach_at) {
         m->dump();
         tty->print_cr("mach:");
         mach->dump(1);
       }
-      assert(m->adr_type() == mach_at, "matcher should not change adr type");
+      assert(m->in_adr_type() == mach_at, "matcher should not change adr type");
     }
 #endif
   }
@@ -1853,6 +1875,27 @@ void Matcher::handle_precedence_edges(Node* n, MachNode *mach) {
   }
 }
 
+void Matcher::combine_adr_type(const Node* n, MachNode* mach) const {
+  if (mach->_out_adr_type == TYPE_PTR_SENTINAL) {
+    assert(mach->_in_adr_type == TYPE_PTR_SENTINAL, "must initialize at the same time");
+    mach->_out_adr_type = nullptr;
+    mach->_in_adr_type = nullptr;
+  }
+
+  // Merge the adr_type of all nodes in the subtree into the adr_type of 'mach'
+  if (const TypePtr* leaf_out_adr_type = n->out_adr_type(); leaf_out_adr_type != nullptr) {
+    // Only support a single out_adr_type, there must not be multiple memory-producing nodes
+    assert(mach->_out_adr_type == nullptr, "must only have a single memory-producing node");
+    mach->_out_adr_type = leaf_out_adr_type;
+  }
+  if (const TypePtr* leaf_in_adr_type = n->in_adr_type(); leaf_in_adr_type != nullptr) {
+    // Only support a single in_adr_type, even if there are multiple nodes that consume memory,
+    // they must consume the same memory
+    assert(mach->_in_adr_type == nullptr || mach->_in_adr_type == leaf_in_adr_type, "inconsistent in_adr_type in a subtree");
+    mach->_in_adr_type = leaf_in_adr_type;
+  }
+}
+
 void Matcher::ReduceInst_Chain_Rule(State* s, int rule, Node* &mem, MachNode* mach) {
   // 'op' is what I am expecting to receive
   int op = _leftOp[rule];
@@ -1887,6 +1930,7 @@ void Matcher::ReduceInst_Chain_Rule(State* s, int rule, Node* &mem, MachNode* ma
 
 uint Matcher::ReduceInst_Interior( State *s, int rule, Node *&mem, MachNode *mach, uint num_opnds ) {
   handle_precedence_edges(s->_leaf, mach);
+  combine_adr_type(s->_leaf, mach);
 
   if( s->_leaf->is_Load() ) {
     Node *mem2 = s->_leaf->in(MemNode::Memory);
@@ -1972,6 +2016,7 @@ void Matcher::ReduceOper( State *s, int rule, Node *&mem, MachNode *mach ) {
   }
 
   handle_precedence_edges(s->_leaf, mach);
+  combine_adr_type(s->_leaf, mach);
 
   if( s->_leaf->in(0) && s->_leaf->req() > 1) {
     if( !mach->in(0) )
@@ -2143,10 +2188,7 @@ void Matcher::find_shared(Node* n) {
 
       // Now hack a few special opcodes
       uint opcode = n->Opcode();
-      bool gc_handled = BarrierSet::barrier_set()->barrier_set_c2()->matcher_find_shared_post_visit(this, n, opcode);
-      if (!gc_handled) {
-        find_shared_post_visit(n, opcode);
-      }
+      find_shared_post_visit(n, opcode);
     }
     else {
       ShouldNotReachHere();
@@ -2228,22 +2270,6 @@ bool Matcher::find_shared_visit(MStack& mstack, Node* n, uint opcode, bool& mem_
     case Op_VectorLoadMask:
       set_shared(n); // Force result into register (it will be anyways)
       break;
-    case Op_ConP: {  // Convert pointers above the centerline to NUL
-      TypeNode *tn = n->as_Type(); // Constants derive from type nodes
-      const TypePtr* tp = tn->type()->is_ptr();
-      if (tp->_ptr == TypePtr::AnyNull) {
-        tn->set_type(TypePtr::NULL_PTR);
-      }
-      break;
-    }
-    case Op_ConN: {  // Convert narrow pointers above the centerline to NUL
-      TypeNode *tn = n->as_Type(); // Constants derive from type nodes
-      const TypePtr* tp = tn->type()->make_ptr();
-      if (tp && tp->_ptr == TypePtr::AnyNull) {
-        tn->set_type(TypeNarrowOop::NULL_PTR);
-      }
-      break;
-    }
     case Op_Binary:         // These are introduced in the Post_Visit state.
       ShouldNotReachHere();
       break;
@@ -2428,6 +2454,7 @@ void Matcher::find_shared_post_visit(Node* n, uint opcode) {
       n->del_req(3);
       break;
     }
+    case Op_VectorSlice:
     case Op_VectorBlend:
     case Op_VectorInsert:
     case Op_VectorBitwiseBlend: {
@@ -2468,11 +2495,13 @@ void Matcher::find_shared_post_visit(Node* n, uint opcode) {
       break;
     }
     case Op_StoreLSpecial: {
-      if (n->req() > (MemNode::ValueIn + 1) && n->in(MemNode::ValueIn + 1) != nullptr) {
-        Node* pair = new BinaryNode(n->in(MemNode::ValueIn), n->in(MemNode::ValueIn + 1));
+      if (!n->in(StoreLSpecialNode::OopOffset)->is_top()) {
+        Node* pair = new BinaryNode(n->in(MemNode::ValueIn), n->in(StoreLSpecialNode::OopOffset));
         n->set_req(MemNode::ValueIn, pair);
-        n->del_req(MemNode::ValueIn + 1);
       }
+      n->del_req(StoreLSpecialNode::SecondOop);
+      n->del_req(StoreLSpecialNode::FirstOop);
+      n->del_req(StoreLSpecialNode::OopOffset);
       break;
     }
     default:
@@ -2534,7 +2563,7 @@ void Matcher::collect_null_checks( Node *proj, Node *orig_proj ) {
         _null_check_tests.push(proj);
         Node* val = cmp->in(1);
 #ifdef _LP64
-        if (val->bottom_type()->isa_narrowoop() &&
+        if (val->bottom_type()->is_narrowoop() &&
             !Matcher::narrow_oop_use_complex_address()) {
           //
           // Look for DecodeN node which should be pinned to orig_proj.
@@ -2630,19 +2659,19 @@ const RegMask* Matcher::regmask_for_ideal_register(uint ideal_reg, Node* ret) {
 
   Node* spill;
   switch (ideal_reg) {
-    case Op_RegN: spill = new LoadNNode(nullptr, mem, fp, atp, t->is_narrowoop(), mo); break;
-    case Op_RegI: spill = new LoadINode(nullptr, mem, fp, atp, t->is_int(),       mo); break;
-    case Op_RegP: spill = new LoadPNode(nullptr, mem, fp, atp, t->is_ptr(),       mo); break;
+    case Op_RegN: spill = new LoadNNode(nullptr, mem, fp, atp, t->as_narrowoop(), mo); break;
+    case Op_RegI: spill = new LoadINode(nullptr, mem, fp, atp, t->as_int(),       mo); break;
+    case Op_RegP: spill = new LoadPNode(nullptr, mem, fp, atp, t->as_ptr(),       mo); break;
     case Op_RegF: spill = new LoadFNode(nullptr, mem, fp, atp, t,                 mo); break;
     case Op_RegD: spill = new LoadDNode(nullptr, mem, fp, atp, t,                 mo); break;
-    case Op_RegL: spill = new LoadLNode(nullptr, mem, fp, atp, t->is_long(),      mo); break;
+    case Op_RegL: spill = new LoadLNode(nullptr, mem, fp, atp, t->as_long(),      mo); break;
 
     case Op_VecA: // fall-through
     case Op_VecS: // fall-through
     case Op_VecD: // fall-through
     case Op_VecX: // fall-through
     case Op_VecY: // fall-through
-    case Op_VecZ: spill = new LoadVectorNode(nullptr, mem, fp, atp, t->is_vect()); break;
+    case Op_VecZ: spill = new LoadVectorNode(nullptr, mem, fp, atp, t->as_vect()); break;
     case Op_RegVectMask: return Matcher::predicate_reg_mask();
 
     default: ShouldNotReachHere();
@@ -2653,7 +2682,7 @@ const RegMask* Matcher::regmask_for_ideal_register(uint ideal_reg, Node* ret) {
     return nullptr;
   }
   // Handle generic vector operand case
-  if (Matcher::supports_generic_vector_operands && t->isa_vect()) {
+  if (Matcher::supports_generic_vector_operands && t->is_vect()) {
     specialize_mach_node(mspill);
   }
   return &mspill->out_RegMask();
@@ -2701,7 +2730,7 @@ MachOper* Matcher::specialize_vector_operand(MachNode* m, uint opnd_idx) {
       }
     }
   }
-  assert(def->bottom_type()->isa_vect(), "not a vector");
+  assert(def->bottom_type()->is_vect(), "not a vector");
   uint ideal_vreg = def->bottom_type()->ideal_reg();
   return Matcher::pd_specialize_generic_vector_operand(m->_opnds[opnd_idx], ideal_vreg, false /*is_temp*/);
 }
@@ -2724,7 +2753,7 @@ void Matcher::specialize_generic_vector_operands() {
 
   // Replace generic vector operands (vec/legVec) with concrete ones (vec[SDXYZ]/legVec[SDXYZ])
   // and remove reg-to-reg vector moves (MoveVec2Leg and MoveLeg2Vec).
-  Unique_Node_List live_nodes;
+  Unique_Node_List<Node> live_nodes;
   C->identify_useful_nodes(live_nodes);
 
   while (live_nodes.size() > 0) {
@@ -2745,36 +2774,36 @@ void Matcher::specialize_generic_vector_operands() {
 }
 
 uint Matcher::vector_length(const Node* n) {
-  const TypeVect* vt = n->bottom_type()->is_vect();
+  const TypeVect* vt = n->bottom_type()->as_vect();
   return vt->length();
 }
 
 uint Matcher::vector_length(const MachNode* use, const MachOper* opnd) {
   int def_idx = use->operand_index(opnd);
   Node* def = use->in(def_idx);
-  return def->bottom_type()->is_vect()->length();
+  return def->bottom_type()->as_vect()->length();
 }
 
 uint Matcher::vector_length_in_bytes(const Node* n) {
-  const TypeVect* vt = n->bottom_type()->is_vect();
+  const TypeVect* vt = n->bottom_type()->as_vect();
   return vt->length_in_bytes();
 }
 
 uint Matcher::vector_length_in_bytes(const MachNode* use, const MachOper* opnd) {
   uint def_idx = use->operand_index(opnd);
   Node* def = use->in(def_idx);
-  return def->bottom_type()->is_vect()->length_in_bytes();
+  return def->bottom_type()->as_vect()->length_in_bytes();
 }
 
 BasicType Matcher::vector_element_basic_type(const Node* n) {
-  const TypeVect* vt = n->bottom_type()->is_vect();
+  const TypeVect* vt = n->bottom_type()->as_vect();
   return vt->element_basic_type();
 }
 
 BasicType Matcher::vector_element_basic_type(const MachNode* use, const MachOper* opnd) {
   int def_idx = use->operand_index(opnd);
   Node* def = use->in(def_idx);
-  return def->bottom_type()->is_vect()->element_basic_type();
+  return def->bottom_type()->as_vect()->element_basic_type();
 }
 
 bool Matcher::is_non_long_integral_vector(const Node* n) {
@@ -2784,10 +2813,8 @@ bool Matcher::is_non_long_integral_vector(const Node* n) {
 }
 
 bool Matcher::is_encode_and_store_pattern(const Node* n, const Node* m) {
-  if (n == nullptr ||
-      m == nullptr ||
-      n->Opcode() != Op_StoreN ||
-      !m->is_EncodeP() ||
+  if (!Node::is_exact<Op_StoreN>(n)   ||
+      !Node::is<EncodePNode>(m) ||
       n->as_Store()->barrier_data() == 0) {
     return false;
   }
@@ -2799,7 +2826,7 @@ bool Matcher::is_encode_and_store_pattern(const Node* n, const Node* m) {
 bool Matcher::verify_after_postselect_cleanup() {
   assert(!C->failing_internal() || C->failure_is_artificial(), "sanity");
   if (supports_generic_vector_operands) {
-    Unique_Node_List useful;
+    Unique_Node_List<Node> useful;
     C->identify_useful_nodes(useful);
     for (uint i = 0; i < useful.size(); i++) {
       MachNode* m = useful.at(i)->isa_Mach();
@@ -2867,8 +2894,7 @@ bool Matcher::post_store_load_barrier(const Node* vmb) {
         xop == Op_CompareAndSwapL ||
         xop == Op_CompareAndSwapP ||
         xop == Op_CompareAndSwapN ||
-        xop == Op_CompareAndSwapI ||
-        BarrierSet::barrier_set()->barrier_set_c2()->matcher_is_store_load_barrier(x, xop)) {
+        xop == Op_CompareAndSwapI) {
       return true;
     }
 
@@ -2937,8 +2963,8 @@ bool Matcher::branches_to_uncommon_trap(const Node *n) {
     if (call &&
         call->entry_point() == OptoRuntime::uncommon_trap_blob()->entry_point()) {
       const Type* trtype = call->in(TypeFunc::Parms)->bottom_type();
-      if (trtype->isa_int() && trtype->is_int()->is_con()) {
-        jint tr_con = trtype->is_int()->get_con();
+      if (trtype->is_int() && trtype->as_int()->is_con()) {
+        jint tr_con = trtype->as_int()->get_con();
         Deoptimization::DeoptReason reason = Deoptimization::trap_request_reason(tr_con);
         Deoptimization::DeoptAction action = Deoptimization::trap_request_action(tr_con);
         assert((int)reason < (int)BitsPerInt, "recode bit map");

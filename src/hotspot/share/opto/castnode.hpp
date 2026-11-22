@@ -195,7 +195,7 @@ protected:
 
 private:
   virtual Node* pin_node_under_control_impl() const;
-  Node* ideal_cast_of_inline_type_node(PhaseGVN* phase);
+  Node* ideal_cast_of_value_type_node(PhaseGVN* phase);
 };
 
 //------------------------------CastIINode-------------------------------------
@@ -334,7 +334,7 @@ class CheckCastPPNode: public ConstraintCastNode {
   virtual uint  ideal_reg() const { return Op_RegP; }
 
 private:
-  virtual bool depends_only_on_test_impl() const { return !type()->isa_rawptr() && ConstraintCastNode::depends_only_on_test_impl(); }
+  virtual bool depends_only_on_test_impl() const { return !type()->is_rawptr() && ConstraintCastNode::depends_only_on_test_impl(); }
   virtual Node* pin_node_under_control_impl() const;
 };
 

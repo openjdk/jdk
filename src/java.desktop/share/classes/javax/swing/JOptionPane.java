@@ -1519,8 +1519,11 @@ public class JOptionPane extends JComponent implements Accessible
                     "not have a valid parent");
         }
 
-        // Option dialogs should be closable only
-        final JInternalFrame  iFrame = new JInternalFrame(title, false, true,
+        // Option dialogs should not be resizable, closable,
+        // maximizable and iconifiable
+        // and internal option dialogs are closed via a UI action,
+        // not by a close button on the dialog title bar.
+        final JInternalFrame  iFrame = new JInternalFrame(title, false, false,
                                                            false, false);
 
         iFrame.putClientProperty("JInternalFrame.frameType", "optionDialog");

@@ -148,9 +148,7 @@ size_t PSAdaptiveSizePolicy::compute_desired_eden_size(bool is_survivor_overflow
   return cur_eden;
 }
 
-size_t PSAdaptiveSizePolicy::compute_desired_survivor_size(
-  size_t current_survivor_size,
-  size_t max_gen_size) {
+size_t PSAdaptiveSizePolicy::compute_desired_survivor_size(size_t current_survivor_size, size_t max_gen_size) {
   size_t desired_survivor_size = survived_bytes_estimate();
 
   if (desired_survivor_size >= current_survivor_size) {
@@ -295,9 +293,18 @@ void PSAdaptiveSizePolicy::update_averages(bool is_survivor_overflow,
     _survived_bytes.add(survived + promoted);
   }
 
-  avg_promoted()->sample(promoted);
+  sample_promoted_bytes(promoted);
   _promoted_bytes.add(promoted);
 
   double promotion_rate = promoted / (_gc_distance_seconds_seq.last() + _trimmed_minor_gc_time_seconds.last());
   _promotion_rate_bytes_per_sec.add(promotion_rate);
+}
+
+void PSAdaptiveSizePolicy::sample_promoted_bytes(size_t promoted) {
+  avg_promoted()->sample(promoted);
+}
+
+void PSAdaptiveSizePolicy::sample_promoted_bytes_permit_zero(size_t promoted) {
+  // avg_promoted() is AdaptivePaddedNoZeroDevAverage*
+  avg_promoted()->AdaptivePaddedAverage::sample(promoted);
 }

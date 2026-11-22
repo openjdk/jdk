@@ -40,22 +40,24 @@
 import java.io.*;
 import java.net.*;
 import java.security.Security;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import javax.net.ssl.*;
 
 public class InvalidateServerSessionRenegotiate implements
         HandshakeCompletedListener {
 
-    static byte handshakesCompleted = 0;
+    final CountDownLatch handshakeLatch = new CountDownLatch(2);
 
     /*
      * Define what happens when handshaking is completed
      */
     public void handshakeCompleted(HandshakeCompletedEvent event) {
         synchronized (this) {
-            handshakesCompleted++;
+            handshakeLatch.countDown();
             System.out.println("Session: " + event.getSession().toString());
             System.out.println("Seen handshake completed #" +
-                handshakesCompleted);
+                (2 - handshakeLatch.getCount()));
         }
     }
 
@@ -273,14 +275,11 @@ public class InvalidateServerSessionRenegotiate implements
         }
 
         /*
-         * Give the Handshaker Thread a chance to run
+         * Wait until both HandshakeCompleted events have been delivered,
+         * with a timeout to avoid hanging forever if something goes wrong.
          */
-        Thread.sleep(1000);
-
-        synchronized (this) {
-            if (handshakesCompleted != 2) {
-                throw new Exception("Didn't see 2 handshake completed events.");
-            }
+        if (!handshakeLatch.await(10, TimeUnit.SECONDS)) {
+            throw new Exception("Didn't see 2 handshake completed events.");
         }
     }
 

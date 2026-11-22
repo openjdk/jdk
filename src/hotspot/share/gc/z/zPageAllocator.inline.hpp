@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,7 @@
 
 #include "gc/z/zPageAllocator.hpp"
 
-inline ZPageAllocatorStats::ZPageAllocatorStats(size_t min_capacity,
-                                                size_t max_capacity,
-                                                size_t soft_max_capacity,
+inline ZPageAllocatorStats::ZPageAllocatorStats(size_t heuristic_max_capacity,
                                                 size_t capacity,
                                                 size_t used,
                                                 size_t used_high,
@@ -38,9 +36,7 @@ inline ZPageAllocatorStats::ZPageAllocatorStats(size_t min_capacity,
                                                 size_t promoted,
                                                 size_t compacted,
                                                 size_t allocation_stalls)
-  : _min_capacity(min_capacity),
-    _max_capacity(max_capacity),
-    _soft_max_capacity(soft_max_capacity),
+  : _heuristic_max_capacity(heuristic_max_capacity),
     _capacity(capacity),
     _used(used),
     _used_high(used_high),
@@ -51,16 +47,8 @@ inline ZPageAllocatorStats::ZPageAllocatorStats(size_t min_capacity,
     _compacted(compacted),
     _allocation_stalls(allocation_stalls) {}
 
-inline size_t ZPageAllocatorStats::min_capacity() const {
-  return _min_capacity;
-}
-
-inline size_t ZPageAllocatorStats::max_capacity() const {
-  return _max_capacity;
-}
-
-inline size_t ZPageAllocatorStats::soft_max_capacity() const {
-  return _soft_max_capacity;
+inline size_t ZPageAllocatorStats::heuristic_max_capacity() const {
+  return _heuristic_max_capacity;
 }
 
 inline size_t ZPageAllocatorStats::capacity() const {

@@ -134,7 +134,7 @@ public:
 };
 
 // Per-thread Statistics for synchronization
-class ThreadStatistics : public CHeapObj<mtInternal> {
+class ThreadStatistics : public CHeapObj<mtServiceability> {
 private:
   // The following contention statistics are only updated by
   // the thread owning these statistics when contention occurs.
@@ -204,7 +204,7 @@ public:
 };
 
 // Thread snapshot to represent the thread state and statistics
-class ThreadSnapshot : public CHeapObj<mtInternal> {
+class ThreadSnapshot : public CHeapObj<mtServiceability> {
 private:
   // This JavaThread* is protected by being stored in objects that are
   // protected by a ThreadsListSetter (ThreadDumpResult).
@@ -269,7 +269,7 @@ public:
   void        metadata_do(void f(Metadata*));
 };
 
-class ThreadStackTrace : public CHeapObj<mtInternal> {
+class ThreadStackTrace : public CHeapObj<mtServiceability> {
  private:
   JavaThread*                     _thread;
   int                             _depth;  // number of stack frames added
@@ -300,7 +300,7 @@ class ThreadStackTrace : public CHeapObj<mtInternal> {
 // StackFrameInfo for keeping Method* and bci during
 // stack walking for later construction of StackTraceElement[]
 // Java instances
-class StackFrameInfo : public CHeapObj<mtInternal> {
+class StackFrameInfo : public CHeapObj<mtServiceability> {
  private:
   Method*             _method;
   int                 _bci;
@@ -323,7 +323,7 @@ class StackFrameInfo : public CHeapObj<mtInternal> {
   void      print_on(outputStream* st) const;
 };
 
-class ThreadConcurrentLocks : public CHeapObj<mtInternal> {
+class ThreadConcurrentLocks : public CHeapObj<mtServiceability> {
 private:
   GrowableArray<OopHandle>*   _owned_locks;
   ThreadConcurrentLocks*      _next;
@@ -399,7 +399,7 @@ class ThreadDumpResult : public StackObj {
   void                 metadata_do(void f(Metadata*));
 };
 
-class DeadlockCycle : public CHeapObj<mtInternal> {
+class DeadlockCycle : public CHeapObj<mtServiceability> {
  private:
   GrowableArray<JavaThread*>* _threads;
   DeadlockCycle*              _next;

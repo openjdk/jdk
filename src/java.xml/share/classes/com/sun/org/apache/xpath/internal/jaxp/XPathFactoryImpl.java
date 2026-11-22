@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -35,7 +35,7 @@ import jdk.xml.internal.*;
  *
  * @author  Ramesh Mandava
  *
- * @LastModified: June 2025
+ * @LastModified: June 2026
  */
 public  class XPathFactoryImpl extends XPathFactory {
 
@@ -184,6 +184,8 @@ public  class XPathFactoryImpl extends XPathFactory {
                 _isNotSecureProcessing = !value;
                 if (value && _featureManager != null) {
                     _featureManager.setFeature(JdkXmlFeatures.XmlFeature.ENABLE_EXTENSION_FUNCTION,
+                            JdkProperty.State.FSP, false);
+                    _featureManager.setFeature(JdkXmlFeatures.XmlFeature.JDK_XPATH_SYSTEM_PROPERTY,
                             JdkProperty.State.FSP, false);
                     _xmlSecMgr.setSecureProcessing(value);
                 }

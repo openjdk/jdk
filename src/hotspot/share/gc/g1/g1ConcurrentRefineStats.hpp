@@ -51,8 +51,8 @@ struct G1LocalRefineStats {
 
 // Global statistics for concurrent refinement processing.
 class G1ConcurrentRefineStats : public CHeapObj<mtGC> {
-  Atomic<jlong> _sweep_duration;              // Time spent sweeping the table finding non-clean cards
-                                              // and refining them.
+  Atomic<jlong> _sweep_work_duration;         // Time spent sweeping the table finding non-clean cards
+                                              // and refining them without yields.
   Atomic<jlong> _yield_during_sweep_duration; // Time spent yielding during the sweep (not doing the sweep).
 
   Atomic<size_t> _cards_scanned;              // Total number of cards scanned.
@@ -67,7 +67,7 @@ class G1ConcurrentRefineStats : public CHeapObj<mtGC> {
 public:
   // Time spent performing sweeping the refinement table (includes actual refinement,
   // but not yield time).
-  inline jlong sweep_duration() const;
+  inline jlong sweep_work_duration() const;
   inline jlong yield_during_sweep_duration() const;
   inline jlong refine_duration() const;
 

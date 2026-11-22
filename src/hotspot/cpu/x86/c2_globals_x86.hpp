@@ -58,7 +58,6 @@ define_pd_global(intx, RegisterCostAreaRatio,        16000);
 define_pd_global(bool, OptoPeephole,                 true);
 define_pd_global(bool, UseCISCSpill,                 true);
 define_pd_global(bool, OptoScheduling,               false);
-define_pd_global(bool, OptoBundling,                 false);
 define_pd_global(bool, OptoRegScheduling,            true);
 define_pd_global(bool, SuperWordLoopUnrollAnalysis,  true);
 define_pd_global(uint, SuperWordStoreToLoadForwardingFailureDetection, 16);

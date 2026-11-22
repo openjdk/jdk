@@ -58,7 +58,6 @@ public class JPopupMenuOverlapping extends OverlappingTestBase {
     {testEmbeddedFrame = true;}
 
     private boolean lwClicked = false;
-    private Point loc;
     private JPopupMenu popup;
     private JFrame frame=null;
 
@@ -86,11 +85,12 @@ public class JPopupMenuOverlapping extends OverlappingTestBase {
         }
         propagateAWTControls(frame);
         frame.setVisible(true);
-        loc = frame.getContentPane().getLocationOnScreen();
     }
 
     @Override
     protected boolean performTest() {
+        Point loc = frame.getContentPane().getLocationOnScreen();
+
         // run robot
         Robot robot = Util.createRobot();
         robot.setAutoDelay(ROBOT_DELAY);

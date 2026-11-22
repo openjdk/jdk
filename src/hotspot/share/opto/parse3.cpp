@@ -31,12 +31,12 @@
 #include "oops/objArrayKlass.hpp"
 #include "opto/addnode.hpp"
 #include "opto/castnode.hpp"
-#include "opto/inlinetypenode.hpp"
 #include "opto/memnode.hpp"
 #include "opto/parse.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
 #include "opto/subnode.hpp"
+#include "opto/valuetypenode.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/handles.inline.hpp"
 
@@ -130,21 +130,24 @@ void Parse::do_get_xxx(Node* obj, ciField* field) {
     }
   }
 
-  if (obj->is_InlineType()) {
+  if (obj->is_ValueType()) {
     assert(!field->is_static(), "must not be a static field");
-    InlineTypeNode* vt = obj->as_InlineType();
+    ValueTypeNode* vt = obj->as_ValueType();
     Node* value = vt->field_value_by_offset(field->offset_in_bytes(), false);
     const Type* value_type = _gvn.type(value);
-    if (value_type->is_inlinetypeptr()) {
-      value = InlineTypeNode::make_from_oop(this, value, value_type->inline_klass());
+    if (value_type->is_valueklassptr()) {
+      value = ValueTypeNode::make_from_oop(this, value, value_type->value_klass());
     }
     pop();
     push_node(field->layout_type(), value);
+    if (is_reference_type(bt) && !field->type()->is_loaded()) {
+      null_assert_for_unloaded_type(peek(), field->type(), "field", true);
+    }
     return;
   }
 
   ciType* field_klass = field->type();
-  field_klass = improve_abstract_inline_type_klass(field_klass);
+  field_klass = improve_abstract_value_type_klass(field_klass);
   int offset = field->offset_in_bytes();
   bool must_assert_null = false;
   Node* adr = basic_plus_adr(obj, obj, offset);
@@ -152,16 +155,17 @@ void Parse::do_get_xxx(Node* obj, ciField* field) {
          "slice of address and input slice don't match");
 
   Node* ld = nullptr;
-  if (field_klass->is_inlinetype()) { // could also have an abstract value class
-    ciInlineKlass* vk = field_klass->as_inline_klass();
-    if (field->is_null_free() && vk->is_empty()) {
-      // Loading from a field of an empty inline type. Just return the default instance.
-      ld = InlineTypeNode::make_all_zero(_gvn, vk);
+  if (field_klass->is_value_klass()) { // could also have an abstract value class
+    ciValueKlass* vk = field_klass->as_value_klass();
+    if (field->is_null_free() && !field->is_volatile() && vk->is_empty()) {
+      // Loading from a null-free field of an empty value type. Just return the default instance.
+      // Skip volatile fields because their memory barriers need to remain.
+      ld = ValueTypeNode::make_all_zero(_gvn, vk);
     } else if (field->is_flat()) {
-      // Loading from a flat inline type field.
+      // Loading from a flat value type field.
       bool is_immutable = field->is_final() && field->is_strict();
       bool atomic = field->is_atomic();
-      ld = InlineTypeNode::make_from_flat(this, vk, obj, adr, atomic, is_immutable, field->is_null_free(), IN_HEAP | MO_UNORDERED);
+      ld = ValueTypeNode::make_from_flat(this, vk, obj, adr, atomic, is_immutable, field->is_null_free(), IN_HEAP | MO_UNORDERED);
     }
   }
   if (ld == nullptr) {
@@ -180,7 +184,7 @@ void Parse::do_get_xxx(Node* obj, ciField* field) {
         if (con->is_null_object()) {
           type = TypePtr::NULL_PTR;
         } else {
-          type = TypeOopPtr::make_from_constant(con)->isa_oopptr();
+          type = TypeOopPtr::make_from_constant(con);
         }
         assert(type != nullptr, "field singleton type must be consistent");
       } else {
@@ -197,9 +201,9 @@ void Parse::do_get_xxx(Node* obj, ciField* field) {
     DecoratorSet decorators = IN_HEAP;
     decorators |= field->is_volatile() ? MO_SEQ_CST : MO_UNORDERED;
     ld = access_load_at(obj, adr, adr_type, type, bt, decorators);
-    if (field_klass->is_inlinetype()) {
-      // Load a non-flattened inline type from memory
-      ld = InlineTypeNode::make_from_oop(this, ld, field_klass->as_inline_klass());
+    if (field_klass->is_value_klass()) {
+      // Load a non-flattened value type from memory
+      ld = ValueTypeNode::make_from_oop(this, ld, field_klass->as_value_klass());
     }
   }
 
@@ -224,23 +228,13 @@ void Parse::do_get_xxx(Node* obj, ciField* field) {
     // not need to mention the class index, since the class will
     // already have been loaded if we ever see a non-null value.)
     // uncommon_trap(iter().get_field_signature_index());
-    if (PrintOpto && (Verbose || WizardMode)) {
-      method()->print_name(); tty->print_cr(" asserting nullness of field at bci: %d", bci());
-    }
-    if (C->log() != nullptr) {
-      C->log()->elem("assert_null reason='field' klass='%d'",
-                     C->log()->identify(field_klass));
-    }
-    // If there is going to be a trap, put it at the next bytecode:
-    set_bci(iter().next_bci());
-    null_assert(peek());
-    set_bci(iter().cur_bci()); // put it back
+    null_assert_for_unloaded_type(peek(), field_klass, "field", true);
   }
 }
 
 // If the field klass is an abstract value klass (for which we do not know the layout, yet), it could have a unique
-// concrete sub klass for which we have a fixed layout. This allows us to use InlineTypeNodes instead.
-ciType* Parse::improve_abstract_inline_type_klass(ciType* field_klass) {
+// concrete sub klass for which we have a fixed layout. This allows us to use ValueTypeNodes instead.
+ciType* Parse::improve_abstract_value_type_klass(ciType* field_klass) {
   Dependencies* dependencies = C->dependencies();
   if (UseUniqueSubclasses && dependencies != nullptr && field_klass->is_instance_klass()) {
     ciInstanceKlass* instance_klass = field_klass->as_instance_klass();
@@ -273,26 +267,26 @@ void Parse::do_put_xxx(Node* obj, ciField* field, bool is_field) {
 
   Node* adr = basic_plus_adr(obj, obj, offset);
 
-  // We cannot store into a non-larval object, so obj must not be an InlineTypeNode
-  assert(!obj->is_InlineType(), "InlineTypeNodes are non-larval value objects");
+  // We cannot store into a non-larval object, so obj must not be an ValueTypeNode
+  assert(!obj->is_ValueType(), "ValueTypeNodes are non-larval value objects");
   ciType* field_klass = field->type();
   bool do_store = true;
-  if (field_klass->is_inlinetype()) { // could also have an abstract value class
-    ciInlineKlass* vk = field_klass->as_inline_klass();
+  if (field_klass->is_value_klass()) { // could also have an abstract value class
+    ciValueKlass* vk = field_klass->as_value_klass();
     if (field->empty_null_free_initialized_value_field(!method()->is_object_constructor())) {
-      // Storing to an empty, null-free inline type field that is already initialized. Ignore.
+      // Storing to an empty, null-free value type field that is already initialized. Ignore.
       return;
     }
     if (field->is_flat()) {
-      // Storing to a flat inline type field.
-      if (!val->is_InlineType()) {
+      // Storing to a flat value type field.
+      if (!val->is_ValueType()) {
         assert(gvn().type(val) == TypePtr::NULL_PTR, "Unexpected value");
-        val = InlineTypeNode::make_null(gvn(), vk);
+        val = ValueTypeNode::make_null(gvn(), vk);
       }
       inc_sp(1);
       bool is_immutable = field->is_final() && field->is_strict();
       bool atomic = field->is_atomic();
-      val->as_InlineType()->store_flat(this, obj, adr, atomic, is_immutable, field->is_null_free(), IN_HEAP | MO_UNORDERED);
+      val->as_ValueType()->store_flat(this, obj, adr, atomic, is_immutable, field->is_null_free(), IN_HEAP | MO_UNORDERED);
       dec_sp(1);
       do_store = false;
     }
@@ -374,8 +368,8 @@ void Parse::do_newarray() {
                   array_klass);
     return;
   } else if (array_klass->element_klass() != nullptr &&
-             array_klass->element_klass()->is_inlinetype() &&
-             !array_klass->element_klass()->as_inline_klass()->is_initialized()) {
+             array_klass->element_klass()->is_value_klass() &&
+             !array_klass->element_klass()->as_value_klass()->is_initialized()) {
     uncommon_trap(Deoptimization::Reason_uninitialized,
                   Deoptimization::Action_reinterpret,
                   nullptr);
@@ -415,7 +409,7 @@ Node* Parse::expand_multianewarray(ciArrayKlass* array_klass, Node* *lengths, in
     guarantee(length_con >= 0, "non-constant multianewarray");
     ciArrayKlass* array_klass_1 = array_klass->as_obj_array_klass()->element_klass()->as_array_klass();
     const TypePtr* adr_type = TypeAryPtr::OOPS;
-    const TypeOopPtr*    elemtype = _gvn.type(array)->is_aryptr()->elem()->make_oopptr();
+    const TypeOopPtr*    elemtype = _gvn.type(array)->as_aryptr()->elem()->make_oopptr();
     const intptr_t header   = arrayOopDesc::base_offset_in_bytes(T_OBJECT);
     for (jint i = 0; i < length_con; i++) {
       Node*    elem   = expand_multianewarray(array_klass_1, &lengths[1], ndimensions-1, nargs);
@@ -448,7 +442,7 @@ void Parse::do_multianewarray() {
     length[j] = pop();
     elem_klass = elem_klass->as_array_klass()->element_klass();
   }
-  if (elem_klass != nullptr && elem_klass->is_inlinetype() && !elem_klass->as_inline_klass()->is_initialized()) {
+  if (elem_klass != nullptr && elem_klass->is_value_klass() && !elem_klass->as_value_klass()->is_initialized()) {
     inc_sp(ndimensions);
     uncommon_trap(Deoptimization::Reason_uninitialized,
                   Deoptimization::Action_reinterpret,
@@ -541,12 +535,12 @@ void Parse::do_multianewarray() {
   const Type* type = TypeOopPtr::make_from_klass_raw(array_klass, Type::trust_interfaces);
 
   // Improve the type:  We know it's not null, exact, and of a given length.
-  type = type->is_ptr()->cast_to_ptr_type(TypePtr::NotNull);
-  type = type->is_aryptr()->cast_to_exactness(true);
+  type = type->as_ptr()->cast_to_ptr_type(TypePtr::NotNull);
+  type = type->as_aryptr()->cast_to_exactness(true);
 
   const TypeInt* ltype = _gvn.find_int_type(length[0]);
   if (ltype != nullptr)
-    type = type->is_aryptr()->cast_to_size(ltype);
+    type = type->as_aryptr()->cast_to_size(ltype);
 
     // We cannot sharpen the nested sub-arrays, since the top level is mutable.
 

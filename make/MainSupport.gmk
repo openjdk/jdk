@@ -65,6 +65,14 @@ define CleanDocs
 	@$(ECHO) " done"
 endef
 
+define CleanMicrobenchmark
+	@$(PRINTF) "Cleaning microbenchmark build artifacts ..."
+	@$(ECHO) "" $(LOG_DEBUG)
+	$(RM) -r $(SUPPORT_OUTPUTDIR)/test/micro
+	$(RM) -r $(TEST_IMAGE_DIR)/micro
+	@$(ECHO) " done"
+endef
+
 # Cleans the dir given as $1
 define CleanDir
 	@$(PRINTF) "Cleaning %s build artifacts ..." "$(strip $1)"

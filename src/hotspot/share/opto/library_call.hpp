@@ -27,13 +27,14 @@
 
 #include "ci/ciMethod.hpp"
 #include "classfile/javaClasses.hpp"
+#include "classfile/vmIntrinsics.hpp"
 #include "opto/callGenerator.hpp"
 #include "opto/castnode.hpp"
 #include "opto/convertnode.hpp"
 #include "opto/graphKit.hpp"
-#include "opto/inlinetypenode.hpp"
 #include "opto/intrinsicnode.hpp"
 #include "opto/movenode.hpp"
+#include "opto/valuetypenode.hpp"
 
 class LibraryIntrinsic : public InlineCallGenerator {
   // Extend the set of intrinsics known to the runtime:
@@ -116,12 +117,12 @@ class LibraryCallKit : public GraphKit {
         C->record_method_not_compilable("Can't determine return value.");
       }
       BasicType bt = res->bottom_type()->basic_type();
-      if (C->inlining_incrementally() && res->is_InlineType()) {
+      if (C->inlining_incrementally() && res->is_ValueType()) {
         // The caller expects an oop when incrementally inlining an intrinsic that returns an
-        // inline type. Make sure the call is re-executed if the allocation triggers a deoptimization.
+        // value type. Make sure the call is re-executed if the allocation triggers a deoptimization.
         PreserveReexecuteState preexecs(this);
         jvms()->set_should_reexecute(true);
-        res = res->as_InlineType()->buffer(this);
+        res = res->as_ValueType()->buffer(this);
       }
       push_node(bt, res);
     }
@@ -253,6 +254,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_math_subtractExactI(bool is_decrement);
   bool inline_math_subtractExactL(bool is_decrement);
   bool inline_min_max(vmIntrinsics::ID id);
+  bool inline_int128t_addsub(vmIntrinsics::ID id);
   bool inline_notify(vmIntrinsics::ID id);
   // This returns Type::AnyPtr, RawPtr, or OopPtr.
   int classify_unsafe_addr(Node* &base, Node* &offset, BasicType type);
@@ -262,7 +264,7 @@ class LibraryCallKit : public GraphKit {
   DecoratorSet mo_decorator_for_access_kind(AccessKind kind);
   bool inline_unsafe_access(bool is_store, BasicType type, AccessKind kind, bool is_unaligned);
   bool inline_unsafe_flat_access(bool is_store, AccessKind kind);
-  static bool klass_needs_init_guard(Node* kls);
+  bool klass_needs_init_guard(Node* kls) const;
   bool inline_unsafe_allocate();
   bool inline_unsafe_newArray(bool uninitialized);
   bool inline_newArray(bool null_free, bool atomic);
@@ -293,14 +295,12 @@ class LibraryCallKit : public GraphKit {
 #endif
 
 #ifdef JFR_HAVE_INTRINSICS
-  bool inline_native_classID();
   bool inline_native_getEventWriter();
   bool inline_native_jvm_commit();
   void extend_setCurrentThread(Node* jt, Node* thread);
   bool inline_native_try_update_epoch();
 #endif
   bool inline_native_Class_query(vmIntrinsics::ID id);
-  bool inline_primitive_Class_conversion(vmIntrinsics::ID id);
   bool inline_native_subtype_check();
   bool inline_native_getLength();
   bool inline_array_copyOf(bool is_copyOfRange);
@@ -312,7 +312,11 @@ class LibraryCallKit : public GraphKit {
   bool inline_native_clone(bool is_virtual);
   bool inline_native_Reflection_getCallerClass();
   // Helper function for inlining native object hash method
+  Node* get_hashcode_from_header(Node* header, RegionNode* unset_region);
   bool inline_native_hashcode(bool is_virtual, bool is_static);
+public:
+  static IfNode* hashcode_fast_path_if_from_identity_hash_code_call(PhaseGVN* phase, CallJavaNode* call);
+private:
   bool inline_native_getClass();
 
   // Helper functions for inlining arraycopy
@@ -414,8 +418,6 @@ class LibraryCallKit : public GraphKit {
   bool inline_profileBoolean();
   bool inline_isCompileConstant();
 
-  bool inline_continuation_do_yield();
-
   // Vector API support
   bool inline_vector_nary_operation(int n);
   bool inline_vector_call(int arity);
@@ -434,12 +436,11 @@ class LibraryCallKit : public GraphKit {
   bool inline_vector_convert();
   bool inline_vector_extract();
   bool inline_vector_insert();
+  bool inline_vector_slice();
   bool inline_vector_compress_expand();
   bool inline_index_vector();
   bool inline_index_partially_in_upper_range();
   bool inline_vector_select_from_two_vectors();
-
-  Node* gen_call_to_vector_math(int vector_api_op_id, BasicType bt, int num_elem, Node* opd1, Node* opd2);
 
   enum VectorMaskUseType {
     VecMaskUseLoad  = 1 << 0,

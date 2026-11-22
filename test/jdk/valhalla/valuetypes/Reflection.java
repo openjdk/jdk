@@ -26,6 +26,7 @@
  * @test
  * @summary test core reflection on value classes
  * @enablePreview
+ * @requires (vm.opt.PreloadClasses == null | vm.opt.PreloadClasses == "true")
  * @run junit/othervm Reflection
  */
 

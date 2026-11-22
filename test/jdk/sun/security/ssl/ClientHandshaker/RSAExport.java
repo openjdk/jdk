@@ -27,7 +27,6 @@
 /*
  * @test
  * @bug 6690018
- * @enablePreview
  * @summary RSAClientKeyExchange NullPointerException
  * @run main/othervm RSAExport
  */

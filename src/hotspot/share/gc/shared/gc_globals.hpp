@@ -46,6 +46,8 @@
 #include "gc/z/z_globals.hpp"
 #endif
 
+constexpr uint MaxGCCardSizeInBytes = NOT_LP64(512) LP64_ONLY(1024);
+
 #define GC_FLAGS(develop,                                                   \
                  develop_pd,                                                \
                  product,                                                   \
@@ -202,18 +204,6 @@
           "Ergonomically start one thread for this amount of references "   \
           "for reference processing for parallel stop-the-world garbage "   \
           "collectors. Specify 0 to force use of all available threads.")   \
-                                                                            \
-  product(uint, InitiatingHeapOccupancyPercent, 45,                         \
-          "The percent occupancy (IHOP) of the current old generation "     \
-          "capacity above which a concurrent mark cycle will be initiated " \
-          "Its value may change over time if adaptive IHOP is enabled, "    \
-          "otherwise the value remains constant. "                          \
-          "In the latter case a value of 0 will result as frequent as "     \
-          "possible concurrent marking cycles. A value of 100 disables "    \
-          "concurrent marking. "                                            \
-          "Fragmentation waste in the old generation is not considered "    \
-          "free space in this calculation. (G1 collector only)")            \
-          range(0, 100)                                                     \
                                                                             \
   develop(bool, ScavengeALot, false,                                        \
           "Force scavenge at every Nth exit from the runtime system "       \
@@ -523,7 +513,7 @@
                                                                             \
   product(uint, GCCardSizeInBytes, 512,                                     \
           "Card table entry size (in bytes) for card based collectors")     \
-          range(128, NOT_LP64(512) LP64_ONLY(1024))                         \
+          range(128, MaxGCCardSizeInBytes)                                  \
           constraint(GCCardSizeInBytesConstraintFunc,AtParse)
   // end of GC_FLAGS
 

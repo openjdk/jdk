@@ -32,7 +32,7 @@
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "memory/universe.hpp"
-#include "oops/inlineKlass.hpp"
+#include "oops/valueKlass.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/upcallLinker.hpp"
 #include "runtime/arguments.hpp"
@@ -311,7 +311,7 @@ address StubGenerator::generate_call_stub(address& return_address) {
   return_address = __ pc();
   entries.append(return_address);
 
-  // All of j_rargN + rax may be used to return inline type fields so be careful
+  // All of j_rargN + rax may be used to return value type fields so be careful
   // not to clobber those.  See SharedRuntime::java_return_convention().
 
   // store result depending on type (everything that is not
@@ -398,14 +398,14 @@ address StubGenerator::generate_call_stub(address& return_address) {
 
   // handle return types different from T_INT
   __ BIND(check_prim);
-  if (InlineTypeReturnedAsFields) {
+  if (ValueTypeReturnedAsFields) {
     // Check for scalarized return value
     __ testptr(rax, 1);
     __ jcc(Assembler::zero, is_long);
     // Load pack handler address
     __ andptr(rax, -2);
-    __ movptr(rax, Address(rax, InlineKlass::adr_members_offset()));
-    __ movptr(rbx, Address(rax, InlineKlass::pack_handler_jobject_offset()));
+    __ movptr(rax, Address(rax, ValueKlass::adr_members_offset()));
+    __ movptr(rbx, Address(rax, ValueKlass::pack_handler_jobject_offset()));
     // Call pack handler to initialize the buffer
     __ call(rbx);
     __ jmp(exit);
@@ -1422,6 +1422,65 @@ address StubGenerator::generate_vector_byte_perm_mask() {
   // record the stub entry and end
   store_archive_data(stub_id, start, __ pc());
 
+  return start;
+}
+
+// 3 * 32 matrices: logical-left, logical-right, arithmetic-right, counts 0..31.
+address StubGenerator::generate_vector_byte_shift_gfni_matrix() {
+  StubId stub_id = StubId::stubgen_vector_byte_shift_gfni_matrix_id;
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == 1, "sanity check");
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
+    return start;
+  }
+  __ align(CodeEntryAlignment);
+  StubCodeMark mark(this, stub_id);
+  start = __ pc();
+
+  // Counts 0..7. Counts 8..31 have shifted the byte out of the low 8 bits.
+  static const uint64_t mats[3][8] = {
+    // logical left
+    { 0x0102040810204080ULL,
+      0x0001020408102040ULL,
+      0x0000010204081020ULL,
+      0x0000000102040810ULL,
+      0x0000000001020408ULL,
+      0x0000000000010204ULL,
+      0x0000000000000102ULL,
+      0x0000000000000001ULL },
+    // logical right
+    { 0x0102040810204080ULL,
+      0x0204081020408000ULL,
+      0x0408102040800000ULL,
+      0x0810204080000000ULL,
+      0x1020408000000000ULL,
+      0x2040800000000000ULL,
+      0x4080000000000000ULL,
+      0x8000000000000000ULL },
+    // arithmetic right
+    { 0x0102040810204080ULL,
+      0x0204081020408080ULL,
+      0x0408102040808080ULL,
+      0x0810204080808080ULL,
+      0x1020408080808080ULL,
+      0x2040808080808080ULL,
+      0x4080808080808080ULL,
+      0x8080808080808080ULL }
+  };
+  static const uint64_t saturated[3] = {
+    0,                       // logical left
+    0,                       // logical right
+    0x8080808080808080ULL    // arithmetic right, sign fill
+  };
+  for (int kind = 0; kind < 3; kind++) {
+    for (int n = 0; n < 32; n++) {
+      uint64_t m = (n < 8) ? mats[kind][n] : saturated[kind];
+      __ emit_data64((jlong)m, relocInfo::none);
+    }
+  }
+
+  store_archive_data(stub_id, start, __ pc());
   return start;
 }
 
@@ -3336,6 +3395,10 @@ address StubGenerator::generate_base64_decodeBlock() {
     __ BIND(L_finalBit);
     // Now have 1 to 63 bytes left to decode
 
+    // A padded Base64 tail shorter than one complete block is handled by Java.
+    __ cmpl(length, 4);
+    __ jcc(Assembler::less, L_bruteForce);
+
     // I was going to let Java take care of the final fragment
     // however it will repeatedly call this routine for every 4 bytes
     // of input data, so handle the rest here.
@@ -4487,7 +4550,7 @@ address StubGenerator::generate_floatToFloat16() {
 
 static void save_return_registers(MacroAssembler* masm) {
   masm->push_ppx(rax);
-  if (InlineTypeReturnedAsFields) {
+  if (ValueTypeReturnedAsFields) {
     masm->push(rdi);
     masm->push(rsi);
     masm->push(rdx);
@@ -4496,7 +4559,7 @@ static void save_return_registers(MacroAssembler* masm) {
     masm->push(r9);
   }
   masm->push_d(xmm0);
-  if (InlineTypeReturnedAsFields) {
+  if (ValueTypeReturnedAsFields) {
     masm->push_d(xmm1);
     masm->push_d(xmm2);
     masm->push_d(xmm3);
@@ -4525,7 +4588,7 @@ static void save_return_registers(MacroAssembler* masm) {
 }
 
 static void restore_return_registers(MacroAssembler* masm) {
-  if (InlineTypeReturnedAsFields) {
+  if (ValueTypeReturnedAsFields) {
     masm->pop_d(xmm7);
     masm->pop_d(xmm6);
     masm->pop_d(xmm5);
@@ -4535,7 +4598,7 @@ static void restore_return_registers(MacroAssembler* masm) {
     masm->pop_d(xmm1);
   }
   masm->pop_d(xmm0);
-  if (InlineTypeReturnedAsFields) {
+  if (ValueTypeReturnedAsFields) {
     masm->pop(r9);
     masm->pop(r8);
     masm->pop(rcx);
@@ -5015,6 +5078,7 @@ void StubGenerator::generate_compiler_stubs() {
   StubRoutines::x86::_vector_int_mask_cmp_bits = generate_vector_mask(StubId::stubgen_vector_int_mask_cmp_bits_id, 0x0000000100000001);
   StubRoutines::x86::_vector_short_to_byte_mask = generate_vector_mask(StubId::stubgen_vector_short_to_byte_mask_id, 0x00ff00ff00ff00ff);
   StubRoutines::x86::_vector_byte_perm_mask = generate_vector_byte_perm_mask();
+  StubRoutines::x86::_vector_byte_shift_gfni_matrix = generate_vector_byte_shift_gfni_matrix();
   StubRoutines::x86::_vector_int_to_byte_mask = generate_vector_mask(StubId::stubgen_vector_int_to_byte_mask_id, 0x000000ff000000ff);
   StubRoutines::x86::_vector_int_to_short_mask = generate_vector_mask(StubId::stubgen_vector_int_to_short_mask_id, 0x0000ffff0000ffff);
   StubRoutines::x86::_vector_32_bit_mask = generate_vector_custom_i32(StubId::stubgen_vector_32_bit_mask_id, Assembler::AVX_512bit,

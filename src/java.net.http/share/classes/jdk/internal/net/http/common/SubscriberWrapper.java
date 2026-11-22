@@ -25,7 +25,6 @@
 
 package jdk.internal.net.http.common;
 
-import java.io.Closeable;
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Objects;
@@ -55,7 +54,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * at any time.
  */
 public abstract class SubscriberWrapper
-    implements FlowTube.TubeSubscriber, Closeable, Flow.Processor<List<ByteBuffer>,List<ByteBuffer>>
+    implements FlowTube.TubeSubscriber, Flow.Processor<List<ByteBuffer>,List<ByteBuffer>>
                 // TODO: SSLTube Subscriber will never change? Does this really need to be a TS?
 {
     final Logger debug =
@@ -422,15 +421,6 @@ public abstract class SubscriberWrapper
             return true;
         }
         return false;
-    }
-
-    @Override
-    public void close() {
-        errorCommon(new RuntimeException("wrapper closed"));
-    }
-
-    public void close(Throwable t) {
-        errorCommon(t);
     }
 
     private void incomingCaller(List<ByteBuffer> l, boolean complete) {

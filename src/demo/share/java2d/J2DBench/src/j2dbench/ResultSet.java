@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -65,7 +65,6 @@ public class ResultSet {
         "os.version",
         "user.name",
         "sun.cpu.endian",
-        "sun.cpu.isalist",
     };
 
     // Ignored props - will not be copied to results file

@@ -281,7 +281,7 @@ void decode_env::print_hook_comments(address pc, bool newline) {
           if (len > 0 && line[len-1] == '\n') {
             line[len-1] = '\0';
           }
-          _cached_src_lines->append(os::strdup(line));
+          _cached_src_lines->append(os::strdup(line, mtCompiler));
         }
         fclose(fp);
         _print_file_name = true;

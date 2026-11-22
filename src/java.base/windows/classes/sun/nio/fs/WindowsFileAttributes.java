@@ -328,8 +328,8 @@ class WindowsFileAttributes
             if (isReparsePoint(fileAttrs)) {
                 int size = MAXIMUM_REPARSE_DATA_BUFFER_SIZE;
                 try (NativeBuffer reparseBuffer = NativeBuffers.getNativeBuffer(size)) {
-                    DeviceIoControlGetReparsePoint(handle, reparseBuffer.address(), size);
-                    reparseTag = (int)unsafe.getLong(reparseBuffer.address());
+                    DeviceIoControl(handle, FSCTL_GET_REPARSE_POINT, reparseBuffer.address(), size);
+                    reparseTag = unsafe.getInt(reparseBuffer.address());
                 }
             }
 

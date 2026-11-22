@@ -138,6 +138,7 @@
   do_klass(module_Modules_klass,                        jdk_internal_module_Modules                           ) \
                                                                                                                 \
   /* support for CDS */                                                                                         \
+  do_klass(CDS_klass,                                   jdk_internal_misc_CDS                                 ) \
   do_klass(ByteArrayInputStream_klass,                  java_io_ByteArrayInputStream                          ) \
   do_klass(URL_klass,                                   java_net_URL                                          ) \
   do_klass(Enum_klass,                                  java_lang_Enum                                        ) \

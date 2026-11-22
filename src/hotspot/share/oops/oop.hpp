@@ -115,30 +115,40 @@ class oopDesc {
   // to be able to figure out the size of an object knowing its klass.
   inline size_t size_given_klass(Klass* klass);
 
-  // type test operations (inlined in oop.inline.hpp)
+  // Type test operations (inlined in oop.inline.hpp)
   inline bool is_instance()         const;
-  inline bool is_inline()           const;
+  inline bool is_value()            const;
   inline bool is_instanceRef()      const;
   inline bool is_stackChunk()       const;
   inline bool is_array()            const;
-  inline bool is_objArray()         const;
   inline bool is_typeArray()        const;
-  inline bool is_flatArray()        const;
+  inline bool is_objArray()         const;
   inline bool is_refArray()         const;
+  inline bool is_flatArray()        const;
+
+  // Templatized type test operation
+  template <typename OopType>
+  inline bool is() const;
+
+  // Type test operations that don't require inclusion of oop.inline.hpp.
+  bool is_instance_noinline()       const;
+  bool is_value_noinline()          const;
+  bool is_instanceRef_noinline()    const;
+  bool is_stackChunk_noinline()     const;
+  bool is_array_noinline()          const;
+  bool is_typeArray_noinline()      const;
+  bool is_objArray_noinline()       const;
+  bool is_refArray_noinline()       const;
+  bool is_flatArray_noinline()      const;
+
+  // Type test for either flatArray or refArray
   inline bool is_refined_objArray() const;
+
+  // Type test for arrays containing oops in the elements
   inline bool is_array_with_oops()  const;
 
-  inline bool is_inline_type()      const;
-
-  // type test operations that don't require inclusion of oop.inline.hpp.
-  bool is_instance_noinline()         const;
-  bool is_instanceRef_noinline()      const;
-  bool is_stackChunk_noinline()       const;
-  bool is_array_noinline()            const;
-  bool is_objArray_noinline()         const;
-  bool is_refArray_noinline()         const;
-  bool is_typeArray_noinline()        const;
-  bool is_flatArray_noinline()        const;
+  // Type test for value class instances via the mark word
+  inline bool is_value_type()       const;
 
  protected:
   inline oop        as_oop() const { return const_cast<oopDesc*>(this); }
@@ -261,10 +271,6 @@ class oopDesc {
   static void verify_on(outputStream* st, oopDesc* oop_desc);
   static void verify(oopDesc* oopDesc);
 
-  // locking operations
-  inline bool is_locked()   const;
-  inline bool is_unlocked() const;
-
   // asserts and guarantees
   static bool is_oop(oop obj);
   static bool is_oop_or_null(oop obj);
@@ -316,15 +322,13 @@ class oopDesc {
   inline static bool is_instanceof_or_null(oop obj, Klass* klass);
 
   // identity hash; returns the identity hash key (computes it if necessary)
-  inline intptr_t identity_hash();
-  intptr_t slow_identity_hash();
-  inline bool fast_no_hash_check();
+  inline intptr_t identity_hash(Thread* current = nullptr);
+  inline bool has_identity_hash();
 
-  // marks are forwarded to stack when object is locked
-  inline bool     has_displaced_mark() const;
-  inline markWord displaced_mark() const;
-  inline void     set_displaced_mark(markWord m);
+private:
+  intptr_t slow_identity_hash(markWord current_mark, Thread* current);
 
+public:
   // Checks if the mark word needs to be preserved
   inline bool mark_must_be_preserved() const;
   inline bool mark_must_be_preserved(markWord m) const;
@@ -364,6 +368,6 @@ class oopDesc {
 // to fill in certain parts of that memory.  The allocated memory is then
 // treated as referring to an oopDesc.  For that to be valid, the oopDesc
 // class must have a trivial default constructor (C++14 3.8/1).
-static_assert(std::is_trivially_default_constructible<oopDesc>::value, "required");
+static_assert(std::is_trivially_default_constructible<oopDesc>::value);
 
 #endif // SHARE_OOPS_OOP_HPP
