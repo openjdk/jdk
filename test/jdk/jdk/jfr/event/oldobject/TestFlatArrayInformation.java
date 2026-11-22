@@ -23,6 +23,8 @@
 
 package jdk.jfr.event.oldobject;
 
+import com.sun.management.HotSpotDiagnosticMXBean;
+import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
@@ -44,12 +46,15 @@ import jdk.test.lib.jfr.Events;
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
  *          jdk.jfr/jdk.jfr.internal.test
+ *          jdk.management
  * @enablePreview
  * @run main/othervm -Xmx128m -XX:TLABSize=2k -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseArrayFlattening -XX:+UseFieldFlattening -XX:+UseNullFreeNonAtomicValueFlattening -XX:+UseCompressedOops jdk.jfr.event.oldobject.TestFlatArrayInformation
  * @run main/othervm -Xmx128m -XX:TLABSize=2k -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseArrayFlattening -XX:+UseFieldFlattening -XX:+UseNullFreeNonAtomicValueFlattening -XX:-UseCompressedOops jdk.jfr.event.oldobject.TestFlatArrayInformation
  */
 public class TestFlatArrayInformation {
     static final int LENGTH = 8;
+    static final long ALIGNMENT_MASK =
+        Long.parseLong(ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean.class).getVMOption("ObjectAlignmentInBytes").getValue()) - 1;
     static final List<Object> KEEP = new ArrayList<>();
 
     @LooselyConsistentValue
@@ -90,12 +95,22 @@ public class TestFlatArrayInformation {
         RecordedObject holder = ref.getValue("object");
         Asserts.assertEquals(holder.getClass("type").getName(), type.getName());
         if (embedded) {
-            Asserts.assertEquals(holder.getLong("address"), 0L);
-            Asserts.assertNull(holder.getString("description"));
+            verifyLogicalIdentity(holder);
         } else {
             Asserts.assertTrue(holder.getLong("address") != 0);
         }
         return holder;
+    }
+
+    static void verifyLogicalIdentity(RecordedObject object) {
+        long identity = object.getLong("address");
+        Asserts.assertTrue(identity != 0);
+        long marker = identity >>> 32;
+        Asserts.assertTrue(marker == 0x401BA5EDL || marker == 0x401C0DEDL,
+                "Logical identity must be in the BASED or CODED range");
+        Asserts.assertTrue((identity & ALIGNMENT_MASK) != 0,
+                "Logical identity must not alias an aligned physical address");
+        Asserts.assertNull(object.getString("description"));
     }
 
     static void verifyArray(RecordedObject ref, int index, Class<?> type) {

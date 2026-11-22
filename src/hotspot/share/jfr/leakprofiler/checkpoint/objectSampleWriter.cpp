@@ -25,6 +25,7 @@
 #include "jfr/leakprofiler/chains/edge.hpp"
 #include "jfr/leakprofiler/chains/edgeStore.hpp"
 #include "jfr/leakprofiler/chains/edgeUtils.hpp"
+#include "jfr/leakprofiler/checkpoint/logicalEdgeStore.hpp"
 #include "jfr/leakprofiler/checkpoint/objectSampleDescription.hpp"
 #include "jfr/leakprofiler/checkpoint/objectSampleWriter.hpp"
 #include "jfr/leakprofiler/checkpoint/rootResolver.hpp"
@@ -36,8 +37,9 @@
 #include "jfrfiles/jfrTypes.hpp"
 #include "oops/flatArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/valueKlass.inline.hpp"
 #include "oops/symbol.hpp"
+#include "oops/valueKlass.inline.hpp"
+#include "runtime/safepoint.hpp"
 #include "utilities/growableArray.hpp"
 
 template <typename Data>
@@ -78,6 +80,7 @@ class OldObjectSampleData {
  public:
   oop _object;
   const Klass* _value_klass;
+  u8 _logical_id;
   traceid _reference_id;
 };
 
@@ -200,6 +203,15 @@ static RefInfo* ref_infos = nullptr;
 static ArrayInfo* array_infos = nullptr;
 static FieldTable* field_infos = nullptr;
 static RootDescriptionInfo* root_infos = nullptr;
+static LogicalEdgeStore* logical_edges = nullptr;
+
+static LogicalEdgeStore* logical_edge_store() {
+  assert(SafepointSynchronize::is_at_safepoint(), "invariant");
+  if (logical_edges == nullptr) {
+    logical_edges = new LogicalEdgeStore();
+  }
+  return logical_edges;
+}
 
 static int __write_sample_info__(JfrCheckpointWriter* writer, const void* si) {
   assert(writer != nullptr, "invariant");
@@ -207,9 +219,11 @@ static int __write_sample_info__(JfrCheckpointWriter* writer, const void* si) {
   const OldObjectSampleInfo* const oosi = (const OldObjectSampleInfo*)si;
   writer->write(oosi->_id);
   if (oosi->_data._value_klass != nullptr) {
-    // An embedded value has no independent heap object,
-    // hence no object address and no descriptor.
-    writer->write<u8>(0);
+    // Embedded values have no independent heap address. Consumers such as JMC
+    // use the address field as an identity and treat zero as a sentinel, so
+    // write a nonzero synthetic identity for each flattened occurrence.
+    // These identities are unaligned and cannot alias real object addresses.
+    writer->write<u8>(oosi->_data._logical_id);
     writer->write(oosi->_data._value_klass);
     writer->write(static_cast<const char*>(nullptr));
     writer->write(oosi->_data._reference_id);
@@ -559,12 +573,14 @@ static traceid add_gc_root_info(const StoredEdge* root, traceid id) {
   return get_gc_root_description_info_id(*root, id);
 }
 
-static void add_logical_value(traceid id, const Klass* klass) {
+static void add_logical_value(traceid id, u8 logical_id, const Klass* klass) {
   assert(sample_infos != nullptr && klass != nullptr, "invariant");
+  assert(logical_id != 0 && (logical_id & MinObjAlignmentInBytesMask) != 0, "invariant");
   OldObjectSampleInfo* const info = new OldObjectSampleInfo();
   info->_id = id;
   info->_data._object = nullptr;
   info->_data._value_klass = klass;
+  info->_data._logical_id = logical_id;
   info->_data._reference_id = id;
   sample_infos->store(info);
 }
@@ -581,6 +597,39 @@ static void add_logical_reference(traceid id, traceid parent_id,
   info->_data._old_object_sample_id = parent_id;
   info->_data._skip = 0;
   ref_infos->store(info);
+}
+
+// Resolve all identities before adding checkpoint records, so exhaustion never
+// leaves a partially expanded path. Caller needs ResourceMark.
+static bool logical_id_path(const Edge& edge, const GrowableArray<EdgeField>& fields,
+                            GrowableArray<u8>* ids) {
+  const oop owner = edge.reference_owner();
+  if (!owner->is_flatArray() && fields.length() == 1) {
+    return true;
+  }
+  LogicalEdgeStore* const store = logical_edge_store();
+  u8 parent_identity = cast_from_oop<u8>(owner);
+  if (owner->is_flatArray()) {
+    const flatArrayOop array = static_cast<flatArrayOop>(owner);
+    const LogicalEdge element(parent_identity, LogicalEdge::ArrayElement, nullptr,
+                              EdgeUtils::array_index(edge), array->klass()->element_klass());
+    parent_identity = store->get_id(element);
+    if (parent_identity == 0) {
+      return false;
+    }
+    ids->append(parent_identity);
+  }
+  for (int i = 0; i < fields.length() - 1; ++i) {
+    const EdgeField& field = fields.at(i);
+    const LogicalEdge child(parent_identity, LogicalEdge::Field, field._field_holder,
+                            field._field_index, field._value_klass);
+    parent_identity = store->get_id(child);
+    if (parent_identity == 0) {
+      return false;
+    }
+    ids->append(parent_identity);
+  }
+  return true;
 }
 
 // Record the logical reference path corresponding to this physical edge.
@@ -600,11 +649,20 @@ void ObjectSampleWriter::add_logical_reference_chain(const StoredEdge* edge,
     return;
   }
 
+  GrowableArray<u8> logical_ids(4);
+  if (!logical_id_path(*edge, fields, &logical_ids)) {
+    add_reference_info(edge, id, parent_id);
+    return;
+  }
+
+  // Intern occurrence identity, but keep checkpoint records specific to their
+  // recorded referrer paths, just as physical object records already are.
+  int logical_index = 0;
   const oop owner = edge->reference_owner();
   if (owner->is_flatArray()) {
     const flatArrayOop array = static_cast<flatArrayOop>(owner);
     const traceid value_id = ++EdgeStore::_edge_id_counter;
-    add_logical_value(value_id, array->klass()->element_klass());
+    add_logical_value(value_id, logical_ids.at(logical_index++), array->klass()->element_klass());
     add_logical_reference(value_id, parent_id, 0, get_array_info_id(*edge, value_id));
     parent_id = value_id;
   }
@@ -613,11 +671,12 @@ void ObjectSampleWriter::add_logical_reference_chain(const StoredEdge* edge,
     const EdgeField& field = fields.at(i);
     assert(field._value_klass != nullptr, "invariant");
     const traceid value_id = ++EdgeStore::_edge_id_counter;
-    add_logical_value(value_id, field._value_klass);
+    add_logical_value(value_id, logical_ids.at(logical_index++), field._value_klass);
     add_logical_reference(value_id, parent_id, get_field_info_id(field), 0);
     parent_id = value_id;
   }
 
+  assert(logical_index == logical_ids.length(), "invariant");
   add_logical_reference(id, parent_id, get_field_info_id(fields.last()), 0);
 }
 
@@ -680,6 +739,7 @@ ObjectSampleWriter::ObjectSampleWriter(JfrCheckpointWriter& writer, EdgeStore* s
   assert(ref_infos == nullptr, "Invariant");
   assert(array_infos == nullptr, "Invariant");
   assert(root_infos == nullptr, "Invariant");
+  assert(logical_edges == nullptr, "invariant");
 }
 
 ObjectSampleWriter::~ObjectSampleWriter() {
@@ -698,6 +758,8 @@ ObjectSampleWriter::~ObjectSampleWriter() {
   ref_infos = nullptr;
   array_infos = nullptr;
   root_infos = nullptr;
+  delete logical_edges;
+  logical_edges = nullptr;
 }
 
 bool ObjectSampleWriter::operator()(StoredEdge& e) {

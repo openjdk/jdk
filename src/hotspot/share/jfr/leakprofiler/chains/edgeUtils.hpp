@@ -31,15 +31,23 @@
 class Edge;
 class Symbol;
 class Klass;
+class InstanceKlass;
 
 class EdgeField {
  public:
   const Symbol* _name;
   jshort _modifiers;
   const Klass* _value_klass;
-  EdgeField() : _name(nullptr), _modifiers(0), _value_klass(nullptr) {}
-  EdgeField(const Symbol* name, jshort modifiers, const Klass* value_klass = nullptr) :
-    _name(name), _modifiers(modifiers), _value_klass(value_klass) {}
+  // Declaration identity for interning flattened occurrences. Names alone do
+  // not distinguish a field from a same-named field declared by a superclass.
+  const InstanceKlass* _field_holder;
+  int _field_index;
+  EdgeField() : _name(nullptr), _modifiers(0), _value_klass(nullptr),
+                _field_holder(nullptr), _field_index(-1) {}
+  EdgeField(const Symbol* name, jshort modifiers, const Klass* value_klass = nullptr,
+            const InstanceKlass* field_holder = nullptr, int field_index = -1) :
+    _name(name), _modifiers(modifiers), _value_klass(value_klass),
+    _field_holder(field_holder), _field_index(field_index) {}
 };
 
 class EdgeUtils : public AllStatic {

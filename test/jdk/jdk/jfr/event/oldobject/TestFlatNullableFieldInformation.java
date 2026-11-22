@@ -40,6 +40,7 @@ import jdk.test.lib.helpers.StrictInit;
  *          java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
  *          jdk.jfr/jdk.jfr.internal.test
+ *          jdk.management
  * @enablePreview
  * @build jdk.jfr.event.oldobject.TestFlatNullableFieldInformation
  *        jdk.jfr.event.oldobject.TestFlatArrayInformation

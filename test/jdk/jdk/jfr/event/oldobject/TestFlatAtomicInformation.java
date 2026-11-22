@@ -40,6 +40,7 @@ import jdk.test.lib.Asserts;
  *          java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
  *          jdk.jfr/jdk.jfr.internal.test
+ *          jdk.management
  * @enablePreview
  * @build jdk.jfr.event.oldobject.TestFlatArrayInformation
  * @run main/othervm -Xmx128m -XX:TLABSize=2k -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseArrayFlattening -XX:+UseFieldFlattening -XX:-UseNullFreeNonAtomicValueFlattening -XX:-UseNullableNonAtomicValueFlattening -XX:+UseNullFreeAtomicValueFlattening -XX:+UseNullableAtomicValueFlattening -XX:+UseCompressedOops jdk.jfr.event.oldobject.TestFlatAtomicInformation null-free
