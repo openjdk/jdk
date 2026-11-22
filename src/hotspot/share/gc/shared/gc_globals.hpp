@@ -205,18 +205,6 @@ constexpr uint MaxGCCardSizeInBytes = NOT_LP64(512) LP64_ONLY(1024);
           "for reference processing for parallel stop-the-world garbage "   \
           "collectors. Specify 0 to force use of all available threads.")   \
                                                                             \
-  product(uint, InitiatingHeapOccupancyPercent, 45,                         \
-          "The percent occupancy (IHOP) of the current old generation "     \
-          "capacity above which a concurrent mark cycle will be initiated " \
-          "Its value may change over time if adaptive IHOP is enabled, "    \
-          "otherwise the value remains constant. "                          \
-          "In the latter case a value of 0 will result as frequent as "     \
-          "possible concurrent marking cycles. A value of 100 disables "    \
-          "concurrent marking. "                                            \
-          "Fragmentation waste in the old generation is not considered "    \
-          "free space in this calculation. (G1 collector only)")            \
-          range(0, 100)                                                     \
-                                                                            \
   develop(bool, ScavengeALot, false,                                        \
           "Force scavenge at every Nth exit from the runtime system "       \
           "(N=ScavengeALotInterval)")                                       \

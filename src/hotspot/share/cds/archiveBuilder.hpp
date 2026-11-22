@@ -503,7 +503,7 @@ public:
   //    narrow Klass IDs.
   // TinyClassPointer Mode:
   //    We use the highest possible shift value to maximize the encoding range size.
-  static int precomputed_narrow_klass_shift();
+  static int precomputed_narrow_klass_shift() NOT_CDS_RETURN_(0);
 
 };
 

@@ -2229,7 +2229,7 @@ void LIRGenerator::do_LoadField(LoadField* x) {
     // Copy the payload to the buffer
     assert(buffer != nullptr, "buffer required");
     LIRItem dest(buffer, this);
-    access_store_at(decorators, bt, dest, LIR_OprFact::intConst(vk->payload_offset()), payload);
+    access_store_at(decorators, bt, dest, LIR_OprFact::intConst(vk->payload_offset()), payload, nullptr, nullptr, vk);
 
     if (field->is_null_free()) {
       set_result(x, buffer->operand());
@@ -3878,13 +3878,8 @@ void LIRGenerator::increment_event_counter_impl(CodeEmitInfo* info,
       bailout("method counters allocation failed");
       return;
     }
-    if (AOTCodeCache::is_dumping_code()) {
-      counter_holder = new_register(T_METADATA);
-      __ metadata2reg(counters_adr->constant_encoding(), counter_holder);
-    } else {
-      counter_holder = new_pointer_register();
-      __ move(LIR_OprFact::intptrConst(counters_adr->constant_encoding()), counter_holder);
-    }
+    counter_holder = new_register(T_METADATA);
+    __ metadata2reg(counters_adr->constant_encoding(), counter_holder);
     offset = in_bytes(backedge ? MethodCounters::backedge_counter_offset() :
                                  MethodCounters::invocation_counter_offset());
   } else if (level == CompLevel_full_profile) {

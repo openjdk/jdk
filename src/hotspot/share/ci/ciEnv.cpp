@@ -837,13 +837,11 @@ ciMethod* ciEnv::get_method_by_index_impl(const constantPoolHandle& cpool,
     assert(index < cpool->cache()->resolved_indy_entries_length(), "impossible");
     ResolvedIndyEntry* indy_info = cpool->resolved_indy_entry_at(index);
     Method* adapter = indy_info->method();
-#if INCLUDE_CDS
     if (is_aot_compile() && !AOTConstantPoolResolver::is_resolution_deterministic(cpool(), indy_info->constant_pool_index())) {
       // This is an indy callsite that was resolved as a side effect of VM bootstrap, but
       // it cannot be cached in the resolved state, so AOT code should not reference it.
       adapter = nullptr;
     }
-#endif
     // Resolved if the adapter is non null.
     if (adapter != nullptr) {
       return get_method(adapter);

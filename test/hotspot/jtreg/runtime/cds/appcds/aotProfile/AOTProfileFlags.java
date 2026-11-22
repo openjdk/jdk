@@ -121,19 +121,19 @@ public class AOTProfileFlags {
     }
 
     public static void testFlagsMismatch() throws Exception {
-        String errorPattern = ".*Profile.* setting .* does not equal the current .*Profile.* setting.*";
+        String errorPattern = ".*Profile.* setting .* does not equal the current setting.*";
         trainAndRun("TypeProfileLevel", "-XX:TypeProfileLevel=222", "-XX:TypeProfileLevel=111", errorPattern);
         trainAndRun("TypeProfileArgsLimit", "-XX:TypeProfileArgsLimit=2", "-XX:TypeProfileArgsLimit=3",
-                    "TypeProfileArgsLimit setting \\(2\\) does not equal the current TypeProfileArgsLimit setting \\(3\\)");
+                    "TypeProfileArgsLimit setting \\(2\\) does not equal the current setting \\(3\\)");
         trainAndRun("TypeProfileParmsLimit", "-XX:TypeProfileParmsLimit=2", "-XX:TypeProfileParmsLimit=3",
-                    "TypeProfileParmsLimit setting \\(2\\) does not equal the current TypeProfileParmsLimit setting \\(3\\)");
+                    "TypeProfileParmsLimit setting \\(2\\) does not equal the current setting \\(3\\)");
         trainAndRun("TypeProfileWidth", "-XX:TypeProfileWidth=2", "-XX:TypeProfileWidth=3", errorPattern);
         trainAndRun("ProfileExceptionHandlers", "-XX:+ProfileExceptionHandlers", "-XX:-ProfileExceptionHandlers", errorPattern);
         if (Platform.isDebugBuild()) {
           trainAndRun("ProfileTraps", "-XX:+ProfileTraps", "-XX:-ProfileTraps", errorPattern);
           trainAndRun("TypeProfileCasts", "-XX:+TypeProfileCasts", "-XX:-TypeProfileCasts", errorPattern);
         }
-        errorPattern = "SpecTrapLimitExtraEntries setting .* does not equal the current SpecTrapLimitExtraEntries setting";
+        errorPattern = "SpecTrapLimitExtraEntries setting .* does not equal the current setting";
         trainAndRun("SpecTrapLimitExtraEntries", "-XX:SpecTrapLimitExtraEntries=2", "-XX:SpecTrapLimitExtraEntries=3", errorPattern);
     }
 
