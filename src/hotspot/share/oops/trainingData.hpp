@@ -339,7 +339,7 @@ private:
 
   static void initialize() NOT_CDS_RETURN;
 
-  static void verify();
+  static void verify() NOT_CDS_RETURN;
 
   // Widget for recording dependencies, as an N-to-M graph relation,
   // possibly cyclic.
@@ -489,7 +489,7 @@ private:
     return nullptr;
   }
 
-  static void cleanup_after_redefinition();
+  static void cleanup_after_redefinition() NOT_CDS_RETURN;
 };
 
 // Training data that is associated with an InstanceKlass

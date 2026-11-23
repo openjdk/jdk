@@ -24,6 +24,7 @@
 
 #include "cds/aotClassLocation.hpp"
 #include "cds/aotHeap.hpp"
+#include "cds/aotSystemDictionary.hpp"
 #include "cds/cdsConfig.hpp"
 #include "classfile/classFileParser.hpp"
 #include "classfile/classFileStream.hpp"
@@ -85,9 +86,6 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/utf8.hpp"
-#if INCLUDE_CDS
-#include "cds/aotSystemDictionary.hpp"
-#endif
 #if INCLUDE_JFR
 #include "jfr/jfr.hpp"
 #endif
@@ -1750,12 +1748,10 @@ void SystemDictionary::initialize(TRAPS) {
   ResolutionErrorTable::initialize();
   LoaderConstraintTable::initialize();
   PlaceholderTable::initialize();
-#if INCLUDE_CDS
   AOTSystemDictionary::initialize();
   if (CDSConfig::is_dumping_archive()) {
     AOTClassLocationConfig::dumptime_init(THREAD);
   }
-#endif
   // Resolve basic classes
   vmClasses::resolve_all(CHECK);
   // Resolve classes used by archived heap objects
@@ -1937,14 +1933,12 @@ bool SystemDictionary::add_loader_constraint(Symbol* class_name,
     InstanceKlass* klass2 = dictionary2->find_class(current, constraint_name);
     bool result = LoaderConstraintTable::add_entry(constraint_name, klass1, loader_data1,
                                                    klass2, loader_data2);
-#if INCLUDE_CDS
     if (CDSConfig::is_dumping_archive() && klass_being_linked != nullptr &&
         !klass_being_linked->in_aot_cache()) {
          AOTSystemDictionary::record_linking_constraint(constraint_name,
                                      InstanceKlass::cast(klass_being_linked),
                                      class_loader1, class_loader2);
     }
-#endif // INCLUDE_CDS
     if (Signature::is_array(class_name)) {
       constraint_name->decrement_refcount();
     }
@@ -2585,7 +2579,7 @@ bool SystemDictionary::is_nonpublic_Object_method(Method* m) {
 // ----------------------------------------------------------------------------
 
 void SystemDictionary::print_on(outputStream *st) {
-  CDS_ONLY(AOTSystemDictionary::print_on(st));
+  AOTSystemDictionary::print_on(st);
   GCMutexLocker mu(SystemDictionary_lock);
 
   ClassLoaderDataGraph::print_dictionary(st);
@@ -2617,7 +2611,7 @@ void SystemDictionary::dump(outputStream *st, bool verbose) {
   if (verbose) {
     print_on(st);
   } else {
-    CDS_ONLY(AOTSystemDictionary::print_table_statistics(st));
+    AOTSystemDictionary::print_table_statistics(st);
     ClassLoaderDataGraph::print_table_statistics(st);
     LoaderConstraintTable::print_table_statistics(st);
   }

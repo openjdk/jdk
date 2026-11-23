@@ -91,18 +91,7 @@ AOTCodeEntry* find_aot_code_entry(const methodHandle& method, int comp_level,
           compile_reason == CompileTask::Reason_Tiered  ||
           compile_reason == CompileTask::Reason_MustBeCompiled);
   if (AOTCodeCache::is_using_code()) {
-    AOTCodeEntry* aot_code_entry = AOTCodeCache::find_code_entry(method, comp_level);
-    // There is harmless concurrency here when reading fields in the AOTCodeEntry.
-    // The _loaded field is monotonic, going true in ciEnv::register_aot_method under
-    // MethodCompileQueue_lock.  We might race with other threads which quickly queue
-    // and then load the method, and harmlessly conclude that this code entry is
-    // still loadable.  Even if we manage to queue a second load concurrently,
-    // CompileBroker::compile_method_base checks, under the MCQ lock, with
-    // compilation_is_in_queue and compilation_is_complete, to avoid duplicate work.
-    if (aot_code_entry != nullptr && !aot_code_entry->is_loaded() &&
-        !aot_code_entry->not_entrant() && !aot_code_entry->is_verified()) {
-      return aot_code_entry;
-    }
+    return AOTCodeCache::find_code_entry(method, comp_level);
   }
   return nullptr;
 }
