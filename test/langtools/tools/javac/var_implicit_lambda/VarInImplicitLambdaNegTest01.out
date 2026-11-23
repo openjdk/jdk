@@ -1,6 +1,8 @@
-VarInImplicitLambdaNegTest01.java:12:28: compiler.err.invalid.lambda.parameter.declaration: (compiler.misc.var.and.implicit.not.allowed)
-VarInImplicitLambdaNegTest01.java:13:28: compiler.err.invalid.lambda.parameter.declaration: (compiler.misc.var.and.implicit.not.allowed)
-VarInImplicitLambdaNegTest01.java:14:28: compiler.err.invalid.lambda.parameter.declaration: (compiler.misc.var.and.explicit.not.allowed)
-VarInImplicitLambdaNegTest01.java:15:28: compiler.err.invalid.lambda.parameter.declaration: (compiler.misc.implicit.and.explicit.not.allowed)
-VarInImplicitLambdaNegTest01.java:17:52: compiler.err.restricted.type.not.allowed.array: var
-5 errors
+VarInImplicitLambdaNegTest01.java:14:28: compiler.err.invalid.lambda.parameter.declaration: (compiler.misc.var.and.implicit.not.allowed)
+VarInImplicitLambdaNegTest01.java:15:28: compiler.err.invalid.lambda.parameter.declaration: (compiler.misc.var.and.implicit.not.allowed)
+VarInImplicitLambdaNegTest01.java:16:28: compiler.err.invalid.lambda.parameter.declaration: (compiler.misc.var.and.explicit.not.allowed)
+VarInImplicitLambdaNegTest01.java:17:28: compiler.err.invalid.lambda.parameter.declaration: (compiler.misc.implicit.and.explicit.not.allowed)
+VarInImplicitLambdaNegTest01.java:19:52: compiler.err.restricted.type.not.allowed.array: var
+VarInImplicitLambdaNegTest01.java:20:52: compiler.err.restricted.type.not.allowed.array: var
+VarInImplicitLambdaNegTest01.java:20:74: compiler.err.restricted.type.not.allowed.array: var
+7 errors

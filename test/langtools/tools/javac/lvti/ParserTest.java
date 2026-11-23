@@ -43,7 +43,9 @@ class ParserTest<var extends AutoCloseable> {
         var[][] x3 = null; //illegal
         var x4[][] = null; //illegal
         var[] x5 = null; //illegal
+        var @TA [] x5a = null; //illegal
         var x6[] = null; //illegal
+        var x6a @TA [] = null; //illegal
         var@TA[]@TA[] x7 = null; //illegal
         var x8@TA[]@TA[] = null; //illegal
         var x9 = null, y = null; //illegal
