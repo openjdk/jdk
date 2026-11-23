@@ -32,6 +32,7 @@
  * @library /test/jdk/java/lang/invoke/common /test/lib
  * @enablePreview
  * @requires vm.debug
+ * @requires vm.compMode == "Xmixed"
  * @run main ${test.main.class}
  */
 
