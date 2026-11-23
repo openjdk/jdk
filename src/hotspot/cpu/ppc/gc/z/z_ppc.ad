@@ -150,8 +150,8 @@ instruct zLoadP(iRegPdst dst, memoryAlg4 mem, flagsRegCR0 cr0)
   format %{ "LD $dst, $mem" %}
   ins_encode %{
     assert($mem$$index == 0, "sanity");
-    __ ld($dst$$Register, $mem$$disp, $mem$$base$$Register);
-    z_load_barrier(masm, this, Address($mem$$base$$Register, $mem$$disp), $dst$$Register);
+    __ ld($dst$$Register, $mem$$disp, $mem$$Register);
+    z_load_barrier(masm, this, Address($mem$$Register, $mem$$disp), $dst$$Register);
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -169,8 +169,8 @@ instruct zLoadP_acq(iRegPdst dst, memoryAlg4 mem, flagsRegCR0 cr0)
 
   format %{ "LD acq $dst, $mem" %}
   ins_encode %{
-    __ ld($dst$$Register, $mem$$disp, $mem$$base$$Register);
-    z_load_barrier(masm, this, Address($mem$$base$$Register, $mem$$disp), $dst$$Register);
+    __ ld($dst$$Register, $mem$$disp, $mem$$Register);
+    z_load_barrier(masm, this, Address($mem$$Register, $mem$$disp), $dst$$Register);
 
     // Uses the isync instruction as an acquire barrier.
     // This exploits the compare and the branch in the z load barrier (load, compare and branch, isync).
@@ -189,8 +189,8 @@ instruct zStoreP(memoryAlg4 mem, iRegPsrc src, iRegPdst tmp, flagsRegCR0 cr0)
   ins_cost(2 * MEMORY_REF_COST);
   format %{ "std    $mem, $src\t# ptr" %}
   ins_encode %{
-    z_store_barrier(masm, this, $mem$$base$$Register, $mem$$disp, $src$$Register, $tmp$$Register, false /* is_atomic */);
-    __ std($tmp$$Register, $mem$$disp, $mem$$base$$Register);
+    z_store_barrier(masm, this, $mem$$Register, $mem$$disp, $src$$Register, $tmp$$Register, false /* is_atomic */);
+    __ std($tmp$$Register, $mem$$disp, $mem$$Register);
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -203,8 +203,8 @@ instruct zStorePNull(memoryAlg4 mem, immP_0 zero, iRegPdst tmp, flagsRegCR0 cr0)
   ins_cost(MEMORY_REF_COST);
   format %{ "std    $mem, null\t# ptr" %}
   ins_encode %{
-    z_store_barrier(masm, this, $mem$$base$$Register, $mem$$disp, noreg, $tmp$$Register, false /* is_atomic */);
-    __ std($tmp$$Register, $mem$$disp, $mem$$base$$Register);
+    z_store_barrier(masm, this, $mem$$Register, $mem$$disp, noreg, $tmp$$Register, false /* is_atomic */);
+    __ std($tmp$$Register, $mem$$disp, $mem$$Register);
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -221,7 +221,7 @@ instruct zCompareAndSwapP(iRegIdst res, indirect mem, iRegPsrc oldval, iRegPsrc 
   format %{ "CMPXCHG $res, $mem, $oldval, $newval; as bool; ptr" %}
   ins_encode %{
     z_compare_and_swap(masm, this,
-                       $res$$Register, $mem$$base$$Register, $oldval$$Register, $newval$$Register,
+                       $res$$Register, $mem$$Register, $oldval$$Register, $newval$$Register,
                        $tmp1$$Register, $tmp2$$Register,
                        false /* acquire */);
   %}
@@ -240,7 +240,7 @@ instruct zCompareAndSwapP_acq(iRegIdst res, indirect mem, iRegPsrc oldval, iRegP
   format %{ "CMPXCHG acq $res, $mem, $oldval, $newval; as bool; ptr" %}
   ins_encode %{
     z_compare_and_swap(masm, this,
-                       $res$$Register, $mem$$base$$Register, $oldval$$Register, $newval$$Register,
+                       $res$$Register, $mem$$Register, $oldval$$Register, $newval$$Register,
                        $tmp1$$Register, $tmp2$$Register,
                        true /* acquire */);
   %}
@@ -261,7 +261,7 @@ instruct zCompareAndExchangeP(iRegPdst res, indirect mem, iRegPsrc oldval, iRegP
   format %{ "CMPXCHG $res, $mem, $oldval, $newval; as ptr; ptr" %}
   ins_encode %{
     z_compare_and_exchange(masm, this,
-                           $res$$Register, $mem$$base$$Register, $oldval$$Register, $newval$$Register, $tmp$$Register,
+                           $res$$Register, $mem$$Register, $oldval$$Register, $newval$$Register, $tmp$$Register,
                            false /* acquire */);
   %}
   ins_pipe(pipe_class_default);
@@ -281,7 +281,7 @@ instruct zCompareAndExchangeP_acq(iRegPdst res, indirect mem, iRegPsrc oldval, i
   format %{ "CMPXCHG acq $res, $mem, $oldval, $newval; as ptr; ptr" %}
   ins_encode %{
     z_compare_and_exchange(masm, this,
-                           $res$$Register, $mem$$base$$Register, $oldval$$Register, $newval$$Register, $tmp$$Register,
+                           $res$$Register, $mem$$Register, $oldval$$Register, $newval$$Register, $tmp$$Register,
                            true /* acquire */);
   %}
   ins_pipe(pipe_class_default);
@@ -296,8 +296,8 @@ instruct zGetAndSetP(iRegPdst res, indirect mem, iRegPsrc newval, iRegPdst tmp, 
   format %{ "GetAndSetP $res, $mem, $newval" %}
   ins_encode %{
     Register rnew_zpointer = $tmp$$Register, result = $res$$Register;
-    z_store_barrier(masm, this, $mem$$base$$Register, 0, $newval$$Register, rnew_zpointer, true /* is_atomic */);
-    __ getandsetd(result, rnew_zpointer, $mem$$base$$Register, MacroAssembler::cmpxchgx_hint_atomic_update());
+    z_store_barrier(masm, this, $mem$$Register, 0, $newval$$Register, rnew_zpointer, true /* is_atomic */);
+    __ getandsetd(result, rnew_zpointer, $mem$$Register, MacroAssembler::cmpxchgx_hint_atomic_update());
     z_uncolor(masm, result);
 
     if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
