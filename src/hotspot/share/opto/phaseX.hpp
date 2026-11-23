@@ -174,8 +174,7 @@ protected:
 
 public:
   PhaseRenumberLive(PhaseGVN* gvn,
-                    Unique_Node_List<Node>& worklist,
-                    PhaseNumber phase_num = Remove_Useless_And_Renumber_Live);
+                    Unique_Node_List<Node>& worklist);
 };
 
 
