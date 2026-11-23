@@ -25,7 +25,7 @@
  * @test
  * @bug 8388340
  * @summary Verify source level checks are performed properly
- * @library /tools/lib
+ * @library /tools/lib /tools/javac/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.javac.util
@@ -36,9 +36,10 @@
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Stream;
+import javax.annotation.processing.RoundEnvironment;
+import javax.lang.model.element.TypeElement;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -366,6 +367,51 @@ public class SourceLevelChecks {
                         .getOutputLines(Task.OutputKind.DIRECT);
 
             assertEquals(List.of(testCase.expectedOutput()), log);
+        }
+    }
+
+    @Test
+    public void testValueAsTypeWithAP() throws IOException {
+        Path classes = base.resolve("classes");
+
+        Files.createDirectories(classes);
+
+        List<String> expected = List.of(
+            "Test.java:2:13: compiler.warn.restricted.type.not.allowed.preview: value, 28",
+            "Test.java:3:11: compiler.warn.restricted.type.not.allowed.preview: value, 28",
+            "2 warnings"
+        );
+        for (List<String> options : List.of(List.<String>of(),
+                                            List.of("-processor", ProcessorImpl.class.getName(),
+                                                    "-processorpath", System.getProperty("test.classes")))) {
+            List<String> allOptions = new ArrayList<>();
+
+            allOptions.add("-XDrawDiagnostics");
+            allOptions.add("-Xlint:all");
+            allOptions.addAll(options);
+
+            List<String> out =
+                new JavacTask(tb)
+                        .sources("""
+                                 public class Test {
+                                     private value v;
+                                     class value {}
+                                 }
+                                 """)
+                        .options(allOptions)
+                        .outdir(classes)
+                        .run()
+                        .writeAll()
+                        .getOutputLines(Task.OutputKind.DIRECT);
+
+            assertEquals(expected, out);
+        }
+    }
+
+    public static final class ProcessorImpl extends JavacTestingAbstractProcessor {
+        @Override
+        public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+            return false;
         }
     }
 

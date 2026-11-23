@@ -38,6 +38,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import javax.annotation.processing.RoundEnvironment;
@@ -60,6 +61,7 @@ public class DanglingDocComments {
                                  .orElseThrow()
                                  .getName());
     }
+
     @Test
     public void testDanglingDocCommentsWithAP() throws IOException {
         Path classes = base.resolve("classes");
@@ -70,45 +72,31 @@ public class DanglingDocComments {
             "Test.java:2:5: compiler.warn.dangling.doc.comment",
             "1 warning"
         );
-        List<String> out;
+        for (List<String> options : List.of(List.<String>of(),
+                                            List.of("-processor", ProcessorImpl.class.getName(),
+                                                    "-processorpath", System.getProperty("test.classes")))) {
+            List<String> allOptions = new ArrayList<>();
 
-        out =
-            new JavacTask(tb)
-                    .sources("""
-                             public class Test {
-                                 /**comment1*/
-                                 /**comment2*/
-                                 public void test() {}
-                             }
-                             """)
-                    .options("-XDrawDiagnostics",
-                             "-Xlint:dangling-doc-comments")
-                    .outdir(classes)
-                    .run()
-                    .writeAll()
-                    .getOutputLines(Task.OutputKind.DIRECT);
+            allOptions.add("-XDrawDiagnostics");
+            allOptions.add("-Xlint:all");
+            allOptions.addAll(options);
+            List<String> out =
+                new JavacTask(tb)
+                        .sources("""
+                                 public class Test {
+                                     /**comment1*/
+                                     /**comment2*/
+                                     public void test() {}
+                                 }
+                                 """)
+                        .options(allOptions)
+                        .outdir(classes)
+                        .run()
+                        .writeAll()
+                        .getOutputLines(Task.OutputKind.DIRECT);
 
-        assertEquals(expected, out);
-
-        out =
-            new JavacTask(tb)
-                    .sources("""
-                             public class Test {
-                                 /**comment1*/
-                                 /**comment2*/
-                                 public void test() {}
-                             }
-                             """)
-                    .options("-XDrawDiagnostics",
-                             "-Xlint:dangling-doc-comments",
-                             "-processor", ProcessorImpl.class.getName(),
-                             "-processorpath", System.getProperty("test.classes"))
-                    .outdir(classes)
-                    .run()
-                    .writeAll()
-                    .getOutputLines(Task.OutputKind.DIRECT);
-
-        assertEquals(expected, out);
+            assertEquals(expected, out);
+        }
     }
 
     public static final class ProcessorImpl extends JavacTestingAbstractProcessor {
