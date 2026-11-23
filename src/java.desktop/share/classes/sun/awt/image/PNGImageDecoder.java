@@ -463,7 +463,7 @@ public class PNGImageDecoder extends ImageDecoder
         } catch(IOException e) {
             if(!aborted) {
                 property("error", e);
-                imageComplete(ImageConsumer.IMAGEERROR|ImageConsumer.STATICIMAGEDONE, true);
+                imageComplete(ImageConsumer.IMAGEERROR, true);
                 throw e;
             }
         } finally {
