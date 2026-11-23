@@ -3398,8 +3398,14 @@ public class JavacParserTest extends TestCase {
 
                       class Test {
                           int i, j;
-                          void test(boolean b, Supplier<String> r) {
-                              test(i < j, Test::get);
+                          void test1(boolean b, Supplier<String> r) {
+                              test1(i < j, Test::get);
+                          }
+                          void test2(boolean b1, boolean b2, Supplier<String> r) {
+                              test2(i < j, j > i, Test::get);
+                          }
+                          void test3(boolean b1, boolean b2, Supplier<String> r) {
+                              test3(i > j, j < i, Test::get);
                           }
                           private static String get() {
                               return null;
@@ -3433,8 +3439,16 @@ public class JavacParserTest extends TestCase {
                          int i;
                          int j;
                          \n\
-                         void test(boolean b, Supplier<String> r) {
-                             test(i < j, Test::get);
+                         void test1(boolean b, Supplier<String> r) {
+                             test1(i < j, Test::get);
+                         }
+                         \n\
+                         void test2(boolean b1, boolean b2, Supplier<String> r) {
+                             test2(i < j, j > i, Test::get);
+                         }
+                         \n\
+                         void test3(boolean b1, boolean b2, Supplier<String> r) {
+                             test3(i > j, j < i, Test::get);
                          }
                          \n\
                          private static String get() {
