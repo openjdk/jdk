@@ -26,6 +26,7 @@
 
 #include "asm/register.hpp"
 #include "logging/log.hpp"
+#include "memory/resourceArea.hpp"
 #include "os_linux.hpp"
 #include "riscv_hwprobe.hpp"
 #include "runtime/java.hpp"
@@ -120,6 +121,41 @@ void VM_Version::RVNonExtFeatureValue::log_enabled() {
   log_info(os, cpu)("Enabled RV64 feature \"%s\" (%ld)", pretty(), value());
 }
 
+void VM_Version::apply_aot_cache_cpu_features() {
+  RVExtFeatureSet* archived_cpu_features = (RVExtFeatureSet*)get_aot_cache_cpu_features();
+  if (archived_cpu_features != nullptr) {
+    assert(is_aligned(archived_cpu_features, cpu_features_alignment()), "sanity check");
+    assert(UseAOTCacheCpuFeaturesOnly, "UseAOTCacheCpuFeaturesOnly must be true");
+    RVExtFeatureSet* runtime_cpu_features = RVExtFeatureSet::current();
+    if (!runtime_cpu_features->super_set_of(archived_cpu_features)) {
+      if (!FLAG_IS_DEFAULT(UseAOTCacheCpuFeaturesOnly)) {
+        warning("UseAOTCacheCpuFeaturesOnly is ignored: one or more cpu features recorded in AOT cache are not supported by this CPU");
+      }
+      FLAG_SET_ERGO(UseAOTCacheCpuFeaturesOnly, false);
+      return;
+    }
+    _rv_ext_features_disabled_by_aot_cache = runtime_cpu_features->features_not_in(archived_cpu_features);
+    // Undetected extensions can still have flags enabled by command-line options or RVA profiles.
+    for (int i = 0; i < RVExtFeatureSet::CPU_FEATURE_COUNT; i++) {
+      if (!archived_cpu_features->support_feature(i)) {
+        _ext_feature_list[i]->disable_feature();
+        // Normal flag initialization skips disabled extensions.
+        _ext_feature_list[i]->update_flag();
+      }
+    }
+
+    LogTarget(Info, os, cpu) os_cpu_log;
+    if (os_cpu_log.is_enabled()) {
+      ResourceMark rm;
+      stringStream ss;
+      insert_features_names(&_rv_ext_features_disabled_by_aot_cache, ss);
+      if (!ss.is_empty()) {
+        os_cpu_log.print("CPU features turned off by UseAOTCacheCpuFeaturesOnly: %s", ss.as_string());
+      }
+    }
+  }
+}
+
 void VM_Version::setup_cpu_available_features() {
 
   assert(ext_i.feature_bit() == HWCAP_ISA_I, "Bit for I must follow Linux HWCAP");
@@ -139,6 +175,14 @@ void VM_Version::setup_cpu_available_features() {
   char* uarch = os_uarch_additional_features();
   vendor_features();
 
+  // Linux kernel require Zifencei
+  if (!ext_Zifencei.feature_enabled()) {
+    log_info(os, cpu)("Zifencei not found, required by Linux, enabling.");
+    ext_Zifencei.enable_feature();
+  }
+
+  apply_aot_cache_cpu_features();
+
   char buf[1024] = {};
   if (uarch != nullptr && strcmp(uarch, "") != 0) {
     // Use at max half the buffer.
@@ -151,13 +195,15 @@ void VM_Version::setup_cpu_available_features() {
   strcat(buf, "rv64");
   int i = 0;
   while (_feature_list[i] != nullptr) {
-    if (_feature_list[i]->enabled()) {
-      // Change flag default
-      _feature_list[i]->update_flag();
+    if (_feature_list[i]->feature_enabled()) {
+      if (i < RVExtFeatureSet::CPU_FEATURE_COUNT) {
+        assert(_ext_feature_list[i] == _feature_list[i], "feature lists must have the same extension order");
+        _ext_feature_list[i]->update_flag();
+      }
 
       // Feature will be disabled by update_flag() if flag
       // is set to false by the user on the command line.
-      if (!_feature_list[i]->enabled()) {
+      if (!_feature_list[i]->feature_enabled()) {
         continue;
       }
 
@@ -189,12 +235,6 @@ void VM_Version::setup_cpu_available_features() {
       }
     }
     i++;
-  }
-
-  // Linux kernel require Zifencei
-  if (!ext_Zifencei.enabled()) {
-    log_info(os, cpu)("Zifencei not found, required by Linux, enabling.");
-    ext_Zifencei.enable_feature();
   }
 
   if (UseCtxFencei) {
@@ -303,7 +343,7 @@ char* VM_Version::os_uarch_additional_features() {
 }
 
 void VM_Version::vendor_features() {
-  if (!mvendorid.enabled()) {
+  if (!mvendorid.feature_enabled()) {
     return;
   }
   switch (mvendorid.value()) {
@@ -333,7 +373,6 @@ void VM_Version::rivos_features() {
 
   ext_Zicsr.enable_feature();
   ext_Zifencei.enable_feature();
-  ext_Zic64b.enable_feature();
   ext_Ztso.enable_feature();
 
   ext_Zvfh.enable_feature();
@@ -350,7 +389,7 @@ void VM_Version::rivos_features() {
 }
 
 void VM_Version::xuantie_features() {
-  if (!marchid.enabled()) {
+  if (!marchid.feature_enabled()) {
     return;
   }
 
@@ -380,7 +419,6 @@ void VM_Version::xuantie_features() {
   ext_Zicond.enable_feature();
   ext_Zicntr.enable_feature();
   ext_Zicsr.enable_feature();
-  ext_Zic64b.enable_feature();
   ext_Zifencei.enable_feature();
   ext_Zihintpause.enable_feature();
   ext_Zvbb.enable_feature();

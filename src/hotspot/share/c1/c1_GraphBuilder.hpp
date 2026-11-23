@@ -306,6 +306,7 @@ class GraphBuilder {
 
   void copy_value_content(ciValueKlass* vk, Value src, int src_off, Value dest, int dest_off, ValueStack* state_before,
                           CopyNullChecks& null_checks, ciField* enclosing_field = nullptr);
+  Value load_null_reset_value(ciValueKlass* vk);
 
   // stack/code manipulation helpers
   Instruction* append_with_bci(Instruction* instr, int bci);

@@ -102,7 +102,7 @@ void G1HeapRegion::setup_heap_region_size(size_t max_heap_size) {
   }
 }
 
-void G1HeapRegion::handle_evacuation_failure(bool retain) {
+void G1HeapRegion::handle_evacuation_failure() {
   uninstall_surv_rate_group();
   clear_young_index_in_cset();
   clear_index_in_opt_cset();
@@ -110,11 +110,6 @@ void G1HeapRegion::handle_evacuation_failure(bool retain) {
 
   _rem_set->clean_code_roots(this);
   assert(!_rem_set->has_card_set_group(), "must not have a card set group");
-  if (retain) {
-    assert(_rem_set->is_tracked(), "must be");
-  } else {
-    _rem_set->set_state_untracked();
-  }
 }
 
 void G1HeapRegion::unlink_from_list() {
@@ -132,7 +127,7 @@ void G1HeapRegion::hr_clear(bool clear_space) {
   set_free();
   reset_pre_dummy_top();
 
-  rem_set()->clear();
+  rem_set()->clear_code_roots();
 
   _parsable_bottom.store_relaxed(bottom());
   _garbage_bytes.store_relaxed(0);
@@ -198,9 +193,6 @@ void G1HeapRegion::set_starts_humongous(HeapWord* obj_top, size_t fill_size) {
   _type.set_starts_humongous();
   _humongous_start_region = this;
 
-  G1CardSetGroup* card_set_group = new G1CardSetGroup();
-  card_set_group->add(this);
-
   _bot->update_for_block(bottom(), obj_top);
   if (fill_size > 0) {
     _bot->update_for_block(obj_top, obj_top + fill_size);
@@ -221,13 +213,6 @@ void G1HeapRegion::clear_humongous() {
   assert(is_humongous(), "pre-condition");
 
   assert(capacity() == G1HeapRegion::GrainBytes, "pre-condition");
-  if (is_starts_humongous()) {
-    G1CardSetGroup* card_set_group = _rem_set->card_set_group();
-    assert(card_set_group != nullptr, "pre-condition %u missing card set group", hrm_index());
-    uninstall_card_set_group();
-    card_set_group->clear();
-    delete card_set_group;
-  }
   _humongous_start_region = nullptr;
 }
 
@@ -235,7 +220,9 @@ void G1HeapRegion::prepare_remset_for_scan() {
   if (is_young()) {
     uninstall_card_set_group();
   }
-  _rem_set->reset_table_scanner();
+  if (in_collection_set() || has_index_in_opt_cset()) {
+    _rem_set->reset_code_root_table_scanner();
+  }
 }
 
 G1HeapRegion::G1HeapRegion(uint hrm_index,

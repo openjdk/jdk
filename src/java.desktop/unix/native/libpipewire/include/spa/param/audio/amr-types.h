@@ -5,12 +5,12 @@
 #ifndef SPA_AUDIO_AMR_TYPES_H
 #define SPA_AUDIO_AMR_TYPES_H
 
+#include <spa/utils/type.h>
+#include <spa/param/audio/amr.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <spa/utils/type.h>
-#include <spa/param/audio/amr.h>
 
 /**
  * \addtogroup spa_param

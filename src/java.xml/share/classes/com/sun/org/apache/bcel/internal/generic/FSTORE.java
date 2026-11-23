@@ -24,9 +24,9 @@ package com.sun.org.apache.bcel.internal.generic;
 /**
  * FSTORE - Store float into local variable
  *
- * <PRE>
+ * <pre>
  * Stack: ..., value -&gt; ...
- * </PRE>
+ * </pre>
  */
 public class FSTORE extends StoreInstruction {
 
@@ -40,7 +40,7 @@ public class FSTORE extends StoreInstruction {
     /**
      * Store float into local variable
      *
-     * @param n index of local variable
+     * @param n index of local variable.
      */
     public FSTORE(final int n) {
         super(com.sun.org.apache.bcel.internal.Const.FSTORE, com.sun.org.apache.bcel.internal.Const.FSTORE_0, n);
@@ -48,9 +48,9 @@ public class FSTORE extends StoreInstruction {
 
     /**
      * Call corresponding visitor method(s). The order is: Call visitor methods of implemented interfaces first, then call
-     * methods according to the class hierarchy in descending order, i.e., the most specific visitXXX() call comes last.
+     * methods according to the class hierarchy in descending order, that is, the most specific visitXXX() call comes last.
      *
-     * @param v Visitor object
+     * @param v Visitor object.
      */
     @Override
     public void accept(final Visitor v) {

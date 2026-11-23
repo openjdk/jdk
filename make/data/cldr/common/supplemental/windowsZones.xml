@@ -57,7 +57,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 
 			<!-- (UTC-08:00) Pacific Time (US & Canada) -->
 			<mapZone other="Pacific Standard Time" territory="001" type="America/Los_Angeles"/>
-			<mapZone other="Pacific Standard Time" territory="CA" type="America/Vancouver"/>
 			<mapZone other="Pacific Standard Time" territory="US" type="America/Los_Angeles"/>
 
 			<!-- (UTC-07:00) Arizona -->
@@ -73,13 +72,21 @@ For terms of use, see http://www.unicode.org/copyright.html
 
 			<!-- (UTC-07:00) Mountain Time (US & Canada) -->
 			<mapZone other="Mountain Standard Time" territory="001" type="America/Denver"/>
-			<mapZone other="Mountain Standard Time" territory="CA" type="America/Edmonton America/Cambridge_Bay America/Inuvik"/>
+			<mapZone other="Mountain Standard Time" territory="CA" type="America/Cambridge_Bay"/>
 			<mapZone other="Mountain Standard Time" territory="MX" type="America/Ciudad_Juarez"/>
 			<mapZone other="Mountain Standard Time" territory="US" type="America/Denver America/Boise"/>
+
+			<!-- (UTC-07:00) British Columbia -->
+			<mapZone other="British Columbia Standard Time" territory="001" type="America/Vancouver"/>
+			<mapZone other="British Columbia Standard Time" territory="CA" type="America/Vancouver"/>
 
 			<!-- (UTC-07:00) Yukon -->
 			<mapZone other="Yukon Standard Time" territory="001" type="America/Whitehorse"/>
 			<mapZone other="Yukon Standard Time" territory="CA" type="America/Whitehorse America/Dawson"/>
+
+			<!-- (UTC-07:00) Alberta -->
+			<mapZone other="Alberta Standard Time" territory="001" type="America/Edmonton"/>
+			<mapZone other="Alberta Standard Time" territory="CA" type="America/Edmonton America/Inuvik"/>
 
 			<!-- (UTC-06:00) Central America -->
 			<mapZone other="Central America Standard Time" territory="001" type="America/Guatemala"/>
@@ -94,7 +101,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 
 			<!-- (UTC-06:00) Central Time (US & Canada) -->
 			<mapZone other="Central Standard Time" territory="001" type="America/Chicago"/>
-			<mapZone other="Central Standard Time" territory="CA" type="America/Winnipeg America/Rankin_Inlet America/Resolute"/>
+			<mapZone other="Central Standard Time" territory="CA" type="America/Rankin_Inlet America/Resolute"/>
 			<mapZone other="Central Standard Time" territory="MX" type="America/Matamoros America/Ojinaga"/>
 			<mapZone other="Central Standard Time" territory="US" type="America/Chicago America/Indiana/Knox America/Indiana/Tell_City America/Menominee America/North_Dakota/Beulah America/North_Dakota/Center America/North_Dakota/New_Salem"/>
 
@@ -109,6 +116,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<!-- (UTC-06:00) Saskatchewan -->
 			<mapZone other="Canada Central Standard Time" territory="001" type="America/Regina"/>
 			<mapZone other="Canada Central Standard Time" territory="CA" type="America/Regina America/Swift_Current"/>
+
+			<!-- (UTC-05:00) Manitoba -->
+			<mapZone other="Manitoba Standard Time" territory="001" type="America/Winnipeg"/>
+			<mapZone other="Manitoba Standard Time" territory="CA" type="America/Winnipeg"/>
 
 			<!-- (UTC-05:00) Bogota, Lima, Quito, Rio Branco -->
 			<mapZone other="SA Pacific Standard Time" territory="001" type="America/Bogota"/>

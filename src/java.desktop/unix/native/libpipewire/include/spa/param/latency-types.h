@@ -5,6 +5,10 @@
 #ifndef SPA_PARAM_LATENCY_TYPES_H
 #define SPA_PARAM_LATENCY_TYPES_H
 
+#include <spa/utils/enum-types.h>
+#include <spa/param/param-types.h>
+#include <spa/param/latency.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -13,10 +17,6 @@ extern "C" {
  * \addtogroup spa_param
  * \{
  */
-
-#include <spa/utils/enum-types.h>
-#include <spa/param/param-types.h>
-#include <spa/param/latency.h>
 
 #define SPA_TYPE_INFO_PARAM_Latency        SPA_TYPE_INFO_PARAM_BASE "Latency"
 #define SPA_TYPE_INFO_PARAM_LATENCY_BASE    SPA_TYPE_INFO_PARAM_Latency ":"

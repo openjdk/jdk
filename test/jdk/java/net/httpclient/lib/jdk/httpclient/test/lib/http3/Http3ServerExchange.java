@@ -41,6 +41,7 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.LongSupplier;
 
@@ -414,6 +415,11 @@ public final class Http3ServerExchange implements Http2TestExchange {
     @Override
     public void cancelPushId(long pushId) throws IOException {
         serverConn.sendCancelPush(pushId);
+    }
+
+    @Override
+    public void setCancelPushListener(Consumer<Long> listener) {
+        serverConn.setCancelPushListener(listener);
     }
 
     @Override

@@ -182,10 +182,8 @@ void SharedRuntime::generate_stubs() {
 
   generate_deopt_blob();
 
-#if INCLUDE_CDS
   // disallow any further generation of runtime stubs
   AOTCodeCache::set_shared_stubs_complete();
-#endif // INCLUDE_CDS
 }
 
 void SharedRuntime::init_adapter_library() {
@@ -3623,6 +3621,13 @@ AdapterHandlerEntry::~AdapterHandlerEntry() {
   FreeHeap(this);
 }
 
+int AdapterHandlerEntry::fingerprint_size() const {
+  return fingerprint()->size();
+}
+
+bool AdapterHandlerEntry::fingerprint_equals(AdapterFingerPrint* fp) const {
+  return fingerprint()->equals(fp);
+}
 
 #ifdef ASSERT
 // Capture the code before relocation so that it can be compared

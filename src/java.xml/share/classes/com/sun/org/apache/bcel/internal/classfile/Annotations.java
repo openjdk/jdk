@@ -28,6 +28,7 @@ import java.util.Iterator;
 import java.util.stream.Stream;
 
 import com.sun.org.apache.bcel.internal.Const;
+import com.sun.org.apache.bcel.internal.util.Args;
 
 /**
  * base class for annotations
@@ -42,12 +43,12 @@ public abstract class Annotations extends Attribute implements Iterable<Annotati
     /**
      * Constructs an instance.
      *
-     * @param annotationType   the subclass type of the annotation
-     * @param nameIndex        Index pointing to the name <em>Code</em>
-     * @param length           Content length in bytes
-     * @param annotationTable  the actual annotations
-     * @param constantPool     Array of constants
-     * @param isRuntimeVisible whether this Annotation visible at runtime
+     * @param annotationType   The subclass type of the annotation.
+     * @param nameIndex        Index pointing to the name <em>Code</em>.
+     * @param length           Content length in bytes.
+     * @param annotationTable  The actual annotations.
+     * @param constantPool     Array of constants.
+     * @param isRuntimeVisible whether this Annotation visible at runtime.
      */
     public Annotations(final byte annotationType, final int nameIndex, final int length, final AnnotationEntry[] annotationTable,
             final ConstantPool constantPool, final boolean isRuntimeVisible) {
@@ -59,13 +60,13 @@ public abstract class Annotations extends Attribute implements Iterable<Annotati
     /**
      * Constructs an instance.
      *
-     * @param annotationType   the subclass type of the annotation
-     * @param nameIndex        Index pointing to the name <em>Code</em>
-     * @param length           Content length in bytes
-     * @param input            Input stream
-     * @param constantPool     Array of constants
-     * @param isRuntimeVisible whether this Annotation visible at runtime
-     * @throws IOException if an I/O error occurs.
+     * @param annotationType   The subclass type of the annotation.
+     * @param nameIndex        Index pointing to the name <em>Code</em>.
+     * @param length           Content length in bytes.
+     * @param input            Input stream.
+     * @param constantPool     Array of constants.
+     * @param isRuntimeVisible whether this Annotation visible at runtime.
+     * @throws IOException Thrown if an I/O error occurs.
      */
     Annotations(final byte annotationType, final int nameIndex, final int length, final DataInput input, final ConstantPool constantPool,
             final boolean isRuntimeVisible) throws IOException {
@@ -82,7 +83,7 @@ public abstract class Annotations extends Attribute implements Iterable<Annotati
      * defined by the contents of a Java class. I.e., the hierarchy of methods,
      * fields, attributes, etc. spawns a tree of objects.
      *
-     * @param v Visitor object
+     * @param v Visitor object.
      */
     @Override
     public void accept(final Visitor v) {
@@ -96,7 +97,9 @@ public abstract class Annotations extends Attribute implements Iterable<Annotati
     }
 
     /**
-     * Gets the array of annotation entries in this annotation
+     * Gets the array of annotation entries in this annotation.
+     *
+     * @return The array of annotation entries in this annotation.
      */
     public AnnotationEntry[] getAnnotationEntries() {
         return annotationTable;
@@ -105,12 +108,17 @@ public abstract class Annotations extends Attribute implements Iterable<Annotati
     /**
      * Gets the number of annotation entries in this annotation.
      *
-     * @return the number of annotation entries in this annotation
+     * @return The number of annotation entries in this annotation.
      */
     public final int getNumAnnotations() {
         return annotationTable.length;
     }
 
+    /**
+     * Gets whether this annotation is runtime visible.
+     *
+     * @return true if this annotation is runtime visible.
+     */
     public boolean isRuntimeVisible() {
         return isRuntimeVisible;
     }
@@ -123,7 +131,7 @@ public abstract class Annotations extends Attribute implements Iterable<Annotati
     /**
      * Sets the entries to set in this annotation.
      *
-     * @param annotationTable the entries to set in this annotation
+     * @param annotationTable The entries to set in this annotation.
      */
     public final void setAnnotationTable(final AnnotationEntry[] annotationTable) {
         this.annotationTable = annotationTable != null ? annotationTable : AnnotationEntry.EMPTY_ARRAY;
@@ -132,7 +140,7 @@ public abstract class Annotations extends Attribute implements Iterable<Annotati
     /**
      * Converts to a String representation.
      *
-     * @return String representation
+     * @return String representation.
      */
     @Override
     public final String toString() {
@@ -147,8 +155,14 @@ public abstract class Annotations extends Attribute implements Iterable<Annotati
         return buf.toString();
     }
 
+    /**
+     * Writes the annotations to a DataOutputStream.
+     *
+     * @param dos The data output stream.
+     * @throws IOException Thrown if an I/O error occurs.
+     */
     protected void writeAnnotations(final DataOutputStream dos) throws IOException {
-        dos.writeShort(annotationTable.length);
+        dos.writeShort(Args.requireU2(annotationTable.length, "annotationTable.length"));
         for (final AnnotationEntry element : annotationTable) {
             element.dump(dos);
         }
