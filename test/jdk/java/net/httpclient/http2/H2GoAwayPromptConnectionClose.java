@@ -60,6 +60,7 @@ import jdk.internal.net.http.frame.FramesEncoder;
 import jdk.internal.net.http.frame.HeadersFrame;
 import jdk.internal.net.http.frame.Http2Frame;
 import jdk.internal.net.http.frame.SettingsFrame;
+import jdk.internal.net.http.frame.WindowUpdateFrame;
 import jdk.internal.net.http.hpack.Decoder;
 import jdk.internal.net.http.hpack.Encoder;
 import jdk.test.lib.RandomFactory;
@@ -632,13 +633,19 @@ class H2GoAwayPromptConnectionClose {
 
         private static byte[] expectFrame(final InputStream in, final int expectedFrameType)
                 throws IOException {
-            final byte[] frame = readHTTP2Frame(in);
-            final int frameType = frameType(frame);
-            if (frameType != expectedFrameType) {
-                throw new IOException("unexpected frame, got type " + frameType
-                        + ", expected " + expectedFrameType);
-            }
-            return frame;
+            do {
+                final byte[] frame = readHTTP2Frame(in);
+                final int frameType = frameType(frame);
+                if (frameType == WindowUpdateFrame.TYPE && expectedFrameType == HeadersFrame.TYPE) {
+                    // skip this frame
+                    continue;
+                }
+                if (frameType != expectedFrameType) {
+                    throw new IOException("unexpected frame, got type " + frameType
+                            + ", expected " + expectedFrameType);
+                }
+                return frame;
+            } while (true);
         }
 
         private static byte[] readHTTP2Frame(final InputStream in)

@@ -44,6 +44,7 @@
 #include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 size_t ShenandoahHeapRegion::RegionCount = 0;
@@ -57,32 +58,35 @@ size_t ShenandoahHeapRegion::MaxTLABSizeBytes = 0;
 size_t ShenandoahHeapRegion::MaxTLABSizeWords = 0;
 
 ShenandoahHeapRegion::ShenandoahHeapRegion(HeapWord* start, size_t index, bool committed) :
-  _index(index),
   _bottom(start),
   _end(start + RegionSizeWords),
+  _index(checked_cast<uint32_t>(index)),
+  _humongous_start_region_index(UndefinedRegionIndex),
+  _state(committed ? _empty_committed : _empty_uncommitted),
+  _has_self_forwards(false),
+  _age(0),
+  _needs_bitmap_reset(false),
+  _promoted_in_place(false),
   _new_top(nullptr),
-  _empty_time(os::elapsedTime()),
   _top_before_promoted(nullptr),
   _top_at_evac_start(start),
-  _state(committed ? _empty_committed : _empty_uncommitted),
+  _empty_time(os::elapsedTime()),
+  _mixed_candidate_garbage_words(0),
+  _coalesce_and_fill_boundary(start),
+  _critical_pins(0),
+  _update_watermark(start),
   _top(start),
+  _live_data(0),
   _tlab_allocs(0),
   _gclab_allocs(0),
   _plab_allocs(0),
-  _live_data(0),
-  _critical_pins(0),
-  _mixed_candidate_garbage_words(0),
-  _update_watermark(start),
-  _age(0),
-  _needs_bitmap_reset(false),
-  _humongous_start_region_index(UndefinedRegionIndex) {
+  _recycling(false)
+{
   assert(Universe::on_page_boundary(_bottom) && Universe::on_page_boundary(_end),
          "invalid space boundaries");
   if (ZapUnusedHeapArea && committed) {
     SpaceMangler::mangle_region(MemRegion(_bottom, _end));
   }
-  _recycling.unset();
-  _has_self_forwards.unset();
 }
 
 void ShenandoahHeapRegion::report_illegal_transition(const char *method) {
@@ -341,8 +345,8 @@ void ShenandoahHeapRegion::make_empty() {
   reset_age();
   switch (state()) {
     case _trash:
-      set_state(_empty_committed);
       _empty_time = os::elapsedTime();
+      set_state(_empty_committed);
       return;
     default:
       report_illegal_transition("emptying");
@@ -404,7 +408,7 @@ void ShenandoahHeapRegion::set_live_data(size_t s) {
 
 void ShenandoahHeapRegion::print_on(outputStream* st) const {
   st->print("|");
-  st->print("%5zu", this->_index);
+  st->print(UINT32_FORMAT_W(5), this->_index);
 
   switch (state()) {
     case _empty_uncommitted:
@@ -574,7 +578,7 @@ void ShenandoahHeapRegion::oop_iterate_humongous_slice_all(OopIterateClosure* cl
 }
 
 void ShenandoahHeapRegion::recycle_internal() {
-  assert(_recycling.is_set() && is_trash(), "Wrong state");
+  assert(_recycling.load_acquire() && is_trash(), "Wrong state");
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
   _top_at_evac_start = _bottom;
@@ -605,7 +609,7 @@ void ShenandoahHeapRegion::try_recycle_under_lock() {
   if (!is_trash()) {
     return;
   }
-  if (_recycling.try_set()) {
+  if (_recycling.compare_set(false, true)) {
     if (is_trash()) {
       // At freeset rebuild time, which precedes recycling of collection set, we treat all cset regions as
       // part of capacity, as empty, as fully available, and as unaffiliated.  This provides short-lived optimism
@@ -613,12 +617,15 @@ void ShenandoahHeapRegion::try_recycle_under_lock() {
       // by more time-precise accounting of these details.
       recycle_internal();
     }
-    _recycling.unset();
+    // A release store is enough to hand the recycled region over: a racing recycler
+    // observes it through the CAS or the acquire load in the spin loop below, and
+    // nothing after this point depends on the store. No trailing fence is needed.
+    _recycling.release_store(false);
   } else {
     // Ensure recycling is unset before returning to mutator to continue memory allocation.
     // Otherwise, the mutator might see region as fully recycled and might change its affiliation only to have
     // the racing GC worker thread overwrite its affiliation to FREE.
-    while (_recycling.is_set()) {
+    while (_recycling.load_acquire()) {
       if (os::is_MP()) {
         SpinPause();
       } else {
@@ -636,7 +643,7 @@ void ShenandoahHeapRegion::try_recycle() {
   if (!is_trash()) {
     return;
   }
-  if (_recycling.try_set()) {
+  if (_recycling.compare_set(false, true)) {
     // Double check region state after win the race to set recycling flag
     if (is_trash()) {
       // At freeset rebuild time, which precedes recycling of collection set, we treat all cset regions as
@@ -645,7 +652,8 @@ void ShenandoahHeapRegion::try_recycle() {
       // by more time-precise accounting of these details.
       recycle_internal();
     }
-    _recycling.unset();
+    // A release store is enough here as well, see try_recycle_under_lock().
+    _recycling.release_store(false);
   }
 }
 

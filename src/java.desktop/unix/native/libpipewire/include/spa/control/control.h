@@ -5,12 +5,12 @@
 #ifndef SPA_CONTROL_H
 #define SPA_CONTROL_H
 
+#include <spa/utils/defs.h>
+#include <spa/pod/pod.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <spa/utils/defs.h>
-#include <spa/pod/pod.h>
 
 /** \defgroup spa_control Control
  * Control type declarations
