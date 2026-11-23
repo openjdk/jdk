@@ -76,16 +76,9 @@ inline ShenandoahTaskQueueStack* ShenandoahTaskQueueSegment::pick(Atomic<uint64_
 }
 
 inline void ShenandoahTaskQueueSegment::mark(ShenandoahTaskQueueStack* stack, Atomic<uint64_t>* bm) {
-  size_t local_idx = checked_cast<size_t>(stack->index() & (SEGMENT_SIZE - 1));
-  uint64_t mask = nth_bit<uint64_t>(checked_cast<int>(local_idx));
-
-#ifdef ASSERT
-  size_t seg_idx = checked_cast<size_t>(stack->index() >> SEGMENT_SIZE_SHIFT);
-  assert(seg_idx == _segment_index, "Chunk belongs to this segment");
+  uint64_t mask = nth_bit<uint64_t>(checked_cast<int>(stack->index()));
   assert((_shared_bm.load_relaxed() & mask) == 0, "Must not be shared");
   assert((_free_bm.load_relaxed() & mask) == 0, "Mut not be free");
-#endif
-
   bm->fetch_then_or(mask, memory_order_release);
 }
 
@@ -113,27 +106,35 @@ inline ShenandoahTaskQueueStack* ShenandoahTaskQueueSet::pick_shared() {
   if (_shared_count.load_relaxed() == 0) {
     return nullptr;
   }
-  size_t n = _num_segments.load_acquire();
-  for (size_t s = 0; s < n; s++) {
-    auto stack = _segments[s]->pick_shared();
+  ShenandoahTaskQueueSegment* cur = _segments_head.load_acquire();
+  while (cur != nullptr) {
+    auto stack = cur->pick_shared();
     if (stack != nullptr) {
       _shared_count.fetch_then_sub((size_t)1, memory_order_seq_cst);
       return stack;
     }
+    cur = cur->next();
   }
   return nullptr;
 }
 
 inline ShenandoahTaskQueueStack* ShenandoahTaskQueueSet::pick_free() {
   while (true) {
-    size_t n = _num_segments.load_acquire();
-    for (size_t s = 0; s < n; s++) {
-      auto stack = _segments[s]->pick_free();
+    ShenandoahTaskQueueSegment* head = _segments_head.load_acquire();
+    ShenandoahTaskQueueSegment* cur = head;
+    size_t depth = 1;
+    while (cur != nullptr) {
+      auto stack = cur->pick_free();
       if (stack != nullptr) {
+        if (depth > _peak_segments.load_relaxed()) {
+          _peak_segments.store_relaxed(depth);
+        }
         return stack;
       }
+      cur = cur->next();
+      depth++;
     }
-    try_grow(n);
+    try_grow(head);
   }
 }
 
@@ -142,18 +143,12 @@ inline void ShenandoahTaskQueueSet::mark_shared(ShenandoahTaskQueueStack* stack)
   // For the sake of proper termination, we need to bump shared work count
   // before publishing the stack.
   _shared_count.fetch_then_add((size_t)1, memory_order_seq_cst);
-  size_t sub_idx = stack->index() >> ShenandoahTaskQueueSegment::SEGMENT_SIZE_SHIFT;
-  auto seg = _segments[sub_idx];
-  assert(seg != nullptr, "Segment should be allocated");
-  seg->mark_shared(stack);
+  stack->segment()->mark_shared(stack);
 }
 
 inline void ShenandoahTaskQueueSet::mark_free(ShenandoahTaskQueueStack* stack) {
   assert(stack->is_empty(), "Do not free non-empty stacks");
-  size_t sub_idx = stack->index() >> ShenandoahTaskQueueSegment::SEGMENT_SIZE_SHIFT;
-  auto seg = _segments[sub_idx];
-  assert(seg != nullptr, "Segment should be allocated");
-  seg->mark_free(stack);
+  stack->segment()->mark_free(stack);
 }
 
 bool ShenandoahTaskQueueStack::push(ShenandoahTask t) {
@@ -185,21 +180,18 @@ inline bool ShenandoahTaskQueueStack::is_sliceable() {
   return _top >= MIN_SIZE * 2;
 }
 
-void ShenandoahTaskQueueSet::try_grow(size_t n) {
-  if (n >= _max_segments) {
-    vm_exit_out_of_memory(sizeof(ShenandoahTaskQueueSegment), OOM_MALLOC_ERROR, "ShenandoahTaskQueueSet pool exhausted");
+void ShenandoahTaskQueueSet::try_grow(ShenandoahTaskQueueSegment* seen_head) {
+  if (_segments_head.load_acquire() != seen_head) {
+    // Head already moved, let caller rescan.
+    return;
   }
-
-  if (AtomicAccess::load_acquire(&_segments[n]) == nullptr) {
-    ShenandoahTaskQueueSegment* cand = ShenandoahTaskQueueSegment::create(n);
-    if (AtomicAccess::cmpxchg(&_segments[n], (ShenandoahTaskQueueSegment*)nullptr, cand) != nullptr) {
-      // Someone else won the installation race.
-      ShenandoahTaskQueueSegment::destroy(cand);
-    }
+  ShenandoahTaskQueueSegment* cand = ShenandoahTaskQueueSegment::create();
+  cand->set_next(seen_head);
+  if (_segments_head.compare_set(seen_head, cand)) {
+    _num_segments.fetch_then_add((size_t)1);
+  } else {
+    ShenandoahTaskQueueSegment::destroy(cand);
   }
-
-  // Whatever happens, the slot[n] is populated, bump the segment count.
-  _num_segments.compare_exchange(n, n + 1);
 }
 
 inline bool ShenandoahTaskTerminator::has_waiters() {

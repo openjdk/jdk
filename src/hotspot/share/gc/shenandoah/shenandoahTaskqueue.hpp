@@ -216,6 +216,8 @@ public:
 #pragma warning(pop)
 #endif
 
+class ShenandoahTaskQueueSegment;
+
 // Stack is the unit of load balancing.
 //
 // Each stack can be:
@@ -225,17 +227,18 @@ public:
 //
 class ShenandoahTaskQueueStack {
 public:
-  static const int MAX_SIZE = (4096 - sizeof(size_t) * 2) / sizeof(ShenandoahTask);
+  static const int MAX_SIZE = (4096 - sizeof(size_t) * 2 - sizeof(ShenandoahTaskQueueSegment*)) / sizeof(ShenandoahTask);
   static const int MIN_SIZE = 1;
 
 private:
+  ShenandoahTaskQueueSegment* _segment;
   size_t _index;
   size_t _top;
   ShenandoahTask _tasks[MAX_SIZE];
 
 public:
-  ShenandoahTaskQueueStack() : _index(SIZE_MAX), _top(SIZE_MAX) {}
-  ShenandoahTaskQueueStack(size_t index) : _index(index), _top(0) {}
+  ShenandoahTaskQueueStack() : _segment(nullptr), _index(SIZE_MAX), _top(SIZE_MAX) {}
+  ShenandoahTaskQueueStack(ShenandoahTaskQueueSegment* segment, size_t index) : _segment(segment), _index(index), _top(0) {}
 
   ALWAYSINLINE
   bool push(ShenandoahTask t);
@@ -246,6 +249,7 @@ public:
   bool is_empty();
   void clear();
 
+  ShenandoahTaskQueueSegment* segment() { return _segment; }
   size_t index() { return _index; }
 
   bool is_sliceable();
@@ -271,11 +275,11 @@ public:
   shenandoah_padding(1);
   Atomic<uint64_t> _shared_bm;
   shenandoah_padding(2);
+  ShenandoahTaskQueueSegment* _next;
 
   ReservedSpace _rs;
-  size_t _segment_index;
 
-  static ShenandoahTaskQueueSegment* create(size_t seg_idx);
+  static ShenandoahTaskQueueSegment* create();
   static void destroy(ShenandoahTaskQueueSegment* seg);
 
   inline ShenandoahTaskQueueStack* pick(Atomic<uint64_t>* bm);
@@ -286,12 +290,16 @@ public:
   inline void mark_shared(ShenandoahTaskQueueStack* stack);
   inline void mark_free(ShenandoahTaskQueueStack* stack);
 
-  bool are_all_free() const;
+  bool all_are_free() const;
 
   void clear();
 
+  void set_next(ShenandoahTaskQueueSegment * next) { _next = next; }
+
+  ShenandoahTaskQueueSegment * next() { return _next; }
+
 private:
-  ShenandoahTaskQueueSegment(size_t seg_idx, ReservedSpace& rs);
+  ShenandoahTaskQueueSegment(ReservedSpace& rs);
 };
 
 // TaskQueue is the external interface: worker threads use push/pop from it,
@@ -329,16 +337,15 @@ class ShenandoahTaskQueueSet : public CHeapObj<mtGC> {
   ShenandoahTaskQueue** _queues;
   size_t _queue_count;
 
-  ShenandoahTaskQueueSegment** _segments;
+  Atomic<ShenandoahTaskQueueSegment*> _segments_head;
   Atomic<size_t> _num_segments;
-  size_t _peak_segments;
-  size_t _max_segments;
+  Atomic<size_t> _peak_segments;
 
   shenandoah_padding(0);
   Atomic<size_t> _shared_count;
   shenandoah_padding(1);
 
-  inline void try_grow(size_t n);
+  inline void try_grow(ShenandoahTaskQueueSegment* seen_head);
 
 public:
   ShenandoahTaskQueueSet(uint queue_count);
