@@ -3591,6 +3591,7 @@ bool PhaseMacroExpand::expand_macro_nodes() {
     }
   }
   _igvn.set_delay_transform(false);
+  C->set_post_macro_expand_phase();
   return true;
 }
 

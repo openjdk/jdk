@@ -964,6 +964,7 @@ public:
   // Boxing and unboxing calls may not have a safepoint on the fast path.
   // Since the macro flag is cleared before matching, it has no effect on PcDesc emission.
   virtual bool guaranteed_safepoint() {
+    assert(!Compile::current()->post_macro_expand_phase() || !is_macro(), "not expanded");
     return !(is_boxing_or_unboxing_call() && is_macro());
   }
 
