@@ -29,18 +29,18 @@
  * everything as potentially early larval. Value objects that are known to be
  * unrestricted (late larval or fully initialized) are immutable, and can be
  * scalarized.
- * @library /test/jdk/java/lang/invoke/common
+ * @library /test/jdk/java/lang/invoke/common /test/lib
  * @enablePreview
  * @requires vm.debug
- * @run main compiler.valhalla.valuetypes.LarvalDetectionAboveOSR
+ * @run main ${test.main.class}
  */
 
 package compiler.valhalla.valuetypes;
 
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 import test.java.lang.invoke.lib.InstructionHelper;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
 import java.lang.classfile.Label;
 import java.lang.classfile.TypeKind;
 import java.lang.constant.ClassDesc;
@@ -49,7 +49,6 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.nio.ByteBuffer;
-import java.nio.file.FileSystems;
 import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -57,46 +56,21 @@ import java.util.regex.Pattern;
 import static test.java.lang.invoke.lib.InstructionHelper.classDesc;
 
 public class LarvalDetectionAboveOSR {
-    public static ArrayList<String> runInSeparateVM(String scenario, String compile_pattern) throws Throwable {
-        String separator = FileSystems.getDefault().getSeparator();
-        String path = System.getProperty("java.home") + separator + "bin" + separator + "java";
-
-        String javaFile = LarvalDetectionAboveOSR.class.getProtectionDomain().getCodeSource().getLocation().getPath();
-        String classpath = javaFile.replace("LarvalDetectionAboveOSR.java", "");
-        ProcessBuilder processBuilder = new ProcessBuilder(
-                path, "-cp", classpath,
+    public static String[] runInSeparateVM(String scenario, String compile_pattern) throws Throwable {
+        String[] cmd = {
                 "--enable-preview", "-XX:-TieredCompilation",
                 "-XX:CompileCommand=compileonly," + compile_pattern,
                 "-XX:CompileCommand=printcompilation,*::*",
                 "-XX:CompileCommand=PrintIdealPhase,*::*,BEFORE_MACRO_EXPANSION",
                 "-XX:+PrintEliminateAllocations",
                 LarvalDetectionAboveOSR.class.getCanonicalName(), scenario
-        );
-        Process process = processBuilder.start();
-        processBuilder.redirectErrorStream(true);
+        };
 
-        BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-        BufferedReader error_reader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
-        var lines = new ArrayList<String>();
-        var error_lines = new ArrayList<String>();
-        String line;
-        while ((line = reader.readLine()) != null) {
-            lines.add(line);
-        }
-        while ((line = error_reader.readLine()) != null) {
-            error_lines.add(line);
-        }
-        process.waitFor();
+        OutputAnalyzer oa = ProcessTools.executeTestJava(cmd);
+        String output = oa.getStdout();
+        oa.shouldHaveExitValue(0);
 
-        if (process.exitValue() != 0) {
-            System.out.println("stdout:");
-            System.out.println(String.join("\n", lines));
-            System.out.println("stderr:");
-            System.out.println(String.join("\n", error_lines));
-            throw new RuntimeException("Process exited with status: " + process.exitValue());
-        }
-
-        return lines;
+        return output.split("\n");
     }
 
     static class CompilationBlock {
@@ -112,7 +86,7 @@ public class LarvalDetectionAboveOSR {
     static Pattern allocate_elimination_regex = Pattern.compile("\\+{4} Eliminated: \\d+ Allocate");
     static Pattern allocate_regex = Pattern.compile("\\s*\\d+ {2}Allocate {2}={3}.*");
 
-    static ArrayList<CompilationBlock> splitLines(ArrayList<String> lines) {
+    static ArrayList<CompilationBlock> splitLines(String[] lines) {
         var blocks = new ArrayList<CompilationBlock>();
         for (String line : lines) {
             Matcher m = print_compilation_regex.matcher(line);
@@ -125,7 +99,7 @@ public class LarvalDetectionAboveOSR {
         return blocks;
     }
 
-    static void analyzeLines(ArrayList<String> lines) {
+    static void analyzeLines(String[] lines) {
         var blocks = splitLines(lines);
         int blocks_actually_checked = 0;
         for (CompilationBlock block : blocks) {
