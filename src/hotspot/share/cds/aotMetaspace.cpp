@@ -1837,7 +1837,8 @@ MapArchiveResult AOTMetaspace::map_archives(FileMapInfo* static_mapinfo, FileMap
     MapArchiveResult dynamic_result = (static_result == MAP_ARCHIVE_SUCCESS) ?
                                      map_archive(dynamic_mapinfo, mapped_base_address, archive_space_rs) : MAP_ARCHIVE_OTHER_FAILURE;
 
-    if (ArchiveRelocationMode == 0 && use_requested_addr && AOTStressArchiveUnmapping) {
+    if ((ArchiveRelocationMode == REQUESTED_ADDR_FALLBACK_OS_ADDR) &&
+        use_requested_addr && AOTStressArchiveUnmapping) {
       // This is for simulating mmap failures at the requested address. We do it here
       // (after all archives have possibly been mapped), so we can thoroughly test the
       // code for failure handling (releasing all allocated resource, etc).
