@@ -42,7 +42,7 @@
 #include "utilities/powerOfTwo.hpp"
 
 void ShenandoahArguments::initialize() {
-#if !(defined AARCH64 || defined AMD64 || defined PPC64 || defined RISCV64)
+#if !(defined ZERO || defined AARCH64 || defined AMD64 || defined PPC64 || defined RISCV64)
   vm_exit_during_initialization("Shenandoah GC is not supported on this platform.");
 #endif
 

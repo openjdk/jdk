@@ -185,24 +185,21 @@ inline bool ShenandoahTaskQueueStack::is_sliceable() {
   return _top >= MIN_SIZE * 2;
 }
 
-ShenandoahTaskQueueSegment* ShenandoahTaskQueueSet::try_grow(size_t n) {
+void ShenandoahTaskQueueSet::try_grow(size_t n) {
   if (n >= _max_segments) {
     vm_exit_out_of_memory(sizeof(ShenandoahTaskQueueSegment), OOM_MALLOC_ERROR, "ShenandoahTaskQueueSet pool exhausted");
   }
 
-  ShenandoahTaskQueueSegment* cand = nullptr;
   if (AtomicAccess::load_acquire(&_segments[n]) == nullptr) {
-    cand = ShenandoahTaskQueueSegment::create(n);
+    ShenandoahTaskQueueSegment* cand = ShenandoahTaskQueueSegment::create(n);
     if (AtomicAccess::cmpxchg(&_segments[n], (ShenandoahTaskQueueSegment*)nullptr, cand) != nullptr) {
       // Someone else won the installation race.
       ShenandoahTaskQueueSegment::destroy(cand);
-      cand = nullptr;
     }
   }
 
   // Whatever happens, the slot[n] is populated, bump the segment count.
   _num_segments.compare_exchange(n, n + 1);
-  return cand;
 }
 
 inline bool ShenandoahTaskTerminator::has_waiters() {

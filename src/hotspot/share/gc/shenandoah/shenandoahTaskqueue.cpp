@@ -112,7 +112,7 @@ ShenandoahTaskQueueSet::ShenandoahTaskQueueSet(uint queue_count) :
 
   // Size up for the absolute worst case: one 8-byte task per smallest 8-byte object
   size_t alignment = MAX3(STACK_SIZE, os::vm_allocation_granularity(), os::vm_page_size());
-  _max_segments = align_up(MaxHeapSize, alignment) / STACK_SIZE / ShenandoahTaskQueueSegment::SEGMENT_SIZE;
+  _max_segments = align_up(MaxHeapSize, alignment) / ShenandoahTaskQueueStack::MAX_SIZE / ShenandoahTaskQueueSegment::SEGMENT_SIZE;
   _segments = NEW_C_HEAP_ARRAY(ShenandoahTaskQueueSegment*, _max_segments, mtGC);
   memset(_segments, 0, _max_segments * sizeof(ShenandoahTaskQueueSegment*));
 
@@ -159,18 +159,23 @@ void ShenandoahTaskQueueSet::clear() {
 }
 
 void ShenandoahTaskQueueSet::trim() {
+  size_t num_segments = _num_segments.load_relaxed();
+  if (num_segments == 0) {
+    return;
+  }
+
   // Rearrange the chunks to the left-most segments.
   for (uint i = 0; i < _queue_count; i++) {
     queue(i)->compact();
   }
 
   // Simple hysteresis: only trim to half peak.
-  _peak_segments = MAX2(_peak_segments / 2, _num_segments.load_relaxed());
+  _peak_segments = MAX2(_peak_segments / 2, num_segments);
   size_t min_for_queues = align_up(_queue_count, ShenandoahTaskQueueSegment::SEGMENT_SIZE) / ShenandoahTaskQueueSegment::SEGMENT_SIZE + 1;
   size_t keep = MAX2(_peak_segments, min_for_queues);
 
   // Delete free segments from the tail.
-  size_t s = _num_segments.load_relaxed() - 1;
+  size_t s = num_segments - 1;
   while (s > keep && _segments[s]->are_all_free()) {
     ShenandoahTaskQueueSegment::destroy(_segments[s]);
     AtomicAccess::store(&_segments[s], (ShenandoahTaskQueueSegment*)nullptr);
@@ -191,7 +196,7 @@ ShenandoahTaskTerminator::ShenandoahTaskTerminator(int workers, ShenandoahTaskQu
   _heap(ShenandoahHeap::heap()), _queues(queues), _active_workers(workers), _total_workers(workers) {}
 
 bool ShenandoahTaskTerminator::offer_termination(bool cancellable) {
-  _active_workers.fetch_then_sub((size_t)1, memory_order_relaxed);
+  _active_workers.fetch_then_sub((size_t)1, memory_order_seq_cst);
   SpinYield spin;
   while (true) {
     if (_active_workers.load_relaxed() == 0) {
@@ -205,7 +210,7 @@ bool ShenandoahTaskTerminator::offer_termination(bool cancellable) {
     }
     if (!_queues->is_shared_empty()) {
       // New work appeared, no termination
-      _active_workers.fetch_then_add((size_t)1, memory_order_relaxed);
+      _active_workers.fetch_then_add((size_t)1, memory_order_seq_cst);
       return false;
     }
     spin.wait();

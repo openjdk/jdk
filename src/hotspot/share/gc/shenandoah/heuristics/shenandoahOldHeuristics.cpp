@@ -842,7 +842,7 @@ void ShenandoahOldHeuristics::adjust_old_garbage_threshold() {
       } else {
         _old_garbage_threshold = ShenandoahOldGarbageThreshold - adjustment_potential / 3;
       }
-      log_info(gc, ergo)("Adjusting old garbage threshold to %lu because Old Generation used regions represents %lu%% of heap",
+      log_info(gc, ergo)("Adjusting old garbage threshold to " INTPTR_FORMAT " because Old Generation used regions represents " INTPTR_FORMAT "%% of heap",
                    _old_garbage_threshold, percent_used);
     }
   }

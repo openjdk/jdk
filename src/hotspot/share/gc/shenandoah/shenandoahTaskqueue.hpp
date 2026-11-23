@@ -28,11 +28,8 @@
 
 #include "gc/shenandoah/shenandoahPadding.hpp"
 #include "memory/reservedSpace.hpp"
-#include "memory/virtualspace.hpp"
 #include "nmt/memTag.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/mutex.hpp"
-#include "utilities/bitMap.hpp"
 #include "utilities/debug.hpp"
 
 class ShenandoahTaskQueueSet;
@@ -93,10 +90,6 @@ class ShenandoahHeap;
 // In future, these might be rebalanced to favor one degree of freedom against another. For example,
 // if/when Arrays 2.0 bring 2^64-sized arrays, we might need to steal another bit for power. We could regain
 // some bits back if chunks are counted in ObjArrayMarkingStride units.
-//
-// There is also a fallback version that uses plain fields, when we don't have enough space to steal the
-// bits from the native pointer. It is useful to debug the optimized version.
-//
 
 #ifdef _MSC_VER
 #pragma warning(push)
@@ -104,65 +97,58 @@ class ShenandoahHeap;
 #pragma warning( disable:4522 )
 #endif
 
-#ifdef _LP64
-#define SHENANDOAH_OPTIMIZED_TASK 1
-#else
-#define SHENANDOAH_OPTIMIZED_TASK 0
-#endif
-
-#if SHENANDOAH_OPTIMIZED_TASK
 class ShenandoahTask
 {
 private:
   // Everything is encoded into this field...
-  uintptr_t _obj;
+  uint64_t _obj;
 
   // ...with these:
   static const uint8_t chunk_bits  = 10;
   static const uint8_t pow_bits    = 5;
-  static const uint8_t oop_bits    = sizeof(uintptr_t)*8 - chunk_bits - pow_bits;
+  static const uint8_t oop_bits    = sizeof(uintptr_t)*8 LP64_ONLY(- chunk_bits - pow_bits);
 
   static const uint8_t oop_shift   = 0;
   static const uint8_t pow_shift   = oop_bits;
   static const uint8_t chunk_shift = oop_bits + pow_bits;
 
-  static const uintptr_t oop_extract_mask       = right_n_bits(oop_bits) - 3;
-  static const uintptr_t skip_live_extract_mask = 1 << 0;
-  static const uintptr_t weak_extract_mask      = 1 << 1;
-  static const uintptr_t chunk_pow_extract_mask = ~right_n_bits(oop_bits);
+  static const uint64_t oop_extract_mask       = right_n_bits(oop_bits) - 3;
+  static const uint64_t skip_live_extract_mask = 1 << 0;
+  static const uint64_t weak_extract_mask      = 1 << 1;
+  static const uint64_t chunk_pow_extract_mask = ~right_n_bits(oop_bits);
 
   static const int chunk_range_mask = right_n_bits<int>(chunk_bits);
   static const int pow_range_mask   = right_n_bits<int>(pow_bits);
 
-  inline oop decode_oop(uintptr_t val) const {
+  inline oop decode_oop(uint64_t val) const {
     static_assert(oop_shift == 0);
     return cast_to_oop(val & oop_extract_mask);
   }
 
-  inline bool decode_not_chunked(uintptr_t val) const {
+  inline bool decode_not_chunked(uint64_t val) const {
     // No need to shift for a comparison to zero
     return (val & chunk_pow_extract_mask) == 0;
   }
 
-  inline int decode_chunk(uintptr_t val) const {
+  inline int decode_chunk(uint64_t val) const {
     return (int) ((val >> chunk_shift) & chunk_range_mask);
   }
 
-  inline int decode_pow(uintptr_t val) const {
+  inline int decode_pow(uint64_t val) const {
     return (int) ((val >> pow_shift) & pow_range_mask);
   }
 
-  inline bool decode_weak(uintptr_t val) const {
+  inline bool decode_weak(uint64_t val) const {
     return (val & weak_extract_mask) != 0;
   }
 
-  inline bool decode_cnt_live(uintptr_t val) const {
+  inline bool decode_cnt_live(uint64_t val) const {
     return (val & skip_live_extract_mask) == 0;
   }
 
-  inline uintptr_t encode_oop(oop obj, bool skip_live, bool weak) const {
+  inline uint64_t encode_oop(oop obj, bool skip_live, bool weak) const {
     static_assert(oop_shift == 0);
-    uintptr_t encoded = cast_from_oop<uintptr_t>(obj);
+    uint64_t encoded = cast_from_oop<uint64_t>(obj);
     if (skip_live) {
       encoded |= skip_live_extract_mask;
     }
@@ -172,17 +158,17 @@ private:
     return encoded;
   }
 
-  inline uintptr_t encode_chunk(int chunk) const {
-    return ((uintptr_t) chunk) << chunk_shift;
+  inline uint64_t encode_chunk(int chunk) const {
+    return ((uint64_t) chunk) << chunk_shift;
   }
 
-  inline uintptr_t encode_pow(int pow) const {
-    return ((uintptr_t) pow) << pow_shift;
+  inline uint64_t encode_pow(int pow) const {
+    return ((uint64_t) pow) << pow_shift;
   }
 
 public:
   ShenandoahTask(oop o = nullptr, bool skip_live = false, bool weak = false) {
-    uintptr_t enc = encode_oop(o, skip_live, weak);
+    uint64_t enc = encode_oop(o, skip_live, weak);
     assert(decode_oop(enc) == o,     "oop encoding should work: " PTR_FORMAT, p2i(o));
     assert(decode_cnt_live(enc) == !skip_live, "skip_live encoding should work");
     assert(decode_weak(enc) == weak, "weak encoding should work");
@@ -191,10 +177,10 @@ public:
   }
 
   ShenandoahTask(oop o, bool skip_live, bool weak, int chunk, int pow) {
-    uintptr_t enc_oop = encode_oop(o, skip_live, weak);
-    uintptr_t enc_chunk = encode_chunk(chunk);
-    uintptr_t enc_pow = encode_pow(pow);
-    uintptr_t enc = enc_oop | enc_chunk | enc_pow;
+    uint64_t enc_oop = encode_oop(o, skip_live, weak);
+    uint64_t enc_chunk = encode_chunk(chunk);
+    uint64_t enc_pow = encode_pow(pow);
+    uint64_t enc = enc_oop | enc_chunk | enc_pow;
     assert(decode_oop(enc) == o,       "oop encoding should work: " PTR_FORMAT, p2i(o));
     assert(decode_cnt_live(enc) == !skip_live, "skip_live should be true for chunked tasks");
     assert(decode_weak(enc) == weak,   "weak encoding should work");
@@ -218,56 +204,13 @@ public:
   DEBUG_ONLY(bool is_valid() const;) // Tasks to be pushed/popped must be valid.
 
   static uintptr_t max_addressable() {
-    return nth_bit(oop_bits);
+    return LP64_ONLY(nth_bit(oop_bits)) NOT_LP64(UINTPTR_MAX);
   }
 
   static int chunk_size() {
     return nth_bit<int>(chunk_bits);
   }
 };
-#else
-class ShenandoahTask
-{
-private:
-  static const uint8_t chunk_bits  = 10;
-  static const uint8_t pow_bits    = 5;
-
-  static const int chunk_max       = nth_bit(chunk_bits) - 1;
-  static const int pow_max         = nth_bit(pow_bits) - 1;
-
-  oop _obj;
-  bool _skip_live;
-  bool _weak;
-  int _chunk;
-  int _pow;
-
-public:
-  ShenandoahTask(oop o = nullptr, bool skip_live = false, bool weak = false, int chunk = 0, int pow = 0):
-    _obj(o), _skip_live(skip_live), _weak(weak), _chunk(chunk), _pow(pow) {
-    assert(0 <= chunk && chunk <= chunk_max, "chunk is in range: %d", chunk);
-    assert(0 <= pow && pow <= pow_max, "pow is in range: %d", pow);
-  }
-
-  // Trivially copyable.
-
-  inline oop obj()             const { return _obj; }
-  inline int chunk()           const { return _chunk; }
-  inline int pow()             const { return _pow; }
-  inline bool is_not_chunked() const { return _chunk == 0; }
-  inline bool is_weak()        const { return _weak; }
-  inline bool count_liveness() const { return !_skip_live; }
-
-  DEBUG_ONLY(bool is_valid() const;) // Tasks to be pushed/popped must be valid.
-
-  static size_t max_addressable() {
-    return sizeof(oop);
-  }
-
-  static int chunk_size() {
-    return nth_bit(chunk_bits);
-  }
-};
-#endif // SHENANDOAH_OPTIMIZED_TASK
 
 #ifdef _MSC_VER
 #pragma warning(pop)
@@ -281,16 +224,18 @@ public:
 //   free:   not in use by any thread, has no tasks
 //
 class ShenandoahTaskQueueStack {
-  static const int MAX_SIZE = 510;
+public:
+  static const int MAX_SIZE = (4096 - sizeof(size_t) * 2) / sizeof(ShenandoahTask);
   static const int MIN_SIZE = 1;
 
+private:
+  size_t _index;
   size_t _top;
   ShenandoahTask _tasks[MAX_SIZE];
-  size_t _index;
 
 public:
-  ShenandoahTaskQueueStack() {}
-  ShenandoahTaskQueueStack(size_t index) : _top(0), _index(index) {}
+  ShenandoahTaskQueueStack() : _index(SIZE_MAX), _top(SIZE_MAX) {}
+  ShenandoahTaskQueueStack(size_t index) : _index(index), _top(0) {}
 
   ALWAYSINLINE
   bool push(ShenandoahTask t);
@@ -390,10 +335,10 @@ class ShenandoahTaskQueueSet : public CHeapObj<mtGC> {
   size_t _max_segments;
 
   shenandoah_padding(0);
-  Atomic <size_t> _shared_count;
+  Atomic<size_t> _shared_count;
   shenandoah_padding(1);
 
-  inline ShenandoahTaskQueueSegment* try_grow(size_t n);
+  inline void try_grow(size_t n);
 
 public:
   ShenandoahTaskQueueSet(uint queue_count);

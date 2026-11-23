@@ -231,17 +231,15 @@ jint ShenandoahHeap::initialize() {
                                           heap_rs.base(),
                                           heap_rs.size(), heap_rs.page_size());
 
-#if SHENANDOAH_OPTIMIZED_TASK
   // The optimized ShenandoahTask takes some bits away from the full object bits.
   // Fail if we ever attempt to address more than we can.
-  if ((uintptr_t)heap_rs.end() >= ShenandoahTask::max_addressable()) {
+  if ((uintptr_t)heap_rs.end() > ShenandoahTask::max_addressable()) {
     FormatBuffer<512> buf("Shenandoah reserved [" PTR_FORMAT ", " PTR_FORMAT") for the heap, \n"
                           "but max object address is " PTR_FORMAT ". Try to reduce heap size, or try other \n"
                           "VM options that allocate heap at lower addresses (HeapBaseMinAddress, AllocateHeapAt, etc).",
                 p2i(heap_rs.base()), p2i(heap_rs.end()), ShenandoahTask::max_addressable());
     vm_exit_during_initialization("Fatal Error", buf);
   }
-#endif
 
   ReservedSpace sh_rs = heap_rs.first_part(max_byte_size);
   if (!_heap_region_special) {
