@@ -2651,7 +2651,7 @@ static void float16_to_float_v_slow_path(C2_MacroAssembler& masm, C2GeneralStub<
   // we need the payloads of non-canonical NaNs to be preserved.
 
   // adjust vector type to 2 * SEW.
-  __ vsetvli_helper(T_FLOAT, vector_length, Assembler::mu);
+  __ vsetvli_helper(T_FLOAT, vector_length, Assembler::m1, Assembler::mu);
   // widen and sign-extend src data.
   __ vsext_vf2(dst, src, Assembler::v0_t);
   __ mv(t0, 0x7f800000);
