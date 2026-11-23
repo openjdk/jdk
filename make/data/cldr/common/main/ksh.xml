@@ -875,6 +875,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="Hm" draft="contributed">H:mm</dateFormatItem>
 						<dateFormatItem id="hms" draft="contributed">h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="Hms" draft="contributed">H:mm:ss</dateFormatItem>
+						<dateFormatItem id="hmsv" draft="contributed">h:mm:ss a v</dateFormatItem>
+						<dateFormatItem id="Hmsv" draft="contributed">H:mm:ss a v</dateFormatItem>
 						<dateFormatItem id="MEd" draft="contributed">E d. M.</dateFormatItem>
 						<dateFormatItem id="MMMd" draft="contributed">d. MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd" draft="contributed">E d. MMM</dateFormatItem>
@@ -1151,6 +1153,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="Hm" draft="contributed">H:mm</dateFormatItem>
 						<dateFormatItem id="hms" draft="contributed">h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="Hms" draft="contributed">H:mm:ss</dateFormatItem>
+						<dateFormatItem id="hmsv" draft="contributed">h:mm:ss a v</dateFormatItem>
+						<dateFormatItem id="Hmsv" draft="contributed">H:mm:ss a v</dateFormatItem>
 						<dateFormatItem id="MEd" draft="contributed">E d. M.</dateFormatItem>
 						<dateFormatItem id="MMMd" draft="contributed">d. MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd" draft="contributed">E d. MMM</dateFormatItem>
@@ -1165,6 +1169,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yQQQQ" draft="contributed">QQQQ y</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="mixed" draft="provisional">{0} – {1}</intervalFormatRange>
+							<intervalFormatRange type="non-numeric" draft="provisional">{0}–{1}</intervalFormatRange>
+						</intervalFormatRanges>
+						<intervalFormatFallback draft="contributed">{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="hm">
 							<greatestDifference id="a" draft="contributed">h:mm a – h:mm a</greatestDifference>
 							<greatestDifference id="h" draft="contributed">h:mm–h:mm a</greatestDifference>
@@ -1408,11 +1417,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Atlantic/Faeroe">
 				<exemplarCity draft="contributed">Färör</exemplarCity>
 			</zone>
-			<zone type="Europe/London">
-				<long>
-					<daylight draft="contributed">Jrußbretannije sing Summerzick</daylight>
-				</long>
-			</zone>
 			<zone type="Asia/Tbilisi">
 				<exemplarCity draft="contributed">Tiblis</exemplarCity>
 			</zone>
@@ -1433,11 +1437,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="Europe/Zagreb">
 				<exemplarCity draft="contributed">Sagreb</exemplarCity>
-			</zone>
-			<zone type="Europe/Dublin">
-				<long>
-					<daylight draft="contributed">Irland sing Summerzick</daylight>
-				</long>
 			</zone>
 			<zone type="Europe/Isle_of_Man">
 				<exemplarCity draft="contributed">Ensel Män</exemplarCity>
@@ -1637,6 +1636,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight draft="contributed">de Azore ier Summerzick</daylight>
 				</long>
 			</metazone>
+			<metazone type="British">
+				<long>
+					<generic>Jrußbretannije sing Zick</generic>
+					<daylight draft="contributed">Jrußbretannije sing Summerzick</daylight>
+				</long>
+			</metazone>
 			<metazone type="Cape_Verde">
 				<long>
 					<generic draft="contributed">Kapvärdejaansche Zigg</generic>
@@ -1688,6 +1693,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<metazone type="Indian_Ocean">
 				<long>
 					<standard draft="contributed">dem Indische Ozejan sing Zick</standard>
+				</long>
+			</metazone>
+			<metazone type="Irish">
+				<long>
+					<generic>Irland sing Zick</generic>
+					<daylight draft="contributed">Irland sing Summerzick</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mauritius">
@@ -1759,28 +1770,40 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</decimalFormatLength>
 			<decimalFormatLength type="short">
 				<decimalFormat>
+					<pattern type="1000" count="zero" draft="contributed">0 tsd</pattern>
 					<pattern type="1000" count="one" draft="contributed">0 tsd</pattern>
 					<pattern type="1000" count="other" draft="contributed">0 tsd</pattern>
+					<pattern type="10000" count="zero" draft="contributed">00 tsd</pattern>
 					<pattern type="10000" count="one" draft="contributed">00 tsd</pattern>
 					<pattern type="10000" count="other" draft="contributed">00 tsd</pattern>
+					<pattern type="100000" count="zero" draft="contributed">000 tsd</pattern>
 					<pattern type="100000" count="one" draft="contributed">000 tsd</pattern>
 					<pattern type="100000" count="other" draft="contributed">000 tsd</pattern>
+					<pattern type="1000000" count="zero" draft="contributed">0 Mio</pattern>
 					<pattern type="1000000" count="one" draft="contributed">0 Mio</pattern>
 					<pattern type="1000000" count="other" draft="contributed">0 Mio</pattern>
+					<pattern type="10000000" count="zero" draft="contributed">00 Mio</pattern>
 					<pattern type="10000000" count="one" draft="contributed">00 Mio</pattern>
 					<pattern type="10000000" count="other" draft="contributed">00 Mio</pattern>
+					<pattern type="100000000" count="zero" draft="contributed">000 Mio</pattern>
 					<pattern type="100000000" count="one" draft="contributed">000 Mio</pattern>
 					<pattern type="100000000" count="other" draft="contributed">000 Mio</pattern>
+					<pattern type="1000000000" count="zero" draft="contributed">0 Mrd</pattern>
 					<pattern type="1000000000" count="one" draft="contributed">0 Mrd</pattern>
 					<pattern type="1000000000" count="other" draft="contributed">0 Mrd</pattern>
+					<pattern type="10000000000" count="zero" draft="contributed">00 Mrd</pattern>
 					<pattern type="10000000000" count="one" draft="contributed">00 Mrd</pattern>
 					<pattern type="10000000000" count="other" draft="contributed">00 Mrd</pattern>
+					<pattern type="100000000000" count="zero" draft="contributed">000 Mrd</pattern>
 					<pattern type="100000000000" count="one" draft="contributed">000 Mrd</pattern>
 					<pattern type="100000000000" count="other" draft="contributed">000 Mrd</pattern>
+					<pattern type="1000000000000" count="zero" draft="contributed">0 Bio</pattern>
 					<pattern type="1000000000000" count="one" draft="contributed">0 Bio</pattern>
 					<pattern type="1000000000000" count="other" draft="contributed">0 Bio</pattern>
+					<pattern type="10000000000000" count="zero" draft="contributed">00 Bio</pattern>
 					<pattern type="10000000000000" count="one" draft="contributed">00 Bio</pattern>
 					<pattern type="10000000000000" count="other" draft="contributed">00 Bio</pattern>
+					<pattern type="100000000000000" count="zero" draft="contributed">000 Bio</pattern>
 					<pattern type="100000000000000" count="one" draft="contributed">000 Bio</pattern>
 					<pattern type="100000000000000" count="other" draft="contributed">000 Bio</pattern>
 				</decimalFormat>
@@ -2919,6 +2942,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" draft="contributed">{0}m/s</unitPattern>
 			</unit>
 			<unit type="temperature-celsius">
+				<displayName>°C</displayName>
 				<unitPattern count="zero" draft="contributed">{0}°</unitPattern>
 				<unitPattern count="one" draft="contributed">{0}°</unitPattern>
 				<unitPattern count="other" draft="contributed">{0}°</unitPattern>

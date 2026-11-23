@@ -54,7 +54,7 @@ public class JDK_AOT_VM_OPTIONS {
         //----------------------------------------------------------------------
         printTestCase("JDK_AOT_VM_OPTIONS (single-command training)");
 
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        pb = ProcessTools.createTestJavaProcessBuilder(
             "-XX:AOTMode=record",
             "-XX:AOTCacheOutput=" + aotCacheFile,
             "-Xlog:aot=debug",
@@ -70,7 +70,7 @@ public class JDK_AOT_VM_OPTIONS {
 
         //----------------------------------------------------------------------
         printTestCase("JDK_AOT_VM_OPTIONS (two-command training)");
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        pb = ProcessTools.createTestJavaProcessBuilder(
             "-XX:AOTMode=record",
             "-XX:AOTConfiguration=" + aotConfigFile,
             "-Xlog:aot=debug",
@@ -82,7 +82,7 @@ public class JDK_AOT_VM_OPTIONS {
         out.shouldHaveExitValue(0);
 
         //----------------------------------------------------------------------
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        pb = ProcessTools.createTestJavaProcessBuilder(
             "-XX:AOTMode=create",
             "-XX:AOTConfiguration=" + aotConfigFile,
             "-XX:AOTCache=" + aotCacheFile,
@@ -98,7 +98,7 @@ public class JDK_AOT_VM_OPTIONS {
         String optionsFile = "opts.txt";
         Files.writeString(Path.of(optionsFile), "-XX:AOTMode=create");
 
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        pb = ProcessTools.createTestJavaProcessBuilder(
             "-XX:VMOptionsFile=" + optionsFile,
             "-XX:AOTConfiguration=" + aotConfigFile,
             "-XX:AOTCache=" + aotCacheFile,
@@ -113,7 +113,7 @@ public class JDK_AOT_VM_OPTIONS {
         printTestCase("Using -XX:VMOptionsFile inside JDK_AOT_VM_OPTIONS)");
         Files.writeString(Path.of(optionsFile), "-XX:+PrintFlagsFinal");
 
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        pb = ProcessTools.createTestJavaProcessBuilder(
             "-XX:AOTMode=create",
             "-XX:AOTConfiguration=" + aotConfigFile,
             "-XX:AOTCache=" + aotCacheFile,

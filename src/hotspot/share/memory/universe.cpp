@@ -458,16 +458,13 @@ void Universe::genesis(TRAPS) {
     s = StringTable::intern("-2147483648", CHECK);
     _the_min_jint_string = OopHandle(vm_global(), s);
 
-#if INCLUDE_CDS
     if (CDSConfig::is_using_archive()) {
       // Verify shared interfaces array.
       assert(_the_array_interfaces_array->at(0) ==
              vmClasses::Cloneable_klass(), "u3");
       assert(_the_array_interfaces_array->at(1) ==
              vmClasses::Serializable_klass(), "u3");
-    } else
-#endif
-    {
+    } else {
       // Set up shared interfaces array.  (Do this before supers are set up.)
       _the_array_interfaces_array->at_put(0, vmClasses::Cloneable_klass());
       _the_array_interfaces_array->at_put(1, vmClasses::Serializable_klass());
@@ -925,17 +922,14 @@ jint universe_init() {
   // as it might need to access the string table.
   StringTable::create_table();
 
-#if INCLUDE_CDS
   if (CDSConfig::is_using_archive()) {
     // Read the data structures supporting the shared spaces (shared
     // system dictionary, symbol table, etc.)
     AOTMetaspace::initialize_shared_spaces();
   }
-#endif
 
   ClassLoaderData::init_null_class_loader_data();
 
-#if INCLUDE_CDS
 #if INCLUDE_CDS_JAVA_HEAP
   if (CDSConfig::is_using_full_module_graph()) {
     AOTModules::restore_archived_entries_for_null_class_loader_data();
@@ -944,7 +938,6 @@ jint universe_init() {
   if (CDSConfig::is_dumping_archive()) {
     CDSConfig::prepare_for_dumping();
   }
-#endif
 
   SymbolTable::create_table();
 
@@ -1203,9 +1196,7 @@ bool universe_post_init() {
   // Complete initialization
   Universe::heap()->post_initialize();
 
-#if INCLUDE_CDS
   AOTMetaspace::post_initialize(CHECK_false);
-#endif
   return true;
 }
 

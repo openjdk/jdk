@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4406815 8222969 8266784
+ * @bug 4406815 8222969 8266784 8397209
  * @summary RuleBasedCollatorTest uses very limited but selected test data
  *  to test basic functionalities provided by RuleBasedCollator.
  * @run junit/othervm RuleBasedCollatorTest
@@ -215,18 +215,24 @@ public class RuleBasedCollatorTest {
         assertEquals(0, k2.compareTo(k3));
     }
 
-    Object[][] ParseData() {
+    Object[][] ParseExceptionData() {
         return new Object[][] {
                 {""},
                 {"a < b"},
                 {"< a-b < c"},
                 {"< ,a"},
-                {"< a < b & c < d"}
+                {"< a < b & c < d"},
+                {"'"},
+                {"\n'"},
+                {"< '"},
+                {"< a < '"},
+                {"< 'a"},
+                {"< a < 'b"}
         };
     }
 
     @ParameterizedTest
-    @MethodSource("ParseData")
+    @MethodSource("ParseExceptionData")
     void testParseException(String rule) {
         assertThrows(ParseException.class, () -> new RuleBasedCollator(rule));
     }
