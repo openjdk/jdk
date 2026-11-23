@@ -337,6 +337,8 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm,
                                                   Register store_addr,
                                                   Register new_val,
                                                   Register tmp) {
+  // This method is used only for interpreter, adapter and stub code generation.
+  // Use the AOT cache dump state to determine the usage of AOT runtime constants.
   bool use_aot_runtime_const = AOTCodeCache::is_on_for_dump();
   generate_post_barrier(masm, store_addr, new_val, tmp, use_aot_runtime_const, true /* new_val_may_be_null */);
 }
