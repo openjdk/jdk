@@ -906,7 +906,7 @@ void ShenandoahBarrierStubC2::lrb(MacroAssembler& masm) {
     __ mv(_tmp2, _obj);
   }
 
-  if (AOTCodeCache::is_on_for_dump()) {
+  if (Compile::current()->is_aot_compile()) {
     __ lwu(_tmp1, ExternalAddress(AOTRuntimeConstants::grain_shift_address()));
     __ srl(_tmp2, _tmp2, _tmp1);
     __ ld(_tmp1, ExternalAddress(AOTRuntimeConstants::cset_base_address()));

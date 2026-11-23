@@ -24,6 +24,7 @@
 
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
+#include "ci/ciEnv.hpp"
 #include "ci/ciValueKlass.hpp"
 #include "code/aotCodeCache.hpp"
 #include "code/compiledIC.hpp"
@@ -6027,6 +6028,7 @@ void MacroAssembler::reinit_heapbase() {
 
 int MacroAssembler::store_value_type_fields_to_buf(ciValueKlass* vk, bool from_interpreter) {
   assert(ValueTypeReturnedAsFields, "Value types should never be returned as fields");
+  assert(vk == nullptr || !from_interpreter, "Interpreter passes only nullptr for vk");
   // A value type might be returned. If fields are in registers we
   // need to allocate a value type instance and initialize it with
   // the value of the fields.
@@ -6086,7 +6088,7 @@ int MacroAssembler::store_value_type_fields_to_buf(ciValueKlass* vk, bool from_i
     }
     // 3. Initialize its fields with a value class specific handler
     if (vk != nullptr) {
-      if (AOTCodeCache::is_on_for_dump()) {
+      if (ciEnv::current()->is_aot_compile()) {
         // in AOT compiled code call the pack handler indirectly via
         // the klass. The handler's blob does not currently get saved
         // to the archive. So, a direct call to the handler address
@@ -10771,7 +10773,7 @@ void MacroAssembler::restore_legacy_gprs() {
 void MacroAssembler::load_aotrc_address(Register reg, address a) {
 #if INCLUDE_CDS
   assert(AOTRuntimeConstants::contains(a), "address out of range for data area");
-  if (AOTCodeCache::is_on_for_dump()) {
+  if (ciEnv::current()->is_aot_compile()) {
     // all aotrc field addresses should be registered in the AOTCodeCache address table
     lea(reg, ExternalAddress(a));
   } else {
