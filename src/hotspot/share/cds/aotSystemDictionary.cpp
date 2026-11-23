@@ -724,19 +724,12 @@ InstanceKlass* AOTSystemDictionary::get_unregistered_class(Symbol* name) {
   return k != nullptr ? *k : nullptr;
 }
 
-void AOTSystemDictionary::copy_unregistered_class_size_and_crc32(InstanceKlass* klass) {
+void AOTSystemDictionary::copy_unregistered_class_size_and_crc32(InstanceKlass* klass, DumpTimeClassInfo* dt_info) {
   precond(CDSConfig::is_dumping_with_input_archive());
   precond(klass->in_aot_cache());
-
-  // A shared class must have a RunTimeClassInfo record
-  const RunTimeClassInfo* record = find_record(&_info_for_static_archive._unregistered_dictionary,
-                                               nullptr, klass->name());
-  precond(record != nullptr);
-  precond(record->klass() == klass);
-
-  DumpTimeClassInfo* info = get_info(klass);
-  info->_clsfile_size = record->crc()->_clsfile_size;
-  info->_clsfile_crc32 = record->crc()->_clsfile_crc32;
+  const RunTimeClassInfo* rt_info = RunTimeClassInfo::get_for(klass);
+  dt_info->_clsfile_size = rt_info->crc()->_clsfile_size;
+  dt_info->_clsfile_crc32 = rt_info->crc()->_clsfile_crc32;
 }
 
 void AOTSystemDictionary::copy_unregistered_classes_for_retraining(JavaThread* current) {
@@ -758,10 +751,10 @@ void AOTSystemDictionary::copy_unregistered_classes_for_retraining(JavaThread* c
 void AOTSystemDictionary::copy_unregistered_class(JavaThread* current, InstanceKlass* k) {
   precond(k->in_aot_cache());
   precond(CDSConfig::is_dumping_with_input_archive());
-  init_dumptime_info(k);
+  DumpTimeClassInfo* info = init_dumptime_info(k);
   bool added = add_unregistered_class(current, k);
   assert(added, "must not have duplicates");
-  copy_unregistered_class_size_and_crc32(k);
+  copy_unregistered_class_size_and_crc32(k, info);
   copy_verification_info_from_input_archive(k);
   copy_linking_constraints_from_input_archive(k);
 }
@@ -784,13 +777,14 @@ void AOTSystemDictionary::initialize() {
   }
 }
 
-void AOTSystemDictionary::init_dumptime_info(InstanceKlass* k) {
+DumpTimeClassInfo* AOTSystemDictionary::init_dumptime_info(InstanceKlass* k) {
   MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
   assert(AOTSystemDictionary::class_loading_may_happen(), "sanity");
   DumpTimeClassInfo* info = _dumptime_table->allocate_info(k);
   if (AOTClassFilter::is_aot_tooling_class(k)) {
     info->set_is_aot_tooling_class();
   }
+  return info;
 }
 
 void AOTSystemDictionary::remove_dumptime_info(InstanceKlass* k) {

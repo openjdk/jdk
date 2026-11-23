@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -243,7 +243,7 @@ public class G7Test {
         final Collator myCollation = Collator.getInstance(Locale.US);
         final String defRules = ((RuleBasedCollator)myCollation).getRules();
         RuleBasedCollator tblColl = null;
-        String newRules = defRules + "& Question'-'mark ; '?' & Hash'-'mark ; '#' & Ampersand ; '&";
+        String newRules = defRules + "& Question'-'mark ; '?' & Hash'-'mark ; '#' & Ampersand ; '&'";
 
         try {
             tblColl = new RuleBasedCollator(newRules);

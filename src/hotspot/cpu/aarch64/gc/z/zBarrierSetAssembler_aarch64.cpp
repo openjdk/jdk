@@ -284,6 +284,9 @@ void ZBarrierSetAssembler::store_barrier_medium(MacroAssembler* masm,
     // If we get this far, we know there is a young raw null value in the field.
     __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreGoodBeforeMov);
     __ movzw(rtmp1, barrier_Relocation::unpatched);
+    // Be careful to not use rscratch1 for the addr or new_val
+    assert_different_registers(rtmp1, rscratch1);
+    assert_different_registers(rtmp2, rscratch1);
     __ cmpxchg_weak(rtmp2, zr, rtmp1, Assembler::xword, memory_order_relaxed, rtmp3);
     __ br(Assembler::NE, slow_path);
 
@@ -1169,8 +1172,8 @@ void ZBarrierSetAssembler::generate_c2_store_barrier_stub(MacroAssembler* masm, 
   store_barrier_medium(masm,
                        stub->ref_addr(),
                        stub->new_zpointer(),
-                       rscratch1,
                        rscratch2,
+                       rscratch1,
                        stub->is_native(),
                        stub->is_atomic(),
                        *stub->continuation(),
@@ -1392,16 +1395,13 @@ void ZBarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Registe
 
   __ bind(check_zaddress);
   // Check if the oop is in the right area of memory
-#if INCLUDE_CDS
   if (AOTCodeCache::is_on_for_dump()) {
     __ lea(tmp1, ExternalAddress(AOTRuntimeConstants::verify_oop_mask_address()));
     __ ldr(tmp1, Address(tmp1));
     __ andr(tmp1, tmp1, obj);
     __ lea(obj, ExternalAddress(AOTRuntimeConstants::verify_oop_bits_address()));
     __ ldr(obj, Address(obj));
-  } else
-#endif
-  {
+  } else {
     __ mov(tmp1, (intptr_t) Universe::verify_oop_mask());
     __ andr(tmp1, tmp1, obj);
     __ mov(obj, (intptr_t) Universe::verify_oop_bits());

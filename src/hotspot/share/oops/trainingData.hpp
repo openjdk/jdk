@@ -339,7 +339,7 @@ private:
 
   static void initialize() NOT_CDS_RETURN;
 
-  static void verify();
+  static void verify() NOT_CDS_RETURN;
 
   // Widget for recording dependencies, as an N-to-M graph relation,
   // possibly cyclic.
@@ -489,7 +489,7 @@ private:
     return nullptr;
   }
 
-  static void cleanup_after_redefinition();
+  static void cleanup_after_redefinition() NOT_CDS_RETURN;
 };
 
 // Training data that is associated with an InstanceKlass
@@ -940,7 +940,6 @@ class MethodTrainingData : public TrainingData {
   };
   TrainingIteration _iterations[2]; // CURRENT and NEXT
   // metadata snapshots of final state:
-  MethodCounters* _final_counters;
   MethodData*     _final_profile;
 
   int _invocation_count;
