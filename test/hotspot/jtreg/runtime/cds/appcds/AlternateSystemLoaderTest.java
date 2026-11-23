@@ -56,9 +56,8 @@ public class AlternateSystemLoaderTest {
             .classpath(appJar)
             .appCommandLine(appName)
             .setTrainingChecker((OutputAnalyzer out) -> {
-                // Cache only classes loaded by the boot class loader
                 out.shouldContain("AOT optimizations are curtailed because -Djava.system.class.loader=ExcludedClass$AlternateSystemLoader is specified");
-                out.shouldContain("Skipping ExcludedClass: Not defined in boot class loader");
+                out.shouldContain("Skipping ExcludedClass: Defined in built-in app class loader");
             }).runAOTTraining();
 
         // Assemble without alternate loader
@@ -68,11 +67,10 @@ public class AlternateSystemLoaderTest {
                 out.shouldNotContain("AOT optimizations are curtailed because -Djava.system.class.loader=ExcludedClass$AlternateSystemLoader is specified");
                 out.shouldNotContain("ExcludedClass source: shared objects file");
                 out.shouldNotContain("app   ExcludedClass");
-                out.shouldNotMatch("unreg.*ExcludedClass");
             }).runAOTAssembly();
 
         tester.setProductionChecker((OutputAnalyzer out) -> {
-            // Do not load any unregistered classes or any classes defined in platform and system loaders
+            // Do not load any classes defined in the system loader
             out.shouldNotContain("ExcludedClass source: shared objects file");
         }).productionRun();
 
@@ -82,7 +80,7 @@ public class AlternateSystemLoaderTest {
             .classpath(appJar)
             .appCommandLine(appName)
             .setTrainingChecker((OutputAnalyzer out) -> {
-                out.shouldNotContain("Skipping ExcludedClass: Not defined in boot class loader");
+                out.shouldNotContain("Skipping ExcludedClass: Defined in built-in app class loader");
             }).runAOTTraining();
 
         // Assemble with alternate loader
@@ -90,7 +88,6 @@ public class AlternateSystemLoaderTest {
                          logArgs,
                          "-Djava.system.class.loader=ExcludedClass$AlternateSystemLoader")
             .setAssemblyChecker((OutputAnalyzer out) -> {
-                // Load only boot classes
                 out.shouldContain("AOT optimizations are curtailed because -Djava.system.class.loader=ExcludedClass$AlternateSystemLoader is specified");
                 out.shouldNotContain("ExcludedClass source: shared objects file");
                 out.shouldNotContain("app   ExcludedClass");
@@ -108,7 +105,7 @@ public class AlternateSystemLoaderTest {
             .appCommandLine(appName)
             .setTrainingChecker((OutputAnalyzer out) -> {
                 out.shouldNotContain("AOT optimizations are curtailed because -Djava.system.class.loader=ExcludedClass$AlternateSystemLoader is specified");
-                out.shouldNotContain("Skipping ExcludedClass: Not defined in boot class loader");
+                out.shouldNotContain("Skipping ExcludedClass: Defined in built-in app class loader");
             })
             .setAssemblyChecker((OutputAnalyzer out) -> {
                 out.shouldNotContain("AOT optimizations are curtailed because -Djava.system.class.loader=ExcludedClass$AlternateSystemLoader is specified");

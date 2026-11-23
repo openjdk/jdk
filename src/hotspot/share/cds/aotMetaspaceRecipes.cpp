@@ -185,29 +185,24 @@ void AOTMetaspaceRecipes::apply_recipes_for_constantpool(JavaThread* current) {
 }
 
 void AOTMetaspaceRecipes::load_all_classes(TRAPS) {
-  Handle class_loader(THREAD, SystemDictionary::java_system_loader());
   for (int i = 0; i < _all_klasses->length(); i++) {
     Klass* k = _all_klasses->at(i);
     if (k->is_instance_klass()) {
       InstanceKlass* ik = InstanceKlass::cast(k);
       if (AOTSystemDictionary::is_excluded_by_alternate_system_loader(ik)) {
-        // Avoid loading unregistered classes when using an alternate system class loader
         assert(!CDSConfig::is_dumping_aot_linked_classes(), "must be");
         continue;
       }
       if (ik->defined_by_other_loaders()) {
         AOTSystemDictionary::copy_unregistered_class(THREAD, ik);
       } else if (!ik->is_hidden()) {
-        Klass* actual;
-        // When using an alternate system loader, only classes defined in the
-        // boot class loader are archived. When loading these classes, rely on
-        // the boot class loader to load these classes rather than the alternate
-        // system loader as it may possibly not delegate.
-        if (CDSConfig::using_alternate_system_loader()) {
-          actual = SystemDictionary::resolve_or_fail(ik->name(), Handle(THREAD, nullptr), true, CHECK);
-        } else {
-          actual = SystemDictionary::resolve_or_fail(ik->name(), class_loader, true, CHECK);
-        }
+        Handle class_loader;
+        // Avoid loading classes defined in an alternate system loader. Classes
+        // defined in the boot and platform loaders are safe to be loaded through
+        // the platform loader, which will delegate accordingly.
+        class_loader = CDSConfig::using_alternate_system_loader() ?
+          Handle(THREAD, SystemDictionary::java_platform_loader()) : Handle(THREAD, SystemDictionary::java_system_loader());
+        Klass* actual = SystemDictionary::resolve_or_fail(ik->name(), class_loader, true, CHECK);
         if (actual != ik) {
           ResourceMark rm(THREAD);
           log_error(aot)("Unable to resolve class from CDS archive: %s", ik->external_name());
@@ -227,7 +222,6 @@ void AOTMetaspaceRecipes::link_all_classes(TRAPS) {
     if (k->is_instance_klass()) {
       InstanceKlass* ik = InstanceKlass::cast(k);
       if (!ik->defined_by_other_loaders() && !ik->is_hidden()) {
-        // Only classes defined by the boot loader can be loaded when using an alternate system loader.
         if (AOTSystemDictionary::is_excluded_by_alternate_system_loader(ik)) {
           continue;
         }

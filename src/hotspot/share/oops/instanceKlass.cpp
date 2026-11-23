@@ -3343,6 +3343,7 @@ bool InstanceKlass::can_be_verified_at_dumptime() const {
   }
   return true;
 }
+
 #endif // INCLUDE_CDS
 
 #if INCLUDE_JVMTI

@@ -2110,10 +2110,9 @@ bool FileMapHeader::validate() {
                                             CDSConfig::type_of_archive_being_loaded());
       return false;
     }
-    aot_log_warning(aot)("Archived non-system classes are disabled because the "
+    aot_log_warning(aot)("Archived application classes are disabled because the "
             "java.system.class.loader property is specified (value = \"%s\"). "
-            "To use archived non-system classes, this property must not be set", prop);
-    _has_platform_or_app_classes = false;
+            "To use archived application classes, this property must not be set", prop);
   }
 
 
