@@ -762,6 +762,27 @@ JNIEXPORT jlong JNICALL Java_apple_security_KeychainStore__1addItemToKeychain
 
     NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init]; \
     @try {
+        // Convert the password obj into a CFStringRef that the keychain importer can use for encryption.
+        CFStringRef passwordStrRef = NULL;
+        jsize passwordLen = 0;
+        jchar *passwordChars = NULL;
+
+        if (passwordObj) {
+            passwordLen = (*env)->GetArrayLength(env, passwordObj);
+
+            if (passwordLen > 0) {
+                passwordChars = (*env)->GetCharArrayElements(env, passwordObj, NULL);
+                if (passwordChars == NULL) {
+                    goto errOut;
+                }
+
+                passwordStrRef = CFStringCreateWithCharactersNoCopy(NULL, passwordChars, passwordLen, kCFAllocatorNull);
+                if (passwordStrRef == NULL) {
+                    goto errOut;
+                }
+            }
+        }
+
         jsize dataSize = (*env)->GetArrayLength(env, rawDataObj);
         jbyte *rawData = (*env)->GetByteArrayElements(env, rawDataObj, NULL);
         if (rawData == NULL) {
@@ -773,35 +794,12 @@ JNIEXPORT jlong JNICALL Java_apple_security_KeychainStore__1addItemToKeychain
         if (cfDataToImport == NULL) {
             goto errOut;
         }
+
         SecKeychainRef defaultKeychain = NULL;
         SecKeychainCopyDefault(&defaultKeychain);
 
         SecExternalFormat dataFormat = (isCertificate == JNI_TRUE ? kSecFormatX509Cert : kSecFormatWrappedPKCS8);
-
-        // Convert the password obj into a CFStringRef that the keychain importer can use for encryption.
         SecKeyImportExportParameters paramBlock;
-        CFStringRef passwordStrRef = NULL;
-
-        jsize passwordLen = 0;
-        jchar *passwordChars = NULL;
-
-        if (passwordObj) {
-            passwordLen = (*env)->GetArrayLength(env, passwordObj);
-
-            if (passwordLen > 0) {
-                passwordChars = (*env)->GetCharArrayElements(env, passwordObj, NULL);
-                if (passwordChars == NULL) {
-                    CFRelease(cfDataToImport);
-                    goto errOut;
-                }
-
-                passwordStrRef = CFStringCreateWithCharactersNoCopy(NULL, passwordChars, passwordLen, kCFAllocatorNull);
-                if (passwordStrRef == NULL) {
-                    CFRelease(cfDataToImport);
-                    goto errOut;
-                }
-            }
-        }
 
         paramBlock.version = SEC_KEY_IMPORT_EXPORT_PARAMS_VERSION;
         // Note that setting the flags field **requires** you to pass in a password of some kind.  The keychain will not prompt you.
