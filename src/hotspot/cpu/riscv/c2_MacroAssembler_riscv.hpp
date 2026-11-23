@@ -297,7 +297,12 @@
                              VectorRegister vtmp1, VectorRegister vtmp2, BasicType bt,
                              uint vector_length, VectorMask vm = Assembler::unmasked);
 
-  void vsetvli_helper(BasicType bt, uint vector_length, LMUL vlmul = Assembler::m1, Register tmp = t0);
+  void vsetvli_helper(BasicType bt, uint vector_length, LMUL vlmul = Assembler::m1,
+                     VMA vma = Assembler::ma, VTA vta = Assembler::ta, Register tmp = t0);
+
+  void vsetvli_helper(BasicType bt, uint vector_length, VMA vma, VTA vta = Assembler::ta) {
+    vsetvli_helper(bt, vector_length, Assembler::m1, vma, vta);
+  }
 
   void compare_integral_v(VectorRegister dst, VectorRegister src1, VectorRegister src2, int cond,
                           BasicType bt, uint vector_length, VectorMask vm = Assembler::unmasked);

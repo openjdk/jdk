@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,9 +75,11 @@ public class VectorFPtoIntCastTest {
         byte_arr = new byte[COUNT];
 
         Random ran = new Random(0);
+        double[] special = {Double.NaN, 42.75, -13.5, Double.POSITIVE_INFINITY,
+                            Double.NEGATIVE_INFINITY, -0.0, Double.MAX_VALUE, -Double.MAX_VALUE};
         for (int i = 0; i < COUNT; i++) {
-            float_arr[i] = ran.nextFloat();
-            double_arr[i] = ran.nextDouble();
+            float_arr[i] = i < special.length ? (float) special[i] : ran.nextFloat(-1000.0f, 1000.0f);
+            double_arr[i] = i < special.length ? special[i] : ran.nextDouble(-1000.0, 1000.0);
         }
 
         fvec256 = FloatVector.fromArray(FloatVector.SPECIES_256, float_arr, 0);
