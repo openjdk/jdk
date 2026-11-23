@@ -758,6 +758,8 @@ public class TypeAnnotationsOnVariables {
                           class Test {
                               @Target(ElementType.TYPE_USE)
                               @interface TypeAnno { }
+                              @Target(ElementType.TYPE_USE)
+                              @interface TypeAnno2 { }
 
                               static class C1 {
                                   static {
@@ -815,10 +817,33 @@ public class TypeAnnotationsOnVariables {
                                   }
                               }
 
+                              static class C8 {
+                                  static {
+                                      try {
+                                          throw new IOException();
+                                      } catch (java.io.@TypeAnno IOException | java.lang.@TypeAnno RuntimeException ex8) {}
+                                  }
+                                  static {
+                                      try {
+                                          throw new IOException();
+                                      } catch (java.io.@TypeAnno2 IOException | java.lang.@TypeAnno2 RuntimeException ex9) {}
+                                  }
+                                  {
+                                      try {
+                                          throw new IOException();
+                                      } catch (java.io.@TypeAnno IOException | java.lang.@TypeAnno RuntimeException exa) {}
+                                  }
+                                  {
+                                      try {
+                                          throw new IOException();
+                                      } catch (java.io.@TypeAnno2 IOException | java.lang.@TypeAnno2 RuntimeException exb) {}
+                                  }
+                              }
+
                               void test(Exception param) {
                                   try {
                                       new Object();
-                                  } catch (@TypeAnno Exception ex8) {}
+                                  } catch (@TypeAnno Exception exc) {}
                               }
                           }
                           """);
@@ -856,8 +881,12 @@ public class TypeAnnotationsOnVariables {
             "ex5: java.io.@Test.TypeAnno IOException | java.lang.@Test.TypeAnno RuntimeException",
             "ex6: java.io.@Test.TypeAnno IOException | java.lang.@Test.TypeAnno RuntimeException",
             "ex7: java.io.@Test.TypeAnno IOException | java.lang.@Test.TypeAnno RuntimeException",
+            "ex8: java.io.@Test.TypeAnno IOException | java.lang.@Test.TypeAnno RuntimeException",
+            "ex9: java.io.@Test.TypeAnno2 IOException | java.lang.@Test.TypeAnno2 RuntimeException",
+            "exa: java.io.@Test.TypeAnno IOException | java.lang.@Test.TypeAnno RuntimeException",
+            "exb: java.io.@Test.TypeAnno2 IOException | java.lang.@Test.TypeAnno2 RuntimeException",
             "param: java.lang.Exception",
-            "ex8: java.lang.@Test.TypeAnno Exception"
+            "exc: java.lang.@Test.TypeAnno Exception"
         );
 
         actual.forEach(System.out::println);
@@ -941,6 +970,32 @@ public class TypeAnnotationsOnVariables {
                              "        0: LTest$TypeAnno;(): EXCEPTION_PARAMETER, exception_index=0",
                              "          Test$TypeAnno",
                              "        1: LTest$TypeAnno;(): EXCEPTION_PARAMETER, exception_index=1",
+                             "          Test$TypeAnno");
+
+        Path c8 = classes.resolve("Test$C8.class");
+        TestClassDesc testClassDescC8 = TestClassDesc.create(c8);
+
+        checkTypeAnnotations(testClassDescC8,
+                             "<clinit>",
+                             this::getAnnotationsFromCode,
+                             "        0: LTest$TypeAnno;(): EXCEPTION_PARAMETER, exception_index=0",
+                             "          Test$TypeAnno",
+                             "        1: LTest$TypeAnno;(): EXCEPTION_PARAMETER, exception_index=1",
+                             "          Test$TypeAnno",
+                             "        2: LTest$TypeAnno2;(): EXCEPTION_PARAMETER, exception_index=2",
+                             "          Test$TypeAnno",
+                             "        3: LTest$TypeAnno2;(): EXCEPTION_PARAMETER, exception_index=3",
+                             "          Test$TypeAnno");
+        checkTypeAnnotations(testClassDescC8,
+                             "<init>",
+                             this::getAnnotationsFromCode,
+                             "        0: LTest$TypeAnno;(): EXCEPTION_PARAMETER, exception_index=0",
+                             "          Test$TypeAnno",
+                             "        1: LTest$TypeAnno;(): EXCEPTION_PARAMETER, exception_index=1",
+                             "          Test$TypeAnno",
+                             "        2: LTest$TypeAnno2;(): EXCEPTION_PARAMETER, exception_index=2",
+                             "          Test$TypeAnno",
+                             "        3: LTest$TypeAnno2;(): EXCEPTION_PARAMETER, exception_index=3",
                              "          Test$TypeAnno");
     }
 
