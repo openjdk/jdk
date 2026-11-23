@@ -54,6 +54,11 @@ public class PngImageDecoderPrematureEOFTest {
     }
 
     private PngImageDecoderPrematureEOFTest() throws IOException {
+        // The dimensions here matter. At 100x100px the PNGImageDecoder fails
+        // with an IOException. At 105x105px the PNGImageDecoder fails with
+        // a ArrayIndexOutOfBoundsException. The two are caught/handled
+        // separately.
+
         BufferedImage sampleImage = new BufferedImage(100, 100,
                 BufferedImage.TYPE_INT_RGB);
 
