@@ -5,6 +5,7 @@
 #ifndef SPA_VIDEO_TYPES_H
 #define SPA_VIDEO_TYPES_H
 
+#include <spa/param/video/color-types.h>
 #include <spa/param/video/raw-types.h>
 
 #endif /* SPA_VIDEO_TYPES_H */

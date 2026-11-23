@@ -5,11 +5,11 @@
 #ifndef PIPEWIRE_PROTOCOL_H
 #define PIPEWIRE_PROTOCOL_H
 
+#include <spa/utils/list.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <spa/utils/list.h>
 
 /** \defgroup pw_protocol Protocol
  *

@@ -1017,8 +1017,6 @@ private:
   void init_attributes(void);
   void clear_attributes(void) { _attributes = nullptr; }
 
-  void lea(Register dst, Address src);
-
   void mov(Register dst, Register src);
 
   // support caching the result of some routines
