@@ -25,19 +25,19 @@ import java.security.Security;
 
 /**
  * @test
- * @bug 8388138
- * @summary Test the default setting of the jdk.crypto.legacyAlgorithms security property
- * @comment This property has a default value of "Cipher.RSA/ECB/PKCS1Padding"
- *          This test assures the default is not changed.
+ * @bug 8388138 8367753
+ * @summary Test that jdk.crypto.legacyAlgorithms security property is not set
+ * @comment This property should not contain "Cipher.RSA/ECB/PKCS1Padding"
+ *          This test assures the default is not set.
  * @run main TestLegacyCryptoAlgorithms
  */
 public class TestLegacyCryptoAlgorithms {
 
     public static void main(String args[]) throws Exception {
         String value = Security.getProperty("jdk.crypto.legacyAlgorithms");
-        if (value == null || !value.equals("Cipher.RSA/ECB/PKCS1Padding")) {
+        if (value != null && value.equals("Cipher.RSA/ECB/PKCS1Padding")) {
             throw new RuntimeException("Test failed: jdk.crypto.legacyAlgorithms " +
-                "security property does not have default value of Cipher.RSA/ECB/PKCS1Padding");
+                "security property should not have value of Cipher.RSA/ECB/PKCS1Padding");
         }
     }
 }

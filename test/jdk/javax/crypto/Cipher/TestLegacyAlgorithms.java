@@ -26,11 +26,11 @@
  * @bug 8376748
  * @summary Test JCE layer legacy algorithm warning for Cipher
  * @library /test/lib
- * @run main/othervm TestLegacyAlgorithms CIPHEr.Rsa/ECB/PKCS1Padding true
- * @run main/othervm TestLegacyAlgorithms cipheR.rsA true
- * @run main/othervm TestLegacyAlgorithms CIPher.what false
- * @run main/othervm TestLegacyAlgorithms cipHER.RSA/ECB/PKCS1Padding2 false
- * @run main/othervm -Djdk.crypto.legacyAlgorithms=CIPHER.RSA
+ * @run main/othervm -Djava.security.properties=${test.src}/java.security TestLegacyAlgorithms CIPHEr.Rsa/ECB/PKCS1Padding true
+ * @run main/othervm -Djava.security.properties=${test.src}/java.security TestLegacyAlgorithms cipheR.rsA true
+ * @run main/othervm -Djava.security.properties=${test.src}/java.security TestLegacyAlgorithms CIPher.what false
+ * @run main/othervm -Djava.security.properties=${test.src}/java.security TestLegacyAlgorithms cipHER.RSA/ECB/PKCS1Padding2 false
+ * @run main/othervm -Djava.security.properties=${test.src}/java.security -Djdk.crypto.legacyAlgorithms=CIPHER.RSA
  *      -Djdk.crypto.disabledAlgorithms=CIPHER.RSA
  *      TestLegacyAlgorithms CIPHER.RSA false true
 
