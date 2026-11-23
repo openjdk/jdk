@@ -28,10 +28,19 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
+
 import static java.lang.System.out;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 public class FramesDecoderTest {
@@ -140,6 +149,9 @@ public class FramesDecoderTest {
     }
 
     private static byte[] frame(int type, int streamId, byte[] payload) {
+        return frame(type, streamId, 0, payload);
+    }
+    private static byte[] frame(int type, int streamId, int flags, byte[] payload) {
         ByteBuffer buffer = ByteBuffer.allocate(Http2Frame.FRAME_HEADER_SIZE
                 + payload.length);
         int len = payload.length;
@@ -147,7 +159,7 @@ public class FramesDecoderTest {
         buffer.put((byte) (len >> 8));
         buffer.put((byte) len);
         buffer.put((byte) type);
-        buffer.put((byte) 0);
+        buffer.put((byte) flags);
         buffer.putInt(streamId);
         buffer.put(payload);
         return buffer.array();
@@ -210,4 +222,104 @@ public class FramesDecoderTest {
             assertTrue(malformedFrame.isConnectionError());
         }
     }
+
+    /**
+     * CONTINUATION frame after HEADERS/PUSH PROMISE.
+     */
+    @ParameterizedTest
+    @ValueSource(ints={HeadersFrame.TYPE, PushPromiseFrame.TYPE})
+    public void decodeContinuationFrame(int firstFrameType) throws Exception {
+        List<Http2Frame> frames = decode(new byte[][]{
+                frame(firstFrameType, 1, 0, new byte[] {0,0,0,2}),
+                frame(ContinuationFrame.TYPE, 1, 0, new byte[0]),
+                frame(ContinuationFrame.TYPE, 1, HeaderFrame.END_HEADERS, new byte[0]),
+                PING
+        });
+        assertEquals(4, frames.size(), frames.toString());
+        HeaderFrame frame = assertInstanceOf(HeaderFrame.class, frames.get(0));
+        assertEquals(firstFrameType, frame.type());
+        assertInstanceOf(ContinuationFrame.class, frames.get(1));
+        assertInstanceOf(ContinuationFrame.class, frames.get(2));
+        assertInstanceOf(PingFrame.class, frames.get(3));
+    }
+
+    /**
+     * CONTINUATION as a first frame.
+     */
+    @Test
+    public void decodeStrayContinuationFrame() throws Exception {
+        List<Http2Frame> frames = decode(new byte[][]{
+                frame(ContinuationFrame.TYPE, 2, 0, new byte[0])
+        });
+        assertEquals(1, frames.size(), frames.toString());
+        MalformedFrame malformedFrame = assertInstanceOf(MalformedFrame.class, frames.get(0));
+        assertEquals(ErrorFrame.PROTOCOL_ERROR, malformedFrame.getErrorCode());
+        assertTrue(malformedFrame.isConnectionError());
+    }
+
+    /**
+     * CONTINUATION after CONTINUATION with END_HEADERS.
+     */
+    @ParameterizedTest
+    @ValueSource(ints={HeadersFrame.TYPE, PushPromiseFrame.TYPE})
+    public void decodeExtraContinuationFrame(int firstFrameType) throws Exception {
+        List<Http2Frame> frames = decode(new byte[][]{
+                frame(firstFrameType, 1, 0, new byte[] {0,0,0,2}),
+                frame(ContinuationFrame.TYPE, 1, HeaderFrame.END_HEADERS, new byte[0]),
+                frame(ContinuationFrame.TYPE, 1, HeaderFrame.END_HEADERS, new byte[0])
+        });
+        assertEquals(3, frames.size(), frames.toString());
+        HeaderFrame frame = assertInstanceOf(HeaderFrame.class, frames.get(0));
+        assertEquals(firstFrameType, frame.type());
+        assertInstanceOf(ContinuationFrame.class, frames.get(1));
+        MalformedFrame malformedFrame = assertInstanceOf(MalformedFrame.class, frames.get(2));
+        assertEquals(ErrorFrame.PROTOCOL_ERROR, malformedFrame.getErrorCode());
+        assertTrue(malformedFrame.isConnectionError());
+    }
+
+    /**
+     * CONTINUATION with wrong stream ID.
+     */
+    @ParameterizedTest
+    @ValueSource(ints={HeadersFrame.TYPE, PushPromiseFrame.TYPE})
+    public void decodeWrongStreamContinuationFrame(int firstFrameType) throws Exception {
+        List<Http2Frame> frames = decode(new byte[][]{
+                frame(firstFrameType, 1, 0, new byte[] {0,0,0,2}),
+                frame(ContinuationFrame.TYPE, 2, HeaderFrame.END_HEADERS, new byte[0]),
+        });
+        assertEquals(2, frames.size(), frames.toString());
+        HeaderFrame frame = assertInstanceOf(HeaderFrame.class, frames.get(0));
+        assertEquals(firstFrameType, frame.type());
+        MalformedFrame malformedFrame = assertInstanceOf(MalformedFrame.class, frames.get(1));
+        assertEquals(ErrorFrame.PROTOCOL_ERROR, malformedFrame.getErrorCode());
+        assertTrue(malformedFrame.isConnectionError());
+    }
+
+    public static Stream<Arguments> decodeNonContinuationFrameArgs() {
+        return IntStream.of(0,1)
+                .mapToObj(streamId -> IntStream.range(0,256)
+                        .filter(type -> type != ContinuationFrame.TYPE)
+                        .mapToObj(type -> Arguments.of(streamId, type)))
+                .flatMap(Function.identity());
+    }
+
+    /**
+     * No CONTINUATION when expected.
+     * @param streamId non-Continuation frame stream ID
+     * @param type non-Continuation frame type
+     */
+    @ParameterizedTest
+    @MethodSource("decodeNonContinuationFrameArgs")
+    public void decodeNonContinuationFrame(int streamId, int type) throws Exception {
+        List<Http2Frame> frames = decode(new byte[][]{
+                frame(HeadersFrame.TYPE, 1, 0, new byte[0]),
+                frame(type, streamId, 0, new byte[0]),
+        });
+        assertEquals(2, frames.size(), frames.toString());
+        assertInstanceOf(HeadersFrame.class, frames.get(0));
+        MalformedFrame malformedFrame = assertInstanceOf(MalformedFrame.class, frames.get(1));
+        assertEquals(ErrorFrame.PROTOCOL_ERROR, malformedFrame.getErrorCode());
+        assertTrue(malformedFrame.isConnectionError());
+    }
+
 }
