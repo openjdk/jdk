@@ -4474,9 +4474,9 @@ operand immILog()
 %}
 
 // 32-bit logical immediate with the sign bit clear.
-operand immILogNonNeg()
+operand immILogPos()
 %{
-  predicate(n->get_int() >= 0
+  predicate(n->get_int() > 0
             && Assembler::operand_valid_for_logical_immediate(/*is32*/true, (uint64_t)n->get_int()));
   match(ConI);
 
@@ -11775,9 +11775,10 @@ instruct ubfizLConvL2Ix(iRegINoSp dst, iRegL src, immI lshift, immL_positive_bit
 // This pattern is automatically generated from aarch64_ad.m4
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 
-// A non-negative mask keeps the 32-bit AND result's sign bit clear, so the zero
-// extension done by andw is already the sign extension ConvI2L needs.
-instruct convI2L_andI_reg_imm(iRegLNoSp dst, iRegIorL2I src, immILogNonNeg msk)
+// AND with a positive immediate. The result will be positive so no
+// sign extension is needed, and the implicit zero extension of `andw`
+// zeroes the high 32 bits.
+instruct convI2L_andI_reg_imm(iRegLNoSp dst, iRegIorL2I src, immILogPos msk)
 %{
   match(Set dst (ConvI2L (AndI src msk)));
   ins_cost(INSN_COST);

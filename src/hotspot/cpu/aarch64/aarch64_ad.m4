@@ -325,9 +325,10 @@ BFX1_INSN(L, I, L2I, exact_log2_long, get_long, 31, 31,       immL_positive_bitm
 // This pattern is automatically generated from aarch64_ad.m4
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 
-// A non-negative mask keeps the 32-bit AND result's sign bit clear, so the zero
-// extension done by andw is already the sign extension ConvI2L needs.
-instruct convI2L_andI_reg_imm(iRegLNoSp dst, iRegIorL2I src, immILogNonNeg msk)
+// AND with a positive immediate. The result will be positive so no
+// sign extension is needed, and the implicit zero extension of `andw`
+// zeroes the high 32 bits.
+instruct convI2L_andI_reg_imm(iRegLNoSp dst, iRegIorL2I src, immILogPos msk)
 %{
   match(Set dst (ConvI2L (AndI src msk)));
   ins_cost(INSN_COST);
