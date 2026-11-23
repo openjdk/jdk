@@ -519,7 +519,7 @@ private:
 
   // AOT Code Cache support
   static int  cpu_features_size();
-  static void store_cpu_features(void* buf);
+  static void cpu_features_for_aot_cache(void* buf);
   static void get_cpu_features_disabled_by_aot_cache(void* buf);
   static bool verify_aot_code_cache_features(void* features_buffer);
   static void get_cpu_features_name(void* features_buffer, stringStream& ss);
