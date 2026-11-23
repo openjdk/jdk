@@ -577,10 +577,10 @@ Node *Node::clone() const {
     n->as_SafePoint()->clone_replaced_nodes();
   }
   if (n->is_ValueType()) {
-    C->add_value_type(n);
+    C->add_value_type(n->as_ValueType());
   }
   if (n->is_LoadFlat() || n->is_StoreFlat()) {
-    C->add_flat_access(n);
+    C->add_flat_access(n->as_SafePoint());
   }
   Compile::current()->record_modified_node(n);
   return n;                     // Return the clone
@@ -647,10 +647,10 @@ void Node::destruct(PhaseValues* phase) {
     compile->remove_from_post_loop_opts_igvn(this);
   }
   if (is_ValueType()) {
-    compile->remove_value_type(this);
+    compile->remove_value_type(as_ValueType());
   }
   if (for_merge_stores_igvn()) {
-    compile->remove_from_merge_stores_igvn(this);
+    compile->remove_from_merge_stores_igvn(as_Store());
   }
 
   if (is_SafePoint()) {
