@@ -104,7 +104,7 @@ void ShenandoahTaskQueueSegment::clear() {
 
 bool ShenandoahTaskQueueSegment::all_are_free() const {
   return _shared_bm.load_relaxed() == 0 &&
-         _free_bm.load_relaxed() == (uint64_t)right_n_bits(SEGMENT_SIZE);
+         _free_bm.load_relaxed() == right_n_bits<uint64_t>(SEGMENT_SIZE);
 }
 
 ShenandoahTaskQueueSet::ShenandoahTaskQueueSet(uint queue_count) :
@@ -172,12 +172,11 @@ void ShenandoahTaskQueueSet::trim() {
   size_t peak = _peak_segments.load_relaxed();
   size_t keep = MAX2((peak + num_segments) / 2, min_for_queues);
   _peak_segments.store_relaxed(0);
-  size_t s = num_segments;
 
   // Delete free segments.
   ShenandoahTaskQueueSegment* prev = nullptr;
   ShenandoahTaskQueueSegment* cur = _segments_head.load_acquire();
-  while (s > keep && cur != nullptr) {
+  while (num_segments > keep && cur != nullptr) {
     ShenandoahTaskQueueSegment* next = cur->next();
     if (cur->all_are_free()) {
       if (prev == nullptr) {
@@ -186,13 +185,15 @@ void ShenandoahTaskQueueSet::trim() {
         prev->set_next(next);
       }
       ShenandoahTaskQueueSegment::destroy(cur);
-      _num_segments.fetch_then_sub((size_t)1);
-      s--;
+      num_segments--;
     } else {
       prev = cur;
     }
     cur = next;
   }
+  size_t trimmed = _num_segments.load_relaxed() - num_segments;
+  _num_segments.release_store(num_segments);
+  log_info(gc)("Task queues: %zu segments trimmed, %zu (%zuK) segments remain", trimmed, num_segments, num_segments * sizeof(ShenandoahTaskQueueSegment) / K);
 }
 
 void ShenandoahTaskQueueSet::flush_to_shared() {

@@ -1323,7 +1323,6 @@ void ShenandoahConcurrentGC::op_cleanup_complete() {
                               ShenandoahWorkerPolicy::calc_workers_for_conc_cleanup(),
                               "cleanup complete.");
   ShenandoahHeap::heap()->recycle_trash();
-  generation()->trim_queues();
 }
 
 void ShenandoahConcurrentGC::op_reset_after_collect() {
@@ -1342,6 +1341,7 @@ void ShenandoahConcurrentGC::op_reset_after_collect() {
   } else {
     _generation->reset_mark_bitmap<false>();
   }
+  generation()->trim_queues();
 }
 
 bool ShenandoahConcurrentGC::check_cancellation_and_abort() {
