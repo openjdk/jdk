@@ -1964,7 +1964,7 @@ public class JavacParser implements Parser {
                     }
                     break;
                 case COLCOL:
-                    return true;
+                    return depth == 0;
                 default:
                     return false;
             }
