@@ -996,6 +996,7 @@ static const Node* get_base_and_offset(const MachNode* mach, intptr_t& offset) {
     base = base->in(AddPNode::Base);
     assert(base != nullptr, "");
   }
+
   if (is_undefined(offset) || (is_concrete(offset) && offset < 0)) {
     return nullptr;
   }
