@@ -193,8 +193,8 @@ public class ImagingLib {
 
           case CONVOLVE_OP:
             ConvolveOp cOp = (ConvolveOp) op;
-            if (convolveRaster(src, dst, cOp.getKernel(),
-                            cOp.getEdgeCondition()) > 0) {
+            if (convolveRaster(src, dst,
+                               cOp.getKernel(), cOp.getEdgeCondition()) > 0) {
                 retRaster = dst;
             }
             break;
