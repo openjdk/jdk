@@ -44,10 +44,12 @@ import java.util.Random;
 import java.util.TreeSet;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class PngImageDecoderPrematureEOFTest {
     boolean failed;
     byte[] pngFile;
+    BufferedImage sampleImage;
 
     public static void main(String[] args) throws Exception {
         PngImageDecoderPrematureEOFTest t =
@@ -61,7 +63,7 @@ public class PngImageDecoderPrematureEOFTest {
         // a ArrayIndexOutOfBoundsException. The two difference exception types
         // are handled differently.
 
-        BufferedImage sampleImage = new BufferedImage(100, 100,
+        sampleImage = new BufferedImage(100, 100,
                 BufferedImage.TYPE_INT_RGB);
 
         // give the image random data that won't compress well:
@@ -146,6 +148,7 @@ public class PngImageDecoderPrematureEOFTest {
 
         CompletableFuture<Integer> completionConstantFuture =
                 new CompletableFuture<>();
+        AtomicReference<Thread> workerThread = new AtomicReference<>();
 
         // these are pixel rows we received at least partial pixels for
         Collection<Integer> rows = new TreeSet<>();
@@ -190,14 +193,25 @@ public class PngImageDecoderPrematureEOFTest {
 
             @Override
             public void imageComplete(int status) {
-                completionConstantFuture.complete(status);
+                if (completionConstantFuture.getNow(null) == null) {
+                    completionConstantFuture.complete(status);
+                } else {
+                    failed = true;
+                    System.out.println("failed: imageComplete was called multiple times");
+                }
+                workerThread.set(Thread.currentThread());
             }
         };
         img.getSource().startProduction(consumer);
         int completion = completionConstantFuture.get();
 
+        workerThread.get().join();
+        if (failed) {
+            return;
+        }
+
         System.out.println("Read " + rows.size() +
-                " rows out of a 100px-tall image.");
+                " rows out of a " + sampleImage.getHeight() + "px image.");
 
         if (completion == ImageConsumer.IMAGEERROR) {
             System.out.println(
