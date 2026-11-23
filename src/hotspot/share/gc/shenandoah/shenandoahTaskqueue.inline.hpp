@@ -31,10 +31,8 @@
 
 void ShenandoahTaskQueue::push(ShenandoahTask task) {
   if (!_stack->push(task)) {
-    auto top_stack = _qs->pick_free();
-    _stack->slice_top(top_stack);
     _qs->mark_shared(_stack);
-    _stack = top_stack;
+    _stack = _qs->pick_free();
     bool succ = _stack->push(task);
     assert(succ, "Must succeed");
   }
