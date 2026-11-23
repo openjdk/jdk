@@ -308,9 +308,7 @@ public class ContinuationFrameTest {
             if(headerFrames.get(0).getFlag(HeaderFrame.END_STREAM))
                 os.markClosed();
 
-            for (Http2Frame f : headerFrames) {
-                conn.addToOutputQ(f);
-            }
+            conn.addToOutputQ(headerFrames);
 
             os.goodToGo();
             System.err.println("Sent response headers " + rCode);

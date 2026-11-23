@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2026, Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -74,6 +74,10 @@ public class FramesDecoder {
     private int frameFlags;
     private int frameStreamid;
     private boolean closed;
+
+    // if >0, expect a continuation frame for this stream.
+    // if ==0, expect a non-continuation frame.
+    private int continuationStreamId;
 
     /**
      * Creates Frame Decoder
@@ -171,6 +175,24 @@ public class FramesDecoder {
                                 +"length("+frameLength
                                 +") exceeds MAX_FRAME_SIZE("
                                 + maxFrameSize+")");
+                    }
+                    if (frameType == ContinuationFrame.TYPE) {
+                        if (continuationStreamId == 0) {
+                            // connection error
+                            return new MalformedFrame(ErrorFrame.PROTOCOL_ERROR,
+                                    "Received unexpected CONTINUATION frame");
+                        } else if (continuationStreamId != frameStreamid) {
+                            // connection error
+                            return new MalformedFrame(ErrorFrame.PROTOCOL_ERROR,
+                                    "Received a CONTINUATION with "
+                                    + "unexpected stream id: " + frameStreamid
+                                    +" != " + continuationStreamId);
+                        }
+                    } else if (continuationStreamId != 0) {
+                        // connection error
+                        return new MalformedFrame(ErrorFrame.PROTOCOL_ERROR,
+                                "Expected a CONTINUATION frame but received "
+                                        + Http2Frame.asString(frameType));
                     }
                     frameHeaderParsed = true;
                 } else {
@@ -393,6 +415,8 @@ public class FramesDecoder {
         if (hasPriority) {
             hf.setPriority(streamDependency, exclusive, weight);
         }
+        if (!hf.endHeaders())
+            continuationStreamId = streamid;
         return hf;
     }
 
@@ -485,6 +509,8 @@ public class FramesDecoder {
         PushPromiseFrame ppf = new PushPromiseFrame(streamid, flags, promisedStream,
                 getBuffers(false, frameLength - padLength), padLength);
         skipBytes(padLength);
+        if (!ppf.endHeaders())
+            continuationStreamId = streamid;
         return ppf;
     }
 
@@ -540,7 +566,11 @@ public class FramesDecoder {
             return new MalformedFrame(ErrorFrame.PROTOCOL_ERROR,
                     "zero streamId for ContinuationFrame");
         }
-        return new ContinuationFrame(streamid, flags, getBuffers(false, frameLength));
+
+        ContinuationFrame frame = new ContinuationFrame(streamid, flags, getBuffers(false, frameLength));
+        if (frame.endHeaders())
+            continuationStreamId = 0;
+        return frame;
     }
 
     private Http2Frame parseAltSvcFrame(int frameLength, int frameStreamid, int frameFlags) {

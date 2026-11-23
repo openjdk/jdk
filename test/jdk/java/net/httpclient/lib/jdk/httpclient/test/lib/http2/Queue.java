@@ -24,6 +24,7 @@
 package jdk.httpclient.test.lib.http2;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.LinkedList;
 import java.util.Objects;
 import java.util.stream.Stream;
@@ -64,6 +65,14 @@ public final class Queue<T> implements ExceptionallyCloseable {
     public synchronized void put(T obj) throws IOException {
         if (!putIfOpen(obj)) {
             throw new IOException("queue closed");
+        }
+    }
+
+    public synchronized void putAll(Collection<T> c) throws IOException {
+        for (T obj : c) {
+            if (!putIfOpen(obj)) {
+                throw new IOException("queue closed");
+            }
         }
     }
 
