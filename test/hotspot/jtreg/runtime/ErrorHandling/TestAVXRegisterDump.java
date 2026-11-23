@@ -28,6 +28,7 @@
  * @requires os.family == "linux" & os.arch == "amd64"
  * @requires vm.cpu.features ~= ".*avx.*"
  * @requires vm.debug == true
+ * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox

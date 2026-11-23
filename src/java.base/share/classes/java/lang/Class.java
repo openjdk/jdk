@@ -2935,6 +2935,13 @@ public final class Class<T> implements java.io.Serializable,
     // that redefines this class or a superclass.
     private transient volatile int classRedefinedCount;
 
+
+    // Returns whether this class or any of its superclasses has been
+    // redefined or retransformed.
+    boolean hasBeenRedefined() {
+        return classRedefinedCount != 0;
+    }
+
     // Lazily create and cache ReflectionData
     private ReflectionData<T> reflectionData() {
         SoftReference<ReflectionData<T>> reflectionData = this.reflectionData;

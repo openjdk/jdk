@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1411,10 +1411,14 @@ public class PathOps {
             .normalize("C:\\foo");
         test("C:\\.\\foo")
             .normalize("C:\\foo");
+        test("C:\\foo\\.\\bar\\..\\..\\gus/")
+            .normalize("C:\\gus");
         test("C:\\foo\\..")
             .normalize("C:\\");
         test("C:\\..\\foo")
             .normalize("C:\\foo");
+        test("C:\\..\\foo\\..\\..\\gus")
+            .normalize("C:\\gus");
         test("\\\\server\\share\\foo")
             .normalize("\\\\server\\share\\foo");
         test("\\\\server\\share\\foo\\.")
@@ -1425,6 +1429,8 @@ public class PathOps {
             .normalize("\\\\server\\share\\");
         test("\\\\server\\share\\..\\foo")
             .normalize("\\\\server\\share\\foo");
+        test("\\\\server\\share\\..\\foo\\..\\..\\gus")
+            .normalize("\\\\server\\share\\gus");
         test("C:foo")
             .normalize("C:foo");
         test("C:foo\\.")
@@ -1435,6 +1441,8 @@ public class PathOps {
             .normalize("C:");
         test("C:..\\foo")
             .normalize("C:..\\foo");
+        test("C:foo\\..\\..\\gus")
+            .normalize("C:..\\gus");
         test("\\foo")
             .normalize("\\foo");
         test("\\foo\\.")
@@ -1445,22 +1453,32 @@ public class PathOps {
             .normalize("\\");
         test("\\..\\foo")
             .normalize("\\foo");
+        test("\\..\\foo\\..\\..\\gus")
+            .normalize("\\gus");
         test(".")
             .normalize("");
         test("..")
             .normalize("..");
+        test("..\\..")
+            .normalize("..\\..");
         test("\\..\\..")
             .normalize("\\");
         test("..\\..\\foo")
             .normalize("..\\..\\foo");
+        test("..\\foo\\..\\..\\bar")
+            .normalize("..\\..\\bar");
         test("foo\\bar\\..")
             .normalize("foo");
         test("foo\\bar\\.\\..")
             .normalize("foo");
         test("foo\\bar\\gus\\..\\..")
             .normalize("foo");
+        test("foo\\bar\\..\\..\\..")
+            .normalize("..");
         test(".\\foo\\.\\bar\\.\\gus\\..\\.\\..")
             .normalize("foo");
+        test(".foo\\..\\foo..\\..\\bar\\..\\gus")
+            .normalize("gus");
         test("")
             .normalize("");
 
@@ -2140,32 +2158,56 @@ public class PathOps {
             .normalize("foo");
         test("/foo")
             .normalize("/foo");
+        test("//foo///bar/../")
+            .normalize("/foo");
         test("")
             .normalize("");
         test(".")
             .normalize("");
         test("..")
             .normalize("..");
+        test("../..")
+            .normalize("../..");
         test("/..")
             .normalize("/");
         test("/../..")
             .normalize("/");
+        test("/../foo/../../bar")
+            .normalize("/bar");
         test("foo/.")
             .normalize("foo");
         test("./foo")
             .normalize("foo");
+        test("foo/./bar/.././../gus/.")
+            .normalize("gus");
+        test(".foo/../foo../../bar/../gus")
+            .normalize("gus");
         test("foo/..")
             .normalize("");
+        test(".../../..")
+            .normalize("..");
+        test("foo/.../bar/..")
+            .normalize("foo/...");
+        test("foo/../...")
+            .normalize("...");
         test("../foo")
             .normalize("../foo");
         test("../../foo")
             .normalize("../../foo");
+        test("../foo/../../bar")
+            .normalize("../../bar");
         test("foo/bar/..")
             .normalize("foo");
+        test("foo/bar/../..")
+            .normalize("");
+        test("foo/bar/../../..")
+            .normalize("..");
         test("foo/bar/gus/../..")
             .normalize("foo");
         test("/foo/bar/gus/../..")
             .normalize("/foo");
+        test("/foo/bar/../..")
+            .normalize("/");
 
         // equals
         test("this")

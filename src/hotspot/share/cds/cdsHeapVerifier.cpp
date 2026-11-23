@@ -170,7 +170,8 @@ CDSHeapVerifier::CDSHeapVerifier() : _archived_objs(0), _problems(0)
   if (CDSConfig::is_dumping_aot_linked_classes()) {
     add_shared_secret_accessors();
   }
-  ClassLoaderDataGraph::classes_do(this);
+
+  ClassLoaderDataGraph::loaded_classes_do_keepalive(this);
 }
 
 // We allow only "stateless" accessors in the SharedSecrets class to be AOT-initialized, for example,
@@ -371,8 +372,15 @@ public:
 // loaded. Later, we will check if any archived objects reference one of
 // these fields.
 void CDSHeapVerifier::do_klass(Klass* k) {
+  precond(CDSConfig::in_aot_safepoint());
   if (k->is_instance_klass()) {
     InstanceKlass* ik = InstanceKlass::cast(k);
+
+    if (!ik->is_loaded() || !ik->is_loader_alive()) {
+      // In the training run, we may see some classes that are just being created, or
+      // are in the process of being unloaded. Ignore them
+      return;
+    }
 
     if (AOTHeap::is_subgraph_root_class(ik)) {
       // ik is inside one of the ArchivableStaticFieldInfo tables

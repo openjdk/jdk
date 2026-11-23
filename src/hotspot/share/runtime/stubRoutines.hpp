@@ -283,10 +283,8 @@ public:
   static BlobId stub_to_blob(StubId id);
 #endif
 
-#if INCLUDE_CDS
   // AOT Initalization -- implementation is arch-specific
-  static void    init_AOTAddressTable();
-#endif // INCLUDE_CDS
+  static void    init_AOTAddressTable() NOT_CDS_RETURN;
 
   // Debugging
   static jint    verify_oop_count()                        { return _verify_oop_count; }

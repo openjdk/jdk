@@ -1012,6 +1012,7 @@ import java.net.URI;
  * <td style="text-align:center">String</td>
  * <td>
  * {@code allow, ignore, and deny}. Values are case-insensitive.
+ * If an invalid value is supplied, {@code IllegalArgumentException} is thrown.
  * </td>
  * <td style="text-align:center">allow</td>
  * <td style="text-align:center">No</td>
@@ -1046,6 +1047,7 @@ import java.net.URI;
  * <td style="text-align:center">String</td>
  * <td>
  * {@code continue, ignore, and strict}. Values are case-insensitive.
+ * If an invalid value is supplied, {@code IllegalArgumentException} is thrown.
  * </td>
  * <td style="text-align:center">continue</td>
  * <td style="text-align:center">No</td>

@@ -958,6 +958,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</characters>
 	<dates>
 		<calendars>
+			<calendar type="chinese">
+				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator>-</numericDateSeparator>
+					</numericSeparators>
+				</dateTimeFormats>
+			</calendar>
 			<calendar type="generic">
 				<dateFormats>
 					<dateFormatLength type="full">
@@ -1134,13 +1141,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<months>
 					<monthContext type="format">
 						<monthWidth type="abbreviated">
-							<month type="1">جنؤری</month>
-							<month type="2">فرؤری</month>
-							<month type="3">مارٕچ</month>
+							<month type="1">جنوری</month>
+							<month type="2">فروری</month>
+							<month type="3">مارچ</month>
 							<month type="4">اپریل</month>
 							<month type="5">مئی</month>
 							<month type="6">جوٗن</month>
-							<month type="7">جُلَے</month>
+							<month type="7">جُلایی</month>
 							<month type="8">اگست</month>
 							<month type="9">ستمبر</month>
 							<month type="10">اکتوٗبر</month>
@@ -1148,25 +1155,25 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="12">دسمبر</month>
 						</monthWidth>
 						<monthWidth type="wide">
-							<month type="1">جنؤری</month>
-							<month type="2">فرؤری</month>
-							<month type="3">مارٕچ</month>
+							<month type="1">جنوری</month>
+							<month type="2">فروری</month>
+							<month type="3">مارچ</month>
 							<month type="4">اپریل</month>
 							<month type="5">مئی</month>
 							<month type="6">جوٗن</month>
-							<month type="7">جُلَے</month>
+							<month type="7">جُلایی</month>
 							<month type="8">اگست</month>
 							<month type="9">ستمبر</month>
 							<month type="10">اکتوٗبر</month>
 							<month type="11">نومبر</month>
-							<month type="12">دَسَمبَر</month>
+							<month type="12">دسمبر</month>
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
 						<monthWidth type="abbreviated">
-							<month type="1">جنؤری</month>
-							<month type="2">فرؤری</month>
-							<month type="3">مارٕچ</month>
+							<month type="1">جنوری</month>
+							<month type="2">فروری</month>
+							<month type="3">مارچ</month>
 							<month type="4">اپریل</month>
 							<month type="5">مئی</month>
 							<month type="6">جوٗن</month>
@@ -1192,9 +1199,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="12">ن</month>
 						</monthWidth>
 						<monthWidth type="wide">
-							<month type="1">جنؤری</month>
-							<month type="2">فرؤری</month>
-							<month type="3">مارٕچ</month>
+							<month type="1">جنوری</month>
+							<month type="2">فروری</month>
+							<month type="3">مارچ</month>
 							<month type="4">اپریل</month>
 							<month type="5">مئی</month>
 							<month type="6">جوٗن</month>
@@ -1212,14 +1219,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dayWidth type="abbreviated">
 							<day type="sun">آتھوار</day>
 							<day type="mon">ژٔندٕروار</day>
-							<day type="tue">بۆموار</day>
+							<day type="tue">Tue</day>
 							<day type="wed">بودوار</day>
 							<day type="thu">برؠسوار</day>
 							<day type="fri">جُمہ</day>
 							<day type="sat">بٹوار</day>
 						</dayWidth>
 						<dayWidth type="wide">
-							<day type="sun">اَتھوار</day>
+							<day type="sun">آتھوار</day>
 							<day type="mon">ژٔندرٕروار</day>
 							<day type="tue">بۆموار</day>
 							<day type="wed">بودوار</day>
@@ -1332,6 +1339,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</timeFormatLength>
 				</timeFormats>
 				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator draft="provisional">/</numericDateSeparator>
+						<numericTimeSeparator draft="provisional">:</numericTimeSeparator>
+					</numericSeparators>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
@@ -1372,17 +1383,23 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="MMMMW" count="one">ہفتہ W از MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="other">ہفتہ W از MMMM</dateFormatItem>
 						<dateFormatItem id="yM">M/y</dateFormatItem>
-						<dateFormatItem id="yMd">M/d/y</dateFormatItem>
 						<dateFormatItem id="yMEd">E, M/d/y</dateFormatItem>
 						<dateFormatItem id="yMMM">MMM y</dateFormatItem>
 						<dateFormatItem id="yMMMEd">E, MMM d, y</dateFormatItem>
 						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
+						<dateFormatItem id="yMMMMd" draft="contributed">y MMMM d</dateFormatItem>
+						<dateFormatItem id="yMMMMEd" draft="contributed">EEE, MMMM d, y</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
 						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
 						<dateFormatItem id="yw" count="one">ہفتہ w از Y</dateFormatItem>
 						<dateFormatItem id="yw" count="other">ہفتہ w از Y</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="mixed" draft="provisional">{0} – {1}</intervalFormatRange>
+							<intervalFormatRange type="non-numeric" draft="provisional">{0} – {1}</intervalFormatRange>
+							<intervalFormatRange type="numeric" draft="provisional">{0} – {1}</intervalFormatRange>
+						</intervalFormatRanges>
 						<intervalFormatItem id="GyM">
 							<greatestDifference id="G">M/y G – M/y G</greatestDifference>
 							<greatestDifference id="M">M/y – M/y G</greatestDifference>
@@ -1559,7 +1576,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 		</fields>
 		<timeZoneNames>
-			<gmtZeroFormat>جی ایم ٹی</gmtZeroFormat>
 			<regionFormat>{0} وَکھ</regionFormat>
 			<regionFormat type="daylight">{0} ڈے لائٹ وَکھ</regionFormat>
 			<regionFormat type="standard">{0} معیٲری وَکھ</regionFormat>
@@ -1570,6 +1586,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<long>
 					<standard>کوآرڈنیٹڈ یونیورسل وَکھ</standard>
 				</long>
+				<short>
+					<standard>-</standard>
+				</short>
 			</zone>
 			<zone type="Etc/Unknown">
 				<exemplarCity>غٲر زان</exemplarCity>
@@ -2031,9 +2050,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>لِبَروِل</exemplarCity>
 			</zone>
 			<zone type="Europe/London">
-				<long>
-					<daylight>برطٲنوی سَمَر ٹایِم</daylight>
-				</long>
 				<exemplarCity>لَندَن</exemplarCity>
 			</zone>
 			<zone type="America/Grenada">
@@ -2124,9 +2140,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>جَیاپوٗرا</exemplarCity>
 			</zone>
 			<zone type="Europe/Dublin">
-				<long>
-					<daylight>اَیرِش سَمَر ٹایِم</daylight>
-				</long>
 				<exemplarCity>ڈَبلِن</exemplarCity>
 			</zone>
 			<zone type="Asia/Jerusalem">
@@ -2852,13 +2865,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>اؠلاسکا ڈےلایِٔٹ ٹایِم</daylight>
 				</long>
 			</metazone>
-			<metazone type="Almaty">
-				<long>
-					<generic>اؠلمؠٹی ٹایِم</generic>
-					<standard>اؠلمؠٹی سٹینڑاڑ ٹایِم</standard>
-					<daylight>اؠلمؠٹی سَمَر ٹایِم</daylight>
-				</long>
-			</metazone>
 			<metazone type="Amazon">
 				<long>
 					<generic>اؠمَزَن ٹایِم</generic>
@@ -2899,20 +2905,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>اؠنَڑیٖر ٹایِم</generic>
 					<standard>اؠنَڑیٖر سٹینڑاڑ ٹایِم</standard>
 					<daylight>اؠنڑیٖر سَمَر ٹایِم</daylight>
-				</long>
-			</metazone>
-			<metazone type="Aqtau">
-				<long>
-					<generic>اؠکٹاؤ ٹایِم</generic>
-					<standard>اؠکٹاؤ سٹینڑاڑ ٹایِم</standard>
-					<daylight>اؠکٹاؤ سَمَر ٹایِم</daylight>
-				</long>
-			</metazone>
-			<metazone type="Aqtobe">
-				<long>
-					<generic>اؠکٹوب ٹایِم</generic>
-					<standard>اؠکٹوب سٹینڑاڑ ٹایِم</standard>
-					<daylight>اؠکٹوب سَمَر ٹایِم</daylight>
 				</long>
 			</metazone>
 			<metazone type="Arabian">
@@ -3016,6 +3008,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>برؠسِلِیا سَمَر ٹایِم</daylight>
 				</long>
 			</metazone>
+			<metazone type="British">
+				<long>
+					<generic>برٹِش ٹایم</generic>
+					<daylight>برطٲنوی سَمَر ٹایِم</daylight>
+				</long>
+			</metazone>
 			<metazone type="Brunei">
 				<long>
 					<standard>بروٗنَے دَروٗسَلَم ٹایِم</standard>
@@ -3023,7 +3021,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Cape_Verde">
 				<long>
-					<generic>کیپ ؤرڑو ٹایِم</generic>
+					<generic>کیپ ؤرڑ ٹایِم</generic>
 					<standard>کیپ ؤرڑو سٹینڈرڈ ٹایِم</standard>
 					<daylight>کیپ سَمَر ٹایِم</daylight>
 				</long>
@@ -3203,11 +3201,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>مغرِبی گریٖن لینڈُک سَمَر ٹایِم</daylight>
 				</long>
 			</metazone>
-			<metazone type="Guam">
-				<long>
-					<standard>گُوؠم ٹایِم</standard>
-				</long>
-			</metazone>
 			<metazone type="Gulf">
 				<long>
 					<standard>گَلف سٹینڈرڈ ٹایِم</standard>
@@ -3226,7 +3219,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<metazone type="Hawaii_Aleutian">
 				<long>
 					<generic>حَواے اؠلیوٗٹِیَن ٹایِم</generic>
-					<standard>حَواے اؠلیوٗٹِیَن سٹینڑاڑ ٹایِم</standard>
+					<standard>ہوائی ایلیوشن سٹینڈرڈ ٹایم</standard>
 					<daylight>حَواے اؠلیوٗٹِیَن سَمَر ٹایِم</daylight>
 				</long>
 			</metazone>
@@ -3279,6 +3272,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>اِیٖرٲنؠ ٹایِم</generic>
 					<standard>اِیٖرٲنؠ سٹینڑاڑ ٹایِم</standard>
 					<daylight>اِیٖرٲنی سَمَر ٹایِم</daylight>
+				</long>
+			</metazone>
+			<metazone type="Irish">
+				<long>
+					<generic>آیرِش ٹایِم</generic>
+					<daylight>اَیرِش سَمَر ٹایِم</daylight>
 				</long>
 			</metazone>
 			<metazone type="Irkutsk">
@@ -3343,11 +3342,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>کرغزستان ٹائم</standard>
 				</long>
 			</metazone>
-			<metazone type="Lanka">
-				<long>
-					<standard>لَنکا ٹایِم</standard>
-				</long>
-			</metazone>
 			<metazone type="Line_Islands">
 				<long>
 					<standard>لایِٔن ججیٖرُک ٹایِم</standard>
@@ -3358,13 +3352,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>لعاڑ حووے ٹایِم</generic>
 					<standard>لعاڑ حووے سٹینڑاڑ ٹایِم</standard>
 					<daylight>لعاڑ ڑےلایٔٹ ٹایِم</daylight>
-				</long>
-			</metazone>
-			<metazone type="Macau">
-				<long>
-					<generic>مَکَعوٗ ٹایِم</generic>
-					<standard>مَکَعوٗ سٹینڑاڑ ٹایِم</standard>
-					<daylight>مَکَعوٗ سَمَر ٹایِم</daylight>
 				</long>
 			</metazone>
 			<metazone type="Magadan">
@@ -3482,11 +3469,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>فرنینڈو ڈی نورونہا سَمَر ٹائم</daylight>
 				</long>
 			</metazone>
-			<metazone type="North_Mariana">
-				<long>
-					<standard>شُمٲلی مَرِیانا ٹایِم</standard>
-				</long>
-			</metazone>
 			<metazone type="Novosibirsk">
 				<long>
 					<generic>نۄوۄسِبٔرسک ٹایِم</generic>
@@ -3566,13 +3548,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>یونگ یانگ ٹائم</standard>
 				</long>
 			</metazone>
-			<metazone type="Qyzylorda">
-				<long>
-					<generic>قِزلوڑا ٹایِم</generic>
-					<standard>قِزلوڑا سٹینڑاڑ ٹایِم</standard>
-					<daylight>قِزلوڑا سَمَر ٹایِم</daylight>
-				</long>
-			</metazone>
 			<metazone type="Reunion">
 				<long>
 					<standard>رِیوٗنِیَن ٹایِم</standard>
@@ -3599,9 +3574,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Samoa">
 				<long>
-					<generic>سؠموآ ٹایِم</generic>
 					<standard>سؠموآ سٹینڑاڑ ٹایِم</standard>
-					<daylight>سؠموآ سَمَر ٹایِم</daylight>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">

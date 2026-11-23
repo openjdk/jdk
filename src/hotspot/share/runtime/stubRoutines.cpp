@@ -320,11 +320,8 @@ STUBGEN_BLOBS_DO(DEFINE_BLOB_INIT_FUNCTION)
 #undef DEFINE_BLOB_INIT_FUNCTION
 
 
-#if INCLUDE_CDS
 // non-generated external API init driver function
-
 void stubs_AOTAddressTable_init() { StubRoutines::init_AOTAddressTable(); }
-#endif // INCLUDE_CDS
 
 /*
  * we generate the underlying driver function compiler_stubs_init()
