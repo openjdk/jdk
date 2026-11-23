@@ -41,6 +41,14 @@
 //the value of an argument.
 #define VALUE_MAXLEN 256
 
+class DCmdParserMark : public StackObj {
+  DCmdParser* const _parser;
+
+public:
+  DCmdParserMark(DCmdParser* parser) : _parser(parser) {}
+  ~DCmdParserMark() { _parser->cleanup(); }
+};
+
 // DiagnosticFramework test utility methods
 
 /*
@@ -146,6 +154,7 @@ static void fill_in_parser(DCmdParser* parser, oop argument)
 WB_ENTRY(jobjectArray, WB_ParseCommandLine(JNIEnv* env, jobject o, jstring j_cmdline, jchar j_delim, jobjectArray arguments))
   ResourceMark rm;
   DCmdParser parser;
+  DCmdParserMark parser_mark(&parser);
 
   const char* c_cmdline = java_lang_String::as_utf8_string(JNIHandles::resolve(j_cmdline));
   const char c_delim = (char)(j_delim & 0xff);
