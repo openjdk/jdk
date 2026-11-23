@@ -36,6 +36,7 @@ import java.awt.image.ImageConsumer;
 import java.awt.image.ImageObserver;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.lang.ref.Reference;
 import java.util.Collection;
 import java.util.Hashtable;
 import java.util.Random;
@@ -122,6 +123,7 @@ public class PngImageDecoderPrematureEOFTest {
         };
         img.getWidth(observer);
         flagsFuture.get();
+        Reference.reachabilityFence(observer);
     }
 
     /**
