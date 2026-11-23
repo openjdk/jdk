@@ -50,11 +50,6 @@ Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
   return JNI_OK;
 }
 
-JNIEXPORT void JNICALL
-Java_GetCtorLocalStrictInitFields_keepAlive(JNIEnv *jni, jclass ignore, jobject obj) {
-  // Intentionally empty. It forces the compiler to pass the obj to JNI.
-}
-
 JNIEXPORT jint JNICALL
 Java_GetCtorLocalStrictInitFields_suspendThread(JNIEnv *jni, jclass ignore, jthread target) {
   return (jint) jvmti->SuspendThread(target);

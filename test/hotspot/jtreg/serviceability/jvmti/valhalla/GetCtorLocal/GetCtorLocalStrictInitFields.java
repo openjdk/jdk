@@ -37,9 +37,12 @@
  *     GetCtorLocalStrictInitFields$ConstructorBeforeAndAfterThis$TestClass
  *     GetCtorLocalStrictInitFields$MethodAfterSuper$TestClass
  *     GetCtorLocalStrictInitFields$MethodAfterInit$TestClass
- * @run junit/othervm/native --enable-native-access=ALL-UNNAMED -agentlib:GetCtorLocalStrictInitFields ${test.main.class}
+ * @run junit/othervm/native --enable-native-access=ALL-UNNAMED
+ *     -XX:CompileCommand=exclude,GetCtorLocalStrictInitFields$ValueClassConstructor2$TestClass::<init>
+ *     -agentlib:GetCtorLocalStrictInitFields ${test.main.class}
  */
 
+import java.lang.ref.Reference;
 import jdk.test.lib.helpers.StrictInit;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Nested;
@@ -468,7 +471,7 @@ class GetCtorLocalStrictInitFields {
                 // JIT compiler can remove the THIS object as it is not used in the constructor.
                 // But it is needed in the call to testGetLocalInstance() which checks the value
                 // returned by the JVMTI GetLocalInstance() and GetLocalObject() for slot 0.
-                keepAlive(this);
+                Reference.reachabilityFence(this);
             }
         }
 
@@ -617,7 +620,6 @@ class GetCtorLocalStrictInitFields {
         assertEquals(methodName, stack[0].getMethodName());
     }
 
-    static native int keepAlive(Object obj);
     static native int suspendThread(Thread thread);
     static native int resumeThread(Thread thread);
     static native int testGetLocalInstance(Thread thread);
