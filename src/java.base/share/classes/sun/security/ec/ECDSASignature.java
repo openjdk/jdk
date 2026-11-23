@@ -31,7 +31,6 @@ import java.security.*;
 import java.security.interfaces.*;
 import java.security.spec.*;
 import java.util.Arrays;
-import java.util.Optional;
 
 import sun.security.jca.JCAUtil;
 import sun.security.util.*;
@@ -83,6 +82,8 @@ abstract class ECDSASignature extends SignatureSpi {
 
     // The format. true for the IEEE P1363 format. false (default) for ASN.1
     private final boolean p1363Format;
+
+    private ECDSAOperations ops;
 
     /**
      * Constructs a new ECDSASignature.
@@ -347,6 +348,8 @@ abstract class ECDSASignature extends SignatureSpi {
     protected void engineInitVerify(PublicKey publicKey)
     throws InvalidKeyException {
         ECPublicKey key = (ECPublicKey) ECKeyFactory.toECKey(publicKey);
+        this.ops = ECDSAOperations.forParameters(key.getParams()).orElseThrow(
+                () -> new InvalidKeyException("Curve not supported: " + key.getParams()));
         // Should check that the supplied key is appropriate for signature
         // algorithm (e.g. P-256 for SHA256withECDSA)
         this.publicKey = key;
@@ -367,6 +370,8 @@ abstract class ECDSASignature extends SignatureSpi {
     throws InvalidKeyException {
         ECPrivateKey key = (ECPrivateKey) ECKeyFactory.toECKey(privateKey);
         ECUtil.checkPrivateKey(key);
+        this.ops = ECDSAOperations.forParameters(key.getParams()).orElseThrow(
+                () -> new InvalidKeyException("Curve not supported: " + key.getParams()));
         // Should check that the supplied key is appropriate for signature
         // algorithm (e.g. P-256 for SHA256withECDSA)
         this.privateKey = key;
@@ -470,12 +475,7 @@ abstract class ECDSASignature extends SignatureSpi {
 
         // seed is the key size + 64 bits
         int seedBits = params.getOrder().bitLength() + 64;
-        Optional<ECDSAOperations> opsOpt =
-            ECDSAOperations.forParameters(params);
-        if (opsOpt.isEmpty()) {
-            throw new SignatureException("Curve not supported: " + params);
-        }
-        byte[] sig = signDigestImpl(opsOpt.get(), seedBits, digest, privateKey,
+        byte[] sig = signDigestImpl(ops, seedBits, digest, privateKey,
             random);
 
         if (p1363Format) {
@@ -498,9 +498,6 @@ abstract class ECDSASignature extends SignatureSpi {
         } catch (InvalidKeyException e) {
             return false;
         }
-
-        ECDSAOperations ops = ECDSAOperations.forParameters(params)
-                .orElseThrow(() -> new SignatureException("Curve not supported: " + params));
 
         // Full public key validation, only necessary when h != 1.
         if (params.getCofactor() != 1) {
