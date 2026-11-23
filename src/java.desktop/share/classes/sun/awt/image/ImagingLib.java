@@ -77,37 +77,21 @@ public class ImagingLib {
     public static native int transformRaster(Raster src, Raster dst,
                                              double[] matrix,
                                              int interpType);
-    public static native int convolveBINative(BufferedImage src, BufferedImage dst,
+    private static native int convolveBINative(BufferedImage src, BufferedImage dst,
                                         int width, int height, float[] data, int edgeHint);
     public static int convolveBI(BufferedImage src, BufferedImage dst,
-                             Kernel kernel, int edgeHint) {
-        int width = kernel.getWidth();
-        int height = kernel.getHeight();
-        float[] data = kernel.getKernelData(null);
-
-        if (width <= 0 || height <= 0 ||
-                (long) width * height != data.length) {
-            return 0;
-        }
-
-        return convolveBINative(src, dst, width, height, data, edgeHint);
+                                Kernel kernel, int edgeHint) {
+        return convolveBINative(src, dst, kernel.getWidth(),
+                kernel.getHeight(), kernel.getKernelData(null), edgeHint);
     }
 
-    public static native int convolveRasterNative(Raster src, Raster dst,
+    private static native int convolveRasterNative(Raster src, Raster dst,
                                             int width, int height, float[] data, int edgeHint);
 
     public static int convolveRaster(Raster src, Raster dst,
-                                 Kernel kernel, int edgeHint) {
-        int width = kernel.getWidth();
-        int height = kernel.getHeight();
-        float[] data = kernel.getKernelData(null);
-
-        if (width <= 0 || height <= 0 ||
-                (long) width * height != data.length) {
-            return 0;
-        }
-
-        return convolveRasterNative(src, dst, width, height, data, edgeHint);
+                                    Kernel kernel, int edgeHint) {
+        return convolveRasterNative(src, dst, kernel.getWidth(),
+                kernel.getHeight(), kernel.getKernelData(null), edgeHint);
     }
 
     public static native int lookupByteBI(BufferedImage src, BufferedImage dst,

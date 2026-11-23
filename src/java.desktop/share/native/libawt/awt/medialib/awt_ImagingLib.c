@@ -305,16 +305,7 @@ Java_sun_awt_image_ImagingLib_convolveBINative(JNIEnv *env, jobject this,
     if (s_nomlib) return 0;
     if (s_timeIt)     (*start_timer)(3600);
 
-    if (jdata == NULL) {
-        return 0;
-    }
-
     klen  = (*env)->GetArrayLength(env, jdata);
-
-    if (kwidth <= 0 || kheight <= 0 ||
-        (jlong) kwidth * kheight != klen) {
-        return 0;
-    }
 
     kern  = (float *) (*env)->GetPrimitiveArrayCritical(env, jdata, NULL);
     if (kern == NULL) {
@@ -551,16 +542,7 @@ Java_sun_awt_image_ImagingLib_convolveRasterNative(JNIEnv *env, jobject this,
     if (s_nomlib) return 0;
     if (s_timeIt)     (*start_timer)(3600);
 
-    if (jdata == NULL) {
-        return 0;
-    }
-
     klen  = (*env)->GetArrayLength(env, jdata);
-
-    if (kwidth <= 0 || kheight <= 0 ||
-        (jlong) kwidth * kheight != klen) {
-        return 0;
-    }
 
     kern  = (float *) (*env)->GetPrimitiveArrayCritical(env, jdata, NULL);
     if (kern == NULL) {
