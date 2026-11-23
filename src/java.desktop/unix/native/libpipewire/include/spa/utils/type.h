@@ -5,12 +5,12 @@
 #ifndef SPA_TYPE_H
 #define SPA_TYPE_H
 
+#include <spa/utils/defs.h>
+#include <spa/utils/string.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <spa/utils/defs.h>
-#include <spa/utils/string.h>
 
 #ifndef SPA_API_TYPE
  #ifdef SPA_API_IMPL
@@ -88,6 +88,8 @@ enum {
     SPA_TYPE_OBJECT_ParamLatency,
     SPA_TYPE_OBJECT_ParamProcessLatency,
     SPA_TYPE_OBJECT_ParamTag,
+    SPA_TYPE_OBJECT_PeerParam,
+    SPA_TYPE_OBJECT_ParamDict,
     _SPA_TYPE_OBJECT_LAST,            /**< not part of ABI */
 
     /* vendor extensions */

@@ -5,6 +5,10 @@
 #ifndef SPA_PARAM_TAG_TYPES_H
 #define SPA_PARAM_TAG_TYPES_H
 
+#include <spa/utils/enum-types.h>
+#include <spa/param/param-types.h>
+#include <spa/param/tag.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -13,10 +17,6 @@ extern "C" {
  * \addtogroup spa_param
  * \{
  */
-
-#include <spa/utils/enum-types.h>
-#include <spa/param/param-types.h>
-#include <spa/param/tag.h>
 
 #define SPA_TYPE_INFO_PARAM_Tag        SPA_TYPE_INFO_PARAM_BASE "Tag"
 #define SPA_TYPE_INFO_PARAM_TAG_BASE    SPA_TYPE_INFO_PARAM_Tag ":"
