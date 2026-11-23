@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -333,8 +333,8 @@ OGLSD_InitFBObject(GLuint *fbobjectID, GLuint *depthID,
         error = j2d_glGetError();
         if (error != GL_NO_ERROR) {
             J2dTraceLn(J2D_TRACE_VERBOSE, "OGLSD_InitFBObject: "\
-                       "could not create depth buffer: error=%x",
-                       error);
+                       "could not create depth buffer: depth=%d error=%x",
+                       /* depthSize = */ (16 + (i * 8)), error);
             j2d_glDeleteRenderbuffersEXT(1, &depthTmpID);
             continue;
         }
@@ -350,14 +350,14 @@ OGLSD_InitFBObject(GLuint *fbobjectID, GLuint *depthID,
         if (status == GL_FRAMEBUFFER_COMPLETE_EXT) {
             // we found a valid format, so break out of the loop
             J2dTraceLn(J2D_TRACE_VERBOSE,
-                       "  framebuffer is complete");
+                       "  framebuffer is complete: depth=%d", /* depthSize = */ (16 + (i * 8)));
             foundDepth = JNI_TRUE;
             break;
         } else {
             // this depth format didn't work, so delete and try another format
             J2dTraceLn(J2D_TRACE_VERBOSE,
-                       "  framebuffer is incomplete: status=%x",
-                       status);
+                       "  framebuffer is incomplete: depth=%d status=%x",
+                       /* depthSize = */ (16 + (i * 8)), status);
             j2d_glDeleteRenderbuffersEXT(1, &depthTmpID);
         }
     }
