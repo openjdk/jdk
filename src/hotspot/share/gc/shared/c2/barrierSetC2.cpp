@@ -980,32 +980,22 @@ static const Node* get_base_and_offset(const MachNode* mach, intptr_t& offset) {
   }
 
   if (base->is_Mach() && base->as_Mach()->ideal_Opcode() == Op_AddP) {
-    // The memory address is computed by 'base' (an AddP) and fed to 'mach'
-    // via a memory operand that uses the AddP's result as its base. The
-    // ultimate base and offset of the access can be fetched from the AddP's
-    // inputs and Ideal type.
-    //
-    // On platforms with scaled-indexed addressing (e.g. x86, aarch64), the
-    // matcher folds the full address into a single memory operand, so when
-    // 'base' is an AddP the operand's own immediate is 0.
-    //
-    // On platforms without scaled-indexed addressing (e.g. PPC64), a
-    // variable-index array access requires a separate AddP to compute
-    // 'array_base + shifted_index', and the array header offset remains in
-    // the memory instruction's own immediate. In that case 'offset' here is
-    // non-zero, and the AddP's type offset (OffsetBot for variable-index)
-    // replaces it to correctly describe the access.
+    // The memory address is computed by 'base' and fed to 'mach'.
+    // If memory operands have no index register, the full address is
+    // pre-computed by an AddP node. The ultimate base and offset can
+    // be fetched directly from the inputs and Ideal type of 'base'.
     const TypeOopPtr* oopptr = base->bottom_type()->isa_oopptr();
     if (oopptr == nullptr) return nullptr;
-    if (!is_unknown(offset)) {
-      offset = oopptr->offset();
-    }
+    intptr_t addp_offset = oopptr->offset();
+    if (is_undefined(addp_offset)) return nullptr;
+    // If the AddP offset is unknown (e.g. array access with unknown index),
+    // the total access offset is unknown regardless of the outer displacement.
+    offset = is_unknown(addp_offset) ? addp_offset : addp_offset + offset;
     // Even if 'base' is not an Ideal AddP node anymore, Matcher::ReduceInst()
     // guarantees that the base address is still available at the same slot.
     base = base->in(AddPNode::Base);
     assert(base != nullptr, "");
   }
-
   if (is_undefined(offset) || (is_concrete(offset) && offset < 0)) {
     return nullptr;
   }
