@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -297,15 +297,15 @@ public final class CompositeFont extends Font2D {
                     /* If a component specifies the file with a bad font,
                      * the corresponding slot will be initialized by
                      * default physical font. In such case findFont2D may
-                     * return composite font which cannot be casted to
+                     * return composite font which cannot be cast to
                      * physical font.
                      */
-                    try {
-                        components[slot] =
-                            (PhysicalFont) fm.findFont2D(componentNames[slot],
-                                                         style,
-                                                FontManager.PHYSICAL_FALLBACK);
-                    } catch (ClassCastException cce) {
+                    Font2D f2d = fm.findFont2D(componentNames[slot],
+                                               style,
+                                               FontManager.PHYSICAL_FALLBACK);
+                    if (f2d instanceof PhysicalFont pf) {
+                        components[slot] = pf;
+                    } else {
                         /* Assign default physical font to the slot */
                         components[slot] = fm.getDefaultPhysicalFont();
                     }
@@ -379,12 +379,13 @@ public final class CompositeFont extends Font2D {
         try {
             PhysicalFont font = components[slot];
             if (font == null) {
-                try {
-                    font = (PhysicalFont) fm.
-                        findFont2D(componentNames[slot], style,
-                                   FontManager.PHYSICAL_FALLBACK);
+                Font2D f2d = fm.findFont2D(componentNames[slot],
+                                           style,
+                                           FontManager.PHYSICAL_FALLBACK);
+                if (f2d instanceof PhysicalFont pf) {
+                    font = pf;
                     components[slot] = font;
-                } catch (ClassCastException cce) {
+                } else {
                     font = fm.getDefaultPhysicalFont();
                 }
             }

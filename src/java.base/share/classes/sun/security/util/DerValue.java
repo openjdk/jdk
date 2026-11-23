@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import sun.util.calendar.CalendarSystem;
 import java.io.*;
 import java.math.BigInteger;
 import java.nio.charset.Charset;
+import java.time.Instant;
 import java.util.*;
 
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
@@ -156,6 +157,9 @@ public class DerValue {
      * "SET OF" (one to N members, order does not matter).
      */
     public static final byte    tag_SetOf = 0x31;
+
+    // Max nested depth for constructed data
+    private static final int MAX_CONSTRUCTED_NEST = 30;
 
     // This class is mostly immutable except that:
     //
@@ -564,6 +568,14 @@ public class DerValue {
      * @return the octet string held in this DER value
      */
     public byte[] getOctetString() throws IOException {
+        return getOctetString(0);
+    }
+
+    private byte[] getOctetString(int limit) throws IOException {
+        if (++limit > MAX_CONSTRUCTED_NEST) {
+            throw new IOException("Nested OctetString limit reached ("
+                + MAX_CONSTRUCTED_NEST + ").");
+        }
 
         if (tag != tag_OctetString && !isConstructed(tag_OctetString)) {
             throw new IOException(
@@ -582,7 +594,7 @@ public class DerValue {
             ByteArrayOutputStream bout = new ByteArrayOutputStream();
             DerInputStream dis = data();
             while (dis.available() > 0) {
-                bout.write(dis.getDerValue().getOctetString());
+                bout.write(dis.getDerValue().getOctetString(limit));
             }
             return bout.toByteArray();
         }
@@ -888,11 +900,11 @@ public class DerValue {
     }
 
     /**
-     * Private helper routine to extract time from the der value.
+     * Private helper routine to extract time from the der value as an Instant.
      * @param generalized true if Generalized Time is to be read, false
      * if UTC Time is to be read.
      */
-    private Date getTimeInternal(boolean generalized) throws IOException {
+    private Instant getTimeInternal(boolean generalized) throws IOException {
 
         /*
          * UTC time encoded as ASCII chars:
@@ -1064,7 +1076,7 @@ public class DerValue {
             default:
                 throw new IOException("Parse " + type + " time, garbage offset");
         }
-        return new Date(time);
+        return Instant.ofEpochMilli(time);
     }
 
     /**
@@ -1080,11 +1092,11 @@ public class DerValue {
     }
 
     /**
-     * Determines whether Date was encoded as UTC or Generalized time and
-     * calls getUTCTime or getGeneralizedTime accordingly
+     * Determines whether {@code Instant} was encoded as UTC or Generalized time
+     * and calls getUTCInstant or getGeneralizedInstant accordingly.
      */
-    public Date getTime() throws IOException {
-        return (tag == tag_UtcTime) ? getUTCTime() : getGeneralizedTime();
+    public Instant getInstant() throws IOException {
+        return (tag == tag_UtcTime) ? getUTCInstant() : getGeneralizedInstant();
     }
 
     /**
@@ -1093,6 +1105,15 @@ public class DerValue {
      * @return the Date held in this DER value
      */
     public Date getUTCTime() throws IOException {
+        return Date.from(getUTCInstant());
+    }
+
+    /**
+     * Returns an Instant if the DerValue is UtcTime.
+     *
+     * @return the Instant held in this DER value
+     */
+    public Instant getUTCInstant() throws IOException {
         if (tag != tag_UtcTime) {
             throw new IOException("DerValue.getUTCTime, not a UtcTime: " + tag);
         }
@@ -1109,6 +1130,15 @@ public class DerValue {
      * @return the Date held in this DER value
      */
     public Date getGeneralizedTime() throws IOException {
+        return Date.from(getGeneralizedInstant());
+    }
+
+    /**
+     * Returns an Instant if the DerValue is GeneralizedTime.
+     *
+     * @return the Instant held in this DER value
+     */
+    public Instant getGeneralizedInstant() throws IOException {
         if (tag != tag_GeneralizedTime) {
             throw new IOException(
                 "DerValue.getGeneralizedTime, not a GeneralizedTime: " + tag);

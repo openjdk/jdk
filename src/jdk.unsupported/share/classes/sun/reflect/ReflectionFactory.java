@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,27 +62,39 @@ public class ReflectionFactory {
     }
 
     /**
-     * Returns an accessible constructor capable of creating instances
-     * of the given class, initialized by the given constructor.
+     * Throws {@code UnsupportedOperationException}.
      *
-     * @param cl the class to instantiate
-     * @param constructorToCall the constructor to call
-     * @return an accessible constructor
+     * <p> This method was originally implemented to return an accessible constructor to
+     * create an instance of the given class and initializes it by invoking the supplied
+     * constructor. The method is now disabled and throws UnsupportedOperationException
+     * by default. Legacy behavior can be temporarily re-enabled by running with
+     * {@code -Djdk.reflect.allowNonSerializableConstruction=true}. The method is
+     * deprecated for removal in a future release.
+     *
+     * @deprecated Use the 1-arg newConstructorForSerialization instead.
+     *
+     * @param cl the class to instantiate, ignored by default
+     * @param constructorToCall the constructor to call, ignored by default
+     * @return nothing by default
+     * @throws UnsupportedOperationException by default
      */
+    @Deprecated(since="28", forRemoval=true)
     public Constructor<?> newConstructorForSerialization(Class<?> cl,
                                                          Constructor<?> constructorToCall)
     {
-        return delegate.newConstructorForSerialization(cl,
-                                                       constructorToCall);
+        return delegate.newConstructorForSerialization(cl, constructorToCall);
     }
 
     /**
-     * Returns an accessible no-arg constructor for a class.
-     * The no-arg constructor is found searching the class and its supertypes.
+     * Returns an accessible no-arg constructor for a serializable class.
+     * The no-arg constructor is found searching the class and its supertypes,
+     * and must ensure that all strictly-initialized fields
+     * declared in the class and its supertypes are properly initialized.
      *
-     * @param cl the class to instantiate
-     * @return a no-arg constructor for the class or {@code null} if
-     *     the class or supertypes do not have a suitable no-arg constructor
+     * @param cl the serializable class to instantiate
+     * @return a no-arg constructor for the class, or {@code null} if the
+     *         class or supertypes do not have a suitable no-arg constructor
+     *         or if the class is a value class
      */
     public final Constructor<?> newConstructorForSerialization(Class<?> cl)
     {

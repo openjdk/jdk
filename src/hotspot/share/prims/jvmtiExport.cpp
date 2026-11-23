@@ -24,6 +24,7 @@
 
 #include "cds/aotThread.hpp"
 #include "classfile/javaClasses.inline.hpp"
+#include "classfile/javaStackTraceClasses.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -1019,7 +1020,7 @@ class JvmtiClassFileLoadHookPoster : public StackObj {
         // and it hasn't already been cached, cache it
         JvmtiCachedClassFileData *p;
         p = (JvmtiCachedClassFileData *)os::malloc(
-          offset_of(JvmtiCachedClassFileData, data) + _curr_len, mtInternal);
+          offset_of(JvmtiCachedClassFileData, data) + _curr_len, mtServiceability);
         if (p == nullptr) {
           vm_exit_out_of_memory(offset_of(JvmtiCachedClassFileData, data) + _curr_len,
             OOM_MALLOC_ERROR,
@@ -1137,7 +1138,7 @@ class JvmtiObjectAllocEventMark : public JvmtiClassEventMark  {
    jlong    _size;
  public:
    JvmtiObjectAllocEventMark(JavaThread *thread, oop obj) : JvmtiClassEventMark(thread, oop_to_klass(obj)) {
-     _jobj = (jobject)to_jobject(obj);
+     _jobj = obj->is_value() ? nullptr : (jobject)to_jobject(obj); // nullptr for non-identity objects
      _size = obj->size() * wordSize;
    };
    jobject jni_jobject() { return _jobj; }
@@ -1282,6 +1283,7 @@ bool              JvmtiExport::_can_post_frame_pop                        = fals
 bool              JvmtiExport::_can_pop_frame                             = false;
 bool              JvmtiExport::_can_force_early_return                    = false;
 bool              JvmtiExport::_can_support_virtual_threads               = false;
+bool              JvmtiExport::_can_support_value_objects                 = false;
 bool              JvmtiExport::_can_get_owned_monitor_info                = false;
 
 bool              JvmtiExport::_early_vmstart_recorded                    = false;
@@ -2277,6 +2279,46 @@ void JvmtiExport::post_field_access_by_jni(JavaThread *thread, oop obj,
   post_field_access(thread, method, address, klass, h_obj, fieldID);
 }
 
+// Returns true if a field access or modification event should be skipped while the event
+// thread is initializing a class with strictly-initialized static fields or executing a
+// constructor with strictly-initialized instance fields in its declaring-class hierarchy.
+static bool should_skip_field_event_during_strict_initialization(JavaThread* thread, Klass* field_klass, Handle object, jfieldID field) {
+  fieldDescriptor fd;
+  if (!JvmtiEnv::get_field_descriptor(field_klass, field, &fd)) {
+    assert(false, "should_skip_field_event_during_strict_initialization called with invalid fieldID");
+    return true;
+  }
+
+  // Skip field event for a static field when the class declaring the field is being initialized
+  // by the event thread and the class declares strictly-initialized static fields.
+  if (fd.is_static()) {
+    InstanceKlass* ik = fd.field_holder();
+    return ik->has_strict_static_fields() && ik->is_reentrant_initialization(thread);
+  }
+
+  // Skip an instance field event when the current Java frame is a constructor
+  // whose declaring class has strictly-initialized instance fields in its hierarchy
+  // and slot 0 contains a reference to the object containing the watched field.
+  ResourceMark rm(thread);
+  RegisterMap reg_map(thread,
+                      RegisterMap::UpdateMap::skip,
+                      RegisterMap::ProcessFrames::skip,
+                      RegisterMap::WalkContinuation::skip);
+  javaVFrame* jvf = thread->last_java_vframe(&reg_map);
+  if (jvf != nullptr) {
+    Method* method = jvf->method();
+    if (method->is_object_constructor() && method->method_holder()->has_strict_instance_fields_in_hierarchy()) {
+      StackValueCollection* locals = jvf->locals();
+      if (!locals->is_empty()) {
+        StackValue* receiver = locals->at(0);
+        return receiver->type() == T_OBJECT && !receiver->obj_is_scalar_replaced() && receiver->get_obj()() == object();
+      }
+    }
+  }
+
+  return false;
+}
+
 void JvmtiExport::post_field_access(JavaThread *thread, Method* method,
   address location, Klass* field_klass, Handle object, jfieldID field) {
 
@@ -2288,6 +2330,9 @@ void JvmtiExport::post_field_access(JavaThread *thread, Method* method,
     return;
   }
   if (thread->should_hide_jvmti_events()) {
+    return;
+  }
+  if (should_skip_field_event_during_strict_initialization(thread, field_klass, object, field)) {
     return;
   }
 
@@ -2458,6 +2503,9 @@ void JvmtiExport::post_field_modification(JavaThread *thread, Method* method,
     return;
   }
   if (thread->should_hide_jvmti_events()) {
+    return;
+  }
+  if (should_skip_field_event_during_strict_initialization(thread, field_klass, object, field)) {
     return;
   }
 
@@ -2967,6 +3015,10 @@ void JvmtiExport::post_vm_object_alloc(JavaThread *thread, oop object) {
   if (thread->should_hide_jvmti_events()) {
     return;
   }
+  const bool is_value = object->is_value();
+  if (is_value && !JvmtiExport::can_support_value_objects()) {
+    return;
+  }
   HandleMark hm(thread);
   Handle h(thread, object);
 
@@ -2974,10 +3026,11 @@ void JvmtiExport::post_vm_object_alloc(JavaThread *thread, oop object) {
                       JvmtiTrace::safe_get_thread_name(thread)));
   JvmtiEnvIterator it;
   for (JvmtiEnv* env = it.first(); env != nullptr; env = it.next(env)) {
-    if (env->is_enabled(JVMTI_EVENT_VM_OBJECT_ALLOC)) {
+    if (env->is_enabled(JVMTI_EVENT_VM_OBJECT_ALLOC) &&
+        (!is_value || env->get_capabilities()->can_support_value_objects != 0)) {
       EVT_TRACE(JVMTI_EVENT_VM_OBJECT_ALLOC, ("[%s] Evt vmobject alloc sent %s",
                                          JvmtiTrace::safe_get_thread_name(thread),
-                                         object==nullptr? "null" : object->klass()->external_name()));
+                                         object->klass()->external_name()));
 
       JvmtiObjectAllocEventMark jem(thread, h());
       JVMTI_JAVA_THREAD_EVENT_CALLBACK_BLOCK(thread)
@@ -3004,19 +3057,24 @@ void JvmtiExport::post_sampled_object_alloc(JavaThread *thread, oop object) {
   if (thread->should_hide_jvmti_events()) {
     return;
   }
+  const bool is_value = object->is_value();
+  if (is_value && !JvmtiExport::can_support_value_objects()) {
+    return;
+  }
 
   EVT_TRIG_TRACE(JVMTI_EVENT_SAMPLED_OBJECT_ALLOC,
                  ("[%s] Trg sampled object alloc triggered",
                   JvmtiTrace::safe_get_thread_name(thread)));
   JvmtiEnvThreadStateIterator it(state);
   for (JvmtiEnvThreadState* ets = it.first(); ets != nullptr; ets = it.next(ets)) {
-    if (ets->is_enabled(JVMTI_EVENT_SAMPLED_OBJECT_ALLOC)) {
+    JvmtiEnv *env = ets->get_env();
+    if (ets->is_enabled(JVMTI_EVENT_SAMPLED_OBJECT_ALLOC) &&
+        (!is_value || env->get_capabilities()->can_support_value_objects != 0)) {
       EVT_TRACE(JVMTI_EVENT_SAMPLED_OBJECT_ALLOC,
                 ("[%s] Evt sampled object alloc sent %s",
                  JvmtiTrace::safe_get_thread_name(thread),
-                 object == nullptr ? "null" : object->klass()->external_name()));
+                 object->klass()->external_name()));
 
-      JvmtiEnv *env = ets->get_env();
       JvmtiObjectAllocEventMark jem(thread, h());
       JVMTI_JAVA_THREAD_EVENT_CALLBACK_BLOCK(thread)
       jvmtiEventSampledObjectAlloc callback = env->callbacks()->SampledObjectAlloc;

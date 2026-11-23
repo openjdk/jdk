@@ -23,6 +23,8 @@
 
 // key: compiler.misc.feature.primitive.patterns
 // key: compiler.warn.preview.feature.use.plural
+// as of Valhalla, j.l.Record is a preview class:
+// key: compiler.warn.preview.feature.use.classfile
 // options: --enable-preview -source ${jdk.version} -Xlint:preview
 
 class PrimitivePatternMatching {

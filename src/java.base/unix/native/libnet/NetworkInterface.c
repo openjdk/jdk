@@ -1593,7 +1593,7 @@ static int getMacAddress
    unsigned char *buf)
 {
     int size;
-    struct kinfo_ndd *nddp;
+    struct kinfo_ndd *nddp, *orig_nddp;
     void *end;
 
     size = getkerninfo(KINFO_NDD, 0, 0, 0);
@@ -1621,18 +1621,20 @@ static int getMacAddress
     }
 
     end = (void *)nddp + size;
+    orig_nddp = nddp;
+
     while ((void *)nddp < end) {
         if (!strcmp(nddp->ndd_alias, ifname) ||
                  !strcmp(nddp->ndd_name, ifname)) {
             bcopy(nddp->ndd_addr, buf, 6);
-            free(nddp);
+            free(orig_nddp);
             return 6;
         } else {
             nddp++;
         }
     }
 
-    free(nddp);
+    free(orig_nddp);
     return -1;
 }
 

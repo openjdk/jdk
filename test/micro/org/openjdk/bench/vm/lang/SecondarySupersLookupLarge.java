@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2026 IBM Corporation. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.security.SecureClassLoader;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.*;
@@ -91,11 +92,11 @@ public class SecondarySupersLookupLarge {
         for (int n = first; n <= last; n++) {
             interfaces[n] = genInterface(name.apply(n));
         }
-        System.out.println("LENGTH = " + interfaces.length);
+        System.out.println("interfaceCount = " + interfaces.length);
         return interfaces;
     }
 
-    Class<?>[] interfaces;
+    Class<?>[] goodInterfaces, badInterfaces;
 
     public Class<?>[] genClasses(Class<?>[] interfaces, int length) {
         Class<?>[] klasses = new Class[length];
@@ -185,15 +186,16 @@ public class SecondarySupersLookupLarge {
         if (J.class.getClassLoader() != AClass.class.getClassLoader())
             throw new RuntimeException();
 
-        interfaces = genInterfaces(SecondarySupersLookupLarge::interfaceName, 0, interfaceCount);
+        goodInterfaces = genInterfaces(SecondarySupersLookupLarge::interfaceName, 0, interfaceCount);
+        badInterfaces = genInterfaces(n -> interfaceName(n) + "Bad", 0, interfaceCount);
         genInterface("J");
 
-        Class<?> barf = genClass(interfaces, "Humongous");
+        Class<?> barf = genClass(goodInterfaces, "Humongous");
         testInstance = (AClass)(barf.getConstructor().newInstance());
 
         testInstances = new AClass[TESTINSTANCES];
         for (int i = 0; i < testInstances.length; i++) {
-            var anObject = genClass(interfaces, String.format("Humongous%02d", i))
+            var anObject = genClass(goodInterfaces, String.format("Humongous%02d", i))
                 .getConstructor().newInstance();
             testInstances[i] = (AClass)anObject;
         }
@@ -210,12 +212,14 @@ public class SecondarySupersLookupLarge {
 
     // Arbitrary-sized conformance tests.
     @Benchmark public void testPositiveN() {
-        for (var iFace : interfaces) {
+        for (var iFace : goodInterfaces) {
             test(testInstance, iFace, true);
         }
     }
     @Benchmark public void testNegativeN() {
-        test(testInstance, J.class, false);
+        for (var iFace : badInterfaces) {
+            test(testInstance, iFace, false);
+        }
     }
 
     // These invoke obj instanceof/checkcast T. We use an array of

@@ -83,6 +83,14 @@ public class AARCH64Frame extends Frame {
       });
   }
 
+  public static long ropProtection() {
+    return ropProtectionField.getValue();
+  }
+
+  public static long pacMask() {
+    return pacMaskField.getValue();
+  }
+
   private static synchronized void initialize(TypeDataBase db) {
     INTERPRETER_FRAME_MDX_OFFSET                  = INTERPRETER_FRAME_METHOD_OFFSET - 1;
     INTERPRETER_FRAME_PADDING_OFFSET              = INTERPRETER_FRAME_MDX_OFFSET - 1;
@@ -358,7 +366,25 @@ public class AARCH64Frame extends Frame {
     if (map.getUpdateMap())
       updateMapWithSavedLink(map, addressOfStackSlot(LINK_OFFSET));
 
-    return new AARCH64Frame(sp, unextendedSP, getLink(), getSenderPC());
+    Address senderPC = getSenderPC();
+
+    if (Continuation.isReturnBarrierEntry(senderPC)) {
+      // We assume WalkContinuation is "WalkContinuation::skip".
+      // It is same with c'tor arguments of RegisterMap in frame::next_frame().
+      //
+      // frame::sender_for_interpreter_frame() in cpu/aarch64/frame_aarch64.cpp:
+      //
+      //   if (Continuation::is_return_barrier_entry(sender_pc)) {
+      //     if (map->walk_cont()) { // about to walk into an h-stack
+      //       return Continuation::top_frame(*this, map);
+      //     } else {
+      //       return Continuation::continuation_bottom_sender(map->thread(), *this, sender_sp);
+      //     }
+      //   }
+      return Continuation.continuationBottomSender(map.getThread(), this, sp);
+    }
+
+    return new AARCH64Frame(sp, unextendedSP, getLink(), senderPC);
   }
 
   private void updateMapWithSavedLink(RegisterMap map, Address savedFPAddr) {

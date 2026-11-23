@@ -99,6 +99,7 @@ public class ApplicableIRRulesPrinter {
         // Intel AVX
         "avx",
         "avx2",
+        "gfni",
         "avx512",
         "avx512bw",
         "avx512dq",
@@ -122,6 +123,7 @@ public class ApplicableIRRulesPrinter {
         "asimdhp",
         // RISCV64
         "rvv",
+        "zbb",
         "zbkb",
         "zfh",
         "zvbb",
@@ -137,23 +139,21 @@ public class ApplicableIRRulesPrinter {
      * - indices of all @IR rules that should be applied, separated by a comma
      * - "-1" if no @IR rule should not be applied
      */
-    public void emitApplicableIRRules(Method m, boolean skipped) {
+    public void emitApplicableIRRules(Method m) {
         method = m;
         int i = 0;
         ArrayList<Integer> validRules = new ArrayList<>();
         IR[] irAnnos = m.getAnnotationsByType(IR.class);
-        if (!skipped) {
-            for (IR irAnno : irAnnos) {
-                ruleIndex = i + 1;
-                try {
-                    if (shouldApplyIrRule(irAnno, m.getName(), ruleIndex, irAnnos.length)) {
-                        validRules.add(ruleIndex);
-                    }
-                } catch (TestFormatException e) {
-                    // Catch logged failure and continue to check other IR annotations.
+        for (IR irAnno : irAnnos) {
+            ruleIndex = i + 1;
+            try {
+                if (shouldApplyIrRule(irAnno, m.getName(), ruleIndex, irAnnos.length)) {
+                    validRules.add(ruleIndex);
                 }
-                i++;
+            } catch (TestFormatException e) {
+                // Catch logged failure and continue to check other IR annotations.
             }
+            i++;
         }
 
         if (irAnnos.length == 0 || validRules.isEmpty()) {
@@ -196,9 +196,6 @@ public class ApplicableIRRulesPrinter {
         } else if (irAnno.applyIf().length != 0 && !hasAllRequiredFlags(irAnno.applyIf(), "applyIf")) {
             printDisableReason(m, "Flag constraint not met (applyIf)", irAnno.applyIf(), ruleIndex, ruleMax);
             return false;
-        } else if (irAnno.applyIfNot().length != 0 && !hasNoRequiredFlags(irAnno.applyIfNot(), "applyIfNot")) {
-            printDisableReason(m, "Flag constraint not met (applyIfNot)", irAnno.applyIfNot(), ruleIndex, ruleMax);
-            return false;
         } else if (irAnno.applyIfAnd().length != 0 && !hasAllRequiredFlags(irAnno.applyIfAnd(), "applyIfAnd")) {
             printDisableReason(m, "Not all flag constraints are met (applyIfAnd)", irAnno.applyIfAnd(), ruleIndex, ruleMax);
             return false;
@@ -220,12 +217,12 @@ public class ApplicableIRRulesPrinter {
         if (irAnno.applyIfAnd().length != 0) {
             flagConstraints++;
             TestFormat.checkNoThrow(irAnno.applyIfAnd().length > 2,
-                                    "Use applyIf or applyIfNot or at least 2 conditions for applyIfAnd" + failAt());
+                                    "Use applyIf or at least 2 conditions for applyIfAnd" + failAt());
         }
         if (irAnno.applyIfOr().length != 0) {
             flagConstraints++;
             TestFormat.checkNoThrow(irAnno.applyIfOr().length > 2,
-                                    "Use applyIf or applyIfNot or at least 2 conditions for applyIfOr" + failAt());
+                                    "Use applyIf or at least 2 conditions for applyIfOr" + failAt());
         }
         if (irAnno.applyIf().length != 0) {
             flagConstraints++;
@@ -261,11 +258,6 @@ public class ApplicableIRRulesPrinter {
             cpuFeatureConstraints++;
             TestFormat.checkNoThrow(irAnno.applyIfCPUFeatureOr().length % 2 == 0,
                                     "applyIfCPUFeatureOr expects more than one CPU feature pair" + failAt());
-        }
-        if (irAnno.applyIfNot().length != 0) {
-            flagConstraints++;
-            TestFormat.checkNoThrow(irAnno.applyIfNot().length <= 2,
-                                    "Use applyIfAnd or applyIfOr or only 1 condition for applyIfNot" + failAt());
         }
         TestFormat.checkNoThrow(flagConstraints <= 1, "Can only specify one flag constraint" + failAt());
         TestFormat.checkNoThrow(platformConstraints <= 1, "Can only specify one platform constraint" + failAt());
@@ -449,16 +441,21 @@ public class ApplicableIRRulesPrinter {
         return returnValue;
     }
 
+    @SuppressWarnings("preview")
     private boolean check(String flag, String value) {
         if (flag.isEmpty()) {
             TestFormat.failNoThrow("Provided empty flag" + failAt());
             return false;
         }
+        Object actualFlagValue = WHITE_BOX.getStringVMFlag(flag);
+        if (actualFlagValue != null) {
+            return value.equals(actualFlagValue);
+        }
         if (value.isEmpty()) {
             TestFormat.failNoThrow("Provided empty value for flag " + flag + failAt());
             return false;
         }
-        Object actualFlagValue = WHITE_BOX.getBooleanVMFlag(flag);
+        actualFlagValue = WHITE_BOX.getBooleanVMFlag(flag);
         if (actualFlagValue != null) {
             return checkBooleanFlag(flag, value, (Boolean) actualFlagValue);
         }
@@ -470,9 +467,8 @@ public class ApplicableIRRulesPrinter {
         if (actualFlagValue != null) {
             return checkFlag(Double::parseDouble, "floating point", flag, value, (Double) actualFlagValue);
         }
-        actualFlagValue = WHITE_BOX.getStringVMFlag(flag);
-        if (actualFlagValue != null) {
-            return value.equals(actualFlagValue);
+        if (flag.equals("enable-valhalla")) {
+            return checkBooleanFlag(flag, value, Integer.class.isValue());
         }
 
         // This could be improved if the Whitebox offers a "isVMFlag" function. For now, just check if we can actually set

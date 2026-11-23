@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,7 +124,7 @@ final class LdapSearchEnumeration
                 // rcn is either relative to homeCtx or a fully qualified DN
                 obj = NamingManagerHelper.getDirObjectInstance(
                     obj, rcn, (relative ? homeCtx : null),
-                    homeCtx.envprops, attrs, ObjectFactoriesFilter::checkLdapFilter);
+                    homeCtx.envprops, attrs, ObjectFactoriesFilter.ldapFactoryFilter());
             } catch (NamingException e) {
                 throw e;
             } catch (Exception e) {

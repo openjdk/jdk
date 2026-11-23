@@ -335,6 +335,9 @@ AC_DEFUN_ONCE([HELP_PRINT_SUMMARY_AND_WARNINGS],
   if test "x$CCACHE_STATUS" != "x"; then
     $ECHO "* ccache status:  $CCACHE_STATUS"
   fi
+  if test "x$SCCACHE_STATUS" != "x"; then
+    $ECHO "* sccache status: $SCCACHE_STATUS"
+  fi
   $ECHO ""
 
   if test "x$BUILDING_MULTIPLE_JVM_VARIANTS" = "xtrue"; then

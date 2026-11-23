@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -972,10 +972,10 @@ float VTransformMemopScalarNode::cost(const VLoopAnalyzer& vloop_analyzer) const
 VTransformApplyResult VTransformMemopScalarNode::apply(VTransformApplyState& apply_state) const {
   apply_vtn_inputs_to_node(_node, apply_state);
   // The memory state has to be applied separately: the vtn does not hold it. This allows reordering.
-  Node* mem = apply_state.memory_state(_node->adr_type());
+  Node* mem = apply_state.memory_state(_node->in_adr_type());
   apply_state.phase()->igvn().replace_input_of(_node, 1, mem);
   if (_node->is_Store()) {
-    apply_state.set_memory_state(_node->adr_type(), _node);
+    apply_state.set_memory_state(_node->out_adr_type(), _node);
   }
 
   return VTransformApplyResult::make_scalar(_node);
@@ -1016,7 +1016,7 @@ void VTransformPhiScalarNode::apply_backedge(VTransformApplyState& apply_state) 
   if (_node->is_memory_phi()) {
     // Memory phi/backedge
     // The last memory state of that slice is the backedge.
-    Node* last_state = apply_state.memory_state(_node->adr_type());
+    Node* last_state = apply_state.memory_state(_node->in_adr_type());
     phase->igvn().replace_input_of(_node, 2, last_state);
   } else {
     // Data phi/backedge
@@ -1069,7 +1069,7 @@ float VTransformShiftCountNode::cost(const VLoopAnalyzer& vloop_analyzer) const 
 VTransformApplyResult VTransformShiftCountNode::apply(VTransformApplyState& apply_state) const {
   PhaseIdealLoop* phase = apply_state.phase();
   Node* shift_count_in = apply_state.transformed_node(in_req(1));
-  assert(shift_count_in->bottom_type()->isa_int(), "int type only for shift count");
+  assert(shift_count_in->bottom_type()->is_int(), "int type only for shift count");
   // The shift_count_in would be automatically truncated to the lowest _mask
   // bits in a scalar shift operation. But vector shift does not truncate, so
   // we must apply the mask now.

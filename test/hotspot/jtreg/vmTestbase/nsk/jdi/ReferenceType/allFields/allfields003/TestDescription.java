@@ -62,7 +62,6 @@
  *
  * @run driver
  *      nsk.jdi.ReferenceType.allFields.allfields003
- *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java

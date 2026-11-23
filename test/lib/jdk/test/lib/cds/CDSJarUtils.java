@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,11 +31,16 @@ import jdk.test.lib.compiler.CompilerUtils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.util.FileUtils;
+import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.jar.Attributes;
+import java.util.jar.Manifest;
 import java.util.spi.ToolProvider;
 
 public class CDSJarUtils {
@@ -159,11 +164,14 @@ public class CDSJarUtils {
      */
     public static class JarOptions {
         private String [] options;
+        private String manifestFile;
+        private final Attributes extraManifestAttributes = new Attributes();
         private JarOptions() {}
 
         public static JarOptions of(String... options) {
             JarOptions jo = new JarOptions();
             jo.options = options;
+            jo.manifestFile = null;
             return jo;
         }
 
@@ -173,11 +181,49 @@ public class CDSJarUtils {
             }
             return this;
         }
-        public JarOptions setManifest(String manifest) {
-            if (manifest != null) {
-                options = StringArrayUtils.concat(options, "--manifest=" + manifest);
-            }
+        public JarOptions setManifest(String manifestFile) {
+            this.manifestFile = manifestFile;
             return this;
+        }
+
+        public JarOptions setAutomaticModule(String moduleName) {
+            extraManifestAttributes.putValue("Automatic-Module-Name", moduleName);
+            return this;
+        }
+
+        private String mergeManifestHelper() throws IOException {
+            Manifest manifest = new Manifest();
+            if (manifestFile != null) {
+                String content = Files.readString(Path.of(manifestFile)) + "\n";
+                manifest.read(new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8)));
+            }
+            Attributes attributes = manifest.getMainAttributes();
+            attributes.putIfAbsent(Attributes.Name.MANIFEST_VERSION, "1.0");
+            attributes.putAll(extraManifestAttributes);
+
+            Path tempPath = Files.createTempFile("jar", ".manifest");
+            try (var out = Files.newOutputStream(tempPath)) {
+                manifest.write(out);
+            }
+            return tempPath.toAbsolutePath().toString();
+        }
+
+        private String mergeManifest() {
+            try {
+                return mergeManifestHelper();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        public String [] getOptions() {
+            if (!extraManifestAttributes.isEmpty()) {
+                return StringArrayUtils.concat(options, "--manifest=" + mergeManifest());
+            } else if (manifestFile != null) {
+                return StringArrayUtils.concat(options, "--manifest=" + manifestFile);
+            } else {
+                return options;
+            }
         }
     }
 
@@ -193,7 +239,7 @@ public class CDSJarUtils {
         argList.add("--create");
         argList.add("--file=" + jarPath);
         if (jarOptions != null) {
-            for (String s : jarOptions.options) {
+            for (String s : jarOptions.getOptions()) {
                 argList.add(s);
             }
         }

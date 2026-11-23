@@ -31,9 +31,9 @@ G1FullGCResetMetadataTask::G1ResetMetadataClosure::G1ResetMetadataClosure(G1Full
   _collector(collector) { }
 
 void G1FullGCResetMetadataTask::G1ResetMetadataClosure::reset_region_metadata(G1HeapRegion* hr) {
-  assert(hr->is_humongous() || !hr->rem_set()->has_cset_group(),
-         "Non-humongous regions must not have cset group");
-  hr->rem_set()->clear();
+  precond(!hr->rem_set()->has_card_set_group());
+
+  hr->rem_set()->clear_code_roots(); // Will be regenerated later.
   hr->clear_both_card_tables();
   _g1h->concurrent_mark()->reset_region_marking_state(hr);
 }

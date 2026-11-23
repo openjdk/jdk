@@ -545,13 +545,10 @@ public abstract sealed class VectorMask<E> extends jdk.internal.vm.vector.Vector
      * {@code ETYPE} value and the {@code ETYPE} value representing
      * {@code -1}, respectively.
      *
-     * @apiNote For the sake of static type checking, users may wish
-     * to check the resulting vector against the expected integral
-     * lane type or species.  If the mask is for a float-point
-     * species, then the resulting vector will have the same shape and
-     * lane size, but an integral type.  If the mask is for an
-     * integral species, the resulting vector will be of exactly that
-     * species.
+     * @apiNote The returned vector has the same species as this mask.
+     * For a floating-point species, a set mask lane is represented in
+     * the returned vector by the floating-point value {@code -1},
+     * rather than by setting all bits of the corresponding vector lane.
      *
      * @return a vector representation of this mask
      * @see Vector#check(Class)

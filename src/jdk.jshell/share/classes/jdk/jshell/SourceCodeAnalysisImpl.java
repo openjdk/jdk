@@ -46,6 +46,7 @@ import com.sun.source.tree.Tree.Kind;
 import com.sun.source.tree.TypeParameterTree;
 import com.sun.source.tree.VariableTree;
 import com.sun.source.tree.YieldTree;
+import com.sun.source.util.JavacTask;
 import com.sun.source.util.SourcePositions;
 import com.sun.source.util.TreePath;
 import com.sun.source.util.TreePathScanner;
@@ -173,6 +174,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
 
     private final JShell proc;
     private final CompletenessAnalyzer ca;
+    private final Function<String, String> binaryName2SnipperOuterWrap;
     private final List<AutoCloseable> closeables = new ArrayList<>();
     private final Map<Path, ClassIndex> currentIndexes = new HashMap<>();
     private int indexVersion;
@@ -184,6 +186,14 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
         this.proc = proc;
         this.ca = new CompletenessAnalyzer(proc);
 
+        this.binaryName2SnipperOuterWrap = binaryName -> {
+            return proc.snippets()
+                       .filter(s -> binaryName.equals(s.classFullName()))
+                       .map(s -> s.outerWrap().wrapped())
+                       .findAny()
+                       .orElse(null);
+        };
+
         int cpVersion = classpathVersion = 1;
 
         INDEXER.submit(() -> refreshIndexes(cpVersion));
@@ -191,7 +201,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
 
     @Override
     public CompletionInfo analyzeCompletion(String srcInput) {
-        MaskCommentsAndModifiers mcm = new MaskCommentsAndModifiers(srcInput, false);
+        MaskCommentsAndModifiers mcm = new MaskCommentsAndModifiers(srcInput, false, true);
         if (mcm.endsWithOpenToken()) {
             proc.debug(DBG_COMPA, "Incomplete (open comment): %s\n", srcInput);
             return new CompletionInfoImpl(DEFINITELY_INCOMPLETE, null, srcInput + '\n');
@@ -199,8 +209,9 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
         String cleared = mcm.cleared();
         String trimmedInput = Util.trimEnd(cleared);
         if (trimmedInput.isEmpty()) {
-            // Just comment or empty
-            return new CompletionInfoImpl(Completeness.EMPTY, srcInput, "");
+            // Just comment, empty, or javadoc prefix
+            boolean hasDocumentation = !Util.trimEnd(new MaskCommentsAndModifiers(srcInput, false, false).cleared()).isEmpty();
+            return new CompletionInfoImpl(hasDocumentation ? Completeness.PREFIX : Completeness.EMPTY, srcInput, "");
         }
         CaInfo info = ca.scan(trimmedInput);
         Completeness status = info.status;
@@ -369,7 +380,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
 
     private <Suggestion> List<Suggestion> computeSuggestions(OuterWrap code, String inputCode, int cursor, String prefix, ElementSuggestionConvertor<Suggestion> suggestionConvertor) {
         return proc.taskFactory.analyze(code, COMPLETION_EXTRA_PARAMETERS, at -> {
-            try (JavadocHelper javadoc = JavadocHelper.create(at.task, findSources())) {
+            try (JavadocConfig javadoc = new JavadocConfig(at.task, getAllPaths())) {
             SourcePositions sp = at.trees().getSourcePositions();
             CompilationUnitTree topLevel = at.firstCuTree();
             TreePath tp = pathFor(topLevel, sp, code, cursor);
@@ -713,9 +724,6 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
 
                 return suggestionConvertor.convert(completionState, result);
             }
-            } catch (IOException ex) {
-                //TODO:
-                ex.printStackTrace();
             }
             return Collections.emptyList();
         });
@@ -805,7 +813,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
         //TODO: OuterWrap duplicated
         OuterWrap codeWrap = switch (guessKind(snippet)) {
             case IMPORT -> proc.outerMap.wrapImport(Wrap.simpleWrap(snippet + "any.any"), null);
-            case CLASS, METHOD -> proc.outerMap.wrapInTrialClass(Wrap.classMemberWrap(snippet));
+            case CLASS, METHOD -> proc.outerMap.wrapInTrialClass(Wrap.classMemberWrap(snippet, 0));
             default -> proc.outerMap.wrapInTrialClass(Wrap.methodWrap(snippet));
         };
         String wrappedCode = codeWrap.wrapped();
@@ -1227,7 +1235,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
     };
     private final Function<Element, Iterable<? extends Element>> IDENTITY = Collections::singletonList;
 
-    private void addElements(JavadocHelper javadoc, Iterable<? extends Element> elements, Predicate<Element> accept, Predicate<Element> smart, int anchor, String prefix, List<ElementSuggestion> result) {
+    private void addElements(JavadocConfig javadoc, Iterable<? extends Element> elements, Predicate<Element> accept, Predicate<Element> smart, int anchor, String prefix, List<ElementSuggestion> result) {
         for (Element c : elements) {
             if (!accept.test(c) || !simpleContinuationName(c).startsWith(prefix))
                 continue;
@@ -1237,10 +1245,11 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                 continue;
             }
             StoredElement stored = javadoc.getHandle(c);
-            Collection<? extends Path> sourceLocations = javadoc.getSourceLocations();
+            Collection<? extends Path> binaryPaths = javadoc.getBinaryPaths();
             result.add(new ElementSuggestionImpl(c, null, smart.test(c), anchor, () -> {
                 return proc.taskFactory.analyze(proc.outerMap.wrapInTrialClass(Wrap.methodWrap(";")), task -> {
-                    try (JavadocHelper nestedJavadoc = JavadocHelper.create(task.task, sourceLocations)) {
+                    try (CloseableSources closeableSources = findSources(binaryPaths);
+                         JavadocHelper nestedJavadoc = JavadocHelper.create(task.task, closeableSources.sources(), binaryName2SnipperOuterWrap)) {
                         return nestedJavadoc.getResolvedDocComment(stored);
                     } catch (IOException ex) {
                         ex.printStackTrace();
@@ -1251,7 +1260,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
         }
     }
 
-    private void addModuleElements(AnalyzeTask at, JavadocHelper javadoc, int anchor,
+    private void addModuleElements(AnalyzeTask at, JavadocConfig javadoc, int anchor,
                                    String prefix,
                                    List<ElementSuggestion> result) {
         for (ModuleElement me : at.getElements().getAllModuleElements()) {
@@ -1413,6 +1422,8 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
             int cpVersion = ++classpathVersion;
 
             INDEXER.submit(() -> refreshIndexes(cpVersion));
+
+            allPaths = null;
         }
     }
 
@@ -1704,7 +1715,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
         };
     }
 
-    private void addScopeElements(AnalyzeTask at, JavadocHelper javadoc, Scope scope, Function<Element, Iterable<? extends Element>> elementConvertor, Predicate<Element> filter, Predicate<Element> smartFilter, int anchor, String prefix, List<ElementSuggestion> result) {
+    private void addScopeElements(AnalyzeTask at, JavadocConfig javadoc, Scope scope, Function<Element, Iterable<? extends Element>> elementConvertor, Predicate<Element> filter, Predicate<Element> smartFilter, int anchor, String prefix, List<ElementSuggestion> result) {
         addElements(javadoc, scopeContent(at, scope, elementConvertor), filter, smartFilter, anchor, prefix, result);
     }
 
@@ -1903,7 +1914,8 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
 
             List<Documentation> result = Collections.emptyList();
 
-            try (JavadocHelper helper = JavadocHelper.create(at.task, findSources())) {
+            try (CloseableSources sources = findSources(getAllPaths());
+                 JavadocHelper helper = JavadocHelper.create(at.task, sources.sources(), binaryName2SnipperOuterWrap)) {
                 int parameterIndexFin = parameterIndex;
                 result = elements.map(el -> constructDocumentation(at, helper, el, parameterIndexFin, computeJavadoc))
                                  .filter(Objects::nonNull)
@@ -1933,7 +1945,11 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
     }
 
     public void close() {
-        for (AutoCloseable closeable : closeables) {
+        close(closeables);
+    }
+
+    private void close(List<AutoCloseable> toClose) {
+        for (AutoCloseable closeable : toClose) {
             try {
                 closeable.close();
             } catch (Exception ex) {
@@ -1966,17 +1982,51 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                  .allMatch(param -> param.getSimpleName().toString().startsWith("arg"));
     }
 
-    private static List<Path> availableSourcesOverride; //for tests
-    private List<Path> availableSources;
+    private CloseableSources findSources(Collection<? extends Path> forPaths) {
+        List<AutoCloseable> toClose = new ArrayList<>();
 
-    private List<Path> findSources() {
-        if (availableSources != null) {
-            return availableSources;
+        try {
+            List<Path> sourcePaths = new ArrayList<>();
+
+            sourcePaths.addAll(jdkSources());
+
+            if (proc.binarySourceMapping != null) {
+                for (Path binaryPath : forPaths) {
+                    Iterable<? extends Path> mappedSources = proc.binarySourceMapping.apply(binaryPath);
+
+                    if (mappedSources != null) {
+                        if (mappedSources instanceof AutoCloseable closeable) {
+                            toClose.add(closeable);
+                        }
+
+                        mappedSources.forEach(sourcePaths::add);
+                    }
+                }
+            }
+
+            CloseableSources result = new CloseableSources(this, sourcePaths, toClose);
+
+            toClose = List.of();
+
+            return result;
+        } finally {
+            close(toClose);
         }
-        if (availableSourcesOverride != null) {
-            return availableSources = availableSourcesOverride;
+    }
+
+    private static List<Path> jdkSourcesOverride; //for tests
+    private List<Path> jdkSources;
+
+    private synchronized List<Path> jdkSources() {
+        if (jdkSources != null) {
+            return jdkSources;
         }
-        List<Path> result = new ArrayList<>();
+        if (jdkSourcesOverride != null) {
+            return jdkSources = jdkSourcesOverride;
+        }
+
+        jdkSources = new ArrayList<>();
+
         Path home = Paths.get(System.getProperty("java.home"));
         Path srcZip = home.resolve("lib").resolve("src.zip");
         if (!Files.isReadable(srcZip))
@@ -1991,13 +2041,13 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
 
                 if (Files.exists(root.resolve("java/lang/Object.java".replace("/", zipFO.getSeparator())))) {
                     //non-modular format:
-                    result.add(srcZip);
+                    jdkSources.add(srcZip);
                 } else if (Files.exists(root.resolve("java.base/java/lang/Object.java".replace("/", zipFO.getSeparator())))) {
                     //modular format:
                     try (DirectoryStream<Path> ds = Files.newDirectoryStream(root)) {
                         for (Path p : ds) {
                             if (Files.isDirectory(p)) {
-                                result.add(p);
+                                jdkSources.add(p);
                             }
                         }
                     }
@@ -2011,18 +2061,21 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                     if (keepOpen) {
                         closeables.add(zipFO);
                     } else {
-                        try {
-                            zipFO.close();
-                        } catch (IOException ex) {
-                            proc.debug(ex, "SourceCodeAnalysisImpl.findSources()");
-                        }
+                        close(List.of(zipFO));
                     }
                 }
             }
         }
-        return availableSources = result;
+
+        return jdkSources;
     }
 
+    record CloseableSources(SourceCodeAnalysisImpl analysis, List<Path> sources, List<AutoCloseable> toClose) implements AutoCloseable {
+        @Override
+        public void close() {
+            analysis.close(toClose());
+        }
+    }
     private Element getOriginalEnclosingElement(Element el) {
         if (el instanceof Symbol s) el = s.baseSymbol();
         return el.getEnclosingElement();
@@ -2186,7 +2239,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
             case IMPORT:
                 return new QualifiedNames(Collections.emptyList(), -1, true, false);
             case METHOD:
-                codeWrap = proc.outerMap.wrapInTrialClass(Wrap.classMemberWrap(codeFin));
+                codeWrap = proc.outerMap.wrapInTrialClass(Wrap.classMemberWrap(codeFin, 0));
                 break;
             default:
                 codeWrap = proc.outerMap.wrapInTrialClass(Wrap.methodWrap(codeFin));
@@ -2269,22 +2322,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
     //update indexes, either initially or after a classpath change:
     private void refreshIndexes(int version) {
         try {
-            Collection<Path> paths = proc.taskFactory.parse("", task -> {
-                MemoryFileManager fm = proc.taskFactory.fileManager();
-                Collection<Path> _paths = new ArrayList<>();
-                try {
-                    appendPaths(fm, StandardLocation.PLATFORM_CLASS_PATH, _paths);
-                    appendPaths(fm, StandardLocation.CLASS_PATH, _paths);
-                    appendPaths(fm, StandardLocation.SOURCE_PATH, _paths);
-                    appendModulePaths(fm, StandardLocation.SYSTEM_MODULES, _paths);
-                    appendModulePaths(fm, StandardLocation.UPGRADE_MODULE_PATH, _paths);
-                    appendModulePaths(fm, StandardLocation.MODULE_PATH, _paths);
-                    return _paths;
-                } catch (Exception ex) {
-                    proc.debug(ex, "SourceCodeAnalysisImpl.refreshIndexes(" + version + ")");
-                    return List.of();
-                }
-            });
+            Collection<Path> paths = getAllPaths();
 
             Map<Path, ClassIndex> newIndexes = new HashMap<>();
 
@@ -2321,6 +2359,50 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                 indexVersion = version;
             }
         }
+    }
+
+    private Collection<Path> allPaths;
+    private Collection<Path> getAllPaths() {
+        int originalClasspathVersion;
+
+        synchronized (currentIndexes) {
+            if (allPaths != null) {
+                return allPaths;
+            }
+
+            originalClasspathVersion = classpathVersion;
+        }
+
+        Collection<Path> paths = proc.taskFactory.parse("", task -> {
+            MemoryFileManager fm = proc.taskFactory.fileManager();
+            Collection<Path> _paths = new ArrayList<>();
+            try {
+                appendPaths(fm, StandardLocation.PLATFORM_CLASS_PATH, _paths);
+                appendPaths(fm, StandardLocation.CLASS_PATH, _paths);
+                appendPaths(fm, StandardLocation.SOURCE_PATH, _paths);
+                appendModulePaths(fm, StandardLocation.SYSTEM_MODULES, _paths);
+                appendModulePaths(fm, StandardLocation.UPGRADE_MODULE_PATH, _paths);
+                appendModulePaths(fm, StandardLocation.MODULE_PATH, _paths);
+                return _paths;
+            } catch (Exception ex) {
+                proc.debug(ex, "SourceCodeAnalysisImpl.getAllPaths(" + originalClasspathVersion + ")");
+                return List.of();
+            }
+        });
+
+        synchronized (currentIndexes) {
+            if (originalClasspathVersion != classpathVersion) {
+                paths = null;
+            } else {
+                allPaths = paths;
+            }
+        }
+
+        if (paths == null) {
+            paths = getAllPaths();
+        }
+
+        return paths;
     }
 
     private void appendPaths(MemoryFileManager fm, Location loc, Collection<Path> paths) {
@@ -2536,10 +2618,10 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                     lastImportIsModuleImport = moduleImport[0];
                 }
                 case CLASS, METHOD -> {
-                    pendingWrap = declarationWrap = Wrap.classMemberWrap(whitespaces(code, startOffset) + current);
+                    pendingWrap = declarationWrap = Wrap.classMemberWrap(whitespaces(code, startOffset) + current, 0);
                 }
                 case VARIABLE -> {
-                    declarationWrap = Wrap.classMemberWrap(whitespaces(code, startOffset) + current);
+                    declarationWrap = Wrap.classMemberWrap(whitespaces(code, startOffset) + current, 0);
                     pendingWrap = Wrap.methodWrap(whitespaces(code, startOffset) + current);
                 }
                 default -> {
@@ -2720,5 +2802,37 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
             return typeUtils;
         }
 
+    }
+
+    private static class JavadocConfig implements AutoCloseable {
+        private JavacTask mainTask;
+        private Collection<? extends Path> binaryPaths;
+
+        public JavadocConfig(JavacTask mainTask, Collection<? extends Path> binaryPaths) {
+            this.mainTask = mainTask;
+            this.binaryPaths = binaryPaths;
+        }
+
+        public StoredElement getHandle(Element el) {
+            if (mainTask == null) {
+                throw new IllegalStateException("Already closed.");
+            }
+
+            return StoredElement.getStoredElement(mainTask, el);
+        }
+
+        public Collection<? extends Path> getBinaryPaths() {
+            if (binaryPaths == null) {
+                throw new IllegalStateException("Already closed.");
+            }
+
+            return binaryPaths;
+        }
+
+        @Override
+        public void close() {
+            mainTask = null;
+            binaryPaths = null;
+        }
     }
 }

@@ -167,6 +167,10 @@ static BufferBlob* initialize_stubs(BlobId blob_id,
                                     const char* buffer_name,
                                     const char* assert_msg) {
   assert(StubInfo::is_stubgen(blob_id), "not a stubgen blob %s", StubInfo::name(blob_id));
+  if (blob_id == BlobId::stubgen_continuation_id && !VMContinuations) {
+      log_info(stubs)("%s\t not generated:\t VMContinuations is disabled", buffer_name);
+    return nullptr;
+  }
   ResourceMark rm;
   TraceTime timer(timer_msg, TRACETIME_LOG(Info, startuptime));
   // If we are loading stubs we need to check if we can retrieve a
@@ -316,11 +320,8 @@ STUBGEN_BLOBS_DO(DEFINE_BLOB_INIT_FUNCTION)
 #undef DEFINE_BLOB_INIT_FUNCTION
 
 
-#if INCLUDE_CDS
 // non-generated external API init driver function
-
 void stubs_AOTAddressTable_init() { StubRoutines::init_AOTAddressTable(); }
-#endif // INCLUDE_CDS
 
 /*
  * we generate the underlying driver function compiler_stubs_init()

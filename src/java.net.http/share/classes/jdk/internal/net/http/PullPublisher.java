@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,7 +85,7 @@ class PullPublisher<T> implements Flow.Publisher<T> {
         private volatile boolean completed;
         private volatile boolean cancelled;
         private volatile Throwable error;
-        final SequentialScheduler pullScheduler = new SequentialScheduler(new PullTask());
+        final SequentialScheduler pullScheduler = SequentialScheduler.lockingScheduler(new PullTask());
         private final Demand demand = new Demand();
 
         Subscription(Flow.Subscriber<? super T> subscriber,
@@ -96,9 +96,9 @@ class PullPublisher<T> implements Flow.Publisher<T> {
             this.error = throwable;
         }
 
-        final class PullTask extends SequentialScheduler.CompleteRestartableTask {
+        final class PullTask implements Runnable {
             @Override
-            protected void run() {
+            public void run() {
                 if (completed || cancelled) {
                     return;
                 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2018, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2021, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -68,9 +68,8 @@ int CompiledDirectCall::to_interp_stub_size() {
 }
 
 int CompiledDirectCall::to_trampoline_stub_size() {
-  // We count size of target address and an additional alignment nop.
-  // Reloc call address stubs are always word aligned.
-  return MacroAssembler::max_reloc_call_address_stub_size();
+  // RISC-V doesn't use trampolines.
+  return 0;
 }
 
 // Relocation entries for call stub, compiled java to interpreter.

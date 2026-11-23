@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,6 +68,7 @@ public class ProxyGraphics extends Graphics {
      * @return     a new graphics context that is a copy of
      *                       this graphics context.
      */
+    @Override
     public Graphics create() {
         return new ProxyGraphics(g.create());
     }
@@ -106,6 +107,7 @@ public class ProxyGraphics extends Graphics {
      * @see        java.awt.Graphics#translate
      * @see        java.awt.Graphics#clipRect
      */
+    @Override
     public Graphics create(int x, int y, int width, int height) {
         return new ProxyGraphics(g.create(x, y, width, height));
     }
@@ -121,6 +123,7 @@ public class ProxyGraphics extends Graphics {
      * @param  x   the <i>x</i> coordinate.
      * @param  y   the <i>y</i> coordinate.
      */
+    @Override
     public void translate(int x, int y) {
         g.translate(x, y);
     }
@@ -131,6 +134,7 @@ public class ProxyGraphics extends Graphics {
      * @see       java.awt.Color
      * @see       java.awt.Graphics#setColor
      */
+    @Override
     public Color getColor() {
         return g.getColor();
     }
@@ -143,6 +147,7 @@ public class ProxyGraphics extends Graphics {
      * @see       java.awt.Color
      * @see       java.awt.Graphics#getColor
      */
+    @Override
     public void setColor(Color c) {
         g.setColor(c);
     }
@@ -154,6 +159,7 @@ public class ProxyGraphics extends Graphics {
      * overwrite mode.  All subsequent rendering operations will
      * overwrite the destination with the current color.
      */
+    @Override
     public void setPaintMode() {
         g.setPaintMode();
     }
@@ -173,6 +179,7 @@ public class ProxyGraphics extends Graphics {
      * drawn twice, then all pixels are restored to their original values.
      * @param     c1 the XOR alternation color
      */
+    @Override
     public void setXORMode(Color c1) {
         g.setXORMode(c1);
     }
@@ -183,6 +190,7 @@ public class ProxyGraphics extends Graphics {
      * @see       java.awt.Font
      * @see       java.awt.Graphics#setFont
      */
+    @Override
     public Font getFont() {
         return g.getFont();
     }
@@ -197,6 +205,7 @@ public class ProxyGraphics extends Graphics {
      * @see     java.awt.Graphics#drawBytes(byte[], int, int, int, int)
      * @see     java.awt.Graphics#drawChars(char[], int, int, int, int)
     */
+    @Override
     public void setFont(Font font) {
         g.setFont(font);
     }
@@ -209,6 +218,7 @@ public class ProxyGraphics extends Graphics {
      * @see       java.awt.FontMetrics
      * @see       java.awt.Graphics#getFontMetrics(Font)
      */
+    @Override
     public FontMetrics getFontMetrics() {
         return g.getFontMetrics();
     }
@@ -221,6 +231,7 @@ public class ProxyGraphics extends Graphics {
      * @see       java.awt.FontMetrics
      * @see       java.awt.Graphics#getFontMetrics()
      */
+    @Override
     public FontMetrics getFontMetrics(Font f) {
         return g.getFontMetrics(f);
     }
@@ -243,6 +254,7 @@ public class ProxyGraphics extends Graphics {
      * @see         java.awt.Graphics#setClip(Shape)
      * @since       1.1
      */
+    @Override
     public Rectangle getClipBounds() {
         return g.getClipBounds();
     }
@@ -266,6 +278,7 @@ public class ProxyGraphics extends Graphics {
      * @see #setClip(int, int, int, int)
      * @see #setClip(Shape)
      */
+    @Override
     public void clipRect(int x, int y, int width, int height) {
         g.clipRect(x, y, width, height);
     }
@@ -284,6 +297,7 @@ public class ProxyGraphics extends Graphics {
      * @see         java.awt.Graphics#setClip(Shape)
      * @since       1.1
      */
+    @Override
     public void setClip(int x, int y, int width, int height) {
         g.setClip(x, y, width, height);
     }
@@ -304,6 +318,7 @@ public class ProxyGraphics extends Graphics {
      * @see         java.awt.Graphics#setClip(Shape)
      * @since       1.1
      */
+    @Override
     public Shape getClip() {
         return g.getClip();
     }
@@ -324,6 +339,7 @@ public class ProxyGraphics extends Graphics {
      * @see         java.awt.Graphics#setClip(int, int, int, int)
      * @since       1.1
      */
+    @Override
     public void setClip(Shape clip) {
         g.setClip(clip);
     }
@@ -347,6 +363,7 @@ public class ProxyGraphics extends Graphics {
      * @param       dx the horizontal distance to copy the pixels.
      * @param       dy the vertical distance to copy the pixels.
      */
+    @Override
     public void copyArea(int x, int y, int width, int height,
                                   int dx, int dy) {
         g.copyArea(x, y, width, height, dx, dy);
@@ -361,6 +378,7 @@ public class ProxyGraphics extends Graphics {
      * @param   x2  the second point's <i>x</i> coordinate.
      * @param   y2  the second point's <i>y</i> coordinate.
      */
+    @Override
     public void drawLine(int x1, int y1, int x2, int y2) {
         g.drawLine(x1, y1, x2, y2);
     }
@@ -384,6 +402,7 @@ public class ProxyGraphics extends Graphics {
      * @see           java.awt.Graphics#clearRect
      * @see           java.awt.Graphics#drawRect
      */
+    @Override
     public void fillRect(int x, int y, int width, int height) {
         g.fillRect(x, y, width, height);
     }
@@ -404,6 +423,7 @@ public class ProxyGraphics extends Graphics {
      * @see          java.awt.Graphics#fillRect
      * @see          java.awt.Graphics#clearRect
      */
+    @Override
     public void drawRect(int x, int y, int width, int height) {
         g.drawRect(x, y, width, height);
     }
@@ -427,6 +447,7 @@ public class ProxyGraphics extends Graphics {
      * @see         java.awt.Graphics#setPaintMode
      * @see         java.awt.Graphics#setXORMode(java.awt.Color)
      */
+    @Override
     public void clearRect(int x, int y, int width, int height) {
         g.clearRect(x, y, width, height);
     }
@@ -447,6 +468,7 @@ public class ProxyGraphics extends Graphics {
      *                    at the four corners.
      * @see        java.awt.Graphics#fillRoundRect
      */
+    @Override
     public void drawRoundRect(int x, int y, int width, int height,
                                        int arcWidth, int arcHeight) {
         g.drawRoundRect(x, y, width, height, arcWidth, arcHeight);
@@ -468,6 +490,7 @@ public class ProxyGraphics extends Graphics {
      *                     of the arc at the four corners.
      * @see         java.awt.Graphics#drawRoundRect
      */
+    @Override
     public void fillRoundRect(int x, int y, int width, int height,
                                        int arcWidth, int arcHeight) {
         g.fillRoundRect(x, y, width, height, arcWidth, arcHeight);
@@ -492,6 +515,7 @@ public class ProxyGraphics extends Graphics {
      *                      or sunk into the surface.
      * @see         java.awt.Graphics#fill3DRect
      */
+    @Override
     public void draw3DRect(int x, int y, int width, int height,
                            boolean raised) {
         g.draw3DRect(x, y, width, height, raised);
@@ -512,6 +536,7 @@ public class ProxyGraphics extends Graphics {
      *                      or etched into the surface.
      * @see         java.awt.Graphics#draw3DRect
      */
+    @Override
     public void fill3DRect(int x, int y, int width, int height,
                            boolean raised) {
         g.fill3DRect(x, y, width, height, raised);
@@ -534,6 +559,7 @@ public class ProxyGraphics extends Graphics {
      * @param       height the height of the oval to be drawn.
      * @see         java.awt.Graphics#fillOval
      */
+    @Override
     public void drawOval(int x, int y, int width, int height) {
         g.drawOval(x, y, width, height);
     }
@@ -549,6 +575,7 @@ public class ProxyGraphics extends Graphics {
      * @param       height the height of the oval to be filled.
      * @see         java.awt.Graphics#drawOval
      */
+    @Override
     public void fillOval(int x, int y, int width, int height) {
         g.fillOval(x, y, width, height);
     }
@@ -590,6 +617,7 @@ public class ProxyGraphics extends Graphics {
      *                    relative to the start angle.
      * @see         java.awt.Graphics#fillArc
      */
+    @Override
     public void drawArc(int x, int y, int width, int height,
                                  int startAngle, int arcAngle) {
         g.drawArc(x, y, width, height, startAngle, arcAngle);
@@ -631,6 +659,7 @@ public class ProxyGraphics extends Graphics {
      *                    relative to the start angle.
      * @see         java.awt.Graphics#drawArc
      */
+    @Override
     public void fillArc(int x, int y, int width, int height,
                                  int startAngle, int arcAngle) {
 
@@ -649,6 +678,7 @@ public class ProxyGraphics extends Graphics {
      * @see         java.awt.Graphics#drawPolygon(int[], int[], int)
      * @since       1.1
      */
+    @Override
     public void drawPolyline(int[] xPoints, int[] yPoints,
                                       int nPoints) {
         g.drawPolyline(xPoints, yPoints, nPoints);
@@ -673,6 +703,7 @@ public class ProxyGraphics extends Graphics {
      * @see          java.awt.Graphics#fillPolygon
      * @see          java.awt.Graphics#drawPolyline
      */
+    @Override
     public void drawPolygon(int[] xPoints, int[] yPoints,
                                      int nPoints) {
         g.drawPolygon(xPoints, yPoints, nPoints);
@@ -685,6 +716,7 @@ public class ProxyGraphics extends Graphics {
      * @see          java.awt.Graphics#fillPolygon
      * @see          java.awt.Graphics#drawPolyline
      */
+    @Override
     public void drawPolygon(Polygon p) {
         g.drawPolygon(p);
     }
@@ -709,6 +741,7 @@ public class ProxyGraphics extends Graphics {
      * @param        nPoints   the total number of points.
      * @see          java.awt.Graphics#drawPolygon(int[], int[], int)
      */
+    @Override
     public void fillPolygon(int[] xPoints, int[] yPoints,
                                      int nPoints) {
         g.fillPolygon(xPoints, yPoints, nPoints);
@@ -723,6 +756,7 @@ public class ProxyGraphics extends Graphics {
      * @param        p the polygon to fill.
      * @see          java.awt.Graphics#drawPolygon(int[], int[], int)
      */
+    @Override
     public void fillPolygon(Polygon p) {
         g.fillPolygon(p);
     }
@@ -738,6 +772,7 @@ public class ProxyGraphics extends Graphics {
      * @see         java.awt.Graphics#drawBytes
      * @see         java.awt.Graphics#drawChars
      */
+    @Override
     public void drawString(String str, int x, int y) {
         g.drawString(str, x, y);
     }
@@ -754,6 +789,7 @@ public class ProxyGraphics extends Graphics {
      * @see         java.awt.Graphics#drawBytes
      * @see         java.awt.Graphics#drawChars
      */
+   @Override
    public void drawString(AttributedCharacterIterator iterator,
                                     int x, int y) {
         g.drawString(iterator, x, y);
@@ -772,6 +808,7 @@ public class ProxyGraphics extends Graphics {
      * @see         java.awt.Graphics#drawBytes
      * @see         java.awt.Graphics#drawString
      */
+    @Override
     public void drawChars(char[] data, int offset, int length, int x, int y) {
         g.drawChars(data, offset, length, x, y);
     }
@@ -789,6 +826,7 @@ public class ProxyGraphics extends Graphics {
      * @see         java.awt.Graphics#drawChars
      * @see         java.awt.Graphics#drawString
      */
+    @Override
     public void drawBytes(byte[] data, int offset, int length, int x, int y) {
         g.drawBytes(data, offset, length, x, y);
     }
@@ -817,6 +855,7 @@ public class ProxyGraphics extends Graphics {
      * @see      java.awt.image.ImageObserver
      * @see      java.awt.image.ImageObserver#imageUpdate(java.awt.Image, int, int, int, int, int)
      */
+    @Override
     public boolean drawImage(Image img, int x, int y,
                                       ImageObserver observer) {
         return g.drawImage(img, x, y, observer);
@@ -855,6 +894,7 @@ public class ProxyGraphics extends Graphics {
      * @see      java.awt.image.ImageObserver
      * @see      java.awt.image.ImageObserver#imageUpdate(java.awt.Image, int, int, int, int, int)
      */
+    @Override
     public boolean drawImage(Image img, int x, int y,
                                       int width, int height,
                                       ImageObserver observer) {
@@ -891,6 +931,7 @@ public class ProxyGraphics extends Graphics {
      * @see      java.awt.image.ImageObserver
      * @see      java.awt.image.ImageObserver#imageUpdate(java.awt.Image, int, int, int, int, int)
      */
+    @Override
     public boolean drawImage(Image img, int x, int y,
                                       Color bgcolor,
                                       ImageObserver observer) {
@@ -935,6 +976,7 @@ public class ProxyGraphics extends Graphics {
      * @see      java.awt.image.ImageObserver
      * @see      java.awt.image.ImageObserver#imageUpdate(java.awt.Image, int, int, int, int, int)
      */
+    @Override
     public boolean drawImage(Image img, int x, int y,
                                       int width, int height,
                                       Color bgcolor,
@@ -990,6 +1032,7 @@ public class ProxyGraphics extends Graphics {
      * @see         java.awt.image.ImageObserver#imageUpdate(java.awt.Image, int, int, int, int, int)
      * @since       1.1
      */
+    @Override
     public boolean drawImage(Image img,
                                       int dx1, int dy1, int dx2, int dy2,
                                       int sx1, int sy1, int sx2, int sy2,
@@ -1053,6 +1096,7 @@ public class ProxyGraphics extends Graphics {
      * @see         java.awt.image.ImageObserver#imageUpdate(java.awt.Image, int, int, int, int, int)
      * @since       1.1
      */
+    @Override
     public boolean drawImage(Image img,
                                       int dx1, int dy1, int dx2, int dy2,
                                       int sx1, int sy1, int sx2, int sy2,
@@ -1092,6 +1136,7 @@ public class ProxyGraphics extends Graphics {
      * @see         java.awt.Component#getGraphics
      * @see         java.awt.Graphics#create
      */
+    @Override
     public void dispose() {
         g.dispose();
     }
@@ -1099,6 +1144,7 @@ public class ProxyGraphics extends Graphics {
     /**
      * Empty finalizer as no clean up needed here.
      */
+    @Override
     @SuppressWarnings("removal")
     public void finalize() {
     }
@@ -1108,6 +1154,7 @@ public class ProxyGraphics extends Graphics {
      *                        {@code Graphics} object's value.
      * @return       a string representation of this graphics context.
      */
+    @Override
     public String toString() {
         return getClass().getName() + "[font=" + getFont() + ",color=" + getColor() + "]";
     }
@@ -1116,6 +1163,7 @@ public class ProxyGraphics extends Graphics {
      * @deprecated As of JDK version 1.1,
      * replaced by {@code getClipBounds()}.
      */
+    @Override
     @Deprecated
     public Rectangle getClipRect() {
         return g.getClipRect();
@@ -1132,6 +1180,7 @@ public class ProxyGraphics extends Graphics {
      * @param width the width of the rectangle to test against the clip
      * @param height the height of the rectangle to test against the clip
      */
+    @Override
     public boolean hitClip(int x, int y, int width, int height) {
         return g.hitClip(x, y, width, height);
     }
@@ -1152,6 +1201,7 @@ public class ProxyGraphics extends Graphics {
      *              overwritten.
      * @return      the bounding rectangle of the current clipping area.
      */
+    @Override
     public Rectangle getClipBounds(Rectangle r) {
         return g.getClipBounds(r);
     }

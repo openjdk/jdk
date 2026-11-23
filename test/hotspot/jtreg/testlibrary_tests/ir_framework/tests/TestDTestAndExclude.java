@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import compiler.lib.ir_framework.Test;
 import compiler.lib.ir_framework.TestFramework;
 import compiler.lib.ir_framework.driver.TestVMException;
 import compiler.lib.ir_framework.shared.NoTestsRunException;
+import compiler.lib.ir_framework.shared.OverlappingTestAndExcludeException;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Utils;
 import jdk.test.lib.process.OutputAnalyzer;
@@ -47,26 +48,27 @@ public class TestDTestAndExclude {
         if (args.length == 0) {
             run("good1,good2", "", "good");
             run("good1,good2", "bad1", "good");
-            run("good1,bad1", "bad1", "good");
-            run("good1,bad1", "bad1,good", "good");
-            run("good3,bad2", "bad1,bad2", "good");
+            run("good1,bad1", "bad1", "overlap");
+            run("good1,bad1", "badSingle,good", "bad1");
+            run("good3,badSingle", "bad1,badSingle", "overlap");
             run("goodMulti1,goodMulti2", "", "good");
             run("bad1,good1", "", "bad1");
-            run("bad1,good1", "good1", "bad1");
+            run("bad1,good1", "good1", "overlap");
             run("bad1,good1", "asdf", "bad1");
-            run("bad2,good1", "", "runBadSingle");
-            run("bad2", "runBadSingle", "runBadSingle");
+            run("badSingle,good1", "", "runBadSingle");
+            run("badSingle", "runBadSingle", "runBadSingle");
             run("badMulti1,badMulti2", "", "runBadMulti");
             run("badMulti1", "", "runBadMulti");
-            run("badMulti1", "badMulti2", "runBadMulti");
-            run("badMulti2", "badMulti1", "runBadMulti");
+            run("badMulti1,good1", "badMulti2", "overlap");
+            run("badMulti1", "badMulti2", "overlap");
+            run("badMulti2", "badMulti1", "overlap");
             run("runBadSingle", "", "empty");
             run("runBadMulti", "", "empty");
             run("asdf", "", "empty");
-            run("", "good1,good2,good3,bad1,bad2,goodMulti1,goodMulti2,badMulti1,badMulti2", "empty");
-            run("asdf", "good1,good2,good3,bad1,bad2,goodMulti1,goodMulti2,badMulti1,badMulti2", "empty");
-            run("bad1", "bad1", "empty");
-            run("good1", "asdf,good,good1", "empty");
+            run("", "good1,good2,good3,bad1,badSingle,goodMulti1,goodMulti2,badMulti1,badMulti2", "empty");
+            run("asdf", "good1,good2,good3,bad1,badSingle,goodMulti1,goodMulti2,badMulti1,badMulti2", "empty");
+            run("bad1", "bad1", "overlap");
+            run("good1", "asdf,good,good1", "overlap");
         } else {
             switch (args[0]) {
                 case "good" -> TestFramework.run();
@@ -76,6 +78,8 @@ public class TestDTestAndExclude {
                         throw new RuntimeException("should not reach");
                     } catch (TestVMException e) {
                         Asserts.assertTrue(e.getExceptionInfo().contains("expected " + args[0] + " exception"));
+                    } catch (Exception e) {
+                        Asserts.fail("unexpected exception", e);
                     }
                 }
                 case "empty" -> {
@@ -84,6 +88,18 @@ public class TestDTestAndExclude {
                         throw new RuntimeException("should not reach");
                     } catch (NoTestsRunException e) {
                         // Expected
+                    } catch (Exception e) {
+                        Asserts.fail("unexpected exception", e);
+                    }
+                }
+                case "overlap" -> {
+                    try {
+                        TestFramework.run();
+                        throw new RuntimeException("should not reach");
+                    } catch (OverlappingTestAndExcludeException e) {
+                        // Expected
+                    } catch (Exception e) {
+                        Asserts.fail("unexpected exception", e);
                     }
                 }
                 default -> throw new RuntimeException("should not reach");
@@ -95,11 +111,26 @@ public class TestDTestAndExclude {
      * Create a VM and simulate as if it was a driver VM spawned by JTreg that has -DTest/DExclude set as VM or Javaopts
      */
     protected static void run(String dTest, String dExclude, String arg) throws Exception {
-        System.out.println("Run -DTest=" + dTest + " -DExclude=" + dExclude + " arg=" + arg);
+        // Let's randomize a bit which version of -Dtest and -Dexclude we use (caps and plural).
+        boolean plural = dTest.contains(",");
+        boolean capital = dTest.length() % 2 == 0;  // Any criterion that is not constant or correlated with `plural` would do as well.
+        String dTestFlag = capital ? "-DTest" : "-Dtest";
+        String dExcludeFlag = capital ? "-DExclude" : "-Dexclude";
+        if (plural) {
+            dTestFlag = dTestFlag + "s";
+            dExcludeFlag = dExcludeFlag + "s";
+        }
+        String include = dTestFlag + "=" + dTest;
+        String exclude = dExcludeFlag + "=" + dExclude;
+        String includeExclude = include + " " + exclude;
+        System.out.println("Run " + includeExclude + " arg=" + arg);
         OutputAnalyzer oa;
         ProcessBuilder process = ProcessTools.createLimitedTestJavaProcessBuilder(
-                "-Dtest.class.path=" + Utils.TEST_CLASS_PATH, "-Dtest.jdk=" + Utils.TEST_JDK,
-                "-Dtest.vm.opts=-DTest=" + dTest + " -DExclude=" + dExclude,
+                "-Dtest.class.path=" + Utils.TEST_CLASS_PATH,
+                "-Dtest.jdk=" + Utils.TEST_JDK,
+                "-Dtest.vm.opts=" + includeExclude,
+                include,
+                exclude,
                 "ir_framework.tests.TestDTestAndExclude", arg);
         oa = ProcessTools.executeProcess(process);
         oa.shouldHaveExitValue(0);
@@ -140,7 +171,7 @@ public class TestDTestAndExclude {
     }
 
     @Test
-    public void bad2() {
+    public void badSingle() {
     }
 
     @Test
@@ -151,7 +182,7 @@ public class TestDTestAndExclude {
     public void badMulti2() {
     }
 
-    @Run(test = "bad2")
+    @Run(test = "badSingle")
     public void runBadSingle() {
         throw new RuntimeException("expected runBadSingle exception");
     }

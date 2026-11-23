@@ -114,7 +114,7 @@ public:
   static ciSymbol* vm_symbol_at(vmSymbolID index);
 
   // Called on every new object made.
-  void notice_new_object(ciBaseObject* new_object);
+  void notice_new_object(ciBaseObject* new_object) NOT_CDS_RETURN;
 
   // Get the ciMethod representing an unloaded/unfound method.
   ciMethod* get_unloaded_method(ciInstanceKlass* holder,
@@ -147,6 +147,9 @@ public:
   ciMethodData* get_empty_methodData();
 
   ciReturnAddress* get_return_address(int bci);
+
+  ciWrapper* make_early_larval_wrapper(ciType* type);
+  ciWrapper* make_null_free_wrapper(ciType* type);
 
   GrowableArray<ciMetadata*>* get_ci_metadata() { return &_ci_metadata; }
   // RedefineClasses support

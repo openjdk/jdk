@@ -93,7 +93,7 @@ class ClassPathZipEntry: public ClassPathEntry {
   const char* name() const { return _zip_name; }
   ClassPathZipEntry(jzfile* zip, const char* zip_name);
   virtual ~ClassPathZipEntry();
-  bool has_entry(JavaThread* current, const char* name);
+  bool has_entry(const char* name, Handle class_loader, bool is_multi_release_jar, TRAPS);
   u1* open_entry(JavaThread* current, const char* name, jint* filesize, bool nul_terminate);
   ClassFileStream* open_stream(JavaThread* current, const char* name);
 };
@@ -335,7 +335,7 @@ class ClassLoader: AllStatic {
   // loaded system packages.
   // Note: The package names returned are "/"-separated and end with a
   // trailing "/".
-  static objArrayOop get_system_packages(TRAPS);
+  static refArrayOop get_system_packages(TRAPS);
 
   // Initialization
   static void initialize(TRAPS);
@@ -347,10 +347,10 @@ class ClassLoader: AllStatic {
 
   static bool is_in_patch_mod_entries(Symbol* module_name);
 
+  static void  record_result(JavaThread* current, InstanceKlass* ik,
+                             const ClassFileStream* stream, bool redefined) NOT_CDS_RETURN;
 #if INCLUDE_CDS
   static char* uri_to_path(const char* uri);
-  static void  record_result(JavaThread* current, InstanceKlass* ik,
-                             const ClassFileStream* stream, bool redefined);
   static void record_result_for_builtin_loader(s2 classpath_index, InstanceKlass* result, bool redefined);
   static void record_hidden_class(InstanceKlass* ik);
   static void append_boot_classpath(ClassPathEntry* new_entry);

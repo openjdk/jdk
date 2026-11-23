@@ -42,7 +42,7 @@ define_pd_global(size_t, CodeCacheSegmentSize,   64);
 define_pd_global(uint, CodeEntryAlignment,       64);
 define_pd_global(intx, OptoLoopAlignment,        16);
 
-#define DEFAULT_STACK_YELLOW_PAGES (2)
+#define DEFAULT_STACK_YELLOW_PAGES (NOT_WINDOWS(2) WINDOWS_ONLY(3))
 #define DEFAULT_STACK_RED_PAGES (1)
 // Java_java_net_SocketOutputStream_socketWrite0() uses a 64k buffer on the
 // stack if compiled for unix and LP64. To pass stack overflow tests we need
@@ -66,6 +66,9 @@ define_pd_global(bool, RewriteBytecodes,     true);
 define_pd_global(bool, RewriteFrequentPairs, true);
 
 define_pd_global(bool, PreserveFramePointer, false);
+
+define_pd_global(bool, ValueTypePassFieldsAsArgs, true);
+define_pd_global(bool, ValueTypeReturnedAsFields, true);
 
 define_pd_global(uintx, TypeProfileLevel, 111);
 
@@ -99,6 +102,8 @@ define_pd_global(intx, InlineSmallCode,          1000);
           "Use SIMD SHA3 instructions for SHA3 intrinsic")              \
   product(bool, AvoidUnalignedAccesses, false,                          \
           "Avoid generating unaligned memory accesses")                 \
+  product(bool, AvoidMLAChain, false, DIAGNOSTIC,                       \
+          "Avoid long dependency chains formed by MLA instructions")    \
   product(bool, UseLSE, false,                                          \
           "Use LSE instructions")                                       \
   product(uint, UseSVE, 0,                                              \

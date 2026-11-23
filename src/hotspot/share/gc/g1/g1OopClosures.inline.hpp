@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -163,8 +163,8 @@ inline void G1ConcurrentRefineOopClosure::do_oop_work(T* p) {
   if (to_rem_set->is_tracked()) {
     G1HeapRegion* from = _g1h->heap_region_containing(p);
 
-    if (from->rem_set()->cset_group() != to_rem_set->cset_group()) {
-      to_rem_set->add_reference(p, _worker_id);
+    if (from->rem_set()->card_set_group() != to_rem_set->card_set_group()) {
+      to_rem_set->add_reference(p, _from_card_cache);
       _has_ref_to_old = true;
     }
   }
@@ -215,6 +215,12 @@ void G1ParCopyHelper::do_cld_barrier(oop new_obj) {
   }
 }
 
+void G1ParCopyHelper::do_cld_barrier_non_cset(G1HeapRegionAttr attr) {
+  if (attr.is_humongous()) {
+    _scanned_cld->record_humongous_oops();
+  }
+}
+
 void G1ParCopyHelper::mark_object(oop obj) {
   assert(!_g1h->heap_region_containing(obj)->in_collection_set(), "should not mark objects in the CSet");
 
@@ -255,6 +261,9 @@ void G1ParCopyClosure<barrier, should_mark>::do_oop_work(T* p) {
       do_cld_barrier(forwardee);
     }
   } else {
+    if (barrier == G1BarrierCLD) {
+      do_cld_barrier_non_cset(state);
+    }
     if (state.is_humongous_candidate()) {
       _g1h->set_humongous_is_live(obj);
     } else if ((barrier != G1BarrierNoOptRoots) && state.is_optional()) {
@@ -284,13 +293,14 @@ template <class T> void G1RebuildRemSetClosure::do_oop_work(T* p) {
   G1HeapRegion* to = _g1h->heap_region_containing(obj);
   G1HeapRegionRemSet* rem_set = to->rem_set();
   if (rem_set->is_tracked()) {
-    if (to->is_young()) {
-      G1BarrierSet::g1_barrier_set()->write_ref_field_post(p);
-    } else {
+    // References into young regions are only indicated by the card mark, which
+    // has been dirtied when installing the reference already, so no further
+    // remembering needs to happen.
+    if (!to->is_young()) {
       G1HeapRegion* from = _g1h->heap_region_containing(p);
 
-      if (from->rem_set()->cset_group() != rem_set->cset_group()) {
-        rem_set->add_reference(p, _worker_id);
+      if (from->rem_set()->card_set_group() != rem_set->card_set_group()) {
+        rem_set->add_reference(p, _from_card_cache);
       }
     }
   }

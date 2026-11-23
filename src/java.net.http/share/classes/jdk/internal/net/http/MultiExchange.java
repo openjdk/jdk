@@ -29,7 +29,6 @@ import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.net.ConnectException;
 import java.net.ProtocolException;
-import java.net.ProtocolException;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpConnectTimeoutException;
 import java.net.http.HttpHeaders;
@@ -90,7 +89,6 @@ class MultiExchange<T> implements Cancelable {
     }
 
     private static final AtomicLong IDS = new AtomicLong();
-    private final HttpRequest userRequest; // the user request
     private final HttpRequestImpl request; // a copy of the user request
     private final ConnectTimeoutTracker connectTimeout; // null if no timeout
     final HttpClientImpl client;
@@ -99,9 +97,7 @@ class MultiExchange<T> implements Cancelable {
     final AtomicInteger attempts = new AtomicInteger();
     final long id = IDS.incrementAndGet();
     HttpRequestImpl currentreq; // used for retries & redirect
-    HttpRequestImpl previousreq; // used for retries & redirect
     Exchange<T> exchange; // the current exchange
-    Exchange<T> previous;
     volatile HttpResponse<T> response;
 
     // Maximum number of times a request will be retried/redirected
@@ -170,16 +166,12 @@ class MultiExchange<T> implements Cancelable {
     /**
      * MultiExchange with one final response.
      */
-    MultiExchange(HttpRequest userRequest,
-                  HttpRequestImpl requestImpl,
+    MultiExchange(HttpRequestImpl requestImpl,
                   HttpClientImpl client,
                   HttpResponse.BodyHandler<T> responseHandler,
                   PushPromiseHandler<T> pushPromiseHandler) {
-        this.previous = null;
-        this.userRequest = userRequest;
         this.request = requestImpl;
         this.currentreq = request;
-        this.previousreq = null;
         this.client = client;
         this.filters = client.filterChain();
         this.executor = client.theExecutor();
@@ -469,8 +461,6 @@ class MultiExchange<T> implements Cancelable {
 
     // we call this only when a request is being retried
     private CompletableFuture<Response> retryRequest() {
-        // maintain state indicating a request being retried
-        previousreq = currentreq;
         // request is being retried, so the filters have already
         // been applied once. Applying them a second time might
         // cause some headers values to be added twice: for
@@ -524,7 +514,6 @@ class MultiExchange<T> implements Cancelable {
                             exch.exchImpl.connection().close();
                         }
                         return exch.ignoreBody().handle((r,t) -> {
-                            previousreq = currentreq;
                             currentreq = newrequest;
                             // this is the first attempt to have the new request
                             // processed by the server

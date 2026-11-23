@@ -44,7 +44,7 @@ import org.xml.sax.SAXNotSupportedException;
 
 
 /**
- * Converts locale data from "Locale Data Markup Language" format to
+ * Converts locale data from "Common Locale Data {@literal &} Rules" format to
  * JRE resource bundle format. LDML is the format used by the Common
  * Locale Data Repository maintained by the Unicode Consortium.
  */
@@ -87,7 +87,7 @@ public class CLDRConverter {
     static final String EXEMPLAR_CITY_PREFIX = "timezone.excity.";
     static final String ZONE_NAME_PREFIX = "timezone.displayname.";
     static final String METAZONE_ID_PREFIX = "metazone.id.";
-    static final String METAZONE_DSTOFFSET_PREFIX = "metazone.dstoffset.";
+    static final String METAZONE_DSTOFFSETS = "metazone.dstoffsets";
     static final String PARENT_LOCALE_PREFIX = "parentLocale.";
     static final String LIKELY_SCRIPT_PREFIX = "likelyScript.";
     static final String META_EMPTY_ZONE_NAME = "EMPTY_ZONE";
@@ -652,7 +652,44 @@ public class CLDRConverter {
         bundleGenerator.generateMetaInfo(metaInfo);
     }
 
+    // Aliases except metazone names
     static final Map<String, String> aliases = new HashMap<>();
+
+    enum ZoneNameSlot {
+        STD_LONG,
+        STD_SHORT,
+        DST_LONG,
+        DST_SHORT,
+        GEN_LONG,
+        GEN_SHORT
+    }
+
+    record MetazoneNameAlias(String targetKey, EnumSet<ZoneNameSlot> slots) {
+        MetazoneNameAlias {
+            slots = EnumSet.copyOf(slots);
+        }
+    }
+
+    // Aliases for metazone names with relevant name slots
+    static final Map<String, MetazoneNameAlias> metazoneNameAliases = new HashMap<>();
+
+    static void addMetazoneNameAlias(String sourceKey, String targetKey,
+                                     EnumSet<ZoneNameSlot> slots) {
+        EnumSet<ZoneNameSlot> resultSlots;
+        MetazoneNameAlias alias = metazoneNameAliases.get(sourceKey);
+
+        if (alias != null) {
+            if (!alias.targetKey().equals(targetKey)) {
+                throw new IllegalArgumentException("Conflicting aliases for " + sourceKey);
+            }
+            resultSlots = EnumSet.copyOf(alias.slots());
+            resultSlots.addAll(slots);
+        } else {
+            resultSlots = slots;
+        }
+
+        metazoneNameAliases.put(sourceKey, new MetazoneNameAlias(targetKey, resultSlots));
+    }
 
     /**
      * Translate the aliases into the real entries in the bundle map.
@@ -859,14 +896,25 @@ public class CLDRConverter {
 
         // exemplar cities.
         Map<String, Object> exCities = map.entrySet().stream()
-            .filter(e -> e.getKey().startsWith(CLDRConverter.EXEMPLAR_CITY_PREFIX))
+            .filter(e -> e.getKey().startsWith(EXEMPLAR_CITY_PREFIX))
             .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         names.putAll(exCities);
 
-        // Explicit metazone offsets
-        if (id.equals("root")) {
-            explicitDstOffsets.forEach((k, v) ->
-                names.put(METAZONE_DSTOFFSET_PREFIX + k, v));
+        // Explicit metazone offsets. For example,
+        // "metazone.dstoffsets" -> "America/Vancouver=-07;Europe/Dublin=+01"
+        if (id.equals("root") && !explicitDstOffsets.isEmpty()) {
+            names.put(METAZONE_DSTOFFSETS,
+                explicitDstOffsets.entrySet().stream()
+                    .sorted(Map.Entry.comparingByKey())
+                    .map(e -> {
+                        String tzid = e.getKey();
+                        if (tzid.isEmpty() || tzid.indexOf('=') >= 0 || tzid.indexOf(';') >= 0) {
+                            throw new IllegalArgumentException("Invalid timezone ID: " + tzid);
+                        }
+                        ZoneOffset.of(e.getValue()); // checks if the offset is valid
+                        return tzid + "=" + e.getValue();
+                    })
+                    .collect(Collectors.joining(";")));
         }
 
         // If there's no UTC entry at this point, add an empty one
@@ -982,8 +1030,8 @@ public class CLDRConverter {
 
         for (String key : map.keySet()) {
             // Copy available calendar names
-            if (key.startsWith(CLDRConverter.LOCALE_TYPE_PREFIX_CA)) {
-                String type = key.substring(CLDRConverter.LOCALE_TYPE_PREFIX_CA.length());
+            if (key.startsWith(LOCALE_TYPE_PREFIX_CA)) {
+                String type = key.substring(LOCALE_TYPE_PREFIX_CA.length());
                 for (CalendarType calendarType : CalendarType.values()) {
                     if (type.equals(calendarType.lname())) {
                         Object value = map.get(key);

@@ -418,6 +418,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="pi">ಪಾಲಿ</language>
 			<language type="pis">ಪಿಜಿನ್</language>
 			<language type="pl">ಪೊಲಿಶ್</language>
+			<language type="pms">ಪೀಡ್‌ಮಾಂಟೀಸ್</language>
 			<language type="pon">ಪೋನ್‌‌ಪಿಯನ್</language>
 			<language type="pqm">ಮ್ಯಾಲಿಸೀಟ್-ಪಸ್ಸಾಮಕ್ವಾಡ್ಡಿ</language>
 			<language type="prg">ಪ್ರಶಿಯನ್</language>
@@ -1063,18 +1064,34 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<key type="collation">ವಿಂಗಡಣೆ ಕ್ರಮ</key>
 			<key type="colNormalization">ಸಾಮಾನ್ಯ ವಿಂಗಡಣೆ</key>
 			<key type="colNumeric">ಸಂಖ್ಯೆ ವಿಂಗಡಣೆ</key>
+			<key type="colReorder">ಸ್ಕ್ರಿಪ್ಟ್/ಬ್ಲಾಕ್ ರೀಆರ್ಡರಿಂಗ್</key>
 			<key type="colStrength">ವಿಂಗಡಣೆ ಸಾಮರ್ಥ್ಯ</key>
 			<key type="currency">ಕರೆನ್ಸಿ</key>
+			<key type="d0">ಟ್ರಾನ್ಸ್‌ಫಾರ್ಮ್ ಡೆಸ್ಟಿನೇಷನ್</key>
+			<key type="dx">ಡಿಕ್ಷನರಿ ಬ್ರೇಕ್ ಎಕ್ಸ್‌ಕ್ಲೂಶನ್‌ಗಳು</key>
 			<key type="em">ಎಮೋಜಿ ಪ್ರೆಸೆಂಟೇಶನ್</key>
-			<key type="hc">ಕಾಲ ಚಕ್ರ (12 ವಿರುದ್ಧ 24)</key>
+			<key type="fw">ವಾರದ ಮೊದಲ ದಿನ</key>
+			<key type="h0">ಮಿಕ್ಸಡ್-ಇನ್</key>
+			<key type="hc">ಕಾಲ ಚಕ್ರ (12 ವರ್ಸಸ್ 24)</key>
+			<key type="i0">ಇನ್‌ಪುಟ್ ವಿಧಾನ</key>
+			<key type="k0">ಕೀಬೋರ್ಡ್</key>
+			<key type="kv">ಅತಿ ಹೆಚ್ಚು ನಿರ್ಲಕ್ಷಿಸಿರುವುದು</key>
 			<key type="lb">ಲೈನ್ ಬ್ರೇಕ್ ಶೈಲಿ</key>
 			<key type="lw">ಪದಗಳ ಮಧ್ಯ ಲೈನ್ ಬ್ರೇಕ್‌ಗಳು</key>
+			<key type="m0">ಟ್ರಾನ್ಸ್‌ಫಾರ್ಮ್ ನಿಯಮಗಳು</key>
 			<key type="ms">ಮಾಪನ ವ್ಯವಸ್ಥೆ</key>
+			<key type="mu">ಮಾಪನ ಯೂನಿಟ್</key>
 			<key type="numbers">ಸಂಖ್ಯೆಗಳು</key>
+			<key type="rg">ಪೂರಕ ಡೇಟಾಗಾಗಿ ಪ್ರದೇಶ</key>
+			<key type="s0">ಟ್ರಾನ್ಸ್‌ಫಾರ್ಮ್ ಸೋರ್ಸ್</key>
+			<key type="sd">ಪ್ರದೇಶ ಉಪವಿಭಾಗ</key>
 			<key type="ss">ಸಂಕ್ಷಿಪ್ತರೂಪದ ನಂತರ ವಾಕ್ಯ ವಿರಾಮ</key>
+			<key type="t">ಟ್ರಾನ್ಸ್‌ಫಾರ್ಮ್</key>
+			<key type="t0">ಮಷಿನ್ ಅನುವಾದಿಸಿರುವುದು</key>
 			<key type="timezone">ಸಮಯ ವಲಯ</key>
 			<key type="va">ಸ್ಥಳೀಯ ಭಿನ್ನತೆ</key>
 			<key type="x">ಖಾಸಗಿ ಬಳಕೆ</key>
+			<key type="x0">ಖಾಸಗಿ ಬಳಕೆಯ ಟ್ರಾನ್ಸ್‌ಫಾರ್ಮ್</key>
 		</keys>
 		<types>
 			<type key="calendar" type="buddhist">ಬೌದ್ಧರ ಕ್ಯಾಲೆಂಡರ್</type>
@@ -1100,9 +1117,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="islamic-civil">ಇಸ್ಲಾಮಿಕ್-ಸಿವಿಲ್ ಕ್ಯಾಲೆಂಡರ್</type>
 			<type key="calendar" type="islamic-civil" scope="core">ಹಿಜ್ರಿ (ಟ್ಯಾಬುಲರ್, ನಾಗರಿಕ ಯುಗ)</type>
 			<type key="calendar" type="islamic-rgsa" draft="contributed">ಇಸ್ಲಾಮಿಕ್‌ ಕ್ಯಾಲೆಂಡರ್‌ (ಸೌದಿ ಅರೇಬಿಯಾ, ಸೈಟಿಂಗ್‌)bia, sighting)</type>
+			<type key="calendar" type="islamic-rgsa" scope="core">ಹಿಜ್ರಿ, ಸೌದಿ ಅರೇಬಿಯಾ ಪ್ರವಾಸಿ ಆಕರ್ಷಣೆಗಳ ವೀಕ್ಷಣೆ</type>
+			<type key="calendar" type="islamic-tbla" scope="core">ಹಿಜ್ರಿ (ಕೋಷ್ಟಕ, ಖಗೋಳ ಯುಗ)</type>
 			<type key="calendar" type="islamic-umalqura">ಇಸ್ಲಾಮಿಕ್ ಕ್ಯಾಲೆಂಡರ್ (ಉಮ್ ಅಲ್-ಖುರಾ)</type>
 			<type key="calendar" type="islamic-umalqura" scope="core">ಹಿಜ್ರಿ (ಉಮ್ ಅಲ್-ಖುರಾ)</type>
 			<type key="calendar" type="iso8601">ISO-8601 ಕ್ಯಾಲೆಂಡರ್</type>
+			<type key="calendar" type="iso8601" scope="core">ಗ್ರೆಗೊರಿಯನ್</type>
 			<type key="calendar" type="japanese">ಜಪಾನೀಸ್ ಕ್ಯಾಲೆಂಡರ್</type>
 			<type key="calendar" type="japanese" scope="core">ಜಪಾನೀಸ್</type>
 			<type key="calendar" type="persian">ಪರ್ಷಿಯನ್ ಕ್ಯಾಲೆಂಡರ್</type>
@@ -1118,42 +1138,70 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colBackwards" type="no">ಉಚ್ಛಾರಣೆಯನ್ನು ಸಾಮಾನ್ಯವಾಗಿ ವಿಂಗಡಿಸಿ</type>
 			<type key="colBackwards" type="yes">ತಿರುಗು ಮುರುಗಾದ ಉಚ್ಛಾರಣೆಗಳನ್ನು ವಿಂಗಡಿಸಿ</type>
 			<type key="colCaseFirst" type="lower">ಮೊದಲು ಲೋವರ್‌ಕೇಸ್ ಅನ್ನು ವಿಂಗಡಿಸಿ</type>
+			<type key="colCaseFirst" type="lower" scope="core">ಲೋವರ್‌ಕೇಸ್</type>
 			<type key="colCaseFirst" type="no">ಸಾಮಾನ್ಯ ಕೇಸ್ ಕ್ರಮವನ್ನು ವಿಂಗಡಿಸಿ</type>
+			<type key="colCaseFirst" type="no" scope="core">ಲೋವರ್‌ಕೇಸ್</type>
 			<type key="colCaseFirst" type="upper">ಮೊದಲು ಅಪ್ಪರ್‌ಕೇಸ್ ಅನ್ನು ವಿಂಗಡಿಸಿ</type>
+			<type key="colCaseFirst" type="upper" scope="core">ಅಪ್ಪರ್‌ಕೇಸ್</type>
 			<type key="colCaseLevel" type="no">ಕೇಸ್ ಇನ್‌ಸೆಂಟೀವ್ ಅನ್ನು ವಿಂಗಡಿಸಿ</type>
 			<type key="colCaseLevel" type="yes">ಕೇಸ್‌ ಸೆನ್ಸಿಟೀವ್‌‌ ವಿಂಗಡಿಸಿ</type>
 			<type key="collation" type="compat" draft="contributed">ಹೊಂದಾಣಿಕೆಯ ಸಲುವಾಗಿ ಹಿಂದಿನ ವಿಂಗಡಣಾ ಕ್ರಮ</type>
+			<type key="collation" type="compat" scope="core">ಕಾಂಪ್ಯಾಟಿಬಿಲಿಟಿ</type>
 			<type key="collation" type="dictionary">ಡಿಕ್ಷನರಿ ಅನುಕ್ರಮ ವಿನ್ಯಾಸ</type>
+			<type key="collation" type="dictionary" scope="core">ಡಿಕ್ಷನರಿ</type>
 			<type key="collation" type="ducet">ಡೀಫಾಲ್ಟ್ ಯೂನಿಕೋಡ್ ವಿಂಗಡಣೆ ಕ್ರಮ</type>
 			<type key="collation" type="ducet" scope="core">ಡೀಫಾಲ್ಟ್ ಯೂನಿಕೋಡ್</type>
+			<type key="collation" type="emoji" scope="core">ಇಮೋಜಿ</type>
 			<type key="collation" type="eor" draft="contributed">ಯುರೋಪಿನ ಅನುಕ್ರಮ ನಿಯಮಗಳು</type>
+			<type key="collation" type="eor" scope="core">ಯುರೋಪಿಯನ್ ನಿಯಮಗಳು</type>
 			<type key="collation" type="phonebook">ಫೋನ್‌ಬುಕ್ ವಿಂಗಡಣೆ ಕ್ರಮ</type>
+			<type key="collation" type="phonebook" scope="core">ಫೋನ್‌ಬುಕ್‌</type>
 			<type key="collation" type="phonetic">ಉಚ್ಛಾರಣಾನುರೂಪವಾಗಿ ವಿಂಗಡಣೆ ಕ್ರಮ</type>
+			<type key="collation" type="phonetic" scope="core">ಫೋನೆಟಿಕ್</type>
 			<type key="collation" type="pinyin">ಪಿನ್‌ಯಿನ್ ವಿಂಗಡಣೆ ಕ್ರಮ</type>
+			<type key="collation" type="pinyin" scope="core">ಪಿನ್ಯಿಯಿನ್</type>
 			<type key="collation" type="search">ಸಾಮಾನ್ಯ- ಉದ್ದೇಶ ಹುಡುಕಾಟ</type>
 			<type key="collation" type="search" scope="core">ಹುಡುಕಾಟ</type>
 			<type key="collation" type="searchjl">ಹಂಗುಲ್ ಆದ್ಯಕ್ಷರ ವ್ಯಂಜನದ ಮೂಲಕ ಹುಡುಕಿ</type>
+			<type key="collation" type="searchjl" scope="core">ಕೊರಿಯನ್ ಇನಿಶಿಯಲ್ ಕಾನ್ಸೊನೆಂಟ್</type>
 			<type key="collation" type="standard">ಪ್ರಮಾಣೀಕೃತ ವಿಂಗಡಣೆ ಕ್ರಮ</type>
 			<type key="collation" type="standard" scope="core">ಪ್ರಮಾಣೀಕೃತ</type>
 			<type key="collation" type="stroke">ಸ್ಟ್ರೋಕ್ ವಿಂಗಡಣೆ ಕ್ರಮ</type>
+			<type key="collation" type="stroke" scope="core">ಸ್ಟ್ರೋಕ್</type>
 			<type key="collation" type="traditional">ಸಾಂಪ್ರದಾಯಿಕ ವಿಂಗಡಣೆ ಕ್ರಮ</type>
 			<type key="collation" type="traditional" scope="core">ಸಾಂಪ್ರದಾಯಿಕ</type>
 			<type key="collation" type="unihan">ರ್ಯಾಡಿಕಲ್-ಸ್ಟ್ರೋಕ್ ವಿಂಗಡಣೆ ಕ್ರಮ</type>
+			<type key="collation" type="unihan" scope="core">ರ‍್ಯಾಡಿಕಲ್ ಸ್ಟ್ರೋಕ್</type>
+			<type key="collation" type="zhuyin" scope="core">ಝುಯಿನ್</type>
 			<type key="colNormalization" type="no">ಸಾಮಾನ್ಯ ಸ್ಥಿತಿಯನ್ನು ಹೊರತುಪಡಿಸಿ ವಿಂಗಡಿಸಿ</type>
 			<type key="colNormalization" type="yes">ಸಾಮಾನ್ಯವಾದ ಯೂನಿಕೋಡ್ ಅನ್ನು ವಿಂಗಡಿಸಿ</type>
 			<type key="colNumeric" type="no">ಅಂಕೆಗಳನ್ನು ಪ್ರತ್ಯೇಕವಾಗಿ ವಿಂಗಡಿಸಿ</type>
 			<type key="colNumeric" type="yes">ಅಂಕೆಗಳನ್ನು ಸಂಖ್ಯಾತ್ಮಕವಾಗಿ ವಿಂಗಡಿಸಿ</type>
+			<type key="colReorder" type="currency" scope="core">ಕರೆನ್ಸಿ</type>
+			<type key="colReorder" type="digit" scope="core">ಡಿಜಿಟ್‌ಗಳು</type>
+			<type key="colReorder" type="punct" scope="core">ವಿರಾಮಚಿಹ್ನೆ</type>
+			<type key="colReorder" type="space" scope="core">ವೈಟ್‌ಸ್ಪೇಸ್</type>
+			<type key="colReorder" type="symbol" scope="core">ಚಿಹ್ನೆ</type>
 			<type key="colStrength" type="identical">ಎಲ್ಲವನ್ನೂ ವಿಂಗಡಿಸಿ</type>
+			<type key="colStrength" type="identical" scope="core">ಎಲ್ಲಾ</type>
 			<type key="colStrength" type="primary">ವಿಂಗಡಣೆ ಆಧರಿಸಿದ ಅಕ್ಷರಗಳನ್ನು ಮಾತ್ರ</type>
+			<type key="colStrength" type="primary" scope="core">ಬೇಸ್ ಅಕ್ಷರಗಳು ಮಾತ್ರ</type>
 			<type key="colStrength" type="quaternary">ಉಚ್ಛಾರಣೆ/ಕೇಸ್/ಅಳತೆ/ಕಾನಾ ವಿಂಗಡಿಸಿ</type>
+			<type key="colStrength" type="quaternary" scope="core">ಬೇಸ್, ಉಚ್ಚಾರಣೆಗಳು, ಕೇಸ್, ರೂಪಾಂತರಗಳು, ಕನಾ</type>
 			<type key="colStrength" type="secondary">ಉಚ್ಛಾರಣೆಗಳನ್ನು ವಿಂಗಡಿಸಿ</type>
+			<type key="colStrength" type="secondary" scope="core">ಬೇಸ್, ಉಚ್ಚಾರಣೆಗಳು</type>
 			<type key="colStrength" type="tertiary">ಉಚ್ಛಾರಣೆ/ಕೇಸ್/ಅಳತೆ ವಿಂಗಡಿಸಿ</type>
+			<type key="colStrength" type="tertiary" scope="core">ಬೇಸ್, ಉಚ್ಚಾರಣೆಗಳು, ಕೇಸ್, ರೂಪಾಂತರಗಳು</type>
 			<type key="d0" type="fwidth">ಪೂರ್ಣಅಗಲಕ್ಕೆ</type>
 			<type key="d0" type="hwidth">ಅರೆಅಗಲಕ್ಕೆ</type>
 			<type key="d0" type="npinyin">ಸಂಖ್ಯೆ</type>
 			<type key="em" type="default" scope="core">ಡೀಫಾಲ್ಟ್</type>
 			<type key="em" type="emoji" scope="core">ಎಮೋಜಿ</type>
 			<type key="em" type="text" scope="core">ಪಠ್ಯ</type>
+			<type key="hc" type="c12">12 ಗಂಟೆ ವ್ಯವಸ್ಥೆ</type>
+			<type key="hc" type="c12" scope="core">12</type>
+			<type key="hc" type="c24">24 ಗಂಟೆ ವ್ಯವಸ್ಥೆ</type>
+			<type key="hc" type="c24" scope="core">24</type>
 			<type key="hc" type="h11">12 ಗಂಟೆ ವ್ಯವಸ್ಥೆ (0–11)</type>
 			<type key="hc" type="h11" scope="core">12 (0–11)</type>
 			<type key="hc" type="h12">12 ಗಂಟೆ ವ್ಯವಸ್ಥೆ (1–12)</type>
@@ -1162,6 +1210,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="hc" type="h23" scope="core">24 (0–23)</type>
 			<type key="hc" type="h24">24 ಗಂಟೆ ವ್ಯವಸ್ಥೆ (1–24)</type>
 			<type key="hc" type="h24" scope="core">24 (1–24)</type>
+			<type key="kv" type="currency" scope="core">ಶಿಫ್ಟ್ ಸ್ಪೇಸ್‌ಗಳು, ವಿರಾಮಚಿಹ್ನೆ, ಎಲ್ಲಾ ಚಿಹ್ನೆಗಳು</type>
+			<type key="kv" type="punct" scope="core">ಶಿಫ್ಟ್ ಸ್ಪೇಸ್‌ಗಳು, ವಿರಾಮಚಿಹ್ನೆ</type>
+			<type key="kv" type="space" scope="core">ಶಿಫ್ಟ್ ಸ್ಪೇಸ್‌ಗಳು, ವಿರಾಮಚಿಹ್ನೆ</type>
+			<type key="kv" type="symbol" scope="core">ಶಿಫ್ಟ್ ಸ್ಪೇಸ್‌ಗಳು, ವಿರಾಮಚಿಹ್ನೆ, ಕರೆನ್ಸಿಯೇತರ ಚಿಹ್ನೆಗಳು</type>
 			<type key="lb" type="loose">ಲೂಸ್ ಲೈನ್ ಬ್ರೇಕ್ ಶೈಲಿ</type>
 			<type key="lb" type="loose" scope="core">ಲೂಸ್</type>
 			<type key="lb" type="normal">ಸಾಮಾನ್ಯ ಲೈನ್ ಬ್ರೇಕ್ ಶೈಲಿ</type>
@@ -1182,51 +1234,85 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="ms" type="ussystem" scope="core">ಅಮೇರಿಕಾ</type>
 			<type key="numbers" type="arab">ಅರೇಬಿಕ್-ಇಂಡಿಕ್ ಅಂಕೆಗಳು</type>
 			<type key="numbers" type="arabext">ವಿಸ್ತರಿಸಲಾದ ಅರೇಬಿಕ್-ಇಂಡಿಕ್ ಅಂಕೆಗಳು</type>
+			<type key="numbers" type="arabext" scope="core">ವಿಸ್ತರಿಸಲಾದ ಅರೇಬಿಕ್-ಇಂಡಿಕ್</type>
 			<type key="numbers" type="armn">ಆರ್ಮೇನಿಯಾದ ಸಂಖ್ಯೆಗಳು</type>
 			<type key="numbers" type="armnlow">ಅರ್ಮೇನಿಯಾದ ಸಣ್ಣಕ್ಷರ ಸಂಖ್ಯೆಗಳು</type>
+			<type key="numbers" type="armnlow" scope="core">ಅರ್ಮೇನಿಯನ್ ಲೋವರ್‌ಕೇಸ್</type>
 			<type key="numbers" type="beng">ಬಾಂಗ್ಲಾ ಅಂಕೆಗಳು</type>
 			<type key="numbers" type="cakm">ಚಕ್ಮಾ ಅಂಕೆಗಳು</type>
 			<type key="numbers" type="deva">ದೇವನಾಗರಿ ಅಂಕೆಗಳು</type>
 			<type key="numbers" type="ethi">ಇಥಿಯೋಪಿಯಾದ ಸಂಖ್ಯೆಗಳು</type>
 			<type key="numbers" type="finance">ಆರ್ಥಿಕ ಸಂಖ್ಯೆಗಳು</type>
+			<type key="numbers" type="finance" scope="core">ಹಣಕಾಸು</type>
 			<type key="numbers" type="fullwide">ಪೂರ್ಣ ಅಗಲವಾದ ಸಂಖ್ಯೆಗಳು</type>
+			<type key="numbers" type="fullwide" scope="core">ಫುಲ್-ವಿಡ್ತ್</type>
 			<type key="numbers" type="geor">ಜಾರ್ಜಿಯಾದ ಸಂಖ್ಯೆಗಳು</type>
 			<type key="numbers" type="grek">ಗ್ರೀಕ್ ಸಂಖ್ಯೆಗಳು</type>
 			<type key="numbers" type="greklow">ಗ್ರೀಕ್ ಲೋವರ್‌ಕೇಸ್ ಸಂಖ್ಯೆಗಳು</type>
+			<type key="numbers" type="greklow" scope="core">ಗ್ರೀಕ್ ಲೋವರ್‌ಕೇಸ್</type>
 			<type key="numbers" type="gujr">ಗುಜರಾತಿ ಅಂಕೆಗಳು</type>
 			<type key="numbers" type="guru">ಗುರ್ಮುಖಿ ಅಂಕೆಗಳು</type>
+			<type key="numbers" type="hanidays" scope="core">ಸಾಂಪ್ರದಾಯಿಕ ಕ್ಯಾಲೆಂಡರ್‌ಗಳಲ್ಲಿ ಹಾನ್ ಅಕ್ಷರದ ತಿಂಗಳ ದಿನ ಸಂಖ್ಯೆ</type>
 			<type key="numbers" type="hanidec">ಚೀನಾದ ದಶಮಾಂಶ ಸಂಖ್ಯೆಗಳು</type>
+			<type key="numbers" type="hanidec" scope="core">ಚೀನೀ ಸಂಖ್ಯಾ ಐಡಿಯೋಗ್ರಾಫ್‌ಗಳನ್ನು ಅಂಕೆಗಳಾಗಿ ಬಳಸುವ ಸ್ಥಾನಿಕ ದಶಮಾಂಶ ವ್ಯವಸ್ಥೆ.</type>
 			<type key="numbers" type="hans">ಸರಳೀಕೃತ ಚೀನಿ ಸಂಖ್ಯೆಗಳು</type>
 			<type key="numbers" type="hansfin">ಸರಳೀಕೃತ ಚೀನಿ ಆರ್ಥಿಕ ಸಂಖ್ಯೆಗಳು</type>
+			<type key="numbers" type="hansfin" scope="core">ಸರಳೀಕೃತ ಚೀನೀ ಹಣಕಾಸು</type>
 			<type key="numbers" type="hant">ಸಾಂಪ್ರದಾಯಿಕ ಚೀನಿ ಸಂಖ್ಯೆಗಳು</type>
 			<type key="numbers" type="hantfin">ಸಾಂಪ್ರದಾಯಿಕ ಚೀನಿ ಆರ್ಥಿಕ ಸಂಖ್ಯೆಗಳು</type>
+			<type key="numbers" type="hantfin" scope="core">ಸಾಂಪ್ರದಾಯಿಕ ಚೀನೀ ಹಣಕಾಸು</type>
 			<type key="numbers" type="hebr">ಹೀಬ್ರೂ ಸಂಖ್ಯೆಗಳು</type>
 			<type key="numbers" type="java">ಜಾವಾನೀಸ್ ಅಂಕೆಗಳು</type>
 			<type key="numbers" type="jpan">ಜಪಾನೀ ಸಂಖ್ಯೆಗಳು</type>
 			<type key="numbers" type="jpanfin">ಜಪಾನೀ ಆರ್ಥಿಕ ಸಂಖ್ಯೆಗಳು</type>
+			<type key="numbers" type="jpanfin" scope="core">ಜಾಪನೀಸ್ ಹಣಕಾಸು</type>
+			<type key="numbers" type="jpanyear" scope="core">ಜಾಪನೀಸ್ ಮೊದಲ ವರ್ಷದ ಗಾನೆನ್ ಸಂಖ್ಯೆಗಳು</type>
 			<type key="numbers" type="khmr">ಖಮೆ ಅಂಕೆಗಳು</type>
 			<type key="numbers" type="knda">ಕನ್ನಡ ಅಂಕೆಗಳು</type>
+			<type key="numbers" type="lanatham" scope="core">ತೈ ಥಾಮ್ ಥಾಮ್ (ಎಕ್ಲೆಸಿಯಸ್ಟಿಕಲ್)</type>
 			<type key="numbers" type="laoo">ಲಾವೋ ಅಂಕೆಗಳು</type>
 			<type key="numbers" type="latn">ಪಾಶ್ಚಿಮಾತ್ಯ ಅಂಕೆಗಳು</type>
+			<type key="numbers" type="mathbold" scope="core">ಮ್ಯಾಥೆಮೆಟಿಕಲ್ ಬೋಲ್ಡ್</type>
+			<type key="numbers" type="mathdbl" scope="core">ಮ್ಯಾಥೆಮೆಟಿಕಲ್ ಡಬಲ್-ಸ್ಟ್ರಕ್</type>
+			<type key="numbers" type="mathmono" scope="core">ಮ್ಯಾಥೆಮೆಟಿಕಲ್ ಮೋನೊಸ್ಪೇಸ್</type>
+			<type key="numbers" type="mathsanb" scope="core">ಮ್ಯಾಥೆಮೆಟಿಕಲ್ ಸ್ಯಾನ್ಸ್-ಸೆರಿಫ್ ಬೋಲ್ಡ್</type>
+			<type key="numbers" type="mathsans" scope="core">ಮ್ಯಾಥೆಮೆಟಿಕಲ್ ಸ್ಯಾನ್ಸ್-ಸೆರಿಫ್</type>
 			<type key="numbers" type="mlym">ಮಲಯಾಳಂ ಅಂಕಿಗಳು</type>
 			<type key="numbers" type="mong">ಮಂಗೋಲಿಯಾದ ಅಂಕೆಗಳು</type>
 			<type key="numbers" type="mtei">ಮೈಟಿ ಮಯೆಕ್ ಅಂಕೆಗಳು</type>
 			<type key="numbers" type="mymr">ಮ್ಯಾನ್ಮಾರ್ ಅಂಕೆಗಳು</type>
+			<type key="numbers" type="mymrepka" scope="core">ಮ್ಯಾನ್ಮರ್ ಈಸ್ಟರ್ನ್ ಪ್ವೋ ಕರೆನ್</type>
+			<type key="numbers" type="mymrpao" scope="core">ಮ್ಯಾನ್ಮರ್ ಪವೊ</type>
+			<type key="numbers" type="mymrshan" scope="core">ಮ್ಯಾನ್ಮರ್ ಶಾನ್</type>
+			<type key="numbers" type="mymrtlng" scope="core">ಮ್ಯಾನ್ಮರ್ ಟೈ ಲೈಯಿಂಗ್</type>
 			<type key="numbers" type="native">ಸ್ಥಳೀಯ ಅಂಕೆಗಳು</type>
+			<type key="numbers" type="native" scope="core">ನೇಟಿವ್ ಡಿಜಿಟ್‌ಗಳು</type>
 			<type key="numbers" type="olck">ಓಲ್ ಚಿಕಿ ಅಂಕೆಗಳು</type>
 			<type key="numbers" type="orya">ಒರಿಯಾ ಅಂಕೆಗಳು</type>
+			<type key="numbers" type="outlined" scope="core">ಔಟ್‌ಲೈನಡ್</type>
 			<type key="numbers" type="roman">ರೋಮನ್ ಸಂಖ್ಯೆಗಳು</type>
+			<type key="numbers" type="roman" scope="core">ರೋಮನ್ ಅಪ್ಪರ್‌ಕೇಸ್</type>
 			<type key="numbers" type="romanlow">ರೋಮನ್ ಲೋವರ್‌ಕೇಸ್ ಸಂಖ್ಯೆಗಳು</type>
+			<type key="numbers" type="romanlow" scope="core">ರೋಮನ್ ಲೋವರ್‌ಕೇಸ್</type>
+			<type key="numbers" type="segment" scope="core">ಸೆಗ್ಮೆಂಟ್ ಮಾಡಿರುವುದು</type>
 			<type key="numbers" type="taml">ಸಾಂಪ್ರದಾಯಿಕ ತಮಿಳು ಸಂಖ್ಯೆಗಳು</type>
 			<type key="numbers" type="tamldec">ತಮಿಳು ಅಂಕೆಗಳು</type>
+			<type key="numbers" type="tamldec" scope="core">ಆಧುನಿಕ ತಮಿಳು</type>
 			<type key="numbers" type="telu">ತೆಲುಗು ಅಂಕೆಗಳು</type>
 			<type key="numbers" type="thai">ಥಾಯ್ ಅಂಕೆಗಳು</type>
 			<type key="numbers" type="tibt">ಟಿಬೇಟಿಯನ್ ಅಂಕೆಗಳು</type>
 			<type key="numbers" type="traditional">ಸಾಂಪ್ರದಾಯಿಕ ಸಂಖ್ಯೆಗಳು</type>
+			<type key="numbers" type="traditional" scope="core">ಸಾಂಪ್ರದಾಯಿಕ ಸಂಖ್ಯೆಗಳು</type>
 			<type key="numbers" type="vaii">ವಾಯ್ ಅಂಕೆಗಳು</type>
 			<type key="ss" type="none" scope="core">ಆಫ್</type>
 			<type key="ss" type="standard" scope="core">ಆನ್</type>
+			<type key="t0" type="und">ನಿರ್ದಿಷ್ಟಪಡಿಸದ ಮಷಿನ್ ಅನುವಾದ</type>
+			<type key="va" type="posix" scope="core">POSIX ವೇರಿಯಂಟ್</type>
 		</types>
+		<typeValues>
+			<typeValue type="no">ಆಫ್</typeValue>
+			<typeValue type="yes">ಆನ್</typeValue>
+		</typeValues>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">ಮೆಟ್ರಿಕ್</measurementSystemName>
 			<measurementSystemName type="UK">ಯುಕೆ</measurementSystemName>
@@ -1316,6 +1402,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</dateFormatLength>
 				</dateFormats>
 				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator>-</numericDateSeparator>
+					</numericSeparators>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
@@ -1367,6 +1456,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yyyyMM">MM-y G</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="mixed">{0} – {1}</intervalFormatRange>
+							<intervalFormatRange type="numeric">{0}–{1}</intervalFormatRange>
+						</intervalFormatRanges>
 						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="M">
 							<greatestDifference id="M">M–M</greatestDifference>
@@ -1385,6 +1478,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<intervalFormatItem id="MMMd">
 							<greatestDifference id="d">d –d MMM</greatestDifference>
 							<greatestDifference id="M">d MMM – d MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMMd">
+							<greatestDifference id="d">MMMM d – d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="y">
 							<greatestDifference id="y">y–y G</greatestDifference>
@@ -1590,6 +1686,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</timeFormatLength>
 				</timeFormats>
 				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator>/</numericDateSeparator>
+					</numericSeparators>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
@@ -1639,18 +1738,24 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E, d MMM</dateFormatItem>
 						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMEd">E, d MMMM</dateFormatItem>
 						<dateFormatItem id="yM">M/y</dateFormatItem>
 						<dateFormatItem id="yMd">d/M/y</dateFormatItem>
 						<dateFormatItem id="yMEd">E, M/d/y</dateFormatItem>
 						<dateFormatItem id="yMM">MM-y</dateFormatItem>
 						<dateFormatItem id="yMMM">MMM y</dateFormatItem>
-						<dateFormatItem id="yMMMd">MMM d,y</dateFormatItem>
+						<dateFormatItem id="yMMMd">d MMM y</dateFormatItem>
 						<dateFormatItem id="yMMMEd">E, MMM d, y</dateFormatItem>
 						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
+						<dateFormatItem id="yMMMMd">d MMMM y</dateFormatItem>
+						<dateFormatItem id="yMMMMEd">E, d MMMM y</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
 						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="non-numeric">{0} – {1}</intervalFormatRange>
+						</intervalFormatRanges>
 						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="hm">
 							<greatestDifference id="m">h:mm – h:mm a</greatestDifference>
@@ -1687,6 +1792,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<intervalFormatItem id="MMMd">
 							<greatestDifference id="d">MMM d – d</greatestDifference>
 							<greatestDifference id="M">d MMM – d MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMMd">
+							<greatestDifference id="d">MMMM d – d</greatestDifference>
+							<greatestDifference id="M">d MMMM – d MMMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
 							<greatestDifference id="M">M/y – M/y</greatestDifference>
@@ -2497,7 +2606,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>ಫಮಾಗುಸ್ತಾ</exemplarCity>
 			</zone>
 			<zone type="Europe/Prague">
-				<exemplarCity>ಪ್ರಾಗ್ವೆ</exemplarCity>
+				<exemplarCity>ಪ್ರಾಗ್</exemplarCity>
 			</zone>
 			<zone type="Europe/Busingen">
 				<exemplarCity>ಬುಸಿಂಜೆನ್</exemplarCity>
@@ -2578,9 +2687,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>ಲಿಬ್ರೆವೀಲ್</exemplarCity>
 			</zone>
 			<zone type="Europe/London">
-				<long>
-					<daylight>ಬ್ರಿಟಿಷ್ ಬೇಸಿಗೆ ಸಮಯ</daylight>
-				</long>
 				<exemplarCity>ಲಂಡನ್</exemplarCity>
 			</zone>
 			<zone type="America/Grenada">
@@ -2671,10 +2777,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>ಜಯಪುರ</exemplarCity>
 			</zone>
 			<zone type="Europe/Dublin">
-				<long>
-					<daylight>ಐರಿಷ್ ಪ್ರಮಾಣಿತ ಸಮಯ</daylight>
-				</long>
-				<exemplarCity>ಡುಬ್ಲಿನ್</exemplarCity>
+				<exemplarCity>ಡಬ್ಲಿನ್</exemplarCity>
 			</zone>
 			<zone type="Asia/Jerusalem">
 				<exemplarCity>ಜೆರುಸಲೆಮ್</exemplarCity>
@@ -3371,9 +3474,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<metazone type="Acre">
 				<long>
-					<generic draft="contributed">ಏಕರ್ ಸಮಯ</generic>
-					<standard draft="contributed">ಏಕರ್ ಪ್ರಮಾಣಿತ ಸಮಯ</standard>
-					<daylight draft="contributed">ಏಕರ್ ಬೇಸಿಗೆ ಸಮಯ</daylight>
+					<generic>ಏಕರ್ ಸಮಯ</generic>
+					<standard>ಏಕರ್ ಪ್ರಮಾಣಿತ ಸಮಯ</standard>
+					<daylight>ಏಕರ್ ಬೇಸಿಗೆ ಸಮಯ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Afghanistan">
@@ -3406,13 +3509,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>ಅಲಾಸ್ಕಾ ಸಮಯ</generic>
 					<standard>ಅಲಾಸ್ಕಾ ಪ್ರಮಾಣಿತ ಸಮಯ</standard>
 					<daylight>‌ಅಲಾಸ್ಕಾ ಹಗಲು ಸಮಯ</daylight>
-				</long>
-			</metazone>
-			<metazone type="Almaty">
-				<long>
-					<generic draft="contributed">ಆಲ್ಮೇಟಿ ಸಮಯ</generic>
-					<standard draft="contributed">ಆಲ್ಮೇಟಿ ಪ್ರಮಾಣಿತ ಸಮಯ</standard>
-					<daylight draft="contributed">ಆಲ್ಮೇಟಿ ಬೇಸಿಗೆ ಸಮಯ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Amazon">
@@ -3462,20 +3558,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>ಅಪಿಯಾ ಸಮಯ</generic>
 					<standard>ಅಪಿಯಾ ಪ್ರಮಾಣಿತ ಸಮಯ</standard>
 					<daylight>ಅಪಿಯಾ ಹಗಲು ಸಮಯ</daylight>
-				</long>
-			</metazone>
-			<metazone type="Aqtau">
-				<long>
-					<generic draft="contributed">ಅಕ್ಟೌ ಸಮಯ</generic>
-					<standard draft="contributed">ಅಕ್ಟೌ ಪ್ರಮಾಣಿತ ಸಮಯ</standard>
-					<daylight draft="contributed">ಅಕ್ಟೌ ಬೇಸಿಗೆ ಸಮಯ</daylight>
-				</long>
-			</metazone>
-			<metazone type="Aqtobe">
-				<long>
-					<generic draft="contributed">ಅಕ್ಟೋಬೆ ಸಮಯ</generic>
-					<standard draft="contributed">ಅಕ್ಟೋಬೆ ಪ್ರಮಾಣಿತ ಸಮಯ</standard>
-					<daylight draft="contributed">ಅಕ್ಟೋಬೆ ಬೇಸಿಗೆ ಸಮಯ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Arabian">
@@ -3577,6 +3659,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>ಬ್ರೆಸಿಲಿಯಾದ ಸಮಯ</generic>
 					<standard>ಬ್ರೆಸಿಲಿಯಾ ಪ್ರಮಾಣಿತ ಸಮಯ</standard>
 					<daylight>ಬ್ರೆಸಿಲಿಯಾ ಬೇಸಿಗೆ ಸಮಯ</daylight>
+				</long>
+			</metazone>
+			<metazone type="British">
+				<long>
+					<generic>ಬ್ರಿಟಿಷ್ ಸಮಯ</generic>
+					<daylight>ಬ್ರಿಟಿಷ್ ಬೇಸಿಗೆ ಸಮಯ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Brunei">
@@ -3752,6 +3840,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>ಗ್ರೀನ್‌ವಿಚ್ ಸರಾಸರಿ ಕಾಲಮಾನ</standard>
 				</long>
 			</metazone>
+			<metazone type="Greenland">
+				<long>
+					<generic>ಗ್ರೀನ್‌ಲ್ಯಾಂಡ್ ಸಮಯ</generic>
+					<standard>ಗ್ರೀನ್‌ಲ್ಯಾಂಡ್ ಪ್ರಮಾಣಿತ ಸಮಯ</standard>
+					<daylight>ಗ್ರೀನ್‌ಲ್ಯಾಂಡ್ ಬೇಸಿಗೆ ಸಮಯ</daylight>
+				</long>
+			</metazone>
 			<metazone type="Greenland_Eastern">
 				<long>
 					<generic>ಪೂರ್ವ ಗ್ರೀನ್‌ಲ್ಯಾಂಡ್ ಸಮಯ</generic>
@@ -3766,11 +3861,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>ಪಶ್ಚಿಮ ಗ್ರೀನ್‌ಲ್ಯಾಂಡ್ ಬೇಸಿಗೆ ಸಮಯ</daylight>
 				</long>
 			</metazone>
-			<metazone type="Guam">
-				<long>
-					<standard draft="contributed">ಗುವಾಮ್ ಪ್ರಮಾಣಿತ ಸಮಯ</standard>
-				</long>
-			</metazone>
 			<metazone type="Gulf">
 				<long>
 					<standard>ಗಲ್ಫ್ ಪ್ರಮಾಣಿತ ಸಮಯ</standard>
@@ -3783,7 +3873,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Hawaii">
 				<long>
-					<standard>ಹವಾಯಿ-ಅಲ್ಯುಟಿಯನ್ ಪ್ರಮಾಣಿತ ಸಮಯ</standard>
+					<standard>ಹವಾಯಿ ಸಮಯ</standard>
 				</long>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
@@ -3847,6 +3937,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>ಇರಾನ್ ಹಗಲು ಸಮಯ</daylight>
 				</long>
 			</metazone>
+			<metazone type="Irish">
+				<long>
+					<generic>ಐರಿಷ್ ಸಮಯ</generic>
+					<daylight>ಐರಿಷ್ ಪ್ರಮಾಣಿತ ಸಮಯ</daylight>
+				</long>
+			</metazone>
 			<metazone type="Irkutsk">
 				<long>
 					<generic>ಇರ್‌ಕುಟಸ್ಕ್ ಸಮಯ</generic>
@@ -3870,9 +3966,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Kamchatka">
 				<long>
-					<generic>ಪೆತ್ರೋಪಾವ್ಲೋಸ್ಕ್‌‌-ಕಮ್ಚತ್ಸ್‌ಕೀ ಸಮಯ</generic>
-					<standard>ಪೆತ್ರೋಪಾವ್ಲೋಸ್ಕ್‌‌-ಕಮ್ಚತ್ಸ್‌ಕೀ ಪ್ರಮಾಣಿತ ಸಮಯ</standard>
-					<daylight>ಪೆತ್ರೋಪಾವ್ಲೋಸ್ಕ್‌‌-ಕಮ್ಚತ್ಸ್‌ಕೀ ಬೇಸಿಗೆ ಸಮಯ</daylight>
+					<generic>ಕಾಮ್‌ಚಾಟ್ಕಾ ಸಮಯ</generic>
+					<standard>ಕಾಮ್‌ಚಾಟ್ಕಾ ಪ್ರಮಾಣಿತ ಸಮಯ</standard>
+					<daylight>ಕಾಮ್‌ಚಾಟ್ಕಾ ಬೇಸಿಗೆ ಸಮಯ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan">
@@ -3914,11 +4010,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>ಕಿರ್ಗಿಸ್ತಾನ್ ಸಮಯ</standard>
 				</long>
 			</metazone>
-			<metazone type="Lanka">
-				<long>
-					<standard draft="contributed">ಲಂಕಾ ಸಮಯ</standard>
-				</long>
-			</metazone>
 			<metazone type="Line_Islands">
 				<long>
 					<standard>ಲೈನ್ ದ್ವೀಪಗಳ ಸಮಯ</standard>
@@ -3929,13 +4020,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>ಲಾರ್ಡ್ ಹೋವ್ ಸಮಯ</generic>
 					<standard>ಲಾರ್ಡ್ ಹೋವ್ ಪ್ರಮಾಣಿತ ಸಮಯ</standard>
 					<daylight>ಲಾರ್ಡ್ ಹೋವ್ ಬೆಳಗಿನ ಸಮಯ</daylight>
-				</long>
-			</metazone>
-			<metazone type="Macau">
-				<long>
-					<generic draft="contributed">ಮಕಾವ್ ಸಮಯ</generic>
-					<standard draft="contributed">ಮಕಾವ್ ಪ್ರಮಾಣಿತ ಸಮಯ</standard>
-					<daylight draft="contributed">ಮಕಾವ್ ಬೇಸಿಗೆ ಸಮಯ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Magadan">
@@ -4053,11 +4137,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>ಫರ್ನಾಂಡೋ ದೆ ನೊರೊನ್ಹಾ ಬೇಸಿಗೆ ಸಮಯ</daylight>
 				</long>
 			</metazone>
-			<metazone type="North_Mariana">
-				<long>
-					<standard draft="contributed">ಉತ್ತರ ಮರಿಯಾನಾ ದ್ವೀಪಗಳ ಸಮಯ</standard>
-				</long>
-			</metazone>
 			<metazone type="Novosibirsk">
 				<long>
 					<generic>ನೊವೊಸಿಬಿರ್‌ಸ್ಕ್ ಸಮಯ</generic>
@@ -4137,13 +4216,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>ಪ್ಯೊಂಗ್ಯಾಂಗ್ ಸಮಯ</standard>
 				</long>
 			</metazone>
-			<metazone type="Qyzylorda">
-				<long>
-					<generic draft="contributed">ಕೋಜಿಲೋರ್ಡಾ ಸಮಯ</generic>
-					<standard draft="contributed">ಕೋಜಿಲೋರ್ಡಾ ಪ್ರಮಾಣಿತ ಸಮಯ</standard>
-					<daylight draft="contributed">ಕೋಜಿಲೋರ್ಡಾ ಬೇಸಿಗೆ ಸಮಯ</daylight>
-				</long>
-			</metazone>
 			<metazone type="Reunion">
 				<long>
 					<standard>ರಿಯೂನಿಯನ್ ಸಮಯ</standard>
@@ -4163,16 +4235,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Samara">
 				<long>
-					<generic>ಸಮರ ಸಮಯ</generic>
-					<standard>ಸಮರ ಪ್ರಮಾಣಿತ ಸಮಯ</standard>
-					<daylight>ಸಮರ ಬೇಸಿಗೆ ಸಮಯ</daylight>
+					<generic>ಸಮಾರ ಸಮಯ</generic>
+					<standard>ಸಮಾರ ಪ್ರಮಾಣಿತ ಸಮಯ</standard>
+					<daylight>ಸಮಾರ ಬೇಸಿಗೆ ಸಮಯ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Samoa">
 				<long>
-					<generic>ಸಮೋವಾ ಸಮಯ</generic>
 					<standard>ಸಮೋವಾ ಪ್ರಮಾಣಿತ ಸಮಯ</standard>
-					<daylight>ಸಮೋವಾ ಬೇಸಿಗೆ ಸಮಯ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">
@@ -4241,9 +4311,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Turkey">
 				<long>
-					<generic draft="unconfirmed">ಟರ್ಕಿ ಸಮಯ</generic>
-					<standard draft="unconfirmed">ಟರ್ಕಿ ಪ್ರಮಾಣಿತ ಸಮಯ</standard>
-					<daylight draft="unconfirmed">ಟರ್ಕಿ ಬೇಸಿಗೆ ಸಮಯ</daylight>
+					<generic>ತುರ್ಕಿಯೇ ಸಮಯ</generic>
+					<standard>ತುರ್ಕಿಯೇ ಪ್ರಮಾಣಿತ ಸಮಯ</standard>
+					<daylight>ತುರ್ಕಿಯೇ ಬೇಸಿಗೆ ಸಮಯ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Turkmenistan">
@@ -4263,6 +4333,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>ಉರುಗ್ವೇ ಸಮಯ</generic>
 					<standard>ಉರುಗ್ವೇ ಪ್ರಮಾಣಿತ ಸಮಯ</standard>
 					<daylight>ಉರುಗ್ವೇ ಬೇಸಿಗೆ ಸಮಯ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Urumqi">
+				<long>
+					<standard>ಉರುಮ್‌ಕಿ ಸಮಯ</standard>
 				</long>
 			</metazone>
 			<metazone type="Uzbekistan">
@@ -5257,8 +5332,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="ZWG">
 				<displayName>ಜಿಂಬಾಬ್ವಿಯನ್ ಗೋಲ್ಡ್</displayName>
-				<displayName count="one">ಜಿಂಬಾಬ್ವಿಯನ್ ಗೋಲ್ಡ್</displayName>
-				<displayName count="other">ಜಿಂಬಾಬ್ವಿಯನ್ ಗೋಲ್ಡ್</displayName>
 			</currency>
 		</currencies>
 		<miscPatterns numberSystem="latn">
@@ -5919,26 +5992,28 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="duration-century">
 				<gender>neuter</gender>
 				<displayName>ಶತಮಾನಗಳು</displayName>
-				<unitPattern count="one">{0} ಶತಮಾನವು</unitPattern>
+				<unitPattern count="one">{0} ಶತಮಾನ</unitPattern>
 				<unitPattern count="one" case="accusative">{0} ಶತಮಾನವನ್ನು</unitPattern>
 				<unitPattern count="one" case="dative">{0} ಶತಮಾನಕ್ಕೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ಶತಮಾನದ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ಶತಮಾನದಲ್ಲಿ</unitPattern>
 				<unitPattern count="one" case="vocative">{0} ಶತಮಾನ</unitPattern>
-				<unitPattern count="other">{0}ಶತಮಾನಗಳು</unitPattern>
+				<unitPattern count="other">{0} ಶತಮಾನಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ಶತಮಾನಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ಶತಮಾನಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ಶತಮಾನಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ಶತಮಾನಗಳಲ್ಲಿ</unitPattern>
+				<unitPattern count="other" case="vocative">{0} ಶತಮಾನಗಳು</unitPattern>
 			</unit>
 			<unit type="duration-decade">
 				<gender>neuter</gender>
 				<displayName>ದಶಕಗಳು</displayName>
-				<unitPattern count="one">{0} ದಶಕವು</unitPattern>
+				<unitPattern count="one">{0} ದಶಕ</unitPattern>
 				<unitPattern count="one" case="accusative">{0} ದಶಕವನ್ನು</unitPattern>
 				<unitPattern count="one" case="dative">{0} ದಶಕಕ್ಕೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ದಶಕದ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ದಶಕದಲ್ಲಿ</unitPattern>
+				<unitPattern count="one" case="vocative">{0} ದಶಕ</unitPattern>
 				<unitPattern count="other">{0} ದಶಕಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ದಶಕಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ದಶಕಗಳಿಗೆ</unitPattern>
@@ -5952,7 +6027,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="dative">{0} ವರ್ಷಕ್ಕೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ವರ್ಷದ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ವರ್ಷದಲ್ಲಿ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} ವರ್ಷ</unitPattern>
 				<unitPattern count="other">{0} ವರ್ಷಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ವರ್ಷಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ವರ್ಷಗಳಿಗೆ</unitPattern>
@@ -5963,7 +6037,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="duration-quarter">
 				<gender>neuter</gender>
 				<displayName>ತ್ರೈಮಾಸಿಕಗಳು</displayName>
-				<unitPattern count="one">{0} ತ್ರೈಮಾಸಿಕವು</unitPattern>
+				<unitPattern count="one">{0} ತ್ರೈಮಾಸಿಕ</unitPattern>
 				<unitPattern count="one" case="accusative">{0} ತ್ರೈಮಾಸಿಕವನ್ನು</unitPattern>
 				<unitPattern count="one" case="dative">{0} ತ್ರೈಮಾಸಿಕಕ್ಕೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ತ್ರೈಮಾಸಿಕದ</unitPattern>
@@ -5992,11 +6066,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="duration-week">
 				<gender>neuter</gender>
-				<unitPattern count="one">{0} ವಾರವು</unitPattern>
+				<unitPattern count="one">{0} ವಾರ</unitPattern>
 				<unitPattern count="one" case="accusative">{0} ವಾರವನ್ನು</unitPattern>
 				<unitPattern count="one" case="dative">{0} ವಾರಕ್ಕೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ವಾರದ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ವಾರದಲ್ಲಿ</unitPattern>
+				<unitPattern count="one" case="vocative">{0} ವಾರ</unitPattern>
 				<unitPattern count="other">{0} ವಾರಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ವಾರಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ವಾರಗಳಿಗೆ</unitPattern>
@@ -6006,11 +6081,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="duration-day">
 				<gender>neuter</gender>
-				<unitPattern count="one">{0} ದಿನವು</unitPattern>
+				<unitPattern count="one">{0} ದಿನ</unitPattern>
 				<unitPattern count="one" case="accusative">{0} ದಿನವನ್ನು</unitPattern>
 				<unitPattern count="one" case="dative">{0} ದಿನಕ್ಕೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ದಿನದ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ದಿನದಲ್ಲಿ</unitPattern>
+				<unitPattern count="one" case="vocative">{0} ದಿನ</unitPattern>
 				<unitPattern count="other">{0} ದಿನಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ದಿನಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ದಿನಗಳಿಗೆ</unitPattern>
@@ -6034,11 +6110,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="duration-minute">
 				<gender>neuter</gender>
-				<unitPattern count="one">{0} ನಿಮಿಷವು</unitPattern>
+				<unitPattern count="one">{0} ನಿಮಿಷ</unitPattern>
 				<unitPattern count="one" case="accusative">{0} ನಿಮಿಷವನ್ನು</unitPattern>
 				<unitPattern count="one" case="dative">{0} ನಿಮಿಷಕ್ಕೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ನಿಮಿಷದ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ನಿಮಿಷದಲ್ಲಿ</unitPattern>
+				<unitPattern count="one" case="vocative">{0} ನಿಮಿಷ</unitPattern>
 				<unitPattern count="other">{0} ನಿಮಿಷಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ನಿಮಿಷಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ನಿಮಿಷಗಳಿಗೆ</unitPattern>
@@ -6048,11 +6125,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="duration-second">
 				<gender>neuter</gender>
+				<displayName>ಸೆಕೆಂಡ್‌ಗಳು</displayName>
 				<unitPattern count="one">{0} ಸೆಕೆಂಡ್</unitPattern>
-				<unitPattern count="one" case="accusative">{0} ಸೆಕೆಂಡನ್ನು</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ಸೆಕೆಂಡ್ ಅನ್ನು</unitPattern>
 				<unitPattern count="one" case="dative">{0} ಸೆಕೆಂಡಿಗೆ</unitPattern>
-				<unitPattern count="one" case="genitive">{0} ಸೆಕೆಂಡಿನ</unitPattern>
-				<unitPattern count="one" case="locative">{0} ಸೆಕೆಂಡಿನಲ್ಲಿ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ಸೆಕೆಂಡ್‌ನ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ಸೆಕೆಂಡ್‌ನಲ್ಲಿ</unitPattern>
 				<unitPattern count="other">{0} ಸೆಕೆಂಡುಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ಸೆಕೆಂಡುಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ಸೆಕೆಂಡುಗಳಿಗೆ</unitPattern>
@@ -6062,34 +6140,35 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="duration-millisecond">
 				<gender>neuter</gender>
+				<displayName>ಮಿಲಿಸೆಕೆಂಡ್‌ಗಳು</displayName>
 				<unitPattern count="one">{0} ಮಿಲಿಸೆಕೆಂಡ್</unitPattern>
 				<unitPattern count="one" case="accusative">{0} ಮಿಲಿಸೆಕೆಂಡ್ ಅನ್ನು</unitPattern>
-				<unitPattern count="one" case="dative">{0} ಮಿಲಿಸೆಕೆಂಡಿಗೆ</unitPattern>
-				<unitPattern count="one" case="genitive">{0} ಮಿಲಿಸೆಕೆಂಡಿನ</unitPattern>
-				<unitPattern count="one" case="locative">{0} ಮಿಲಿಸೆಕೆಂಡಿನಲ್ಲಿ</unitPattern>
-				<unitPattern count="other">{0} ಮಿಲಿಸೆಕೆಂಡುಗಳು</unitPattern>
+				<unitPattern count="one" case="dative">{0} ಮಿಲಿಸೆಕೆಂಡ್‌ಗೆ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ಮಿಲಿಸೆಕೆಂಡ್‌ನ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ಮಿಲಿಸೆಕೆಂಡ್‌ನಲ್ಲಿ</unitPattern>
+				<unitPattern count="other">{0} ಮಿಲಿಸೆಕೆಂಡ್‌ಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ಮಿಲಿಸೆಕೆಂಡ್‌ಗಳನ್ನು</unitPattern>
-				<unitPattern count="other" case="dative">{0} ಮಿಲಿಸೆಕೆಂಡುಗಳಿಗೆ</unitPattern>
-				<unitPattern count="other" case="genitive">{0} ಮಿಲಿಸೆಕೆಂಡುಗಳ</unitPattern>
-				<unitPattern count="other" case="locative">{0} ಮಿಲಿಸೆಕೆಂಡುಗಳಲ್ಲಿ</unitPattern>
+				<unitPattern count="other" case="dative">{0} ಮಿಲಿಸೆಕೆಂಡ್‌ಗಳಿಗೆ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ಮಿಲಿಸೆಕೆಂಡ್‌ಗಳ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ಮಿಲಿಸೆಕೆಂಡ್‌ಗಳಲ್ಲಿ</unitPattern>
 			</unit>
 			<unit type="duration-microsecond">
 				<gender>neuter</gender>
-				<displayName>ಮೈಕ್ರೊಸೆಕೆಂಡುಗಳು</displayName>
+				<displayName>ಮೈಕ್ರೊಸೆಕೆಂಡ್‌ಗಳು</displayName>
 				<unitPattern count="one">{0} ಮೈಕ್ರೊಸೆಕೆಂಡ್</unitPattern>
 				<unitPattern count="one" case="accusative">{0} ಮೈಕ್ರೊಸೆಕೆಂಡ್ ಅನ್ನು</unitPattern>
 				<unitPattern count="one" case="dative">{0} ಮೈಕ್ರೊಸೆಕೆಂಡ್‌ಗೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ಮೈಕ್ರೊಸೆಕೆಂಡ್‌ನ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ಮೈಕ್ರೊಸೆಕೆಂಡ್‌ನಲ್ಲಿ</unitPattern>
-				<unitPattern count="other">{0} ಮೈಕ್ರೊಸೆಕೆಂಡುಗಳು</unitPattern>
+				<unitPattern count="other">{0} ಮೈಕ್ರೊಸೆಕೆಂಡ್‌ಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ಮೈಕ್ರೊಸೆಕೆಂಡ್‌ಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ಮೈಕ್ರೊಸೆಕೆಂಡ್‌ಗಳಿಗೆ</unitPattern>
-				<unitPattern count="other" case="genitive">{0} ಮೈಕ್ರೊಸೆಕೆಂಡುಗಳ</unitPattern>
-				<unitPattern count="other" case="locative">{0} ಮೈಕ್ರೊಸೆಕೆಂಡುಗಳಲ್ಲಿ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ಮೈಕ್ರೊಸೆಕೆಂಡ್‌ಗಳ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ಮೈಕ್ರೊಸೆಕೆಂಡ್‌ಗಳಲ್ಲಿ</unitPattern>
 			</unit>
 			<unit type="duration-nanosecond">
 				<gender>neuter</gender>
-				<displayName>ನ್ಯಾನೊಸೆಕೆಂಡುಗಳು</displayName>
+				<displayName>ನ್ಯಾನೊಸೆಕೆಂಡ್‌ಗಳು</displayName>
 				<unitPattern count="one">{0} ನ್ಯಾನೊಸೆಕೆಂಡ್</unitPattern>
 				<unitPattern count="one" case="accusative">{0} ನ್ಯಾನೊಸೆಕೆಂಡ್ ಅನ್ನು</unitPattern>
 				<unitPattern count="one" case="dative">{0} ನ್ಯಾನೊಸೆಕೆಂಡ್‌ಗೆ</unitPattern>
@@ -7754,7 +7833,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ಶ</unitPattern>
 			</unit>
 			<unit type="duration-decade">
-				<displayName>ದಶ</displayName>
+				<displayName>ದಶಕ</displayName>
 				<unitPattern count="one">{0} ದಶ</unitPattern>
 				<unitPattern count="other">{0} ದಶ</unitPattern>
 			</unit>
@@ -7801,13 +7880,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<perUnitPattern>{0}/ನಿಮಿ</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
-				<displayName>ಸೆಕೆಂಡುಗಳು</displayName>
+				<displayName>ಸೆಕೆಂಡ್‌ಗಳು</displayName>
 				<unitPattern count="one">{0} ಸೆಕೆಂ</unitPattern>
 				<unitPattern count="other">{0} ಸೆಕೆಂ</unitPattern>
 				<perUnitPattern>{0}/ಸೆ</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
-				<displayName>ಮಿಲಿಸೆಕೆಂಡುಗಳು</displayName>
+				<displayName>ಮಿಲಿಸೆಕೆಂಡ್‌ಗಳು</displayName>
 				<unitPattern count="one">{0} ಮಿ.ಸೆ.</unitPattern>
 				<unitPattern count="other">{0} ಮಿ.ಸೆ.</unitPattern>
 			</unit>
@@ -8643,11 +8722,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}ವಸ್ತು</unitPattern>
 				<unitPattern count="other">{0}ವಸ್ತು</unitPattern>
 			</unit>
-			<unit type="concentr-part">
-				<displayName>ಪಾರ್ಟ್</displayName>
-				<unitPattern count="one">{0} ಪಾರ್ಟ್</unitPattern>
-				<unitPattern count="other">{0} ಪಾರ್ಟ್</unitPattern>
-			</unit>
 			<unit type="concentr-part-per-1e6">
 				<displayName>ಭಾಪ್ರಮಿ</displayName>
 				<unitPattern count="one">{0}ಭಾಪ್ರಮಿ</unitPattern>
@@ -8665,11 +8739,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="concentr-mole">
 				<unitPattern count="one">{0}ಮೋಲ್</unitPattern>
 				<unitPattern count="other">{0}ಮೋಲ್</unitPattern>
-			</unit>
-			<unit type="concentr-ofglucose">
-				<displayName>Glc</displayName>
-				<unitPattern count="one">{0} Glc</unitPattern>
-				<unitPattern count="other">{0} Glc</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>ಲೀ/ಕಿಮೀ</displayName>
@@ -8737,6 +8806,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="digital-bit">
 				<unitPattern count="one">{0}ಬಿಟ್</unitPattern>
 				<unitPattern count="other">{0}ಬಿಟ್</unitPattern>
+			</unit>
+			<unit type="duration-century">
+				<unitPattern count="one">{0}ಶ</unitPattern>
+				<unitPattern count="other">{0}ಶ</unitPattern>
 			</unit>
 			<unit type="duration-decade">
 				<displayName>ದಶಕ</displayName>
@@ -9264,13 +9337,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}qt-Imp.</unitPattern>
 				<unitPattern count="other">{0}qt-Imp.</unitPattern>
 			</unit>
-			<unit type="concentr-katal">
-				<displayName>ಕ್ಯಾಟ್</displayName>
-				<unitPattern count="one">{0} ಕ್ಯಾಟ್</unitPattern>
-				<unitPattern count="other">{0} ಕ್ಯಾಟ್</unitPattern>
-			</unit>
-			<unit type="energy-calorie-it">
-				<displayName>cal-IT</displayName>
+			<unit type="electric-henry">
+				<unitPattern count="one">{0} H</unitPattern>
+				<unitPattern count="other">{0} H</unitPattern>
 			</unit>
 			<unit type="duration-night">
 				<displayName>ರಾತ್ರಿಗಳು</displayName>

@@ -43,6 +43,7 @@
 #include "oops/oop.inline.hpp"
 #include "oops/resolvedIndyEntry.hpp"
 #include "oops/resolvedMethodEntry.hpp"
+#include "oops/valueKlass.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/arguments.hpp"
@@ -467,6 +468,11 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
   __ lea(esp, Address(rfp, rscratch1, Address::lsl(Interpreter::logStackElementSize)));
   // and null it as marker that esp is now tos until next java call
   __ str(zr, Address(rfp, frame::interpreter_frame_last_sp_offset * wordSize));
+
+  if (state == atos && ValueTypeReturnedAsFields) {
+    __ store_value_type_fields_to_buf(nullptr, true);
+  }
+
   __ restore_bcp();
   __ restore_locals();
   __ restore_constant_pool_cache();
@@ -541,6 +547,16 @@ address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state,
   } else {
     __ jump_to_entry(continuation);
   }
+  return entry;
+}
+
+// Continuation entry for an interpreted frame thawed after its callee was
+// popped by JVMTI PopFrame.
+address TemplateInterpreterGenerator::generate_cont_popframe_reexecute_entry() {
+  address entry = __ pc();
+  // We reuse the deopt entry with step=0, which restores the interpreter
+  // state and reexecutes the invoke.
+  __ jump_to_entry(Interpreter::deopt_entry(vtos, 0));
   return entry;
 }
 
@@ -1416,7 +1432,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ verify_sve_vector_length();
 
   // change thread state
-  __ mov(rscratch1, _thread_in_native_trans);
+  __ mov(rscratch1, _thread_in_Java);
   __ lea(rscratch2, Address(rthread, JavaThread::thread_state_offset()));
   __ stlrw(rscratch1, rscratch2);
 
@@ -1441,17 +1457,12 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     // hand.
     //
     __ mov(c_rarg0, rthread);
-    __ lea(rscratch2, RuntimeAddress(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans)));
+    __ lea(rscratch2, RuntimeAddress(CAST_FROM_FN_PTR(address, SharedRuntime::check_special_condition_for_native_trans)));
     __ blr(rscratch2);
     __ get_method(rmethod);
     __ reinit_heapbase();
     __ bind(Continue);
   }
-
-  // change thread state
-  __ mov(rscratch1, _thread_in_Java);
-  __ lea(rscratch2, Address(rthread, JavaThread::thread_state_offset()));
-  __ stlrw(rscratch1, rscratch2);
 
   // Check preemption for Object.wait()
   Label not_preempted;
@@ -1633,7 +1644,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 //
 // Generic interpreted method entry to (asm) interpreter
 //
-address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
+address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized, bool object_init) {
   // determine code generation flags
   bool inc_counter  = UseCompiler || CountCompiledCalls;
 
@@ -1760,6 +1771,12 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
 #endif
   }
 
+  // Issue a StoreStore barrier on entry to Object_init if the
+  // class has strict field fields.  Be lazy, always do it.
+  if (object_init) {
+    __ membar(MacroAssembler::StoreStore);
+  }
+
   // start execution
 #ifdef ASSERT
   {
@@ -1873,16 +1890,17 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
   __ strw(r3, Address(rthread, JavaThread::popframe_condition_offset()));
 
   {
-    // Check to see whether we are returning to a deoptimized frame.
-    // (The PopFrame call ensures that the caller of the popped frame is
-    // either interpreted or compiled and deoptimizes it if compiled.)
-    // In this case, we can't call dispatch_next() after the frame is
-    // popped, but instead must save the incoming arguments and restore
-    // them after deoptimization has occurred.
+    // Check to see whether we are returning to a deoptimized frame or
+    // into the continuation return barrier (the PopFrame call ensures that
+    // the caller of the popped frame is either interpreted or compiled and
+    // deoptimizes it if compiled). In both cases, we can't call dispatch_next()
+    // after the frame is popped, but instead must save the incoming arguments
+    // and restore them after deoptimization or thaw has occurred.
     //
     // Note that we don't compare the return PC against the
     // deoptimization blob's unpack entry because of the presence of
-    // adapter frames in C2.
+    // adapter frames in C2. Checking for an interpreter return PC covers
+    // the return barrier as well.
     Label caller_not_deoptimized;
     __ ldr(c_rarg1, Address(rfp, frame::return_addr_offset * wordSize));
     // This is a return address, so requires authenticating for PAC.

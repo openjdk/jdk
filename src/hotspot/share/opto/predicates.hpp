@@ -441,7 +441,7 @@ class TemplateAssertionPredicate : public Predicate {
   TemplateAssertionPredicate clone_and_replace_init(Node* new_control, Node* new_input,
                                                     CountedLoopNode* new_loop_node, PhaseIdealLoop* phase) const;
   void replace_opaque_stride_input(Node* new_stride, PhaseIterGVN& igvn) const;
-  void replace_opaque_init_node(Node* new_init, PhaseIterGVN& igvn) const;
+  void replace_opaque_init_node(Node* new_init, PhaseIterGVN& igvn, uint last_node_index) const;
   InitializedAssertionPredicate initialize(PhaseIdealLoop* phase) const;
   void rewire_loop_data_dependencies(IfTrueNode* target_predicate, const NodeInLoopBody& data_in_loop_body,
                                      const PhaseIdealLoop* phase) const;
@@ -593,12 +593,19 @@ class TemplateAssertionExpressionNode : public StackObj {
             opcode == Op_CastII);
   }
 
+  static void push_outputs_of(Unique_Node_List<Node>& list, const Node* node) {
+    for (DUIterator_Fast imax, i = node->fast_outs(imax); i < imax; i++) {
+      Node* output = node->fast_out(i);
+      list.push(output);
+    }
+  }
+
   // Apply the given function to all Template Assertion Predicates (if any) to which this Template Assertion Predicate
   // Expression Node belongs to.
   template <class Callback>
   void for_each_template_assertion_predicate(Callback callback) {
     ResourceMark rm;
-    Unique_Node_List list;
+    Unique_Node_List<Node> list;
     list.push(_node);
     DEBUG_ONLY(int template_counter = 0;)
     for (uint i = 0; i < list.size(); i++) {
@@ -608,7 +615,7 @@ class TemplateAssertionExpressionNode : public StackObj {
         DEBUG_ONLY(template_counter++;)
       } else {
         assert(!next->is_CFG(), "no CFG expected in Template Assertion Expression");
-        list.push_outputs_of(next);
+        push_outputs_of(list, next);
       }
     }
 
@@ -816,22 +823,40 @@ class PredicateIterator : public StackObj {
   // Returns the entry to the earliest predicate.
   Node* for_each(PredicateVisitor& predicate_visitor) const {
     Node* current_node = _start_node;
-    PredicateBlockIterator loop_limit_check_predicate_iterator(current_node, Deoptimization::Reason_loop_limit_check);
-    current_node = loop_limit_check_predicate_iterator.for_each(predicate_visitor);
-    if (UseAutoVectorizationPredicate) {
-      PredicateBlockIterator auto_vectorization_check_iterator(current_node, Deoptimization::Reason_auto_vectorization_check);
-      current_node = auto_vectorization_check_iterator.for_each(predicate_visitor);
+    if (!UseParsePredicates) {
+      // We cannot do nothing when UseParsePredicates is not set: We could still have Assertion Predicates from Range
+      // Check Elimination even without Parse Predicates. We have one "generic" block, but we use
+      // Reason_loop_limit_check (could also use another predicate related reason) to not confuse the iteration logic
+      // with non-predicate deoptimization reasons.
+      return apply_for(predicate_visitor, current_node, Deoptimization::Reason_loop_limit_check);
     }
+
+    if (UseLoopLimitCheckPredicate) {
+      current_node = apply_for(predicate_visitor, current_node, Deoptimization::Reason_loop_limit_check);
+    }
+
+    if (UseAutoVectorizationPredicate) {
+      current_node = apply_for(predicate_visitor, current_node, Deoptimization::Reason_auto_vectorization_check);
+    }
+
     if (UseLoopPredicate) {
       if (UseProfiledLoopPredicate) {
-        PredicateBlockIterator profiled_loop_predicate_iterator(current_node, Deoptimization::Reason_profile_predicate);
-        current_node = profiled_loop_predicate_iterator.for_each(predicate_visitor);
+        current_node = apply_for(predicate_visitor, current_node, Deoptimization::Reason_profile_predicate);
       }
-      PredicateBlockIterator loop_predicate_iterator(current_node, Deoptimization::Reason_predicate);
-      current_node = loop_predicate_iterator.for_each(predicate_visitor);
+      current_node = apply_for(predicate_visitor, current_node, Deoptimization::Reason_predicate);
     }
-    PredicateBlockIterator short_running_loop_predicate_iterator(current_node, Deoptimization::Reason_short_running_long_loop);
-    return short_running_loop_predicate_iterator.for_each(predicate_visitor);
+
+    if (ShortRunningLongLoop) {
+      current_node = apply_for(predicate_visitor, current_node, Deoptimization::Reason_short_running_long_loop);
+    }
+    return current_node;
+  }
+
+ private:
+  [[nodiscard]] static Node* apply_for(PredicateVisitor& predicate_visitor, Node* current_node,
+                                       Deoptimization::DeoptReason reason) {
+    PredicateBlockIterator predicate_block_iterator(current_node, reason);
+    return predicate_block_iterator.for_each(predicate_visitor);
   }
 };
 
@@ -1059,10 +1084,10 @@ class Predicates : public StackObj {
 // This class checks whether a node is in the original loop body and not the cloned one.
 class NodeInOriginalLoopBody : public NodeInLoopBody {
   const uint _first_node_index_in_cloned_loop_body;
-  const Node_List& _old_new;
+  const Node_List<Node>& _old_new;
 
  public:
-  NodeInOriginalLoopBody(const uint first_node_index_in_cloned_loop_body, const Node_List& old_new)
+  NodeInOriginalLoopBody(const uint first_node_index_in_cloned_loop_body, const Node_List<Node>& old_new)
       : _first_node_index_in_cloned_loop_body(first_node_index_in_cloned_loop_body),
         _old_new(old_new) {}
   NONCOPYABLE(NodeInOriginalLoopBody);
@@ -1086,11 +1111,11 @@ class NodeInMainLoopBody : public NodeInLoopBody {
   const uint _first_node_index_in_pre_loop_body;
   const uint _last_node_index_in_pre_loop_body;
   DEBUG_ONLY(const uint _last_node_index_from_backedge_goo;)
-  const Node_List& _old_new;
+  const Node_List<Node>& _old_new;
 
   public:
   NodeInMainLoopBody(const uint first_node_index_in_pre_loop_body, const uint last_node_index_in_pre_loop_body,
-                     DEBUG_ONLY(const uint last_node_index_from_backedge_goo COMMA) const Node_List& old_new)
+                     DEBUG_ONLY(const uint last_node_index_from_backedge_goo COMMA) const Node_List<Node>& old_new)
       : _first_node_index_in_pre_loop_body(first_node_index_in_pre_loop_body),
         _last_node_index_in_pre_loop_body(last_node_index_in_pre_loop_body),
         DEBUG_ONLY(_last_node_index_from_backedge_goo(last_node_index_from_backedge_goo) COMMA)
@@ -1265,10 +1290,10 @@ class CloneUnswitchedLoopPredicatesVisitor : public PredicateVisitor {
 // This visitor collects all OpaqueTemplateAssertionNodes of Template Assertion Predicates. This is used for cleaning
 // up unused Template Assertion Predicates.
 class OpaqueTemplateAssertionPredicateCollector : public PredicateVisitor {
-  Unique_Node_List& _list;
+  Unique_Node_List<OpaqueTemplateAssertionPredicateNode>& _list;
 
  public:
-  explicit OpaqueTemplateAssertionPredicateCollector(Unique_Node_List& list) : _list(list) {}
+  explicit OpaqueTemplateAssertionPredicateCollector(Unique_Node_List<OpaqueTemplateAssertionPredicateNode>& list) : _list(list) {}
 
   using PredicateVisitor::visit;
 
@@ -1308,11 +1333,14 @@ class UpdateStrideForAssertionPredicates : public PredicateVisitor {
 class UpdateInitForTemplateAssertionPredicates : public PredicateVisitor {
   Node* const _new_init;
   PhaseIdealLoop* const _phase;
+  uint _last_node_index; // only applied to nodes created before Compile::unique() was captured in _last_node_index
 
 public:
-  UpdateInitForTemplateAssertionPredicates(Node* const new_init, PhaseIdealLoop* phase)
+  UpdateInitForTemplateAssertionPredicates(Node* const new_init, PhaseIdealLoop* phase, uint last_node_index)
       : _new_init(new_init),
-        _phase(phase) {}
+        _phase(phase),
+        _last_node_index(last_node_index) {
+    }
   NONCOPYABLE(UpdateInitForTemplateAssertionPredicates);
 
   using PredicateVisitor::visit;
@@ -1343,8 +1371,8 @@ class EliminateUselessPredicates : public StackObj {
 
 #ifdef ASSERT
   void verify_loop_nodes_of_useless_templates_assertion_predicates_are_dead() const;
-  Unique_Node_List collect_loop_nodes_of_useless_template_assertion_predicates() const;
-  void verify_associated_loop_nodes_are_dead(const Unique_Node_List& loop_nodes_of_useless_template_assertion_predicates) const;
+  Unique_Node_List<const CountedLoopNode> collect_loop_nodes_of_useless_template_assertion_predicates() const;
+  void verify_associated_loop_nodes_are_dead(const Unique_Node_List<const CountedLoopNode>& loop_nodes_of_useless_template_assertion_predicates) const;
 #endif // ASSERT
  public:
   EliminateUselessPredicates(PhaseIterGVN& igvn, IdealLoopTree* ltree_root)

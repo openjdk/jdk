@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2022 SAP SE. All rights reserved.
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,9 +86,9 @@ public class TestAlwaysPreTouchStacks {
               "-XX:+UnlockDiagnosticVMOptions",
               "-Xmx100M",
               "-XX:NativeMemoryTracking=summary", "-XX:+PrintNMTStatistics");
-      if (preTouch){
-          vmArgs.add("-XX:+AlwaysPreTouchStacks");
-      }
+      // Set the tested flag explicitly for both children, so it can't be affected
+      // by externally supplied VM options.
+      vmArgs.add(preTouch ? "-XX:+AlwaysPreTouchStacks" : "-XX:-AlwaysPreTouchStacks");
       if (System.getProperty("os.name").contains("Linux")) {
           vmArgs.add("-XX:-UseMadvPopulateWrite");
       }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@
 #include "gc/parallel/psParallelCompact.inline.hpp"
 #include "gc/parallel/psStringDedup.hpp"
 #include "gc/shared/partialArrayState.hpp"
-#include "gc/shared/partialArrayTaskStepper.inline.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/arrayOop.hpp"
@@ -61,7 +60,7 @@ void ParCompactionManager::push_region(size_t index)
 #ifdef ASSERT
   const ParallelCompactData& sd = PSParallelCompact::summary_data();
   ParallelCompactData::RegionData* const region_ptr = sd.region(index);
-  assert(region_ptr->claimed(), "must be claimed");
+  assert(region_ptr->is_normal(), "must be normal fill work");
   assert(region_ptr->_pushed++ == 0, "should only be pushed once");
 #endif
   region_stack()->push(index);
@@ -99,36 +98,21 @@ inline void ParCompactionManager::FollowStackClosure::do_void() {
   }
 }
 
-template <typename T>
-inline void follow_array_specialized(objArrayOop obj, size_t start, size_t end, ParCompactionManager* cm) {
-  assert(start <= end, "invariant");
-  T* const base = (T*)obj->base();
-  T* const beg = base + start;
-  T* const chunk_end = base + end;
-
-  // Push the non-null elements of the next stride on the marking stack.
-  for (T* e = beg; e < chunk_end; e++) {
-    cm->mark_and_push<T>(e);
-  }
-}
-
 inline void ParCompactionManager::follow_array(objArrayOop obj, size_t start, size_t end) {
-  if (UseCompressedOops) {
-    follow_array_specialized<narrowOop>(obj, start, end, this);
-  } else {
-    follow_array_specialized<oop>(obj, start, end, this);
-  }
+  obj->oop_iterate_elements_range(&_mark_and_push_closure,
+                                  checked_cast<int>(start),
+                                  checked_cast<int>(end));
 }
 
 inline void ParCompactionManager::follow_contents(const ScannerTask& task, bool stolen) {
   if (task.is_partial_array_state()) {
-    assert(PSParallelCompact::mark_bitmap()->is_marked(task.to_partial_array_state()->source()), "should be marked");
+    assert(PSParallelCompact::mark_bitmap()->is_marked(task.to_partial_array_state()->array()), "should be marked");
     process_array_chunk(task.to_partial_array_state(), stolen);
   } else {
     oop obj = task.to_oop();
     assert(PSParallelCompact::mark_bitmap()->is_marked(obj), "should be marked");
-    if (obj->is_objArray()) {
-      push_objArray(obj);
+    if (obj->is_array_with_oops()) {
+      push_objArray((objArrayOop)obj);
     } else {
       obj->oop_iterate(&_mark_and_push_closure);
     }

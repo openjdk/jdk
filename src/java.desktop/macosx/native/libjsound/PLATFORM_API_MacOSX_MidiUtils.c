@@ -542,8 +542,9 @@ INT32 MIDI_Utils_CloseDevice(MacMidiDeviceHandle* handle) {
 
 
 INT32 MIDI_Utils_StartDevice(MacMidiDeviceHandle* handle) {
+#ifdef USE_ERROR
     OSStatus err = noErr;
-
+#endif
     if (!handle || !handle->h.deviceHandle) {
         ERROR0("ERROR: MIDI_Utils_StartDevice: handle or native is NULL\n");
         return MIDI_INVALID_HANDLE;
@@ -565,10 +566,16 @@ INT32 MIDI_Utils_StartDevice(MacMidiDeviceHandle* handle) {
             // Similarly, handle->h.queue is used in the CoreMDID's callback
             // to dispatch the incoming messages to the appropriate queue.
             //
-            err = MIDIPortConnectSource(inPort, (MIDIEndpointRef) (intptr_t) (handle->h.deviceHandle), (void*) handle);
+#ifdef USE_ERROR
+            err =
+#endif
+            MIDIPortConnectSource(inPort, (MIDIEndpointRef) (intptr_t) (handle->h.deviceHandle), (void*) handle);
         } else if (handle->direction == MIDI_OUT) {
             // Unschedules previous-sent packets.
-            err = MIDIFlushOutput((MIDIEndpointRef) (intptr_t) handle->h.deviceHandle);
+#ifdef USE_ERROR
+            err =
+#endif
+            MIDIFlushOutput((MIDIEndpointRef) (intptr_t) handle->h.deviceHandle);
         }
 
         MIDI_CHECK_ERROR;
@@ -578,8 +585,9 @@ INT32 MIDI_Utils_StartDevice(MacMidiDeviceHandle* handle) {
 
 
 INT32 MIDI_Utils_StopDevice(MacMidiDeviceHandle* handle) {
+#ifdef USE_ERROR
     OSStatus err = noErr;
-
+#endif
     if (!handle || !handle->h.deviceHandle) {
         ERROR0("ERROR: MIDI_Utils_StopDevice: handle or native handle is NULL\n");
         return MIDI_INVALID_HANDLE;
@@ -590,10 +598,16 @@ INT32 MIDI_Utils_StopDevice(MacMidiDeviceHandle* handle) {
         handle->isStarted = FALSE;
 
         if (handle->direction == MIDI_IN) {
-            err = MIDIPortDisconnectSource(inPort, (MIDIEndpointRef) (intptr_t) (handle->h.deviceHandle));
+#ifdef USE_ERROR
+            err =
+#endif
+            MIDIPortDisconnectSource(inPort, (MIDIEndpointRef) (intptr_t) (handle->h.deviceHandle));
         } else if (handle->direction == MIDI_OUT) {
             // Unschedules previously-sent packets.
-            err = MIDIFlushOutput((MIDIEndpointRef) (intptr_t) handle->h.deviceHandle);
+#ifdef USE_ERROR
+            err =
+#endif
+            MIDIFlushOutput((MIDIEndpointRef) (intptr_t) handle->h.deviceHandle);
         }
 
         MIDI_CHECK_ERROR;

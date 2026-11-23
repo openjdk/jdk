@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2025, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CPU_X86_STUBDECLARATIONS_HPP
-#define CPU_X86_STUBDECLARATIONS_HPP
+#ifndef CPU_X86_STUBDECLARATIONS_X86_HPP
+#define CPU_X86_STUBDECLARATIONS_X86_HPP
 
 #define STUBGEN_PREUNIVERSE_BLOBS_ARCH_DO(do_stub,                      \
                                           do_arch_blob,                 \
@@ -43,6 +43,10 @@
   do_stub(initial, verify_mxcsr)                                        \
   do_arch_entry(x86, initial, verify_mxcsr, verify_mxcsr_entry,         \
                 verify_mxcsr_entry)                                     \
+  do_stub(initial, hf2i_fixup)                                          \
+  do_arch_entry(x86, initial, hf2i_fixup, hf2i_fixup, hf2i_fixup)       \
+  do_stub(initial, hf2l_fixup)                                          \
+  do_arch_entry(x86, initial, hf2l_fixup, hf2l_fixup, hf2l_fixup)       \
   do_stub(initial, f2i_fixup)                                           \
   do_arch_entry(x86, initial, f2i_fixup, f2i_fixup, f2i_fixup)          \
   do_stub(initial, f2l_fixup)                                           \
@@ -104,6 +108,10 @@
   do_stub(compiler, vector_byte_perm_mask)                              \
   do_arch_entry(x86, compiler,vector_byte_perm_mask,                    \
                 vector_byte_perm_mask, vector_byte_perm_mask)           \
+  do_stub(compiler, vector_byte_shift_gfni_matrix)                      \
+  do_arch_entry(x86, compiler, vector_byte_shift_gfni_matrix,           \
+                vector_byte_shift_gfni_matrix,                          \
+                vector_byte_shift_gfni_matrix)                          \
   do_stub(compiler, vector_int_to_byte_mask)                            \
   do_arch_entry(x86, compiler, vector_int_to_byte_mask,                 \
                 vector_int_to_byte_mask, vector_int_to_byte_mask)       \
@@ -271,4 +279,4 @@
   do_arch_blob(final, 33000                                             \
                WINDOWS_ONLY(+22000) ZGC_ONLY(+20000))                   \
 
-#endif // CPU_X86_STUBDECLARATIONS_HPP
+#endif // CPU_X86_STUBDECLARATIONS_X86_HPP

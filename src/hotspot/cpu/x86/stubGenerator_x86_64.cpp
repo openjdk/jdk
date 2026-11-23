@@ -22,6 +22,7 @@
  *
  */
 
+#include "asm/assembler.hpp"
 #include "asm/macroAssembler.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/vmIntrinsics.hpp"
@@ -31,6 +32,7 @@
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "memory/universe.hpp"
+#include "oops/valueKlass.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/upcallLinker.hpp"
 #include "runtime/arguments.hpp"
@@ -38,6 +40,8 @@
 #include "runtime/javaThread.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "utilities/macros.hpp"
+#include "vmreg_x86.inline.hpp"
 #include "stubGenerator_x86_64.hpp"
 #ifdef COMPILER2
 #include "opto/runtime.hpp"
@@ -307,24 +311,27 @@ address StubGenerator::generate_call_stub(address& return_address) {
   return_address = __ pc();
   entries.append(return_address);
 
+  // All of j_rargN + rax may be used to return value type fields so be careful
+  // not to clobber those.  See SharedRuntime::java_return_convention().
+
   // store result depending on type (everything that is not
   // T_OBJECT, T_LONG, T_FLOAT or T_DOUBLE is treated as T_INT)
-  __ movptr(c_rarg0, result);
-  Label is_long, is_float, is_double, exit;
-  __ movl(c_rarg1, result_type);
-  __ cmpl(c_rarg1, T_OBJECT);
+  __ movptr(r13, result);
+  Label is_long, is_float, is_double, check_prim, exit;
+  __ movl(rbx, result_type);
+  __ cmpl(rbx, T_OBJECT);
+  __ jcc(Assembler::equal, check_prim);
+  __ cmpl(rbx, T_LONG);
   __ jcc(Assembler::equal, is_long);
-  __ cmpl(c_rarg1, T_LONG);
-  __ jcc(Assembler::equal, is_long);
-  __ cmpl(c_rarg1, T_FLOAT);
+  __ cmpl(rbx, T_FLOAT);
   __ jcc(Assembler::equal, is_float);
-  __ cmpl(c_rarg1, T_DOUBLE);
+  __ cmpl(rbx, T_DOUBLE);
   __ jcc(Assembler::equal, is_double);
 #ifdef ASSERT
   // make sure the type is INT
   {
     Label L;
-    __ cmpl(c_rarg1, T_INT);
+    __ cmpl(rbx, T_INT);
     __ jcc(Assembler::equal, L);
     __ stop("StubRoutines::call_stub: unexpected result type");
     __ bind(L);
@@ -332,7 +339,7 @@ address StubGenerator::generate_call_stub(address& return_address) {
 #endif
 
   // handle T_INT case
-  __ movl(Address(c_rarg0, 0), rax);
+  __ movl(Address(r13, 0), rax);
 
   __ BIND(exit);
 
@@ -390,16 +397,29 @@ address StubGenerator::generate_call_stub(address& return_address) {
   __ ret(0);
 
   // handle return types different from T_INT
+  __ BIND(check_prim);
+  if (ValueTypeReturnedAsFields) {
+    // Check for scalarized return value
+    __ testptr(rax, 1);
+    __ jcc(Assembler::zero, is_long);
+    // Load pack handler address
+    __ andptr(rax, -2);
+    __ movptr(rax, Address(rax, ValueKlass::adr_members_offset()));
+    __ movptr(rbx, Address(rax, ValueKlass::pack_handler_jobject_offset()));
+    // Call pack handler to initialize the buffer
+    __ call(rbx);
+    __ jmp(exit);
+  }
   __ BIND(is_long);
-  __ movq(Address(c_rarg0, 0), rax);
+  __ movq(Address(r13, 0), rax);
   __ jmp(exit);
 
   __ BIND(is_float);
-  __ movflt(Address(c_rarg0, 0), xmm0);
+  __ movflt(Address(r13, 0), xmm0);
   __ jmp(exit);
 
   __ BIND(is_double);
-  __ movdbl(Address(c_rarg0, 0), xmm0);
+  __ movdbl(Address(r13, 0), xmm0);
   __ jmp(exit);
 
   // record the stub entry and end plus the auxiliary entry
@@ -618,6 +638,101 @@ address StubGenerator::generate_verify_mxcsr() {
     __ addptr(rsp, wordSize);
     __ pop_ppx(rax);
   }
+
+  __ ret(0);
+
+  // record the stub entry and end
+  store_archive_data(stub_id, start, __ pc());
+
+  return start;
+}
+
+address StubGenerator::generate_hf2i_fixup() {
+  StubId stub_id = StubId::stubgen_hf2i_fixup_id;
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == 1, "sanity check");
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
+    return start;
+  }
+  StubCodeMark mark(this, stub_id);
+  Address inout(rsp, 5 * wordSize); // return address + 4 saves
+
+  start = __ pc();
+
+  Label L;
+
+  __ push_ppx(rax);
+  __ push_ppx(c_rarg3);
+  __ push_ppx(c_rarg2);
+  __ push_ppx(c_rarg1);
+
+  __ movl(rax, 0x7c00);
+  __ xorl(c_rarg3, c_rarg3);
+  __ movl(c_rarg2, inout);
+  __ movl(c_rarg1, c_rarg2);
+  __ andl(c_rarg1, 0x7fff);
+  __ cmpl(rax, c_rarg1); // NaN? -> 0
+  __ jcc(Assembler::negative, L);
+  __ testl(c_rarg2, c_rarg2); // signed ? min_jint : max_jint
+  __ movl(c_rarg3, 0x80000000);
+  __ movl(rax, 0x7fffffff);
+  __ cmovl(Assembler::positive, c_rarg3, rax);
+
+  __ bind(L);
+  __ movptr(inout, c_rarg3);
+
+  __ pop_ppx(c_rarg1);
+  __ pop_ppx(c_rarg2);
+  __ pop_ppx(c_rarg3);
+  __ pop_ppx(rax);
+
+  __ ret(0);
+
+  // record the stub entry and end
+  store_archive_data(stub_id, start, __ pc());
+
+  return start;
+}
+
+address StubGenerator::generate_hf2l_fixup() {
+  StubId stub_id = StubId::stubgen_hf2l_fixup_id;
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == 1, "sanity check");
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
+    return start;
+  }
+  StubCodeMark mark(this, stub_id);
+  Address inout(rsp, 5 * wordSize); // return address + 4 saves
+  start = __ pc();
+
+  Label L;
+
+  __ push_ppx(rax);
+  __ push_ppx(c_rarg3);
+  __ push_ppx(c_rarg2);
+  __ push_ppx(c_rarg1);
+
+  __ movl(rax, 0x7c00);
+  __ xorq(c_rarg3, c_rarg3);
+  __ movl(c_rarg2, inout);
+  __ movl(c_rarg1, c_rarg2);
+  __ andl(c_rarg1, 0x7fff);
+  __ cmpl(rax, c_rarg1); // NaN? -> 0
+  __ jcc(Assembler::negative, L);
+  __ testl(c_rarg2, c_rarg2); // signed ? min_jlong : max_jlong
+  __ mov64(c_rarg3, 0x8000000000000000);
+  __ mov64(rax, 0x7fffffffffffffff);
+  __ cmov(Assembler::positive, c_rarg3, rax);
+
+  __ bind(L);
+  __ movptr(inout, c_rarg3);
+
+  __ pop_ppx(c_rarg1);
+  __ pop_ppx(c_rarg2);
+  __ pop_ppx(c_rarg3);
+  __ pop_ppx(rax);
 
   __ ret(0);
 
@@ -1307,6 +1422,65 @@ address StubGenerator::generate_vector_byte_perm_mask() {
   // record the stub entry and end
   store_archive_data(stub_id, start, __ pc());
 
+  return start;
+}
+
+// 3 * 32 matrices: logical-left, logical-right, arithmetic-right, counts 0..31.
+address StubGenerator::generate_vector_byte_shift_gfni_matrix() {
+  StubId stub_id = StubId::stubgen_vector_byte_shift_gfni_matrix_id;
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == 1, "sanity check");
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
+    return start;
+  }
+  __ align(CodeEntryAlignment);
+  StubCodeMark mark(this, stub_id);
+  start = __ pc();
+
+  // Counts 0..7. Counts 8..31 have shifted the byte out of the low 8 bits.
+  static const uint64_t mats[3][8] = {
+    // logical left
+    { 0x0102040810204080ULL,
+      0x0001020408102040ULL,
+      0x0000010204081020ULL,
+      0x0000000102040810ULL,
+      0x0000000001020408ULL,
+      0x0000000000010204ULL,
+      0x0000000000000102ULL,
+      0x0000000000000001ULL },
+    // logical right
+    { 0x0102040810204080ULL,
+      0x0204081020408000ULL,
+      0x0408102040800000ULL,
+      0x0810204080000000ULL,
+      0x1020408000000000ULL,
+      0x2040800000000000ULL,
+      0x4080000000000000ULL,
+      0x8000000000000000ULL },
+    // arithmetic right
+    { 0x0102040810204080ULL,
+      0x0204081020408080ULL,
+      0x0408102040808080ULL,
+      0x0810204080808080ULL,
+      0x1020408080808080ULL,
+      0x2040808080808080ULL,
+      0x4080808080808080ULL,
+      0x8080808080808080ULL }
+  };
+  static const uint64_t saturated[3] = {
+    0,                       // logical left
+    0,                       // logical right
+    0x8080808080808080ULL    // arithmetic right, sign fill
+  };
+  for (int kind = 0; kind < 3; kind++) {
+    for (int n = 0; n < 32; n++) {
+      uint64_t m = (n < 8) ? mats[kind][n] : saturated[kind];
+      __ emit_data64((jlong)m, relocInfo::none);
+    }
+  }
+
+  store_archive_data(stub_id, start, __ pc());
   return start;
 }
 
@@ -3221,6 +3395,10 @@ address StubGenerator::generate_base64_decodeBlock() {
     __ BIND(L_finalBit);
     // Now have 1 to 63 bytes left to decode
 
+    // A padded Base64 tail shorter than one complete block is handled by Java.
+    __ cmpl(length, 4);
+    __ jcc(Assembler::less, L_bruteForce);
+
     // I was going to let Java take care of the final fragment
     // however it will repeatedly call this routine for every 4 bytes
     // of input data, so handle the rest here.
@@ -4370,6 +4548,67 @@ address StubGenerator::generate_floatToFloat16() {
   return start;
 }
 
+static void save_return_registers(MacroAssembler* masm) {
+  masm->push_ppx(rax);
+  if (ValueTypeReturnedAsFields) {
+    masm->push(rdi);
+    masm->push(rsi);
+    masm->push(rdx);
+    masm->push(rcx);
+    masm->push(r8);
+    masm->push(r9);
+  }
+  masm->push_d(xmm0);
+  if (ValueTypeReturnedAsFields) {
+    masm->push_d(xmm1);
+    masm->push_d(xmm2);
+    masm->push_d(xmm3);
+    masm->push_d(xmm4);
+    masm->push_d(xmm5);
+    masm->push_d(xmm6);
+    masm->push_d(xmm7);
+  }
+#ifdef ASSERT
+  masm->movq(rax, 0xBADC0FFE);
+  masm->movq(rdi, rax);
+  masm->movq(rsi, rax);
+  masm->movq(rdx, rax);
+  masm->movq(rcx, rax);
+  masm->movq(r8, rax);
+  masm->movq(r9, rax);
+  masm->movq(xmm0, rax);
+  masm->movq(xmm1, rax);
+  masm->movq(xmm2, rax);
+  masm->movq(xmm3, rax);
+  masm->movq(xmm4, rax);
+  masm->movq(xmm5, rax);
+  masm->movq(xmm6, rax);
+  masm->movq(xmm7, rax);
+#endif
+}
+
+static void restore_return_registers(MacroAssembler* masm) {
+  if (ValueTypeReturnedAsFields) {
+    masm->pop_d(xmm7);
+    masm->pop_d(xmm6);
+    masm->pop_d(xmm5);
+    masm->pop_d(xmm4);
+    masm->pop_d(xmm3);
+    masm->pop_d(xmm2);
+    masm->pop_d(xmm1);
+  }
+  masm->pop_d(xmm0);
+  if (ValueTypeReturnedAsFields) {
+    masm->pop(r9);
+    masm->pop(r8);
+    masm->pop(rcx);
+    masm->pop(rdx);
+    masm->pop(rsi);
+    masm->pop(rdi);
+  }
+  masm->pop_ppx(rax);
+}
+
 address StubGenerator::generate_cont_thaw(StubId stub_id) {
   if (!Continuations::enabled()) return nullptr;
 
@@ -4427,8 +4666,7 @@ address StubGenerator::generate_cont_thaw(StubId stub_id) {
 
   if (return_barrier) {
     // Preserve possible return value from a method returning to the return barrier.
-    __ push_ppx(rax);
-    __ push_d(xmm0);
+    save_return_registers(_masm);
   }
 
   __ movptr(c_rarg0, r15_thread);
@@ -4439,8 +4677,7 @@ address StubGenerator::generate_cont_thaw(StubId stub_id) {
   if (return_barrier) {
     // Restore return value from a method returning to the return barrier.
     // No safepoint in the call to thaw, so even an oop return value should be OK.
-    __ pop_d(xmm0);
-    __ pop_ppx(rax);
+    restore_return_registers(_masm);
   }
 
 #ifdef ASSERT
@@ -4466,8 +4703,7 @@ address StubGenerator::generate_cont_thaw(StubId stub_id) {
 
   if (return_barrier) {
     // Preserve possible return value from a method returning to the return barrier. (Again.)
-    __ push_ppx(rax);
-    __ push_d(xmm0);
+    save_return_registers(_masm);
   }
 
   // If we want, we can templatize thaw by kind, and have three different entries.
@@ -4479,8 +4715,7 @@ address StubGenerator::generate_cont_thaw(StubId stub_id) {
   if (return_barrier) {
     // Restore return value from a method returning to the return barrier. (Again.)
     // No safepoint in the call to thaw, so even an oop return value should be OK.
-    __ pop_d(xmm0);
-    __ pop_ppx(rax);
+    restore_return_registers(_masm);
   } else {
     // Return 0 (success) from doYield.
     __ xorptr(rax, rax);
@@ -4757,6 +4992,8 @@ void StubGenerator::generate_initial_stubs() {
   // platform dependent
   StubRoutines::x86::_verify_mxcsr_entry    = generate_verify_mxcsr();
 
+  StubRoutines::x86::_hf2i_fixup            = generate_hf2i_fixup();
+  StubRoutines::x86::_hf2l_fixup            = generate_hf2l_fixup();
   StubRoutines::x86::_f2i_fixup             = generate_f2i_fixup();
   StubRoutines::x86::_f2l_fixup             = generate_f2l_fixup();
   StubRoutines::x86::_d2i_fixup             = generate_d2i_fixup();
@@ -4842,6 +5079,7 @@ void StubGenerator::generate_compiler_stubs() {
   StubRoutines::x86::_vector_int_mask_cmp_bits = generate_vector_mask(StubId::stubgen_vector_int_mask_cmp_bits_id, 0x0000000100000001);
   StubRoutines::x86::_vector_short_to_byte_mask = generate_vector_mask(StubId::stubgen_vector_short_to_byte_mask_id, 0x00ff00ff00ff00ff);
   StubRoutines::x86::_vector_byte_perm_mask = generate_vector_byte_perm_mask();
+  StubRoutines::x86::_vector_byte_shift_gfni_matrix = generate_vector_byte_shift_gfni_matrix();
   StubRoutines::x86::_vector_int_to_byte_mask = generate_vector_mask(StubId::stubgen_vector_int_to_byte_mask_id, 0x000000ff000000ff);
   StubRoutines::x86::_vector_int_to_short_mask = generate_vector_mask(StubId::stubgen_vector_int_to_short_mask_id, 0x0000ffff0000ffff);
   StubRoutines::x86::_vector_32_bit_mask = generate_vector_custom_i32(StubId::stubgen_vector_32_bit_mask_id, Assembler::AVX_512bit,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package com.sun.security.sasl.digest;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.StringTokenizer;
 import java.util.ArrayList;
@@ -619,7 +620,7 @@ final class DigestMD5Server extends DigestMD5Base implements SaslServer {
                     "DIGEST-MD5: problem duplicating client response", e);
             }
 
-            if (!Arrays.equals(responseFromClient, expectedResponse)) {
+            if (!MessageDigest.isEqual(responseFromClient, expectedResponse)) {
                 throw new SaslException("DIGEST-MD5: digest response format " +
                     "violation. Mismatched response.");
             }

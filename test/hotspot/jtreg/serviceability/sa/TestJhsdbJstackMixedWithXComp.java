@@ -37,33 +37,36 @@ import jtreg.SkippedException;
 
 /**
  * @test id=xcomp
- * @bug 8370176
+ * @bug 8370176 8390621 8391637
  * @requires vm.hasSA
  * @requires vm.gc != "Z"
  * @requires os.family == "linux"
- * @requires (os.arch == "amd64") | (os.arch == "aarch64")
+ * @requires (os.arch == "amd64") | (os.arch == "aarch64") | (os.arch == "riscv64")
+ * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @library /test/lib
  * @run driver TestJhsdbJstackMixedWithXComp
  */
 
 /**
  * @test id=xcomp-preserve-frame-pointer
- * @bug 8370176
+ * @bug 8370176 8390621 8391637
  * @requires vm.hasSA
  * @requires vm.gc != "Z"
  * @requires os.family == "linux"
- * @requires (os.arch == "amd64") | (os.arch == "aarch64")
+ * @requires (os.arch == "amd64") | (os.arch == "aarch64") | (os.arch == "riscv64")
+ * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @library /test/lib
  * @run driver TestJhsdbJstackMixedWithXComp -XX:+PreserveFramePointer
  */
 
 /**
  * @test id=xcomp-disable-tiered-compilation
- * @bug 8370176
+ * @bug 8370176 8390621 8391637
  * @requires vm.hasSA
  * @requires vm.gc != "Z"
  * @requires os.family == "linux"
- * @requires (os.arch == "amd64") | (os.arch == "aarch64")
+ * @requires (os.arch == "amd64") | (os.arch == "aarch64") | (os.arch == "riscv64")
+ * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @library /test/lib
  * @run driver TestJhsdbJstackMixedWithXComp -XX:-TieredCompilation
  */
@@ -115,7 +118,14 @@ public class TestJhsdbJstackMixedWithXComp {
 
     public static void main(String... args) throws Exception {
         if (Platform.isMusl()) {
-            throw new SkippedException("This test does not work on musl libc.");
+            if (!Platform.isX64()) {
+                throw new SkippedException("This platform is not supported.");
+            }
+
+            var libc = SATestUtils.getLibCPath();
+            if (SATestUtils.getDebugInfo(libc) == null) {
+                throw new SkippedException("libc debug info is not available.");
+            }
         }
 
         SATestUtils.skipIfCannotAttach(); // throws SkippedException if attach not expected to work.

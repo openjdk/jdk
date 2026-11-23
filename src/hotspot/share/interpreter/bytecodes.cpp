@@ -30,6 +30,7 @@
 
 #define JVM_BYTECODES_DO(def)                                                                                                     \
   def(_fast_agetfield            , "fast_agetfield"            , "bJJ"  , nullptr    , T_OBJECT ,  0, true , _getfield          ) \
+  def(_fast_vgetfield            , "fast_vgetfield"            , "bJJ"  , nullptr    , T_OBJECT ,  0, true , _getfield          ) \
   def(_fast_bgetfield            , "fast_bgetfield"            , "bJJ"  , nullptr    , T_INT    ,  0, true , _getfield          ) \
   def(_fast_cgetfield            , "fast_cgetfield"            , "bJJ"  , nullptr    , T_CHAR   ,  0, true , _getfield          ) \
   def(_fast_dgetfield            , "fast_dgetfield"            , "bJJ"  , nullptr    , T_DOUBLE ,  0, true , _getfield          ) \
@@ -39,6 +40,7 @@
   def(_fast_sgetfield            , "fast_sgetfield"            , "bJJ"  , nullptr    , T_SHORT  ,  0, true , _getfield          ) \
                                                                                                                                   \
   def(_fast_aputfield            , "fast_aputfield"            , "bJJ"  , nullptr    , T_OBJECT ,  0, true , _putfield          ) \
+  def(_fast_vputfield            , "fast_vputfield"            , "bJJ"  , nullptr    , T_OBJECT ,  0, true , _putfield          ) \
   def(_fast_bputfield            , "fast_bputfield"            , "bJJ"  , nullptr    , T_INT    ,  0, true , _putfield          ) \
   def(_fast_zputfield            , "fast_zputfield"            , "bJJ"  , nullptr    , T_INT    ,  0, true , _putfield          ) \
   def(_fast_cputfield            , "fast_cputfield"            , "bJJ"  , nullptr    , T_CHAR   ,  0, true , _putfield          ) \

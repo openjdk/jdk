@@ -58,15 +58,10 @@ public class JavaThread extends Thread {
   // JavaThreadStates read from underlying process
   private static int           UNINITIALIZED;
   private static int           NEW;
-  private static int           NEW_TRANS;
   private static int           IN_NATIVE;
-  private static int           IN_NATIVE_TRANS;
   private static int           IN_VM;
-  private static int           IN_VM_TRANS;
   private static int           IN_JAVA;
-  private static int           IN_JAVA_TRANS;
   private static int           BLOCKED;
-  private static int           BLOCKED_TRANS;
 
   private static int           NOT_TERMINATED;
   private static int           EXITING;
@@ -106,15 +101,10 @@ public class JavaThread extends Thread {
 
     UNINITIALIZED     = db.lookupIntConstant("_thread_uninitialized").intValue();
     NEW               = db.lookupIntConstant("_thread_new").intValue();
-    NEW_TRANS         = db.lookupIntConstant("_thread_new_trans").intValue();
     IN_NATIVE         = db.lookupIntConstant("_thread_in_native").intValue();
-    IN_NATIVE_TRANS   = db.lookupIntConstant("_thread_in_native_trans").intValue();
     IN_VM             = db.lookupIntConstant("_thread_in_vm").intValue();
-    IN_VM_TRANS       = db.lookupIntConstant("_thread_in_vm_trans").intValue();
     IN_JAVA           = db.lookupIntConstant("_thread_in_Java").intValue();
-    IN_JAVA_TRANS     = db.lookupIntConstant("_thread_in_Java_trans").intValue();
     BLOCKED           = db.lookupIntConstant("_thread_blocked").intValue();
-    BLOCKED_TRANS     = db.lookupIntConstant("_thread_blocked_trans").intValue();
 
     NOT_TERMINATED    = db.lookupIntConstant("JavaThread::_not_terminated").intValue();
     EXITING           = db.lookupIntConstant("JavaThread::_thread_exiting").intValue();
@@ -293,24 +283,14 @@ public class JavaThread extends Thread {
       return JavaThreadState.UNINITIALIZED;
     } else if (val == NEW) {
       return JavaThreadState.NEW;
-    } else if (val == NEW_TRANS) {
-      return JavaThreadState.NEW_TRANS;
     } else if (val == IN_NATIVE) {
       return JavaThreadState.IN_NATIVE;
-    } else if (val == IN_NATIVE_TRANS) {
-      return JavaThreadState.IN_NATIVE_TRANS;
     } else if (val == IN_VM) {
       return JavaThreadState.IN_VM;
-    } else if (val == IN_VM_TRANS) {
-      return JavaThreadState.IN_VM_TRANS;
     } else if (val == IN_JAVA) {
       return JavaThreadState.IN_JAVA;
-    } else if (val == IN_JAVA_TRANS) {
-      return JavaThreadState.IN_JAVA_TRANS;
     } else if (val == BLOCKED) {
       return JavaThreadState.BLOCKED;
-    } else if (val == BLOCKED_TRANS) {
-      return JavaThreadState.BLOCKED_TRANS;
     } else {
       throw new RuntimeException("Illegal thread state " + val);
     }

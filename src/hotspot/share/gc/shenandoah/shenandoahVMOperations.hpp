@@ -28,7 +28,6 @@
 #include "gc/shared/gcVMOperations.hpp"
 
 class ShenandoahConcurrentGC;
-class ShenandoahDegenGC;
 class ShenandoahFullGC;
 
 // VM_operations for the Shenandoah Collector.
@@ -36,12 +35,12 @@ class ShenandoahFullGC;
 // VM_ShenandoahOperation
 //   - VM_ShenandoahInitMark: initiate concurrent marking
 //   - VM_ShenandoahFinalMarkStartEvac: finish up concurrent marking, and start evacuation
+//   - VM_ShenandoahFinalRoots: finish up roots processing
 //   - VM_ShenandoahInitUpdateRefs: initiate update references
 //   - VM_ShenandoahFinalUpdateRefs: finish up update references
 //   - VM_ShenandoahFinalVerify: final verification at the end of the cycle
 //   - VM_ShenandoahReferenceOperation:
 //       - VM_ShenandoahFullGC: do full GC
-//       - VM_ShenandoahDegeneratedGC: do STW degenerated GC
 
 class VM_ShenandoahOperation : public VM_Operation {
 protected:
@@ -90,15 +89,6 @@ public:
   void doit() override;
 };
 
-class VM_ShenandoahDegeneratedGC: public VM_ShenandoahReferenceOperation {
-  ShenandoahDegenGC* const _gc;
-public:
-  explicit VM_ShenandoahDegeneratedGC(ShenandoahDegenGC* gc);
-  VM_Operation::VMOp_Type type() const override { return VMOp_ShenandoahDegeneratedGC; }
-  const char* name()             const override { return "Shenandoah Degenerated GC"; }
-  void doit() override;
-};
-
 class VM_ShenandoahFullGC : public VM_ShenandoahReferenceOperation {
   GCCause::Cause           _gc_cause;
   ShenandoahFullGC* const  _full_gc;
@@ -107,6 +97,7 @@ public:
   VM_Operation::VMOp_Type type() const override { return VMOp_ShenandoahFullGC; }
   const char* name()             const override { return "Shenandoah Full GC"; }
   void doit() override;
+  bool allow_nested_vm_operations() const override;
 };
 
 class VM_ShenandoahInitUpdateRefs: public VM_ShenandoahOperation {
@@ -124,6 +115,15 @@ public:
   explicit VM_ShenandoahFinalUpdateRefs(ShenandoahConcurrentGC* gc);
   VM_Operation::VMOp_Type type() const override { return VMOp_ShenandoahFinalUpdateRefs; }
   const char* name()             const override { return "Shenandoah Final Update References"; }
+  void doit() override;
+};
+
+class VM_ShenandoahFinalRoots: public VM_ShenandoahOperation {
+  ShenandoahConcurrentGC* const _gc;
+public:
+  explicit VM_ShenandoahFinalRoots(ShenandoahConcurrentGC* gc);
+  VM_Operation::VMOp_Type type() const override { return VMOp_ShenandoahFinalRoots; }
+  const char* name()             const override { return "Shenandoah Final Roots"; }
   void doit() override;
 };
 

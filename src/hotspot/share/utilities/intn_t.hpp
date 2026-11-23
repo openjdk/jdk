@@ -76,7 +76,7 @@ public:
 
   constexpr static int min = std::numeric_limits<unsigned int>::max() << (nbits - 1);
   constexpr static int max = (1 << (nbits - 1)) - 1;
-  static_assert(min < max, "");
+  static_assert(min < max);
 
   constexpr bool operator==(intn_t o) const { return (_v & _mask) == (o._v & _mask); }
   constexpr bool operator!=(intn_t o) const { return !(*this == o); }
@@ -118,7 +118,7 @@ public:
 
   constexpr static int min = 0;
   constexpr static int max = _mask;
-  static_assert(min < max, "");
+  static_assert(min < max);
 
   constexpr bool operator==(uintn_t o) const { return (_v & _mask) == (o._v & _mask); }
   constexpr bool operator!=(uintn_t o) const { return (_v & _mask) != (o._v & _mask); }

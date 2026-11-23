@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -201,7 +201,7 @@ import java.util.concurrent.CountedCompleter;
                         T split = a[(rh = rn >>> 1) + rb];
                         for (int lo = 0; lo < lh; ) {
                             int lm = (lo + lh) >>> 1;
-                            if (c.compare(split, a[lm + lb]) <= 0)
+                            if (c.compare(split, a[lm + lb]) < 0)
                                 lh = lm;
                             else
                                 lo = lm + 1;

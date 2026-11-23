@@ -180,10 +180,11 @@ inline bool G1CMTask::is_below_finger(oop obj, HeapWord* global_finger) const {
 }
 
 inline bool G1CMTask::should_be_sliced(oop obj) {
-  return obj->is_objArray() && ((objArrayOop)obj)->length() >= (int)ObjArrayMarkingStride;
+  return obj->is_array_with_oops() && ((objArrayOop)obj)->length() >= (int)ObjArrayMarkingStride;
 }
 
 inline void G1CMTask::process_array_chunk(objArrayOop obj, size_t start, size_t end) {
+  precond(obj->is_array_with_oops());
   obj->oop_iterate_elements_range(_cm_oop_closure,
                                   checked_cast<int>(start),
                                   checked_cast<int>(end));
@@ -341,8 +342,8 @@ inline bool G1CMTask::make_reference_grey(oop obj) {
   // be pushed on the stack. So, some duplicate work, but no
   // correctness problems.
   if (is_below_finger(obj, global_finger)) {
-    if (obj->is_typeArray()) {
-      // Immediately process arrays of primitive types, rather
+    if (_g1h->can_be_marked_through_immediately(obj)) {
+      // Immediately process arrays of types without oops, rather
       // than pushing on the mark stack.  This keeps us from
       // adding humongous objects to the mark stack that might
       // be reclaimed before the entry is processed - see
@@ -350,8 +351,9 @@ inline bool G1CMTask::make_reference_grey(oop obj) {
       // objects.  The cost of the additional type test is
       // mitigated by avoiding a trip through the mark stack,
       // by only doing a bookkeeping update and avoiding the
-      // actual scan of the object - a typeArray contains no
-      // references, and the metadata is built-in.
+      // actual scan of the object - the object contains no
+      // references (but the metadata must be processed).
+      process_klass(obj->klass());
     } else {
       G1TaskQueueEntry entry(obj);
       push(entry);

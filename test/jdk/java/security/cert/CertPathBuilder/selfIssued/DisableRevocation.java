@@ -36,7 +36,6 @@
  * @run main/othervm DisableRevocation subca
  * @run main/othervm DisableRevocation subci
  * @run main/othervm DisableRevocation alice
- * @enablePreview
  * @author Xuelei Fan
  */
 

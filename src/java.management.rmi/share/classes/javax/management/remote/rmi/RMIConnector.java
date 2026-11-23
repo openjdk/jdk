@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InvalidObjectException;
+import java.io.ObjectInputFilter;
 import java.io.ObjectInputStream;
 import java.io.ObjectStreamClass;
 import java.io.Serializable;
@@ -1779,8 +1780,7 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
         else if (path.startsWith("/stub/"))
             return findRMIServerJRMP(path.substring(6,end), environment);
         else {
-            final String msg = "URL path must begin with /jndi/ or /stub/ " +
-                    "or /ior/: " + path;
+            final String msg = "URL path must begin with /jndi/ or /stub/: " + path;
             throw new MalformedURLException(msg);
         }
     }
@@ -1812,6 +1812,77 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
         return (RMIServer) objref;
     }
 
+    /**
+     * ObjectInputFilter implementation for JMXServiceURL.
+     * Optional filters may be set from the env and System Property.
+     * If not decisive, the default filter is checked.
+     */
+    private static final class JMXURLObjectInputFilter implements ObjectInputFilter {
+
+        // Default filter.  Intentionally does NOT end in "!*", to leave some classes UNDECIDED.
+        private static final String DEFAULT_URL_FILTER_PATTERN =
+            // Permit proxy classes including older style jdk.proxy1.$Proxy0
+            "java.lang.reflect.Proxy;" +
+            "java.rmi.server.RemoteObjectInvocationHandler;" +
+            "jdk.proxy*;" +
+            "java.rmi.server.RemoteStub;" +
+            "java.rmi.server.RemoteObject;" +
+            "javax.management.remote.rmi.RMIServerImpl_Stub;";
+
+        private static final String URL_FILTER_OVERRIDE_PATTERN_NAME = "jmx.remote.rmi.connector.url.filter.pattern";
+
+        private final ObjectInputFilter envFilter;
+
+        private final ObjectInputFilter systemPropertyFilter;
+
+        private final ObjectInputFilter defaultFilter;
+
+        private static ObjectInputFilter filterFromPattern(String pattern) {
+            // createFilter returns null on empty pattern (pattern must not be null)
+            return ObjectInputFilter.Config.createFilter(pattern != null ? pattern : "");
+        }
+
+        public JMXURLObjectInputFilter(Map<String, ?> env) {
+            envFilter = filterFromPattern((String) env.get(URL_FILTER_OVERRIDE_PATTERN_NAME));
+            systemPropertyFilter = filterFromPattern(System.getProperty(URL_FILTER_OVERRIDE_PATTERN_NAME));
+            defaultFilter = ObjectInputFilter.Config.createFilter(DEFAULT_URL_FILTER_PATTERN);
+        }
+
+        @Override
+        public Status checkInput(FilterInfo info) {
+            Status status = Status.UNDECIDED;
+            // Check custom filters, if set.  Try next filter if UNDECIDED.
+            if (envFilter != null) {
+                status = envFilter.checkInput(info);
+                if (status != Status.UNDECIDED) {
+                    return status;
+                }
+            }
+            if (systemPropertyFilter != null) {
+                status = systemPropertyFilter.checkInput(info);
+                if (status != Status.UNDECIDED) {
+                    return status;
+                }
+            }
+            status = defaultFilter.checkInput(info);
+            if (status != Status.UNDECIDED) {
+                return status;
+            }
+            // Finally, permit client socket factory or RMIServer, to avoid requiring an exhaustive filter.
+            // Otherwise, return REJECTED.
+            Class<?> c = info.serialClass();
+            if (c == null) {
+                return Status.UNDECIDED;
+            }
+            if (RMIClientSocketFactory.class.isAssignableFrom(c)
+                || RMIServer.class.isAssignableFrom(c)) {
+                return Status.ALLOWED;
+            } else {
+                return Status.REJECTED;
+            }
+        }
+    }
+
     private RMIServer findRMIServerJRMP(String base64, Map<String, ?> env)
         throws IOException {
         final byte[] serialized;
@@ -1828,13 +1899,16 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
                 (loader == null) ?
                     new ObjectInputStream(bin) :
                     new ObjectInputStreamWithLoader(bin, loader);
+
+        oin.setObjectInputFilter(new JMXURLObjectInputFilter(env));
+
         final Object stub;
         try {
             stub = oin.readObject();
         } catch (ClassNotFoundException e) {
             throw new MalformedURLException("Class not found: " + e);
         }
-        return (RMIServer)stub;
+        return (RMIServer) stub;
     }
 
     private static final class ObjectInputStreamWithLoader

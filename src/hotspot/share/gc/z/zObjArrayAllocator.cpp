@@ -26,14 +26,21 @@
 #include "gc/z/zThreadLocalData.hpp"
 #include "gc/z/zUtils.inline.hpp"
 #include "oops/arrayKlass.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 ZObjArrayAllocator::ZObjArrayAllocator(Klass* klass, size_t word_size, int length, bool do_zero, Thread* thread)
   : ObjArrayAllocator(klass, word_size, length, do_zero, thread) {}
 
 void ZObjArrayAllocator::yield_for_safepoint() const {
   ThreadBlockInVM tbivm(JavaThread::cast(_thread));
+}
+
+static bool is_oop_containing_flat_array(ArrayKlass* ak) {
+  return ak->is_flatArray_klass() &&
+         FlatArrayKlass::cast(ak)->contains_oops();
 }
 
 oop ZObjArrayAllocator::initialize(HeapWord* mem) const {
@@ -51,9 +58,30 @@ oop ZObjArrayAllocator::initialize(HeapWord* mem) const {
   const size_t segment_max = ZUtils::bytes_to_words(64 * K);
 
   if (_word_size <= segment_max) {
-    // To small to use segmented clearing
+    // Too small to use segmented clearing
     return ObjArrayAllocator::initialize(mem);
   }
+
+  ArrayKlass* const ak = ArrayKlass::cast(_klass);
+
+  if (is_oop_containing_flat_array(ak)) {
+    // Flat arrays containing oops are not supported in ZGC without relying on
+    // internal-only features such as loose-consistency and null-restriction.
+    // A value object that contains an oop and a null-marker will always exceed
+    // 64 bits when using ZGC. As a result, such objects will not be flattened
+    // in practice due to the 64-bit atomicity limit.
+    //
+    // We only need to support flat arrays containing oops when/if value objects
+    // can be user-declared with loose-consistency and/or null-restriction.
+    return ObjArrayAllocator::initialize(mem);
+  }
+
+  const BasicType element_type = ak->element_type();
+
+  // Flat arrays containing oops are not supported and only contain primitives
+  // from here on out.
+  const bool is_oop_array = element_type != T_FLAT_ELEMENT &&
+                            is_reference_type(element_type);
 
   // Segmented clearing
 
@@ -66,7 +94,11 @@ oop ZObjArrayAllocator::initialize(HeapWord* mem) const {
   if (UseCompactObjectHeaders) {
     oopDesc::release_set_mark(mem, _klass->prototype_header().set_marked());
   } else {
-    arrayOopDesc::set_mark(mem, markWord::prototype().set_marked());
+    if (Arguments::is_valhalla_enabled()) {
+      arrayOopDesc::set_mark(mem, _klass->prototype_header().set_marked());
+    } else {
+      arrayOopDesc::set_mark(mem, markWord::prototype().set_marked());
+    }
     arrayOopDesc::release_set_klass(mem, _klass);
   }
   assert(_length >= 0, "length should be non-negative");
@@ -79,7 +111,6 @@ oop ZObjArrayAllocator::initialize(HeapWord* mem) const {
   // over such objects.
   ZThreadLocalData::set_invisible_root(_thread, (zaddress_unsafe*)&mem);
 
-  const BasicType element_type = ArrayKlass::cast(_klass)->element_type();
   const size_t base_offset_in_bytes = (size_t)arrayOopDesc::base_offset_in_bytes(element_type);
   const size_t process_start_offset_in_bytes = align_up(base_offset_in_bytes, (size_t)BytesPerWord);
 
@@ -87,7 +118,7 @@ oop ZObjArrayAllocator::initialize(HeapWord* mem) const {
     // initialize_memory can only fill word aligned memory,
     // fill the first 4 bytes here.
     assert(process_start_offset_in_bytes - base_offset_in_bytes == 4, "Must be 4-byte aligned");
-    assert(!is_reference_type(element_type), "Only TypeArrays can be 4-byte aligned");
+    assert(!is_oop_array, "Only TypeArrays can be 4-byte aligned");
     *reinterpret_cast<int*>(reinterpret_cast<char*>(mem) + base_offset_in_bytes) = 0;
   }
 
@@ -126,14 +157,14 @@ oop ZObjArrayAllocator::initialize(HeapWord* mem) const {
       // barriers trigger slow paths for this.
       const uintptr_t colored_null = seen_gc_safepoint ? (ZPointerStoreGoodMask | ZPointerRememberedMask)
                                                        : ZPointerStoreGoodMask;
-      const uintptr_t fill_value = is_reference_type(element_type) ? colored_null : 0;
+      const uintptr_t fill_value = is_oop_array ? colored_null : 0;
       ZUtils::fill(start, segment, fill_value);
 
       // Safepoint
       yield_for_safepoint();
 
       // Deal with safepoints
-      if (is_reference_type(element_type) && !seen_gc_safepoint && gc_safepoint_happened()) {
+      if (is_oop_array && !seen_gc_safepoint && gc_safepoint_happened()) {
         // The first time we observe a GC safepoint in the yield point,
         // we have to restart processing with 11 remembered bits.
         seen_gc_safepoint = true;
@@ -156,7 +187,7 @@ oop ZObjArrayAllocator::initialize(HeapWord* mem) const {
   ZThreadLocalData::clear_invisible_root(_thread);
 
   // Signal to the ZIterator that this is no longer an invisible root
-  if (UseCompactObjectHeaders) {
+  if (UseCompactObjectHeaders || Arguments::is_valhalla_enabled()) {
     oopDesc::release_set_mark(mem, _klass->prototype_header());
   } else {
     oopDesc::release_set_mark(mem, markWord::prototype());

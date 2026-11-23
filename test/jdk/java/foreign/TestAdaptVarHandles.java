@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -24,22 +24,23 @@
 
 /*
  * @test
- * @run testng/othervm -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=true -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=false -Xverify:all TestAdaptVarHandles
- * @run testng/othervm -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=true -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=true -Xverify:all TestAdaptVarHandles
- * @run testng/othervm -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=false -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=false -Xverify:all TestAdaptVarHandles
- * @run testng/othervm -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=false -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=true -Xverify:all TestAdaptVarHandles
+ * @run junit/othervm -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=true -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=false -Xverify:all TestAdaptVarHandles
+ * @run junit/othervm -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=true -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=true -Xverify:all TestAdaptVarHandles
+ * @run junit/othervm -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=false -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=false -Xverify:all TestAdaptVarHandles
+ * @run junit/othervm -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=false -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=true -Xverify:all TestAdaptVarHandles
  */
 
 import java.lang.foreign.*;
 
-import org.testng.annotations.*;
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.VarHandle;
 import java.util.List;
+
+import org.junit.jupiter.api.Test;
 
 public class TestAdaptVarHandles {
 
@@ -98,15 +99,15 @@ public class TestAdaptVarHandles {
         VarHandle i2SHandle = MethodHandles.filterValue(intHandle, S2I, I2S);
         i2SHandle.set(segment, 0L, "1");
         String oldValue = (String)i2SHandle.getAndAdd(segment, 0L, "42");
-        assertEquals(oldValue, "1");
+        assertEquals("1", oldValue);
         String value = (String)i2SHandle.get(segment, 0L);
-        assertEquals(value, "43");
+        assertEquals("43", value);
         boolean swapped = (boolean)i2SHandle.compareAndSet(segment, 0L, "43", "12");
         assertTrue(swapped);
         oldValue = (String)i2SHandle.compareAndExchange(segment, 0L, "12", "42");
-        assertEquals(oldValue, "12");
+        assertEquals("12", oldValue);
         value = (String)i2SHandle.toMethodHandle(VarHandle.AccessMode.GET).invokeExact(segment, 0L);
-        assertEquals(value, "42");
+        assertEquals("42", value);
     }
 
     @Test
@@ -120,15 +121,15 @@ public class TestAdaptVarHandles {
         i2SHandle = MethodHandles.insertCoordinates(i2SHandle, 2, "a", "b");
         i2SHandle.set(segment, 0L, "1");
         String oldValue = (String)i2SHandle.getAndAdd(segment, 0L, "42");
-        assertEquals(oldValue, "ab1");
+        assertEquals("ab1", oldValue);
         String value = (String)i2SHandle.get(segment, 0L);
-        assertEquals(value, "ab43");
+        assertEquals("ab43", value);
         boolean swapped = (boolean)i2SHandle.compareAndSet(segment, 0L, "43", "12");
         assertTrue(swapped);
         oldValue = (String)i2SHandle.compareAndExchange(segment, 0L, "12", "42");
-        assertEquals(oldValue, "ab12");
+        assertEquals("ab12", oldValue);
         value = (String)i2SHandle.toMethodHandle(VarHandle.AccessMode.GET).invokeExact(segment, 0L);
-        assertEquals(value, "ab42");
+        assertEquals("ab42", value);
     }
 
     @Test
@@ -140,72 +141,88 @@ public class TestAdaptVarHandles {
         VarHandle i2SHandle = MethodHandles.filterValue(intHandle, O2I, I2O);
         i2SHandle.set(segment, 0L, "1");
         String oldValue = (String)i2SHandle.getAndAdd(segment, 0L, "42");
-        assertEquals(oldValue, "1");
+        assertEquals("1", oldValue);
         String value = (String)i2SHandle.get(segment, 0L);
-        assertEquals(value, "43");
+        assertEquals("43", value);
         boolean swapped = (boolean)i2SHandle.compareAndSet(segment, 0L, "43", "12");
         assertTrue(swapped);
         oldValue = (String)i2SHandle.compareAndExchange(segment, 0L, "12", "42");
-        assertEquals(oldValue, "12");
+        assertEquals("12", oldValue);
         value = (String)(Object)i2SHandle.toMethodHandle(VarHandle.AccessMode.GET).invokeExact(segment, 0L);
-        assertEquals(value, "42");
+        assertEquals("42", value);
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void testBadFilterCarrier() {
-        MethodHandles.filterValue(floatHandle, S2I, I2S);
+        assertThrows(IllegalArgumentException.class, () -> {
+            MethodHandles.filterValue(floatHandle, S2I, I2S);
+        });
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void testBadFilterUnboxArity() {
         VarHandle floatHandle = ValueLayout.JAVA_INT.varHandle();
-        MethodHandles.filterValue(floatHandle, S2I.bindTo(""), I2S);
+        assertThrows(IllegalArgumentException.class, () -> {
+            MethodHandles.filterValue(floatHandle, S2I.bindTo(""), I2S);
+        });
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void testBadFilterBoxArity() {
         VarHandle intHandle = ValueLayout.JAVA_INT.varHandle();
-        MethodHandles.filterValue(intHandle, S2I, I2S.bindTo(42));
+        assertThrows(IllegalArgumentException.class, () -> {
+            MethodHandles.filterValue(intHandle, S2I, I2S.bindTo(42));
+        });
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void testBadFilterBoxPrefixCoordinates() {
         VarHandle intHandle = ValueLayout.JAVA_INT.varHandle();
-        MethodHandles.filterValue(intHandle,
-                MethodHandles.dropArguments(S2I, 1, int.class),
-                MethodHandles.dropArguments(I2S, 1, long.class));
+        assertThrows(IllegalArgumentException.class, () -> {
+            MethodHandles.filterValue(intHandle,
+                    MethodHandles.dropArguments(S2I, 1, int.class),
+                    MethodHandles.dropArguments(I2S, 1, long.class));
+        });
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void testBadFilterBoxException() {
         VarHandle intHandle = ValueLayout.JAVA_INT.varHandle();
-        MethodHandles.filterValue(intHandle, I2S, S2L_EX);
+        assertThrows(IllegalArgumentException.class, () -> {
+            MethodHandles.filterValue(intHandle, I2S, S2L_EX);
+        });
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void testBadFilterUnboxException() {
         VarHandle intHandle = ValueLayout.JAVA_INT.varHandle();
-        MethodHandles.filterValue(intHandle, S2L_EX, I2S);
+        assertThrows(IllegalArgumentException.class, () -> {
+            MethodHandles.filterValue(intHandle, S2L_EX, I2S);
+        });
     }
 
-    @Test(expectedExceptions = IllegalStateException.class)
+    @Test
     public void testBadFilterBoxHandleException() {
         VarHandle intHandle = ValueLayout.JAVA_INT.varHandle();
         VarHandle vh = MethodHandles.filterValue(intHandle, S2I, I2S_EX);
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment seg = arena.allocate(ValueLayout.JAVA_INT);
             vh.set(seg, 0L, "42");
-            String x = (String) vh.get(seg, 0L); // should throw
+            assertThrows(IllegalStateException.class, () -> {
+                String x = (String) vh.get(seg, 0L);
+            });
         }
     }
 
-    @Test(expectedExceptions = IllegalStateException.class)
+    @Test
     public void testBadFilterUnboxHandleException() {
         VarHandle intHandle = ValueLayout.JAVA_INT.varHandle();
         VarHandle vh = MethodHandles.filterValue(intHandle, S2I_EX, I2S);
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment seg = arena.allocate(ValueLayout.JAVA_INT);
-            vh.set(seg, 0L, "42"); // should throw
+            assertThrows(IllegalStateException.class, () -> {
+                vh.set(seg, 0L, "42"); // should throw
+            });
         }
     }
 
@@ -217,40 +234,50 @@ public class TestAdaptVarHandles {
         VarHandle intHandle_longIndex = MethodHandles.filterCoordinates(intHandleIndexed, 0, BASE_ADDR, S2L);
         intHandle_longIndex.set(segment, "0", 1);
         int oldValue = (int)intHandle_longIndex.getAndAdd(segment, "0", 42);
-        assertEquals(oldValue, 1);
+        assertEquals(1, oldValue);
         int value = (int)intHandle_longIndex.get(segment, "0");
-        assertEquals(value, 43);
+        assertEquals(43, value);
         boolean swapped = (boolean)intHandle_longIndex.compareAndSet(segment, "0", 43, 12);
         assertTrue(swapped);
         oldValue = (int)intHandle_longIndex.compareAndExchange(segment, "0", 12, 42);
-        assertEquals(oldValue, 12);
+        assertEquals(12, oldValue);
         value = (int)intHandle_longIndex.toMethodHandle(VarHandle.AccessMode.GET).invokeExact(segment, "0");
-        assertEquals(value, 42);
+        assertEquals(42, value);
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void testBadFilterCoordinatesNegativePos() {
-        MethodHandles.filterCoordinates(intHandle, -1, SUM_OFFSETS);
+        assertThrows(IllegalArgumentException.class, () -> {
+            MethodHandles.filterCoordinates(intHandle, -1, SUM_OFFSETS);
+        });
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void testBadFilterCoordinatesPosTooBig() {
-        MethodHandles.filterCoordinates(intHandle, 1, SUM_OFFSETS);
+        assertThrows(IllegalArgumentException.class, () -> {
+            MethodHandles.filterCoordinates(intHandle, 1, SUM_OFFSETS);
+        });
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void testBadFilterCoordinatesWrongFilterType() {
-        MethodHandles.filterCoordinates(intHandleIndexed, 1, S2I);
+        assertThrows(IllegalArgumentException.class, () -> {
+            MethodHandles.filterCoordinates(intHandleIndexed, 1, S2I);
+        });
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void testBadFilterCoordinatesWrongFilterException() {
-        MethodHandles.filterCoordinates(intHandleIndexed, 1, S2L_EX);
+        assertThrows(IllegalArgumentException.class, () -> {
+            MethodHandles.filterCoordinates(intHandleIndexed, 1, S2L_EX);
+        });
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void testBadFilterCoordinatesTooManyFilters() {
-        MethodHandles.filterCoordinates(intHandleIndexed, 1, S2L, S2L);
+        assertThrows(IllegalArgumentException.class, () -> {
+            MethodHandles.filterCoordinates(intHandleIndexed, 1, S2L, S2L);
+        });
     }
 
     @Test
@@ -261,35 +288,43 @@ public class TestAdaptVarHandles {
         VarHandle intHandle_longIndex = MethodHandles.insertCoordinates(intHandleIndexed, 0, segment, 0L);
         intHandle_longIndex.set(1);
         int oldValue = (int)intHandle_longIndex.getAndAdd(42);
-        assertEquals(oldValue, 1);
+        assertEquals(1, oldValue);
         int value = (int)intHandle_longIndex.get();
-        assertEquals(value, 43);
+        assertEquals(43, value);
         boolean swapped = (boolean)intHandle_longIndex.compareAndSet(43, 12);
         assertTrue(swapped);
         oldValue = (int)intHandle_longIndex.compareAndExchange(12, 42);
-        assertEquals(oldValue, 12);
+        assertEquals(12, oldValue);
         value = (int)intHandle_longIndex.toMethodHandle(VarHandle.AccessMode.GET).invokeExact();
-        assertEquals(value, 42);
+        assertEquals(42, value);
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void testBadInsertCoordinatesNegativePos() {
-        MethodHandles.insertCoordinates(intHandle, -1, 42);
+        assertThrows(IllegalArgumentException.class, () -> {
+            MethodHandles.insertCoordinates(intHandle, -1, 42);
+        });
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void testBadInsertCoordinatesPosTooBig() {
-        MethodHandles.insertCoordinates(intHandle, 1, 42);
+        assertThrows(IllegalArgumentException.class, () -> {
+            MethodHandles.insertCoordinates(intHandle, 1, 42);
+        });
     }
 
-    @Test(expectedExceptions = ClassCastException.class)
+    @Test
     public void testBadInsertCoordinatesWrongCoordinateType() {
-        MethodHandles.insertCoordinates(intHandleIndexed, 1, "Hello");
+        assertThrows(ClassCastException.class, () -> {
+            MethodHandles.insertCoordinates(intHandleIndexed, 1, "Hello");
+        });
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void testBadInsertCoordinatesTooManyValues() {
-        MethodHandles.insertCoordinates(intHandleIndexed, 1, 0L, 0L);
+        assertThrows(IllegalArgumentException.class, () -> {
+            MethodHandles.insertCoordinates(intHandleIndexed, 1, 0L, 0L);
+        });
     }
 
     @Test
@@ -301,35 +336,43 @@ public class TestAdaptVarHandles {
                 List.of(long.class, MemorySegment.class), 1, 0);
         intHandle_swap.set(0L, segment, 1);
         int oldValue = (int)intHandle_swap.getAndAdd(0L, segment, 42);
-        assertEquals(oldValue, 1);
+        assertEquals(1, oldValue);
         int value = (int)intHandle_swap.get(0L, segment);
-        assertEquals(value, 43);
+        assertEquals(43, value);
         boolean swapped = (boolean)intHandle_swap.compareAndSet(0L, segment, 43, 12);
         assertTrue(swapped);
         oldValue = (int)intHandle_swap.compareAndExchange(0L, segment, 12, 42);
-        assertEquals(oldValue, 12);
+        assertEquals(12, oldValue);
         value = (int)intHandle_swap.toMethodHandle(VarHandle.AccessMode.GET).invokeExact(0L, segment);
-        assertEquals(value, 42);
+        assertEquals(42, value);
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void testBadPermuteCoordinatesTooManyCoordinates() {
-        MethodHandles.permuteCoordinates(intHandle, List.of(int.class, int.class), new int[2]);
+        assertThrows(IllegalArgumentException.class, () -> {
+            MethodHandles.permuteCoordinates(intHandle, List.of(int.class, int.class), new int[2]);
+        });
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void testBadPermuteCoordinatesTooFewCoordinates() {
-        MethodHandles.permuteCoordinates(intHandle, List.of());
+        assertThrows(IllegalArgumentException.class, () -> {
+            MethodHandles.permuteCoordinates(intHandle, List.of());
+        });
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void testBadPermuteCoordinatesIndexTooBig() {
-        MethodHandles.permuteCoordinates(intHandle, List.of(int.class, int.class), 3);
+        assertThrows(IllegalArgumentException.class, () -> {
+            MethodHandles.permuteCoordinates(intHandle, List.of(int.class, int.class), 3);
+        });
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void testBadPermuteCoordinatesIndexTooSmall() {
-        MethodHandles.permuteCoordinates(intHandle, List.of(int.class, int.class), -1);
+        assertThrows(IllegalArgumentException.class, () -> {
+            MethodHandles.permuteCoordinates(intHandle, List.of(int.class, int.class), -1);
+        });
     }
 
     @Test
@@ -340,41 +383,49 @@ public class TestAdaptVarHandles {
         VarHandle intHandle_sum = MethodHandles.collectCoordinates(intHandleIndexed, 1, SUM_OFFSETS);
         intHandle_sum.set(segment, -2L, 2L, 1);
         int oldValue = (int)intHandle_sum.getAndAdd(segment, -2L, 2L, 42);
-        assertEquals(oldValue, 1);
+        assertEquals(1, oldValue);
         int value = (int)intHandle_sum.get(segment, -2L, 2L);
-        assertEquals(value, 43);
+        assertEquals(43, value);
         boolean swapped = (boolean)intHandle_sum.compareAndSet(segment, -2L, 2L, 43, 12);
         assertTrue(swapped);
         oldValue = (int)intHandle_sum.compareAndExchange(segment, -2L, 2L, 12, 42);
-        assertEquals(oldValue, 12);
+        assertEquals(12, oldValue);
         value = (int)intHandle_sum.toMethodHandle(VarHandle.AccessMode.GET).invokeExact(segment, -2L, 2L);
-        assertEquals(value, 42);
+        assertEquals(42, value);
     }
 
     @Test
     public void testCollectCoordinatesVoidFilterType() {
         VarHandle handle = MethodHandles.collectCoordinates(intHandle, 0, VOID_FILTER);
-        assertEquals(handle.coordinateTypes(), List.of(String.class, MemorySegment.class));
+        assertEquals(List.of(String.class, MemorySegment.class), handle.coordinateTypes());
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void testBadCollectCoordinatesNegativePos() {
-        MethodHandles.collectCoordinates(intHandle, -1, SUM_OFFSETS);
+        assertThrows(IllegalArgumentException.class, () -> {
+            MethodHandles.collectCoordinates(intHandle, -1, SUM_OFFSETS);
+        });
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void testBadCollectCoordinatesPosTooBig() {
-        MethodHandles.collectCoordinates(intHandle, 1, SUM_OFFSETS);
+        assertThrows(IllegalArgumentException.class, () -> {
+            MethodHandles.collectCoordinates(intHandle, 1, SUM_OFFSETS);
+        });
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void testBadCollectCoordinatesWrongFilterType() {
-        MethodHandles.collectCoordinates(intHandle, 0, SUM_OFFSETS);
+        assertThrows(IllegalArgumentException.class, () -> {
+            MethodHandles.collectCoordinates(intHandle, 0, SUM_OFFSETS);
+        });
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void testBadCollectCoordinatesWrongFilterException() {
-        MethodHandles.collectCoordinates(intHandle, 0, S2L_EX);
+        assertThrows(IllegalArgumentException.class, () -> {
+            MethodHandles.collectCoordinates(intHandle, 0, S2L_EX);
+        });
     }
 
     @Test
@@ -385,25 +436,29 @@ public class TestAdaptVarHandles {
         VarHandle intHandle_dummy = MethodHandles.dropCoordinates(intHandleIndexed, 1, float.class, String.class);
         intHandle_dummy.set(segment, 1f, "hello", 0L, 1);
         int oldValue = (int)intHandle_dummy.getAndAdd(segment, 1f, "hello", 0L, 42);
-        assertEquals(oldValue, 1);
+        assertEquals(1, oldValue);
         int value = (int)intHandle_dummy.get(segment, 1f, "hello", 0L);
-        assertEquals(value, 43);
+        assertEquals(43, value);
         boolean swapped = (boolean)intHandle_dummy.compareAndSet(segment, 1f, "hello", 0L, 43, 12);
         assertTrue(swapped);
         oldValue = (int)intHandle_dummy.compareAndExchange(segment, 1f, "hello", 0L, 12, 42);
-        assertEquals(oldValue, 12);
+        assertEquals(12, oldValue);
         value = (int)intHandle_dummy.toMethodHandle(VarHandle.AccessMode.GET).invokeExact(segment, 1f, "hello", 0L);
-        assertEquals(value, 42);
+        assertEquals(42, value);
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void testBadDropCoordinatesNegativePos() {
-        MethodHandles.dropCoordinates(intHandle, -1);
+        assertThrows(IllegalArgumentException.class, () -> {
+            MethodHandles.dropCoordinates(intHandle, -1);
+        });
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void testBadDropCoordinatesPosTooBig() {
-        MethodHandles.dropCoordinates(intHandle, 2);
+        assertThrows(IllegalArgumentException.class, () -> {
+            MethodHandles.dropCoordinates(intHandle, 2);
+        });
     }
 
     //helper methods

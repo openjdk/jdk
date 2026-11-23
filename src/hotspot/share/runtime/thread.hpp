@@ -152,7 +152,7 @@ class Thread: public ThreadShadow {
   }
 
   template <typename T> T* gc_data() {
-    STATIC_ASSERT(sizeof(T) <= sizeof(_gc_data));
+    static_assert(sizeof(T) <= sizeof(_gc_data));
     return reinterpret_cast<T*>(&_gc_data);
   }
 
@@ -666,5 +666,29 @@ inline Thread* Thread::current_or_null_safe() {
   }
   return nullptr;
 }
+
+// A SkipGCALot object is used to elide the usual effect of gc-a-lot
+// over a section of execution by a thread.
+class SkipGCALot : public StackObj {
+  private:
+   bool _saved;
+   Thread* _t;
+
+  public:
+#ifdef ASSERT
+    SkipGCALot(Thread* t) : _t(t) {
+      _saved = _t->skip_gcalot();
+      _t->set_skip_gcalot(true);
+    }
+
+    ~SkipGCALot() {
+      assert(_t->skip_gcalot(), "Save-restore protocol invariant");
+      _t->set_skip_gcalot(_saved);
+    }
+#else
+    SkipGCALot(Thread* t) { }
+    ~SkipGCALot() { }
+#endif
+};
 
 #endif // SHARE_RUNTIME_THREAD_HPP

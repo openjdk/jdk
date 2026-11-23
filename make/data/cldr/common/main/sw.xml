@@ -32,14 +32,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ann">Kiobolo</language>
 			<language type="anp">Kiangika</language>
 			<language type="ar">Kiarabu</language>
-			<language type="ar_001">Kiarabu sanifu</language>
+			<language type="ar_001">Kiarabu Sanifu cha Kisasa</language>
 			<language type="arc">Kiaramu</language>
 			<language type="arn">Kimapuche</language>
 			<language type="arp">Kiarapaho</language>
 			<language type="arq">Kiarabu cha Algeria</language>
 			<language type="ars">Kiarabu cha Najdi</language>
 			<language type="arz">Kiarabu cha Misri</language>
-			<language type="as">Kiassam</language>
+			<language type="as">Kiasami</language>
 			<language type="asa">Kiasu</language>
 			<language type="ast">Kiasturia</language>
 			<language type="atj">Kiatikamekw</language>
@@ -132,8 +132,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="en_GB">Kiingereza (Uingereza)</language>
 			<language type="eo">Kiesperanto</language>
 			<language type="es">Kihispania</language>
-			<language type="es_419">Kihispania (Amerika ya Latini)</language>
-			<language type="es_ES">Kihispania (Ulaya)</language>
+			<language type="es_419">Kihispania cha Amerika ya Latini</language>
+			<language type="es_ES">Kihispania cha Ulaya</language>
+			<language type="es_MX">Kihispania cha Meksiko</language>
 			<language type="et">Kiestonia</language>
 			<language type="eu">Kibaski</language>
 			<language type="ewo">Kiewondo</language>
@@ -201,7 +202,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="it">Kiitaliano</language>
 			<language type="iu">Kiinuktituti</language>
 			<language type="ja">Kijapani</language>
-			<language type="jbo">Lojban</language>
+			<language type="jbo">Kilojbani</language>
 			<language type="jgo">Kingomba</language>
 			<language type="jmc">Kimachame</language>
 			<language type="jv">Kijava</language>
@@ -359,13 +360,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="peo">Kiajemi cha Kale</language>
 			<language type="pis">Kipijini</language>
 			<language type="pl">Kipolandi</language>
+			<language type="pms">Kipiedmonti</language>
 			<language type="pqm">Kimaliseet-Passamaquoddy</language>
 			<language type="prg">Kiprussia</language>
 			<language type="ps">Kipashto</language>
-			<language type="ps" alt="variant">Kipushto</language>
 			<language type="pt">Kireno</language>
-			<language type="pt_BR">Kireno (Brazili)</language>
-			<language type="pt_PT">Kireno (Ulaya)</language>
+			<language type="pt_BR">Kireno cha Brazili</language>
+			<language type="pt_PT">Kireno cha Ulaya</language>
 			<language type="qu">Kikechua</language>
 			<language type="quc">Kʼicheʼ</language>
 			<language type="raj">Kirajasthani</language>
@@ -400,7 +401,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="sg">Kisango</language>
 			<language type="sh">Kiserbia-kroeshia</language>
 			<language type="shi">Kitachelhit</language>
-			<language type="shn">Kishan</language>
+			<language type="shn">Kishani</language>
 			<language type="shu">Kiarabu cha Chad</language>
 			<language type="si">Kisinhala</language>
 			<language type="sk">Kislovakia</language>
@@ -427,7 +428,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="sv">Kiswidi</language>
 			<language type="sw">Kiswahili</language>
 			<language type="swb">Shikomor</language>
-			<language type="syr">Lugha ya Syriac</language>
+			<language type="syr">Kisiria</language>
 			<language type="szl">Kisilesia</language>
 			<language type="ta">Kitamili</language>
 			<language type="tce">Kitutchone cha Kusini</language>
@@ -455,7 +456,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ttm">Kitutchone cha Kaskazini</language>
 			<language type="tum">Kitumbuka</language>
 			<language type="tvl">Kituvalu</language>
-			<language type="tw">Twi</language>
+			<language type="tw">Kitwi</language>
 			<language type="twq">Kitasawak</language>
 			<language type="ty">Kitahiti</language>
 			<language type="tyv">Kituva</language>
@@ -498,6 +499,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="zh">Kichina</language>
 			<language type="zh" alt="menu">Kichina sanifu</language>
 			<language type="zh_Hans">Kichina (Kilichorahisishwa)</language>
+			<language type="zh_Hans" alt="long">Kichina cha Mandarin Kilichorahisishwa</language>
 			<language type="zh_Hant">Kichina cha Jadi</language>
 			<language type="zh_Hant" alt="long">Kichina (cha jadi)</language>
 			<language type="zu">Kizulu</language>
@@ -532,7 +534,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Hant">Cha jadi</script>
 			<script type="Hant" alt="stand-alone">Kihan cha Jadi</script>
 			<script type="Hebr">Kiebrania</script>
-			<script type="Hira">Hiragana</script>
+			<script type="Hira">Kihiragana</script>
 			<script type="Hrkt">Hati za Kijapani</script>
 			<script type="Jpan">Kijapani</script>
 			<script type="Kana">Kikatakana</script>
@@ -568,7 +570,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Zzzz">Hati isiyojulikana</script>
 		</scripts>
 		<territories>
-			<territory type="001">Dunia</territory>
+			<territory type="001">dunia</territory>
 			<territory type="002">Afrika</territory>
 			<territory type="003">Amerika Kaskazini</territory>
 			<territory type="005">Amerika Kusini</territory>
@@ -589,7 +591,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="053">Australasia</territory>
 			<territory type="054">Melanesia</territory>
 			<territory type="057">Eneo la Mikronesia</territory>
-			<territory type="061">Polynesia</territory>
+			<territory type="061">Polinesia</territory>
 			<territory type="142">Asia</territory>
 			<territory type="143">Asia ya Kati</territory>
 			<territory type="145">Asia ya Magharibi</territory>
@@ -624,18 +626,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="BG">Bulgaria</territory>
 			<territory type="BH">Bahareni</territory>
 			<territory type="BI">Burundi</territory>
-			<territory type="BJ">Benin</territory>
+			<territory type="BJ">Benini</territory>
 			<territory type="BL">St. Barthelemy</territory>
 			<territory type="BM">Bermuda</territory>
 			<territory type="BN">Brunei</territory>
 			<territory type="BO">Bolivia</territory>
 			<territory type="BQ">Uholanzi ya Karibiani</territory>
-			<territory type="BR">Brazil</territory>
+			<territory type="BR">Brazili</territory>
 			<territory type="BS">Bahama</territory>
 			<territory type="BT">Bhutan</territory>
 			<territory type="BV">Kisiwa cha Bouvet</territory>
 			<territory type="BW">Botswana</territory>
-			<territory type="BY">Belarus</territory>
+			<territory type="BY">Belarusi</territory>
 			<territory type="BZ">Belize</territory>
 			<territory type="CA">Kanada</territory>
 			<territory type="CC">Visiwa vya Cocos (Keeling)</territory>
@@ -646,7 +648,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="CG" alt="variant">Jamhuri ya Kongo</territory>
 			<territory type="CH">Uswisi</territory>
 			<territory type="CI">Cote d’Ivoire</territory>
-			<territory type="CI" alt="variant">Ivory Coast</territory>
+			<territory type="CI" alt="variant">Kodivaa</territory>
 			<territory type="CK">Visiwa vya Cook</territory>
 			<territory type="CL">Chile</territory>
 			<territory type="CM">Kameruni</territory>
@@ -670,7 +672,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="DO">Jamhuri ya Dominika</territory>
 			<territory type="DZ">Aljeria</territory>
 			<territory type="EA">Ceuta na Melilla</territory>
-			<territory type="EC">Ecuador</territory>
+			<territory type="EC">Ekwado</territory>
 			<territory type="EE">Estonia</territory>
 			<territory type="EG">Misri</territory>
 			<territory type="EH">Sahara Magharibi</territory>
@@ -686,7 +688,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="FM">Mikronesia</territory>
 			<territory type="FO">Visiwa vya Faroe</territory>
 			<territory type="FR">Ufaransa</territory>
-			<territory type="GA">Gabon</territory>
+			<territory type="GA">Goboni</territory>
 			<territory type="GB">Ufalme wa Muungano</territory>
 			<territory type="GD">Grenada</territory>
 			<territory type="GE">Jojia</territory>
@@ -746,11 +748,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="LR">Liberia</territory>
 			<territory type="LS">Lesoto</territory>
 			<territory type="LT">Lithuania</territory>
-			<territory type="LU">Luxembourg</territory>
+			<territory type="LU">Lasembagi</territory>
 			<territory type="LV">Latvia</territory>
 			<territory type="LY">Libya</territory>
-			<territory type="MA">Morocco</territory>
-			<territory type="MC">Monaco</territory>
+			<territory type="MA">Moroko</territory>
+			<territory type="MC">Monako</territory>
 			<territory type="MD">Moldova</territory>
 			<territory type="ME">Montenegro</territory>
 			<territory type="MF">St. Martin</territory>
@@ -786,14 +788,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="NU">Niue</territory>
 			<territory type="NZ">Nyuzilandi</territory>
 			<territory type="NZ" alt="variant">Aotearoa Nyuzilandi</territory>
-			<territory type="OM">Oman</territory>
+			<territory type="OM">Omani</territory>
 			<territory type="PA">Panama</territory>
 			<territory type="PE">Peru</territory>
 			<territory type="PF">Polynesia ya Ufaransa</territory>
 			<territory type="PG">Papua New Guinea</territory>
 			<territory type="PH">Ufilipino</territory>
 			<territory type="PK">Pakistani</territory>
-			<territory type="PL">Poland</territory>
+			<territory type="PL">Polandi</territory>
 			<territory type="PM">Santapierre na Miquelon</territory>
 			<territory type="PN">Visiwa vya Pitcairn</territory>
 			<territory type="PR">Puerto Rico</territory>
@@ -801,8 +803,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="PS" alt="short">Palestina</territory>
 			<territory type="PT">Ureno</territory>
 			<territory type="PW">Palau</territory>
-			<territory type="PY">Paraguay</territory>
-			<territory type="QA">Qatar</territory>
+			<territory type="PY">Paragwai</territory>
+			<territory type="QA">Katari</territory>
 			<territory type="QO">Oceania ya Nje</territory>
 			<territory type="RE">Reunion</territory>
 			<territory type="RO">Romania</territory>
@@ -812,7 +814,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="SA">Saudia</territory>
 			<territory type="SB">Visiwa vya Solomon</territory>
 			<territory type="SC">Ushelisheli</territory>
-			<territory type="SD">Sudan</territory>
+			<territory type="SD">Sudani</territory>
 			<territory type="SE">Uswidi</territory>
 			<territory type="SG">Singapore</territory>
 			<territory type="SH">St. Helena</territory>
@@ -828,12 +830,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ST">Sao Tome na Principe</territory>
 			<territory type="SV">El Salvador</territory>
 			<territory type="SX">Sint Maarten</territory>
-			<territory type="SY">Syria</territory>
+			<territory type="SY">Siria</territory>
 			<territory type="SZ">Eswatini</territory>
 			<territory type="SZ" alt="variant">Uswazi</territory>
 			<territory type="TA">Tristan da Cunha</territory>
 			<territory type="TC">Visiwa vya Turks na Caicos</territory>
-			<territory type="TD">Chad</territory>
+			<territory type="TD">Chadi</territory>
 			<territory type="TF">Himaya za Kusini za Kifaranza</territory>
 			<territory type="TG">Togo</territory>
 			<territory type="TH">Tailandi</territory>
@@ -854,7 +856,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="UM">Visiwa Vidogo vya Nje vya Marekani</territory>
 			<territory type="UN">Umoja wa Mataifa</territory>
 			<territory type="US">Marekani</territory>
-			<territory type="UY">Uruguay</territory>
+			<territory type="UY">Urugwai</territory>
 			<territory type="UZ">Uzibekistani</territory>
 			<territory type="VA">Mji wa Vatican</territory>
 			<territory type="VC">St. Vincent na Grenadines</territory>
@@ -890,18 +892,34 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<key type="collation">Mpangilio</key>
 			<key type="colNormalization">Upangaji wa Kawaida</key>
 			<key type="colNumeric">Upangaji kwa Nambari</key>
+			<key type="colReorder">Hati/Upangaji Upya wa Fungu</key>
 			<key type="colStrength">Nguvu ya Upangaji</key>
 			<key type="currency">Sarafu</key>
+			<key type="d0">Hatima ya Kigeuzi</key>
+			<key type="dx">Upuuzaji wa Migawanyo ya Kikamusi</key>
 			<key type="em">Uwasilishaji wa Emoji</key>
+			<key type="fw">Siku ya kwanza ya wiki</key>
+			<key type="h0">Mseto</key>
 			<key type="hc">Kipindi cha saa (12 au 24)</key>
+			<key type="i0">Mbinu ya Ingizo</key>
+			<key type="k0">Kibodi</key>
+			<key type="kv">Kilichopuuzwa Zaidi</key>
 			<key type="lb">Mtindo wa Kukata Mstari</key>
 			<key type="lw">Nafasi kati ya mistari kwa maneno</key>
+			<key type="m0">Kanuni za Ugeuzaji</key>
 			<key type="ms">Mfumo wa Vipimo</key>
+			<key type="mu">Kizio cha Kipimo</key>
 			<key type="numbers">Nambari</key>
+			<key type="rg">Eneo kwa ajili ya Data ya Nyongeza</key>
+			<key type="s0">Badili Umbo Chanzo</key>
+			<key type="sd">Ugawanyaji mdogo wa eneo</key>
 			<key type="ss">Nafasi ya Sentensi Baada ya Ufupisho</key>
+			<key type="t">Badili Umbo</key>
+			<key type="t0">Imetafsiriwa na Mashine</key>
 			<key type="timezone">Saa za Eneo</key>
 			<key type="va">Lahaja za Lugha</key>
 			<key type="x">Matumizi ya Kibinafsi</key>
+			<key type="x0">Kubadili Umbo kwa Matumizi Binafsi</key>
 		</keys>
 		<types>
 			<type key="calendar" type="buddhist">Kalenda ya Kibuddha</type>
@@ -921,13 +939,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="hebrew">Kalenda ya Kiebrania</type>
 			<type key="calendar" type="hebrew" scope="core">Kiebrania</type>
 			<type key="calendar" type="indian">Kalenda ya Taifa ya India</type>
+			<type key="calendar" type="indian" scope="core">Kitaifa India</type>
 			<type key="calendar" type="islamic">Kalenda ya Hijra</type>
 			<type key="calendar" type="islamic" scope="core">Hijra</type>
 			<type key="calendar" type="islamic-civil">Kalenda ya Hijra (inayoanza usiku wa manane)</type>
 			<type key="calendar" type="islamic-civil" scope="core">Hijra (inayotegemea hesabu)</type>
+			<type key="calendar" type="islamic-rgsa" scope="core">Hijra, mwezi kuonekana Saudia</type>
+			<type key="calendar" type="islamic-tbla" scope="core">Hijra (inayotegemea falaki)</type>
 			<type key="calendar" type="islamic-umalqura">Kalenda ya Hijra (Umm ul-Qura)</type>
 			<type key="calendar" type="islamic-umalqura" scope="core">Hijra (Umm al-Qura)</type>
 			<type key="calendar" type="iso8601">Kalenda ya ISO-8601</type>
+			<type key="calendar" type="iso8601" scope="core">Kigregori</type>
 			<type key="calendar" type="japanese">Kalenda ya Kijapani</type>
 			<type key="calendar" type="japanese" scope="core">Kijapani</type>
 			<type key="calendar" type="persian">Kalenda ya Kiajemi</type>
@@ -943,39 +965,68 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colBackwards" type="no">Panga Viinitoni kwa Kawaida</type>
 			<type key="colBackwards" type="yes">Panga Viinitoni Kumegeuzwa</type>
 			<type key="colCaseFirst" type="lower">Panga Herufi ndogo Kwanza</type>
+			<type key="colCaseFirst" type="lower" scope="core">Herufi ndogo</type>
 			<type key="colCaseFirst" type="no">Panga Utaratibu wa Herufi ya Kawaida</type>
+			<type key="colCaseFirst" type="no" scope="core">Herufi ndogo</type>
 			<type key="colCaseFirst" type="upper">Panga Herufi kubwa Kwanza</type>
+			<type key="colCaseFirst" type="upper" scope="core">Herufi kubwa</type>
 			<type key="colCaseLevel" type="no">Panga Isiyoathiriwa na Herufi</type>
 			<type key="colCaseLevel" type="yes">Panga kwa Inayoathiriwa na Herufi</type>
+			<type key="collation" type="compat" scope="core">Upatanifu</type>
 			<type key="collation" type="dictionary">Mpangilio wa Kamusi</type>
+			<type key="collation" type="dictionary" scope="core">Kamusi</type>
 			<type key="collation" type="ducet">Mpangilio Chaguo-Msingi wa Unicode</type>
 			<type key="collation" type="ducet" scope="core">Chaguomsingi ya Unicode</type>
+			<type key="collation" type="emoji" scope="core">Emoji</type>
+			<type key="collation" type="eor" scope="core">Kanuni za Ulaya</type>
 			<type key="collation" type="phonebook">Mpangilio wa Orodha za Nambari za Simu</type>
+			<type key="collation" type="phonebook" scope="core">Orodha ya anwani</type>
 			<type key="collation" type="phonetic">Utaratibu wa Kupanga Fonetiki</type>
+			<type key="collation" type="phonetic" scope="core">Fonetiki</type>
 			<type key="collation" type="pinyin">Mpangilio wa Kipinyin</type>
+			<type key="collation" type="pinyin" scope="core">Pinyin</type>
 			<type key="collation" type="search">Utafutaji wa Kijumla</type>
 			<type key="collation" type="search" scope="core">Utafutaji</type>
 			<type key="collation" type="searchjl">Tafuta kwa Konsonanti Halisi ya Hangul</type>
+			<type key="collation" type="searchjl" scope="core">Konsonanti ya awali ya Kikorea</type>
 			<type key="collation" type="standard">Mpangilio wa Kawaida</type>
 			<type key="collation" type="standard" scope="core">Kawaida</type>
 			<type key="collation" type="stroke">Mpangilio wa Mikwaju</type>
+			<type key="collation" type="stroke" scope="core">Chapa</type>
 			<type key="collation" type="traditional">Mpangilio wa Kawaida</type>
+			<type key="collation" type="traditional" scope="core">Kijadi</type>
 			<type key="collation" type="unihan">Mpangilio wa Mikwaju ya Shina</type>
+			<type key="collation" type="unihan" scope="core">Chapa ya Kimapokeo</type>
+			<type key="collation" type="zhuyin" scope="core">Zhuyin</type>
 			<type key="colNormalization" type="no">Panga Bila Ukawaida</type>
 			<type key="colNormalization" type="yes">Upangaji Msimbosare Umekawaidishwa</type>
 			<type key="colNumeric" type="no">Panga Tarakimu Kivyake</type>
 			<type key="colNumeric" type="yes">Panga Dijiti kwa Namba</type>
+			<type key="colReorder" type="currency" scope="core">Sarafu</type>
+			<type key="colReorder" type="digit" scope="core">Tarakimu</type>
+			<type key="colReorder" type="punct" scope="core">Uakifishaji</type>
+			<type key="colReorder" type="space" scope="core">Nafasi wazi</type>
+			<type key="colReorder" type="symbol" scope="core">Alama</type>
 			<type key="colStrength" type="identical">Panga Zote</type>
+			<type key="colStrength" type="identical" scope="core">Vyote</type>
 			<type key="colStrength" type="primary">Panga Herufi Msingi Tu</type>
+			<type key="colStrength" type="primary" scope="core">Herufi za Msingi Pekee</type>
 			<type key="colStrength" type="quaternary">Panga Viinitoni/Herufi/Upana/Kana</type>
+			<type key="colStrength" type="quaternary" scope="core">Msingi, Shadda, Herufi Kubwa au Ndogo, Vibadala, Kana</type>
 			<type key="colStrength" type="secondary">Panga Viinitoni</type>
+			<type key="colStrength" type="secondary" scope="core">Msingi, Shadda</type>
 			<type key="colStrength" type="tertiary">Panga Viinitoni/Herufi/Upana</type>
+			<type key="colStrength" type="tertiary" scope="core">Msingi, Shadda, Herufi Kubwa au Ndogo, Vibadala</type>
 			<type key="d0" type="fwidth">Upana kamili</type>
 			<type key="d0" type="hwidth">Nusu upana</type>
 			<type key="d0" type="npinyin">Ya Nambari</type>
 			<type key="em" type="default" scope="core">Chaguomsingi</type>
 			<type key="em" type="emoji" scope="core">Emoji</type>
 			<type key="em" type="text" scope="core">Maandiko</type>
+			<type key="hc" type="c12">Kipindi cha saa 12</type>
+			<type key="hc" type="c12" scope="core">12</type>
+			<type key="hc" type="c24">Kipindi cha saa 24</type>
+			<type key="hc" type="c24" scope="core">24</type>
 			<type key="hc" type="h11">Kipindi cha saa 12 (0–11)</type>
 			<type key="hc" type="h11" scope="core">12 (0–11)</type>
 			<type key="hc" type="h12">Kipindi cha saa 12 (1–12)</type>
@@ -984,6 +1035,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="hc" type="h23" scope="core">24 (0–23)</type>
 			<type key="hc" type="h24">Kipindi cha saa 24 (1–24)</type>
 			<type key="hc" type="h24" scope="core">24 (1–24)</type>
+			<type key="kv" type="currency" scope="core">Kitufe cha Kubadilisha Nafasi, uakifishaji, alama zote</type>
+			<type key="kv" type="punct" scope="core">Kitufe cha Kubadilisha Nafasi, uakifishaji</type>
+			<type key="kv" type="space" scope="core">Kitufe cha Kubadilisha Nafasi, uakifishaji</type>
+			<type key="kv" type="symbol" scope="core">Kitufe cha Kubadilisha Nafasi, uakifishaji, alama zisizo za kifedha</type>
 			<type key="lb" type="loose">Mtindo Pana wa Kukata Mstari</type>
 			<type key="lb" type="loose" scope="core">Usio kaza</type>
 			<type key="lb" type="normal">Mtindo wa Kawaida wa Kukata Mstari</type>
@@ -1004,54 +1059,88 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="ms" type="ussystem" scope="core">Marekani</type>
 			<type key="numbers" type="arab">Nambari za Kiarabu/Kihindi</type>
 			<type key="numbers" type="arabext">Nambari za Kiarabu/Kihindi Zilizopanuliwa</type>
+			<type key="numbers" type="arabext" scope="core">Tarakimu za Kiarabu</type>
 			<type key="numbers" type="armn">Nambari za Kiarmenia</type>
 			<type key="numbers" type="armnlow">Nambari Ndogo za Kiarmenia</type>
+			<type key="numbers" type="armnlow" scope="core">Herufi ndogo za Kiarmenia</type>
 			<type key="numbers" type="beng">Nambari za Kibengali</type>
 			<type key="numbers" type="cakm">Nambari za Kichakma</type>
-			<type key="numbers" type="cham" draft="unconfirmed">Nambari za Kichami</type>
+			<type key="numbers" type="cham" draft="contributed">Nambari za Kichami</type>
 			<type key="numbers" type="deva">Nambari za Kidevanagari</type>
 			<type key="numbers" type="ethi">Nambari za Kiethiopia</type>
 			<type key="numbers" type="finance">Tarakimu za Kifedha</type>
+			<type key="numbers" type="finance" scope="core">Kifedha</type>
 			<type key="numbers" type="fullwide">Nambari za Upana Kamili</type>
+			<type key="numbers" type="fullwide" scope="core">Upana kamili</type>
 			<type key="numbers" type="geor">Nambari za Kigeorgia</type>
 			<type key="numbers" type="grek">Nambari za Kigiriki</type>
 			<type key="numbers" type="greklow">Nambari Ndogo za Kigiriki</type>
+			<type key="numbers" type="greklow" scope="core">Herufi ndogo ya Kigiriki</type>
 			<type key="numbers" type="gujr">Nambari za Kigujarati</type>
 			<type key="numbers" type="guru">Nambari za Kigurmukhi</type>
+			<type key="numbers" type="hanidays" scope="core">Kalenda za jadi zenye tarakimu za Han kwa idadi ya siku za mwezi</type>
 			<type key="numbers" type="hanidec">Nambari za Desimali za Kichina</type>
+			<type key="numbers" type="hanidec" scope="core">Mfumo wa nafasi za desimali kwa kutumia ishara za nambari za Kichina kama tarakimu</type>
 			<type key="numbers" type="hans">Nambari za Kichina Rahisi</type>
 			<type key="numbers" type="hansfin">Nambari za Kifedha za Kichina Rahisi</type>
+			<type key="numbers" type="hansfin" scope="core">Kichina Rahisi cha Kifedha</type>
 			<type key="numbers" type="hant">Nambari za Kichina cha Jadi</type>
 			<type key="numbers" type="hantfin">Nambari za Kifedha za Kichina cha Jadi</type>
+			<type key="numbers" type="hantfin" scope="core">Kijapani Rahisi cha Kifedha</type>
 			<type key="numbers" type="hebr">Nambari za Kiebrania</type>
 			<type key="numbers" type="java">Nambari za Kijava</type>
 			<type key="numbers" type="jpan">Nambari za Kijapani</type>
 			<type key="numbers" type="jpanfin">Nambari za Kifedha za Kijapani</type>
+			<type key="numbers" type="jpanfin" scope="core">Tarakimu za Kijapani za kifedha</type>
+			<type key="numbers" type="jpanyear" scope="core">Tarakimu za Kijapani za Gannen ya mwaka wa kwanza</type>
 			<type key="numbers" type="khmr">Nambari za Kikambodia</type>
 			<type key="numbers" type="knda">Nambari za Kikannada</type>
+			<type key="numbers" type="lanatham" scope="core">Hati ya Tai Tham (kidini)</type>
 			<type key="numbers" type="laoo">Nambari za Kilao</type>
 			<type key="numbers" type="latn">Nambari za Nchi za Magharibi</type>
 			<type key="numbers" type="limb" draft="unconfirmed">Nambari za Kilimbu</type>
+			<type key="numbers" type="mathbold" scope="core">Chapa nene ya kihesabu</type>
+			<type key="numbers" type="mathdbl" scope="core">Chapa ya kihesabu ya mstari pacha</type>
+			<type key="numbers" type="mathmono" scope="core">Chapa ya kihesabu ya upana sawa</type>
+			<type key="numbers" type="mathsanb" scope="core">Chapa ya kihesabu ya sans-serif iliyokolezwa</type>
+			<type key="numbers" type="mathsans" scope="core">Chapa ya kihesabu ya sans-serif</type>
 			<type key="numbers" type="mlym">Nambari za Malayalam</type>
 			<type key="numbers" type="mong">Nambari za Kimongolia</type>
 			<type key="numbers" type="mtei">Nambari za Meetei Mayek</type>
 			<type key="numbers" type="mymr">Nambari za Myanmar</type>
+			<type key="numbers" type="mymrepka" scope="core">Hati ya Pwo Karen ya Myanmar Mashariki</type>
+			<type key="numbers" type="mymrpao" scope="core">Tarakimu za Pao za Myanmar</type>
+			<type key="numbers" type="mymrshan" scope="core">Tarakimu za Shan za Myanmar</type>
+			<type key="numbers" type="mymrtlng" scope="core">Tarakimu za Tai Laing za Myanmar</type>
 			<type key="numbers" type="native">Nambari Asili</type>
+			<type key="numbers" type="native" scope="core">Tarakimu asilia</type>
 			<type key="numbers" type="olck">Nambari za Kiol Chiki</type>
 			<type key="numbers" type="orya">Nambari za Kioriya</type>
+			<type key="numbers" type="outlined" scope="core">Chapa yenye mistari ya nje</type>
 			<type key="numbers" type="roman">Nambari za Kirumi</type>
+			<type key="numbers" type="roman" scope="core">Herufi kubwa za Kirumi</type>
 			<type key="numbers" type="romanlow">Nambari Ndogo za Kirumi</type>
+			<type key="numbers" type="romanlow" scope="core">Herufi ndogo za Kirumi</type>
+			<type key="numbers" type="segment" scope="core">Tarakimu za vipande</type>
 			<type key="numbers" type="takr" draft="unconfirmed">Nambari za Kitakri</type>
 			<type key="numbers" type="taml">Nambari za Kitamil cha Jadi</type>
 			<type key="numbers" type="tamldec">Nambari za Kitamil</type>
+			<type key="numbers" type="tamldec" scope="core">Tarakimu za Kitamil za Kisasa</type>
 			<type key="numbers" type="telu">Nambari za Kitelugu</type>
 			<type key="numbers" type="thai">Nambari za Kithai</type>
 			<type key="numbers" type="tibt">Nambari za Kitibeti</type>
 			<type key="numbers" type="traditional">Tarakimu za Jadi</type>
+			<type key="numbers" type="traditional" scope="core">Tarakimu za jadi</type>
 			<type key="numbers" type="vaii">Nambari za Kivai</type>
 			<type key="ss" type="none" scope="core">Imezimwa</type>
 			<type key="ss" type="standard" scope="core">Imewashwa</type>
+			<type key="t0" type="und">Tafsiri ya Mashine Isiyo Bayana</type>
+			<type key="va" type="posix" scope="core">Kibadala cha POSIX</type>
 		</types>
+		<typeValues>
+			<typeValue type="no">Imezimwa</typeValue>
+			<typeValue type="yes">Imewashwa</typeValue>
+		</typeValues>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">Mfumo wa Mita</measurementSystemName>
 			<measurementSystemName type="UK">Uingereza</measurementSystemName>
@@ -1078,6 +1167,37 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	</characters>
 	<dates>
 		<calendars>
+			<calendar type="chinese">
+				<months>
+					<monthContext type="stand-alone">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="contributed">M01</month>
+							<month type="2" draft="contributed">M02</month>
+							<month type="3" draft="contributed">M03</month>
+							<month type="4" draft="contributed">M04</month>
+							<month type="5" draft="contributed">M05</month>
+							<month type="7" draft="contributed">M07</month>
+							<month type="10" draft="contributed">M10</month>
+							<month type="11" draft="contributed">Mw11</month>
+							<month type="12" draft="contributed">Mw12</month>
+						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1" draft="contributed">1</month>
+							<month type="2" draft="contributed">2</month>
+							<month type="3" draft="contributed">Mw3</month>
+							<month type="4" draft="contributed">4</month>
+							<month type="5" draft="contributed">5</month>
+							<month type="6" draft="contributed">6</month>
+							<month type="7" draft="contributed">Mw7</month>
+							<month type="8" draft="contributed">8</month>
+							<month type="9" draft="contributed">9</month>
+							<month type="10" draft="contributed">10</month>
+							<month type="11" draft="contributed">11</month>
+							<month type="12" draft="contributed">12</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+			</calendar>
 			<calendar type="generic">
 				<dateFormats>
 					<dateFormatLength type="full">
@@ -1175,6 +1295,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yyyyQQQQ">QQQQ y G</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="non-numeric">{0}–{1}</intervalFormatRange>
+							<intervalFormatRange type="numeric">{0}–{1}</intervalFormatRange>
+						</intervalFormatRanges>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d">d – d</greatestDifference>
 						</intervalFormatItem>
@@ -1269,6 +1393,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<intervalFormatItem id="MMMEd">
 							<greatestDifference id="d">E, d MMM – E, d MMM</greatestDifference>
 							<greatestDifference id="M">E, d MMM – E, d MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMMd">
+							<greatestDifference id="M">d MMMM – d MMMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="y">
 							<greatestDifference id="y">y – y G</greatestDifference>
@@ -1429,7 +1556,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<dayPeriod type="night1">usiku</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
-							<dayPeriod type="noon">saa sita za mchana</dayPeriod>
 							<dayPeriod type="morning1">alfajiri</dayPeriod>
 							<dayPeriod type="morning2">asubuhi</dayPeriod>
 							<dayPeriod type="afternoon1">mchana</dayPeriod>
@@ -1495,6 +1621,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</timeFormatLength>
 				</timeFormats>
 				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator>/</numericDateSeparator>
+					</numericSeparators>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
@@ -1538,6 +1667,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, d MMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMM">MMMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMMd">d MMMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMMEd">E, d MMMM y G</dateFormatItem>
 						<dateFormatItem id="hm">h:mm a</dateFormatItem>
 						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
@@ -1557,12 +1689,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yMMMd">d MMM y</dateFormatItem>
 						<dateFormatItem id="yMMMEd">E, d MMM y</dateFormatItem>
 						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
+						<dateFormatItem id="yMMMMd">d MMMM y</dateFormatItem>
+						<dateFormatItem id="yMMMMEd">E d, MMMM y</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
 						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
 						<dateFormatItem id="yw" count="one">'wiki' w 'ya' Y</dateFormatItem>
 						<dateFormatItem id="yw" count="other">'wiki' w 'ya' Y</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="non-numeric">{0} – {1}</intervalFormatRange>
+						</intervalFormatRanges>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d">d – d</greatestDifference>
 						</intervalFormatItem>
@@ -1645,6 +1782,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="d">E, d/M – E, d/M</greatestDifference>
 							<greatestDifference id="M">E, d/M – E, d/M</greatestDifference>
 						</intervalFormatItem>
+						<intervalFormatItem id="MMM">
+							<greatestDifference id="M">MMM – MMM</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="MMMd">
 							<greatestDifference id="d">d – d MMM</greatestDifference>
 							<greatestDifference id="M">d MMM – d MMM</greatestDifference>
@@ -1652,6 +1792,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<intervalFormatItem id="MMMEd">
 							<greatestDifference id="d">E, d MMM – E, d MMM</greatestDifference>
 							<greatestDifference id="M">E, d MMM – E, d MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMMd">
+							<greatestDifference id="d">d–d MMMM</greatestDifference>
+							<greatestDifference id="M">d MMMM – d MMMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
 							<greatestDifference id="M">M/y – M/y</greatestDifference>
@@ -1686,6 +1830,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="y">MMMM y – MMMM y</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="iso8601">
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="yw" count="one" draft="contributed">Y 'wiki' 'ya' w</dateFormatItem>
+						<dateFormatItem id="yw" count="other" draft="contributed">Y 'wiki' 'ya' w</dateFormatItem>
+					</availableFormats>
 				</dateTimeFormats>
 			</calendar>
 		</calendars>
@@ -1919,10 +2071,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 			<field type="second-short">
 				<displayName>sek</displayName>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">sekunde {0} iliyopita</relativeTimePattern>
-					<relativeTimePattern count="other">sekunde {0} zilizopita</relativeTimePattern>
-				</relativeTime>
 			</field>
 			<field type="zone">
 				<displayName>saa za eneo</displayName>
@@ -1947,24 +2095,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Etc/Unknown">
 				<exemplarCity>Jiji Lisilojulikana</exemplarCity>
 			</zone>
-			<zone type="Europe/London">
-				<long>
-					<daylight>Saa za Majira ya Joto za Uingereza</daylight>
-				</long>
-			</zone>
 			<zone type="Atlantic/South_Georgia">
 				<exemplarCity>Georgia Kusini</exemplarCity>
 			</zone>
-			<zone type="Europe/Dublin">
-				<long>
-					<daylight>Saa za Majira ya Joto za Ayalandi</daylight>
-				</long>
-			</zone>
 			<zone type="Asia/Qostanay">
 				<exemplarCity>Kostanay</exemplarCity>
-			</zone>
-			<zone type="Asia/Rangoon">
-				<exemplarCity>Rangoon</exemplarCity>
 			</zone>
 			<zone type="Asia/Macau">
 				<exemplarCity>Macau</exemplarCity>
@@ -1987,6 +2122,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Europe/Kiev">
 				<exemplarCity>Kiev</exemplarCity>
 			</zone>
+			<metazone type="Acre">
+				<long>
+					<generic>Saa za Acre</generic>
+					<standard>Saa Wastani za Acre</standard>
+					<daylight>Saa za Acre Majira ya Joto</daylight>
+				</long>
+			</metazone>
 			<metazone type="Afghanistan">
 				<long>
 					<standard>Saa za Afghanistan</standard>
@@ -2063,7 +2205,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Apia">
 				<long>
-					<generic>Saa za Apia</generic>
+					<generic>Saa za Samoa Magharibi</generic>
 					<standard>Saa za Wastani za Apia</standard>
 					<daylight>Saa za Mchana za Apia</daylight>
 				</long>
@@ -2167,6 +2309,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Saa za Brasilia</generic>
 					<standard>Saa za Wastani za Brasilia</standard>
 					<daylight>Saa za Majira ya joto za Brasilia</daylight>
+				</long>
+			</metazone>
+			<metazone type="British">
+				<long>
+					<generic>Saa za Uingereza</generic>
+					<daylight>Saa za Majira ya Joto za Uingereza</daylight>
 				</long>
 			</metazone>
 			<metazone type="Brunei">
@@ -2342,6 +2490,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>Saa za Greenwich</standard>
 				</long>
 			</metazone>
+			<metazone type="Greenland">
+				<long>
+					<generic>Saa za Greenland</generic>
+					<standard>Saa Wastani za Greenland</standard>
+					<daylight>Saa Wastani za Greenland Majira ya Joto</daylight>
+				</long>
+			</metazone>
 			<metazone type="Greenland_Eastern">
 				<long>
 					<generic>Saa za Greenland Mashariki</generic>
@@ -2368,13 +2523,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Hawaii">
 				<long>
-					<standard>Saa za Wastani za Hawaii-Aleutian</standard>
+					<standard>Saa za Hawaii</standard>
 				</long>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
 				<long>
 					<generic>Saa za Hawaii-Aleutian</generic>
-					<standard>Saa za Wastani za Hawaii-Aleutian</standard>
+					<standard>Saa Wastani za Hawaii-Aleutian</standard>
 					<daylight>Saa za Mchana za Hawaii-Aleutian</daylight>
 				</long>
 			</metazone>
@@ -2424,9 +2579,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Iran">
 				<long>
-					<generic>Saa za Iran</generic>
-					<standard>Saa za Wastani za Iran</standard>
-					<daylight>Saa za Mchana za Iran</daylight>
+					<generic>Saa za Irani</generic>
+					<standard>Saa za Wastani za Irani</standard>
+					<daylight>Saa za Mchana za Irani</daylight>
+				</long>
+			</metazone>
+			<metazone type="Irish">
+				<long>
+					<generic>Saa za Ayalandi</generic>
+					<daylight>Saa za Majira ya Joto za Ayalandi</daylight>
 				</long>
 			</metazone>
 			<metazone type="Irkutsk">
@@ -2728,9 +2889,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Samoa">
 				<long>
-					<generic>Saa za Samoa</generic>
 					<standard>Saa za Wastani za Samoa</standard>
-					<daylight>Saa za Majira ya joto za Samoa</daylight>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">
@@ -2797,6 +2956,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>Saa za Chuuk</standard>
 				</long>
 			</metazone>
+			<metazone type="Turkey">
+				<long>
+					<generic>Saa za Uturuki</generic>
+					<standard>Saa Wastani za Uturuki</standard>
+					<daylight>Saa za Uturuki Majira ya Joto</daylight>
+				</long>
+			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
 					<generic>Saa za Turkmenistan</generic>
@@ -2814,6 +2980,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Saa za Urugwai</generic>
 					<standard>Saa za Wastani za Urugwai</standard>
 					<daylight>Saa za Majira ya joto za Urugwai</daylight>
+				</long>
+			</metazone>
+			<metazone type="Urumqi">
+				<long>
+					<standard>Saa za Urumqi</standard>
 				</long>
 			</metazone>
 			<metazone type="Uzbekistan">
@@ -2923,7 +3094,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<pattern type="10000" count="other">elfu 00;elfu -00</pattern>
 					<pattern type="100000" count="one">elfu 000;elfu -000</pattern>
 					<pattern type="100000" count="other">elfu 000;elfu -000</pattern>
-					<pattern type="1000000" count="one">0M;-0M</pattern>
+					<pattern type="1000000" count="one">0M</pattern>
 					<pattern type="1000000" count="other">0M</pattern>
 					<pattern type="10000000" count="one">00M;-00M</pattern>
 					<pattern type="10000000" count="other">00M</pattern>
@@ -2974,7 +3145,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</currencyFormat>
 			</currencyFormatLength>
 			<unitPattern count="one">{0} {1}</unitPattern>
-			<unitPattern count="other">{1} {0}</unitPattern>
+			<unitPattern count="other">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
 			<currency type="AED">
@@ -3791,8 +3962,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="XCG">
 				<displayName>Guilder ya Karibe</displayName>
-				<displayName count="one">Guilder ya Karibe</displayName>
-				<displayName count="other">Guilder ya Karibe</displayName>
 			</currency>
 			<currency type="XOF">
 				<displayName>Faranga ya Afrika Magharibi CFA</displayName>
@@ -3832,8 +4001,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="ZWG">
 				<displayName>Dhahabu ya Zimbabwe</displayName>
-				<displayName count="one">Dhahabu ya Zimbabwe</displayName>
-				<displayName count="other">Dhahabu ya Zimbabwe</displayName>
 			</currency>
 		</currencies>
 		<miscPatterns numberSystem="latn">
@@ -5281,6 +5448,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="volume-gallon-imperial">
 				<unitPattern count="one">gal Imp. {0}</unitPattern>
 				<unitPattern count="other">gal Imp. {0}</unitPattern>
+				<perUnitPattern>{0}/galImp</perUnitPattern>
 			</unit>
 			<unit type="volume-quart">
 				<displayName>kwati</displayName>
@@ -5322,6 +5490,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">mapipa {0}</unitPattern>
 			</unit>
 			<unit type="volume-dessert-spoon">
+				<displayName>vijiko vya kitindamlo</displayName>
 				<unitPattern count="one">dstspn {0}</unitPattern>
 				<unitPattern count="other">dstspn {0}</unitPattern>
 			</unit>
@@ -5461,18 +5630,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">mmol {0}/L</unitPattern>
 				<unitPattern count="other">mmol {0}/L</unitPattern>
 			</unit>
-			<unit type="concentr-part">
-				<displayName>kipande</displayName>
-				<unitPattern count="one">kipande {0}</unitPattern>
-				<unitPattern count="other">kipande {0}</unitPattern>
-			</unit>
 			<unit type="concentr-part-per-1e6">
 				<displayName>ppm</displayName>
-			</unit>
-			<unit type="concentr-ofglucose">
-				<displayName>Glc</displayName>
-				<unitPattern count="one">Glc {0}</unitPattern>
-				<unitPattern count="other">Glc {0}</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
 				<unitPattern count="one">L/100km {0}</unitPattern>
@@ -5565,50 +5724,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="temperature-celsius">
 				<displayName>°C</displayName>
 			</unit>
-			<unit type="angle-steradian">
-				<unitPattern count="one">sr {0}</unitPattern>
-				<unitPattern count="other">sr {0}</unitPattern>
-			</unit>
-			<unit type="concentr-katal">
-				<unitPattern count="one">kat {0}</unitPattern>
-				<unitPattern count="other">kat {0}</unitPattern>
-			</unit>
-			<unit type="electric-coulomb">
-				<unitPattern count="one">C {0}</unitPattern>
-				<unitPattern count="other">C {0}</unitPattern>
-			</unit>
-			<unit type="electric-farad">
-				<unitPattern count="one">F {0}</unitPattern>
-				<unitPattern count="other">F {0}</unitPattern>
-			</unit>
-			<unit type="electric-henry">
-				<unitPattern count="one">H {0}</unitPattern>
-				<unitPattern count="other">H {0}</unitPattern>
-			</unit>
-			<unit type="electric-siemens">
-				<unitPattern count="one">S {0}</unitPattern>
-				<unitPattern count="other">S {0}</unitPattern>
-			</unit>
-			<unit type="energy-calorie-it">
-				<displayName draft="contributed">cal-IT</displayName>
-				<unitPattern count="one">cal-IT {0}</unitPattern>
-				<unitPattern count="other">cal-IT {0}</unitPattern>
-			</unit>
-			<unit type="energy-becquerel">
-				<unitPattern count="one">Bq {0}</unitPattern>
-				<unitPattern count="other">Bq {0}</unitPattern>
-			</unit>
-			<unit type="energy-sievert">
-				<unitPattern count="one">Sv {0}</unitPattern>
-				<unitPattern count="other">Sv {0}</unitPattern>
-			</unit>
-			<unit type="energy-gray">
-				<unitPattern count="one">Gy {0}</unitPattern>
-				<unitPattern count="other">Gy {0}</unitPattern>
-			</unit>
-			<unit type="force-kilogram-force">
-				<unitPattern count="one">kgf {0}</unitPattern>
-				<unitPattern count="other">kgf {0}</unitPattern>
+			<unit type="volume-gallon-imperial">
+				<perUnitPattern>{0}/galIm</perUnitPattern>
 			</unit>
 			<unit type="magnetic-tesla">
 				<unitPattern count="one">T{0}</unitPattern>
@@ -5818,6 +5935,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	<personNames>
 		<nameOrderLocales order="givenFirst">und sw</nameOrderLocales>
 		<nameOrderLocales order="surnameFirst">ko vi yue zh</nameOrderLocales>
+		<parameterDefault parameter="formality">informal</parameterDefault>
 		<personName order="givenFirst" length="long" usage="referring" formality="informal">
 			<namePattern>{given-informal} {surname}</namePattern>
 		</personName>

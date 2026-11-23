@@ -314,6 +314,17 @@ source %{
           return false;
         }
         break;
+      case Op_DivVB:
+      case Op_DivVS:
+      case Op_DivVI:
+      case Op_DivVL:
+        // Integer vector divide is only available on SVE (SDIV for 32-bit and
+        // 64-bit elements). NEON has no integer vector divide instruction.
+        // BYTE/SHORT are widened to 32-bit, divided, and narrowed back.
+        if (UseSVE == 0) {
+          return false;
+        }
+        break;
       default:
         break;
     }
@@ -338,6 +349,11 @@ source %{
       case Op_CompressBitsV:
       case Op_ExpandBitsV:
       case Op_VectorBitwiseBlend:
+      // There is no native SVE divide for BYTE/SHORT elements (these are
+      // emulated by widening to 32-bit), so the masked variants are handled
+      // by an unpredicated divide combined with a VectorBlend.
+      case Op_DivVB:
+      case Op_DivVS:
         return false;
       case Op_SaturatingAddV:
       case Op_SaturatingSubV:
@@ -384,6 +400,87 @@ source %{
     }
 
     return match_rule_supported_vector(opcode, vlen, bt);
+  }
+
+  // Determine whether the given multiply-add/sub-structured node is a profitable
+  // vector MLA/MLS candidate.
+  //
+  // A multiply-add/sub-structured node is NOT considered a profitable MLA/MLS
+  // candidate if forming an MLA/MLS would likely extend a dependency chain, e.g.
+  //
+  //        add_input     MulVL          MulVL      add_input
+  //             \        /                   \     /
+  //            AddVL/SubVL                     AddVL
+  //
+  //  - The "add_input" itself is (or feeds from) another multiply-add/sub-structured
+  // node or a multiply node.
+  //
+  // Exceptions:
+  // If the "add_input" is identical to one of the multiply operands, then fusing
+  // does not introduce an additional dependency edge and is allowed.
+  //
+  // The main idea behind this change is to improve parallelism between the two inputs
+  // of AddVL. When "add_input" is MulVL or MLA and has no dependency on MulVL
+  // (the other input of AddVL), we can benefit from executing add_input and MulVL
+  // in parallel. However, this parallelism depends on hardware scheduling behavior
+  // and available resources, so it does not apply uniformly across all microarchitectures.
+  // Therefore, AvoidMLAChain is applied selectively.
+  bool Matcher::is_multiply_accumulate_candidate(const Node* n) {
+    if (n->Opcode() != Op_AddVL && n->Opcode() != Op_SubVL) {
+      return true;
+    }
+    // Only apply the chain-length heuristic to 128-bit vectors.
+    if (!AvoidMLAChain || Matcher::vector_length_in_bytes(n) != 16) {
+      return true;
+    }
+
+    Node* in1 = nullptr;
+    Node* in2 = nullptr;
+    if (n->is_predicated_vector()) {
+      // Masked AD rules use (AddVL/SubVL (Binary src1 src2) pg).
+      assert(n->in(1)->Opcode() == Op_Binary, "");
+      in1 = n->in(1)->in(1);
+      in2 = n->in(1)->in(2);
+    } else {
+      in1 = n->in(1);
+      in2 = n->in(2);
+    }
+
+    // Exception:
+    // If the "add_input" is already needed to compute the "mul", the
+    // multiply-add/sub-structured node is still considered a profitable vector
+    // MLA/MLS candidate:
+    //
+    //          add_input      ...         ...    add_input
+    //           \     \     /               \    /     /
+    //            \     MulVL                 MulVL    /
+    //             \      /                      \    /
+    //            AddVL/SubVL                     AddVL
+    if (VectorNode::is_unpredicated_vector_long_multiply(in1)) {
+      if (in2 == in1->in(1) || in2 == in1->in(2)) {
+        return true;
+      }
+    }
+    if (VectorNode::is_unpredicated_vector_long_multiply(in2)) {
+      if (in1 == in2->in(1) || in1 == in2->in(2)) {
+        return true;
+      }
+    }
+
+    // If both inputs are already long-mul(-add/sub) patterns, fusing again tends
+    // to lengthen chains.
+    if (VectorNode::is_vector_long_mul_or_muladdsub(in1) &&
+        VectorNode::is_vector_long_mul_or_muladdsub(in2)) {
+      return false;
+    }
+
+    // If an input is a Phi, check whether *its* incoming values are long-mul patterns.
+    if (VectorNode::phi_has_vector_long_mul_or_muladdsub_input(in1) ||
+        VectorNode::phi_has_vector_long_mul_or_muladdsub_input(in2)) {
+      return false;
+    }
+
+    return true;
   }
 
   bool Matcher::vector_needs_partial_operations(Node* node, const TypeVect* vt) {
@@ -450,11 +547,11 @@ source %{
       // On architectures that do not support predicate, masks are stored in
       // general vector registers (TypeVect) with sizes ranging from TypeVectA
       // to TypeVectX based on the vector size in bytes.
-      assert(vt->isa_pvectmask() == nullptr, "mask type is not matched");
+      assert(!vt->is_pvectmask(), "mask type is not matched");
       return false;
     }
 
-    assert(vt->isa_pvectmask() != nullptr, "expected TypePVectMask on SVE");
+    assert(vt->is_pvectmask(), "expected TypePVectMask on SVE");
     switch (opcode) {
       case Op_VectorMaskToLong:
       case Op_VectorLongToMask:
@@ -842,6 +939,61 @@ BINARY_OP_NEON_SVE_PAIRWISE(vdivD,  DivVD,  fdiv, sve_fdiv, D)
 // vector float div - predicated
 BINARY_OP_PREDICATE(vdivF, DivVF, sve_fdiv, S)
 BINARY_OP_PREDICATE(vdivD, DivVD, sve_fdiv, D)
+
+dnl
+dnl BINARY_OP_SVE_ONLY($1,        $2,      $3,   $4  )
+dnl BINARY_OP_SVE_ONLY(rule_name, op_name, insn, size)
+define(`BINARY_OP_SVE_ONLY', `
+instruct $1_sve(vReg dst_src1, vReg src2) %{
+  predicate(UseSVE > 0);
+  match(Set dst_src1 ($2 dst_src1 src2));
+  format %{ "$1_sve $dst_src1, $dst_src1, $src2" %}
+  ins_encode %{
+    __ $3($dst_src1$$FloatRegister, __ $4, ptrue, $src2$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}')dnl
+dnl
+// ------------------------------ Vector integer div ---------------------------
+
+// BYTE and SHORT have no native integer divide on SVE (SDIV only supports 32-bit
+// and 64-bit elements), so they are emulated by widening each element to 32-bit,
+// performing SDIV, and narrowing the result back.
+
+instruct vdivB_sve(vReg dst_src1, vReg src2, vReg vtmp1, vReg vtmp2, vReg vtmp3, vReg vtmp4) %{
+  predicate(UseSVE > 0);
+  match(Set dst_src1 (DivVB dst_src1 src2));
+  effect(TEMP_DEF dst_src1, TEMP vtmp1, TEMP vtmp2, TEMP vtmp3, TEMP vtmp4);
+  format %{ "vdivB_sve $dst_src1, $dst_src1, $src2" %}
+  ins_encode %{
+    __ sve_sdiv_byte($dst_src1$$FloatRegister, $src2$$FloatRegister,
+                     $vtmp1$$FloatRegister, $vtmp2$$FloatRegister,
+                     $vtmp3$$FloatRegister, $vtmp4$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vdivS_sve(vReg dst_src1, vReg src2, vReg vtmp1, vReg vtmp2) %{
+  predicate(UseSVE > 0);
+  match(Set dst_src1 (DivVS dst_src1 src2));
+  effect(TEMP_DEF dst_src1, TEMP vtmp1, TEMP vtmp2);
+  format %{ "vdivS_sve $dst_src1, $dst_src1, $src2" %}
+  ins_encode %{
+    __ sve_sdiv_short($dst_src1$$FloatRegister, $src2$$FloatRegister,
+                      $vtmp1$$FloatRegister, $vtmp2$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+BINARY_OP_SVE_ONLY(vdivI, DivVI, sve_sdiv, S)
+BINARY_OP_SVE_ONLY(vdivL, DivVL, sve_sdiv, D)
+
+// Vector integer div - predicated
+//
+// There is no native SVE divide for BYTE/SHORT elements (these are emulated by
+// widening to 32-bit), so the masked variants are handled by an unpredicated
+// divide combined with a VectorBlend.
+BINARY_OP_PREDICATE(vdivI, DivVI, sve_sdiv, S)
+BINARY_OP_PREDICATE(vdivL, DivVL, sve_sdiv, D)
 dnl
 dnl BITWISE_OP_IMM($1,        $2,   $3,      $4,   $5,   $6        )
 dnl BITWISE_OP_IMM(rule_name, type, op_name, insn, size, basic_type)
@@ -1514,7 +1666,7 @@ instruct vmla(vReg dst_src1, vReg src2, vReg src3) %{
 %}
 
 instruct vmlaL(vReg dst_src1, vReg src2, vReg src3) %{
-  predicate(UseSVE > 0);
+  predicate(UseSVE > 0 && Matcher::is_multiply_accumulate_candidate(n));
   match(Set dst_src1 (AddVL dst_src1 (MulVL src2 src3)));
   format %{ "vmlaL $dst_src1, $src2, $src3" %}
   ins_encode %{
@@ -1526,7 +1678,7 @@ instruct vmlaL(vReg dst_src1, vReg src2, vReg src3) %{
 %}
 
 instruct vmla_masked(vReg dst_src1, vReg src2, vReg src3, pRegGov pg) %{
-  predicate(UseSVE > 0);
+  predicate(UseSVE > 0 && Matcher::is_multiply_accumulate_candidate(n));
   match(Set dst_src1 (AddVB (Binary dst_src1 (MulVB src2 src3)) pg));
   match(Set dst_src1 (AddVS (Binary dst_src1 (MulVS src2 src3)) pg));
   match(Set dst_src1 (AddVI (Binary dst_src1 (MulVI src2 src3)) pg));
@@ -1605,7 +1757,7 @@ instruct vmls(vReg dst_src1, vReg src2, vReg src3) %{
 %}
 
 instruct vmlsL(vReg dst_src1, vReg src2, vReg src3) %{
-  predicate(UseSVE > 0);
+  predicate(UseSVE > 0 && Matcher::is_multiply_accumulate_candidate(n));
   match(Set dst_src1 (SubVL dst_src1 (MulVL src2 src3)));
   format %{ "vmlsL $dst_src1, $src2, $src3" %}
   ins_encode %{
@@ -1617,7 +1769,7 @@ instruct vmlsL(vReg dst_src1, vReg src2, vReg src3) %{
 %}
 
 instruct vmls_masked(vReg dst_src1, vReg src2, vReg src3, pRegGov pg) %{
-  predicate(UseSVE > 0);
+  predicate(UseSVE > 0 && Matcher::is_multiply_accumulate_candidate(n));
   match(Set dst_src1 (SubVB (Binary dst_src1 (MulVB src2 src3)) pg));
   match(Set dst_src1 (SubVS (Binary dst_src1 (MulVS src2 src3)) pg));
   match(Set dst_src1 (SubVI (Binary dst_src1 (MulVI src2 src3)) pg));
@@ -3666,7 +3818,7 @@ instruct extractUB_ireg(iRegINoSp dst, vReg src, iRegI idx, vReg tmp) %{
       assert(UseSVE > 0, "must be sve");
       __ sve_tbl($tmp$$FloatRegister, __ B, $src$$FloatRegister, $tmp$$FloatRegister);
     }
-    __ smov($dst$$Register, $tmp$$FloatRegister, __ B, 0);
+    __ umov($dst$$Register, $tmp$$FloatRegister, __ B, 0);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -4513,14 +4665,14 @@ instruct vmask_lasttrue_neon(iRegINoSp dst, vReg src) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vmask_lasttrue_sve(iRegINoSp dst, pReg src, pReg ptmp) %{
+instruct vmask_lasttrue_sve(iRegINoSp dst, pRegGov src, vReg vtmp, rFlagsReg cr) %{
   predicate(UseSVE > 0);
   match(Set dst (VectorMaskLastTrue src));
-  effect(TEMP ptmp);
-  format %{ "vmask_lasttrue_sve $dst, $src\t# KILL $ptmp" %}
+  effect(TEMP vtmp, KILL cr);
+  format %{ "vmask_lasttrue_sve $dst, $src\t# KILL $vtmp, cr" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this, $src);
-    __ sve_vmask_lasttrue($dst$$Register, bt, $src$$PRegister, $ptmp$$PRegister);
+    __ sve_vmask_lasttrue($dst$$Register, bt, $src$$PRegister, $vtmp$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}

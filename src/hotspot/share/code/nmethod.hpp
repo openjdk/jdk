@@ -27,6 +27,7 @@
 
 #include "code/codeBlob.hpp"
 #include "code/pcDesc.hpp"
+#include "compiler/compilerDefinitions.hpp"
 #include "oops/metadata.hpp"
 #include "oops/method.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -47,6 +48,8 @@ class JvmtiThreadState;
 class MetadataClosure;
 class NativeCallWrapper;
 class OopIterateClosure;
+class AOTCodeReader;
+class AOTCodeEntry;
 class ScopeDesc;
 class xmlStream;
 
@@ -204,10 +207,15 @@ class nmethod : public CodeBlob {
 
   CompiledICData* _compiled_ic_data;
 
+  AOTCodeEntry* _aot_code_entry;
+
   // offsets for entry points
   address  _osr_entry_point;       // entry point for on stack replacement
   uint16_t _entry_offset;          // entry point with class check
   uint16_t _verified_entry_offset; // entry point without class check
+  uint16_t _value_entry_offset;             // value type entry point (unpack all value type args) with class check
+  uint16_t _verified_value_entry_offset;    // value type entry point (unpack all value type args) without class check
+  uint16_t _verified_value_ro_entry_offset; // value type entry point (unpack receiver only) without class check
   int      _entry_bci;             // != InvocationEntryBci if this nmethod is an on-stack replacement method
   int      _immutable_data_size;
 
@@ -257,15 +265,24 @@ public:
       UNSAFE_ACCESS = 1 << 0,
       WIDE_VECTORS  = 1 << 1,
       MONITORS      = 1 << 2,
-      SCOPED_ACCESS = 1 << 3
+      SCOPED_ACCESS = 1 << 3,
+      NEEDS_STACK_REPAIR = 1 << 4,
+      CLINIT_BARRIERS = 1 << 5
     };
 
     Flags() : _bits(0) {}
-    Flags(bool has_unsafe_access, bool has_wide_vectors, bool has_monitors, bool has_scoped_access) :
-      _bits((has_unsafe_access ? UNSAFE_ACCESS : 0) |
-            (has_wide_vectors  ? WIDE_VECTORS  : 0) |
-            (has_monitors      ? MONITORS      : 0) |
-            (has_scoped_access ? SCOPED_ACCESS : 0))
+    Flags(bool has_unsafe_access,
+          bool has_wide_vectors,
+          bool has_monitors,
+          bool has_scoped_access,
+          bool needs_stack_repair,
+          bool has_clinit_barriers) :
+      _bits((has_unsafe_access   ? UNSAFE_ACCESS : 0) |
+            (has_wide_vectors    ? WIDE_VECTORS  : 0) |
+            (has_monitors        ? MONITORS      : 0) |
+            (has_scoped_access   ? SCOPED_ACCESS : 0) |
+            (needs_stack_repair  ? NEEDS_STACK_REPAIR : 0) |
+            (has_clinit_barriers ? CLINIT_BARRIERS : 0))
     {}
 
     // May fault due to unsafe access
@@ -279,6 +296,12 @@ public:
 
     // Used by shared scope closure (scopedMemoryAccess.cpp)
     bool has_scoped_access() const { return (_bits & SCOPED_ACCESS) != 0; }
+
+    // Stack has been extended and needs repair. See comment in MacroAssembler::remove_frame
+    bool needs_stack_repair() const { return (_bits & NEEDS_STACK_REPAIR) != 0; }
+
+    // AOT preload code has clinit barriers
+    bool has_clinit_barriers() const {  return (_bits & CLINIT_BARRIERS) != 0; }
   };
 
 private:
@@ -293,6 +316,9 @@ private:
 
   // Used by JVMTI to track if an event has been posted for this nmethod
   bool _load_reported;
+
+  // This AOT code was preloaded before method is called
+  bool _aot_preloaded;
 
   enum DeoptimizationStatus : u1 {
     not_marked,
@@ -352,7 +378,6 @@ private:
 
   // helper methods
   void* operator new(size_t size, int nmethod_size, int comp_level) throw();
-  void* operator new(size_t size, int nmethod_size, CodeBlobType code_blob_type) throw();
 
   // For method handle intrinsics: Try MethodNonProfiled, MethodProfiled and NonNMethod.
   // Attention: Only allow NonNMethod space for special nmethods which don't need to be
@@ -486,6 +511,18 @@ private:
   // transitions).
   void oops_do_set_strong_done(nmethod* old_head);
 
+  void record_nmethod_dependency();
+#if INCLUDE_CDS
+  nmethod* restore(address code_cache_buffer,
+                   const methodHandle& method,
+                   AOTCodeReader* aot_code_reader);
+
+public:
+  // create nmethod using archived nmethod from AOT code cache
+  static nmethod* new_nmethod(nmethod* archived_nm,
+                              const methodHandle& method,
+                              AOTCodeReader* aot_code_reader);
+#endif
 public:
   enum class InvalidationReason : s1 {
     NOT_INVALIDATED = -1,
@@ -569,11 +606,40 @@ public:
                               CompLevel comp_level,
                               Flags flags);
 
+  enum class RelocationResult : u1 {
+    SUCCESS,
+    FAILED_NO_SPACE_IN_CODE_HEAP,
+    FAILED_NOT_RELOCATABLE_NMETHOD,
+    FAILED_INVALIDATED_NMETHOD
+  };
+
+  static const char* relocation_result_to_string(RelocationResult relocation_result) {
+    switch (relocation_result) {
+      case RelocationResult::SUCCESS:
+        return "relocated";
+      case RelocationResult::FAILED_NO_SPACE_IN_CODE_HEAP:
+        return "not enough space in the code heap";
+      case RelocationResult::FAILED_NOT_RELOCATABLE_NMETHOD:
+        return "not relocatable nmethod";
+      case RelocationResult::FAILED_INVALIDATED_NMETHOD:
+        return "nmethod invalidated during relocation";
+      default: {
+        assert(false, "Unhandled relocation result");
+        return "Unknown";
+      }
+    }
+  }
+
   // Relocate the nmethod to the code heap identified by code_blob_type.
-  // Returns nullptr if the code heap does not have enough space, the
-  // nmethod is unrelocatable, or the nmethod is invalidated during relocation,
-  // otherwise the relocated nmethod. The original nmethod will be marked not entrant.
-  nmethod* relocate(CodeBlobType code_blob_type);
+  // Returns nullptr if the code heap does not have enough space,
+  // the nmethod is unrelocatable, or the nmethod is invalidated during
+  // relocation, otherwise the relocated nmethod (relocation_result is set
+  // if provided).
+  //
+  // If relocation succeeds, the relocated nmethod is installed into
+  // the owner of the original nmethod and the original nmethod is made
+  // not entrant.
+  nmethod* relocate(CodeBlobType code_blob_type, RelocationResult* relocation_result = nullptr);
 
   static nmethod* new_native_nmethod(const methodHandle& method,
                                      int compile_id,
@@ -587,10 +653,12 @@ public:
                                      int exception_handler = -1);
 
   Method* method       () const { return _method; }
+  uint16_t entry_bci   () const { return _entry_bci; }
   bool is_native_method() const { return _method != nullptr && _method->is_native(); }
   bool is_java_method  () const { return _method != nullptr && !_method->is_native(); }
   bool is_osr_method   () const { return _entry_bci != InvocationEntryBci; }
 
+  int  orig_pc_offset() const { return _orig_pc_offset; }
   bool is_relocatable();
 
   // Compiler task identification.  Note that all OSR methods
@@ -598,6 +666,8 @@ public:
   // and native method wrappers are also numbered independently if
   // CICountNative is true.
   int compile_id() const { return _compile_id; }
+  void set_compile_id(int compile_id) { _compile_id = compile_id; }
+  int comp_level() const { return _comp_level; }
   const char* compile_kind() const;
 
   inline bool  is_compiled_by_c1   () const { return _compiler_type == compiler_c1; }
@@ -638,6 +708,8 @@ public:
   address scopes_data_end       () const { return           _immutable_data + _immutable_data_ref_count_offset ; }
   address immutable_data_ref_count_begin () const { return  _immutable_data + _immutable_data_ref_count_offset ; }
 
+  void set_immutable_data(address data) { _immutable_data = data; }
+
   // Sizes
   int immutable_data_size() const { return _immutable_data_size; }
   int consts_size        () const { return int(          consts_end       () -           consts_begin       ()); }
@@ -674,6 +746,11 @@ public:
   // entry points
   address entry_point() const          { return code_begin() + _entry_offset;          } // normal entry point
   address verified_entry_point() const { return code_begin() + _verified_entry_offset; } // if klass is correct
+  address value_entry_point() const              { return code_begin() + _value_entry_offset; }             // value type entry point (unpack all value type args)
+  address verified_value_entry_point() const     { return code_begin() + _verified_value_entry_offset; }    // value type entry point (unpack all value type args) without class check
+  address verified_value_ro_entry_point() const  { return code_begin() + _verified_value_ro_entry_offset; } // value type entry point (only unpack receiver) without class check
+
+  int inline_instructions_size() const { return insts_end() - verified_entry_point() - skipped_instructions_size(); }
 
   enum : signed char { not_installed = -1, // in construction, only the owner doing the construction is
                                            // allowed to advance state
@@ -696,12 +773,13 @@ public:
   bool make_in_use() {
     return try_transition(in_use);
   }
+
   // Make the nmethod non entrant. The nmethod will continue to be
   // alive.  It is used when an uncommon trap happens.  Returns true
   // if this thread changed the state of the nmethod or false if
   // another thread performed the transition.
-  bool  make_not_entrant(InvalidationReason invalidation_reason);
-  bool  make_not_used() { return make_not_entrant(InvalidationReason::NOT_USED); }
+  bool  make_not_entrant(InvalidationReason invalidation_reason, bool keep_aot_entry = false);
+  bool  make_not_used() { return make_not_entrant(InvalidationReason::NOT_USED, true /* keep AOT entry */); }
 
   bool  is_marked_for_deoptimization() const { return deoptimization_status() != not_marked; }
   bool  has_been_deoptimized() const { return deoptimization_status() == deoptimize_done; }
@@ -732,6 +810,11 @@ public:
   bool  has_monitors() const                      { return _flags.has_monitors(); }
   bool  has_scoped_access() const                 { return _flags.has_scoped_access(); }
   bool  has_wide_vectors() const                  { return _flags.has_wide_vectors(); }
+  bool  needs_stack_repair() const                { return _flags.needs_stack_repair(); }
+  bool  has_clinit_barriers() const               { return _flags.has_clinit_barriers(); }
+
+  bool  aot_preloaded() const                     { return _aot_preloaded; }
+  void  set_aot_preloaded(bool z)                 { _aot_preloaded = z; }
 
   bool  has_flushed_dependencies() const          { return _has_flushed_dependencies; }
   void  set_has_flushed_dependencies(bool z)      {
@@ -745,7 +828,9 @@ public:
       _is_unlinked = true;
   }
 
-  int   comp_level() const                        { return _comp_level; }
+  bool is_aot() const                             { return _aot_code_entry != nullptr; }
+  void set_aot_code_entry(AOTCodeEntry* entry)    { _aot_code_entry = entry; }
+  AOTCodeEntry* aot_code_entry() const            { return _aot_code_entry; }
 
   // Support for oops in scopes and relocs:
   // Note: index 0 is reserved for null.
@@ -766,6 +851,7 @@ public:
     return &metadata_begin()[index - 1];
   }
 
+  void copy_values(GrowableArray<Handle>* array);
   void copy_values(GrowableArray<jobject>* oops);
   void copy_values(GrowableArray<Metadata*>* metadata);
   void copy_values(GrowableArray<address>* metadata) {} // Nothing to do
@@ -781,6 +867,8 @@ protected:
 public:
   void fix_oop_relocations(ICacheInvalidationContext* icic);
   void fix_oop_relocations();
+
+  void create_reloc_immediates_list(JavaThread* thread, GrowableArray<Handle>& oop_list, GrowableArray<Metadata*>& metadata_list);
 
   bool is_at_poll_return(address pc);
   bool is_at_poll_or_poll_return(address pc);
@@ -812,7 +900,7 @@ public:
   const char* state() const;
 
   bool inlinecache_check_contains(address addr) const {
-    return (addr >= code_begin() && addr < verified_entry_point());
+    return (addr >= code_begin() && (addr < verified_entry_point() || addr < verified_value_entry_point()));
   }
 
   void preserve_callee_argument_oops(frame fr, const RegisterMap *reg_map, OopClosure* f);
@@ -948,8 +1036,6 @@ public:
   void copy_scopes_pcs(PcDesc* pcs, int count);
   void copy_scopes_data(address buffer, int size);
 
-  int orig_pc_offset() { return _orig_pc_offset; }
-
   // Post successful compilation
   void post_compiled_method(CompileTask* task);
 
@@ -979,7 +1065,7 @@ public:
 
 #if defined(SUPPORT_DATA_STRUCTS)
   // print output in opt build for disassembler library
-  void print_relocations()                        PRODUCT_RETURN;
+  void print_relocations_on(outputStream* st)     PRODUCT_RETURN;
   void print_pcs_on(outputStream* st);
   void print_scopes() { print_scopes_on(tty); }
   void print_scopes_on(outputStream* st)          PRODUCT_RETURN;
@@ -1022,9 +1108,10 @@ public:
   // and the changes have invalidated it
   bool check_dependency_on(DepChange& changes);
 
-  // Fast breakpoint support. Tells if this compiled method is
-  // dependent on the given method. Returns true if this nmethod
-  // corresponds to the given method as well.
+  // Tells if this compiled method is dependent on the given method.
+  // Returns true if this nmethod corresponds to the given method as well.
+  // It is used for fast breakpoint support and updating the calling convention
+  // in case of mismatch.
   bool is_dependent_on_method(Method* dependee);
 
   // JVMTI's GetLocalInstance() support
@@ -1048,6 +1135,8 @@ public:
   void make_deoptimized();
   void finalize_relocations();
 
+  void prepare_for_archiving_impl();
+
   class Vptr : public CodeBlob::Vptr {
     void print_on(const CodeBlob* instance, outputStream* st) const override {
       ttyLocker ttyl;
@@ -1056,6 +1145,9 @@ public:
     void print_value_on(const CodeBlob* instance, outputStream* st) const override {
       instance->as_nmethod()->print_value_on_impl(st);
     }
+    void prepare_for_archiving(CodeBlob* instance) const override {
+      ((nmethod*)instance)->prepare_for_archiving_impl();
+    };
   };
 
   static const Vptr _vpntr;

@@ -24,11 +24,12 @@
 /*
  * @test TestOverloadCompileQueues
  * @bug 8163511 8230402
+ * @key stress
  * @summary Test overloading the C1 and C2 compile queues with tasks.
  * @run main/othervm/timeout=1200 -XX:-TieredCompilation -XX:CompileThreshold=2 -XX:CICompilerCount=1
- *                   compiler.classUnloading.methodUnloading.TestOverloadCompileQueues
+ *                   ${test.main.class}
  * @run main/othervm/timeout=1200 -XX:TieredCompileTaskTimeout=1000 -XX:CompileThresholdScaling=0.001 -XX:CICompilerCount=2
- *                   compiler.classUnloading.methodUnloading.TestOverloadCompileQueues
+ *                   ${test.main.class}
  */
 
 package compiler.classUnloading.methodUnloading;

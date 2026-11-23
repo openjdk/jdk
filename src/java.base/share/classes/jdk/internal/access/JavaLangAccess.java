@@ -78,6 +78,12 @@ public interface JavaLangAccess {
     ConstantPool getConstantPool(Class<?> klass);
 
     /**
+     * Returns whether the given class or any of its superclasses has been
+     * redefined or retransformed.
+     */
+    boolean hasBeenRedefined(Class<?> klass);
+
+    /**
      * Compare-And-Set the AnnotationType instance corresponding to this class.
      * (This method only applies to annotation types.)
      */
@@ -125,12 +131,6 @@ public interface JavaLangAccess {
     <E extends Enum<E>> E[] getEnumConstantsShared(Class<E> klass);
 
     /**
-     * Returns the big-endian packed minor-major version of the class file
-     * of this class.
-     */
-    int classFileVersion(Class<?> clazz);
-
-    /**
      * Set current thread's blocker field.
      */
     void blockedOn(Interruptible b);
@@ -138,10 +138,10 @@ public interface JavaLangAccess {
     /**
      * Registers a shutdown hook.
      *
-     * It is expected that this method with registerShutdownInProgress=true
-     * is only used to register DeleteOnExitHook since the first file
-     * may be added to the delete on exit list by the application shutdown
-     * hooks.
+     * It is expected that registerShutdownInProgress is false for the hook
+     * that runs application shutdown hooks. It may be true for other hooks,
+     * e.g. DeleteOnExitHook, as the first invocation of File.deleteOnExit
+     * may occur in an application shutdown hook.
      *
      * @param slot  the slot in the shutdown hook array, whose element
      *              will be invoked in order during shutdown
@@ -255,6 +255,12 @@ public interface JavaLangAccess {
      * Returns true if module m reflectively opens a package to other
      */
     boolean isReflectivelyOpened(Module module, String pn, Module other);
+
+    /**
+     * Returns true if there are readability, exports/uses, or service uses that were added
+     * reflectively.
+     */
+    boolean hasModuleReflectionData();
 
     /**
      * Updates module m to allow access to restricted methods.
@@ -659,4 +665,18 @@ public interface JavaLangAccess {
      * Finish initialization of the StackTraceElement objects in a stack trace.
      */
     void finishInit(StackTraceElement[] stackTrace);
+
+    /**
+     * Returns the live native pool-cache storage for the given platform thread, or
+     * {@code null} if uninitialized. The caller must provide owner-confined
+     * access; the returned array is not synchronized.
+     */
+    long[] getConfinedMemoryPools(Thread thread);
+
+    /**
+     * Returns the live native pool-cache storage for the given platform thread or
+     * initializes one if needed. The caller must provide owner-confined
+     * access; the returned array is not synchronized.
+     */
+    long[] getOrCreateConfinedMemoryPools(Thread thread, int poolSlots);
 }

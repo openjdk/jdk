@@ -47,6 +47,7 @@ import java.awt.geom.Line2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.geom.GeneralPath;
 import java.text.AttributedCharacterIterator.Attribute;
+import java.util.Objects;
 
 import static sun.font.AttributeValues.*;
 import static sun.font.EAttribute.*;
@@ -169,48 +170,17 @@ public class Decoration {
             this.imUnderline = imUnderline;
         }
 
-        private static boolean areEqual(Object lhs, Object rhs) {
-
-            if (lhs == null) {
-                return rhs == null;
-            }
-            else {
-                return lhs.equals(rhs);
-            }
-        }
-
-        public boolean equals(Object rhs) {
-
-            if (rhs == this) {
+        public boolean equals(Object o) {
+            if (o == this) {
                 return true;
             }
-            if (rhs == null) {
-                return false;
-            }
-
-            DecorationImpl other = null;
-            try {
-                other = (DecorationImpl) rhs;
-            }
-            catch(ClassCastException e) {
-                return false;
-            }
-
-            if (!(swapColors == other.swapColors &&
-                        strikethrough == other.strikethrough)) {
-                return false;
-            }
-
-            if (!areEqual(stdUnderline, other.stdUnderline)) {
-                return false;
-            }
-            if (!areEqual(fgPaint, other.fgPaint)) {
-                return false;
-            }
-            if (!areEqual(bgPaint, other.bgPaint)) {
-                return false;
-            }
-            return areEqual(imUnderline, other.imUnderline);
+            return o instanceof DecorationImpl other &&
+                swapColors == other.swapColors &&
+                strikethrough == other.strikethrough &&
+                Objects.equals(stdUnderline, other.stdUnderline) &&
+                Objects.equals(fgPaint, other.fgPaint) &&
+                Objects.equals(bgPaint, other.bgPaint) &&
+                Objects.equals(imUnderline, other.imUnderline);
         }
 
         public int hashCode() {
@@ -304,8 +274,7 @@ public class Decoration {
                 if (swapColors) {
                     background = fgPaint==null? savedPaint : fgPaint;
                     if (bgPaint == null) {
-                        if (background instanceof Color) {
-                            Color bg = (Color)background;
+                        if (background instanceof Color bg) {
                             // 30/59/11 is standard weights, tweaked a bit
                             int brightness = 33 * bg.getRed()
                                 + 53 * bg.getGreen()

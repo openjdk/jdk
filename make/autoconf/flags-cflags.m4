@@ -213,6 +213,7 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
       WARNINGS_ENABLE_ADDITIONAL=""
       WARNINGS_ENABLE_ADDITIONAL_CXX=""
       WARNINGS_ENABLE_ADDITIONAL_JVM=""
+      WARNINGS_ENABLE_ADDITIONAL_JDK="-w34189"
       DISABLED_WARNINGS="4800 5105"
       CFLAGS_CONVERSION_WARNINGS=
       ;;
@@ -582,7 +583,7 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
 
     if test "x$OPENJDK_TARGET_OS" = xaix; then
       TOOLCHAIN_CFLAGS_JVM="$TOOLCHAIN_CFLAGS_JVM -ffunction-sections -ftls-model -fno-math-errno"
-      TOOLCHAIN_CFLAGS_JDK="-ffunction-sections -fsigned-char"
+      TOOLCHAIN_CFLAGS_JDK="-ffunction-sections"
     fi
 
     TOOLCHAIN_CFLAGS_JDK="$TOOLCHAIN_CFLAGS_JDK -fvisibility=hidden -fstack-protector"
@@ -623,8 +624,8 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
   ADLC_LANGSTD_CXXFLAGS="$LANGSTD_CXXFLAGS"
 
   # CFLAGS WARNINGS STUFF
-  WARNING_CFLAGS_JDK_CONLY="$WARNINGS_ENABLE_ALL"
-  WARNING_CFLAGS_JDK_CXXONLY="$WARNINGS_ENABLE_ALL_CXX"
+  WARNING_CFLAGS_JDK_CONLY="$WARNINGS_ENABLE_ALL $WARNINGS_ENABLE_ADDITIONAL_JDK"
+  WARNING_CFLAGS_JDK_CXXONLY="$WARNINGS_ENABLE_ALL_CXX $WARNINGS_ENABLE_ADDITIONAL_JDK"
   WARNING_CFLAGS_JVM="$WARNINGS_ENABLE_ALL_JVM"
 
   # Set some additional per-OS defines.
@@ -722,6 +723,12 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
       fi
     else
       AC_MSG_RESULT([no])
+    fi
+
+    if test "x$FLAGS_OS" = xlinux && test "x$FLAGS_CPU" = xriscv64; then
+      # SA needs asynchronous unwind tables to unwind native frames. They are
+      # not enabled by default on riscv64 before GCC 13 and Clang 17.
+      $1_CFLAGS_CPU="${$1_CFLAGS_CPU} -fasynchronous-unwind-tables"
     fi
   fi
 
@@ -945,11 +952,21 @@ AC_DEFUN_ONCE([FLAGS_SETUP_BRANCH_PROTECTION],
 [
   # Is branch protection available?
   BRANCH_PROTECTION_AVAILABLE=false
-  BRANCH_PROTECTION_FLAG="-mbranch-protection=standard"
+  BRANCH_PROTECTION_CFLAG=""
+  BRANCH_PROTECTION_ASFLAG=""
 
   if test "x$OPENJDK_TARGET_CPU" = xaarch64; then
     if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
-      FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [$BRANCH_PROTECTION_FLAG],
+      BRANCH_PROTECTION_CFLAG="-mbranch-protection=standard"
+      # The GCC/Clang assembler accepts the same flag as the compiler.
+      BRANCH_PROTECTION_ASFLAG="$BRANCH_PROTECTION_CFLAG"
+      FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [$BRANCH_PROTECTION_CFLAG],
+          IF_TRUE: [BRANCH_PROTECTION_AVAILABLE=true])
+    elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
+      BRANCH_PROTECTION_CFLAG="/guard:signret"
+      # MSVC's assembler does not support branch protection flags, so
+      # BRANCH_PROTECTION_ASFLAG is intentionally left empty.
+      FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [$BRANCH_PROTECTION_CFLAG],
           IF_TRUE: [BRANCH_PROTECTION_AVAILABLE=true])
     fi
   fi
@@ -957,5 +974,5 @@ AC_DEFUN_ONCE([FLAGS_SETUP_BRANCH_PROTECTION],
   UTIL_ARG_ENABLE(NAME: branch-protection, DEFAULT: false,
       RESULT: BRANCH_PROTECTION_ENABLED, AVAILABLE: $BRANCH_PROTECTION_AVAILABLE,
       DESC: [enable branch protection when compiling C/C++],
-      IF_ENABLED: [BRANCH_PROTECTION_CFLAGS=$BRANCH_PROTECTION_FLAG])
+      IF_ENABLED: [BRANCH_PROTECTION_CFLAGS=$BRANCH_PROTECTION_CFLAG])
 ])

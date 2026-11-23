@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ import static jdk.internal.constant.ConstantUtils.validateMemberName;
  *
  * @since 12
  */
-public final class DynamicCallSiteDesc {
+public final class DynamicCallSiteDesc implements ConstantDescs.CallSiteBootstrapMethodHook {
 
     private final DirectMethodHandleDesc bootstrapMethod;
     private final ConstantDesc[] bootstrapArgs;
@@ -207,12 +207,14 @@ public final class DynamicCallSiteDesc {
     }
 
     /**
-     * Returns a {@link MethodHandleDesc} describing the bootstrap method for
+     * Returns a {@link DirectMethodHandleDesc} describing the bootstrap method for
      * the {@code invokedynamic}.
      *
      * @return the bootstrap method for the {@code invokedynamic}
+     * @since 28
      */
-    public MethodHandleDesc bootstrapMethod() { return bootstrapMethod; }
+    @Override
+    public DirectMethodHandleDesc bootstrapMethod() { return bootstrapMethod; }
 
     /**
      * Returns {@link ConstantDesc}s describing the bootstrap arguments for the

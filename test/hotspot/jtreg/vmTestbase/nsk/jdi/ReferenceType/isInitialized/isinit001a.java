@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,15 +27,13 @@ import nsk.share.*;
 import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
-
 /**
  * This class is used as debugee application for the isinit001 JDI test.
  */
 
 public class isinit001a {
 
-    static boolean verbose_mode = false;  // debugger may switch to true
-                                          // - for more easy failure evaluation
+    private static Log log = new Log(System.err);
 
     NotInitializedClass not_initialized_class_0,
         not_initialized_class_1[] = {not_initialized_class_0};
@@ -47,33 +45,20 @@ public class isinit001a {
 
     int copy_super_class_int_var = SubClass.super_class_int_var;
 
-    private static void print_log_on_verbose(String message) {
-        if ( verbose_mode ) {
-            System.err.println(message);
-        }
-    }
-
     public static void main (String argv[]) {
 
-        for (int i=0; i<argv.length; i++) {
-            if ( argv[i].equals("-vbs") || argv[i].equals("-verbose") ) {
-                verbose_mode = true;
-                break;
-            }
-        }
-
-        print_log_on_verbose("**> isinit001a: debugee started!");
+        log.display("**> isinit001a: debugee started!");
         ArgumentHandler argHandler = new ArgumentHandler(argv);
         IOPipe pipe = argHandler.createDebugeeIOPipe();
 
         isinit001a isinit001a_obj = new isinit001a();
 
-        print_log_on_verbose("**> isinit001a: waiting for \"quit\" signal...");
+        log.display("**> isinit001a: waiting for \"quit\" signal...");
         pipe.println("ready");
         String instruction = pipe.readln();
         if (instruction.equals("quit")) {
-            print_log_on_verbose("**> isinit001a: \"quit\" signal recieved!");
-            print_log_on_verbose("**> isinit001a: completed succesfully!");
+            log.display("**> isinit001a: \"quit\" signal recieved!");
+            log.display("**> isinit001a: completed succesfully!");
             System.exit(0/*STATUS_PASSED*/ + 95/*STATUS_TEMP*/);
         }
         System.err.println("!!**> isinit001a: unexpected signal (no \"quit\") - " + instruction);
@@ -87,7 +72,6 @@ class NotInitializedClass {}
 
 // not initialized interface
 interface NotInitializedInterface {}
-
 
 // initialized interface
 interface InitializedInterface {

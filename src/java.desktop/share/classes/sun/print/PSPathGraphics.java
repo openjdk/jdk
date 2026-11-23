@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,6 +78,7 @@ class PSPathGraphics extends PathGraphics {
      *                       this graphics context.
      * @since      1.0
      */
+    @Override
     public Graphics create() {
 
         return new PSPathGraphics((Graphics2D) getDelegate().create(),
@@ -94,6 +95,7 @@ class PSPathGraphics extends PathGraphics {
      * so that we can generate PostScript in user space
      * rather than device space.
      */
+    @Override
     public void fill(Shape s, Color color) {
         deviceFill(s.getPathIterator(new AffineTransform()), color);
     }
@@ -110,6 +112,7 @@ class PSPathGraphics extends PathGraphics {
      * @see         java.awt.Graphics#drawChars
      * @since       1.0
      */
+    @Override
     public void drawString(String str, int x, int y) {
         drawString(str, (float) x, (float) y);
     }
@@ -136,20 +139,24 @@ class PSPathGraphics extends PathGraphics {
      * @see #setComposite
      * @see #setClip
      */
+     @Override
      public void drawString(String str, float x, float y) {
          drawString(str, x, y, getFont(), getFontRenderContext(), 0f);
      }
 
 
+    @Override
     protected boolean canDrawStringToWidth() {
         return true;
     }
 
+    @Override
     protected int platformFontCount(Font font, String str) {
         PSPrinterJob psPrinterJob = (PSPrinterJob) getPrinterJob();
         return psPrinterJob.platformFontCount(font,  str);
     }
 
+    @Override
     protected void drawString(String str, float x, float y,
                               Font font, FontRenderContext frc, float w) {
         if (str.length() == 0) {
@@ -276,6 +283,7 @@ class PSPathGraphics extends PathGraphics {
      * @param   handlingTransparency if being recursively called to
      *                    print opaque region of transparent image
      */
+    @Override
     protected boolean drawImageToPlatform(Image image, AffineTransform xform,
                                           Color bgcolor,
                                           int srcX, int srcY,
@@ -636,6 +644,7 @@ class PSPathGraphics extends PathGraphics {
       *
       */
 
+    @Override
     public void redrawRegion(Rectangle2D region, double scaleX, double scaleY,
                              Shape savedClip, AffineTransform savedTransform)
 
@@ -736,6 +745,7 @@ class PSPathGraphics extends PathGraphics {
      * with the specified color.
      * The path is provided in current user space.
      */
+    @Override
     protected void deviceFill(PathIterator pathIter, Color color) {
 
         PSPrinterJob psPrinterJob = (PSPrinterJob) getPrinterJob();
@@ -746,6 +756,7 @@ class PSPathGraphics extends PathGraphics {
      * Draw the bounding rectangle using path by calling draw()
      * function and passing a rectangle shape.
      */
+    @Override
     protected void deviceFrameRect(int x, int y, int width, int height,
                                    Color color) {
 
@@ -756,6 +767,7 @@ class PSPathGraphics extends PathGraphics {
      * Draw a line using path by calling draw() function and passing
      * a line shape.
      */
+    @Override
     protected void deviceDrawLine(int xBegin, int yBegin,
                                   int xEnd, int yEnd, Color color) {
 
@@ -765,6 +777,7 @@ class PSPathGraphics extends PathGraphics {
     /*
      * Fill the rectangle with the specified color by calling fill().
      */
+    @Override
     protected void deviceFillRect(int x, int y, int width, int height,
                                   Color color) {
         fill(new Rectangle2D.Float(x, y, width, height));
@@ -776,6 +789,7 @@ class PSPathGraphics extends PathGraphics {
      * FIX: Rework PathGraphics so that this method is
      * not an abstract method there.
      */
+    @Override
     protected void deviceClip(PathIterator pathIter) {
     }
 

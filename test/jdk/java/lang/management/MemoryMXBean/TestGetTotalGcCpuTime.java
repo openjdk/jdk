@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,6 +80,8 @@ import java.lang.management.MemoryMXBean;
 import java.lang.management.ThreadMXBean;
 import java.util.ArrayList;
 
+import jdk.test.lib.Platform;
+
 public class TestGetTotalGcCpuTime {
     static final ThreadMXBean mxThreadBean = ManagementFactory.getThreadMXBean();
     static final MemoryMXBean mxMemoryBean = ManagementFactory.getMemoryMXBean();
@@ -99,10 +101,17 @@ public class TestGetTotalGcCpuTime {
             return;
         }
 
-        // Add some tracing work to ensure OSs with slower update rates would report usage
-        for (int i = 0; i < 200; i++) {
+        // Add some tracing work to ensure time is spent in GC.
+        int loop1 = 200;
+        int loop2 = 5000;
+        if (Platform.isWindows()) {
+            // Windows has coarser timer ganularity, needs more work to reliably register >0 time.
+            loop1 = 1000;
+            loop2 = 6000;
+        }
+        for (int i = 0; i < loop1; i++) {
             objs = new ArrayList<Object>();
-            for (int j = 0; j < 5000; j++) {
+            for (int j = 0; j < loop2; j++) {
                 objs.add(new Object());
             }
             System.gc();
@@ -116,7 +125,7 @@ public class TestGetTotalGcCpuTime {
             }
         } else {
             if (gcCpuTimeFromThread <= 0) {
-                throw new RuntimeException("Some GC CPU time must have been reported");
+                throw new RuntimeException("Some GC CPU time must have been reported: gcCpuTimeFromThread = " + gcCpuTimeFromThread);
             }
         }
     }

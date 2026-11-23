@@ -137,7 +137,7 @@ inline bool MacroAssembler::is_calculate_address_from_global_toc_at(address a, a
 
 #ifdef _LP64
 // Detect narrow oop constants.
-inline bool MacroAssembler::is_set_narrow_oop(address a, address bound) {
+inline bool MacroAssembler::is_set_narrow_oop(address a, address lower_bound) {
   const address inst2_addr = a;
   const int inst2 = *(int *)a;
   // The relocation points to the second instruction, the ori.
@@ -147,15 +147,11 @@ inline bool MacroAssembler::is_set_narrow_oop(address a, address bound) {
   const int dst = inv_rta_field(inst2);
   if (inv_rs_field(inst2) != dst) return false;
 
-  // Now, find the preceding addis which writes to dst.
-  int inst1 = 0;
-  address inst1_addr = inst2_addr - BytesPerInstWord;
-  while (inst1_addr >= bound) {
-    inst1 = *(int *) inst1_addr;
-    if (is_lis(inst1) && inv_rs_field(inst1) == dst) return true;
-    inst1_addr -= BytesPerInstWord;
-  }
-  return false;
+  // The preceding instruction must be the lis which writes dst.
+  const address inst1_addr = inst2_addr - BytesPerInstWord;
+  if (inst1_addr < lower_bound) return false;
+  const int inst1 = *(int *) inst1_addr;
+  return is_lis(inst1) && inv_rs_field(inst1) == dst;
 }
 #endif
 
@@ -305,6 +301,23 @@ inline void MacroAssembler::hf2f(FloatRegister dst, Register src) {
   mtfprd(dst, src);
   // Single precision values in FloatRegisters use double precision format on PPC64.
   xscvhpdp(dst->to_vsr(), dst->to_vsr());
+}
+
+inline void MacroAssembler::intBitsToFloat(FloatRegister dst, Register src) {
+  // Single precision values in FloatRegisters use double precision format on PPC64.
+  if (PowerArchitecturePPC64 >= 9) {
+    mtfprws(dst, src);                         // Move int into all word elements.
+  } else {
+    mtfprwz(dst, src);                         // Move int into word element 1.
+    xxspltw(dst->to_vsr(), dst->to_vsr(), 1);  // Replicate it into word element 0.
+  }
+  xscvspdpn(dst->to_vsr(), dst->to_vsr());     // Convert from word element 0.
+}
+
+inline void MacroAssembler::floatToIntBits(Register dst, FloatRegister src, FloatRegister tmp) {
+  // Single precision values in FloatRegisters use double precision format on PPC64.
+  xscvdpspn(tmp->to_vsr(), src->to_vsr());
+  mfvsrwz(dst, tmp->to_vsr());
 }
 
 // Convenience bc_far versions

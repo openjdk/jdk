@@ -26,6 +26,8 @@ package jdk.test.failurehandler;
 import java.io.FilterWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.HashSet;
+import java.util.Set;
 
 public class HtmlSection {
     protected final HtmlSection rootSection;
@@ -39,6 +41,7 @@ public class HtmlSection {
     protected final PrintWriter pw;
     protected final PrintWriter textWriter;
     protected boolean closed;
+    private final Set<String> sectionIds;
 
     private HtmlSection child;
 
@@ -56,6 +59,7 @@ public class HtmlSection {
         // main
         if (rootSection == null) {
             this.rootSection = this;
+            this.sectionIds = new HashSet<>();
             this.pw.println("<html>");
 
             this.pw.println("<head>");
@@ -68,6 +72,7 @@ public class HtmlSection {
             this.pw.println("<body>");
         } else {
             this.rootSection = rootSection;
+            this.sectionIds = new HashSet<>();
             this.pw.print("<ul>");
         }
     }
@@ -151,15 +156,31 @@ public class HtmlSection {
         return current;
     }
 
+    /**
+     * Returns {@code base} if no section has used it as an id yet, otherwise
+     * {@code base} with the first free numeric suffix ("-2", "-3", ...), and
+     * records the returned id as used. Keeps every section id unique so that
+     * anchors, {@code data-toggle} and {@code data-show} references resolve to
+     * the right occurrence when a command name is repeated.
+     */
+    private static String uniqueId(HtmlSection root, String base) {
+        String id = base;
+        for (int i = 2; !root.sectionIds.add(id); i++) {
+            id = base + "-" + i;
+        }
+        return id;
+    }
+
     private static class SubSection extends HtmlSection {
         private final HtmlSection parent;
 
         public SubSection(HtmlSection parent, String name,
                           HtmlSection rootSection) {
             super(parent.pw,
-                    parent.id.isEmpty()
-                            ? name
-                            : String.format("%s.%s", parent.id, name),
+                    uniqueId(rootSection,
+                            parent.id.isEmpty()
+                                    ? name
+                                    : String.format("%s.%s", parent.id, name)),
                     name, rootSection);
             this.parent = parent;
             pw.printf("<li><a name='%1$s'/><a href='#%1$s' data-toggle=\"%1$s\" >%2$s</a><div id='%1$s'><code><pre>",

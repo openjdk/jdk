@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,7 +138,7 @@ void NumberSeq::add(double val) {
 
 TruncatedSeq::TruncatedSeq(int length, double alpha):
   AbsSeq(alpha), _length(length), _next(0) {
-  _sequence = NEW_C_HEAP_ARRAY(double, _length, mtInternal);
+  _sequence = NEW_C_HEAP_ARRAY(double, _length, mtGC);
   for (int i = 0; i < _length; ++i)
     _sequence[i] = 0.0;
 }

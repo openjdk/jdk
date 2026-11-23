@@ -147,7 +147,7 @@ class SerialFullGC : AllStatic {
   // Mark pointer and follow contents.  Empty marking stack afterwards.
   template <class T> static inline void follow_root(T* p);
 
-  static inline void push_objarray(oop obj, size_t index);
+  static inline void push_objarray(objArrayOop obj, size_t index);
 
   static void follow_object(oop obj);
 

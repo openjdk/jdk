@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -253,7 +253,16 @@ ZVirtualMemoryManager::ZVirtualMemoryManager(size_t max_capacity)
                         EXACTFMTARGS(limit), EXACTFMTARGS(desired), EXACTFMTARGS(requested));
 
   if (reserved < max_capacity) {
-    ZInitialize::error_d("Failed to reserve " EXACTFMT " address space for Java heap", EXACTFMTARGS(max_capacity));
+    reserver.unreserve_all();
+
+    const bool has_reserve_limit = os::reserve_memory_limit() != SIZE_MAX;
+    const char* extra_message = has_reserve_limit
+       ? " Use -Xmx to explicitly set the heap size to limit how much memory is reserved."
+       : "";
+
+    ZInitialize::error_d("Failed to reserve " EXACTFMT " address space for Java heap.%s",
+                         EXACTFMTARGS(max_capacity), extra_message);
+
     return;
   }
 

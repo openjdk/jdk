@@ -41,6 +41,7 @@
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/markBitMap.inline.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
+#include "oops/oop.inline.hpp"
 #include "oops/stackChunkOop.hpp"
 #include "runtime/threadSMR.inline.hpp"
 #include "utilities/bitMap.inline.hpp"
@@ -73,6 +74,10 @@ inline void G1JavaThreadsListClaimer::apply(ThreadClosure* cl) {
       cl->do_thread(list[i]);
     }
   }
+}
+
+bool G1CollectedHeap::can_be_marked_through_immediately(oop obj) const {
+  return obj->is_array() && !obj->is_array_with_oops();
 }
 
 G1GCPhaseTimes* G1CollectedHeap::phase_times() const {
@@ -191,6 +196,12 @@ void G1CollectedHeap::register_humongous_candidate_region_with_region_attr(uint 
   _region_attr.set_humongous_candidate(index);
 }
 
+void G1CollectedHeap::register_humongous_non_candidate_region_with_region_attr(uint index) {
+  _region_attr.set_humongous_non_candidate(index,
+                                           region_at(index)->rem_set()->is_tracked(),
+                                           region_at(index)->has_pinned_objects());
+}
+
 void G1CollectedHeap::register_young_region_with_region_attr(G1HeapRegion* r) {
   assert(!is_in_cset(r), "should not already be registered as in collection set");
   _region_attr.set_in_young(r->hrm_index(), r->has_pinned_objects());
@@ -215,7 +226,8 @@ void G1CollectedHeap::register_old_collection_set_region_with_region_attr(G1Heap
 }
 
 void G1CollectedHeap::register_optional_region_with_region_attr(G1HeapRegion* r) {
-  _region_attr.set_optional(r->hrm_index(), r->rem_set()->is_tracked());
+  precond(r->rem_set()->is_tracked());
+  _region_attr.set_optional(r->hrm_index(), true /* is_remset_tracked */);
 }
 
 inline bool G1CollectedHeap::is_in_young(const oop obj) const {
@@ -291,12 +303,11 @@ inline void G1CollectedHeap::set_humongous_is_live(oop obj) {
 }
 
 inline bool G1CollectedHeap::is_collection_set_candidate(const G1HeapRegion* r) const {
-  const G1CollectionSetCandidates* candidates = collection_set()->candidates();
-  return candidates->contains(r);
+  return collection_set_candidates()->contains(r);
 }
 
 inline uint G1CollectedHeap::target_num_eden_regions() const {
-  return _policy->target_num_young_regions() - survivor_regions_count();
+  return _policy->target_num_young_regions() - num_survivor_regions();
 }
 
 #endif // SHARE_GC_G1_G1COLLECTEDHEAP_INLINE_HPP

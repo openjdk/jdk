@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -34,7 +34,7 @@ import jdk.xml.internal.Utils;
  * Module attribute. There may be at most one ModulePackages attribute in a ClassFile structure.
  *
  * @see Attribute
- * @LastModified: Sept 2025
+ * @LastModified: Nov 2026
  */
 public final class ModulePackages extends Attribute {
 
@@ -43,26 +43,24 @@ public final class ModulePackages extends Attribute {
     /**
      * Constructs object from input stream.
      *
-     * @param nameIndex Index in constant pool
-     * @param length Content length in bytes
-     * @param input Input stream
-     * @param constantPool Array of constants
-     * @throws IOException if an I/O error occurs.
+     * @param nameIndex Index in constant pool.
+     * @param length Content length in bytes.
+     * @param dataInput Input stream.
+     * @param constantPool Array of constants.
+     * @throws IOException Thrown if an I/O error occurs.
      */
-    ModulePackages(final int nameIndex, final int length, final DataInput input, final ConstantPool constantPool) throws IOException {
+    ModulePackages(final int nameIndex, final int length, final DataInput dataInput, final ConstantPool constantPool) throws IOException {
         this(nameIndex, length, (int[]) null, constantPool);
-        final int packageCount = input.readUnsignedShort();
-        packageIndexTable = new int[packageCount];
-        for (int i = 0; i < packageCount; i++) {
-            packageIndexTable[i] = input.readUnsignedShort();
-        }
+        packageIndexTable = ClassParser.readU2U2Table(dataInput);
     }
 
     /**
-     * @param nameIndex Index in constant pool
-     * @param length Content length in bytes
-     * @param packageIndexTable Table of indices in constant pool
-     * @param constantPool Array of constants
+     * Constructs a new ModulePackages.
+     *
+     * @param nameIndex Index in constant pool.
+     * @param length Content length in bytes.
+     * @param packageIndexTable Table of indices in constant pool.
+     * @param constantPool Array of constants.
      */
     public ModulePackages(final int nameIndex, final int length, final int[] packageIndexTable, final ConstantPool constantPool) {
         super(Const.ATTR_MODULE_PACKAGES, nameIndex, length, constantPool);
@@ -84,7 +82,7 @@ public final class ModulePackages extends Attribute {
      * Called by objects that are traversing the nodes of the tree implicitly defined by the contents of a Java class.
      * I.e., the hierarchy of methods, fields, attributes, etc. spawns a tree of objects.
      *
-     * @param v Visitor object
+     * @param v Visitor object.
      */
     @Override
     public void accept(final Visitor v) {
@@ -92,7 +90,7 @@ public final class ModulePackages extends Attribute {
     }
 
     /**
-     * @return deep copy of this attribute
+     * @return deep copy of this attribute.
      */
     @Override
     public Attribute copy(final ConstantPool constantPool) {
@@ -105,21 +103,23 @@ public final class ModulePackages extends Attribute {
     }
 
     /**
-     * Dump ModulePackages attribute to file stream in binary format.
+     * Dumps ModulePackages attribute to file stream in binary format.
      *
-     * @param file Output file stream
-     * @throws IOException if an I/O error occurs.
+     * @param file Output file stream.
+     * @throws IOException Thrown if an I/O error occurs.
      */
     @Override
     public void dump(final DataOutputStream file) throws IOException {
         super.dump(file);
-        file.writeShort(packageIndexTable.length);
+        file.writeShort(Args.requireU2(packageIndexTable.length, "packageIndexTable.length"));
         for (final int index : packageIndexTable) {
             file.writeShort(index);
         }
     }
 
     /**
+     * Gets the number of packages.
+     *
      * @return Length of package table.
      */
     public int getNumberOfPackages() {
@@ -127,6 +127,8 @@ public final class ModulePackages extends Attribute {
     }
 
     /**
+     * Gets the package index table.
+     *
      * @return array of indices into constant pool of package names.
      */
     public int[] getPackageIndexTable() {
@@ -134,7 +136,9 @@ public final class ModulePackages extends Attribute {
     }
 
     /**
-     * @return string array of package names
+     * Gets the package names.
+     *
+     * @return string array of package names.
      */
     public String[] getPackageNames() {
         final String[] names = new String[packageIndexTable.length];
@@ -143,14 +147,16 @@ public final class ModulePackages extends Attribute {
     }
 
     /**
-     * @param packageIndexTable the list of package indexes Also redefines number_of_packages according to table length.
+     * Sets the package index table.
+     *
+     * @param packageIndexTable The list of package indexes Also redefines number_of_packages according to table length.
      */
     public void setPackageIndexTable(final int[] packageIndexTable) {
         this.packageIndexTable = Utils.createEmptyArrayIfNull(packageIndexTable);
     }
 
     /**
-     * @return String representation, i.e., a list of packages.
+     * @return String representation, that is, a list of packages.
      */
     @Override
     public String toString() {

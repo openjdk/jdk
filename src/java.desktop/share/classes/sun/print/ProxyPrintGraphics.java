@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,7 @@ public class ProxyPrintGraphics extends ProxyGraphics
      * Returns the PrintJob object from which this PrintGraphics
      * object originated.
      */
+    @Override
     public PrintJob getPrintJob() {
         return printJob;
     }
@@ -59,6 +60,7 @@ public class ProxyPrintGraphics extends ProxyGraphics
      * @return     a new graphics context that is a copy of
      *                       this graphics context.
      */
+    @Override
     public Graphics create() {
         return new ProxyPrintGraphics(getGraphics().create(), printJob);
     }
@@ -80,11 +82,13 @@ public class ProxyPrintGraphics extends ProxyGraphics
      * @see        java.awt.Graphics#translate
      * @see        java.awt.Graphics#clipRect
      */
+    @Override
     public Graphics create(int x, int y, int width, int height) {
         Graphics g = getGraphics().create(x, y, width, height);
         return new ProxyPrintGraphics(g, printJob);
     }
 
+    @Override
     public Graphics getGraphics() {
         return super.getGraphics();
     }
@@ -96,6 +100,7 @@ public class ProxyPrintGraphics extends ProxyGraphics
     * We will preserve that behaviour and there is consequently no need
     * to take any action in this dispose method.
     */
+    @Override
     public void dispose() {
      super.dispose();
     }

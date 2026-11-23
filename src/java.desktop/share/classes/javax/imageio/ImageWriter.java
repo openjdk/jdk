@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -409,10 +409,12 @@ public abstract class ImageWriter implements ImageTranscoder {
                                 ImageWriteParam param);
 
     // comment inherited
+    @Override
     public abstract IIOMetadata convertStreamMetadata(IIOMetadata inData,
                                                       ImageWriteParam param);
 
     // comment inherited
+    @Override
     public abstract IIOMetadata
         convertImageMetadata(IIOMetadata inData,
                              ImageTypeSpecifier imageType,
@@ -1195,7 +1197,7 @@ public abstract class ImageWriter implements ImageTranscoder {
      * {@code prepareInsertEmpty} without a corresponding call to
      * {@code endInsertEmpty} has been made.
      * @throws IllegalStateException if a call to
-     * {@code prepareReiplacePixels} has been made without a
+     * {@code prepareReplacePixels} has been made without a
      * matching call to {@code endReplacePixels}.
      * @throws IOException if an I/O error occurs during writing.
      */

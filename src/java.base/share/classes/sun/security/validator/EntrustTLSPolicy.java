@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,6 @@
 package sun.security.validator;
 
 import java.security.cert.X509Certificate;
-import java.time.LocalDate;
-import java.time.Month;
-import java.time.ZoneOffset;
-import java.util.Date;
-import java.util.Map;
 import java.util.Set;
 
 import sun.security.util.Debug;
@@ -61,11 +56,6 @@ final class EntrustTLSPolicy {
         //     OU=(c) 2009 Entrust, Inc. - for authorized use only,
         //     OU=See www.entrust.net/legal-terms, O=Entrust, Inc., C=US
         "43DF5774B03E7FEF5FE40D931A7BEDF1BB2E6B42738C4E6D3841103D3AA7F339",
-        // cacerts alias: entrustrootcag4
-        // DN: CN=Entrust Root Certification Authority - G4
-        //     OU=(c) 2015 Entrust, Inc. - for authorized use only,
-        //     OU=See www.entrust.net/legal-terms, O=Entrust, Inc., C=US,
-        "DB3517D1F6732A2D5AB97C533EC70779EE3270A62FB4AC4238372460E6F01E88",
         // cacerts alias: entrust2048ca
         // DN: CN=Entrust.net Certification Authority (2048),
         //     OU=(c) 1999 Entrust.net Limited,
@@ -75,9 +65,7 @@ final class EntrustTLSPolicy {
     );
 
     // Any TLS Server certificate that is anchored by one of the Entrust
-    // roots above and is issued after this date will be distrusted.
-    private static final LocalDate NOVEMBER_11_2024 =
-        LocalDate.of(2024, Month.NOVEMBER, 11);
+    // roots above will be distrusted.
 
     /**
      * This method assumes the eeCert is a TLS Server Cert and chains back to
@@ -96,28 +84,15 @@ final class EntrustTLSPolicy {
                 + "trust anchor of TLS server certificate");
         }
         if (FINGERPRINTS.contains(fp)) {
-            Date notBefore = chain[0].getNotBefore();
-            LocalDate ldNotBefore = LocalDate.ofInstant(notBefore.toInstant(),
-                                                        ZoneOffset.UTC);
-            // reject if certificate is issued after November 11, 2024
-            checkNotBefore(ldNotBefore, NOVEMBER_11_2024, anchor);
+            throw new ValidatorException
+                ("TLS Server certificate anchored by a distrusted legacy " +
+                 "Entrust root CA: "+ anchor.getSubjectX500Principal(),
+                 ValidatorException.T_UNTRUSTED_CERT, anchor);
         }
     }
 
     private static String fingerprint(X509Certificate cert) {
         return X509CertImpl.getFingerprint("SHA-256", cert, debug);
-    }
-
-    private static void checkNotBefore(LocalDate notBeforeDate,
-            LocalDate distrustDate, X509Certificate anchor)
-            throws ValidatorException {
-        if (notBeforeDate.isAfter(distrustDate)) {
-            throw new ValidatorException
-                ("TLS Server certificate issued after " + distrustDate +
-                 " and anchored by a distrusted legacy Entrust root CA: "
-                 + anchor.getSubjectX500Principal(),
-                 ValidatorException.T_UNTRUSTED_CERT, anchor);
-        }
     }
 
     private EntrustTLSPolicy() {}

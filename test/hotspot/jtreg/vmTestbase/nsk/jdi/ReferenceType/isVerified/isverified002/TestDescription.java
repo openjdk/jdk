@@ -64,7 +64,6 @@
  *
  * @run driver
  *      nsk.jdi.ReferenceType.isVerified.isverified002
- *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java

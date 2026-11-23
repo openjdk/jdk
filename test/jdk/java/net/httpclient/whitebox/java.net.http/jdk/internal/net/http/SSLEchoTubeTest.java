@@ -265,7 +265,7 @@ public class SSLEchoTubeTest extends AbstractSSLTubeTest {
         private final Queue<Object> queue = new ConcurrentLinkedQueue<>();
         private final int maxQueueSize;
         private final SequentialScheduler processingScheduler =
-                new SequentialScheduler(createProcessingTask());
+                SequentialScheduler.lockingScheduler(createProcessingTask());
 
         /* Writing into this tube */
         private volatile long requested;
@@ -360,11 +360,11 @@ public class SSLEchoTubeTest extends AbstractSSLTubeTest {
         }
 
         int transmitted = 0;
-        private SequentialScheduler.RestartableTask createProcessingTask() {
-            return new SequentialScheduler.CompleteRestartableTask() {
+        private Runnable createProcessingTask() {
+            return new Runnable() {
 
                 @Override
-                protected void run() {
+                public void run() {
                     try {
                         while (!cancelled.get()) {
                             Object item = queue.peek();
@@ -374,39 +374,36 @@ public class SSLEchoTubeTest extends AbstractSSLTubeTest {
                                 requestMore();
                                 return;
                             }
-                            try {
-                                System.out.printf("EchoTube processing item, requested=%s, demand=%s, transmitted=%s%n",
-                                        requested, demand.get(), transmitted);
-                                if (item instanceof List) {
-                                    if (!demand.tryDecrement()) {
-                                        System.out.println("EchoTube no demand");
-                                        return;
-                                    }
-                                    @SuppressWarnings("unchecked")
-                                    List<ByteBuffer> bytes = (List<ByteBuffer>) item;
-                                    Object removed = queue.remove();
-                                    assert removed == item;
-                                    System.out.println("EchoTube processing "
-                                            + Utils.remaining(bytes));
-                                    transmitted++;
-                                    subscriber.onNext(bytes);
-                                    requestMore();
-                                } else if (item instanceof Throwable) {
-                                    cancelled.set(true);
-                                    Object removed = queue.remove();
-                                    assert removed == item;
-                                    System.out.println("EchoTube processing " + item);
-                                    subscriber.onError((Throwable) item);
-                                } else if (item == EOF) {
-                                    cancelled.set(true);
-                                    Object removed = queue.remove();
-                                    assert removed == item;
-                                    System.out.println("EchoTube processing EOF");
-                                    subscriber.onComplete();
-                                } else {
-                                    throw new InternalError(String.valueOf(item));
+                            System.out.printf("EchoTube processing item, requested=%s, demand=%s, transmitted=%s%n",
+                                    requested, demand.get(), transmitted);
+                            if (item instanceof List) {
+                                if (!demand.tryDecrement()) {
+                                    System.out.println("EchoTube no demand");
+                                    return;
                                 }
-                            } finally {
+                                @SuppressWarnings("unchecked")
+                                List<ByteBuffer> bytes = (List<ByteBuffer>) item;
+                                Object removed = queue.remove();
+                                assert removed == item;
+                                System.out.println("EchoTube processing "
+                                        + Utils.remaining(bytes));
+                                transmitted++;
+                                subscriber.onNext(bytes);
+                                requestMore();
+                            } else if (item instanceof Throwable) {
+                                cancelled.set(true);
+                                Object removed = queue.remove();
+                                assert removed == item;
+                                System.out.println("EchoTube processing " + item);
+                                subscriber.onError((Throwable) item);
+                            } else if (item == EOF) {
+                                cancelled.set(true);
+                                Object removed = queue.remove();
+                                assert removed == item;
+                                System.out.println("EchoTube processing EOF");
+                                subscriber.onComplete();
+                            } else {
+                                throw new InternalError(String.valueOf(item));
                             }
                         }
                     } catch(Throwable t) {

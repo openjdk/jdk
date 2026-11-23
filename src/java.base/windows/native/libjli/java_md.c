@@ -164,8 +164,6 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
     }
 
     char *jvmtype;
-    int i = 0;
-    char** argv = *pargv;
 
     /* Find out where the JDK is that we will be using. */
     if (!GetJDKInstallRoot(jdkroot, so_jdkroot)) {
@@ -197,8 +195,8 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
 
     /* Check if we need preload AWT */
 #ifdef ENABLE_AWT_PRELOAD
-    argv = *pargv;
-    for (i = 0; i < *pargc ; i++) {
+    char** argv = *pargv;
+    for (int i = 0; i < *pargc ; i++) {
         /* Tests the "turn on" parameter only if not set yet. */
         if (awtPreloadD3D < 0) {
             if (GetBoolParamValue(PARAM_PRELOAD_D3D, argv[i]) == 1) {

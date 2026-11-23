@@ -239,6 +239,7 @@ typedef void*    (* _cmsDupUserDataFn)(cmsContext ContextID, const void* Data);
 #define cmsPluginTransformSig                0x7A666D48     // 'xfmH'
 #define cmsPluginMutexSig                    0x6D747A48     // 'mtxH'
 #define cmsPluginParalellizationSig          0x70726C48     // 'prlH
+#define cmsPluginHeaderSig                   0x68647248     // 'hdrH'
 
 typedef struct _cmsPluginBaseStruct {
 
@@ -375,6 +376,7 @@ typedef struct {
 // Formatter16 callback
 
 struct _cmstransform_struct;
+struct _cmsiccprofile_struct;
 
 typedef cmsUInt8Number* (* cmsFormatter16)(CMSREGISTER struct _cmstransform_struct* CMMcargo,
                                            CMSREGISTER cmsUInt16Number Values[],
@@ -717,6 +719,34 @@ typedef struct {
     _cmsTransform2Fn    SchedulerFn;      // callback to setup functions
 
 }  cmsPluginParalellization;
+
+
+
+//----------------------------------------------------------------------------------------------------------
+// Header
+
+CMSAPI void   CMSEXPORT _cmsSetProfileUserData(cmsHPROFILE hProfile, void* Data, _cmsFreeUserDataFn FreeData);
+CMSAPI void*  CMSEXPORT _cmsGetProfileUserData(cmsHPROFILE hProfile);
+
+// The plug-in may use the I/O handler freely, but must not close it.
+// LittleCMS restores the handler position after each callback.
+
+typedef cmsBool (*_cmsReadProfileHeaderFn)(cmsContext ContextID,
+                                           cmsHPROFILE hProfile,
+                                           cmsIOHANDLER* io);
+
+typedef cmsBool (*_cmsWriteProfileHeaderFn)(cmsContext ContextID,
+                                            cmsHPROFILE hProfile,
+                                            cmsIOHANDLER* io);
+
+typedef struct {
+    cmsPluginBase              base;
+
+    cmsUInt32Number            ICCVersion;
+    _cmsReadProfileHeaderFn    ReadPtr;
+    _cmsWriteProfileHeaderFn   WritePtr;
+
+} cmsPluginHeader;
 
 
 #ifndef CMS_USE_CPP_API
