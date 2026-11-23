@@ -24,7 +24,7 @@ package org.openjdk.bench.sun.misc;
 
 import java.lang.reflect.Field;
 import java.util.concurrent.TimeUnit;
-import jdk.internal.misc.Unsafe;
+import sun.misc.Unsafe;
 import org.openjdk.jmh.annotations.*;
 
 @BenchmarkMode(Mode.AverageTime)
@@ -60,6 +60,7 @@ public class UnsafeOps {
         valueOffset = U.objectFieldOffset(f);
 
         address = U.allocateMemory(1000);
+        // Ensure getLongOffHeap doesn't read from uninitialized memory.
         U.putLong(null, address, 0);
     }
 
