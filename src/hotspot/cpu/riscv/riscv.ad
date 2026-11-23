@@ -2865,7 +2865,7 @@ operand immI_simm12()
 %}
 
 // 12 bit signed value that is non-negative, i.e. 0 <= value <= 2047.
-operand immI_simm12NonNeg()
+operand immI_simm12_nonneg()
 %{
   predicate(Assembler::is_simm12((int64_t)n->get_int()) && n->get_int() >= 0);
   match(ConI);
@@ -9040,7 +9040,7 @@ instruct convI2L_andI_reg_imm(iRegLNoSp dst, iRegI src, immI_simm12 mask) %{
 
 // With a non-negative mask the 64-bit AND drops the high half itself, so the L2I
 // is redundant.
-instruct convI2L_andI_l2i_reg_imm(iRegLNoSp dst, iRegL src, immI_simm12NonNeg mask) %{
+instruct convI2L_andI_l2i_reg_imm(iRegLNoSp dst, iRegL src, immI_simm12_nonneg mask) %{
   match(Set dst (ConvI2L (AndI (ConvL2I src) mask)));
 
   ins_cost(ALU_COST);
