@@ -267,6 +267,26 @@ void MacroAssembler::lea(Address dst, AddressLiteral adr, Register rscratch) {
   movptr(dst, rscratch);
 }
 
+void MacroAssembler::leal(Register dst, Address src) {
+  if ((src.base() != noreg) && (src.index() == noreg) &&
+      (src.disp() == 0) && (src.reloc() == relocInfo::none)) {
+    // base-only lea, use move (other simple cases not seen).
+    movl(dst, src.base());
+  } else {
+    Assembler::leal(dst, src);
+  }
+}
+
+void MacroAssembler::leaq(Register dst, Address src) {
+  if ((src.base() != noreg) && (src.index() == noreg) &&
+      (src.disp() == 0) && (src.reloc() == relocInfo::none)) {
+    // base-only lea, use move (other simple cases not seen).
+    movq(dst, src.base());
+  } else {
+    Assembler::leaq(dst, src);
+  }
+}
+
 void MacroAssembler::leave() {
   // %%% is this really better? Why not on 32bit too?
   emit_int8((unsigned char)0xC9); // LEAVE
@@ -4894,13 +4914,10 @@ void MacroAssembler::_verify_oop(Register reg, const char* s, const char* file, 
     ResourceMark rm;
     stringStream ss;
     ss.print("verify_oop: %s: %s (%s:%d)", reg->name(), s, file, line);
-#if INCLUDE_CDS
     if (AOTCodeCache::is_on_for_dump() && !code_section()->scratch_emit()) {
       // this will duplicate string to preserve it
       b = AOTCodeCache::add_C_string(ss.as_string());
-    } else
-#endif
-    {
+    } else {
       b = code_string(ss.as_string());
     }
   }
@@ -5167,13 +5184,10 @@ void MacroAssembler::_verify_oop_addr(Address addr, const char* s, const char* f
     ResourceMark rm;
     stringStream ss;
     ss.print("verify_oop_addr: %s (%s:%d)", s, file, line);
-#if INCLUDE_CDS
     if (AOTCodeCache::is_on_for_dump() && !code_section()->scratch_emit()) {
       // this will duplicate string to preserve it
       b = AOTCodeCache::add_C_string(ss.as_string());
-    } else
-#endif
-    {
+    } else {
       b = code_string(ss.as_string());
     }
   }
@@ -6030,14 +6044,7 @@ int MacroAssembler::store_value_type_fields_to_buf(ciValueKlass* vk, bool from_i
   mov(rscratch1, rax); // save rax for slow_case since *_allocate may corrupt it when allocation failed
   if (vk != nullptr) {
     // Called from C1, where the return type is statically known.
-#if INCLUDE_CDS
-    if (AOTCodeCache::is_on_for_dump()) {
-      mov_metadata(rbx, vk->constant_encoding());
-    } else
-#endif
-    {
-      movptr(rbx, (intptr_t)vk->get_ValueKlass());
-    }
+    mov_metadata(rbx, vk->get_ValueKlass()); // get_ValueKlass asserts that vk is ValueKlass
     jint lh = vk->layout_helper();
     assert(lh != Klass::_lh_neutral_value, "value class in return type must have been resolved");
     if (UseTLAB && !Klass::layout_helper_needs_slow_path(lh)) {
@@ -6079,7 +6086,6 @@ int MacroAssembler::store_value_type_fields_to_buf(ciValueKlass* vk, bool from_i
     }
     // 3. Initialize its fields with a value class specific handler
     if (vk != nullptr) {
-#if INCLUDE_CDS
       if (AOTCodeCache::is_on_for_dump()) {
         // in AOT compiled code call the pack handler indirectly via
         // the klass. The handler's blob does not currently get saved
@@ -6090,9 +6096,7 @@ int MacroAssembler::store_value_type_fields_to_buf(ciValueKlass* vk, bool from_i
         movptr(rbx, Address(rbx, ValueKlass::adr_members_offset()));
         movptr(rbx, Address(rbx, ValueKlass::pack_handler_offset()));
         call(rbx);
-      } else
-#endif
-      {
+      } else {
         call(RuntimeAddress(vk->pack_handler())); // no need for call info as this will not safepoint.
       }
     } else {

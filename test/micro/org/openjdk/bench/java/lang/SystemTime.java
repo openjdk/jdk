@@ -28,6 +28,7 @@ import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
+import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
 
 import java.time.Instant;
@@ -47,6 +48,12 @@ public class SystemTime {
 
     @Benchmark
     public long nanoTime() {
+        return System.nanoTime();
+    }
+
+    @Benchmark
+    @Threads(Threads.MAX)
+    public long nanoTimeContended() {
         return System.nanoTime();
     }
 

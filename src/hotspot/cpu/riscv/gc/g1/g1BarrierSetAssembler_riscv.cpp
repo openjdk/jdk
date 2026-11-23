@@ -258,7 +258,6 @@ static void generate_post_barrier(MacroAssembler* masm,
   assert(thread == xthread, "must be");
   assert_different_registers(store_addr, new_val, thread, tmp1, tmp2, noreg);
   // Does store cross heap regions?
-#if INCLUDE_CDS
   // AOT code needs to load the barrier grain shift from the aot
   // runtime constants area in the code cache otherwise we can compile
   // it as an immediate operand
@@ -267,9 +266,7 @@ static void generate_post_barrier(MacroAssembler* masm,
     __ lwu(tmp2, ExternalAddress(AOTRuntimeConstants::grain_shift_address()));
     __ srl(tmp1, tmp1, tmp2);
     __ beqz(tmp1, done);
-  } else
-#endif
-  {
+  } else {
     __ xorr(tmp1, store_addr, new_val);                    // tmp1 := store address ^ new value
     __ srli(tmp1, tmp1, G1HeapRegion::LogOfHRGrainBytes);  // tmp1 := ((store address ^ new value) >> LogOfHRGrainBytes)
     __ beqz(tmp1, done);
