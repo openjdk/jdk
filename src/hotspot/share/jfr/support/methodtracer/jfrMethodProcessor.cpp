@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,27 +35,12 @@
 JfrMethodProcessor::JfrMethodProcessor(const InstanceKlass* ik, Thread* thread) :
   _klass(ik),
   _methods(nullptr),
-  _thread(thread),
+  _protected_methods(thread),
   _has_timing(false),
   _log(log_is_enabled(Debug, jfr, methodtrace)) {
     assert(ik != nullptr, "invariant");
     assert(Thread::current() == thread, "invariant");
     process();
-}
-
-JfrMethodProcessor::~JfrMethodProcessor() {
-  assert(_thread != nullptr, "invariant");
-  if (_methods != nullptr) {
-    // Removal of pushed metadata keep-alive entries.
-    for (int i = 0; i < _methods->length(); ++i) {
-      Method* const method = const_cast<Method*>(_methods->at(i).method());
-      if (method != nullptr) {
-        const int idx = _thread->metadata_handles()->find_from_end(method);
-        assert(idx >= 0, "invariant");
-        _thread->metadata_handles()->remove_at(idx);
-      }
-    }
-  }
 }
 
 void JfrMethodProcessor::update_methods(const InstanceKlass* ik) {
@@ -74,8 +59,7 @@ void JfrMethodProcessor::update_methods(const InstanceKlass* ik) {
     // Equivalent functionality to that provided by the methodHandle. Unfortunately,
     // we cannot use that directly because our handles would reside not on the stack
     // but in an Arena managed by a thread-local ResourceArea, which is not allowed.
-    // Removal of pushed metadata entries happens in the destructor.
-    _thread->metadata_handles()->push(method);
+    _protected_methods.append(method);
   }
 }
 

@@ -31,6 +31,7 @@
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoadInfo.hpp"
 #include "classfile/klassFactory.hpp"
+#include "classfile/protectedMethods.hpp"
 #include "memory/resourceArea.hpp"
 #include "prims/jvmtiEnvBase.hpp"
 #include "prims/jvmtiRedefineClasses.hpp"
@@ -39,7 +40,6 @@
 #if INCLUDE_JFR
 #include "jfr/jfr.hpp"
 #endif
-
 
 // called during initial loading of a shared class
 InstanceKlass* KlassFactory::check_shared_class_file_load_hook(
@@ -80,10 +80,12 @@ InstanceKlass* KlassFactory::check_shared_class_file_load_hook(
                                                     /* from_boot_loader_modules_image */ false,
                                                     /* from_class_file_load_hook */ true);
       ClassLoadInfo cl_info(protection_domain);
+      ProtectedMethods mirandas(THREAD);
       ClassFileParser parser(stream,
                              class_name,
                              loader_data,
                              &cl_info,
+                             &mirandas,
                              ClassFileParser::BROADCAST, // publicity level
                              CHECK_NULL);
       const ClassInstanceInfo* cl_inst_info = cl_info.class_hidden_info_ptr();
@@ -197,10 +199,13 @@ InstanceKlass* KlassFactory::create_from_stream(ClassFileStream* stream,
                                         CHECK_NULL);
   }
 
+  ProtectedMethods mirandas(THREAD);
+
   ClassFileParser parser(stream,
                          name,
                          loader_data,
                          &cl_info,
+                         &mirandas,
                          ClassFileParser::BROADCAST, // publicity level
                          CHECK_NULL);
 

@@ -25,6 +25,7 @@
 #ifndef SHARE_OOPS_KLASSVTABLE_HPP
 #define SHARE_OOPS_KLASSVTABLE_HPP
 
+#include "classfile/protectedMethods.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/handles.hpp"
 #include "utilities/growableArray.hpp"
@@ -76,7 +77,7 @@ class klassVtable {
   // computes vtable length (in words) and the number of miranda methods
   static void compute_vtable_size_and_num_mirandas(int* vtable_length,
                                                    int* num_new_mirandas,
-                                                   GrowableArray<Method*>* all_mirandas,
+                                                   ProtectedMethods* all_mirandas,
                                                    const InstanceKlass* super,
                                                    Array<Method*>* methods,
                                                    AccessFlags class_flags,
@@ -139,7 +140,7 @@ class klassVtable {
                          bool is_interface);
   static void add_new_mirandas_to_lists(
       GrowableArray<Method*>* new_mirandas,
-      GrowableArray<Method*>* all_mirandas,
+      ProtectedMethods* all_mirandas,
       Array<Method*>* current_interface_methods,
       Array<Method*>* class_methods,
       Array<Method*>* default_methods,
@@ -147,7 +148,7 @@ class klassVtable {
       bool is_interface);
   static void get_mirandas(
       GrowableArray<Method*>* new_mirandas,
-      GrowableArray<Method*>* all_mirandas,
+      ProtectedMethods* all_mirandas,
       const InstanceKlass* super,
       Array<Method*>* class_methods,
       Array<Method*>* default_methods,

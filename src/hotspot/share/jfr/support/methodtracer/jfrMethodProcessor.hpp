@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #ifndef SHARE_JFR_SUPPORT_METHODTRACER_JFRMETHODPROCESSOR_HPP
 #define SHARE_JFR_SUPPORT_METHODTRACER_JFRMETHODPROCESSOR_HPP
 
+#include "classfile/protectedMethods.hpp"
 #include "jfr/support/methodtracer/jfrTracedMethod.hpp"
 #include "memory/allocation.hpp"
 
@@ -42,7 +43,7 @@ class JfrMethodProcessor: public StackObj {
  private:
   const InstanceKlass* const      _klass;
   GrowableArray<JfrTracedMethod>* _methods;
-  Thread*                         _thread;
+  ProtectedMethods                _protected_methods;
   bool                            _has_timing;
   bool                            _log;
 
@@ -51,7 +52,6 @@ class JfrMethodProcessor: public StackObj {
 
  public:
   JfrMethodProcessor(const InstanceKlass* klass, Thread* thread);
-  ~JfrMethodProcessor();
 
   bool has_methods() const {
     return _methods != nullptr;
