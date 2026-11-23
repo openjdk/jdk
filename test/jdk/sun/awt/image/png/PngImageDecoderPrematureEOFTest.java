@@ -24,12 +24,13 @@
 /*
  * @test
  * @bug 6968794
- * @summary This test confirms the PNGImageProducer reports failures for
+ * @summary This test confirms the PNGImageDecoder reports failures for
  * incomplete file streams.
  */
 
 import javax.imageio.ImageIO;
-import java.awt.*;
+import java.awt.Image;
+import java.awt.Toolkit;
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
 import java.awt.image.ImageConsumer;
@@ -57,8 +58,8 @@ public class PngImageDecoderPrematureEOFTest {
     private PngImageDecoderPrematureEOFTest() throws IOException {
         // The dimensions here matter. At 100x100px the PNGImageDecoder fails
         // with an IOException. At 105x105px the PNGImageDecoder fails with
-        // a ArrayIndexOutOfBoundsException. The two are caught/handled
-        // separately.
+        // a ArrayIndexOutOfBoundsException. The two difference exception types
+        // are handled differently.
 
         BufferedImage sampleImage = new BufferedImage(100, 100,
                 BufferedImage.TYPE_INT_RGB);
@@ -98,11 +99,11 @@ public class PngImageDecoderPrematureEOFTest {
             InterruptedException {
         System.out.println("\n#### testImageObserver ####");
 
-        // only read 50% of the file, which should result in an error:
+        // only read part of the file, which should result in an error:
         Image img = Toolkit.getDefaultToolkit().createImage(pngFile, 0,
-                pngFile.length / 2);
+                pngFile.length / 3);
 
-        CompletableFuture flagsFuture = new CompletableFuture();
+        CompletableFuture<Integer> flagsFuture = new CompletableFuture<>();
         ImageObserver observer = new ImageObserver() {
             @Override
             public boolean imageUpdate(Image img, int infoflags, int x, int y,
@@ -112,10 +113,12 @@ public class PngImageDecoderPrematureEOFTest {
                         "Received infoflags containing ALLBITS; test failed");
                     failed = true;
                     flagsFuture.complete(infoflags);
+                    return false;
                 } else if ((infoflags & ERROR) != 0) {
                     System.out.println(
                         "Received infoflags containing ERROR; test passed");
                     flagsFuture.complete(infoflags);
+                    return false;
                 }
 
                 return true;
@@ -123,6 +126,9 @@ public class PngImageDecoderPrematureEOFTest {
         };
         img.getWidth(observer);
         flagsFuture.get();
+
+        // ImageObservers are maintained via WeakReferences, so keep the
+        // following reference to observer until after Future.get() returns:
         Reference.reachabilityFence(observer);
     }
 
@@ -134,9 +140,9 @@ public class PngImageDecoderPrematureEOFTest {
             InterruptedException {
         System.out.println("\n#### testImageConsumer ####");
 
-        // only read 50% of the file, which should result in an error:
+        // only read part of the file, which should result in an error:
         Image img = Toolkit.getDefaultToolkit().createImage(pngFile, 0,
-                pngFile.length / 2);
+                pngFile.length / 3);
 
         CompletableFuture<Integer> completionConstantFuture =
                 new CompletableFuture<>();
