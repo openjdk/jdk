@@ -436,7 +436,6 @@ void FileMapHeader::print(outputStream* st, bool output_for_diff, bool actual_jv
   st->print_cr("- has_full_module_graph                     %d", actual_jvm_setting ? CDSConfig::is_using_full_module_graph() : _has_full_module_graph);
   st->print_cr("- has_valhalla_patched_classes              %d", actual_jvm_setting ? Arguments::is_valhalla_enabled() : _has_valhalla_patched_classes);
   _must_match.print(st, actual_jvm_setting);
-  _must_match.print(st, actual_jvm_setting);
   if (!output_for_diff) {
     st->print_cr("- has_aot_linked_classes                    %d", _has_aot_linked_classes);
   }
