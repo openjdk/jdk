@@ -72,18 +72,6 @@ public class UninitializedFlatField {
     private static native Object allocObject(Class<?> target);
     private static native Object getObjectField(Holder holder);
 
-    private static Object read_getfield(Holder holder) {
-        return holder.value;
-    }
-
-    private static Object read_jni(Holder holder) {
-        return getObjectField(holder);
-    }
-
-    private static Object read_unsafe(Holder holder, Field field) {
-        return U.getFlatValue(holder, U.objectFieldOffset(field), U.fieldLayout(field), Value.class);
-    }
-
     public static void main(String[] args) throws Exception {
         Holder holder = (Holder) allocObject(Holder.class);
         Field field = Holder.class.getDeclaredField("value");
@@ -92,13 +80,13 @@ public class UninitializedFlatField {
         Asserts.assertFalse(U.hasNullMarker(field), "Test needs a null-restricted field");
         Asserts.assertFalse(valueInitialized, "AllocObject must not initialize Value");
 
-        Object result_getfield = read_getfield(holder);
+        Object result_getfield = holder.value;
         Asserts.assertTrue(result_getfield == null, "Read got an instance of an uninitialized value class");
 
-        Object result_jni = read_jni(holder);
+        Object result_jni = getObjectField(holder);
         Asserts.assertTrue(result_jni == null, "Read got an instance of an uninitialized value class");
 
-        Object result_unsafe = read_unsafe(holder, field);
+        Object result_unsafe = U.getFlatValue(holder, U.objectFieldOffset(field), U.fieldLayout(field), Value.class);
         Asserts.assertTrue(result_unsafe == null, "Read got an instance of an uninitialized value class");
 
         Asserts.assertFalse(valueInitialized, "Reading the field must not initialize Value");
