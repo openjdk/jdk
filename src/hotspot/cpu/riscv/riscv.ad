@@ -1454,11 +1454,6 @@ int ConstantTable::calculate_table_base_offset() const {
   return 0;  // absolute addressing, no offset
 }
 
-bool MachConstantBaseNode::requires_postalloc_expand() const { return false; }
-void MachConstantBaseNode::postalloc_expand(GrowableArray <Node *> *nodes, PhaseRegAlloc *ra_) {
-  ShouldNotReachHere();
-}
-
 void MachConstantBaseNode::emit(C2_MacroAssembler* masm, PhaseRegAlloc* ra_) const {
   // Empty encoding
 }
@@ -12019,8 +12014,7 @@ instruct clearArray_imm_reg(immL cnt, iRegP_R28 base, immL_0 zero, Universe dumm
 %{
   predicate(!UseRVV
             && (uint64_t)n->in(2)->in(1)->get_long()
-               < (uint64_t)(BlockZeroingLowLimit >> LogBytesPerWord)
-            && !((ClearArrayNode*)n)->requires_word_fill());
+               < (uint64_t)(BlockZeroingLowLimit >> LogBytesPerWord));
   match(Set dummy (ClearArray (Binary cnt base) zero));
   effect(USE_KILL base, KILL cr);
 

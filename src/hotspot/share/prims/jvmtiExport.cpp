@@ -2279,6 +2279,46 @@ void JvmtiExport::post_field_access_by_jni(JavaThread *thread, oop obj,
   post_field_access(thread, method, address, klass, h_obj, fieldID);
 }
 
+// Returns true if a field access or modification event should be skipped while the event
+// thread is initializing a class with strictly-initialized static fields or executing a
+// constructor with strictly-initialized instance fields in its declaring-class hierarchy.
+static bool should_skip_field_event_during_strict_initialization(JavaThread* thread, Klass* field_klass, Handle object, jfieldID field) {
+  fieldDescriptor fd;
+  if (!JvmtiEnv::get_field_descriptor(field_klass, field, &fd)) {
+    assert(false, "should_skip_field_event_during_strict_initialization called with invalid fieldID");
+    return true;
+  }
+
+  // Skip field event for a static field when the class declaring the field is being initialized
+  // by the event thread and the class declares strictly-initialized static fields.
+  if (fd.is_static()) {
+    InstanceKlass* ik = fd.field_holder();
+    return ik->has_strict_static_fields() && ik->is_reentrant_initialization(thread);
+  }
+
+  // Skip an instance field event when the current Java frame is a constructor
+  // whose declaring class has strictly-initialized instance fields in its hierarchy
+  // and slot 0 contains a reference to the object containing the watched field.
+  ResourceMark rm(thread);
+  RegisterMap reg_map(thread,
+                      RegisterMap::UpdateMap::skip,
+                      RegisterMap::ProcessFrames::skip,
+                      RegisterMap::WalkContinuation::skip);
+  javaVFrame* jvf = thread->last_java_vframe(&reg_map);
+  if (jvf != nullptr) {
+    Method* method = jvf->method();
+    if (method->is_object_constructor() && method->method_holder()->has_strict_instance_fields_in_hierarchy()) {
+      StackValueCollection* locals = jvf->locals();
+      if (!locals->is_empty()) {
+        StackValue* receiver = locals->at(0);
+        return receiver->type() == T_OBJECT && !receiver->obj_is_scalar_replaced() && receiver->get_obj()() == object();
+      }
+    }
+  }
+
+  return false;
+}
+
 void JvmtiExport::post_field_access(JavaThread *thread, Method* method,
   address location, Klass* field_klass, Handle object, jfieldID field) {
 
@@ -2290,6 +2330,9 @@ void JvmtiExport::post_field_access(JavaThread *thread, Method* method,
     return;
   }
   if (thread->should_hide_jvmti_events()) {
+    return;
+  }
+  if (should_skip_field_event_during_strict_initialization(thread, field_klass, object, field)) {
     return;
   }
 
@@ -2460,6 +2503,9 @@ void JvmtiExport::post_field_modification(JavaThread *thread, Method* method,
     return;
   }
   if (thread->should_hide_jvmti_events()) {
+    return;
+  }
+  if (should_skip_field_event_during_strict_initialization(thread, field_klass, object, field)) {
     return;
   }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiPredicate;
+import java.util.function.Consumer;
 import javax.net.ssl.SSLSession;
 
 import jdk.internal.net.http.common.HttpHeadersBuilder;
@@ -220,6 +221,10 @@ public interface Http2TestExchange {
      */
     default long waitForMaxPushId(long pushId) throws InterruptedException {
         return VariableLengthEncoder.MAX_ENCODED_INTEGER;
+    }
+
+    default void setCancelPushListener(Consumer<Long> listener) {
+        throw new UnsupportedOperationException("setCancelPushListener with " + getExchangeVersion());
     }
 
     default Encoder qpackEncoder() {
