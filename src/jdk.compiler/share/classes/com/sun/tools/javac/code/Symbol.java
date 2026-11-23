@@ -177,15 +177,15 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
         }
     }
 
-    public void appendClassInitTypeAttributes(List<Attribute.TypeCompound> l) {
+    public void appendUniqueClassInitTypeAttributes(List<Attribute.TypeCompound> l) {
         if (l.nonEmpty()) {
-            initedMetadata().appendClassInitTypeAttributes(l);
+            initedMetadata().appendUniqueClassInitTypeAttributes(l);
         }
     }
 
-    public void appendInitTypeAttributes(List<Attribute.TypeCompound> l) {
+    public void appendUniqueInitTypeAttributes(List<Attribute.TypeCompound> l) {
         if (l.nonEmpty()) {
-            initedMetadata().appendInitTypeAttributes(l);
+            initedMetadata().appendUniqueInitTypeAttributes(l);
         }
     }
 

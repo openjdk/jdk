@@ -783,10 +783,42 @@ public class TypeAnnotationsOnVariables {
                                   }
                               }
 
+                              static class C4 {
+                                  static {
+                                      try {
+                                          throw new IOException();
+                                      } catch (java.io.@TypeAnno IOException | java.lang.RuntimeException ex4) {}
+                                  }
+                              }
+
+                              static class C5 {
+                                  static {
+                                      try {
+                                          throw new IOException();
+                                      } catch (java.io.@TypeAnno IOException | java.lang.@TypeAnno RuntimeException ex5) {}
+                                  }
+                              }
+
+                              static class C6 {
+                                  static {
+                                      try {
+                                          throw new IOException();
+                                      } catch (@TypeAnno IOException | @TypeAnno RuntimeException ex6) {}
+                                  }
+                              }
+
+                              static class C7 {
+                                  {
+                                      try {
+                                          throw new IOException();
+                                      } catch (java.io.@TypeAnno IOException | java.lang.@TypeAnno RuntimeException ex7) {}
+                                  }
+                              }
+
                               void test(Exception param) {
                                   try {
                                       new Object();
-                                  } catch (@TypeAnno Exception ex4) {}
+                                  } catch (@TypeAnno Exception ex8) {}
                               }
                           }
                           """);
@@ -820,8 +852,12 @@ public class TypeAnnotationsOnVariables {
             "ex1: java.lang.@Test.TypeAnno Exception",
             "ex2: java.lang.@Test.TypeAnno Exception",
             "ex3: java.io.IOException | java.lang.@Test.TypeAnno RuntimeException",
+            "ex4: java.io.@Test.TypeAnno IOException | java.lang.RuntimeException",
+            "ex5: java.io.@Test.TypeAnno IOException | java.lang.@Test.TypeAnno RuntimeException",
+            "ex6: java.io.@Test.TypeAnno IOException | java.lang.@Test.TypeAnno RuntimeException",
+            "ex7: java.io.@Test.TypeAnno IOException | java.lang.@Test.TypeAnno RuntimeException",
             "param: java.lang.Exception",
-            "ex4: java.lang.@Test.TypeAnno Exception"
+            "ex8: java.lang.@Test.TypeAnno Exception"
         );
 
         actual.forEach(System.out::println);
@@ -863,6 +899,48 @@ public class TypeAnnotationsOnVariables {
                              "<clinit>",
                              this::getAnnotationsFromCode,
                              "        0: LTest$TypeAnno;(): EXCEPTION_PARAMETER, exception_index=1",
+                             "          Test$TypeAnno");
+
+        Path c4 = classes.resolve("Test$C4.class");
+        TestClassDesc testClassDescC4 = TestClassDesc.create(c4);
+
+        checkTypeAnnotations(testClassDescC4,
+                             "<clinit>",
+                             this::getAnnotationsFromCode,
+                             "        0: LTest$TypeAnno;(): EXCEPTION_PARAMETER, exception_index=0",
+                             "          Test$TypeAnno");
+
+        Path c5 = classes.resolve("Test$C5.class");
+        TestClassDesc testClassDescC5 = TestClassDesc.create(c5);
+
+        checkTypeAnnotations(testClassDescC5,
+                             "<clinit>",
+                             this::getAnnotationsFromCode,
+                             "        0: LTest$TypeAnno;(): EXCEPTION_PARAMETER, exception_index=0",
+                             "          Test$TypeAnno",
+                             "        1: LTest$TypeAnno;(): EXCEPTION_PARAMETER, exception_index=1",
+                             "          Test$TypeAnno");
+
+        Path c6 = classes.resolve("Test$C6.class");
+        TestClassDesc testClassDescC6 = TestClassDesc.create(c6);
+
+        checkTypeAnnotations(testClassDescC6,
+                             "<clinit>",
+                             this::getAnnotationsFromCode,
+                             "        0: LTest$TypeAnno;(): EXCEPTION_PARAMETER, exception_index=0",
+                             "          Test$TypeAnno",
+                             "        1: LTest$TypeAnno;(): EXCEPTION_PARAMETER, exception_index=1",
+                             "          Test$TypeAnno");
+
+        Path c7 = classes.resolve("Test$C7.class");
+        TestClassDesc testClassDescC7 = TestClassDesc.create(c7);
+
+        checkTypeAnnotations(testClassDescC7,
+                             "<init>",
+                             this::getAnnotationsFromCode,
+                             "        0: LTest$TypeAnno;(): EXCEPTION_PARAMETER, exception_index=0",
+                             "          Test$TypeAnno",
+                             "        1: LTest$TypeAnno;(): EXCEPTION_PARAMETER, exception_index=1",
                              "          Test$TypeAnno");
     }
 
@@ -1047,9 +1125,14 @@ public class TypeAnnotationsOnVariables {
             }
         }
 
-        String methodKey = "<clinit>".equals(nameOfMethodToCheck)
-                ? " static {"
-                : " " + nameOfMethodToCheck + "(";
+        String methodKey = switch (nameOfMethodToCheck) {
+            case "<clinit>" -> " static {";
+            case "<init>" -> {
+                String fileName = testClassDesc.pathToClass().getFileName().toString();
+                yield " " + fileName.substring(0, fileName.indexOf('.'));
+            }
+            default -> " " + nameOfMethodToCheck + "(";
+        };
 
         List<List<String>> methodContents = feature2Text.entrySet().stream().filter(e -> e.getKey().contains(methodKey)).map(Entry::getValue).toList();
 

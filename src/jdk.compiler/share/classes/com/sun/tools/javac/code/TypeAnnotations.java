@@ -449,9 +449,9 @@ public class TypeAnnotations {
                 // to allow output in Gen.normalizeDefs.
                 ClassSymbol cs = (ClassSymbol) sym.owner.owner;
                 if ((ownerFlags & Flags.STATIC) != 0) {
-                    cs.appendClassInitTypeAttributes(typeAnnotations);
+                    cs.appendUniqueClassInitTypeAttributes(typeAnnotations);
                 } else {
-                    cs.appendInitTypeAttributes(typeAnnotations);
+                    cs.appendUniqueInitTypeAttributes(typeAnnotations);
                 }
             } else {
                 sym.owner.appendUniqueTypeAttributes(typeAnnotations);
