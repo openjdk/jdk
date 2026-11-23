@@ -60,8 +60,8 @@ public class PngImageDecoderPrematureEOFTest {
     private PngImageDecoderPrematureEOFTest() throws IOException {
         // The dimensions here matter. At 100x100px the PNGImageDecoder fails
         // with an IOException. At 105x105px the PNGImageDecoder fails with
-        // a ArrayIndexOutOfBoundsException. The two difference exception types
-        // are handled differently.
+        // a ArrayIndexOutOfBoundsException. The two different exception types
+        // were handled differently.
 
         sampleImage = new BufferedImage(100, 100,
                 BufferedImage.TYPE_INT_RGB);
@@ -89,6 +89,7 @@ public class PngImageDecoderPrematureEOFTest {
         if (failed) {
             throw new RuntimeException("Test failed; see log for details");
         }
+        System.out.println("\nAll tests passed.");
     }
 
     /**
@@ -193,48 +194,47 @@ public class PngImageDecoderPrematureEOFTest {
 
             @Override
             public void imageComplete(int status) {
-                if (completionConstantFuture.getNow(null) == null) {
-                    completionConstantFuture.complete(status);
+                workerThread.set(Thread.currentThread());
+
+                if (status == ImageConsumer.IMAGEERROR) {
+                    // this is the only status we expect in this unit test
+                    System.out.println("imageComplete(IMAGEERROR) " +
+                            "(as expected)");
                 } else {
                     failed = true;
-                    System.out.println("failed: imageComplete was called multiple times");
+                    img.getSource().removeConsumer(this);
+                    String statusStr;
+                    if (status == ImageConsumer.SINGLEFRAMEDONE) {
+                        statusStr = "SINGLEFRAMEDONE";
+                    } else if (status == ImageConsumer.STATICIMAGEDONE) {
+                        statusStr = "STATICIMAGEDONE";
+                    } else if (status == ImageConsumer.IMAGEABORTED) {
+                        statusStr = "IMAGEABORTED";
+                    } else {
+                        statusStr = Integer.toString(status);
+                    }
+                    System.out.println("failed: unexpected " +
+                            "imageComplete(" + statusStr + ")");
                 }
-                workerThread.set(Thread.currentThread());
+
+                if (!completionConstantFuture.complete(status)) {
+                    failed = true;
+                    System.out.println("failed: imageComplete was called " +
+                            "multiple times");
+                }
             }
         };
         img.getSource().startProduction(consumer);
-        int completion = completionConstantFuture.get();
 
+        completionConstantFuture.get();
+
+        // Now we're sure imageComplete has been called at least once. But
+        // let's wait a few seconds and make sure we don't get redundant
+        // calls to imageComplete. The worker threads will automatically
+        // shut down after a few seconds of idleness
         workerThread.get().join();
-        if (failed) {
-            return;
-        }
 
         System.out.println("Read " + rows.size() +
                 " rows out of a " + sampleImage.getHeight() + "px image.");
-
-        if (completion == ImageConsumer.IMAGEERROR) {
-            System.out.println(
-                    "imageComplete(IMAGEERROR) called, test passed");
-            return;
-        }
-        failed = true;
-        if (completion == ImageConsumer.SINGLEFRAMEDONE) {
-            System.out.println(
-                    "failed: imageComplete(SINGLEFRAMEDONE) called, " +
-                            "IMAGEERROR expected");
-        } else if (completion == ImageConsumer.STATICIMAGEDONE) {
-            System.out.println(
-                    "failed: imageComplete(STATICIMAGEDONE) called, " +
-                            "IMAGEERROR expected");
-        } else if (completion == ImageConsumer.IMAGEABORTED) {
-            System.out.println(
-                    "failed: imageComplete(IMAGEABORTED) called, " +
-                            "IMAGEERROR expected");
-        } else {
-            System.out.println(
-                    "failed: imageComplete(" + completion +
-                            ") called, IMAGEERROR expected");
-        }
     }
 }
