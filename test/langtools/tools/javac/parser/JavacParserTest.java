@@ -3397,7 +3397,7 @@ public class JavacParserTest extends TestCase {
                       import java.util.function.*;
 
                       class Test {
-                          int i, j;
+                          int i, j, k;
                           void test1(boolean b, Supplier<String> r) {
                               test1(i < j, Test::get);
                           }
@@ -3406,6 +3406,18 @@ public class JavacParserTest extends TestCase {
                           }
                           void test3(boolean b1, boolean b2, Supplier<String> r) {
                               test3(i > j, j < i, Test::get);
+                          }
+                          void test4(boolean b, Supplier<String> r) {
+                              test4(i < j >> k, Test::get);
+                          }
+                          void test5(boolean b, Supplier<String> r) {
+                              test5(i < j >>> k, Test::get);
+                          }
+                          void test6(boolean b1, boolean b2, Supplier<String> r) {
+                              test6(i < j, i < j >> k, Test::get);
+                          }
+                          void test7(boolean b1, boolean b2, Supplier<String> r) {
+                              test7(i < j, i < j >>> k, Test::get);
                           }
                           private static String get() {
                               return null;
@@ -3438,6 +3450,7 @@ public class JavacParserTest extends TestCase {
                      class Test {
                          int i;
                          int j;
+                         int k;
                          \n\
                          void test1(boolean b, Supplier<String> r) {
                              test1(i < j, Test::get);
@@ -3449,6 +3462,22 @@ public class JavacParserTest extends TestCase {
                          \n\
                          void test3(boolean b1, boolean b2, Supplier<String> r) {
                              test3(i > j, j < i, Test::get);
+                         }
+                         \n\
+                         void test4(boolean b, Supplier<String> r) {
+                             test4(i < j >> k, Test::get);
+                         }
+                         \n\
+                         void test5(boolean b, Supplier<String> r) {
+                             test5(i < j >>> k, Test::get);
+                         }
+                         \n\
+                         void test6(boolean b1, boolean b2, Supplier<String> r) {
+                             test6(i < j, i < j >> k, Test::get);
+                         }
+                         \n\
+                         void test7(boolean b1, boolean b2, Supplier<String> r) {
+                             test7(i < j, i < j >>> k, Test::get);
                          }
                          \n\
                          private static String get() {
