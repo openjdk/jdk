@@ -2512,6 +2512,8 @@ Node* GraphKit::uncommon_trap(int trap_request,
       action = Deoptimization::Action_none;
       trap_request = Deoptimization::make_trap_request(reason, action);
     } else {
+      assert(!keep_exact_action || Deoptimization::trap_request_index(trap_request) >= 0 || !too_many_recompiles(reason),
+             "recompiling trap emitted again after too many recompilations: missing too_many_traps_or_recompiles() check?");
       C->set_trap_can_recompile(true);
     }
     break;
