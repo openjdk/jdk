@@ -126,8 +126,9 @@ inline ShenandoahTaskQueueStack* ShenandoahTaskQueueSet::pick_free() {
     while (cur != nullptr) {
       auto stack = cur->pick_free();
       if (stack != nullptr) {
-        if (depth > _peak_segments.load_relaxed()) {
-          _peak_segments.store_relaxed(depth);
+        size_t current_peak;
+        while (depth > (current_peak = _peak_segments.load_relaxed())) {
+          _peak_segments.compare_set(current_peak, depth, memory_order_relaxed);
         }
         return stack;
       }
