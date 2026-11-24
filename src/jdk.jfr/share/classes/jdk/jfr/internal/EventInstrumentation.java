@@ -91,6 +91,8 @@ public final class EventInstrumentation {
     private static final MethodDesc METHOD_EVENT_SHOULD_THROTTLE_COMMIT_LONG = MethodDesc.of("shouldThrottleCommit", "(J)Z");
     private static final MethodDesc METHOD_GET_EVENT_WRITER = MethodDesc.of("getEventWriter", "()" + TYPE_EVENT_WRITER.descriptorString());
     private static final MethodDesc METHOD_IS_ENABLED = MethodDesc.of("isEnabled", "()Z");
+    private static final MethodDesc METHOD_PIN = MethodDesc.of("pin", "()V");
+    private static final MethodDesc METHOD_UNPIN = MethodDesc.of("unpin", "()V");
     private static final MethodDesc METHOD_RESET = MethodDesc.of("reset", "()V");
     private static final MethodDesc METHOD_SHOULD_COMMIT_LONG = MethodDesc.of("shouldCommit", "(J)Z");
     private static final MethodDesc METHOD_TIME_STAMP = MethodDesc.of("timestamp", "()J");
@@ -280,18 +282,37 @@ public final class EventInstrumentation {
     }
 
     private void methodCommit(CodeBuilder codeBuilder) {
+        Label retry = codeBuilder.newLabel();
+        Label end = codeBuilder.newLabel();
+        codeBuilder.labelBinding(retry);
+        if (staticCommitMethod == null) {
+            prepareInstanceCommit(codeBuilder, end);
+        }
+        // Preserve carrier affinity from writer checkout through cleanup.
+        invokestatic(codeBuilder, TYPE_EVENT_WRITER, METHOD_PIN);
+        codeBuilder.trying(this::methodCommitAttempt, catchBuilder -> {
+            catchBuilder.catchingAll(catchAllHandler -> {
+                invokestatic(catchAllHandler, TYPE_EVENT_WRITER, METHOD_UNPIN);
+                catchAllHandler.athrow();
+            });
+        });
+        // stack: [integer]
+        invokestatic(codeBuilder, TYPE_EVENT_WRITER, METHOD_UNPIN);
+        codeBuilder.ifeq(retry);
+        codeBuilder.labelBinding(end);
+        codeBuilder.return_();
+    }
+
+    private void methodCommitAttempt(CodeBuilder codeBuilder) {
         Label excluded = codeBuilder.newLabel();
         Label end = codeBuilder.newLabel();
         codeBuilder.trying(blockCodeBuilder -> {
             if (staticCommitMethod != null) {
                 updateStaticCommit(blockCodeBuilder, excluded);
             } else {
-                updateInstanceCommit(blockCodeBuilder, end, excluded);
+                updateInstanceCommit(blockCodeBuilder, excluded);
             }
             // stack: [integer]
-            // notified -> restart event write attempt
-            blockCodeBuilder.ifeq(blockCodeBuilder.startLabel());
-            // stack: []
             blockCodeBuilder.goto_(end);
         }, catchBuilder -> {
             catchBuilder.catchingAll(catchAllHandler -> {
@@ -315,9 +336,10 @@ public final class EventInstrumentation {
         codeBuilder.labelBinding(excluded);
         // stack: [EW]
         codeBuilder.pop();
+        // An excluded thread has no event to retry.
+        codeBuilder.iconst_1();
         codeBuilder.labelBinding(end);
-        // stack: []
-        codeBuilder.return_();
+        // stack: [integer]
     }
 
     private void methodEnabledStatic(CodeBuilder codeBuilder) {
@@ -464,7 +486,7 @@ public final class EventInstrumentation {
         // stack: [int]
     }
 
-    private void updateInstanceCommit(BlockCodeBuilder blockCodeBuilder, Label end, Label excluded) {
+    private void prepareInstanceCommit(CodeBuilder blockCodeBuilder, Label end) {
         // if (!isEnable()) {
         // return;
         // }
@@ -515,6 +537,9 @@ public final class EventInstrumentation {
         blockCodeBuilder.aload(0);
         invokevirtual(blockCodeBuilder, eventClassDesc, METHOD_EVENT_SHOULD_COMMIT);
         blockCodeBuilder.ifeq(end);
+    }
+
+    private void updateInstanceCommit(BlockCodeBuilder blockCodeBuilder, Label excluded) {
         getEventWriter(blockCodeBuilder);
         // stack: [EW]
         blockCodeBuilder.dup();
