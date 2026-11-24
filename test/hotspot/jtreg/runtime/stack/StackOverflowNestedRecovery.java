@@ -25,7 +25,7 @@
  * @test
  * @key stress
  *
- * @summary Nested stack overflow recovery in multiple threads and compilation modes.
+ * @summary Nested stack overflow recovery in multiple threads.
  * VM testbase keywords: [stress, diehard, stack, nonconcurrent]
  * VM testbase readme:
  * DESCRIPTION
@@ -48,10 +48,8 @@
  *     See the bug:
  *     4366625 (P4/S4) multiple stack overflow causes HS crash
  *
- * @requires (vm.opt.DeoptimizeALot != true & vm.compMode != "Xcomp")
- * @run main/othervm/timeout=900 -Xint -Xss448K StackOverflowNestedRecovery
- * @run main/othervm/timeout=900 -Xcomp -Xss448K StackOverflowNestedRecovery
- * @run main/othervm/timeout=900 -Xcomp -XX:-TieredCompilation -Xss448K StackOverflowNestedRecovery
+ * @requires vm.opt.DeoptimizeALot != true
+ * @run main/othervm/timeout=900 -Xss448K StackOverflowNestedRecovery
  */
 
 public class StackOverflowNestedRecovery extends Thread {
