@@ -144,18 +144,22 @@ void ImageLocation::clear_data() {
 
 // Manage a table of open image files.  This table allows multiple access points
 // to share an open image.
-ImageFileReaderTable::ImageFileReaderTable() : _count(0), _max(_growth) {
-    _table = static_cast<ImageFileReader**>(calloc(_max, sizeof(ImageFileReader*)));
-    assert(_table != NULL && "allocation failed");
+ImageFileReaderTable::ImageFileReaderTable() : _count(0), _max(0), _table(NULL) {
 }
 
-// Add a new image entry to the table.
-void ImageFileReaderTable::add(ImageFileReader* image) {
+// Add a new image entry to the table. Return false if allocation fails.
+bool ImageFileReaderTable::add(ImageFileReader* image) {
     if (_count == _max) {
+        void* tmp = realloc(_table, (_max + _growth) * sizeof(ImageFileReader*));
+        if (tmp == NULL) {
+            // Allocation failed, _table still owns the original memory
+            return false;
+        }
         _max += _growth;
-        _table = static_cast<ImageFileReader**>(realloc(_table, _max * sizeof(ImageFileReader*)));
+        _table = static_cast<ImageFileReader**>(tmp);
     }
     _table[_count++] = image;
+    return true;
 }
 
 // Remove an image entry from the table.
@@ -168,9 +172,13 @@ void ImageFileReaderTable::remove(ImageFileReader* image) {
         }
     }
 
-    if (_count != 0 && _count == _max - _growth) {
-        _max -= _growth;
-        _table = static_cast<ImageFileReader**>(realloc(_table, _max * sizeof(ImageFileReader*)));
+    if (_count != 0 && _count <= _max - _growth) {
+        // Leave the table allocation and capacity unchanged if allocation fails.
+        void* tmp = realloc(_table, (_max - _growth) * sizeof(ImageFileReader*));
+        if (tmp != NULL) {
+            _max -= _growth;
+            _table = static_cast<ImageFileReader**>(tmp);
+        }
     }
 }
 
@@ -228,9 +236,13 @@ ImageFileReader* ImageFileReader::open(const char* name, bool big_endian) {
             return existing_reader;
         }
     }
-    // Bump use count and add to table.
+    // Add to table and bump use count if success.
+    if (!_reader_table.add(reader)) {
+        // Failed to add to table.
+        delete reader;
+        return NULL;
+    }
     reader->inc_use();
-    _reader_table.add(reader);
     return reader;
 }
 

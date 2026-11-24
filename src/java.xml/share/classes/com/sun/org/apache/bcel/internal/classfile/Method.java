@@ -28,7 +28,7 @@ import com.sun.org.apache.bcel.internal.generic.Type;
 import com.sun.org.apache.bcel.internal.util.BCELComparator;
 
 /**
- * This class represents the method info structure, i.e., the representation for a method in the class. See JVM
+ * This class represents the method info structure, that is, the representation for a method in the class. See JVM
  * specification for details. A method has access flags, a name, a signature and a number of attributes.
  */
 public final class Method extends FieldOrMethod {
@@ -54,6 +54,8 @@ public final class Method extends FieldOrMethod {
     };
 
     /**
+     * Gets the comparison strategy object.
+     *
      * @return Comparison strategy object.
      */
     public static BCELComparator<Method> getComparator() {
@@ -61,6 +63,8 @@ public final class Method extends FieldOrMethod {
     }
 
     /**
+     * Sets the comparison strategy object.
+     *
      * @param comparator Comparison strategy object.
      */
     public static void setComparator(final BCELComparator<Method> comparator) {
@@ -79,20 +83,22 @@ public final class Method extends FieldOrMethod {
     /**
      * Constructs object from file stream.
      *
-     * @param file Input stream
-     * @throws IOException if an I/O error occurs.
-     * @throws ClassFormatException if a class is malformed or cannot be interpreted as a class file
+     * @param file Input stream.
+     * @throws IOException Thrown if an I/O error occurs.
+     * @throws ClassFormatException Thrown if a class is malformed or cannot be interpreted as a class file.
      */
     Method(final DataInput file, final ConstantPool constantPool) throws IOException, ClassFormatException {
         super(file, constantPool);
     }
 
     /**
-     * @param accessFlags Access rights of method
-     * @param nameIndex Points to field name in constant pool
-     * @param signatureIndex Points to encoded signature
-     * @param attributes Collection of attributes
-     * @param constantPool Array of constants
+     * Constructs a Method.
+     *
+     * @param accessFlags Access rights of method.
+     * @param nameIndex Points to field name in constant pool.
+     * @param signatureIndex Points to encoded signature.
+     * @param attributes Collection of attributes.
+     * @param constantPool Array of constants.
      */
     public Method(final int accessFlags, final int nameIndex, final int signatureIndex, final Attribute[] attributes, final ConstantPool constantPool) {
         super(accessFlags, nameIndex, signatureIndex, attributes, constantPool);
@@ -112,7 +118,7 @@ public final class Method extends FieldOrMethod {
      * Called by objects that are traversing the nodes of the tree implicitly defined by the contents of a Java class.
      * I.e., the hierarchy of methods, fields, attributes, etc. spawns a tree of objects.
      *
-     * @param v Visitor object
+     * @param v Visitor object.
      */
     @Override
     public void accept(final Visitor v) {
@@ -120,7 +126,10 @@ public final class Method extends FieldOrMethod {
     }
 
     /**
-     * @return deep copy of this method
+     * Creates a deep copy of this method.
+     *
+     * @param constantPool The constant pool.
+     * @return deep copy of this method.
      */
     public Method copy(final ConstantPool constantPool) {
         return (Method) copy_(constantPool);
@@ -138,14 +147,18 @@ public final class Method extends FieldOrMethod {
     }
 
     /**
-     * @return array of method argument types
+     * Gets array of method argument types.
+     *
+     * @return array of method argument types.
      */
     public Type[] getArgumentTypes() {
         return Type.getArgumentTypes(getSignature());
     }
 
     /**
-     * @return Code attribute of method, if any
+     * Gets Code attribute of method, if any.
+     *
+     * @return Code attribute of method, if any.
      */
     public Code getCode() {
         for (final Attribute attribute : super.getAttributes()) {
@@ -157,8 +170,9 @@ public final class Method extends FieldOrMethod {
     }
 
     /**
-     * @return ExceptionTable attribute of method, if any, i.e., list all exceptions the method may throw not exception
-     *         handlers!
+     * Gets ExceptionTable attribute of method, if any.
+     *
+     * @return ExceptionTable attribute of method, if any, that is, list all exceptions the method may throw not exception handlers.
      */
     public ExceptionTable getExceptionTable() {
         for (final Attribute attribute : super.getAttributes()) {
@@ -170,7 +184,9 @@ public final class Method extends FieldOrMethod {
     }
 
     /**
-     * @return LineNumberTable of code attribute if any, i.e. the call is forwarded to the Code atribute.
+     * Gets LineNumberTable of code attribute if any.
+     *
+     * @return LineNumberTable of code attribute if any, for example the call is forwarded to the Code attribute.
      */
     public LineNumberTable getLineNumberTable() {
         final Code code = getCode();
@@ -181,7 +197,9 @@ public final class Method extends FieldOrMethod {
     }
 
     /**
-     * @return LocalVariableTable of code attribute if any, i.e. the call is forwarded to the Code attribute.
+     * Gets LocalVariableTable of code attribute if any.
+     *
+     * @return LocalVariableTable of code attribute if any, for example the call is forwarded to the Code attribute.
      */
     public LocalVariableTable getLocalVariableTable() {
         final Code code = getCode();
@@ -193,7 +211,8 @@ public final class Method extends FieldOrMethod {
 
     /**
      * Gets the local variable type table attribute {@link LocalVariableTypeTable}.
-     * @return LocalVariableTypeTable of code attribute if any, i.e. the call is forwarded to the Code attribute.
+     *
+     * @return LocalVariableTypeTable of code attribute if any, for example the call is forwarded to the Code attribute.
      * @since 6.10.0
      */
     public LocalVariableTypeTable getLocalVariableTypeTable() {
@@ -205,7 +224,9 @@ public final class Method extends FieldOrMethod {
     }
 
     /**
-     * @return Annotations on the parameters of a method
+     * Gets Annotations on the parameters of a method.
+     *
+     * @return Annotations on the parameters of a method.
      * @since 6.0
      */
     public ParameterAnnotationEntry[] getParameterAnnotationEntries() {
@@ -216,7 +237,9 @@ public final class Method extends FieldOrMethod {
     }
 
     /**
-     * @return return type of method
+     * Gets return type of method.
+     *
+     * @return return type of method.
      */
     public Type getReturnType() {
         return Type.getReturnType(getSignature());
@@ -235,7 +258,7 @@ public final class Method extends FieldOrMethod {
 
     /**
      * Return string representation close to declaration format, 'public static void main(String[] args) throws
-     * IOException', e.g.
+     * IOException', for example.
      *
      * @return String representation of the method.
      */

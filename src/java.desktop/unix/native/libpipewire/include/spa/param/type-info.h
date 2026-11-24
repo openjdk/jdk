@@ -15,5 +15,7 @@
 #include <spa/param/profile-types.h>
 #include <spa/param/route-types.h>
 #include <spa/param/tag-types.h>
+#include <spa/param/dict-types.h>
+#include <spa/param/peer-types.h>
 
 #endif /* SPA_PARAM_TYPE_INFO_H */

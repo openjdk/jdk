@@ -5,11 +5,11 @@
 #ifndef SPA_AUDIO_AAC_H
 #define SPA_AUDIO_AAC_H
 
+#include <spa/param/audio/raw.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <spa/param/audio/raw.h>
 
 /**
  * \addtogroup spa_param
@@ -18,19 +18,19 @@ extern "C" {
 
 enum spa_audio_aac_stream_format {
     SPA_AUDIO_AAC_STREAM_FORMAT_UNKNOWN,
-    /* Raw AAC frames */
+    /** Raw AAC frames */
     SPA_AUDIO_AAC_STREAM_FORMAT_RAW,
-    /* ISO/IEC 13818-7 MPEG-2 Audio Data Transport Stream (ADTS) */
+    /** ISO/IEC 13818-7 MPEG-2 Audio Data Transport Stream (ADTS) */
     SPA_AUDIO_AAC_STREAM_FORMAT_MP2ADTS,
-    /* ISO/IEC 14496-3 MPEG-4 Audio Data Transport Stream (ADTS) */
+    /** ISO/IEC 14496-3 MPEG-4 Audio Data Transport Stream (ADTS) */
     SPA_AUDIO_AAC_STREAM_FORMAT_MP4ADTS,
-    /* ISO/IEC 14496-3 Low Overhead Audio Stream (LOAS) */
+    /** ISO/IEC 14496-3 Low Overhead Audio Stream (LOAS) */
     SPA_AUDIO_AAC_STREAM_FORMAT_MP4LOAS,
-    /* ISO/IEC 14496-3 Low Overhead Audio Transport Multiplex (LATM) */
+    /** ISO/IEC 14496-3 Low Overhead Audio Transport Multiplex (LATM) */
     SPA_AUDIO_AAC_STREAM_FORMAT_MP4LATM,
-    /* ISO/IEC 14496-3 Audio Data Interchange Format (ADIF) */
+    /** ISO/IEC 14496-3 Audio Data Interchange Format (ADIF) */
     SPA_AUDIO_AAC_STREAM_FORMAT_ADIF,
-    /* ISO/IEC 14496-12 MPEG-4 file format */
+    /** ISO/IEC 14496-12 MPEG-4 file format */
     SPA_AUDIO_AAC_STREAM_FORMAT_MP4FF,
 
     SPA_AUDIO_AAC_STREAM_FORMAT_CUSTOM = 0x10000,

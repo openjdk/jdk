@@ -2214,6 +2214,9 @@ enum VectorMask {
   INSN(vnsra_wi, 0b1010111, 0b011, 0b101101);
   INSN(vnsrl_wi, 0b1010111, 0b011, 0b101100);
 
+  // Vector Widening Shift Left Logical (Zvbb) Extension
+  INSN(vwsll_vi, 0b1010111, 0b011, 0b110101);
+
 #undef INSN
 
 #define INSN(NAME, op, funct3, funct6)                                                             \
@@ -2434,6 +2437,7 @@ enum VectorMask {
   INSN(vrsub_vx, 0b1010111, 0b100, 0b000011);
 
   // Vector Slide Instructions
+  INSN(vslideup_vx,   0b1010111, 0b100, 0b001110);
   INSN(vslidedown_vx, 0b1010111, 0b100, 0b001111);
 
 #undef INSN
@@ -2833,6 +2837,16 @@ enum Nf {
 
   INSN(vaesdm_vv,   0b1110111, 0b010, 0b00000, 0b101000);
   INSN(vaesdf_vv,   0b1110111, 0b010, 0b00001, 0b101000);
+
+  // Vector AES instructions - scalar form (Zvkned extension)
+  // .vs broadcasts vs2 element group 0 to all element groups in vd,
+  // allowing an m1 round key to be applied to a VL>4 data group
+  // without key splat.
+  INSN(vaesz_vs,   0b1110111, 0b010, 0b00111, 0b101001);
+  INSN(vaesem_vs,  0b1110111, 0b010, 0b00010, 0b101001);
+  INSN(vaesef_vs,  0b1110111, 0b010, 0b00011, 0b101001);
+  INSN(vaesdm_vs,  0b1110111, 0b010, 0b00000, 0b101001);
+  INSN(vaesdf_vs,  0b1110111, 0b010, 0b00001, 0b101001);
 
   INSN(vclz_v,  0b1010111, 0b010, 0b01100, 0b010010); // count leading zeros
   INSN(vctz_v,  0b1010111, 0b010, 0b01101, 0b010010); // count trailing zeros

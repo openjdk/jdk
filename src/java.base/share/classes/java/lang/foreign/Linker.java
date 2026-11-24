@@ -138,15 +138,28 @@ import java.util.function.Consumer;
  * <ul>
  *     <li>{@code bool}</li>
  *     <li>{@code char}</li>
+ *     <li>{@code unsigned char}</li>
  *     <li>{@code short}</li>
+ *     <li>{@code unsigned short}</li>
  *     <li>{@code int}</li>
+ *     <li>{@code unsigned int}</li>
  *     <li>{@code long}</li>
+ *     <li>{@code unsigned long}</li>
  *     <li>{@code long long}</li>
+ *     <li>{@code unsigned long long}</li>
  *     <li>{@code float}</li>
  *     <li>{@code double}</li>
  *     <li>{@code size_t}</li>
  *     <li>{@code wchar_t}</li>
  *     <li>{@code void*}</li>
+ *     <li>{@code int8_t}</li>
+ *     <li>{@code int16_t}</li>
+ *     <li>{@code int32_t}</li>
+ *     <li>{@code int64_t}</li>
+ *     <li>{@code uint8_t}</li>
+ *     <li>{@code uint16_t}</li>
+ *     <li>{@code uint32_t}</li>
+ *     <li>{@code uint64_t}</li>
  * </ul>
  * As noted above, the specific canonical layout associated with each type can vary,
  * depending on the data model supported by a given ABI. For instance, the canonical
@@ -155,11 +168,6 @@ import java.util.function.Consumer;
  * Similarly, the canonical layout for the C type {@code size_t} is a
  * {@link ValueLayout.OfLong} on 64-bit platforms, and a {@link ValueLayout.OfInt}
  * on 32-bit platforms.
- * <p>
- * A native linker typically does not provide canonical layouts for C's unsigned integral
- * types. Instead, they are modeled using the canonical layouts associated with their
- * corresponding signed integral types. For instance, the C type {@code unsigned long}
- * maps to the canonical layout for {@code long}.
  * <p>
  * The following table shows some examples of how C types are modeled in Linux/x64
  * according to the "System V Application Binary Interface"

@@ -27,6 +27,7 @@
  * @summary Sanity test for -XX:+TraceSplitIf to ensure it doesn't crash and produces output.
  * @library /test/lib
  * @requires vm.compiler2.enabled & vm.debug
+ * @requires vm.flagless
  * @run driver ${test.main.class}
  */
 

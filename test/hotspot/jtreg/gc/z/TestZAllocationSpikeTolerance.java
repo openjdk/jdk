@@ -29,6 +29,7 @@
  *          - succeeds for valid value
  * @library /test/lib
  * @requires vm.gc.Z
+ * @requires vm.flagless
  * @run driver gc.z.TestZAllocationSpikeTolerance
  */
 package gc.z;

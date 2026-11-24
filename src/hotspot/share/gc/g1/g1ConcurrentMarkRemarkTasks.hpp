@@ -25,7 +25,6 @@
 #ifndef SHARE_GC_G1_G1CONCURRENTMARKREMARKTASKS_HPP
 #define SHARE_GC_G1_G1CONCURRENTMARKREMARKTASKS_HPP
 
-#include "gc/g1/g1HeapRegion.hpp"
 #include "gc/g1/g1HeapRegionManager.hpp"
 #include "gc/g1/g1HeapRegionSet.hpp"
 #include "gc/shared/workerThread.hpp"
@@ -33,6 +32,7 @@
 
 class G1CollectedHeap;
 class G1ConcurrentMark;
+class G1HeapRegion;
 
 // Update per-region liveness info based on CM stats. Then, reclaim empty
 // regions right away and select certain regions (e.g. sparse ones) for remset
@@ -43,7 +43,7 @@ class G1UpdateRegionLivenessAndSelectForRebuildTask : public WorkerTask {
   G1HeapRegionClaimer _hrclaimer;
 
   GrowableArrayCHeap<G1HeapRegion*, mtGC> _old_selected_for_rebuild;
-  uint _num_humongous_selected_for_rebuild;
+  GrowableArrayCHeap<G1HeapRegion*, mtGC> _humongous_selected_for_rebuild;
 
   // Reclaimed empty regions
   G1FreeRegionList _cleanup_list;
@@ -61,13 +61,14 @@ public:
   void work(uint worker_id) override;
 
   uint total_selected_for_rebuild() const {
-    return (uint)_old_selected_for_rebuild.length() + _num_humongous_selected_for_rebuild;
+    return (uint)_old_selected_for_rebuild.length() + (uint)_humongous_selected_for_rebuild.length();
   }
 
   // Sort selected old regions by efficiency and prune them based on G1HeapWastePercent.
   // This pruning improves rebuild time in addition to remembered set memory usage.
   // Returns the set of regions selected in efficiency order.
-  GrowableArrayCHeap<G1HeapRegion*, mtGC>* sort_and_prune_old_selected();
+  GrowableArrayCHeap<G1HeapRegion*, mtGC>* sort_and_prune_selected();
+  GrowableArrayCHeap<G1HeapRegion*, mtGC>* humongous_selected() { return &_humongous_selected_for_rebuild; }
 
   static uint desired_num_workers(uint num_regions);
 };

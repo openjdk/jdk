@@ -31,9 +31,9 @@
 
 template<typename Func>
 void G1CollectionSetCandidates::iterate_regions(Func&& f) const {
-  _from_marking_groups.iterate(f);
+  _from_marking_groups.iterate_regions(f);
 
-  _retained_groups.iterate(f);
+  _retained_groups.iterate_regions(f);
 }
 
 #endif /* SHARE_GC_G1_G1COLLECTIONSETCANDIDATES_INLINE_HPP */

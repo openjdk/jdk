@@ -42,7 +42,7 @@ class G1RegionPinCache : public StackObj {
   void flush_and_set(uint new_region_idx, size_t new_count);
 
 public:
-  G1RegionPinCache() : _region_idx(G1_NO_HRM_INDEX), _count(0) { }
+  G1RegionPinCache() : _region_idx(G1HeapRegion::InvalidRegionIdx), _count(0) { }
 
 #ifdef ASSERT
   size_t count() const { return _count; }

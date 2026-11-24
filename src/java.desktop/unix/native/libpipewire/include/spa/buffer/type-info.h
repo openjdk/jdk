@@ -5,6 +5,10 @@
 #ifndef SPA_BUFFER_TYPES_H
 #define SPA_BUFFER_TYPES_H
 
+#include <spa/buffer/buffer.h>
+#include <spa/buffer/meta.h>
+#include <spa/utils/type.h>
+
 /**
  * \addtogroup spa_buffer
  * \{
@@ -13,10 +17,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <spa/buffer/buffer.h>
-#include <spa/buffer/meta.h>
-#include <spa/utils/type.h>
 
 #define SPA_TYPE_INFO_Buffer            SPA_TYPE_INFO_POINTER_BASE "Buffer"
 #define SPA_TYPE_INFO_BUFFER_BASE        SPA_TYPE_INFO_Buffer ":"

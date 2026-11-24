@@ -1564,16 +1564,13 @@ void ZBarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Registe
   __ bind(check_zaddress);
   // Check if the oop is in the right area of memory
   __ movptr(tmp1, obj);
-#if INCLUDE_CDS
   if (AOTCodeCache::is_on_for_dump()) {
     __ lea(tmp2, ExternalAddress(AOTRuntimeConstants::verify_oop_mask_address()));
     __ movptr(tmp2, Address(tmp2));
     __ andptr(tmp1, tmp2);
     __ lea(tmp2, ExternalAddress(AOTRuntimeConstants::verify_oop_bits_address()));
     __ movptr(tmp2, Address(tmp2));
-  } else
-#endif
-  {
+  } else {
     __ movptr(tmp2, (intptr_t) Universe::verify_oop_mask());
     __ andptr(tmp1, tmp2);
     __ movptr(tmp2, (intptr_t) Universe::verify_oop_bits());

@@ -1,4 +1,4 @@
-## PipeWire 1.3.81
+## PipeWire 1.6.11
 
 ### PipeWire license:
 
@@ -6,7 +6,7 @@ All PipeWire header files are licensed under the MIT License:
 
 
 <pre>
-Copyright © 2018-2023 Wim Taymans
+Copyright © 2018-2025 Wim Taymans
 
 Permission is hereby granted, free of charge, to any person obtaining a
 copy of this software and associated documentation files (the "Software"),
@@ -30,17 +30,30 @@ DEALINGS IN THE SOFTWARE.
 
 The below copyright applies to the following files:
 
-spa/include/spa/monitor/type-info.h
+spa/monitor/type-info.h
 ```
 Copyright © 2021 Collabora Ltd.
 ```
 
-spa/include/spa/utils/string.h
+spa/param/audio/dts-types.h
+spa/param/audio/dts.h
 ```
-Copyright © 2021 Red Hat, Inc.
+Copyright © 2025 Carlos Rafael Giani
 ```
 
-spa/utils/cleanup.h:
+spa/param/video/color-types.h
+spa/utils/cleanup.h
 ```
-Copyright © 2023 PipeWire authors
+Copyright © 2023-2025 PipeWire authors
+```
+
+spa/param/video/h265-utils.h
+spa/param/video/h265.h
+```
+Copyright © 2025 Arun Raghavan
+```
+
+spa/utils/string.h
+```
+Copyright © 2021 Red Hat, Inc.
 ```

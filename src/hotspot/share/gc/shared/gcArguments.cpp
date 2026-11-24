@@ -196,6 +196,15 @@ void GCArguments::set_heap_size() {
 void GCArguments::initialize_heap_sizes() {
   initialize_alignments();
   initialize_heap_flags_and_sizes();
+
+  if (MinHeapDeltaBytes > MaxHeapSize) {
+    if (FLAG_IS_CMDLINE(MinHeapDeltaBytes)) {
+      log_warning(gc, ergo)("MinHeapDeltaBytes (%zu) is greater than MaxHeapSize (%zu). "
+                            "Using MaxHeapSize instead.", MinHeapDeltaBytes, MaxHeapSize);
+    }
+    FLAG_SET_ERGO(MinHeapDeltaBytes, MaxHeapSize);
+  }
+
   initialize_size_info();
 }
 

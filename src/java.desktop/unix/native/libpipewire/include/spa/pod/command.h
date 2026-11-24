@@ -5,12 +5,12 @@
 #ifndef SPA_COMMAND_H
 #define SPA_COMMAND_H
 
+#include <spa/utils/defs.h>
+#include <spa/pod/pod.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <spa/utils/defs.h>
-#include <spa/pod/pod.h>
 
 /**
  * \addtogroup spa_pod

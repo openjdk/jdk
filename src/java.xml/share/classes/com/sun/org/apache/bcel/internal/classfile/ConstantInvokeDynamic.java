@@ -48,13 +48,19 @@ public final class ConstantInvokeDynamic extends ConstantCP {
     /**
      * Initialize instance from file data.
      *
-     * @param file Input stream
-     * @throws IOException if an I/O error occurs.
+     * @param file Input stream.
+     * @throws IOException Thrown if an I/O error occurs.
      */
     ConstantInvokeDynamic(final DataInput file) throws IOException {
         this(file.readUnsignedShort(), file.readUnsignedShort());
     }
 
+    /**
+     * Constructs a ConstantInvokeDynamic.
+     *
+     * @param bootstrapMethodAttrIndex Index to the bootstrap method.
+     * @param nameAndTypeIndex Index to the name and type.
+     */
     public ConstantInvokeDynamic(final int bootstrapMethodAttrIndex, final int nameAndTypeIndex) {
         super(Const.CONSTANT_InvokeDynamic, bootstrapMethodAttrIndex, nameAndTypeIndex);
     }
@@ -63,7 +69,7 @@ public final class ConstantInvokeDynamic extends ConstantCP {
      * Called by objects that are traversing the nodes of the tree implicitly defined by the contents of a Java class. I.e.,
      * the hierarchy of methods, fields, attributes, etc. spawns a tree of objects.
      *
-     * @param v Visitor object
+     * @param v Visitor object.
      */
     @Override
     public void accept(final Visitor v) {
@@ -71,6 +77,8 @@ public final class ConstantInvokeDynamic extends ConstantCP {
     }
 
     /**
+     * Gets the reference (index) to bootstrap method this constant refers to.
+     *
      * @return Reference (index) to bootstrap method this constant refers to.
      *
      *         Note that this method is a functional duplicate of getClassIndex for use by ConstantInvokeDynamic.
@@ -81,7 +89,7 @@ public final class ConstantInvokeDynamic extends ConstantCP {
     }
 
     /**
-     * @return String representation
+     * @return String representation.
      */
     @Override
     public String toString() {
