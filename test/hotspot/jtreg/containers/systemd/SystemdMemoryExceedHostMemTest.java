@@ -33,6 +33,7 @@ import jtreg.SkippedException;
  * @summary Verify no asserts are triggered in cgroup adjusting code
  *          when memory limit exceeds physical host memory.
  * @requires systemd.support
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.platform
  * @build HelloSystemd jdk.test.whitebox.WhiteBox
