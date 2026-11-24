@@ -45,9 +45,6 @@ void ShenandoahUncommitThread::run_service() {
   // poll_interval avoids constantly polling regions for shrinking.
   const int64_t poll_interval_ms = 500;
 
-  // When balancing the uncommits, target to complete entire work at most in 5 seconds.
-  const double per_region_delay = 5.0 / _heap->num_regions();
-
   while (true) {
     bool prompt_request;
 
@@ -80,6 +77,11 @@ void ShenandoahUncommitThread::run_service() {
     size_t plan_deferred = 0;
     size_t plan_uncommit = 0;
 
+    // Balance the uncommits to avoid large uncommit/commit spikes.
+    size_t committed_regs = _heap->committed() / ShenandoahHeapRegion::region_size_bytes();
+    if (committed_regs == 0) committed_regs = 1;
+    const double per_region_delay = double(ShenandoahUncommitDuration) / 1000 / committed_regs;
+
     // Categorise the regions and figure out if we have any work.
     for (size_t i = _heap->num_regions(); i > 0; i--) {
       ShenandoahHeapRegion* r = _heap->get_region(i - 1);
@@ -89,8 +91,7 @@ void ShenandoahUncommitThread::run_service() {
           // Region matches the deadline, uncommit it.
           plan_uncommit++;
         } else if (prompt_request) {
-          // Non-matching regions under prompt request get the early deadline.
-          // We still want to balance the uncommits a bit to avoid too eager uncommit.
+          // Non-matching regions under prompt request get the earliest deadline.
           r->set_uncommit_time(MIN2(uncommit_time, now + plan_prompt * per_region_delay));
           plan_prompt++;
         } else if (uncommit_time == DBL_MAX) {
@@ -101,14 +102,22 @@ void ShenandoahUncommitThread::run_service() {
       }
     }
 
+    if (plan_uncommit == 0) {
+      // Nothing planned.
+      continue;
+    }
+
     if (_heap->committed() <= _heap->min_capacity()) {
       // Do not uncommit below target.
       continue;
     }
 
-    if (plan_uncommit > 0) {
-      uncommit();
+    if (!_heap->is_idle()) {
+      // Do not attempt uncommits when GC is active.
+      continue;
     }
+
+    uncommit();
   }
 }
 

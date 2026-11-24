@@ -312,6 +312,11 @@
           "in milliseconds. Setting this delay to 0 effectively uncommits " \
           "regions almost immediately after they become unused.")           \
                                                                             \
+  product(uintx, ShenandoahUncommitDuration, 5*1000, EXPERIMENTAL,          \
+          "When uncommitting eligible regions, try to complete the work "   \
+          "in specified time. Larger values make large uncommits happen "   \
+          "more gradually. Time is in milliseconds.")                       \
+                                                                            \
   product(bool, ShenandoahRegionSampling, false, EXPERIMENTAL,              \
           "Provide heap region sampling data via jvmstat.")                 \
                                                                             \
