@@ -1961,7 +1961,7 @@ const int ObjectAlignmentInBytes = 8;
              "Pass each value type field as an argument at calls")          \
                                                                             \
   product_pd(bool, ValueTypeReturnedAsFields, DIAGNOSTIC,                   \
-          "Return fields instead of a value type reference")                \
+             "Return fields instead of a value type reference")             \
                                                                             \
   develop(bool, StressCallingConvention, false,                             \
           "Stress the scalarized calling convention.")                      \
