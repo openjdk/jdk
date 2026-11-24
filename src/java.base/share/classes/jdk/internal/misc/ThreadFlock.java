@@ -49,8 +49,8 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
  * <p> ThreadFlock defines the {@link #open(String) open} method to open a new flock,
  * the {@link #start(Thread) start} method to start a thread in the flock, and the
  * {@link #close() close} method to close the flock. The {@code close} waits for all
- * threads in the flock to finish. The {@link #awaitAll() awaitAll} method may be used
- * to wait for all threads to finish without closing the flock. The {@link #wakeup()}
+ * threads in the flock to finish. The {@link #awaitAll(Object) awaitAll} method may be
+ * used to wait for all threads to finish without closing the flock. The {@link #wakeup()}
  * method will cause {@code awaitAll} method to complete early, which can be used to
  * support cancellation in higher-level APIs. ThreadFlock also defines the {@link
  * #shutdown() shutdown} method to prevent new threads from starting while allowing
@@ -359,8 +359,8 @@ public class ThreadFlock implements AutoCloseable {
     }
 
     /**
-     * Causes the call to {@link #awaitAll()} or {@link #awaitAll(Duration)} by the
-     * {@linkplain #owner() owner} to return immediately.
+     * Causes the call to {@link #awaitAll(Object)} or {@link #awaitAll(Object, Duration)}
+     * by the {@linkplain #owner() owner} to return immediately.
      *
      * <p> If the owner is blocked in {@code awaitAll} then it will return immediately.
      * If the owner is not blocked in {@code awaitAll} then its next call to wait

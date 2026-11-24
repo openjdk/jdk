@@ -28,20 +28,13 @@
  * @requires vm.continuations
  * @modules java.base/jdk.internal.vm jdk.management
  * @library /test/lib
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run junit/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *         --enable-native-access=ALL-UNNAMED DumpThreads
- * @run junit/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *         --enable-native-access=ALL-UNNAMED -Djdk.trackAllThreads DumpThreads
- * @run junit/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *        --enable-native-access=ALL-UNNAMED -Djdk.trackAllThreads=true DumpThreads
- * @run junit/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *        --enable-native-access=ALL-UNNAMED -Djdk.trackAllThreads=false DumpThreads
+ * @run junit/othervm --enable-native-access=ALL-UNNAMED DumpThreads
+ * @run junit/othervm --enable-native-access=ALL-UNNAMED -Djdk.trackAllThreads DumpThreads
+ * @run junit/othervm --enable-native-access=ALL-UNNAMED -Djdk.trackAllThreads=true DumpThreads
+ * @run junit/othervm --enable-native-access=ALL-UNNAMED -Djdk.trackAllThreads=false DumpThreads
  */
 
 import java.lang.management.ManagementFactory;
-import java.lang.reflect.Method;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
@@ -75,7 +68,6 @@ import static java.lang.Thread.State.*;
 import jdk.test.lib.threaddump.ThreadDump;
 import jdk.test.lib.thread.VThreadPinner;
 import jdk.test.lib.thread.VThreadRunner;
-import jdk.test.whitebox.WhiteBox;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeAll;
@@ -270,7 +262,7 @@ class DumpThreads {
                 ThreadFields fields = findThread(tid, lines);
                 assertNotNull(fields, "thread not found");
                 assertEquals("BLOCKED", fields.state());
-                assertTrue(contains(lines, "- waiting to lock <" + lockAsString));
+                assertTrue(contains(lines, "- waiting to lock <" + lockAsString + ">"));
 
                 // thread dump in JSON format should include thread in root container
                 ThreadDump threadDump = dumpThreadsToJson();
@@ -367,17 +359,11 @@ class DumpThreads {
                 }
             }
 
-            // Compiled native frames have no locals. If Object.wait0 has been compiled
-            // then we may not have the object that the thread is waiting on.
-            Method wait0 = Object.class.getDeclaredMethod("wait0", long.class);
-            boolean expectWaitingOn = !WhiteBox.getWhiteBox().isMethodCompiled(wait0);
-            if (expectWaitingOn) {
-                // plain text dump should have "waiting on" line
-                assertTrue(contains(lines, "- waiting on <" + lockAsString));
+            // plain text dump should have "waiting on" line
+            assertTrue(contains(lines, "- waiting on <" + lockAsString + ">"));
 
-                // JSON thread dump should have waitingOn property
-                assertEquals(lockAsString, ti.waitingOn());
-            }
+            // JSON thread dump should have waitingOn property
+            assertEquals(lockAsString, ti.waitingOn());
 
         } finally {
             synchronized (lock) {
@@ -438,7 +424,7 @@ class DumpThreads {
             assertEquals("WAITING", fields.state());
             String line = find(lines, "- parking to wait for <java.util.concurrent.locks.ReentrantLock");
             assertNotNull(line, "parking to wait line not found");
-            assertTrue(line.endsWith(" owner #" + Thread.currentThread().threadId()));
+            assertTrue(line.endsWith(">, owner #" + Thread.currentThread().threadId()));
 
             // thread dump in JSON format should include thread in root container
             ThreadDump threadDump = dumpThreadsToJson();
@@ -522,9 +508,9 @@ class DumpThreads {
             ThreadFields fields = findThread(tid, lines);
             assertNotNull(fields, "thread not found");
             assertEquals("WAITING", fields.state());
-            assertTrue(contains(lines, "- locked <" + lock1AsString));
-            assertTrue(contains(lines, "- locked <" + lock2AsString));
-            assertTrue(contains(lines, "- locked <" + lock3AsString));
+            assertTrue(contains(lines, "- locked <" + lock1AsString + ">"));
+            assertTrue(contains(lines, "- locked <" + lock2AsString + ">"));
+            assertTrue(contains(lines, "- locked <" + lock3AsString + ">"));
 
             // thread dump in JSON format should include thread in root container
             ThreadDump threadDump = dumpThreadsToJson();
@@ -667,18 +653,14 @@ class DumpThreads {
                     .orElse(null);
             assertNotNull(ti, "Thread " + joinerTid + " not found");
 
-            // Compiled native frames have no locals. If Object.wait0 has been compiled
-            // then we may not have the object that the thread is waiting on.
-            Method wait0 = Object.class.getDeclaredMethod("wait0", long.class);
-            if (!WhiteBox.getWhiteBox().isMethodCompiled(wait0)) {
-                String expectedWaitingOn = Objects.toIdentityString(parkingThread);
+            String expectedWaitingOn = Objects.toIdentityString(parkingThread);
 
-                // plain text dump should have "waiting on" line
-                assertTrue(contains(lines, "- waiting on <" + expectedWaitingOn));
+            // plain text dump should have "waiting on" line
+            assertTrue(contains(lines, "- waiting on <" + expectedWaitingOn + ">"));
 
-                // JSon thread dump should have waitingOn property
-                assertEquals(expectedWaitingOn, ti.waitingOn());
-            }
+            // JSON thread dump should have waitingOn property
+            assertEquals(expectedWaitingOn, ti.waitingOn());
+
         } finally {
             LockSupport.unpark(parkingThread);
             parkingThread.join();
@@ -910,11 +892,11 @@ class DumpThreads {
             return null;
         }
 
-        // #3 "main" java.lang.Thread@6d06d69c RUNNABLE cpuTime=1190000 2025-04-18T15:22:12.012450Z
-        // #36 "" virtual java.lang.VirtualThread@7852e922 WAITING cpuTime=-1 2025-04-18T15:22:12.012450Z
+        // #3 "main" <java.lang.Thread@6d06d69c> RUNNABLE cpuTime=1190000 2025-04-18T15:22:12.012450Z
+        // #36 "" virtual <java.lang.VirtualThread@7852e922> WAITING cpuTime=-1 2025-04-18T15:22:12.012450Z
         Pattern pattern = Pattern.compile(
                 "#(\\d+)\\s+\"((?:\\\\.|[^\"\\\\])*)\"\\s+(virtual\\s+)?"
-                + "(\\S+@[0-9a-f]+)\\s+(\\w+)"
+                + "<([^>\\s]+@[0-9a-f]+)>\\s+(\\w+)"
                 + "\\s+cpuTime=(-?\\d+)\\s+(\\S+)");
         Matcher matcher = pattern.matcher(line);
         assertTrue(matcher.matches(), line);
