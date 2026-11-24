@@ -32,11 +32,8 @@ class ShenandoahHeap;
 class ShenandoahUncommitThread : public ConcurrentGCThread {
   ShenandoahHeap* const _heap;
 
-  // Indicates that `SoftMaxHeapSize` has changed
-  ShenandoahSharedFlag _soft_max_changed;
-
-  // Indicates that an explicit gc has been requested
-  ShenandoahSharedFlag _explicit_gc_requested;
+  // Indicates that something that requires prompt action happened
+  ShenandoahSharedFlag _prompt_request;
 
   // Indicates whether it is safe to uncommit regions
   ShenandoahSharedFlag _uncommit_allowed;
@@ -51,7 +48,7 @@ class ShenandoahUncommitThread : public ConcurrentGCThread {
   Monitor _uncommit_lock;
 
   // Perform the work of uncommitting empty regions
-  void uncommit(size_t shrink_until);
+  void uncommit();
 
   // Try to set progress, potentially stalling until uncommits are allowed
   bool try_set_progress();
@@ -69,7 +66,7 @@ public:
   void run_service() override;
 
   // Wake up this thread and try to uncommit for changed soft max size
-  void notify_soft_max_changed();
+  void request_prompt_uncommit();
 
   // Wake up this thread and try to uncommit for min heap size
   void notify_explicit_gc_requested();

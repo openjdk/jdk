@@ -800,15 +800,9 @@ bool ShenandoahHeap::is_in(const void* p) const {
   return r->is_trash() && is_concurrent_weak_root_in_progress();
 }
 
-void ShenandoahHeap::notify_soft_max_changed() {
+void ShenandoahHeap::request_prompt_uncommit() {
   if (_uncommit_thread != nullptr) {
-    _uncommit_thread->notify_soft_max_changed();
-  }
-}
-
-void ShenandoahHeap::notify_explicit_gc_requested() {
-  if (_uncommit_thread != nullptr) {
-    _uncommit_thread->notify_explicit_gc_requested();
+    _uncommit_thread->request_prompt_uncommit();
   }
 }
 
