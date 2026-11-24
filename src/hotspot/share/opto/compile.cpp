@@ -418,8 +418,8 @@ void Compile::remove_useless_node(Node* dead) {
   if (dead->for_post_loop_opts_igvn()) {
     remove_from_post_loop_opts_igvn(dead);
   }
-  if (dead->is_ValueType()) {
-    remove_value_type(dead->as_ValueType());
+  if (ValueTypeNode* vt = dead->isa_ValueType(); vt != nullptr) {
+    remove_value_type(vt);
   }
   if (dead->is_LoadFlat() || dead->is_StoreFlat()) {
     remove_flat_access(dead->as_SafePoint());
@@ -2009,12 +2009,12 @@ void Compile::process_for_post_loop_opts_igvn(PhaseIterGVN& igvn) {
   }
 }
 
-void Compile::add_value_type(ValueTypeNode* vt) {
-  _value_type_nodes.push(vt);
+void Compile::add_value_type(ValueTypeNode* value_type) {
+  _value_type_nodes.push(value_type);
 }
 
-void Compile::remove_value_type(ValueTypeNode* vt) {
-  _value_type_nodes.remove_if_existing(vt);
+void Compile::remove_value_type(ValueTypeNode* value_type) {
+  _value_type_nodes.remove_if_existing(value_type);
 }
 
 // Does the return value keep otherwise useless value type allocations alive?

@@ -844,8 +844,8 @@ public:
   void process_for_post_loop_opts_igvn(PhaseIterGVN& igvn);
 
   // Keep track of value type nodes for later processing
-  void add_value_type(ValueTypeNode* vt);
-  void remove_value_type(ValueTypeNode* vt);
+  void add_value_type(ValueTypeNode* value_type);
+  void remove_value_type(ValueTypeNode* value_type);
 
   static bool clear_argument_if_only_used_as_buffer_at_calls(const Node* result_cast, PhaseIterGVN& igvn);
 

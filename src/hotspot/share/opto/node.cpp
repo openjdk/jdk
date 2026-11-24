@@ -570,14 +570,14 @@ Node *Node::clone() const {
       n->as_Call()->set_generator(cloned_cg);
     }
   }
-  if (n->is_SafePoint()) {
+  if (SafePointNode* safepoint = n->isa_SafePoint(); safepoint != nullptr) {
     // Scalar replacement and macro expansion might modify the JVMState.
     // Clone it to make sure it's not shared between SafePointNodes.
-    n->as_SafePoint()->clone_jvms(C);
-    n->as_SafePoint()->clone_replaced_nodes();
+    safepoint->clone_jvms(C);
+    safepoint->clone_replaced_nodes();
   }
-  if (n->is_ValueType()) {
-    C->add_value_type(n->as_ValueType());
+  if (ValueTypeNode* value_type = n->isa_ValueType(); value_type != nullptr) {
+    C->add_value_type(value_type);
   }
   if (n->is_LoadFlat() || n->is_StoreFlat()) {
     C->add_flat_access(n->as_SafePoint());
@@ -634,30 +634,29 @@ void Node::destruct(PhaseValues* phase) {
   if (is_expensive()) {
     compile->remove_expensive_node(this);
   }
-  if (is_ReachabilityFence()) {
-    compile->remove_reachability_fence(as_ReachabilityFence());
+  if (ReachabilityFenceNode* this_reachability_fence = isa_ReachabilityFence(); this_reachability_fence != nullptr) {
+    compile->remove_reachability_fence(this_reachability_fence);
   }
-  if (is_OpaqueTemplateAssertionPredicate()) {
-    compile->remove_template_assertion_predicate_opaque(as_OpaqueTemplateAssertionPredicate());
+  if (OpaqueTemplateAssertionPredicateNode* this_opaque = isa_OpaqueTemplateAssertionPredicate(); this_opaque != nullptr) {
+    compile->remove_template_assertion_predicate_opaque(this_opaque);
   }
-  if (is_ParsePredicate()) {
-    compile->remove_parse_predicate(as_ParsePredicate());
+  if (ParsePredicateNode* this_parse_predicate = isa_ParsePredicate(); this_parse_predicate != nullptr) {
+    compile->remove_parse_predicate(this_parse_predicate);
   }
   if (for_post_loop_opts_igvn()) {
     compile->remove_from_post_loop_opts_igvn(this);
   }
-  if (is_ValueType()) {
-    compile->remove_value_type(as_ValueType());
+  if (ValueTypeNode* this_value_type = isa_ValueType(); this_value_type != nullptr) {
+    compile->remove_value_type(this_value_type);
   }
   if (for_merge_stores_igvn()) {
     compile->remove_from_merge_stores_igvn(as_Store());
   }
+  if (SafePointNode* this_safepoint = isa_SafePoint(); this_safepoint != nullptr) {
+    this_safepoint->delete_replaced_nodes();
 
-  if (is_SafePoint()) {
-    as_SafePoint()->delete_replaced_nodes();
-
-    if (is_CallStaticJava()) {
-      compile->remove_unstable_if_trap(as_CallStaticJava(), false);
+    if (CallStaticJavaNode* this_call = isa_CallStaticJava(); this_call != nullptr) {
+      compile->remove_unstable_if_trap(this_call, false);
     }
   }
 
