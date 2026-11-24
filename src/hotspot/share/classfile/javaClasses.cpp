@@ -1265,7 +1265,12 @@ bool java_lang_Class::restore_archived_mirror(Klass *k,
   }
 
   if (CDSConfig::is_dumping_heap() && (!k->is_refined_objArray_klass())) {
-    create_scratch_mirror(k, CHECK_(false));
+    if (!CDSConfig::can_allocate_scratch_oops()) {
+      // Will be created later inside AOTLinkedClassBulkLoader::link_classes_impl().
+      assert(CDSConfig::is_redumping_aot_configuration(), "must be");
+    } else {
+      create_scratch_mirror(k, CHECK_(false));
+    }
   }
 
   return true;

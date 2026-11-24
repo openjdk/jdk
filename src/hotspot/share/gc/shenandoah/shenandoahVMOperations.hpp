@@ -97,6 +97,7 @@ public:
   VM_Operation::VMOp_Type type() const override { return VMOp_ShenandoahFullGC; }
   const char* name()             const override { return "Shenandoah Full GC"; }
   void doit() override;
+  bool allow_nested_vm_operations() const override;
 };
 
 class VM_ShenandoahInitUpdateRefs: public VM_ShenandoahOperation {

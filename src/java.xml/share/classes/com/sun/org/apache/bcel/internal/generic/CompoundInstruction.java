@@ -34,5 +34,10 @@ package com.sun.org.apache.bcel.internal.generic;
  */
 public interface CompoundInstruction {
 
+    /**
+     * Gets the instruction list.
+     *
+     * @return The instruction list.
+     */
     InstructionList getInstructionList();
 }

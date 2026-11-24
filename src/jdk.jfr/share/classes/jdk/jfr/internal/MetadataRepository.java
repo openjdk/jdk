@@ -297,6 +297,12 @@ public final class MetadataRepository {
         staleMetadata = true;
     }
 
+    synchronized Instant updateChunkStartTime(long nanos) {
+        Instant instant = Utils.epochNanosToInstant(nanos);
+        lastMillis = instant.toEpochMilli();
+        return instant;
+    }
+
     // Lock around setOutput ensures that other threads don't
     // emit events after setOutput and unregister the event class, before a call
     // to storeDescriptorInJVM
@@ -310,7 +316,7 @@ public final class MetadataRepository {
         // is what RecordingInfo:getStopTime() returns.
         awaitEpochMilliShift();
         JVM.setOutput(filename);
-        long chunkStart = JVMSupport.getChunkStartNanos();
+        Instant timestamp = updateChunkStartTime(JVMSupport.getChunkStartNanos());
         if (filename != null) {
             RepositoryFiles.notifyNewFile();
         }
@@ -321,7 +327,7 @@ public final class MetadataRepository {
             }
             unregistered = false;
         }
-        return Utils.epochNanosToInstant(chunkStart);
+        return timestamp;
     }
 
     private void awaitEpochMilliShift() {

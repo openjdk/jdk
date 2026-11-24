@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2025 SAP SE. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,24 +43,34 @@ struct JfrCPUTimeSampleRequest {
 };
 
 // Fixed size async-signal-safe SPSC linear queue backed by an array.
-// Designed to be only used under lock and read linearly
+// All accesses to the queue, with the exception of the atomic
+// lost-samples counters, are guarded by a tri-state lock:
+// - ENQUEUE: locked for enqueuing by a signal handler
+// - DEQUEUE: locked for dequeuing, initialization, or deallocation
+// - UNLOCKED: no lock held
 class JfrCPUTimeTraceQueue {
+ private:
+  enum LockState {
+    UNLOCKED,
+    ENQUEUE,
+    DEQUEUE
+  };
 
-  // the default queue capacity, scaled if the sampling period is smaller than 10ms
-  // when the thread is started
-  static const u4 CPU_TIME_QUEUE_CAPACITY = 500;
-
+  volatile LockState _lock;
   JfrCPUTimeSampleRequest* _data;
-  volatile u4 _capacity;
+  u4 _capacity;
   // next unfilled index
-  volatile u4 _head;
+  u4 _head;
 
   volatile u4 _lost_samples;
   volatile u4 _lost_samples_due_to_queue_full;
 
   static const u4 CPU_TIME_QUEUE_INITIAL_CAPACITY = 20;
   static const u4 CPU_TIME_QUEUE_MAX_CAPACITY     = 2000;
-public:
+
+  LockState lock_state() const;
+
+ public:
   JfrCPUTimeTraceQueue(u4 capacity);
 
   ~JfrCPUTimeTraceQueue();
@@ -71,14 +82,8 @@ public:
 
   u4 size() const;
 
-  void set_size(u4 size);
-
-  u4 capacity() const;
-
   // deletes all samples in the queue
   void set_capacity(u4 capacity);
-
-  bool is_empty() const;
 
   u4 lost_samples() const;
 
@@ -96,8 +101,16 @@ public:
   // init the queue capacity
   void init();
 
+  void deallocate();
+
   void clear();
 
+  // signal safe; fails if the lock is already held
+  bool try_acquire_enqueue_lock();
+  // waits while the lock is held for enqueue; fails if it is held for dequeue
+  bool try_acquire_dequeue_lock();
+  void acquire_dequeue_lock();
+  void release_lock();
 };
 
 
@@ -122,8 +135,6 @@ class JfrCPUTimeThreadSampling : public JfrCHeapObj {
   static void destroy();
 
   void update_run_state(JfrCPUSamplerThrottle& throttle);
-
-  static void set_rate(JfrCPUSamplerThrottle& throttle);
 
  public:
   static void set_rate(double rate);

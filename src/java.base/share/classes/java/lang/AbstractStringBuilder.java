@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -267,6 +267,9 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
     private static byte[] ensureCapacityNewCoder(byte[] value, byte coder, int count,
                                                  int minimumCapacity, byte newCoder) {
         assert coder == newCoder || newCoder == UTF16 : "bad new coder UTF16 -> LATIN1";
+        if (minimumCapacity < 0) {
+            throwExcessiveLengthError();
+        }
         // overflow-conscious code
         // Compute the new larger size if growth is requested, otherwise keep the capacity the same
         int oldCapacity = value.length >> coder;
@@ -303,6 +306,9 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      * @param minimumCapacity the new minimum capacity
      */
     private static byte[] ensureCapacitySameCoder(byte[] value, byte coder, int minimumCapacity) {
+        if (minimumCapacity < 0) {
+            throwExcessiveLengthError();
+        }
         // overflow-conscious code
         int oldCapacity = value.length >> coder;
         if (minimumCapacity - oldCapacity > 0) {
@@ -334,17 +340,17 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      * @param value the current buffer
      * @param coder of the current buffer
      * @param  minCapacity the desired minimum capacity
-     * @throws OutOfMemoryError if minCapacity is less than zero or
-     *         greater than (Integer.MAX_VALUE >> coder)
+     * @throws OutOfMemoryError if {@code minCapacity} is out of bounds
      */
     private static int newCapacity(byte[] value, byte coder, int minCapacity) {
+        assert minCapacity >= 0 : "Invalid minimum capacity: " + minCapacity;
         int oldLength = value.length;
-        int newLength = minCapacity << coder;
-        int growth = newLength - oldLength;
-        int length = ArraysSupport.newLength(oldLength, growth, oldLength + (2 << coder));
-        if (length == Integer.MAX_VALUE) {
-            throw new OutOfMemoryError("Required length exceeds implementation limit");
+        long newLength = (long) minCapacity << coder;
+        if (newLength < 0 || newLength >= Integer.MAX_VALUE) {
+            throwExcessiveLengthError();
         }
+        int growth = (int) newLength - oldLength;
+        int length = ArraysSupport.newLength(oldLength, growth, oldLength + (2 << coder));
         return length >> coder;
     }
 
@@ -2049,9 +2055,9 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
     private AbstractStringBuilder repeat(char c, int count) {
         byte coder = this.coder;
         int prevCount = this.count;
-        int limit = prevCount + count;
         byte[] value = this.value;
         byte newCoder = (byte) (coder | StringLatin1.coderFromChar(c));
+        int limit = repeatLimit(newCoder, prevCount, 1, count);
         if (needsNewBuffer(value, coder, limit, newCoder)) {
             this.value = value = ensureCapacityNewCoder(value, coder, prevCount, limit, newCoder);
             this.coder = coder = newCoder;
@@ -2147,14 +2153,10 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
         byte coder = this.coder;
         int offset = this.count;
         byte[] value = this.value;
-        int valueLength = length << coder;
-        if ((Integer.MAX_VALUE - offset) / count < valueLength) {
-            throw new OutOfMemoryError("Required length exceeds implementation limit");
-        }
-        int total = count * length;
-        int limit = offset + total;
+        final int limit;
         if (cs instanceof String str) {
             byte newCoder = (byte)(coder | str.coder());
+            limit = repeatLimit(newCoder, offset, length, count);
             if (needsNewBuffer(value, coder, limit, newCoder)) {
                 this.value = value = ensureCapacityNewCoder(value, coder, offset, limit, newCoder);
                 this.coder = coder = newCoder;
@@ -2162,12 +2164,14 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
             str.getBytes(value, offset, newCoder);
         } else if (cs instanceof AbstractStringBuilder asb) {
             byte newCoder = (byte)(coder | asb.coder);
+            limit = repeatLimit(newCoder, offset, length, count);
             if (needsNewBuffer(value, coder, limit, newCoder)) {
                 this.value = value = ensureCapacityNewCoder(value, coder, offset, limit, newCoder);
                 this.coder = coder = newCoder;
             }
             asb.getBytes(value, offset, newCoder);
         } else {
+            limit = repeatLimit(coder, offset, length, count);
             byte[] currValue = ensureCapacitySameCoder(value, coder, limit);
             value = appendChars(currValue, coder, offset, cs, 0, length);
             if (currValue != value) {
@@ -2175,8 +2179,37 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
             }
             this.value = value;
         }
-        String.repeatCopyRest(value, offset << coder, total << coder, length << coder);
+        String.repeatCopyRest(value, offset << coder, (count * length) << coder, length << coder);
         this.count = limit;
         return this;
     }
+
+    /**
+     * {@return the new {@linkplain #count length} (in {@code char}s) after
+     * appending the given sequence with specified repetitions}
+     *
+     * @param coder the {@linkplain #coder coder} that will be used for encoding
+     * @param offset the {@linkplain #count offset} (in {@code char}s) to start appending at
+     * @param seqLength the length in {@code char}s of the sequence to be repeated
+     * @param seqRepetition the repetition count
+     *
+     * @throws OutOfMemoryError If the resultant length is out of bounds
+     */
+    private static int repeatLimit(int coder, int offset, int seqLength, int seqRepetition) {
+        assert offset >= 0 : "Invalid offset: " + offset;
+        assert seqLength >= 0 : "Invalid sequence length: " + seqLength;
+        assert seqRepetition >= 0 : "Invalid sequence repetition count: " + seqRepetition;
+        long repeatedSeqLength = (long) seqLength * seqRepetition;
+        long limit = (long) offset + repeatedSeqLength;
+        long encodedLimit = limit << coder;
+        if (limit < 0 || encodedLimit < 0 || encodedLimit >= Integer.MAX_VALUE) {
+            throwExcessiveLengthError();
+        }
+        return (int) limit;
+    }
+
+    private static void throwExcessiveLengthError() {
+        throw new OutOfMemoryError("Required length exceeds implementation limit");
+    }
+
 }

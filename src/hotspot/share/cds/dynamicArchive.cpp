@@ -186,9 +186,8 @@ public:
 };
 
 void DynamicArchiveBuilder::init_header() {
-  FileMapInfo* mapinfo = new FileMapInfo(_archive_name, false);
-  assert(FileMapInfo::dynamic_info() == mapinfo, "must be");
-  FileMapInfo* base_info = FileMapInfo::current_info();
+  FileMapInfo* mapinfo = FileMapInfo::allocate_output_archive(_archive_name, false);
+  FileMapInfo* base_info = FileMapInfo::static_input_archive();
   // header only be available after populate_header
   mapinfo->populate_header(base_info->core_region_alignment());
   _header = mapinfo->dynamic_header();
@@ -200,12 +199,8 @@ void DynamicArchiveBuilder::init_header() {
 }
 
 void DynamicArchiveBuilder::release_header() {
-  // We temporarily allocated a dynamic FileMapInfo for dumping, which makes it appear we
-  // have mapped a dynamic archive, but we actually have not. We are in a safepoint now.
-  // Let's free it so that if class loading happens after we leave the safepoint, nothing
-  // bad will happen.
   assert(SafepointSynchronize::is_at_safepoint(), "must be");
-  FileMapInfo *mapinfo = FileMapInfo::dynamic_info();
+  FileMapInfo *mapinfo = FileMapInfo::output_archive();
   assert(mapinfo != nullptr && _header == mapinfo->dynamic_header(), "must be");
   delete mapinfo;
   assert(!DynamicArchive::is_mapped(), "must be");
@@ -322,7 +317,7 @@ void DynamicArchiveBuilder::write_archive(char* serialized_data, AOTClassLocatio
   _header->set_class_location_config(cl_config);
   _header->set_serialized_data(serialized_data);
 
-  FileMapInfo* dynamic_info = FileMapInfo::dynamic_info();
+  FileMapInfo* dynamic_info = FileMapInfo::output_archive();
   assert(dynamic_info != nullptr, "Sanity");
 
   dynamic_info->open_as_output();
@@ -408,7 +403,7 @@ void DynamicArchive::dump_for_jcmd(const char* archive_name, TRAPS) {
 bool DynamicArchive::validate(FileMapInfo* dynamic_info) {
   assert(!dynamic_info->is_static(), "must be");
   // Check if the recorded base archive matches with the current one
-  FileMapInfo* base_info = FileMapInfo::current_info();
+  FileMapInfo* base_info = FileMapInfo::static_input_archive();
   DynamicArchiveHeader* dynamic_header = dynamic_info->dynamic_header();
 
   // Check the header crc

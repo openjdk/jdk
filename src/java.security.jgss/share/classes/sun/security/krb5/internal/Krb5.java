@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,6 +71,7 @@ public class Krb5 {
     public static final int TKT_OPTS_INITIAL      = 9;
     public static final int TKT_OPTS_PRE_AUTHENT  = 10;
     public static final int TKT_OPTS_HW_AUTHENT   = 11;
+    public static final int TKT_OPTS_TRANSIT_POLICY_CHECKED   = 12;
     public static final int TKT_OPTS_DELEGATE     = 13;
     public static final int TKT_OPTS_ENC_PA_REP   = 15;
     public static final int TKT_OPTS_MAX          = 31;

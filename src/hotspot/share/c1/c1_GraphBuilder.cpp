@@ -44,6 +44,7 @@
 #include "interpreter/bytecode.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/oop.inline.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/checkedCast.hpp"
@@ -736,6 +737,20 @@ class MemoryBuffer: public CompilationResourceObj {
   }
 };
 
+class MemoryEffects: public ValueNumberingVisitor {
+ private:
+  MemoryBuffer* _mem;
+
+ protected:
+  void kill_memory() override                                { _mem->kill(); }
+  // Because we only care about memory effects the rest are noops.
+  void kill_field(ciField* field, bool all_offsets) override { return; }
+  void kill_array(ValueType* type) override                  { return; }
+
+ public:
+  explicit MemoryEffects(MemoryBuffer* mem): _mem(mem) {}
+};
+
 
 // Implementation of GraphBuilder's ScopeData
 
@@ -1079,16 +1094,16 @@ void GraphBuilder::load_indexed(BasicType type) {
   bool need_membar = false;
   LoadIndexed* load_indexed = nullptr;
   Instruction* result = nullptr;
-  if (array->is_loaded_flat_array()) {
-    ciType* array_type = array->declared_type();
-    ciFlatArrayKlass* array_klass = array_type->as_flat_array_klass();
+  ciFlatArrayKlass* array_klass = array->as_loaded_flat_array_klass_or_null();
+  if (array_klass != nullptr) {
     ciValueKlass* elem_klass = array_klass->element_klass()->as_value_klass();
 
     bool can_delay_access = false;
     ciBytecodeStream s(method());
     s.force_bci(bci());
     s.next();
-    if (s.cur_bc() == Bytecodes::_getfield) {
+    // Only delay the access if the following getfield is in the same basic block
+    if (s.cur_bc() == Bytecodes::_getfield && block_at(s.cur_bci()) == nullptr) {
       bool is_null_free = array_klass->is_elem_null_free();
       bool will_link;
       ciField* next_field = s.get_field(will_link);
@@ -1838,6 +1853,17 @@ void GraphBuilder::copy_value_content(ciValueKlass* vk, Value src, int src_off, 
   }
 }
 
+Value GraphBuilder::load_null_reset_value(ciValueKlass* vk) {
+  if (compilation()->env()->is_aot_compile()) {
+    // Null-reset value is stored in the class mirror.
+    Value mirror = append(new Constant(new InstanceConstant(vk->java_mirror()))); // Creates oop relocation
+    Value offset = append(new Constant(new LongConstant(vk->get_null_reset_value_offset())));
+    return append(new UnsafeGet(T_OBJECT, mirror, offset, /*is_volatile*/false,/*is_raw*/false));
+  } else {
+    return append(new Constant(new ObjectConstant(vk->get_null_reset_value().as_object())));
+  }
+}
+
 void GraphBuilder::access_field(Bytecodes::Code code) {
   bool will_link;
   ciField* field = stream()->get_field(will_link);
@@ -2015,7 +2041,8 @@ void GraphBuilder::access_field(Bytecodes::Code code) {
               ciBytecodeStream s(method());
               s.force_bci(bci());
               s.next();
-              if (s.cur_bc() == Bytecodes::_getfield && !needs_patching) {
+              // Only delay the access if the following getfield is in the same basic block
+              if (s.cur_bc() == Bytecodes::_getfield && block_at(s.cur_bci()) == nullptr && !needs_patching) {
                 ciField* next_field = s.get_field(will_link);
                 ciInstanceKlass* next_holder = next_field->holder();
                 bool next_needs_patching = !next_holder->is_loaded() ||
@@ -2167,7 +2194,7 @@ void GraphBuilder::access_field(Bytecodes::Code code) {
 
           // Store the subfields when field is a nullable non-atomic field
           Value object_null = append(new Constant(objectNull));
-          Value null_reset_value = append(new Constant(new ObjectConstant(value_klass->get_null_reset_value().as_object())));
+          Value null_reset_value = load_null_reset_value(value_klass);
           Value src = append(new IfOp(val, Instruction::neq, object_null, val, null_reset_value, state_before, false));
           copy_value_content(value_klass, src, value_klass->payload_offset(), obj, offset, state_before, null_checks);
           assert(!null_checks.needs_src && !null_checks.needs_dst, "null checks should have been emitted");
@@ -2660,13 +2687,11 @@ void GraphBuilder::monitorenter(Value x, int bci) {
   // save state before locking in case of deoptimization after a NullPointerException
   ValueStack* state_before = copy_state_for_exception_with_bci(bci);
   append_with_bci(new MonitorEnter(x, state()->lock(x), state_before, maybe_valuetype), bci);
-  kill_all();
 }
 
 
 void GraphBuilder::monitorexit(Value x, int bci) {
   append_with_bci(new MonitorExit(x, state()->unlock()), bci);
-  kill_all();
 }
 
 
@@ -2696,6 +2721,13 @@ void GraphBuilder::throw_op(int bci) {
 
 
 Instruction* GraphBuilder::append_with_bci(Instruction* instr, int bci) {
+  if (EliminateFieldAccess) {
+    // We must kill memory for operations with memory side effects
+    // before we canonicalize the instruction.
+    MemoryEffects mem_effects(_memory);
+    instr->visit(&mem_effects);
+  }
+
   Canonicalizer canon(compilation(), instr, bci);
   Instruction* i1 = canon.canonical();
   if (i1->is_linked() || !i1->can_be_linked()) {
@@ -2741,12 +2773,6 @@ Instruction* GraphBuilder::append_with_bci(Instruction* instr, int bci) {
   // save state after modification of operand stack for StateSplit instructions
   StateSplit* s = i1->as_StateSplit();
   if (s != nullptr) {
-    if (EliminateFieldAccess) {
-      Intrinsic* intrinsic = s->as_Intrinsic();
-      if (s->as_Invoke() != nullptr || (intrinsic && !intrinsic->preserves_state())) {
-        _memory->kill();
-      }
-    }
     s->set_state(state()->copy(ValueStack::StateAfter, canon.bci()));
   }
 
@@ -4735,7 +4761,6 @@ void GraphBuilder::append_unsafe_put(ciMethod* callee, BasicType t, bool is_vola
   }
   Instruction* op = append(new UnsafePut(t, args->at(1), offset, val, is_volatile));
   compilation()->set_has_unsafe_access(true);
-  kill_all();
 }
 
 void GraphBuilder::append_unsafe_CAS(ciMethod* callee) {
@@ -4891,7 +4916,6 @@ void GraphBuilder::append_unsafe_get_and_set(ciMethod* callee, bool is_add) {
 #endif
   Instruction* op = append(new UnsafeGetAndSet(t, args->at(1), offset, args->at(3), is_add));
   compilation()->set_has_unsafe_access(true);
-  kill_all();
   push(op->type(), op);
 }
 

@@ -22,6 +22,12 @@
 # questions.
 #
 
+# Toggle Bash strict mode
+set -euo pipefail
+
+# Switch to the directory this script is located in
+cd "$(dirname "$0")"
+
 # For manual invocation.
 # You can regenerate the source files,
 # and you can clean them up.
@@ -44,12 +50,6 @@ fi
 bash ./gen-template.sh $generate_perf_tests
 
 Log false "Generating Vector API tests, $(date)\n"
-
-# Compile SPP
-Log true "Compiling SPP... "
-compilation=$(${JAVAC} -d . "${JDK_SRC_HOME}/make/jdk/src/classes/build/tools/spp/Spp.java")
-Log false "$compilation\n"
-Log true "done\n"
 
 # For each type
 for type in byte short int long float double float16
@@ -148,10 +148,10 @@ do
 
   for bits in 64 128 256 512 Max
   do
-    vectortype=${typeprefix}${Type}$Vector{bits}
+    vectortype=${typeprefix}${Type}Vector${bits}
     vectorteststype=${typeprefix}${Type}Vector${bits}Tests
     vectorbenchtype=${typeprefix}${Type}Vector${bits}
-    masktype=${typeprefix}${Type}$Mask{bits}
+    masktype=${typeprefix}${Type}Mask${bits}
     bitsvectortype=${typeprefix}${Bitstype}Vector${bits}
     fpvectortype=${typeprefix}${Fptype}Vector${bits}
     shape=S${bits}Bit
@@ -168,10 +168,10 @@ do
     case $vectorteststype in
     $CLASS_FILTER)
       Log true " ${bits}_jtreg $vectorteststype.java"
-      Log false "${JAVA} -cp . ${SPP_CLASSNAME} -nel $bitargs -i${TEMPLATE_FILE} -o$vectorteststype.java "
+      Log false "${JAVA} -cp . ${SPP} -nel $bitargs -i${TEMPLATE_FILE} -o${vectorteststype}.java "
       TEST_DEST_FILE="${vectorteststype}.java"
       rm -f ${TEST_DEST_FILE}
-      ${JAVA} -cp . ${SPP_CLASSNAME} -nel $bitargs \
+      ${JAVA} -cp . ${SPP} -nel $bitargs \
         -i${TEMPLATE_FILE} \
         -o${TEST_DEST_FILE}
       if [ VAR_OS_ENV==windows.cygwin ]; then
@@ -186,10 +186,10 @@ do
       case $vectorbenchtype in
       $CLASS_FILTER)
         Log true " ${bits}_jmh $vectorbenchtype.java"
-        Log false "${JAVA} -cp . ${SPP_CLASSNAME} -nel $bitargs -i${PERF_TEMPLATE_FILE} -o${vectorteststype}Perf.java "
+        Log false "${JAVA} -cp . ${SPP} -nel $bitargs -i${PERF_TEMPLATE_FILE} -o${vectorteststype}Perf.java "
         PERF_DEST_FILE="${PERF_DEST}/${vectorbenchtype}.java"
         rm -f ${PERF_DEST_FILE}
-        ${JAVA} -cp . ${SPP_CLASSNAME} -nel $bitargs \
+        ${JAVA} -cp . ${SPP} -nel $bitargs \
           -i${PERF_TEMPLATE_FILE} \
           -o${PERF_DEST_FILE}
         if [ VAR_OS_ENV==windows.cygwin ]; then
@@ -208,7 +208,7 @@ do
     Log true " scalar ${Type}Scalar.java"
     PERF_DEST_FILE="${PERF_DEST}/${Type}Scalar.java"
     rm -f ${PERF_DEST_FILE}
-    ${JAVA} -cp . ${SPP_CLASSNAME} -nel $args \
+    ${JAVA} -cp . ${SPP} -nel $args \
       -i${PERF_SCALAR_TEMPLATE_FILE} \
       -o${PERF_DEST_FILE}
     if [ VAR_OS_ENV==windows.cygwin ]; then
@@ -243,10 +243,10 @@ do
     case $vectorteststype in
     $CLASS_FILTER)
       Log true " ${bits}_ls $vectorteststype.java"
-      Log false "${JAVA} -cp . ${SPP_CLASSNAME} -nel $bitargs -itemplates/X-LoadStoreTest.java.template -o$vectorteststype.java "
+      Log false "${JAVA} -cp . ${SPP} -nel $bitargs -itemplates/X-LoadStoreTest.java.template -o$vectorteststype.java "
       TEST_DEST_FILE="${vectorteststype}.java"
       rm -f ${TEST_DEST_FILE}
-      ${JAVA} -cp . ${SPP_CLASSNAME} -nel $bitargs \
+      ${JAVA} -cp . ${SPP} -nel $bitargs \
         -itemplates/X-LoadStoreTest.java.template \
         -o${TEST_DEST_FILE}
       if [ VAR_OS_ENV==windows.cygwin ]; then
@@ -259,8 +259,7 @@ do
     # TODO: Generate jmh performance tests for LoadStore variants
   done
 
-  Log true " done\n"
-
 done
 
-rm -fr build
+rm -f ${BUILDLOG_FILE}
+rm -f ${TEMPLATE_FILE}

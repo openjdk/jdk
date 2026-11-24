@@ -28,6 +28,7 @@
  * @summary AOT training run should fail if critical classes have been transformed by JVMTI
  *          with ClassFileLoadHook
  * @bug 8380409
+ * @requires vm.flagless
  * @requires vm.cds.supports.aot.class.linking
  * @library /test/lib
  * @build TransformCriticalClasses
@@ -57,7 +58,7 @@ public class TransformCriticalClasses {
         processArgs.add("app.jar");
         processArgs.add("TransformCriticalClassesApp");
 
-        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(processArgs);
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(processArgs);
         CDSTestUtils.executeAndLog(pb, "train")
             .shouldContain("Skipping java/lang/Class: From ClassFileLoadHook")
             .shouldContain("Critical class java.lang.Class has been excluded. AOT configuration file cannot be written")

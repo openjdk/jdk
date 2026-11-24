@@ -111,7 +111,6 @@ void VMError::install_secondary_signal_handler() {
 // Write a hint to the stream in case siginfo relates to a segv/bus error
 // and the offending address points into CDS archive.
 void VMError::check_failing_cds_access(outputStream* st, const void* siginfo) {
-#if INCLUDE_CDS
   if (siginfo && CDSConfig::is_using_archive()) {
     const siginfo_t* const si = (siginfo_t*)siginfo;
     if (si->si_signo == SIGBUS || si->si_signo == SIGSEGV) {
@@ -124,7 +123,6 @@ void VMError::check_failing_cds_access(outputStream* st, const void* siginfo) {
       }
     }
   }
-#endif
 }
 
 bool VMError::was_assert_poison_crash(const void* siginfo) {
