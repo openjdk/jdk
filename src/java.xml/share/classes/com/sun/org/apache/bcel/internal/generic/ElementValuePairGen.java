@@ -29,6 +29,8 @@ import com.sun.org.apache.bcel.internal.classfile.ElementValue;
 import com.sun.org.apache.bcel.internal.classfile.ElementValuePair;
 
 /**
+ * Generates element value pairs in annotations.
+ *
  * @since 6.0
  */
 public class ElementValuePairGen {
@@ -38,6 +40,13 @@ public class ElementValuePairGen {
 
     private final ConstantPoolGen constantPoolGen;
 
+    /**
+     * Constructs an ElementValuePairGen from an ElementValuePair.
+     *
+     * @param nvp The element value pair.
+     * @param cpool The constant pool.
+     * @param copyPoolEntries whether to copy pool entries.
+     */
     public ElementValuePairGen(final ElementValuePair nvp, final ConstantPoolGen cpool, final boolean copyPoolEntries) {
         this.constantPoolGen = cpool;
         // J5ASSERT:
@@ -56,40 +65,77 @@ public class ElementValuePairGen {
         value = ElementValueGen.copy(nvp.getValue(), cpool, copyPoolEntries);
     }
 
+    /**
+     * Constructs an ElementValuePairGen.
+     *
+     * @param idx The name index.
+     * @param value The element value.
+     * @param cpool The constant pool.
+     */
     protected ElementValuePairGen(final int idx, final ElementValueGen value, final ConstantPoolGen cpool) {
         this.nameIdx = idx;
         this.value = value;
         this.constantPoolGen = cpool;
     }
 
+    /**
+     * Constructs an ElementValuePairGen.
+     *
+     * @param name The name.
+     * @param value The element value.
+     * @param cpool The constant pool.
+     */
     public ElementValuePairGen(final String name, final ElementValueGen value, final ConstantPoolGen cpool) {
         this.nameIdx = cpool.addUtf8(name);
         this.value = value;
         this.constantPoolGen = cpool;
     }
 
+    /**
+     * Dumps this element value pair to a DataOutputStream.
+     *
+     * @param dos The output stream.
+     * @throws IOException Thrown if an I/O error occurs.
+     */
     protected void dump(final DataOutputStream dos) throws IOException {
         dos.writeShort(nameIdx); // u2 name of the element
         value.dump(dos);
     }
 
     /**
-     * Retrieve an immutable version of this ElementNameValuePairGen
+     * Retrieves an immutable version of this ElementValuePairGen.
+     *
+     * @return An immutable ElementValuePair.
      */
     public ElementValuePair getElementNameValuePair() {
         final ElementValue immutableValue = value.getElementValue();
         return new ElementValuePair(nameIdx, immutableValue, constantPoolGen.getConstantPool());
     }
 
+    /**
+     * Gets the name index.
+     *
+     * @return The name index.
+     */
     public int getNameIndex() {
         return nameIdx;
     }
 
+    /**
+     * Gets the name string.
+     *
+     * @return The name string.
+     */
     public final String getNameString() {
         // ConstantString cu8 = (ConstantString) constantPoolGen.getConstant(nameIdx);
         return ((ConstantUtf8) constantPoolGen.getConstant(nameIdx)).getBytes();
     }
 
+    /**
+     * Gets the value.
+     *
+     * @return The element value.
+     */
     public final ElementValueGen getValue() {
         return value;
     }

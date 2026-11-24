@@ -841,6 +841,10 @@ void os::Bsd::clock_init() {
 jlong os::javaTimeNanos() {
   const uint64_t tm = mach_absolute_time();
   const uint64_t now = (tm * Bsd::_timebase_info.numer) / Bsd::_timebase_info.denom;
+// On Aarch64 we trust the monotonicity of the time value. For x86_64 we ensure the time does not go backwards.
+#ifdef AARCH64
+  return now;
+#else
   const uint64_t prev = Bsd::_max_abstime;
   if (now <= prev) {
     return prev;   // same or retrograde time;
@@ -861,6 +865,7 @@ jlong os::javaTimeNanos() {
   // See https://blogs.oracle.com/dave/entry/cas_and_cache_trivia_invalidate
   // https://web.archive.org/web/20131214182431/https://blogs.oracle.com/dave/entry/cas_and_cache_trivia_invalidate
   return (prev == obsv) ? now : obsv;
+#endif
 }
 
 void os::javaTimeNanos_info(jvmtiTimerInfo *info_ptr) {

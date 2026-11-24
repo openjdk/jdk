@@ -65,3 +65,11 @@
  *    jdk/jpackage/internal/RtfConverterTest.java
  * @run junit jdk.jpackage/jdk.jpackage.internal.RtfConverterTest
  */
+
+/* @test
+ * @summary WixComponentKeyTest unit tests
+ * @requires (os.family == "windows")
+ * @compile/module=jdk.jpackage -Xlint:all -Werror
+ *    jdk/jpackage/internal/WixComponentKeyTest.java
+ * @run junit jdk.jpackage/jdk.jpackage.internal.WixComponentKeyTest
+ */

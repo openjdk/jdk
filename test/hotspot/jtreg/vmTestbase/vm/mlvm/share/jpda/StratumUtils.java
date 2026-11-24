@@ -73,10 +73,7 @@ public class StratumUtils {
     }
 
     public static String getStrataStr(StackFrame sf) {
-        ObjectReference thisObject = sf.thisObject();
-        if (thisObject == null)
-            return "(no strata)";
-        return StratumUtils.getStrataStr(thisObject.referenceType());
+        return StratumUtils.getStrataStr(sf.location().declaringType());
     }
 
     public static String getStrataStr(ReferenceType ref) {

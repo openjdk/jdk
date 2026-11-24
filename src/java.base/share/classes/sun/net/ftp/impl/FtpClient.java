@@ -529,7 +529,7 @@ public class FtpClient extends sun.net.ftp.FtpClient {
         if (cmd.indexOf('\n') != -1 || cmd.indexOf('\r') != -1) {
             sun.net.ftp.FtpProtocolException ex
                     = new sun.net.ftp.FtpProtocolException("Illegal FTP command");
-            ex.initCause(new IllegalArgumentException("Illegal carriage return"));
+            ex.initCause(new IllegalArgumentException("Illegal carriage return or line feed"));
             throw ex;
         }
         sendServer(cmd + "\r\n");

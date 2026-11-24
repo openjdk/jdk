@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2025, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2026, IBM Inc. All rights reserved.
  * Copyright 2026 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -8468,21 +8469,21 @@ class StubGenerator: public StubCodeGenerator {
 
   address generate_intpoly_assign() {
     // KNOWN Lengths:
-    //   MontgomeryIntPolynP256:  5 = 4 + 1
-    //   IntegerPolynomial1305:   5 = 4 + 1
-    //   IntegerPolynomial25519: 10 = 8 + 2
+    //   MontgomeryIntPolynP256:  5 = 0 + 5
+    //   IntegerPolynomial1305:   5 = 0 + 5
+    //   IntegerPolynomial25519:  5 = 0 + 5
+    //   IntegerPolynomialP384:   7 = 6 + 1
     //   IntegerPolynomialP256:  10 = 8 + 2
     //   Curve25519OrderField:   10 = 8 + 2
     //   Curve25519OrderField:   10 = 8 + 2
     //   P256OrderField:         10 = 8 + 2
-    //   IntegerPolynomialP384:  14 = 8 + 4 + 2
-    //   P384OrderField:         14 = 8 + 4 + 2
-    //   IntegerPolynomial448:   16 = 8 + 8
-    //   Curve448OrderField:     16 = 8 + 8
-    //   Curve448OrderField:     16 = 8 + 8
-    //   IntegerPolynomialP521:  19 = 8 + 8 + 2 + 1
-    //   P521OrderField:         19 = 8 + 8 + 2 + 1
-    // Special Cases 5, 10, 14, 16, 19
+    //   P384OrderField:         14 = 10 + 4
+    //   IntegerPolynomial448:   16 = 16 + 0
+    //   Curve448OrderField:     16 = 16 + 0
+    //   Curve448OrderField:     16 = 16 + 0
+    //   IntegerPolynomialP521:  19 = 16 + 3
+    //   P521OrderField:         19 = 16 + 3
+    // Special Cases 5, 7, 10, 14, 16, 19
     assert(UseIntPolyIntrinsics, "what are we doing here?");
     StubId stub_id = StubId::stubgen_intpoly_assign_id;
     int entry_count = StubInfo::entry_count(stub_id);
@@ -8503,7 +8504,7 @@ class StubGenerator: public StubCodeGenerator {
     const Register bLimbs = c_rarg2;
     const Register length = c_rarg3;
 
-    Label L_Length5, L_Length10, L_Length14, L_Length16, L_Length19, L_Default, L_Done;
+    Label L_Length5, L_Length7, L_Length10, L_Length14, L_Length16, L_Length19, L_Default, L_Done;
 
     /*
     int maskValue = -set;
@@ -8520,6 +8521,8 @@ class StubGenerator: public StubCodeGenerator {
 
     __ cmp(length, (u1)5);
     __ br(Assembler::EQ, L_Length5);
+    __ cmp(length, (u1)7);
+    __ br(Assembler::EQ, L_Length7);
     __ cmp(length, (u1)10);
     __ br(Assembler::EQ, L_Length10);
     __ cmp(length, (u1)14);
@@ -8585,6 +8588,47 @@ class StubGenerator: public StubCodeGenerator {
       __ str(a4, Address(aLimbs, 4 * BytesPerLong));
 
       __ pop(r19, sp);
+      __ b(L_Done);
+    }
+
+    // Length = 7
+    // Split into 3 neon regs and 1 GPR
+    __ BIND(L_Length7);
+    {
+      Register a7 = r10;
+      Register b7 = r11;
+
+      VSeq<3> a_vec(16);
+      VSeq<3> b_vec(20);
+
+      int offsets[1] = { 0 };
+
+      __ ldr(a7, Address(aLimbs, 6 * BytesPerLong));
+      __ ldr(b7, Address(bLimbs, 6 * BytesPerLong));
+
+      __ ld1(a_vec[0], __ T2D, aLimbs);
+      vs_ldpq_indexed(vs_tail(a_vec), aLimbs, 16, offsets);
+
+      __ eor(b7, b7, a7);
+
+      __ ld1(b_vec[0], __ T2D, bLimbs);
+      vs_ldpq_indexed(vs_tail(b_vec), bLimbs, 16, offsets);
+
+      __ andr(b7, b7, mask_scalar);
+
+      vs_eor(b_vec, b_vec, a_vec);
+
+      __ eor(a7, a7, b7);
+
+      vs_andr(b_vec, b_vec, mask_vec);
+
+      __ str(a7, Address(aLimbs, 6 * BytesPerLong));
+
+      vs_eor(a_vec, a_vec, b_vec);
+
+      __ st1(a_vec[0], __ T2D, aLimbs);
+      vs_stpq_indexed(vs_tail(a_vec), aLimbs, 16, offsets);
+
       __ b(L_Done);
     }
 
@@ -12229,270 +12273,6 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-#if defined (LINUX) && !defined (__ARM_FEATURE_ATOMICS)
-
-  // ARMv8.1 LSE versions of the atomic stubs used by AtomicAccess::PlatformXX.
-  //
-  // If LSE is in use, generate LSE versions of all the stubs. The
-  // non-LSE versions are in atomic_aarch64.S.
-
-  // class AtomicStubMark records the entry point of a stub and the
-  // stub pointer which will point to it. The stub pointer is set to
-  // the entry point when ~AtomicStubMark() is called, which must be
-  // after ICache::invalidate_range. This ensures safe publication of
-  // the generated code.
-  class AtomicStubMark {
-    address _entry_point;
-    aarch64_atomic_stub_t *_stub;
-    MacroAssembler *_masm;
-  public:
-    AtomicStubMark(MacroAssembler *masm, aarch64_atomic_stub_t *stub) {
-      _masm = masm;
-      __ align(32);
-      _entry_point = __ pc();
-      _stub = stub;
-    }
-    ~AtomicStubMark() {
-      *_stub = (aarch64_atomic_stub_t)_entry_point;
-    }
-  };
-
-  // NB: For memory_order_conservative we need a trailing membar after
-  // LSE atomic operations but not a leading membar.
-  //
-  // We don't need a leading membar because a clause in the Arm ARM
-  // says:
-  //
-  //   Barrier-ordered-before
-  //
-  //   Barrier instructions order prior Memory effects before subsequent
-  //   Memory effects generated by the same Observer. A read or a write
-  //   RW1 is Barrier-ordered-before a read or a write RW 2 from the same
-  //   Observer if and only if RW1 appears in program order before RW 2
-  //   and [ ... ] at least one of RW 1 and RW 2 is generated by an atomic
-  //   instruction with both Acquire and Release semantics.
-  //
-  // All the atomic instructions {ldaddal, swapal, casal} have Acquire
-  // and Release semantics, therefore we don't need a leading
-  // barrier. However, there is no corresponding Barrier-ordered-after
-  // relationship, therefore we need a trailing membar to prevent a
-  // later store or load from being reordered with the store in an
-  // atomic instruction.
-  //
-  // This was checked by using the herd7 consistency model simulator
-  // (http://diy.inria.fr/) with this test case:
-  //
-  // AArch64 LseCas
-  // { 0:X1=x; 0:X2=y; 1:X1=x; 1:X2=y; }
-  // P0 | P1;
-  // LDR W4, [X2] | MOV W3, #0;
-  // DMB LD       | MOV W4, #1;
-  // LDR W3, [X1] | CASAL W3, W4, [X1];
-  //              | DMB ISH;
-  //              | STR W4, [X2];
-  // exists
-  // (0:X3=0 /\ 0:X4=1)
-  //
-  // If X3 == 0 && X4 == 1, the store to y in P1 has been reordered
-  // with the store to x in P1. Without the DMB in P1 this may happen.
-  //
-  // At the time of writing we don't know of any AArch64 hardware that
-  // reorders stores in this way, but the Reference Manual permits it.
-
-  void gen_cas_entry(Assembler::operand_size size,
-                     atomic_memory_order order) {
-    Register prev = r3, ptr = c_rarg0, compare_val = c_rarg1,
-      exchange_val = c_rarg2;
-    bool acquire, release;
-    switch (order) {
-      case memory_order_relaxed:
-        acquire = false;
-        release = false;
-        break;
-      case memory_order_release:
-        acquire = false;
-        release = true;
-        break;
-      default:
-        acquire = true;
-        release = true;
-        break;
-    }
-    __ mov(prev, compare_val);
-    __ lse_cas(prev, exchange_val, ptr, size, acquire, release, /*not_pair*/true);
-    if (order == memory_order_conservative) {
-      __ membar(Assembler::StoreStore|Assembler::StoreLoad);
-    }
-    if (size == Assembler::xword) {
-      __ mov(r0, prev);
-    } else {
-      __ movw(r0, prev);
-    }
-    __ ret(lr);
-  }
-
-  void gen_ldadd_entry(Assembler::operand_size size, atomic_memory_order order) {
-    Register prev = r2, addr = c_rarg0, incr = c_rarg1;
-    // If not relaxed, then default to conservative.  Relaxed is the only
-    // case we use enough to be worth specializing.
-    if (order == memory_order_relaxed) {
-      __ ldadd(size, incr, prev, addr);
-    } else {
-      __ ldaddal(size, incr, prev, addr);
-      __ membar(Assembler::StoreStore|Assembler::StoreLoad);
-    }
-    if (size == Assembler::xword) {
-      __ mov(r0, prev);
-    } else {
-      __ movw(r0, prev);
-    }
-    __ ret(lr);
-  }
-
-  void gen_swpal_entry(Assembler::operand_size size) {
-    Register prev = r2, addr = c_rarg0, incr = c_rarg1;
-    __ swpal(size, incr, prev, addr);
-    __ membar(Assembler::StoreStore|Assembler::StoreLoad);
-    if (size == Assembler::xword) {
-      __ mov(r0, prev);
-    } else {
-      __ movw(r0, prev);
-    }
-    __ ret(lr);
-  }
-
-  void generate_atomic_entry_points() {
-    if (! UseLSE) {
-      return;
-    }
-    StubId stub_id = StubId::stubgen_atomic_entry_points_id;
-    GrowableArray<address> entries;
-    int entry_count = StubInfo::entry_count(stub_id);
-    address start = load_archive_data(stub_id, &entries);
-    if (start != nullptr) {
-      assert(entries.length() == entry_count - 1,
-             "unexpected extra entry count %d", entries.length());
-      aarch64_atomic_fetch_add_4_impl = (aarch64_atomic_stub_t)start;
-      int idx = 0;
-      aarch64_atomic_fetch_add_8_impl = (aarch64_atomic_stub_t)entries.at(idx++);
-      aarch64_atomic_fetch_add_4_relaxed_impl = (aarch64_atomic_stub_t)entries.at(idx++);
-      aarch64_atomic_fetch_add_8_relaxed_impl = (aarch64_atomic_stub_t)entries.at(idx++);
-      aarch64_atomic_xchg_4_impl = (aarch64_atomic_stub_t)entries.at(idx++);
-      aarch64_atomic_xchg_8_impl = (aarch64_atomic_stub_t)entries.at(idx++);
-      aarch64_atomic_cmpxchg_1_impl = (aarch64_atomic_stub_t)entries.at(idx++);
-      aarch64_atomic_cmpxchg_4_impl = (aarch64_atomic_stub_t)entries.at(idx++);
-      aarch64_atomic_cmpxchg_8_impl = (aarch64_atomic_stub_t)entries.at(idx++);
-      aarch64_atomic_cmpxchg_1_relaxed_impl = (aarch64_atomic_stub_t)entries.at(idx++);
-      aarch64_atomic_cmpxchg_4_relaxed_impl = (aarch64_atomic_stub_t)entries.at(idx++);
-      aarch64_atomic_cmpxchg_8_relaxed_impl = (aarch64_atomic_stub_t)entries.at(idx++);
-      aarch64_atomic_cmpxchg_4_release_impl = (aarch64_atomic_stub_t)entries.at(idx++);
-      aarch64_atomic_cmpxchg_8_release_impl = (aarch64_atomic_stub_t)entries.at(idx++);
-      aarch64_atomic_cmpxchg_4_seq_cst_impl = (aarch64_atomic_stub_t)entries.at(idx++);
-      aarch64_atomic_cmpxchg_8_seq_cst_impl = (aarch64_atomic_stub_t)entries.at(idx++);
-      assert(idx == entries.length(), "sanity!");
-      return;
-    }
-
-    __ align(CodeEntryAlignment);
-    StubCodeMark mark(this, stub_id);
-    start = __ pc();
-    address end;
-    {
-    // ADD, memory_order_conservative
-    AtomicStubMark mark_fetch_add_4(_masm, &aarch64_atomic_fetch_add_4_impl);
-    gen_ldadd_entry(Assembler::word, memory_order_conservative);
-
-    AtomicStubMark mark_fetch_add_8(_masm, &aarch64_atomic_fetch_add_8_impl);
-    gen_ldadd_entry(Assembler::xword, memory_order_conservative);
-
-    // ADD, memory_order_relaxed
-    AtomicStubMark mark_fetch_add_4_relaxed
-      (_masm, &aarch64_atomic_fetch_add_4_relaxed_impl);
-    gen_ldadd_entry(MacroAssembler::word, memory_order_relaxed);
-
-    AtomicStubMark mark_fetch_add_8_relaxed
-      (_masm, &aarch64_atomic_fetch_add_8_relaxed_impl);
-    gen_ldadd_entry(MacroAssembler::xword, memory_order_relaxed);
-
-    // XCHG, memory_order_conservative
-    AtomicStubMark mark_xchg_4(_masm, &aarch64_atomic_xchg_4_impl);
-    gen_swpal_entry(Assembler::word);
-
-    AtomicStubMark mark_xchg_8(_masm, &aarch64_atomic_xchg_8_impl);
-    gen_swpal_entry(Assembler::xword);
-
-    // CAS, memory_order_conservative
-    AtomicStubMark mark_cmpxchg_1(_masm, &aarch64_atomic_cmpxchg_1_impl);
-    gen_cas_entry(MacroAssembler::byte, memory_order_conservative);
-
-    AtomicStubMark mark_cmpxchg_4(_masm, &aarch64_atomic_cmpxchg_4_impl);
-    gen_cas_entry(MacroAssembler::word, memory_order_conservative);
-
-    AtomicStubMark mark_cmpxchg_8(_masm, &aarch64_atomic_cmpxchg_8_impl);
-    gen_cas_entry(MacroAssembler::xword, memory_order_conservative);
-
-    // CAS, memory_order_relaxed
-    AtomicStubMark mark_cmpxchg_1_relaxed
-      (_masm, &aarch64_atomic_cmpxchg_1_relaxed_impl);
-    gen_cas_entry(MacroAssembler::byte, memory_order_relaxed);
-
-    AtomicStubMark mark_cmpxchg_4_relaxed
-      (_masm, &aarch64_atomic_cmpxchg_4_relaxed_impl);
-    gen_cas_entry(MacroAssembler::word, memory_order_relaxed);
-
-    AtomicStubMark mark_cmpxchg_8_relaxed
-      (_masm, &aarch64_atomic_cmpxchg_8_relaxed_impl);
-    gen_cas_entry(MacroAssembler::xword, memory_order_relaxed);
-
-    AtomicStubMark mark_cmpxchg_4_release
-      (_masm, &aarch64_atomic_cmpxchg_4_release_impl);
-    gen_cas_entry(MacroAssembler::word, memory_order_release);
-
-    AtomicStubMark mark_cmpxchg_8_release
-      (_masm, &aarch64_atomic_cmpxchg_8_release_impl);
-    gen_cas_entry(MacroAssembler::xword, memory_order_release);
-
-    AtomicStubMark mark_cmpxchg_4_seq_cst
-      (_masm, &aarch64_atomic_cmpxchg_4_seq_cst_impl);
-    gen_cas_entry(MacroAssembler::word, memory_order_seq_cst);
-
-    AtomicStubMark mark_cmpxchg_8_seq_cst
-      (_masm, &aarch64_atomic_cmpxchg_8_seq_cst_impl);
-    gen_cas_entry(MacroAssembler::xword, memory_order_seq_cst);
-
-    end = __ pc();
-
-    ICache::invalidate_range(start, end - start);
-    // exit block to force update of AtomicStubMark targets
-    }
-
-    assert(start == (address)aarch64_atomic_fetch_add_4_impl,
-           "atomic stub should be at start of buffer");
-    // record the stub start and end plus all the entries saved by the
-    // AtomicStubMark destructor
-    entries.append((address)aarch64_atomic_fetch_add_8_impl);
-    entries.append((address)aarch64_atomic_fetch_add_4_relaxed_impl);
-    entries.append((address)aarch64_atomic_fetch_add_8_relaxed_impl);
-    entries.append((address)aarch64_atomic_xchg_4_impl);
-    entries.append((address)aarch64_atomic_xchg_8_impl);
-    entries.append((address)aarch64_atomic_cmpxchg_1_impl);
-    entries.append((address)aarch64_atomic_cmpxchg_4_impl);
-    entries.append((address)aarch64_atomic_cmpxchg_8_impl);
-    entries.append((address)aarch64_atomic_cmpxchg_1_relaxed_impl);
-    entries.append((address)aarch64_atomic_cmpxchg_4_relaxed_impl);
-    entries.append((address)aarch64_atomic_cmpxchg_8_relaxed_impl);
-    entries.append((address)aarch64_atomic_cmpxchg_4_release_impl);
-    entries.append((address)aarch64_atomic_cmpxchg_8_release_impl);
-    entries.append((address)aarch64_atomic_cmpxchg_4_seq_cst_impl);
-    entries.append((address)aarch64_atomic_cmpxchg_8_seq_cst_impl);
-
-    assert(entries.length() == entry_count - 1,
-           "unexpected extra entry count %d", entries.length());
-
-    store_archive_data(stub_id, start, end, &entries);
-  }
-#endif // LINUX
-
   static void save_return_registers(MacroAssembler* masm) {
     if (ValueTypeReturnedAsFields) {
       masm->push(RegSet::range(r0, r7), sp);
@@ -13846,12 +13626,6 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_upcall_stub_exception_handler = generate_upcall_stub_exception_handler();
     StubRoutines::_upcall_stub_load_target = generate_upcall_stub_load_target();
 
-#if defined (LINUX) && !defined (__ARM_FEATURE_ATOMICS)
-
-    generate_atomic_entry_points();
-
-#endif // LINUX
-
 #ifdef COMPILER2
     if (UseSecondarySupersTable) {
       StubRoutines::_lookup_secondary_supers_table_slow_path_stub = generate_lookup_secondary_supers_table_slow_path_stub();
@@ -14117,34 +13891,3 @@ void StubGenerator_init_AOTAddressTable(GrowableArray<address>& addresses) {
 }
 #endif // INCLUDE_CDS
 
-#if defined (LINUX)
-
-// Define pointers to atomic stubs and initialize them to point to the
-// code in atomic_aarch64.S.
-
-#define DEFAULT_ATOMIC_OP(OPNAME, SIZE, RELAXED)                                \
-  extern "C" uint64_t aarch64_atomic_ ## OPNAME ## _ ## SIZE ## RELAXED ## _default_impl \
-    (volatile void *ptr, uint64_t arg1, uint64_t arg2);                 \
-  aarch64_atomic_stub_t aarch64_atomic_ ## OPNAME ## _ ## SIZE ## RELAXED ## _impl \
-    = aarch64_atomic_ ## OPNAME ## _ ## SIZE ## RELAXED ## _default_impl;
-
-DEFAULT_ATOMIC_OP(fetch_add, 4, )
-DEFAULT_ATOMIC_OP(fetch_add, 8, )
-DEFAULT_ATOMIC_OP(fetch_add, 4, _relaxed)
-DEFAULT_ATOMIC_OP(fetch_add, 8, _relaxed)
-DEFAULT_ATOMIC_OP(xchg, 4, )
-DEFAULT_ATOMIC_OP(xchg, 8, )
-DEFAULT_ATOMIC_OP(cmpxchg, 1, )
-DEFAULT_ATOMIC_OP(cmpxchg, 4, )
-DEFAULT_ATOMIC_OP(cmpxchg, 8, )
-DEFAULT_ATOMIC_OP(cmpxchg, 1, _relaxed)
-DEFAULT_ATOMIC_OP(cmpxchg, 4, _relaxed)
-DEFAULT_ATOMIC_OP(cmpxchg, 8, _relaxed)
-DEFAULT_ATOMIC_OP(cmpxchg, 4, _release)
-DEFAULT_ATOMIC_OP(cmpxchg, 8, _release)
-DEFAULT_ATOMIC_OP(cmpxchg, 4, _seq_cst)
-DEFAULT_ATOMIC_OP(cmpxchg, 8, _seq_cst)
-
-#undef DEFAULT_ATOMIC_OP
-
-#endif // LINUX

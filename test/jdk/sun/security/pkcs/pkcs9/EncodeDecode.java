@@ -41,6 +41,7 @@ import sun.security.x509.CertificateExtensions;
 import sun.security.x509.X500Name;
 
 import java.math.BigInteger;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HexFormat;
@@ -57,7 +58,7 @@ public class EncodeDecode {
             "301806092a864886f70d010903310b06092a864886f70d010903");
         test(MESSAGE_DIGEST_OID, new byte[10],
             "301906092a864886f70d010904310c040a00000000000000000000");
-        test(SIGNING_TIME_OID, new Date(0),
+        test(SIGNING_TIME_OID, Instant.ofEpochMilli(0),
             "301c06092a864886f70d010905310f170d3730303130313030303030305a");
 
         var sis = new SignerInfo[] {

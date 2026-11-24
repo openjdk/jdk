@@ -1017,8 +1017,6 @@ private:
   void init_attributes(void);
   void clear_attributes(void) { _attributes = nullptr; }
 
-  void lea(Register dst, Address src);
-
   void mov(Register dst, Register src);
 
   // support caching the result of some routines
@@ -2105,8 +2103,9 @@ private:
   void vpunpckhdq(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void vpunpckhqdq(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
 
-  // Interleave Low Quadwords
+  // Interleave Low/High Quadwords
   void punpcklqdq(XMMRegister dst, XMMRegister src);
+  void punpckhqdq(XMMRegister dst, XMMRegister src);
 
   void evpunpcklqdq(XMMRegister dst, XMMRegister src1, XMMRegister src2, int vector_len);
   void evpunpcklqdq(XMMRegister dst, KRegister mask, XMMRegister src1, XMMRegister src2, bool merge, int vector_len);

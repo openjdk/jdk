@@ -176,14 +176,14 @@ static JVMState* clone_jvms(Compile* C, SafePointNode* sfpt) {
   return new_jvms;
 }
 
-void PhaseVector::scalarize_vbox_node(VectorBoxNode* vec_box) {
+void PhaseVector::scalarize_vbox_node(VectorBoxNode* vec_box) const {
   Node* vec_value = vec_box->in(VectorBoxNode::Value);
   PhaseGVN& gvn = *C->initial_gvn();
 
   // Process merged VBAs
 
   if (EnableVectorAggressiveReboxing) {
-    Unique_Node_List calls;
+    Unique_Node_List<CallJavaNode> calls;
     for (DUIterator_Fast imax, i = vec_box->fast_outs(imax); i < imax; i++) {
       Node* use = vec_box->fast_out(i);
       if (use->is_CallJava()) {
@@ -195,7 +195,7 @@ void PhaseVector::scalarize_vbox_node(VectorBoxNode* vec_box) {
     }
 
     while (calls.size() > 0) {
-      CallJavaNode* call = calls.pop()->as_CallJava();
+      CallJavaNode* call = calls.pop();
       // Attach new VBA to the call and use it instead of Phi (VBA ... VBA).
 
       JVMState* jvms = clone_jvms(C, call);
@@ -253,12 +253,12 @@ void PhaseVector::scalarize_vbox_node(VectorBoxNode* vec_box) {
   }
 
   // Process debug uses at safepoints
-  Unique_Node_List safepoints;
+  Unique_Node_List<SafePointNode> safepoints;
 
-  Unique_Node_List worklist;
+  Unique_Node_List<const Node> worklist;
   worklist.push(vec_box);
   while (worklist.size() > 0) {
-    Node* n = worklist.pop();
+    const Node* n = worklist.pop();
     for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
       Node* use = n->fast_out(i);
       if (use->is_SafePoint()) {
@@ -282,13 +282,13 @@ void PhaseVector::scalarize_vbox_node(VectorBoxNode* vec_box) {
   // targets.
   bool is_mask = is_vector_mask(iklass);
   if (is_mask && vec_value->Opcode() != Op_VectorStoreMask) {
-    const TypeVect* vt = vec_value->bottom_type()->is_vect();
+    const TypeVect* vt = vec_value->bottom_type()->as_vect();
     BasicType bt = vt->element_basic_type();
     vec_value = gvn.transform(VectorStoreMaskNode::make(gvn, vec_value, bt, vt->length()));
   }
 
   while (safepoints.size() > 0) {
-    SafePointNode* sfpt = safepoints.pop()->as_SafePoint();
+    SafePointNode* sfpt = safepoints.pop();
 
     uint first_ind = (sfpt->req() - sfpt->jvms()->scloff());
     Node* sobj = new SafePointScalarObjectNode(vec_box->box_type(), vec_box, first_ind, sfpt->jvms()->depth(), n_fields);
@@ -382,11 +382,11 @@ Node* PhaseVector::expand_vbox_alloc_node(VectorBoxAllocateNode* vbox_alloc,
   // If boxed mask value is present in a predicate register, it must be
   // spilled to a vector though a VectorStoreMaskOperation before actual StoreVector
   // operation to vector payload field.
-  if (is_mask && (value->bottom_type()->isa_pvectmask() || bt != T_BOOLEAN)) {
+  if (is_mask && (value->bottom_type()->is_pvectmask() || bt != T_BOOLEAN)) {
     value = gvn.transform(VectorStoreMaskNode::make(gvn, value, bt, num_elem));
     // Although type of mask depends on its definition, in terms of storage everything is stored in boolean array.
     bt = T_BOOLEAN;
-    assert(value->bottom_type()->is_vect()->element_basic_type() == bt,
+    assert(value->bottom_type()->as_vect()->element_basic_type() == bt,
            "must be consistent with mask representation");
   }
 
@@ -397,7 +397,7 @@ Node* PhaseVector::expand_vbox_alloc_node(VectorBoxAllocateNode* vbox_alloc,
   // Store the vector value into the array.
   // (The store should be captured by InitializeNode and turned into initialized store later.)
   Node* arr_adr = kit.array_element_address(arr, kit.intcon(0), bt);
-  const TypePtr* arr_adr_type = arr_adr->bottom_type()->is_ptr();
+  const TypePtr* arr_adr_type = arr_adr->bottom_type()->as_ptr();
   Node* arr_mem = kit.memory(arr_adr);
   Node* vstore = gvn.transform(StoreVectorNode::make(0,
                                                      kit.control(),
@@ -421,7 +421,7 @@ Node* PhaseVector::expand_vbox_alloc_node(VectorBoxAllocateNode* vbox_alloc,
                                                                                      false);
   assert(field != nullptr, "");
   Node* vec_field = kit.basic_plus_adr(vec_obj, field->offset_in_bytes());
-  const TypePtr* vec_adr_type = vec_field->bottom_type()->is_ptr();
+  const TypePtr* vec_adr_type = vec_field->bottom_type()->as_ptr();
 
   // The store should be captured by InitializeNode and turned into initialized store later.
   Node* field_store = gvn.transform(kit.access_store_at(vec_obj,
@@ -445,9 +445,9 @@ void PhaseVector::expand_vunbox_node(VectorUnboxNode* vec_unbox) {
     PhaseGVN& gvn = kit.gvn();
 
     Node* obj = vec_unbox->obj();
-    const TypeInstPtr* tinst = gvn.type(obj)->isa_instptr();
+    const TypeInstPtr* tinst = gvn.type(obj)->as_instptr();
     ciInstanceKlass* from_kls = tinst->instance_klass();
-    const TypeVect* vt = vec_unbox->bottom_type()->is_vect();
+    const TypeVect* vt = vec_unbox->bottom_type()->as_vect();
     BasicType bt = vt->element_basic_type();
     BasicType masktype = bt;
 
@@ -467,7 +467,7 @@ void PhaseVector::expand_vunbox_node(VectorUnboxNode* vec_unbox) {
     Node* vec_field_ld;
     {
       DecoratorSet decorators = MO_UNORDERED | IN_HEAP;
-      C2AccessValuePtr addr(vec_adr, vec_adr->bottom_type()->is_ptr());
+      C2AccessValuePtr addr(vec_adr, vec_adr->bottom_type()->as_ptr());
       MergeMemNode* local_mem = MergeMemNode::make(mem);
       gvn.record_for_igvn(local_mem);
       BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
@@ -481,7 +481,7 @@ void PhaseVector::expand_vunbox_node(VectorUnboxNode* vec_unbox) {
     }
 
     Node* adr = kit.array_element_address(vec_field_ld, gvn.intcon(0), bt);
-    const TypePtr* adr_type = adr->bottom_type()->is_ptr();
+    const TypePtr* adr_type = adr->bottom_type()->as_ptr();
     int num_elem = vt->length();
     Node* vec_val_load = LoadVectorNode::make(0,
                                               ctrl,

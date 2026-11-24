@@ -251,7 +251,6 @@ void VM_RedefineClasses::doit() {
     _timer_vm_op_doit.start();
   }
 
-#if INCLUDE_CDS
   if (CDSConfig::is_using_archive()) {
     // Sharing is enabled so we remap the shared readonly space to
     // shared readwrite, private just in case we need to redefine
@@ -264,7 +263,6 @@ void VM_RedefineClasses::doit() {
       return;
     }
   }
-#endif
 
   // Mark methods seen on stack and everywhere else so old methods are not
   // cleaned up if they're on the stack.
@@ -276,9 +274,7 @@ void VM_RedefineClasses::doit() {
     redefine_single_class(current, _class_defs[i].klass, _scratch_classes[i]);
   }
 
-#if INCLUDE_CDS
   TrainingData::cleanup_after_redefinition();
-#endif
 
   // Flush all compiled code that depends on the classes redefined.
   flush_dependent_code();

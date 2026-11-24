@@ -343,6 +343,12 @@ public class IRNode {
         superWordNodes(ADD_REDUCTION_VL, "AddReductionVL");
     }
 
+    public static final String ARRAY_COPY = PREFIX + "ARRAY_COPY" + POSTFIX;
+    static {
+        String regex = START + "ArrayCopy" + MID + END;
+        macroNodes(ARRAY_COPY, regex);
+    }
+
     public static final String OPAQUE_MULTIVERSIONING = PREFIX + "OPAQUE_MULTIVERSIONING" + POSTFIX;
     static {
         beforeMatchingNameRegex(OPAQUE_MULTIVERSIONING, "OpaqueMultiversioning");
@@ -542,6 +548,11 @@ public class IRNode {
     public static final String VECTORAPI_INSERT_OP = PREFIX + "VECTORAPI_INSERT_OP" + POSTFIX;
     static {
         beforeMatchingNameRegex(VECTORAPI_INSERT_OP, "CallStaticJava(?=.*VectorSupport::insert instptr:)");
+    }
+
+    public static final String VECTORAPI_SLICE_OP = PREFIX + "VECTORAPI_SLICE_OP" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(VECTORAPI_SLICE_OP, "CallStaticJava(?=.*VectorSupport::sliceOp instptr:)");
     }
 
     public static final String CAST_II = PREFIX + "CAST_II" + POSTFIX;
@@ -986,6 +997,36 @@ public class IRNode {
     static {
         String regex = START + "g1StoreP\\S*" + MID + "barrier\\(\\s*" + IS_REPLACED + "\\s*\\)" + END;
         machOnly(G1_STORE_P_WITH_BARRIER_FLAG, regex);
+    }
+
+    public static final String G1_STORE_L_SPECIAL_WITH_BARRIER_FLAG = COMPOSITE_PREFIX + "G1_STORE_L_SPECIAL_WITH_BARRIER_FLAG" + POSTFIX;
+    public static final String G1_STORE_L_SPECIAL_ONE_OOP_0_WITH_BARRIER_FLAG = COMPOSITE_PREFIX + "G1_STORE_L_SPECIAL_ONE_OOP_0_WITH_BARRIER_FLAG" + POSTFIX;
+    public static final String G1_STORE_L_SPECIAL_ONE_OOP_4_WITH_BARRIER_FLAG = COMPOSITE_PREFIX + "G1_STORE_L_SPECIAL_ONE_OOP_4_WITH_BARRIER_FLAG" + POSTFIX;
+    public static final String G1_STORE_L_SPECIAL_TWO_OOPS_WITH_BARRIER_FLAG = COMPOSITE_PREFIX + "G1_STORE_L_SPECIAL_TWO_OOPS_WITH_BARRIER_FLAG" + POSTFIX;
+    static {
+        String regex_any = START + "g1StoreLSpecial\\S*" + MID + "barrier\\(\\s*" + IS_REPLACED + "\\s*\\)" + END;
+        String regex_one_oop0 = START + "g1StoreLSpecialOneOopOff0" + MID + "barrier\\(\\s*" + IS_REPLACED + "\\s*\\)" + END;
+        String regex_one_oop4 = START + "g1StoreLSpecialOneOopOff4" + MID + "barrier\\(\\s*" + IS_REPLACED + "\\s*\\)" + END;
+        String regex_two_oops = START + "g1StoreLSpecialTwoOops" + MID + "barrier\\(\\s*" + IS_REPLACED + "\\s*\\)" + END;
+        machOnly(G1_STORE_L_SPECIAL_WITH_BARRIER_FLAG, regex_any);
+        machOnly(G1_STORE_L_SPECIAL_ONE_OOP_0_WITH_BARRIER_FLAG, regex_one_oop0);
+        machOnly(G1_STORE_L_SPECIAL_ONE_OOP_4_WITH_BARRIER_FLAG, regex_one_oop4);
+        machOnly(G1_STORE_L_SPECIAL_TWO_OOPS_WITH_BARRIER_FLAG, regex_two_oops);
+    }
+
+    public static final String G1_STORE_L_SPECIAL = PREFIX + "G1_STORE_L_SPECIAL" + POSTFIX;
+    public static final String G1_STORE_L_SPECIAL_ONE_OOP_0 = PREFIX + "G1_STORE_L_SPECIAL_ONE_OOP_0" + POSTFIX;
+    public static final String G1_STORE_L_SPECIAL_ONE_OOP_4 = PREFIX + "G1_STORE_L_SPECIAL_ONE_OOP_4" + POSTFIX;
+    public static final String G1_STORE_L_SPECIAL_TWO_OOPS = PREFIX + "G1_STORE_L_SPECIAL_TWO_OOPS" + POSTFIX;
+    static {
+        String regex_any = START + "g1StoreLSpecial\\S*" + MID + END;
+        String regex_one_oop0 = START + "g1StoreLSpecialOneOopOff0" + MID + END;
+        String regex_one_oop4 = START + "g1StoreLSpecialOneOopOff4" + MID + END;
+        String regex_two_oops = START + "g1StoreLSpecialTwoOops" + MID + END;
+        machOnly(G1_STORE_L_SPECIAL, regex_any);
+        machOnly(G1_STORE_L_SPECIAL_ONE_OOP_0, regex_one_oop0);
+        machOnly(G1_STORE_L_SPECIAL_ONE_OOP_4, regex_one_oop4);
+        machOnly(G1_STORE_L_SPECIAL_TWO_OOPS, regex_two_oops);
     }
 
     public static final String IF = PREFIX + "IF" + POSTFIX;
@@ -2507,12 +2548,12 @@ public class IRNode {
     // Exclude the separate _negate rules that materialize boolean results.
     public static final String RISCV_CMOVE_VTEST_ANYTRUE = PREFIX + "RISCV_CMOVE_VTEST_ANYTRUE" + POSTFIX;
     static {
-        machOnlyNameRegex(RISCV_CMOVE_VTEST_ANYTRUE, "cmov[ILFD]_vtest_anytrue\\b");
+        machOnlyNameRegex(RISCV_CMOVE_VTEST_ANYTRUE, "cmov[ILFDPN]_vtest_anytrue\\b");
     }
 
     public static final String RISCV_CMOVE_VTEST_ALLTRUE = PREFIX + "RISCV_CMOVE_VTEST_ALLTRUE" + POSTFIX;
     static {
-        machOnlyNameRegex(RISCV_CMOVE_VTEST_ALLTRUE, "cmov[ILFD]_vtest_alltrue\\b");
+        machOnlyNameRegex(RISCV_CMOVE_VTEST_ALLTRUE, "cmov[ILFDPN]_vtest_alltrue\\b");
     }
 
     public static final String RISCV_VAND_NOTI_VX_MASKED = PREFIX + "RISCV_VAND_NOTI_VX_MASKED" + POSTFIX;
@@ -2791,9 +2832,44 @@ public class IRNode {
         beforeMatchingNameRegex(VECTOR_MASK_CAST, "VectorMaskCast");
     }
 
-    public static final String VECTOR_REINTERPRET = PREFIX + "VECTOR_REINTERPRET" + POSTFIX;
+    public static final String VECTOR_REINTERPRET_B = VECTOR_PREFIX + "VECTOR_REINTERPRET_B" + POSTFIX;
     static {
-        beforeMatchingNameRegex(VECTOR_REINTERPRET, "VectorReinterpret");
+        vectorNode(VECTOR_REINTERPRET_B, "VectorReinterpret", TYPE_BYTE);
+    }
+
+    public static final String VECTOR_REINTERPRET_C = VECTOR_PREFIX + "VECTOR_REINTERPRET_C" + POSTFIX;
+    static {
+        vectorNode(VECTOR_REINTERPRET_C, "VectorReinterpret", TYPE_CHAR);
+    }
+
+    public static final String VECTOR_REINTERPRET_S = VECTOR_PREFIX + "VECTOR_REINTERPRET_S" + POSTFIX;
+    static {
+        vectorNode(VECTOR_REINTERPRET_S, "VectorReinterpret", TYPE_SHORT);
+    }
+
+    public static final String VECTOR_REINTERPRET_I = VECTOR_PREFIX + "VECTOR_REINTERPRET_I" + POSTFIX;
+    static {
+        vectorNode(VECTOR_REINTERPRET_I, "VectorReinterpret", TYPE_INT);
+    }
+
+    public static final String VECTOR_REINTERPRET_L = VECTOR_PREFIX + "VECTOR_REINTERPRET_L" + POSTFIX;
+    static {
+        vectorNode(VECTOR_REINTERPRET_L, "VectorReinterpret", TYPE_LONG);
+    }
+
+    public static final String VECTOR_REINTERPRET_F = VECTOR_PREFIX + "VECTOR_REINTERPRET_F" + POSTFIX;
+    static {
+        vectorNode(VECTOR_REINTERPRET_F, "VectorReinterpret", TYPE_FLOAT);
+    }
+
+    public static final String VECTOR_REINTERPRET_D = VECTOR_PREFIX + "VECTOR_REINTERPRET_D" + POSTFIX;
+    static {
+        vectorNode(VECTOR_REINTERPRET_D, "VectorReinterpret", TYPE_DOUBLE);
+    }
+
+    public static final String VECTOR_REINTERPRET_Z = VECTOR_PREFIX + "VECTOR_REINTERPRET_Z" + POSTFIX;
+    static {
+        vectorNode(VECTOR_REINTERPRET_Z, "VectorReinterpret", TYPE_BOOLEAN);
     }
 
     public static final String VECTOR_UCAST_B2S = VECTOR_PREFIX + "VECTOR_UCAST_B2S" + POSTFIX;
@@ -3066,6 +3142,11 @@ public class IRNode {
         machOnlyNameRegex(X86_VMULDQ_REG, "vmuldq_reg");
     }
 
+    public static final String X86_VSHIFT_B_GFNI = PREFIX + "X86_VSHIFT_B_GFNI" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_VSHIFT_B_GFNI, "vshiftB_gfni");
+    }
+
     public static final String AARCH64_VMULL_UINT_SVE2 = PREFIX + "AARCH64_VMULL_UINT_SVE2" + POSTFIX;
     static {
         machOnlyNameRegex(AARCH64_VMULL_UINT_SVE2, "vmulL_uint_sve2");
@@ -3104,6 +3185,11 @@ public class IRNode {
     public static final String X86_SCONV_F2L = PREFIX + "X86_SCONV_F2L" + POSTFIX;
     static {
         machOnlyNameRegex(X86_SCONV_F2L, "convF2L_reg_reg");
+    }
+
+    public static final String X86_SCONV_I2L = PREFIX + "X86_SCONV_I2L" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_SCONV_I2L, "convI2L_reg_reg");
     }
 
     public static final String X86_SCONV_D2I_AVX10_2 = PREFIX + "X86_SCONV_D2I_AVX10_2" + POSTFIX;
@@ -3555,6 +3641,16 @@ public class IRNode {
     public static final String CLONE_INTRINSIC_SLOW_PATH = PREFIX + "CLONE_INTRINSIC_SLOW_PATH" + POSTFIX;
     static {
         staticCallOfMethodNodes(CLONE_INTRINSIC_SLOW_PATH, "java.lang.Object::clone");
+    }
+
+    public static final String SLOW_ARRAYCOPY = PREFIX + "SLOW_ARRAYCOPY" + POSTFIX;
+    static {
+        staticCallOfMethodNodes(SLOW_ARRAYCOPY, "slow_arraycopy");
+    }
+
+    public static final String JINT_ARRAYCOPY = PREFIX + "JINT_ARRAYCOPY" + POSTFIX;
+    static {
+        callLeafNoFpOfMethodNodes(JINT_ARRAYCOPY, "jint_disjoint_arraycopy");
     }
 
     public static final String JLONG_ARRAYCOPY = PREFIX + "JLONG_ARRAYCOPY" + POSTFIX;

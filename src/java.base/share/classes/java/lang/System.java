@@ -2019,6 +2019,9 @@ public final class System {
             public jdk.internal.reflect.ConstantPool getConstantPool(Class<?> klass) {
                 return klass.getConstantPool();
             }
+            public boolean hasBeenRedefined(Class<?> klass) {
+                return klass.hasBeenRedefined();
+            }
             public boolean casAnnotationType(Class<?> klass, AnnotationType oldType, AnnotationType newType) {
                 return klass.casAnnotationType(oldType, newType);
             }
@@ -2107,6 +2110,9 @@ public final class System {
             }
             public boolean isReflectivelyOpened(Module m, String pn, Module other) {
                 return m.isReflectivelyOpened(pn, other);
+            }
+            public boolean hasModuleReflectionData() {
+                return Module.hasReflectionData();
             }
             public void addEnableNativeAccess(Module m) {
                 m.implAddEnableNativeAccess();

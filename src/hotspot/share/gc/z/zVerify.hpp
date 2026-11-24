@@ -40,7 +40,10 @@ private:
   static void objects(bool verify_weaks);
   static void threads_start_processing();
 
-  static void after_relocation_internal(ZForwarding* forwarding);
+  static void remset_before(ZForwarding* forwarding);
+  static void remset_after_relocation(ZForwarding* forwarding);
+  static void remset_after_scan(ZForwarding* forwarding);
+  static void remset_after_inner(ZForwarding* forwarding, bool after_relocation);
 
 public:
   static void before_zoperation();

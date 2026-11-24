@@ -49,13 +49,13 @@ class StringConcat : public ResourceObj {
   Node*               _arguments;      // The list of arguments to be concatenated
   GrowableArray<int>  _mode;           // into a String along with a mode flag
                                        // indicating how to treat the value.
-  Node_List           _constructors;   // List of constructors (many in case of stacked concat)
-  Node_List           _control;        // List of control nodes that will be deleted
-  Node_List           _uncommon_traps; // Uncommon traps that needs to be rewritten
-                                       // to restart at the initial JVMState.
-  Unique_Node_List    _allowed_compares; // validate_control_flow() needs to know which compare nodes are
-                                         // accepted users of call results. In case of stacked concats,
-                                         // these need to be persisted across merges for validation.
+  Node_List<const Node> _constructors; // List of constructors (many in case of stacked concat)
+  Node_List<Node>     _control;        // List of control nodes that will be deleted
+  Node_List<CallStaticJavaNode> _uncommon_traps;  // Uncommon traps that needs to be rewritten
+                                                  // to restart at the initial JVMState.
+  Unique_Node_List<const Node> _allowed_compares; // validate_control_flow() needs to know which compare nodes are
+                                                  // accepted users of call results. In case of stacked concats,
+                                                  // these need to be persisted across merges for validation.
 
   static constexpr uint STACKED_CONCAT_UPPER_BOUND = 256; // argument limit for a merged concat.
                                                           // The value 256 was derived by measuring
@@ -182,7 +182,7 @@ class StringConcat : public ResourceObj {
     assert(!_control.contains(ctrl), "only push once");
     _control.push(ctrl);
   }
-  void add_constructor(Node* init) {
+  void add_constructor(const Node* init) {
     assert(!_constructors.contains(init), "only push once");
     _constructors.push(init);
   }
@@ -291,8 +291,8 @@ void StringConcat::eliminate_unneeded_control() {
 StringConcat* StringConcat::merge(StringConcat* other, Node* arg) {
   StringConcat* result = new StringConcat(_stringopts, _end);
 
-  Unique_Node_List null_check_ifs;
-  Unique_Node_List skipped_phis;
+  Unique_Node_List<const Node> null_check_ifs;
+  Unique_Node_List<const Node> skipped_phis;
 
   for (uint x = 0; x < _control.size(); x++) {
     Node* n = _control.at(x);
@@ -350,7 +350,7 @@ StringConcat* StringConcat::merge(StringConcat* other, Node* arg) {
   // Verify that the diamond region isn't shared with non-null check phis;
   // and that the associated bool doesn't have external uses.
   for (uint i = 0; i < skipped_phis.size(); i++) {
-    Node* n = skipped_phis.at(i);
+    const Node* n = skipped_phis.at(i);
     Node* r = n->in(0);
     for (SimpleDUIterator j(r); j.has_next(); j.next()) {
       Node* n2 = j.get();
@@ -452,9 +452,9 @@ void StringConcat::eliminate_initialize(InitializeNode* init) {
   init->disconnect_inputs(C);
 }
 
-Node_List PhaseStringOpts::collect_toString_calls() {
-  Node_List string_calls;
-  Node_List worklist;
+Node_List<CallStaticJavaNode> PhaseStringOpts::collect_toString_calls() {
+  Node_List<CallStaticJavaNode> string_calls;
+  Node_List<Node> worklist;
 
   _visited.clear();
 
@@ -554,7 +554,7 @@ StringConcat* PhaseStringOpts::build_candidate(CallStaticJavaNode* call) {
       }
       // Find the constructor call
       Node* result = alloc->result_cast();
-      if (result == nullptr || !result->is_CheckCastPP() || alloc->in(TypeFunc::Memory)->is_top()) {
+      if (!Node::is<CheckCastPPNode>(result) || alloc->in(TypeFunc::Memory)->is_top()) {
         // strange looking allocation
 #ifndef PRODUCT
         if (PrintOptimizeStringConcat) {
@@ -598,7 +598,7 @@ StringConcat* PhaseStringOpts::build_candidate(CallStaticJavaNode* call) {
               // StringBuilder(int) case.
               Node* parm = use->in(TypeFunc::Parms + 1);
               assert(parm != nullptr, "must exist");
-              const TypeInt* type = _gvn->type(parm)->is_int();
+              const TypeInt* type = _gvn->type(parm)->as_int();
               if (type->_hi < 0) {
                 // Initial capacity argument is always negative in which case StringBuilder(int) throws
                 // a NegativeArraySizeException. Bail out from string opts.
@@ -730,9 +730,9 @@ PhaseStringOpts::PhaseStringOpts(PhaseGVN* gvn):
   // if it's possible to fuse the usage of the SB into a single String
   // construction.
   GrowableArray<StringConcat*> concats;
-  Node_List toStrings = collect_toString_calls();
+  Node_List<CallStaticJavaNode> toStrings = collect_toString_calls();
   while (toStrings.size() > 0) {
-    StringConcat* sc = build_candidate(toStrings.pop()->as_CallStaticJava());
+    StringConcat* sc = build_candidate(toStrings.pop());
     if (sc != nullptr) {
       concats.push(sc);
     }
@@ -854,7 +854,7 @@ bool StringConcat::validate_mem_flow() {
 
   for (uint i = 0; i < _control.size(); i++) {
 #ifndef PRODUCT
-    Node_List path;
+    Node_List<const Node> path;
 #endif
     Node* curr = _control.at(i);
     if (curr->is_Call() && curr != _begin) { // For all calls except the first allocation
@@ -932,8 +932,8 @@ bool StringConcat::validate_mem_flow() {
               ctrl = copy->is_copy();
             } else { // a cast
               assert(ctrl->req() == 3 &&
-                     ctrl->in(1) != nullptr && ctrl->in(1)->is_Proj() &&
-                     ctrl->in(2) != nullptr && ctrl->in(2)->is_Proj() &&
+                     Node::is<ProjNode>(ctrl->in(1)) &&
+                     Node::is<ProjNode>(ctrl->in(2)) &&
                      ctrl->in(1)->in(0) == ctrl->in(2)->in(0) &&
                      ctrl->in(1)->in(0) != nullptr && ctrl->in(1)->in(0)->is_If(),
                      "must be a simple diamond");
@@ -998,11 +998,11 @@ bool StringConcat::validate_control_flow() {
   // trap.
 
   int null_check_count = 0;
-  Unique_Node_List ctrl_path;
+  Unique_Node_List<const Node> ctrl_path;
 
   // Local version of _allowed_compares that stores allowed comparisons discovered during traversal
   // but that we won't persist across merges.
-  Unique_Node_List local_allowed_compares;
+  Unique_Node_List<const Node> local_allowed_compares;
 
   assert(_control.contains(_begin), "missing");
   assert(_control.contains(_end), "missing");
@@ -1160,10 +1160,10 @@ bool StringConcat::validate_control_flow() {
         continue;
       }
       if (ptr->req() == 3 &&
-          ptr->in(1) != nullptr && ptr->in(1)->is_Proj() &&
-          ptr->in(2) != nullptr && ptr->in(2)->is_Proj() &&
+          Node::is<ProjNode>(ptr->in(1)) &&
+          Node::is<ProjNode>(ptr->in(2)) &&
           ptr->in(1)->in(0) == ptr->in(2)->in(0) &&
-          ptr->in(1)->in(0) != nullptr && ptr->in(1)->in(0)->is_If()) {
+          Node::is<IfNode>(ptr->in(1)->in(0))) {
         // Simple diamond.
         // XXX should check for possibly merging stores.  simple data merges are ok.
         // The IGVN will make this simple diamond go away when it
@@ -1212,7 +1212,7 @@ bool StringConcat::validate_control_flow() {
   // this cluster of objects.  First collect all the results produced
   // by calls in the region.
   _stringopts->_visited.clear();
-  Node_List worklist;
+  Node_List<Node> worklist;
   Node* final_result = _end->proj_out_or_null(TypeFunc::Parms);
   for (uint i = 0; i < _control.size(); i++) {
     CallNode* cnode = _control.at(i)->isa_Call();
@@ -1452,7 +1452,7 @@ void PhaseStringOpts::getChars(GraphKit& kit, Node* arg, Node* dst_array, BasicT
   Node* ch = __ AddI(r, __ intcon('0'));
   Node* st = __ store_to_memory(kit.control(), kit.array_element_address(dst_array, index, T_BYTE),
                                 ch, bt, MemNode::unordered, false /* require_atomic_access */,
-                                false /* unaligned */, (bt != T_BYTE) /* mismatched */);
+                                false /* unaligned */, (bt != T_BYTE) /* mismatched */, false, false, 0);
 
   iff = kit.create_and_map_if(head, __ Bool(__ CmpI(q, __ intcon(0)), BoolTest::ne),
                               PROB_FAIR, COUNT_UNKNOWN);
@@ -1491,7 +1491,7 @@ void PhaseStringOpts::getChars(GraphKit& kit, Node* arg, Node* dst_array, BasicT
     Node* index = __ SubI(charPos, __ intcon((bt == T_BYTE) ? 1 : 2));
     st = __ store_to_memory(kit.control(), kit.array_element_address(dst_array, index, T_BYTE),
                             sign, bt, MemNode::unordered, false /* require_atomic_access */, false /* unaligned */,
-                            (bt != T_BYTE) /* mismatched */);
+                            (bt != T_BYTE) /* mismatched */, false, false, 0);
 
     final_merge->init_req(merge_index + 1, kit.control());
     final_mem->init_req(merge_index + 1, st);
@@ -1588,7 +1588,7 @@ void PhaseStringOpts::arraycopy(GraphKit& kit, IdealKit& ideal, Node* src_array,
   bool aligned = (arrayOopDesc::base_offset_in_bytes(T_BYTE) % HeapWordSize == 0);
   // If true, then check if dst array address is aligned to HeapWordSize
   if (aligned) {
-    const TypeInt* tdst = __ gvn().type(start)->is_int();
+    const TypeInt* tdst = __ gvn().type(start)->as_int();
     aligned = tdst->is_con() && ((arrayOopDesc::base_offset_in_bytes(T_BYTE) +
                                   tdst->get_con() * type2aelembytes(T_BYTE)) % HeapWordSize == 0);
   }
@@ -1824,7 +1824,7 @@ Node* PhaseStringOpts::allocate_byte_array(GraphKit& kit, IdealKit* ideal, Node*
 
 jbyte PhaseStringOpts::get_constant_coder(GraphKit& kit, Node* str) {
   assert(str->is_Con(), "String must be constant");
-  const TypeOopPtr* str_type = kit.gvn().type(str)->isa_oopptr();
+  const TypeOopPtr* str_type = kit.gvn().type(str)->as_oopptr();
   ciInstance* str_instance = str_type->const_oop()->as_instance();
   jbyte coder = str_instance->field_value_by_offset(java_lang_String::coder_offset()).as_byte();
   assert(CompactStrings || (coder == java_lang_String::CODER_UTF16), "Strings must be UTF16 encoded");
@@ -1838,7 +1838,7 @@ int PhaseStringOpts::get_constant_length(GraphKit& kit, Node* str) {
 
 ciTypeArray* PhaseStringOpts::get_constant_value(GraphKit& kit, Node* str) {
   assert(str->is_Con(), "String must be constant");
-  const TypeOopPtr* str_type = kit.gvn().type(str)->isa_oopptr();
+  const TypeOopPtr* str_type = kit.gvn().type(str)->as_oopptr();
   ciInstance* str_instance = str_type->const_oop()->as_instance();
   ciObject* src_array = str_instance->field_value_by_offset(java_lang_String::value_offset()).as_object();
   return src_array->as_type_array();
@@ -1922,7 +1922,7 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
       case StringConcat::NegativeIntCheckMode: {
         // Initial capacity argument might be negative in which case StringBuilder(int) throws
         // a NegativeArraySizeException. Insert a runtime check with an uncommon trap.
-        const TypeInt* type = kit.gvn().type(arg)->is_int();
+        const TypeInt* type = kit.gvn().type(arg)->as_int();
         assert(type->_hi >= 0 && type->_lo < 0, "no runtime int check needed");
         Node* p = __ Bool(__ CmpI(arg, kit.intcon(0)), BoolTest::ge);
         IfNode* iff = kit.create_and_map_if(kit.control(), p, PROB_MIN, COUNT_UNKNOWN);
@@ -2031,7 +2031,7 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
       }
       case StringConcat::CharMode: {
         // one character only
-        const TypeInt* t = kit.gvn().type(arg)->is_int();
+        const TypeInt* t = kit.gvn().type(arg)->as_int();
         if (!coder_fixed && t->is_con()) {
           // Constant char
           if (t->get_con() <= 255) {

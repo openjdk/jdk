@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -723,14 +723,6 @@ public final class Utils {
         return p1;
     }
 
-    /**
-     * Set limit to position, and position to mark.
-     */
-    public static void flipToMark(ByteBuffer buffer, int mark) {
-        buffer.limit(buffer.position());
-        buffer.position(mark);
-    }
-
     public static String stackTrace(Throwable t) {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         PrintStream p = new PrintStream(bos, true, US_ASCII);
@@ -755,49 +747,6 @@ public final class Utils {
             dst.put(src);
         }
         return srcLen - src.remaining();
-    }
-
-    /** Threshold beyond which data is no longer copied into the current
-     * buffer, if that buffer has enough unused space. */
-    private static final int COPY_THRESHOLD = 8192;
-
-    /**
-     * Adds the data from buffersToAdd to currentList. Either 1) appends the
-     * data from a particular buffer to the last buffer in the list ( if
-     * there is enough unused space ), or 2) adds it to the list.
-     *
-     * @return the number of bytes added
-     */
-    public static long accumulateBuffers(List<ByteBuffer> currentList,
-                                         List<ByteBuffer> buffersToAdd) {
-        long accumulatedBytes = 0;
-        for (ByteBuffer bufferToAdd : buffersToAdd) {
-            int remaining = bufferToAdd.remaining();
-            if (remaining <= 0)
-                continue;
-            int listSize = currentList.size();
-            if (listSize == 0) {
-                currentList.add(bufferToAdd);
-                accumulatedBytes = remaining;
-                continue;
-            }
-
-            ByteBuffer lastBuffer = currentList.get(listSize - 1);
-            int freeSpace = lastBuffer.capacity() - lastBuffer.limit();
-            if (remaining <= COPY_THRESHOLD && freeSpace >= remaining) {
-                // append the new data to the unused space in the last buffer
-                int position = lastBuffer.position();
-                int limit = lastBuffer.limit();
-                lastBuffer.position(limit);
-                lastBuffer.limit(limit + remaining);
-                lastBuffer.put(bufferToAdd);
-                lastBuffer.position(position);
-            } else {
-                currentList.add(bufferToAdd);
-            }
-            accumulatedBytes += remaining;
-        }
-        return accumulatedBytes;
     }
 
     public static ByteBuffer copy(ByteBuffer src) {
@@ -861,30 +810,6 @@ public final class Utils {
             remain += buf.remaining();
         }
         return remain;
-    }
-
-    //
-
-    /**
-     * Reads as much bytes as possible from the buffer list, and
-     * write them in the provided {@code data} byte array.
-     * Returns the number of bytes read and written to the byte array.
-     * This method advances the position in the byte buffers it reads
-     * @param bufs A list of byte buffer
-     * @param data A byte array to write into
-     * @param offset Where to start writing in the byte array
-     * @return the amount of bytes read and written to the byte array
-     */
-    public static int read(List<ByteBuffer> bufs, byte[] data, int offset) {
-        int pos = offset;
-        for (ByteBuffer buf : bufs) {
-            if (pos >= data.length) break;
-            int read = Math.min(buf.remaining(), data.length - pos);
-            if (read <= 0) continue;
-            buf.get(data, pos, read);
-            pos += read;
-        }
-        return pos - offset;
     }
 
     /**

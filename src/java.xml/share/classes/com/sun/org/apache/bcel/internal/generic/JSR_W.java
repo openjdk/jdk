@@ -37,6 +37,11 @@ public class JSR_W extends JsrInstruction {
     JSR_W() {
     }
 
+    /**
+     * Constructs a JSR_W instruction.
+     *
+     * @param target branch target.
+     */
     public JSR_W(final InstructionHandle target) {
         super(com.sun.org.apache.bcel.internal.Const.JSR_W, target);
         super.setLength(5);
@@ -44,9 +49,9 @@ public class JSR_W extends JsrInstruction {
 
     /**
      * Call corresponding visitor method(s). The order is: Call visitor methods of implemented interfaces first, then call
-     * methods according to the class hierarchy in descending order, i.e., the most specific visitXXX() call comes last.
+     * methods according to the class hierarchy in descending order, that is, the most specific visitXXX() call comes last.
      *
-     * @param v Visitor object
+     * @param v Visitor object.
      */
     @Override
     public void accept(final Visitor v) {
@@ -57,9 +62,9 @@ public class JSR_W extends JsrInstruction {
     }
 
     /**
-     * Dump instruction as byte code to stream out.
+     * Dumps instruction as byte code to stream out.
      *
-     * @param out Output stream
+     * @param out Output stream.
      */
     @Override
     public void dump(final DataOutputStream out) throws IOException {
@@ -69,7 +74,7 @@ public class JSR_W extends JsrInstruction {
     }
 
     /**
-     * Read needed data (e.g. index) from file.
+     * Reads needed data (for example index) from file.
      */
     @Override
     protected void initFromFile(final ByteSequence bytes, final boolean wide) throws IOException {

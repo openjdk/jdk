@@ -92,3 +92,48 @@ const Type* HaltNode::Value(PhaseGVN* phase) const {
 const RegMask &HaltNode::out_RegMask() const {
   return RegMask::EMPTY;
 }
+
+Node* DeadPathNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  assert(unique_ctrl_out() == phase->C->root(), "only referenced from root");
+  assert(can_reshape, "only used once igvn executes");
+  bool modified = false;
+  for (uint i = 1; i < req(); i++) { // For all inputs
+    // Check for and remove dead inputs
+    if (phase->type(in(i)) == Type::TOP) {
+      del_req(i--);             // Delete TOP inputs
+      modified = true;
+    }
+  }
+  if (req() == 1 && is_active()) {
+    assert(modified, "only if some inputs were removed");
+    deactivate();
+  }
+  return modified ? this : nullptr;
+}
+
+const Type* DeadPathNode::Value(PhaseGVN* phase) const {
+  if (req() == 1) {
+    return Type::TOP;
+  }
+  return bottom_type();
+}
+
+void DeadPathNode::activate(PhaseIterGVN* igvn) {
+  assert(Compile::current()->root()->find_edge(this) < 0, "should be disconnected from root");
+  set_req(0, this);
+  // If an entire subgraph died such as with Node::remove_dead_region(), some dead inputs to the DeadPath node will have
+  // been left behind
+  while (req() > 1) {
+    uint last = req() - 1;
+    assert(in(last) == nullptr || in(last)->is_top(), "only dead inputs should remain");
+    del_req(last);
+  }
+  Node* root_node = Compile::current()->root();
+  root_node->add_req(this);
+  igvn->_worklist.push(root_node);
+  igvn->set_type(this, bottom_type());
+}
+
+void DeadPathNode::deactivate() {
+  set_req(0, nullptr);
+}

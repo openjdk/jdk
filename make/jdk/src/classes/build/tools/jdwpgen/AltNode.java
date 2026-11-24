@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,11 +46,20 @@ class AltNode extends AbstractGroupNode implements TypeNode {
     }
 
     void document(PrintWriter writer) {
-        writer.println("<tr>");
+        Node node = parent;
+        while (node != null && !(node instanceof CommandNode)) {
+            node = node.parent;
+        }
+        if (node == null) {
+            error("Alt must be enclosed in a Command");
+        }
+
+        // ID, e.g. JDWP_Event_Composite_eventKind_FieldModification
+        String id = node.context.whereC + "_" + select.typeNode.name() + "_" + name();
+        writer.println("<tr id=\"" + id + "\">");
         writer.println("<th colspan=\"2\" scope=\"row\">"
                 + indentElement(structIndent,
-                    "Case " + nameNode.name
-                    + " - if <i>" + ((SelectNode)parent).typeNode.name + "</i>" +
+                    "Case " + name() + " - if <i>" + select.typeNode.name() + "</i>" +
                     " is " + nameNode.value() + ":"));
         writer.println("<td>" + comment() + "&nbsp;");
         writer.println("</tr>");

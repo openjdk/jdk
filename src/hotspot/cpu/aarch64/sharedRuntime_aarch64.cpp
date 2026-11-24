@@ -42,6 +42,7 @@
 #include "oops/klass.inline.hpp"
 #include "oops/method.inline.hpp"
 #include "prims/methodHandles.hpp"
+#include "registerSaver_aarch64.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/continuationEntry.inline.hpp"
 #include "runtime/globals.hpp"
@@ -72,43 +73,6 @@
 #endif
 
 const int StackAlignmentInSlots = StackAlignmentInBytes / VMRegImpl::stack_slot_size;
-
-// FIXME -- this is used by C1
-class RegisterSaver {
-  const bool _save_vectors;
- public:
-  RegisterSaver(bool save_vectors) : _save_vectors(save_vectors) {}
-
-  OopMap* save_live_registers(MacroAssembler* masm, int additional_frame_words, int* total_frame_words);
-  void restore_live_registers(MacroAssembler* masm);
-
-  // Offsets into the register save area
-  // Used by deoptimization when it is managing result register
-  // values on its own
-
-  int reg_offset_in_bytes(Register r);
-  int r0_offset_in_bytes()    { return reg_offset_in_bytes(r0); }
-  int rscratch1_offset_in_bytes()    { return reg_offset_in_bytes(rscratch1); }
-  int v0_offset_in_bytes();
-
-  // Total stack size in bytes for saving sve predicate registers.
-  int total_sve_predicate_in_bytes();
-
-  // Capture info about frame layout
-  // Note this is only correct when not saving full vectors.
-  enum layout {
-                fpu_state_off = 0,
-                fpu_state_end = fpu_state_off + FPUStateSizeInWords - 1,
-                // The frame sender code expects that rfp will be in
-                // the "natural" place and will override any oopMap
-                // setting for it. We must therefore force the layout
-                // so that it agrees with the frame sender code.
-                r0_off = fpu_state_off + FPUStateSizeInWords,
-                rfp_off = r0_off + (Register::number_of_registers - 2) * Register::max_slots_per_register,
-                return_off = rfp_off + Register::max_slots_per_register,      // slot for return address
-                reg_save_size = return_off + Register::max_slots_per_register};
-
-};
 
 int RegisterSaver::reg_offset_in_bytes(Register r) {
   // The integer registers are located above the floating point

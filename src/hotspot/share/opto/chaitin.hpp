@@ -722,27 +722,27 @@ private:
   Node *skip_copies( Node *c );
   // Replace the old node with the current live version of that value
   // and yank the old value if it's dead.
-  int replace_and_yank_if_dead( Node *old, OptoReg::Name nreg,
-      Block *current_block, Node_List& value, Node_List& regnd ) {
+  int replace_and_yank_if_dead(Node* old, OptoReg::Name nreg,
+      Block* current_block, Node_List<Node>& value, Node_List<Node>& regnd) {
     Node* v = regnd[nreg];
     assert(v->outcnt() != 0, "no dead values");
     old->replace_by(v);
     return yank_if_dead(old, current_block, &value, &regnd);
   }
 
-  int yank_if_dead( Node *old, Block *current_block, Node_List *value, Node_List *regnd ) {
+  int yank_if_dead(Node* old, Block* current_block, Node_List<Node>* value, Node_List<Node>* regnd) {
     return yank_if_dead_recurse(old, old, current_block, value, regnd);
   }
-  int yank_if_dead_recurse(Node *old, Node *orig_old, Block *current_block,
-      Node_List *value, Node_List *regnd);
-  int yank( Node *old, Block *current_block, Node_List *value, Node_List *regnd );
-  int elide_copy( Node *n, int k, Block *current_block, Node_List *value, Node_List *regnd, bool can_change_regs );
-  int use_prior_register( Node *copy, uint idx, Node *def, Block *current_block, Node_List *value, Node_List *regnd );
+  int yank_if_dead_recurse(Node* old, Node* orig_old, Block* current_block,
+      Node_List<Node>* value, Node_List<Node>* regnd);
+  int yank(Node* old, Block* current_block, Node_List<Node>* value, Node_List<Node>* regnd);
+  int elide_copy(Node* n, int k, Block* current_block, Node_List<Node>* value, Node_List<Node>* regnd, bool can_change_regs);
+  int use_prior_register(Node* copy, uint idx, Node* def, Block* current_block, Node_List<Node>* value, Node_List<Node>* regnd);
   bool may_be_copy_of_callee( Node *def ) const;
 
   // If nreg already contains the same constant as val then eliminate it
   bool eliminate_copy_of_constant(Node* val, Node* n,
-      Block *current_block, Node_List& value, Node_List &regnd,
+      Block* current_block, Node_List<Node>& value, Node_List<Node>& regnd,
       OptoReg::Name nreg, OptoReg::Name nreg2);
   // Extend the node to LRG mapping
   void add_reference( const Node *node, const Node *old_node);

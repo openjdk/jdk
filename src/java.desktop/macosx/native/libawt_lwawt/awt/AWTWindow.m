@@ -42,10 +42,7 @@
 #define IS(BITS, KEY) \
     ((BITS & MASK(KEY)) != 0)
 
-#define SET(BITS, KEY, VALUE) \
-    BITS = VALUE ? BITS | MASK(KEY) : BITS & ~MASK(KEY)
-
-static jclass jc_CPlatformWindow = NULL;
+DECLARE_CLASS_ONLY(jc_CPlatformWindow);
 #define GET_CPLATFORM_WINDOW_CLASS() \
     GET_CLASS(jc_CPlatformWindow, "sun/lwawt/macosx/CPlatformWindow");
 
