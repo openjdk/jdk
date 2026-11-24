@@ -870,10 +870,6 @@ static HQUERY file_cache_query = nullptr;
 static HCOUNTER file_cache_counter = nullptr;
 
 static void initialize_file_cache_query() {
-  PlatformMutex* const lock = file_cache_lock;
-  assert(lock != nullptr, "file cache lock must be initialized");
-  lock->lock();
-
   if (PdhDll::PdhAttach()) {
     HQUERY query = nullptr;
     HCOUNTER counter = nullptr;
@@ -888,7 +884,6 @@ static void initialize_file_cache_query() {
       }
     }
   }
-  lock->unlock();
 }
 
 static void close_file_cache_query() {
@@ -906,16 +901,23 @@ static void close_file_cache_query() {
 
 static size_t reclaimable_file_cache(uint64_t total_physical) {
   PlatformMutex* const lock = file_cache_lock;
+
   if (VMError::is_error_reported() || lock == nullptr) {
     return 0;
   }
+
   lock->lock();
+
+  if (file_cache_query == nullptr) {
+    initialize_file_cache_query();
+  }
 
   PDH_RAW_COUNTER cache = {};
   DWORD type = 0;
   const bool valid = file_cache_query != nullptr &&
       PdhDll::PdhCollectQueryData(file_cache_query) == ERROR_SUCCESS &&
       PdhDll::PdhGetRawCounterValue(file_cache_counter, &type, &cache) == ERROR_SUCCESS;
+
   lock->unlock();
 
   if (!valid || (cache.CStatus != PDH_CSTATUS_VALID_DATA && cache.CStatus != PDH_CSTATUS_NEW_DATA) ||
@@ -932,6 +934,7 @@ static size_t reclaimable_file_cache(uint64_t total_physical) {
   }
   const size_t resident = static_cast<size_t>(cache.FirstValue);
   const size_t protected_size = (flags & FILE_CACHE_MIN_HARD_ENABLE) != 0 ? minimum : 0;
+
   return resident > protected_size ? resident - protected_size : 0;
 }
 
@@ -4960,8 +4963,6 @@ jint os::init_2(void) {
       os::win32::lookup_kernelbase_symbol("GetThreadDescription"));
 #endif
   log_info(os, thread)("The SetThreadDescription API is%s available.", _SetThreadDescription == nullptr ? " not" : "");
-
-  initialize_file_cache_query();
 
   // Prepare KernelBase APIs (VirtualAlloc2, MapViewOfFile3) if available (Windows version 1803).
   os::win32::VirtualAlloc2 = reinterpret_cast<os::win32::VirtualAlloc2Fn>(
