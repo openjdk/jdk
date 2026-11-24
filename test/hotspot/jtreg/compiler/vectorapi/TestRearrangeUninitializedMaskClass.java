@@ -62,6 +62,5 @@ public class TestRearrangeUninitializedMaskClass {
         unmasked256();
         masked128();
         masked256();
-        System.out.println("PASS");
     }
 }
