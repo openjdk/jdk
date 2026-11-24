@@ -61,6 +61,7 @@ bool CDSConfig::_has_temp_aot_config_file = false;
 bool CDSConfig::_old_cds_flags_used = false;
 bool CDSConfig::_new_aot_flags_used = false;
 bool CDSConfig::_disable_heap_dumping = false;
+bool CDSConfig::_using_alternate_system_loader = false;
 bool CDSConfig::_is_at_aot_safepoint = false;
 
 const char* CDSConfig::_default_archive_path = nullptr;
@@ -108,6 +109,11 @@ void CDSConfig::ergo_initialize() {
   }
 
   AOTMapLogger::ergo_initialize();
+
+  if (using_alternate_system_loader() && (is_dumping_aot_configuration() || is_dumping_aot_cache())) {
+    log_warning(aot)("AOT optimizations are curtailed because -Djava.system.class.loader=%s is specified",
+        Arguments::get_property("java.system.class.loader"));
+  }
 
   setup_compiler_args();
 
@@ -334,6 +340,10 @@ void CDSConfig::check_incompatible_property(const char* key, const char* value) 
     "jdk.module.showModuleResolution",
     "jdk.module.validation"
   };
+
+  if (strcmp(key, "java.system.class.loader") == 0) {
+    _using_alternate_system_loader = true;
+  }
 
   for (const char* property : incompatible_properties) {
     if (strcmp(key, property) == 0) {
@@ -789,6 +799,11 @@ void CDSConfig::setup_compiler_args() {
 
   if (is_dumping_aot_configuration()) {
     // --- AOT training
+    if (using_alternate_system_loader()) {
+      FLAG_SET_ERGO(AOTRecordTraining, false);
+      FLAG_SET_ERGO(AOTReplayTraining, false);
+    }
+
     if (!AOTClassLinking) { // Note: is_dumping_aot_linked_classes() is false in training run.
       disable_profile_and_compiled_code();
       return;
