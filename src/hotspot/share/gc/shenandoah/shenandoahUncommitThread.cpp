@@ -129,9 +129,13 @@ void ShenandoahUncommitThread::uncommit() {
     }
 
     ShenandoahHeapRegion* r = _heap->get_region(i - 1);
+    if (!r->is_empty_committed()) {
+      // Not a candidate, try again.
+      continue;
+    }
 
     double now = os::elapsedTime();
-    if (!r->is_empty_committed() || (r->uncommit_time() > now)) {
+    if (r->uncommit_time() > now) {
       // Not a candidate, try again.
       continue;
     }
