@@ -97,6 +97,9 @@ void ShenandoahMark::mark_loop_work(uint worker_id, TaskTerminator* terminator, 
 
   ShenandoahObjToScanQueueSet* queues = task_queues();
   ShenandoahObjToScanQueue* q = get_queue(worker_id);
+
+  // The perspective on old queues is different for marking closure and SATB closure.
+  // Marking closure wants to put things on old queue when bootstrapping only.
   ShenandoahObjToScanQueue* old_q = _bootstrapping ? get_old_queue(worker_id) : nullptr;
   ShenandoahObjToScanQueue* old_q_satb = get_old_queue(worker_id);
 
