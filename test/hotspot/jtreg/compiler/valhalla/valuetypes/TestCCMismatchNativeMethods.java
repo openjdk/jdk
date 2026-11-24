@@ -37,7 +37,7 @@ import jdk.internal.vm.annotation.NullRestricted;
  * @modules java.base/jdk.internal.vm.annotation
  *
  * @run main/othervm -Xbatch -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:-WhiteBoxAPI ${test.main.class}
- * @run main/othervm -Xbatch  -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:-WhiteBoxAPI
+ * @run main/othervm -Xbatch -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:-WhiteBoxAPI
  *                   -XX:+IgnoreUnrecognizedVMOptions -XX:ThrowOOMEAtC2iC1NativeEntryPoints=3 ${test.main.class}
  */
 
