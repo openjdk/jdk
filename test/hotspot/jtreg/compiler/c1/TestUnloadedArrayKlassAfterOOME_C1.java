@@ -94,9 +94,9 @@ public class TestUnloadedArrayKlassAfterOOME_C1 {
             }
         }
 
-	static Object[] testNewWithoutCatch() {
-	    return new Value[10];
-	}
+        static Object[] testNewWithoutCatch() {
+            return new Value[10];
+        }
 
         public static void main(String[] args) {
             Object[] array = new Object[10];
@@ -111,9 +111,9 @@ public class TestUnloadedArrayKlassAfterOOME_C1 {
             }
             testNew();
             testArrayCopy(array);
-	    try {
-		testNewWithoutCatch();
-	    }  catch (OutOfMemoryError expected) {
+            try {
+                testNewWithoutCatch();
+            }  catch (OutOfMemoryError expected) {
                 // Ignore
             }
         }
