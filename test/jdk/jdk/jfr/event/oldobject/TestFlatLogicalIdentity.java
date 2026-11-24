@@ -29,6 +29,7 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -47,7 +48,7 @@ import jdk.test.lib.jfr.EventNames;
 /**
  * @test
  * @bug 8389454
- * @summary Verify shared and distinct identities of flattened old-object holders within and across recording dumps
+ * @summary Verify LogicalEdgeStore reuses synthetic addresses for the same flattened value, separates different values, and does not reuse addresses across dumps
  * @requires vm.hasJFR & vm.flagless & vm.bits == "64"
  * @library /test/lib /test/jdk
  * @modules java.base/jdk.internal.misc
@@ -75,9 +76,9 @@ public class TestFlatLogicalIdentity {
     @LooselyConsistentValue
     static value class Outer {
         @NullRestricted final Pair nested;
-        Outer(int firstRole) {
-            this.nested = new Pair(new byte[OldObjects.MIN_SIZE + firstRole],
-                                   new byte[OldObjects.MIN_SIZE + firstRole + 1]);
+        Outer(int firstSampleIndex) {
+            this.nested = new Pair(new byte[OldObjects.MIN_SIZE + firstSampleIndex],
+                                   new byte[OldObjects.MIN_SIZE + firstSampleIndex + 1]);
         }
         Outer() {
             this.nested = new Pair(null, null);
@@ -93,7 +94,7 @@ public class TestFlatLogicalIdentity {
     }
 
     static class Holder extends Base {
-        // Same name and local field index as Base.value, but a different occurrence.
+        // Same name and local field index as Base.value, but a separate flattened value.
         @NullRestricted final Outer value;
         Holder() {
             this.value = new Outer(2);
@@ -101,9 +102,10 @@ public class TestFlatLogicalIdentity {
         }
     }
 
-    private record Occurrence(long holder, int position, boolean nested) {}
+    private record FlatValueLocation(long containingObjectAddress, String fieldOrArrayPath) {}
 
-    private record Observation(Set<Long> identities, boolean complete, Instant lastEventTime) {}
+    private record DumpResult(Set<Long> syntheticAddresses, boolean sampledAllFourReferencePaths,
+                              Instant newestEventTime) {}
 
     public static void main(String[] args) throws Exception {
         WhiteBox.setWriteAllObjectSamples(true);
@@ -112,8 +114,16 @@ public class TestFlatLogicalIdentity {
             Asserts.assertTrue(Unsafe.getUnsafe().isFlatField(type.getDeclaredField("value")));
         }
         Asserts.assertTrue(Unsafe.getUnsafe().isFlatField(Outer.class.getDeclaredField("nested")));
-        check(false);
-        check(true);
+        testInstanceFields();
+        testArrayElements();
+    }
+
+    private static void testInstanceFields() throws Exception {
+        verifySyntheticAddressesAcrossDumps(false);
+    }
+
+    private static void testArrayElements() throws Exception {
+        verifySyntheticAddressesAcrossDumps(true);
     }
 
     private static void allocate(boolean arrayMode) {
@@ -123,60 +133,64 @@ public class TestFlatLogicalIdentity {
             Asserts.assertTrue(ValueClass.isFlatArray(array));
             array[0] = new Outer(0);
             array[array.length - 1] = new Outer(2);
-            TestFlatArrayInformation.KEEP.add(array);
+            TestFlatArrayInformation.RETAINED_OBJECTS.add(array);
         } else {
-            TestFlatArrayInformation.KEEP.add(new Holder());
+            TestFlatArrayInformation.RETAINED_OBJECTS.add(new Holder());
         }
     }
 
-    private static void remember(Map<Occurrence, Long> ids, Map<Long, Occurrence> owners,
-                                 Occurrence occurrence, RecordedObject value) {
-        long id = value.getLong("address");
-        Long previous = ids.putIfAbsent(occurrence, id);
-        if (previous != null) {
-            Asserts.assertEquals(previous.longValue(), id, "Same flattened occurrence must reuse its identity");
+    private static void verifySyntheticAddress(Map<FlatValueLocation, Long> addressByLocation,
+                                               Map<Long, FlatValueLocation> locationByAddress,
+                                               FlatValueLocation location, RecordedObject value) {
+        long syntheticAddress = value.getLong("address");
+        Long previousAddress = addressByLocation.putIfAbsent(location, syntheticAddress);
+        if (previousAddress != null) {
+            Asserts.assertEquals(previousAddress.longValue(), syntheticAddress,
+                "Paths through left and right must reuse the synthetic address for " + location);
         }
-        Occurrence previousOwner = owners.putIfAbsent(id, occurrence);
-        if (previousOwner != null) {
-            Asserts.assertEquals(previousOwner, occurrence, "Different occurrences must have distinct identities");
+        FlatValueLocation previousLocation = locationByAddress.putIfAbsent(syntheticAddress, location);
+        if (previousLocation != null) {
+            Asserts.assertEquals(previousLocation, location,
+                "Different flattened values must not share synthetic address " + syntheticAddress);
         }
     }
 
-    private static void check(boolean arrayMode) throws Exception {
+    private static void verifySyntheticAddressesAcrossDumps(boolean arrayMode) throws Exception {
         Path dump = Files.createTempFile("flat-logical-identity-", ".jfr");
         try {
             for (int attempt = 0; ; attempt++) {
                 if (attempt > 0) {
                     System.out.println("Retrying logical identities, array=" + arrayMode + ", attempt=" + attempt);
                 }
-                TestFlatArrayInformation.KEEP.clear();
+                TestFlatArrayInformation.RETAINED_OBJECTS.clear();
                 try (Recording recording = new Recording()) {
                     recording.enable(EventNames.OldObjectSample).withoutStackTrace().with("cutoff", "infinity");
                     recording.start();
-                    var first = dumpAndVerify(recording, dump, arrayMode, Instant.MIN);
-                    if (!first.complete()) {
+                    var firstDump = dumpAndVerify(recording, dump, arrayMode, Instant.MIN);
+                    if (!firstDump.sampledAllFourReferencePaths()) {
                         continue;
                     }
-                    var second = dumpAndVerify(recording, dump, arrayMode, first.lastEventTime());
-                    if (second.identities().isEmpty()) {
+                    var secondDump = dumpAndVerify(recording, dump, arrayMode, firstDump.newestEventTime());
+                    if (secondDump.syntheticAddresses().isEmpty()) {
                         continue;
                     }
-                    Asserts.assertTrue(Collections.disjoint(first.identities(), second.identities()),
-                        "Newly emitted logical nodes must not reuse identities from the first dump");
-                    System.out.println("Verified distinct logical identities across dumps, array="
-                        + arrayMode + ", first=" + first.identities().size() + ", second=" + second.identities().size());
+                    Asserts.assertTrue(Collections.disjoint(firstDump.syntheticAddresses(), secondDump.syntheticAddresses()),
+                        "LogicalEdgeStore must not reuse synthetic addresses from the first dump");
+                    System.out.println("Verified distinct synthetic addresses across dumps, array="
+                        + arrayMode + ", first=" + firstDump.syntheticAddresses().size()
+                        + ", second=" + secondDump.syntheticAddresses().size());
                     return;
                 }
             }
         } finally {
-            TestFlatArrayInformation.KEEP.clear();
+            TestFlatArrayInformation.RETAINED_OBJECTS.clear();
             Files.deleteIfExists(dump);
         }
     }
 
-    private static Observation dumpAndVerify(Recording recording, Path dump,
-                                            boolean arrayMode, Instant cutoff) throws Exception {
-        List<Object> retainedHolders = TestFlatArrayInformation.KEEP;
+    private static DumpResult dumpAndVerify(Recording recording, Path dump,
+                                           boolean arrayMode, Instant previousDumpLastEventTime) throws Exception {
+        List<Object> retainedHolders = TestFlatArrayInformation.RETAINED_OBJECTS;
         for (int allocation = 0; allocation < 16; allocation++) {
             allocate(arrayMode);
         }
@@ -184,52 +198,60 @@ public class TestFlatLogicalIdentity {
         Reference.reachabilityFence(retainedHolders);
         List<RecordedEvent> events = RecordingFile.readAllEvents(dump).stream()
             .filter(event -> event.getEventType().getName().equals(EventNames.OldObjectSample))
-            .filter(event -> event.getStartTime().isAfter(cutoff))
+            .filter(event -> event.getStartTime().isAfter(previousDumpLastEventTime))
             .toList();
-        return verify(events, arrayMode);
+        return verifySyntheticAddressesWithinDump(events, arrayMode);
     }
 
-    private static Observation verify(List<RecordedEvent> events, boolean arrayMode) {
+    private static DumpResult verifySyntheticAddressesWithinDump(List<RecordedEvent> events, boolean arrayMode) {
         String ownerType = (arrayMode ? Outer[].class : Holder.class).getName();
-        Map<Occurrence, Long> ids = new HashMap<>();
-        Map<Long, Occurrence> owners = new HashMap<>();
-        Map<Long, Integer> seen = new HashMap<>();
+        Map<FlatValueLocation, Long> addressByLocation = new HashMap<>();
+        Map<Long, FlatValueLocation> locationByAddress = new HashMap<>();
+        Map<Long, Set<String>> referencePathsByContainingObject = new HashMap<>();
+        String firstValuePath = arrayMode ? "[0]" : "Base.value";
+        String secondValuePath = arrayMode ? "[" + (TestFlatArrayInformation.LENGTH - 1) + "]" : "Holder.value";
+        Set<String> expectedReferencePaths = Set.of(firstValuePath + ".nested.left", firstValuePath + ".nested.right",
+                                                   secondValuePath + ".nested.left", secondValuePath + ".nested.right");
         for (var event : events) {
             RecordedObject sample = event.getValue("object");
             if (!sample.getClass("type").getName().equals(byte[].class.getName())) {
                 continue;
             }
-            int role = event.getInt("arrayElements") - OldObjects.MIN_SIZE;
-            if (role < 0 || role > 3) {
+            int sampleIndex = event.getInt("arrayElements") - OldObjects.MIN_SIZE;
+            if (sampleIndex < 0 || sampleIndex > 3) {
                 continue;
             }
             RecordedObject ref = sample.getValue("referrer");
             if (ref == null || !ref.getClass("object.type").getName().equals(Pair.class.getName())) {
                 continue;
             }
-            RecordedObject pair = TestFlatArrayInformation.verifyField(ref, (role & 1) == 0
-                                    ? "left" : "right", Pair.class, true);
+            String referenceField = sampleIndex % 2 == 0 ? "left" : "right";
+            RecordedObject pair = TestFlatArrayInformation.verifyFieldInFlattenedValue(ref, referenceField, Pair.class);
             RecordedObject outer =
-                TestFlatArrayInformation.verifyField(pair.getValue("referrer"), "nested", Outer.class, true);
+                TestFlatArrayInformation.verifyFieldInFlattenedValue(pair.getValue("referrer"), "nested", Outer.class);
             RecordedObject outerRef = outer.getValue("referrer");
             if (outerRef == null || !outerRef.getClass("object.type").getName().equals(ownerType)) {
                 continue;
             }
-            int position = role / 2;
+            String valuePath = sampleIndex < 2 ? firstValuePath : secondValuePath;
             RecordedObject holder;
             if (arrayMode) {
-                TestFlatArrayInformation.verifyArray(outerRef, position == 0 ? 0 : TestFlatArrayInformation.LENGTH - 1, Outer[].class);
+                TestFlatArrayInformation.verifyArrayElementReference(outerRef, sampleIndex < 2 ? 0 : TestFlatArrayInformation.LENGTH - 1, Outer[].class);
                 holder = outerRef.getValue("object");
             } else {
-                holder = TestFlatArrayInformation.verifyField(outerRef, "value", Holder.class, false);
+                holder = TestFlatArrayInformation.verifyFieldInObject(outerRef, "value", Holder.class);
             }
-            long address = holder.getLong("address");
-            Asserts.assertEquals(address & TestFlatArrayInformation.ALIGNMENT_MASK, 0L);
-            remember(ids, owners, new Occurrence(address, position, true), pair);
-            remember(ids, owners, new Occurrence(address, position, false), outer);
-            seen.merge(address, 1 << role, (a, b) -> a | b);
+            long containingObjectAddress = holder.getLong("address");
+            Asserts.assertEquals(containingObjectAddress & TestFlatArrayInformation.ALIGNMENT_MASK, 0L);
+            verifySyntheticAddress(addressByLocation, locationByAddress,
+                new FlatValueLocation(containingObjectAddress, valuePath + ".nested"), pair);
+            verifySyntheticAddress(addressByLocation, locationByAddress,
+                new FlatValueLocation(containingObjectAddress, valuePath), outer);
+            referencePathsByContainingObject.computeIfAbsent(containingObjectAddress, address -> new HashSet<>())
+                .add(valuePath + ".nested." + referenceField);
         }
-        Instant lastEventTime = events.stream().map(RecordedEvent::getStartTime).max(Instant::compareTo).orElse(Instant.MIN);
-        return new Observation(Set.copyOf(owners.keySet()), seen.containsValue(15), lastEventTime);
+        Instant newestEventTime = events.stream().map(RecordedEvent::getStartTime).max(Instant::compareTo).orElse(Instant.MIN);
+        return new DumpResult(Set.copyOf(locationByAddress.keySet()),
+            referencePathsByContainingObject.containsValue(expectedReferencePaths), newestEventTime);
     }
 }

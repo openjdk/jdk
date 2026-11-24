@@ -69,7 +69,7 @@ public class TestFlatReferenceChainLimit {
         }
     }
 
-    // Marks the end of our chain without depending on the path from KEEP
+    // Marks the end of our chain without depending on the path from RETAINED_OBJECTS
     // through its backing array and the test's class mirror to a GC root.
     static class Root {
         final Object head;
@@ -83,23 +83,23 @@ public class TestFlatReferenceChainLimit {
         WhiteBox.setWriteAllObjectSamples(true);
         new Node(null);
         Asserts.assertTrue(Unsafe.getUnsafe().isFlatField(Node.class.getDeclaredField("link")));
-        TestFlatArrayInformation.check("flat chain with skipped physical edges",
-            TestFlatReferenceChainLimit::allocate, Node.class, TestFlatReferenceChainLimit::verify);
+        TestFlatArrayInformation.recordAndVerifyReferencePath("flat chain with skipped physical edges",
+            TestFlatReferenceChainLimit::allocateChain, Node.class, TestFlatReferenceChainLimit::verifyTruncatedReferenceChain);
     }
 
-    private static void allocate() {
+    private static void allocateChain() {
         Object next = new byte[OldObjects.MIN_SIZE];
-        for (int i = 0; i < CHAIN_LENGTH; i++) {
+        for (int nodeIndex = 0; nodeIndex < CHAIN_LENGTH; nodeIndex++) {
             next = new Node(next);
         }
-        TestFlatArrayInformation.KEEP.add(new Root(next));
+        TestFlatArrayInformation.RETAINED_OBJECTS.add(new Root(next));
     }
 
-    private static void verify(RecordedObject ref) {
-        int physicalNodes = 0;
-        int logicalNodes = 0;
-        int skippedNodes = 0;
-        int skipEdges = 0;
+    private static void verifyTruncatedReferenceChain(RecordedObject ref) {
+        int recordedNodeCount = 0;
+        int recordedFlattenedLinkCount = 0;
+        int omittedNodeCount = 0;
+        int skipReferenceCount = 0;
         RecordedObject object;
         // A recorded path can start with a skip, without a logical holder
         // for the sampled object's first reference.
@@ -111,22 +111,22 @@ public class TestFlatReferenceChainLimit {
             object = ref.getValue("object");
             Asserts.assertNotNull(object);
             Asserts.assertTrue(isType(object, Node.class));
-            skippedNodes = firstSkip;
-            skipEdges = 1;
+            omittedNodeCount = firstSkip;
+            skipReferenceCount = 1;
         } else {
-            object = TestFlatArrayInformation.verifyField(ref, "ref", Link.class, true);
+            object = TestFlatArrayInformation.verifyFieldInFlattenedValue(ref, "ref", Link.class);
         }
         for (int steps = 0; !isType(object, Root.class); steps++) {
             Asserts.assertTrue(steps < 2 * CHAIN_LENGTH, "Reference chain did not reach its root marker");
-            boolean logical = isType(object, Link.class);
-            if (logical) {
-                logicalNodes++;
-                TestFlatArrayInformation.verifyLogicalIdentity(object);
+            boolean isFlattenedLink = isType(object, Link.class);
+            if (isFlattenedLink) {
+                recordedFlattenedLinkCount++;
+                TestFlatArrayInformation.verifySyntheticAddress(object);
                 Asserts.assertNull(object.getString("description"));
             } else {
                 Asserts.assertTrue(isType(object, Node.class));
                 Asserts.assertTrue(object.getLong("address") != 0);
-                physicalNodes++;
+                recordedNodeCount++;
             }
 
             RecordedObject next = object.getValue("referrer");
@@ -139,27 +139,27 @@ public class TestFlatReferenceChainLimit {
             if (skip != 0) {
                 // A skip connects physical nodes directly, with no field
                 // metadata or logical holder inserted at that boundary.
-                Asserts.assertFalse(logical);
+                Asserts.assertFalse(isFlattenedLink);
                 Asserts.assertTrue(isType(parent, Node.class));
                 Asserts.assertTrue(parent.getLong("address") != 0);
                 Asserts.assertNull(next.getValue("field"));
-                skippedNodes += skip;
-                skipEdges++;
-            } else if (logical) {
-                TestFlatArrayInformation.verifyField(next, "link", Node.class, false);
+                omittedNodeCount += skip;
+                skipReferenceCount++;
+            } else if (isFlattenedLink) {
+                TestFlatArrayInformation.verifyFieldInObject(next, "link", Node.class);
             } else if (isType(parent, Root.class)) {
-                TestFlatArrayInformation.verifyField(next, "head", Root.class, false);
+                TestFlatArrayInformation.verifyFieldInObject(next, "head", Root.class);
             } else {
-                TestFlatArrayInformation.verifyField(next, "ref", Link.class, true);
+                TestFlatArrayInformation.verifyFieldInFlattenedValue(next, "ref", Link.class);
             }
             object = parent;
         }
 
-        Asserts.assertTrue(skipEdges > 0, "Expected a truncated physical chain");
-        Asserts.assertEquals(physicalNodes + skippedNodes, CHAIN_LENGTH,
-                             "Skip counts must account for exactly the omitted physical nodes");
-        Asserts.assertEquals(logicalNodes, physicalNodes - skipEdges,
-                             "Only unskipped physical edges introduce logical holders");
+        Asserts.assertTrue(skipReferenceCount > 0, "Expected at least one skip reference in the recorded Node chain");
+        Asserts.assertEquals(recordedNodeCount + omittedNodeCount, CHAIN_LENGTH,
+                             "Recorded and omitted Node objects must account for the entire allocated chain");
+        Asserts.assertEquals(recordedFlattenedLinkCount, recordedNodeCount - skipReferenceCount,
+                             "Each recorded Node has a flattened Link except at a skip reference");
     }
 
     private static boolean isType(RecordedObject object, Class<?> type) {

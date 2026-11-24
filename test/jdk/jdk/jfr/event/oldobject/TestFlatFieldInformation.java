@@ -93,21 +93,21 @@ public class TestFlatFieldInformation {
         new Holder(null);
         Asserts.assertTrue(Unsafe.getUnsafe().isFlatField(Base.class.getDeclaredField("value")));
         Asserts.assertTrue(Unsafe.getUnsafe().isFlatField(Outer.class.getDeclaredField("nested")));
-        TestFlatArrayInformation.check("nested inherited flat fields",
-            () -> TestFlatArrayInformation.KEEP.add(new Holder(new byte[OldObjects.MIN_SIZE])),
+        TestFlatArrayInformation.recordAndVerifyReferencePath("nested inherited flat fields",
+            () -> TestFlatArrayInformation.RETAINED_OBJECTS.add(new Holder(new byte[OldObjects.MIN_SIZE])),
             Holder.class, ref -> {
-                RecordedObject outer = verifyNested(ref);
-                TestFlatArrayInformation.verifyField(outer.getValue("referrer"), "value", Holder.class, false);
+                RecordedObject outer = verifyNestedFieldPath(ref);
+                TestFlatArrayInformation.verifyFieldInObject(outer.getValue("referrer"), "value", Holder.class);
             });
-        TestFlatArrayInformation.check("nested flat array element",
+        TestFlatArrayInformation.recordAndVerifyReferencePath("nested flat array element",
             TestFlatFieldInformation::allocateArray, Outer[].class, ref -> {
-                RecordedObject outer = verifyNested(ref);
-                TestFlatArrayInformation.verifyArray(outer.getValue("referrer"),
+                RecordedObject outer = verifyNestedFieldPath(ref);
+                TestFlatArrayInformation.verifyArrayElementReference(outer.getValue("referrer"),
                     TestFlatArrayInformation.LENGTH - 1, Outer[].class);
             });
-        TestFlatArrayInformation.check("ordinary reference field",
-            () -> TestFlatArrayInformation.KEEP.add(new Ordinary(new byte[OldObjects.MIN_SIZE])),
-            Ordinary.class, ref -> TestFlatArrayInformation.verifyField(ref, "ref", Ordinary.class, false));
+        TestFlatArrayInformation.recordAndVerifyReferencePath("ordinary reference field",
+            () -> TestFlatArrayInformation.RETAINED_OBJECTS.add(new Ordinary(new byte[OldObjects.MIN_SIZE])),
+            Ordinary.class, ref -> TestFlatArrayInformation.verifyFieldInObject(ref, "ref", Ordinary.class));
     }
 
     private static void allocateArray() {
@@ -116,11 +116,11 @@ public class TestFlatFieldInformation {
                                                                             new Outer(null));
         Asserts.assertTrue(ValueClass.isFlatArray(array));
         array[array.length - 1] = new Outer(new byte[OldObjects.MIN_SIZE]);
-        TestFlatArrayInformation.KEEP.add(array);
+        TestFlatArrayInformation.RETAINED_OBJECTS.add(array);
     }
 
-    private static RecordedObject verifyNested(RecordedObject ref) {
-        RecordedObject inner = TestFlatArrayInformation.verifyField(ref, "ref", Inner.class, true);
-        return TestFlatArrayInformation.verifyField(inner.getValue("referrer"), "nested", Outer.class, true);
+    private static RecordedObject verifyNestedFieldPath(RecordedObject ref) {
+        RecordedObject inner = TestFlatArrayInformation.verifyFieldInFlattenedValue(ref, "ref", Inner.class);
+        return TestFlatArrayInformation.verifyFieldInFlattenedValue(inner.getValue("referrer"), "nested", Outer.class);
     }
 }

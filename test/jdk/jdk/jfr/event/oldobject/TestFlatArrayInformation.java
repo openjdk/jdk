@@ -55,7 +55,7 @@ public class TestFlatArrayInformation {
     static final int LENGTH = 8;
     static final long ALIGNMENT_MASK =
         Long.parseLong(ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean.class).getVMOption("ObjectAlignmentInBytes").getValue()) - 1;
-    static final List<Object> KEEP = new ArrayList<>();
+    static final List<Object> RETAINED_OBJECTS = new ArrayList<>();
 
     @LooselyConsistentValue
     static value class Element {
@@ -74,53 +74,60 @@ public class TestFlatArrayInformation {
         // Exercise different reference offsets at both ends of the array.
         for (int index : new int[] {0, LENGTH - 1}) {
             for (boolean right : new boolean[] {false, true}) {
-                check("flat array index=" + index + " right=" + right,
+                recordAndVerifyReferencePath("flat array index=" + index + " right=" + right,
                       () -> allocate(index, right), Element[].class,
                       ref -> {
-                          RecordedObject element = verifyField(ref, right ? "right" : "left", Element.class, true);
-                          verifyArray(element.getValue("referrer"), index, Element[].class);
+                          RecordedObject element = verifyFieldInFlattenedValue(ref, right ? "right" : "left", Element.class);
+                          verifyArrayElementReference(element.getValue("referrer"), index, Element[].class);
                       });
             }
         }
     }
 
-    static RecordedObject verifyField(RecordedObject ref, String name, Class<?> type, boolean embedded) {
-        Asserts.assertNotNull(ref);
-        Asserts.assertNull(ref.getValue("array"));
-        Asserts.assertEquals(ref.getInt("skip"), 0);
-        RecordedObject field = ref.getValue("field");
-        Asserts.assertNotNull(field);
-        Asserts.assertEquals(field.getString("name"), name);
-        Asserts.assertTrue(java.lang.reflect.Modifier.isFinal(field.getShort("modifiers")));
-        RecordedObject holder = ref.getValue("object");
-        Asserts.assertEquals(holder.getClass("type").getName(), type.getName());
-        if (embedded) {
-            verifyLogicalIdentity(holder);
-        } else {
-            Asserts.assertTrue(holder.getLong("address") != 0);
-        }
-        return holder;
+    static RecordedObject verifyFieldInFlattenedValue(RecordedObject referrer, String fieldName, Class<?> containingType) {
+        RecordedObject flattenedValue = verifyFieldReference(referrer, fieldName, containingType);
+        verifySyntheticAddress(flattenedValue);
+        return flattenedValue;
     }
 
-    static void verifyLogicalIdentity(RecordedObject object) {
-        long identity = object.getLong("address");
-        Asserts.assertTrue(identity != 0);
-        long marker = identity >>> 32;
+    static RecordedObject verifyFieldInObject(RecordedObject referrer, String fieldName, Class<?> containingType) {
+        RecordedObject containingObject = verifyFieldReference(referrer, fieldName, containingType);
+        Asserts.assertTrue(containingObject.getLong("address") != 0, "Containing object must have a nonzero address");
+        return containingObject;
+    }
+
+    private static RecordedObject verifyFieldReference(RecordedObject referrer, String fieldName, Class<?> containingType) {
+        Asserts.assertNotNull(referrer);
+        Asserts.assertNull(referrer.getValue("array"));
+        Asserts.assertEquals(referrer.getInt("skip"), 0);
+        RecordedObject field = referrer.getValue("field");
+        Asserts.assertNotNull(field);
+        Asserts.assertEquals(field.getString("name"), fieldName);
+        Asserts.assertTrue(java.lang.reflect.Modifier.isFinal(field.getShort("modifiers")));
+        RecordedObject containingObject = referrer.getValue("object");
+        Asserts.assertEquals(containingObject.getClass("type").getName(), containingType.getName());
+        return containingObject;
+    }
+
+    static void verifySyntheticAddress(RecordedObject object) {
+        long syntheticAddress = object.getLong("address");
+        Asserts.assertTrue(syntheticAddress != 0);
+        long marker = syntheticAddress >>> 32;
         Asserts.assertTrue(marker == 0x401BA5EDL || marker == 0x401C0DEDL,
-                "Logical identity must be in the BASED or CODED range");
-        Asserts.assertTrue((identity & ALIGNMENT_MASK) != 0,
-                "Logical identity must not alias an aligned physical address");
+                "Synthetic address must be in a LogicalEdgeStore ID range");
+        Asserts.assertTrue((syntheticAddress & ALIGNMENT_MASK) != 0,
+                "Synthetic address must not alias an aligned object address");
         Asserts.assertNull(object.getString("description"));
     }
 
-    static void verifyArray(RecordedObject ref, int index, Class<?> type) {
-        Asserts.assertNotNull(ref);
-        Asserts.assertNull(ref.getValue("field"));
-        Asserts.assertEquals(ref.getInt("skip"), 0);
-        Asserts.assertEquals(ref.getInt("array.index"), index);
-        Asserts.assertEquals(ref.getInt("array.size"), LENGTH);
-        RecordedObject array = ref.getValue("object");
-        Asserts.assertEquals(array.getClass("type").getName(), type.getName());
+    static void verifyArrayElementReference(RecordedObject referrer, int index, Class<?> arrayType) {
+        Asserts.assertNotNull(referrer);
+        Asserts.assertNull(referrer.getValue("field"));
+        Asserts.assertEquals(referrer.getInt("skip"), 0);
+        Asserts.assertEquals(referrer.getInt("array.index"), index);
+        Asserts.assertEquals(referrer.getInt("array.size"), LENGTH);
+        RecordedObject array = referrer.getValue("object");
+        Asserts.assertEquals(array.getClass("type").getName(), arrayType.getName());
         Asserts.assertTrue(array.getLong("address") != 0);
     }
 
@@ -131,22 +138,22 @@ public class TestFlatArrayInformation {
         Asserts.assertTrue(ValueClass.isFlatArray(array), "Test requires a flat array");
         byte[] sample = new byte[OldObjects.MIN_SIZE];
         array[index] = right ? new Element(null, sample) : new Element(sample, null);
-        KEEP.add(array);
+        RETAINED_OBJECTS.add(array);
     }
 
-    static void check(String label, Runnable allocate, Class<?> owner,
-                      Consumer<RecordedObject> verify) throws Exception {
+    static void recordAndVerifyReferencePath(String label, Runnable allocate, Class<?> expectedContainingType,
+                                             Consumer<RecordedObject> verifyReferencePath) throws Exception {
         // Sampling is probabilistic; let the jtreg timeout bound retries.
         for (int attempt = 0; ; attempt++) {
-            KEEP.clear();
+            RETAINED_OBJECTS.clear();
             try (Recording recording = new Recording()) {
                 recording.enable(EventNames.OldObjectSample).withoutStackTrace().with("cutoff", "infinity");
                 recording.start();
-                for (int i = 0; i < 32; i++) {
+                for (int allocation = 0; allocation < 32; allocation++) {
                     allocate.run();
                 }
                 recording.stop();
-                int found = 0;
+                int verifiedPathCount = 0;
                 for (var event : Events.fromRecording(recording)) {
                     RecordedObject sample = event.getValue("object");
                     if (!sample.getClass("type").getName().equals(byte[].class.getName())) {
@@ -159,18 +166,18 @@ public class TestFlatArrayInformation {
                     RecordedObject holder = ref.getValue("object");
                     // Follow the reference chain to the expected containing object or array.
                     for (int depth = 0; holder != null && depth < 16 &&
-                         !holder.getClass("type").getName().equals(owner.getName()); depth++) {
+                         !holder.getClass("type").getName().equals(expectedContainingType.getName()); depth++) {
                         RecordedObject outer = holder.getValue("referrer");
                         holder = outer == null ? null : outer.getValue("object");
                     }
-                    if (holder == null || !holder.getClass("type").getName().equals(owner.getName())) {
+                    if (holder == null || !holder.getClass("type").getName().equals(expectedContainingType.getName())) {
                         continue;
                     }
-                    verify.accept(ref);
-                    found++;
+                    verifyReferencePath.accept(ref);
+                    verifiedPathCount++;
                 }
-                if (found != 0) {
-                    KEEP.clear();
+                if (verifiedPathCount != 0) {
+                    RETAINED_OBJECTS.clear();
                     return;
                 }
             }

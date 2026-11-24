@@ -78,15 +78,15 @@ public class TestFlatNullableFieldInformation {
         // A flat field therefore uses NULLABLE_NON_ATOMIC_FLAT.
         Asserts.assertTrue(Unsafe.getUnsafe().isFlatField(Holder.class.getDeclaredField("value")));
 
-        TestFlatArrayInformation.check("nullable non-atomic flat field",
+        TestFlatArrayInformation.recordAndVerifyReferencePath("nullable non-atomic flat field",
             TestFlatNullableFieldInformation::allocate, Holder.class, ref -> {
-                RecordedObject value = TestFlatArrayInformation.verifyField(ref, "ref", Value.class, true);
-                TestFlatArrayInformation.verifyField(value.getValue("referrer"), "value", Holder.class, false);
+                RecordedObject value = TestFlatArrayInformation.verifyFieldInFlattenedValue(ref, "ref", Value.class);
+                TestFlatArrayInformation.verifyFieldInObject(value.getValue("referrer"), "value", Holder.class);
             });
     }
 
     private static void allocate() {
-        TestFlatArrayInformation.KEEP.add(new Holder(null));
-        TestFlatArrayInformation.KEEP.add(new Holder(new Value(new byte[OldObjects.MIN_SIZE])));
+        TestFlatArrayInformation.RETAINED_OBJECTS.add(new Holder(null));
+        TestFlatArrayInformation.RETAINED_OBJECTS.add(new Holder(new Value(new byte[OldObjects.MIN_SIZE])));
     }
 }

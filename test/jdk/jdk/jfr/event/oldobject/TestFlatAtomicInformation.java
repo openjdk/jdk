@@ -86,20 +86,20 @@ public class TestFlatAtomicInformation {
         Asserts.assertTrue(Unsafe.getUnsafe().isFlatField(holderType.getDeclaredField("value")));
         int[] bounds = {0, TestFlatArrayInformation.LENGTH - 1};
         for (int index : bounds) {
-            TestFlatArrayInformation.check("atomic array " + args[0] + " index=" + index,
+            TestFlatArrayInformation.recordAndVerifyReferencePath("atomic array " + args[0] + " index=" + index,
                 () -> allocateArray(nullable, index), Value[].class, ref -> {
-                    RecordedObject value = TestFlatArrayInformation.verifyField(ref, "ref", Value.class, true);
-                    TestFlatArrayInformation.verifyArray(value.getValue("referrer"), index, Value[].class);
+                    RecordedObject value = TestFlatArrayInformation.verifyFieldInFlattenedValue(ref, "ref", Value.class);
+                    TestFlatArrayInformation.verifyArrayElementReference(value.getValue("referrer"), index, Value[].class);
                 });
         }
 
-        TestFlatArrayInformation.check("atomic field " + args[0],
+        TestFlatArrayInformation.recordAndVerifyReferencePath("atomic field " + args[0],
             () -> {
                 byte[] sample = new byte[OldObjects.MIN_SIZE];
-                TestFlatArrayInformation.KEEP.add(nullable ? new NullableHolder(sample) : new NullRestrictedHolder(sample));
+                TestFlatArrayInformation.RETAINED_OBJECTS.add(nullable ? new NullableHolder(sample) : new NullRestrictedHolder(sample));
             }, holderType, ref -> {
-                RecordedObject value = TestFlatArrayInformation.verifyField(ref, "ref", Value.class, true);
-                TestFlatArrayInformation.verifyField(value.getValue("referrer"), "value", holderType, false);
+                RecordedObject value = TestFlatArrayInformation.verifyFieldInFlattenedValue(ref, "ref", Value.class);
+                TestFlatArrayInformation.verifyFieldInObject(value.getValue("referrer"), "value", holderType);
             });
     }
 
@@ -110,6 +110,6 @@ public class TestFlatAtomicInformation {
         Asserts.assertTrue(ValueClass.isAtomicArray(array));
         Asserts.assertEquals(ValueClass.isNullRestrictedArray(array), !nullable);
         array[index] = new Value(new byte[OldObjects.MIN_SIZE]);
-        TestFlatArrayInformation.KEEP.add(array);
+        TestFlatArrayInformation.RETAINED_OBJECTS.add(array);
     }
 }
