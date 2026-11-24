@@ -10546,7 +10546,7 @@ instruct cmpP_narrowOop_imm0_branch(cmpOpEqNe cmp, iRegN op1, immP_0 zero, label
 
 // Patterns for far (20KiB) variants
 
-instruct far_cmpFlag_branch(cmpOp cmp, rFlagsReg cr, label lbl) %{
+instruct far_cmpFlag_branch(cmpOpEqNe cmp, rFlagsReg cr, label lbl) %{
   match(If cmp cr);
   effect(USE lbl);
 
