@@ -51,6 +51,8 @@ public class PrintToPreviewTest {
                %s
             4. Verify that no job for this document reaches the printer queue
                and no page is printed.
+            5. You can also repeat this process for Send in Mail, Save to iCloud
+               Drive and Save to Web Receipts.
 
             Click Pass only if both the preview and printer-queue checks pass.
             Click Fail if Preview does not open, the page is incorrect, or the
