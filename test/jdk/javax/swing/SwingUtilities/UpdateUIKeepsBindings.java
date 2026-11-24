@@ -77,7 +77,7 @@ public class UpdateUIKeepsBindings {
             }
         }
 
-        // The same look and feel, as an 
+        // The same look and feel, as an
         // application changing its theme updates the UI
         SwingUtilities.updateComponentTreeUI(panel);
 
