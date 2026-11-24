@@ -75,9 +75,9 @@ public class VectorReshapeHelper {
      * Runs {@code testClass}, dropping every pair whose species does not fit into the largest
      * shape supported by this VM.
      *
-     * Prefer {@link #runMainHelperUnfiltered} together with {@code @IR} preconditions: the
-     * filtering below removes test methods from the run without saying so, which makes a loss
-     * of coverage invisible in the output.
+     * Prefer runMainHelperUnfiltered together with @IR preconditions: the
+     * filtering below removes test methods from the run silently. It is hard to understand
+     * the reason for failure.
      */
     public static void runMainHelper(Class<?> testClass, Stream<VectorSpeciesPair> testMethods, String... flags) {
         runMainHelperUnfiltered(testClass,
@@ -88,8 +88,8 @@ public class VectorReshapeHelper {
     }
 
     /**
-     * Runs {@code testClass} for exactly the given pairs. Every test method is executed, and it
-     * is up to its {@code @IR} preconditions to decide whether its rules are verified on this
+     * Runs testClass for exactly the given pairs. Every test method is executed, and it
+     * is up to its IR preconditions to decide whether its rules are verified on this
      * machine.
      */
     public static void runMainHelperUnfiltered(Class<?> testClass, Stream<VectorSpeciesPair> testMethods,
