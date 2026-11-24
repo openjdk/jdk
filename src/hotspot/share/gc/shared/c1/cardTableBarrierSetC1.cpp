@@ -190,7 +190,7 @@ void CardTableBarrierSetC1::post_barrier(LIRAccess& access, LIR_Opr addr, LIR_Op
   }
 
   LIR_Address* card_addr;
-  if (AOTCodeCache::is_on_for_dump()) {
+  if (gen->compilation()->env()->is_aot_compile()) {
     // load the card table address from the AOT Runtime Constants area
     LIR_Opr byte_map_base_adr = LIR_OprFact::intptrConst(AOTRuntimeConstants::card_table_base_address());
     LIR_Opr byte_map_base_reg = gen->new_pointer_register();

@@ -5,6 +5,9 @@
 #ifndef SPA_PARAM_FORMAT_UTILS_H
 #define SPA_PARAM_FORMAT_UTILS_H
 
+#include <spa/pod/parser.h>
+#include <spa/param/format.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -14,9 +17,6 @@ extern "C" {
  * \addtogroup spa_param
  * \{
  */
-
-#include <spa/pod/parser.h>
-#include <spa/param/format.h>
 
 #ifndef SPA_API_FORMAT_UTILS
  #ifdef SPA_API_IMPL

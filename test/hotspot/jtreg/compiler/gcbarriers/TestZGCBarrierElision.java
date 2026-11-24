@@ -412,7 +412,7 @@ class TestZGCEffectiveBarrierElision {
 
     @Test
     @IR(counts = { IRNode.Z_COMPARE_AND_SWAP_P_WITH_BARRIER_FLAG, Common.REMAINING, "1" }, phase = CompilePhase.FINAL_CODE)
-    //@IR(counts = { IRNode.Z_COMPARE_AND_SWAP_P_WITH_BARRIER_FLAG, Common.ELIDED, "1" }, phase = CompilePhase.FINAL_CODE)
+    @IR(counts = { IRNode.Z_COMPARE_AND_SWAP_P_WITH_BARRIER_FLAG, Common.ELIDED, "1" }, phase = CompilePhase.FINAL_CODE)
     static void testAtomicThenAtomic(Outer o, Inner i) {
         Common.field1VarHandle.getAndSet(o, i);
         Common.field1VarHandle.getAndSet(o, i);

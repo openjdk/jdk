@@ -5,6 +5,8 @@
 #ifndef SPA_PARAM_PORT_CONFIG_H
 #define SPA_PARAM_PORT_CONFIG_H
 
+#include <spa/param/param.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -13,8 +15,6 @@ extern "C" {
  * \addtogroup spa_param
  * \{
  */
-
-#include <spa/param/param.h>
 
 enum spa_param_port_config_mode {
     SPA_PARAM_PORT_CONFIG_MODE_none,    /**< no configuration */

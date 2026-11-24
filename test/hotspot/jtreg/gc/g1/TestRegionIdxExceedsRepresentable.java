@@ -28,6 +28,7 @@ package gc.g1;
  * @bug 8396872
  * @requires vm.gc.G1
  * @requires vm.bits != "32"
+ * @requires vm.flagless
  * @summary Test that the VM does not start with heaps exceeding maximum region indexes.
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
@@ -55,7 +56,7 @@ public class TestRegionIdxExceedsRepresentable {
 
         output.shouldNotHaveExitValue(0);
 
-        String pattern = "would exceed maximum region count 2147483648";
+        String pattern = "would exceed maximum number of regions 2147483648";
         output.shouldContain(pattern);
     }
 
