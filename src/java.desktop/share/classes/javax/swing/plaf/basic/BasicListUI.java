@@ -3047,7 +3047,7 @@ public class BasicListUI extends ListUI
                     Object obj = values[i];
                     String val = ((obj == null) ? "" : obj.toString());
                     plainStr.append(val).append('\n');
-                    if (!BasicHTML.isHTMLString(val)) {
+                    if (val != null && !BasicHTML.isHTMLString(val)) {
                         val = val.replace("&", "&amp;")
                                  .replace("<", "&lt;")
                                  .replace(">", "&gt;");
