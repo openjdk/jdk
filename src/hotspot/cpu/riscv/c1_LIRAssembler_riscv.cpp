@@ -573,6 +573,8 @@ bool LIR_Assembler::is_null_or_zero_constant(BasicType type, LIR_Opr opr) {
     case T_OBJECT:
     case T_ARRAY:
       return c->as_jobject() == nullptr;
+    case T_METADATA:
+      return c->as_metadata() == nullptr;
     default:
       return false;
   }
@@ -938,6 +940,19 @@ void LIR_Assembler::emit_opBranch(LIR_OpBranch* op) {
   emit_branch(condition, op->in_opr1(), op->in_opr2(), *op->label(), /* is_far */ true, is_unordered);
 }
 
+Register LIR_Assembler::load_cmp_constant(LIR_Opr src) {
+  BasicType type = src->type();
+  guarantee(type == T_INT || type == T_LONG || type == T_ADDRESS || type == T_METADATA || is_reference_type(type),
+            "unexpected constant type for a CPU comparison");
+  if (is_null_or_zero_constant(type, src)) {
+    return zr;
+  }
+
+  LIR_Opr tmp = type == T_LONG ? FrameMap::t0_long_opr : FrameMap::t0_opr;
+  const2reg(src, tmp, lir_patch_none, nullptr);
+  return as_reg(tmp);
+}
+
 void LIR_Assembler::emit_branch(LIR_Condition cmp_flag, LIR_Opr cmp1, LIR_Opr cmp2, Label& label,
                                 bool is_far, bool is_unordered) {
 
@@ -952,8 +967,8 @@ void LIR_Assembler::emit_branch(LIR_Condition cmp_flag, LIR_Opr cmp1, LIR_Opr cm
       Register reg2 = as_reg(cmp2);
       __ c1_cmp_branch(cmp_flag, reg1, reg2, label, cmp1->type(), is_far);
     } else if (cmp2->is_constant()) {
-      const2reg_helper(cmp2);
-      __ c1_cmp_branch(cmp_flag, reg1, t0, label, cmp2->type(), is_far);
+      Register reg2 = load_cmp_constant(cmp2);
+      __ c1_cmp_branch(cmp_flag, reg1, reg2, label, cmp2->type(), is_far);
     } else {
       ShouldNotReachHere();
     }
@@ -2451,25 +2466,6 @@ void LIR_Assembler::lir_store_slowcheck(Register k_RInfo, Register klass_RInfo, 
   __ addi(sp, sp, 2 * wordSize); // 2: pop out k_RInfo and klass_RInfo
   // result is a boolean
   __ beqz(k_RInfo, *failure_target, /* is_far */ true);
-}
-
-void LIR_Assembler::const2reg_helper(LIR_Opr src) {
-  switch (src->as_constant_ptr()->type()) {
-    case T_INT:
-    case T_ADDRESS:
-    case T_OBJECT:
-    case T_ARRAY:
-    case T_METADATA:
-        const2reg(src, FrameMap::t0_opr, lir_patch_none, nullptr);
-        break;
-    case T_LONG:
-        const2reg(src, FrameMap::t0_long_opr, lir_patch_none, nullptr);
-        break;
-    case T_FLOAT:
-    case T_DOUBLE:
-    default:
-      ShouldNotReachHere();
-  }
 }
 
 void LIR_Assembler::logic_op_reg32(Register dst, Register left, Register right, LIR_Code code) {
