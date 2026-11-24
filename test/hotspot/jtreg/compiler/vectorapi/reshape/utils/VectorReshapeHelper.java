@@ -72,10 +72,7 @@ public class VectorReshapeHelper {
     public static final VectorSpecies<Double>  DSPEC512 = DoubleVector.SPECIES_512;
 
     /**
-     * Runs {@code testClass}, dropping every pair whose species does not fit into the largest
-     * shape supported by this VM.
-     *
-     * Prefer runMainHelperUnfiltered together with @IR preconditions: the
+     * Prefer runMainHelperUnfiltered together with IR preconditions: the
      * filtering below removes test methods from the run silently. It is hard to understand
      * the reason for failure.
      */
