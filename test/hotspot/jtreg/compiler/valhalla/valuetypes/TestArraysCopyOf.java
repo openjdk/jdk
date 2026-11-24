@@ -128,7 +128,7 @@ public class TestArraysCopyOf {
         String[] flagsForScenario = scenarios[Integer.parseInt(args[0])].getFlags().toArray(new String[0]);
         CompileFramework comp = new CompileFramework();
         comp.addJavaSourceCode("compiler.valhalla.valuetypes.TestArraysCopyOfGenerated", generate(comp));
-        comp.compile("--enable-preview", "--source", "28",
+        comp.compile("--enable-preview", "--source", "29",
                      "--add-exports", "java.base/jdk.internal.value=ALL-UNNAMED",
                      "--add-exports", "java.base/jdk.internal.vm.annotation=ALL-UNNAMED",
                      "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED");

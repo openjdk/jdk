@@ -21,7 +21,7 @@
  * questions.
  */
 
-public identity class StrictFieldNoEarlyLarval version 72:65535 {
+public identity class StrictFieldNoEarlyLarval version 73:65535 {
     strict Field x:I;
 
   public Method "<init>":"()V"

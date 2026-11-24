@@ -30,7 +30,7 @@
  *          java.base/jdk.internal.misc
  * @library /test/lib
  * @enablePreview
- * @compile --source 28 DirectMethodTest.java
+ * @compile --source 29 DirectMethodTest.java
  * @run main/othervm -Djdk.reflect.useNativeAccessorOnly=true -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseArrayFlattening -XX:+UseFieldFlattening -XX:+UseNullFreeAtomicValueFlattening -XX:+UseNullableAtomicValueFlattening runtime.valhalla.valuetypes.DirectMethodTest flat
  */
 
@@ -43,7 +43,7 @@
  *          java.base/jdk.internal.misc
  * @library /test/lib
  * @enablePreview
- * @compile --source 28 DirectMethodTest.java
+ * @compile --source 29 DirectMethodTest.java
  * @run main/othervm -Djdk.reflect.useNativeAccessorOnly=true -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:-UseArrayFlattening -XX:+UseNullFreeAtomicValueFlattening -XX:+UseNullableAtomicValueFlattening runtime.valhalla.valuetypes.DirectMethodTest noflat
  */
 
@@ -103,4 +103,3 @@ public class DirectMethodTest {
         }
     }
 }
-

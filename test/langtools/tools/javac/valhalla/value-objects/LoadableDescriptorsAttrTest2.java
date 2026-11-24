@@ -111,7 +111,7 @@ public class LoadableDescriptorsAttrTest2 extends TestRunner {
         Assert.check(classFile.findAttribute(Attributes.loadableDescriptors()).isPresent());
 
         expected = List.of(
-            "- compiler.warn.preview.feature.use.classfile: Val.class, 28",
+            "- compiler.warn.preview.feature.use.classfile: Val.class, 29",
             "Ident.java:2:5: compiler.warn.declared.using.preview: kindname.class, Val",
             "2 warnings"
         );
@@ -180,7 +180,7 @@ public class LoadableDescriptorsAttrTest2 extends TestRunner {
         Assert.check(classFile.findAttribute(Attributes.loadableDescriptors()).isPresent());
 
         expected = List.of(
-            "- compiler.warn.preview.feature.use.classfile: Val.class, 28",
+            "- compiler.warn.preview.feature.use.classfile: Val.class, 29",
             "Ident.java:2:12: compiler.warn.declared.using.preview: kindname.class, Val",
             "2 warnings"
         );

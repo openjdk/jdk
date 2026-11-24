@@ -13,7 +13,7 @@
  *     }
  * }
  */
-abstract class AbstractValueWithFinalizer version 72:65535 {
+abstract class AbstractValueWithFinalizer version 73:65535 {
     final strict Field latch:"Ljava/util/concurrent/CountDownLatch;";
 
     Method "<init>":"(Ljava/util/concurrent/CountDownLatch;)V" stack 2 locals 2 {

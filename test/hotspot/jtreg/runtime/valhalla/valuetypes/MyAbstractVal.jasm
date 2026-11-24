@@ -12,7 +12,7 @@
  *     }
  * }
  */
-abstract class MyAbstractVal version 72:65535 {
+abstract class MyAbstractVal version 73:65535 {
     static volatile Field finalizerWasCalled:Z;
     final strict Field i:I = 0;
 

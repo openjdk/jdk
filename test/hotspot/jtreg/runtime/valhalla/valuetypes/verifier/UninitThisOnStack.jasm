@@ -38,7 +38,7 @@ class UninitThisOnStack {
 }
 */
 
-identity class UninitThisOnStack version 72:65535
+identity class UninitThisOnStack version 73:65535
 {
   strict Field f:I;
 

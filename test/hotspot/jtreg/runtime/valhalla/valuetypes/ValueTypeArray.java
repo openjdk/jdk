@@ -40,7 +40,7 @@ import static jdk.test.lib.Asserts.*;
  *          java.base/jdk.internal.vm.annotation
  * @library /test/lib
  * @enablePreview
- * @compile --source 28 ValueTypeArray.java Point.java Long8Value.java Person.java
+ * @compile --source 29 ValueTypeArray.java Point.java Long8Value.java Person.java
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UseArrayFlattening -XX:+UseFieldFlattening runtime.valhalla.valuetypes.ValueTypeArray
  */
 
@@ -51,7 +51,7 @@ import static jdk.test.lib.Asserts.*;
  *          java.base/jdk.internal.vm.annotation
  * @library /test/lib
  * @enablePreview
- * @compile --source 28 ValueTypeArray.java Point.java Long8Value.java Person.java
+ * @compile --source 29 ValueTypeArray.java Point.java Long8Value.java Person.java
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:-UseArrayFlattening runtime.valhalla.valuetypes.ValueTypeArray
  */
 
@@ -62,7 +62,7 @@ import static jdk.test.lib.Asserts.*;
  *          java.base/jdk.internal.vm.annotation
  * @library /test/lib
  * @enablePreview
- * @compile --source 28 ValueTypeArray.java Point.java Long8Value.java Person.java
+ * @compile --source 29 ValueTypeArray.java Point.java Long8Value.java Person.java
  * @run main/othervm  -XX:+UnlockDiagnosticVMOptions -XX:ForceNonTearable=* runtime.valhalla.valuetypes.ValueTypeArray
  */
 
@@ -73,7 +73,7 @@ import static jdk.test.lib.Asserts.*;
  *          java.base/jdk.internal.vm.annotation
  * @library /test/lib
  * @enablePreview
- * @compile --source 28 ValueTypeArray.java Point.java Long8Value.java Person.java
+ * @compile --source 29 ValueTypeArray.java Point.java Long8Value.java Person.java
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UseArrayFlattening -XX:+UseFieldFlattening -XX:+UseNullableAtomicValueFlattening runtime.valhalla.valuetypes.ValueTypeArray
  */
 public class ValueTypeArray {
