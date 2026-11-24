@@ -984,8 +984,6 @@ class Http2Connection implements Closeable {
             }
             PushContinuationState pcs = pushContinuationState;
             if (stream == null && pcs == null) {
-                // Should never receive a frame with unknown stream id
-
                 if (frame instanceof HeaderFrame hf) {
                     String protocolError = checkMaxOrphanedHeadersExceeded(hf);
                     if (protocolError != null) {
