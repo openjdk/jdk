@@ -5,13 +5,13 @@
 #ifndef SPA_POD_VARARG_H
 #define SPA_POD_VARARG_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <stdarg.h>
 
 #include <spa/pod/pod.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * \addtogroup spa_pod
@@ -20,14 +20,17 @@ extern "C" {
 
 #define SPA_POD_Prop(key,...)                \
     key, ##__VA_ARGS__
+#define SPA_POD_Propf(key,flags,...)            \
+    SPA_ID_INVALID, key, flags, ##__VA_ARGS__
 
 #define SPA_POD_Control(offset,type,...)        \
     offset, type, ##__VA_ARGS__
 
 #define SPA_CHOICE_RANGE(def,min,max)            3,(def),(min),(max)
 #define SPA_CHOICE_STEP(def,min,max,step)        4,(def),(min),(max),(step)
-#define SPA_CHOICE_ENUM(n_vals,...)            (n_vals),##__VA_ARGS__
+#define SPA_CHOICE_ENUM(n_vals,def,alt1,...)        (n_vals),(def),(alt1),##__VA_ARGS__
 #define SPA_CHOICE_FLAGS(flags)                1, (flags)
+#define SPA_CHOICE_FEATURES(features)            1, (features)
 #define SPA_CHOICE_BOOL(def)                3,(def),(def),!(def)
 
 #define SPA_POD_Bool(val)                "b", val
@@ -41,12 +44,14 @@ extern "C" {
 #define SPA_POD_CHOICE_RANGE_Int(def,min,max)        "?ri", SPA_CHOICE_RANGE(def, min, max)
 #define SPA_POD_CHOICE_STEP_Int(def,min,max,step)    "?si", SPA_CHOICE_STEP(def, min, max, step)
 #define SPA_POD_CHOICE_FLAGS_Int(flags)            "?fi", SPA_CHOICE_FLAGS(flags)
+#define SPA_POD_CHOICE_FEATURES_Int(features)        "?Fi", SPA_CHOICE_FEATURES(features)
 
 #define SPA_POD_Long(val)                "l", val
 #define SPA_POD_CHOICE_ENUM_Long(n_vals,...)        "?el", SPA_CHOICE_ENUM(n_vals, __VA_ARGS__)
 #define SPA_POD_CHOICE_RANGE_Long(def,min,max)        "?rl", SPA_CHOICE_RANGE(def, min, max)
 #define SPA_POD_CHOICE_STEP_Long(def,min,max,step)    "?sl", SPA_CHOICE_STEP(def, min, max, step)
 #define SPA_POD_CHOICE_FLAGS_Long(flags)        "?fl", SPA_CHOICE_FLAGS(flags)
+#define SPA_POD_CHOICE_FEATURES_LONG(features)        "?Fl", SPA_CHOICE_FEATURES(features)
 
 #define SPA_POD_Float(val)                "f", val
 #define SPA_POD_CHOICE_ENUM_Float(n_vals,...)        "?ef", SPA_CHOICE_ENUM(n_vals, __VA_ARGS__)
@@ -81,6 +86,12 @@ extern "C" {
 #define SPA_POD_PodObject(val)                "O", val
 #define SPA_POD_PodStruct(val)                "T", val
 #define SPA_POD_PodChoice(val)                "V", val
+
+#define SPA_POD_PodBody(val,body)            "Q", val, body
+#define SPA_POD_PodBodyObject(val,body)            "N", val, body
+#define SPA_POD_PodBodyStruct(val,body)            "U", val, body
+#define SPA_POD_PodBodyChoice(val,body)            "W", val, body
+
 
 /**
  * \}

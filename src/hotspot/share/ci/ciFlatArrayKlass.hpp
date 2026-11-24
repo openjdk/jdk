@@ -49,7 +49,7 @@ protected:
   virtual const char* type_string() override { return "ciFlatArrayKlass"; }
 
 public:
-  LayoutKind layout_kind() const { return get_FlatArrayKlass()->layout_kind(); }
+  FlatLayout flat_layout() const { return get_FlatArrayKlass()->flat_layout(); }
 
   jint max_elements() const {
     return get_FlatArrayKlass()->max_elements();

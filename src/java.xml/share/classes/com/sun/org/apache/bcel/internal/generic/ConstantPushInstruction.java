@@ -30,5 +30,10 @@ package com.sun.org.apache.bcel.internal.generic;
  */
 public interface ConstantPushInstruction extends PushInstruction, TypedInstruction {
 
+    /**
+     * Gets the value to push onto the stack.
+     *
+     * @return The value to push onto the stack.
+     */
     Number getValue();
 }

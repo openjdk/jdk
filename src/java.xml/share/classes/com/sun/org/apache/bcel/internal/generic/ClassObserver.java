@@ -27,5 +27,10 @@ package com.sun.org.apache.bcel.internal.generic;
  */
 public interface ClassObserver {
 
+    /**
+     * Notifies the observer that the ClassGen object has changed.
+     *
+     * @param clazz The ClassGen object that changed.
+     */
     void notify(ClassGen clazz);
 }

@@ -70,7 +70,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="bla">सिक्सिका</language>
 			<language type="blo">अनी</language>
 			<language type="bm">बाम्बारा</language>
-			<language type="bn">बंगाली</language>
+			<language type="bn">बांग्ला</language>
 			<language type="bo">तिब्बती</language>
 			<language type="br">ब्रेटन</language>
 			<language type="bra">ब्रज</language>
@@ -288,7 +288,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ksh">कोलोनियाई</language>
 			<language type="ku">कुर्दिश</language>
 			<language type="ku" menu="core">कुर्दिश</language>
-			<language type="ku" menu="extension">कुर्दिश</language>
+			<language type="ku" menu="extension">कुर्द</language>
 			<language type="kum">कुमीक</language>
 			<language type="kut">क्यूतनाई</language>
 			<language type="kv">कोमी</language>
@@ -419,6 +419,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="pi">पाली</language>
 			<language type="pis">पाईजिन</language>
 			<language type="pl">पोलिश</language>
+			<language type="pms">पीडमॉन्टीज़</language>
 			<language type="pon">पोह्नपिएन</language>
 			<language type="pqm">मलेसीट-पासेमेक्वोडी</language>
 			<language type="prg">प्रुशियाई</language>
@@ -1082,18 +1083,34 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<key type="collation">वर्गीकरण क्रम</key>
 			<key type="colNormalization">सामान्यीकृत वर्गीकरण</key>
 			<key type="colNumeric">संख्यात्मक वर्गीकरण</key>
+			<key type="colReorder">स्क्रिप्ट/ब्लॉक के क्रम में बदलाव</key>
 			<key type="colStrength">वर्गीकरण सशक्तता</key>
 			<key type="currency">मुद्रा</key>
+			<key type="d0">ट्रांसफ़ॉर्म डेस्टिनेशन</key>
+			<key type="dx">शब्दकोश में टेक्स्ट संबंधी नियम के अपवाद</key>
 			<key type="em">इमोजी का प्रज़ेंटेशन</key>
+			<key type="fw">सप्ताह का पहला दिन</key>
+			<key type="h0">मिश्रित</key>
 			<key type="hc">घंटों का चक्र (12 बनाम 24)</key>
+			<key type="i0">इनपुट का तरीका</key>
+			<key type="k0">कीबोर्ड</key>
+			<key type="kv">Highest Ignored</key>
 			<key type="lb">पंक्ति विच्छेद शैली</key>
 			<key type="lw">शब्दों के बीच पंक्ति विच्छेद</key>
+			<key type="m0">बदलाव संबंधी नियम</key>
 			<key type="ms">मापन प्रणाली</key>
+			<key type="mu">मापन इकाई</key>
 			<key type="numbers">संख्याएँ</key>
+			<key type="rg">अनुपूरक डेटा के लिए क्षेत्र</key>
+			<key type="s0">सोर्स में बदलाव</key>
+			<key type="sd">उपखंड क्षेत्र</key>
 			<key type="ss">संक्षेपण के बाद वाक्य विच्छेद</key>
+			<key type="t">बदलाव</key>
+			<key type="t0">मशीनी अनुवाद</key>
 			<key type="timezone">समय क्षेत्र</key>
 			<key type="va">स्थानीय प्रकार</key>
 			<key type="x">निजी-उपयोग</key>
+			<key type="x0">निजी-उपयोग संबंधी बदलाव</key>
 		</keys>
 		<types>
 			<type key="calendar" type="buddhist">बौद्ध पंचांग</type>
@@ -1118,9 +1135,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="islamic" scope="core">हिजरी</type>
 			<type key="calendar" type="islamic-civil">हिजरी नागरिक कैलेंडर</type>
 			<type key="calendar" type="islamic-civil" scope="core">हिजरी (टेबुलर, नागरिक शैली)</type>
+			<type key="calendar" type="islamic-rgsa" scope="core">हिजरी, सउदी अरब से प्रमाणित</type>
+			<type key="calendar" type="islamic-tbla" scope="core">हिजरी (गणना आधारित, खगोलीय कैलेंडर)</type>
 			<type key="calendar" type="islamic-umalqura">हिजरी कैलेंडर (उम्म अल-क़ुरा)</type>
 			<type key="calendar" type="islamic-umalqura" scope="core">हिजरी (उम्म अल-क़ुरा)</type>
 			<type key="calendar" type="iso8601">आईएसओ-8601 कैलेंडर</type>
+			<type key="calendar" type="iso8601" scope="core">ग्रेगोरियन</type>
 			<type key="calendar" type="japanese">जापानी पंचांग</type>
 			<type key="calendar" type="japanese" scope="core">जापानी</type>
 			<type key="calendar" type="persian">फ़ारसी कैलेंडर</type>
@@ -1136,8 +1156,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colBackwards" type="no" draft="contributed">उच्‍चारणों को सामान्‍य रूप से क्रमित करें</type>
 			<type key="colBackwards" type="yes" draft="contributed">उच्‍चारण के उलट क्रमित करें</type>
 			<type key="colCaseFirst" type="lower" draft="contributed">पहले लोअरकेस क्रमित करें</type>
+			<type key="colCaseFirst" type="lower" scope="core">लोअरकेस</type>
 			<type key="colCaseFirst" type="no" draft="contributed">सामान्‍य केस क्रम में क्रमित करें</type>
+			<type key="colCaseFirst" type="no" scope="core">लोअरकेस</type>
 			<type key="colCaseFirst" type="upper" draft="contributed">पहले अपरकेस क्रमित करें</type>
+			<type key="colCaseFirst" type="upper" scope="core">अपरकेस</type>
 			<type key="colCaseLevel" type="no" draft="contributed">केस असंवेदी क्रमित करें</type>
 			<type key="colCaseLevel" type="yes" draft="contributed">केस संवेदी को क्रमित करें</type>
 			<type key="collation" type="compat">संगतता के लिए पिछला वर्गीकरण क्रम</type>
@@ -1146,7 +1169,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="dictionary" scope="core">शब्दकोश</type>
 			<type key="collation" type="ducet">डिफ़ॉल्ट यूनिकोड वर्गीकरण क्रम</type>
 			<type key="collation" type="ducet" scope="core">डिफ़ॉल्ट यूनिकोड</type>
+			<type key="collation" type="emoji" scope="core">इमोजी</type>
 			<type key="collation" type="eor" draft="contributed">यूरोपीय क्रमण नियम</type>
+			<type key="collation" type="eor" scope="core">यूरोपीय नियम</type>
 			<type key="collation" type="phonebook">फ़ोनबुक वर्गीकरण क्रम</type>
 			<type key="collation" type="phonebook" scope="core">फ़ोनबुक</type>
 			<type key="collation" type="phonetic">ध्वन्यात्मक वर्गीकरण क्रम</type>
@@ -1156,6 +1181,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="search">सामान्य-उद्देश्य खोज</type>
 			<type key="collation" type="search" scope="core">खोज</type>
 			<type key="collation" type="searchjl" draft="contributed">हांगुल आरंभिक व्‍यंजन द्वारा खोजें</type>
+			<type key="collation" type="searchjl" scope="core">कोरियन भाषा का शुरुआती व्यंजन</type>
 			<type key="collation" type="standard">मानक वर्गीकरण क्रम</type>
 			<type key="collation" type="standard" scope="core">मानक</type>
 			<type key="collation" type="stroke">स्ट्रोक वर्गीकरण क्रम</type>
@@ -1170,17 +1196,31 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colNormalization" type="yes" draft="contributed">यूनिकोड सामान्‍यीकृत क्रमित करें</type>
 			<type key="colNumeric" type="no" draft="contributed">अंको को अलग-अलग क्रमित करें</type>
 			<type key="colNumeric" type="yes" draft="contributed">अंकों को अंकीय रूप से क्रमित करें</type>
+			<type key="colReorder" type="currency" scope="core">मुद्रा</type>
+			<type key="colReorder" type="digit" scope="core">अंक</type>
+			<type key="colReorder" type="punct" scope="core">विराम चिह्न</type>
+			<type key="colReorder" type="space" scope="core">व्हाइटस्पेस</type>
+			<type key="colReorder" type="symbol" scope="core">चिह्न</type>
 			<type key="colStrength" type="identical" draft="contributed">सभी क्रमित करें</type>
+			<type key="colStrength" type="identical" scope="core">सभी</type>
 			<type key="colStrength" type="primary" draft="contributed">केवल आधार अक्षरों को क्रमित करें</type>
+			<type key="colStrength" type="primary" scope="core">सिर्फ़ मूल शब्द</type>
 			<type key="colStrength" type="quaternary" draft="contributed">उच्‍चारणों/केस/चौड़ाई/काना क्रमित करें</type>
+			<type key="colStrength" type="quaternary" scope="core">मूल, उच्चारण, केस, वेरिएंट, काना</type>
 			<type key="colStrength" type="secondary" draft="contributed">उच्‍चारण क्रमित करें</type>
+			<type key="colStrength" type="secondary" scope="core">मूल, उच्चारण</type>
 			<type key="colStrength" type="tertiary" draft="contributed">उच्‍चारणों/केस/चौड़ाई क्रमित करें</type>
+			<type key="colStrength" type="tertiary" scope="core">मूल, उच्चारण, केस, वेरिएंट</type>
 			<type key="d0" type="fwidth">पूर्ण-चौड़ाई</type>
 			<type key="d0" type="hwidth">आधी-चौड़ाई</type>
 			<type key="d0" type="npinyin" draft="contributed">सांख्यिक</type>
 			<type key="em" type="default" scope="core">डिफ़ॉल्ट</type>
 			<type key="em" type="emoji" scope="core">इमोजी</type>
 			<type key="em" type="text" scope="core">टेक्स्ट</type>
+			<type key="hc" type="c12">12 घंटों की प्रणाली</type>
+			<type key="hc" type="c12" scope="core">12</type>
+			<type key="hc" type="c24">24 घंटों की प्रणाली</type>
+			<type key="hc" type="c24" scope="core">24</type>
 			<type key="hc" type="h11">12 घंटों की प्रणाली (0–11)</type>
 			<type key="hc" type="h11" scope="core">12 (0–11)</type>
 			<type key="hc" type="h12">12 घंटों की प्रणाली (1–12)</type>
@@ -1189,6 +1229,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="hc" type="h23" scope="core">24 (0–23)</type>
 			<type key="hc" type="h24">24 घंटों की प्रणाली (1–24)</type>
 			<type key="hc" type="h24" scope="core">24 (1–24)</type>
+			<type key="kv" type="currency" scope="core">शिफ़्ट स्पेस, विराम चिह्न, सभी चिह्न</type>
+			<type key="kv" type="punct" scope="core">शिफ़्ट स्पेस, विराम चिह्न</type>
+			<type key="kv" type="space" scope="core">शिफ़्ट स्पेस, विराम चिह्न</type>
+			<type key="kv" type="symbol" scope="core">शिफ़्ट स्पेस, विराम चिह्न, गैर-करेंसी चिह्न</type>
 			<type key="lb" type="loose">ढीली पंक्ति विच्छेद शैली</type>
 			<type key="lb" type="loose" scope="core">ढीली</type>
 			<type key="lb" type="normal">सामान्य पंक्ति विच्छेद शैली</type>
@@ -1209,51 +1253,85 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="ms" type="ussystem" scope="core">यू॰एस॰</type>
 			<type key="numbers" type="arab">अरबी-भारतीय अंक</type>
 			<type key="numbers" type="arabext">विस्तृत अरबी-भारतीय अंक</type>
+			<type key="numbers" type="arabext" scope="core">विस्तृत अरबी-भारतीय</type>
 			<type key="numbers" type="armn">आर्मेनियाई संख्याएँ</type>
 			<type key="numbers" type="armnlow">आर्मेनियाई लोअरकेस संख्याएँ</type>
+			<type key="numbers" type="armnlow" scope="core">आर्मेनियाई लोअरकेस</type>
 			<type key="numbers" type="beng">बंगाली अंक</type>
 			<type key="numbers" type="cakm">चकमा अंक</type>
 			<type key="numbers" type="deva">देवनागरी अंक</type>
 			<type key="numbers" type="ethi">इथियोपियाई संख्याएँ</type>
 			<type key="numbers" type="finance" draft="contributed">वित्तीय अंक</type>
+			<type key="numbers" type="finance" scope="core">वित्तीय</type>
 			<type key="numbers" type="fullwide">पूर्ण चौड़ाई अंक</type>
+			<type key="numbers" type="fullwide" scope="core">पूर्ण चौड़ाई</type>
 			<type key="numbers" type="geor">जॉर्जियन संख्याएँ</type>
 			<type key="numbers" type="grek">यूनानी संख्याएँ</type>
 			<type key="numbers" type="greklow">यूनानी लोअरकेस संख्याएँ</type>
+			<type key="numbers" type="greklow" scope="core">यूनानी लोअरकेस</type>
 			<type key="numbers" type="gujr">गुजराती अंक</type>
 			<type key="numbers" type="guru">गुरमुखी अंक</type>
+			<type key="numbers" type="hanidays" scope="core">पारंपरिक कैलेंडर के लिए हान-कैरेक्टर में महीने के दिन से संबंधित अंक प्रणाली</type>
 			<type key="numbers" type="hanidec">चीनी दशमलव संख्याएँ</type>
+			<type key="numbers" type="hanidec" scope="core">चीनी संख्या आइडियोग्राफ़ का अंकों के रूप में उपयोग करने वाली पोज़िशनल दशमलव प्रणाली</type>
 			<type key="numbers" type="hans">सरलीकृत चीनी संख्याएँ</type>
 			<type key="numbers" type="hansfin">सरलीकृत चीनी वित्तीय संख्याएँ</type>
+			<type key="numbers" type="hansfin" scope="core">सरलीकृत चीनी वित्तीय</type>
 			<type key="numbers" type="hant">पारंपरिक चीनी संख्याएँ</type>
 			<type key="numbers" type="hantfin">पारंपरिक चीनी वित्तीय संख्याएँ</type>
+			<type key="numbers" type="hantfin" scope="core">पारंपरिक चीनी वित्तीय</type>
 			<type key="numbers" type="hebr">हिब्रू संख्याएँ</type>
 			<type key="numbers" type="java">जावानीज़ अंक</type>
 			<type key="numbers" type="jpan">जापानी संख्याएँ</type>
 			<type key="numbers" type="jpanfin">जापानी वित्तीय संख्याएँ</type>
+			<type key="numbers" type="jpanfin" scope="core">जापानी वित्तीय</type>
+			<type key="numbers" type="jpanyear" scope="core">जापानी प्रथम वर्ष गैनैन नंबरिंग</type>
 			<type key="numbers" type="khmr">खमेर अंक</type>
 			<type key="numbers" type="knda">कन्नड़ अंक</type>
+			<type key="numbers" type="lanatham" scope="core">ताई थाम थाम (धार्मिक)</type>
 			<type key="numbers" type="laoo">लाओ अंक</type>
 			<type key="numbers" type="latn">पश्चिमी अंक</type>
+			<type key="numbers" type="mathbold" scope="core">मैथेमैटिकल बोल्ड</type>
+			<type key="numbers" type="mathdbl" scope="core">मैथेमैटिकल डबल-स्ट्रक</type>
+			<type key="numbers" type="mathmono" scope="core">मैथेमैटिकल मोनोस्पेस</type>
+			<type key="numbers" type="mathsanb" scope="core">मैथेमैटिकल सैन-सेरिफ़ बोल्ड</type>
+			<type key="numbers" type="mathsans" scope="core">मैथेमैटिकल सैन-सेरिफ़</type>
 			<type key="numbers" type="mlym">मलयालम अंक</type>
 			<type key="numbers" type="mong" draft="contributed">मंगोलियाई अंक</type>
 			<type key="numbers" type="mtei">मीतेई मयक अंक</type>
 			<type key="numbers" type="mymr">म्यांमार अंक</type>
+			<type key="numbers" type="mymrepka" scope="core">म्यांमार पूर्वी प्वो करेन</type>
+			<type key="numbers" type="mymrpao" scope="core">म्यांमार पाओ</type>
+			<type key="numbers" type="mymrshan" scope="core">म्यांमार शान</type>
+			<type key="numbers" type="mymrtlng" scope="core">म्यांमार ताइ लैइंग</type>
 			<type key="numbers" type="native">स्थानीय अंक</type>
+			<type key="numbers" type="native" scope="core">देशज अंक</type>
 			<type key="numbers" type="olck">ओल चिकी अंक</type>
 			<type key="numbers" type="orya">ओड़िया अंक</type>
+			<type key="numbers" type="outlined" scope="core">आउटलाइंड</type>
 			<type key="numbers" type="roman">रोमन संख्याएँ</type>
+			<type key="numbers" type="roman" scope="core">रोमन अपरकेस</type>
 			<type key="numbers" type="romanlow">रोमन लोअरकेस संख्याएँ</type>
+			<type key="numbers" type="romanlow" scope="core">रोमन लोअरकेस</type>
+			<type key="numbers" type="segment" scope="core">सेगमेंटेड</type>
 			<type key="numbers" type="taml">पारंपरिक तमिल संख्याएँ</type>
 			<type key="numbers" type="tamldec">तमिल अंक</type>
+			<type key="numbers" type="tamldec" scope="core">आधुनिक तमिल</type>
 			<type key="numbers" type="telu">तेलुगू अंक</type>
 			<type key="numbers" type="thai">थाई अंक</type>
 			<type key="numbers" type="tibt">तिब्बती अंक</type>
 			<type key="numbers" type="traditional" draft="contributed">परंपरागत अंक</type>
+			<type key="numbers" type="traditional" scope="core">पारंपरिक अंक</type>
 			<type key="numbers" type="vaii">वाई अंक</type>
 			<type key="ss" type="none" scope="core">बंद</type>
 			<type key="ss" type="standard" scope="core">चालू</type>
+			<type key="t0" type="und">अनिर्धारित मशीनी अनुवाद</type>
+			<type key="va" type="posix" scope="core">POSIX वेरिएंट</type>
 		</types>
+		<typeValues>
+			<typeValue type="no">बंद</typeValue>
+			<typeValue type="yes">चालू</typeValue>
+		</typeValues>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">मीट्रिक</measurementSystemName>
 			<measurementSystemName type="UK">यूके</measurementSystemName>
@@ -1399,6 +1477,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateTimeFormat type="atTime">
 							<pattern>{1} को {0} बजे</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="relative">
+							<pattern>{1} {0} बजे</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
@@ -1406,6 +1487,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</dateTimeFormat>
 						<dateTimeFormat type="atTime">
 							<pattern>{1} को {0} बजे</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="relative">
+							<pattern>{1} {0} बजे</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="medium">
@@ -1448,6 +1532,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yyyyQQQQ">QQQQ G y</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="mixed">{0} – {1}</intervalFormatRange>
+							<intervalFormatRange type="numeric">{0}–{1}</intervalFormatRange>
+						</intervalFormatRanges>
 						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="Bh">
 							<greatestDifference id="B">B h – B h</greatestDifference>
@@ -1479,6 +1567,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<intervalFormatItem id="MMMEd">
 							<greatestDifference id="d">E, d MMM – E, d MMM</greatestDifference>
 							<greatestDifference id="M">E, d MMM – E, d MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMMd">
+							<greatestDifference id="d">d – d MMMM</greatestDifference>
+							<greatestDifference id="M">d MMMM – d MMMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="y">
 							<greatestDifference id="y">y–y G</greatestDifference>
@@ -1532,6 +1624,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<month type="8">अग॰</month>
 							<month type="9">सित॰</month>
 							<month type="10">अक्टू॰</month>
+							<month type="10" alt="variant">अक्तू॰</month>
 							<month type="11">नव॰</month>
 							<month type="12">दिस॰</month>
 						</monthWidth>
@@ -1546,6 +1639,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<month type="8">अगस्त</month>
 							<month type="9">सितंबर</month>
 							<month type="10">अक्टूबर</month>
+							<month type="10" alt="variant">अक्तूबर</month>
 							<month type="11">नवंबर</month>
 							<month type="12">दिसंबर</month>
 						</monthWidth>
@@ -1704,12 +1798,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</timeFormatLength>
 				</timeFormats>
 				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator>/</numericDateSeparator>
+					</numericSeparators>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 						<dateTimeFormat type="atTime">
 							<pattern>{1} को {0} बजे</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="relative">
+							<pattern>{1}, {0} बजे</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
@@ -1718,6 +1818,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</dateTimeFormat>
 						<dateTimeFormat type="atTime">
 							<pattern>{1} को {0} बजे</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="relative">
+							<pattern>{1}, {0} बजे</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="medium">
@@ -1742,6 +1845,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="GyMMM">MMM G y</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, d MMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMM">MMMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMMd">d MMMM, y G</dateFormatItem>
+						<dateFormatItem id="GyMMMMEd">E, d MMMM, y G</dateFormatItem>
 						<dateFormatItem id="Md">d/M</dateFormatItem>
 						<dateFormatItem id="MEd">E, d/M</dateFormatItem>
 						<dateFormatItem id="MMdd">dd/MM</dateFormatItem>
@@ -1760,11 +1866,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yMMMd">d MMM y</dateFormatItem>
 						<dateFormatItem id="yMMMEd">E, d MMM y</dateFormatItem>
 						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
+						<dateFormatItem id="yMMMMd">d MMMM, y</dateFormatItem>
+						<dateFormatItem id="yMMMMEd">E, d MMMM, y</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
 						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
 						<dateFormatItem id="yw" count="one">Y का सप्ताह w</dateFormatItem>
 						<dateFormatItem id="yw" count="other">Y का सप्ताह w</dateFormatItem>
 					</availableFormats>
+					<appendItems>
+						<appendItem request="Day-Of-Week">{1}, {0}</appendItem>
+						<appendItem request="Era">{0} {1}</appendItem>
+						<appendItem request="Time-Day-Of-Week">{1}, {0}</appendItem>
+					</appendItems>
 					<intervalFormats>
 						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="Bh">
@@ -1797,6 +1910,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<intervalFormatItem id="MMMEd">
 							<greatestDifference id="d">E, d MMM – E, d MMM</greatestDifference>
 							<greatestDifference id="M">E, d MMM – E, d MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMMd">
+							<greatestDifference id="d">d – d MMMM</greatestDifference>
+							<greatestDifference id="M">d MMMM – d MMMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
 							<greatestDifference id="M">M/y – M/y</greatestDifference>
@@ -1950,238 +2067,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<calendar type="japanese">
 				<eras>
 					<eraAbbr>
-						<era type="0" draft="contributed">ताएका (645–650)</era>
-						<era type="1" draft="contributed">हाकूची (650–671)</era>
-						<era type="2" draft="contributed">हाकूहो (672–686)</era>
-						<era type="3" draft="contributed">शूचो (686–701)</era>
-						<era type="4" draft="contributed">ताहिओ (701–704)</era>
-						<era type="5" draft="contributed">केउन (704–708)</era>
-						<era type="6" draft="contributed">वाडू (708–715)</era>
-						<era type="7" draft="contributed">रैकी (715–717)</era>
-						<era type="8" draft="contributed">योरो (717–724)</era>
-						<era type="9" draft="contributed">जिंकी (724–729)</era>
-						<era type="10" draft="contributed">टेम्प्यो (729–749)</era>
-						<era type="11" draft="contributed">टेम्प्यो-काम्पो (749–749)</era>
-						<era type="12" draft="contributed">टेम्प्यो-शोहो (749–757)</era>
-						<era type="13" draft="contributed">टेम्प्यो-होजी (757–765)</era>
-						<era type="14" draft="contributed">टेम्प्यो-जिंगो (765–767)</era>
-						<era type="15" draft="contributed">टेम्प्यो-किउन (767–770)</era>
-						<era type="16" draft="contributed">होकी (770–780)</era>
-						<era type="17" draft="contributed">टेनो (781–782)</era>
-						<era type="18" draft="contributed">इंर्याकू (782–806)</era>
-						<era type="19" draft="contributed">डाईडू (806–810)</era>
-						<era type="20" draft="contributed">क़ोनिन (810–824)</era>
-						<era type="21" draft="contributed">टेंचो (824–834)</era>
-						<era type="22" draft="contributed">शोवा (834–848)</era>
-						<era type="23" draft="contributed">काज्यो (848–851)</era>
-						<era type="24" draft="contributed">निंजू (851–854)</era>
-						<era type="25" draft="contributed">शाईकू (854–857)</era>
-						<era type="26" draft="contributed">टेनन (857–859)</era>
-						<era type="27" draft="contributed">जोगन् (859–877)</era>
-						<era type="28" draft="contributed">गेंकेई (877–885)</era>
-						<era type="29" draft="contributed">निन्ना (885–889)</era>
-						<era type="30" draft="contributed">केम्प्यो (889–898)</era>
-						<era type="31" draft="contributed">शूताई (898–901)</era>
-						<era type="32" draft="contributed">ईंगी (901–923)</era>
-						<era type="33" draft="contributed">ईंचो (923–931)</era>
-						<era type="34" draft="contributed">शोहेई (931–938)</era>
-						<era type="35" draft="contributed">टेंग्यो (938–947)</era>
-						<era type="36" draft="contributed">टेंर्याकू (947–957)</era>
-						<era type="37" draft="contributed">टेंटूकू (957–961)</era>
-						<era type="38" draft="contributed">ओवा (961–964)</era>
-						<era type="39" draft="contributed">कोहो (964–968)</era>
-						<era type="40" draft="contributed">अन्ना (968–970)</era>
-						<era type="41" draft="contributed">टेंरोकू (970–973)</era>
-						<era type="42" draft="contributed">टेन-एन (973–976)</era>
-						<era type="43" draft="contributed">जोगन् (976–978)</era>
-						<era type="44" draft="contributed">टेंगेन (978–983)</era>
-						<era type="45" draft="contributed">ईकान (983–985)</era>
-						<era type="46" draft="contributed">कन्ना (985–987)</era>
-						<era type="47" draft="contributed">ई-एन (987–989)</era>
-						<era type="48" draft="contributed">एइसो (989–990)</era>
-						<era type="49" draft="contributed">शोर्याकू (990–995)</era>
-						<era type="50" draft="contributed">चोटूकु (995–999)</era>
-						<era type="51" draft="contributed">चोहो (999–1004)</era>
-						<era type="52" draft="contributed">कंको (1004–1012)</era>
-						<era type="53" draft="contributed">च्योवा (1012–1017)</era>
-						<era type="54" draft="contributed">कन्निन (1017–1021)</era>
-						<era type="55" draft="contributed">ज़ियान (1021–1024)</era>
-						<era type="56" draft="contributed">मंजू (1024–1028)</era>
-						<era type="57" draft="contributed">चोगन (1028–1037)</era>
-						<era type="58" draft="contributed">चोर्याकू (1037–1040)</era>
-						<era type="59" draft="contributed">चोक्यु (1040–1044)</era>
-						<era type="60" draft="contributed">कांटूको (1044–1046)</era>
-						<era type="61" draft="contributed">ईशो (1046–1053)</era>
-						<era type="62" draft="contributed">टेंगी (1053–1058)</era>
-						<era type="63" draft="contributed">कोहैइ (1058–1065)</era>
-						<era type="64" draft="contributed">जिर्याकू (1065–1069)</era>
-						<era type="65" draft="contributed">ईंक्यू (1069–1074)</era>
-						<era type="66" draft="contributed">सोहो (1074–1077)</era>
-						<era type="67" draft="contributed">शोर्याकू (1077–1081)</era>
-						<era type="68" draft="contributed">ईहो (1081–1084)</era>
-						<era type="69" draft="contributed">ओटूको (1084–1087)</era>
-						<era type="70" draft="contributed">कांजि (1087–1094)</era>
-						<era type="71" draft="contributed">कोहो (1094–1096)</era>
-						<era type="72" draft="contributed">ईचो (1096–1097)</era>
-						<era type="73" draft="contributed">शोटूको (1097–1099)</era>
-						<era type="74" draft="contributed">कोवा (1099–1104)</era>
-						<era type="75" draft="contributed">चोजी (1104–1106)</era>
-						<era type="76" draft="contributed">काशो (1106–1108)</era>
-						<era type="77" draft="contributed">टेन्निन (1108–1110)</era>
-						<era type="78" draft="contributed">टेन-ई (1110–1113)</era>
-						<era type="79" draft="contributed">ईक्यू (1113–1118)</era>
-						<era type="80" draft="contributed">जेन-ई (1118–1120)</era>
-						<era type="81" draft="contributed">होआन (1120–1124)</era>
-						<era type="82" draft="contributed">तेंजी (1124–1126)</era>
-						<era type="83" draft="contributed">दाईजी (1126–1131)</era>
-						<era type="84" draft="contributed">टेंशो (1131–1132)</era>
-						<era type="85" draft="contributed">चोशो (1132–1135)</era>
-						<era type="86" draft="contributed">होएन (1135–1141)</era>
-						<era type="87" draft="contributed">ईजी (1141–1142)</era>
-						<era type="88" draft="contributed">कोजी (1142–1144)</era>
-						<era type="89" draft="contributed">टेन्यो (1144–1145)</era>
-						<era type="90" draft="contributed">क्यूआन (1145–1151)</era>
-						<era type="91" draft="contributed">निंपैई (1151–1154)</era>
-						<era type="92" draft="contributed">क्योजो (1154–1156)</era>
-						<era type="93" draft="contributed">होगेन (1156–1159)</era>
-						<era type="94" draft="contributed">हैजी (1159–1160)</era>
-						<era type="95" draft="contributed">ईर्याकू (1160–1161)</era>
-						<era type="96" draft="contributed">ओहो (1161–1163)</era>
-						<era type="97" draft="contributed">चोकान (1163–1165)</era>
-						<era type="98" draft="contributed">ईमान (1165–1166)</era>
-						<era type="99" draft="contributed">निन-आन (1166–1169)</era>
-						<era type="100" draft="contributed">काओ (1169–1171)</era>
-						<era type="101" draft="contributed">शोअन (1171–1175)</era>
-						<era type="102" draft="contributed">अंजन (1175–1177)</era>
-						<era type="103" draft="contributed">जिशो (1177–1181)</era>
-						<era type="104" draft="contributed">योवा (1181–1182)</era>
-						<era type="105" draft="contributed">जूऐई (1182–1184)</era>
-						<era type="106" draft="contributed">जेंर्याकू (1184–1185)</era>
-						<era type="107" draft="contributed">बूंजी (1185–1190)</era>
-						<era type="108" draft="contributed">केंक्यू (1190–1199)</era>
-						<era type="109" draft="contributed">शोजी (1199–1201)</era>
-						<era type="110" draft="contributed">केन्निन (1201–1204)</era>
-						<era type="111" draft="contributed">जेंक्यू (1204–1206)</era>
-						<era type="112" draft="contributed">केन-ई (1206–1207)</era>
-						<era type="113" draft="contributed">शोगेन (1207–1211)</era>
-						<era type="114" draft="contributed">केंर्याकू (1211–1213)</era>
-						<era type="115" draft="contributed">केंपो (1213–1219)</era>
-						<era type="116" draft="contributed">शोक्यू (1219–1222)</era>
-						<era type="117" draft="contributed">जू (1222–1224)</era>
-						<era type="118" draft="contributed">जेन्निन (1224–1225)</era>
-						<era type="119" draft="contributed">कोरोकू (1225–1227)</era>
-						<era type="120" draft="contributed">अंटैइ (1227–1229)</era>
-						<era type="121" draft="contributed">कांकी (1229–1232)</era>
-						<era type="122" draft="contributed">जोएई (1232–1233)</era>
-						<era type="123" draft="contributed">टेम्पूकू (1233–1234)</era>
-						<era type="124" draft="contributed">बुंर्याकू (1234–1235)</era>
-						<era type="125" draft="contributed">काटेई (1235–1238)</era>
-						<era type="126" draft="contributed">र्याकूनिन (1238–1239)</era>
-						<era type="127" draft="contributed">ईन-ओ (1239–1240)</era>
-						<era type="128" draft="contributed">निंजी (1240–1243)</era>
-						<era type="129" draft="contributed">कांजेन (1243–1247)</era>
-						<era type="130" draft="contributed">होजी (1247–1249)</era>
-						<era type="131" draft="contributed">केंचो (1249–1256)</era>
-						<era type="132" draft="contributed">कोगेन (1256–1257)</era>
-						<era type="133" draft="contributed">शोका (1257–1259)</era>
-						<era type="134" draft="contributed">शोगेन (1259–1260)</era>
-						<era type="135" draft="contributed">बुन-ओ (1260–1261)</era>
-						<era type="136" draft="contributed">कोचो (1261–1264)</era>
-						<era type="137" draft="contributed">बुन-ई (1264–1275)</era>
-						<era type="138" draft="contributed">केंजी (1275–1278)</era>
-						<era type="139" draft="contributed">कोअन (1278–1288)</era>
-						<era type="140" draft="contributed">शो (1288–1293)</era>
-						<era type="141" draft="contributed">ईनिन (1293–1299)</era>
-						<era type="142" draft="contributed">शोअन (1299–1302)</era>
-						<era type="143" draft="contributed">केंजेन (1302–1303)</era>
-						<era type="144" draft="contributed">काजेन (1303–1306)</era>
-						<era type="145" draft="contributed">टोकूजी (1306–1308)</era>
-						<era type="146" draft="contributed">ईंकेई (1308–1311)</era>
-						<era type="147" draft="contributed">ओचो (1311–1312)</era>
-						<era type="148" draft="contributed">शोवा (1312–1317)</era>
-						<era type="149" draft="contributed">बुंपो (1317–1319)</era>
-						<era type="150" draft="contributed">जेनो (1319–1321)</era>
-						<era type="151" draft="contributed">जेंक्यो (1321–1324)</era>
-						<era type="152" draft="contributed">शोचू (1324–1326)</era>
-						<era type="153" draft="contributed">कारेकी (1326–1329)</era>
-						<era type="154" draft="contributed">जेंटोकू (1329–1331)</era>
-						<era type="155" draft="contributed">गेंको (1331–1334)</era>
-						<era type="156" draft="contributed">केम्मू (1334–1336)</era>
-						<era type="157" draft="contributed">ईंजेन (1336–1340)</era>
-						<era type="158" draft="contributed">कोकोकू (1340–1346)</era>
-						<era type="159" draft="contributed">शोहेई (1346–1370)</era>
-						<era type="160" draft="contributed">केंटोकू (1370–1372)</era>
-						<era type="161" draft="contributed">बूंचो (1372–1375)</era>
-						<era type="162" draft="contributed">टेंजो (1375–1379)</era>
-						<era type="163" draft="contributed">कोर्याकू (1379–1381)</era>
-						<era type="164" draft="contributed">कोवा (1381–1384)</era>
-						<era type="165" draft="contributed">जेंचू (1384–1392)</era>
-						<era type="166" draft="contributed">मेटोकू (1384–1387)</era>
-						<era type="167" draft="contributed">काकेई (1387–1389)</era>
-						<era type="168" draft="contributed">कू (1389–1390)</era>
-						<era type="169" draft="contributed">मेटोकू (1390–1394)</era>
-						<era type="170" draft="contributed">ओई (1394–1428)</era>
-						<era type="171" draft="contributed">शोचो (1428–1429)</era>
-						<era type="172" draft="contributed">ईक्यो (1429–1441)</era>
-						<era type="173" draft="contributed">काकीत्सू (1441–1444)</era>
-						<era type="174" draft="contributed">बुन-अन (1444–1449)</era>
-						<era type="175" draft="contributed">होटोकू (1449–1452)</era>
-						<era type="176" draft="contributed">क्योटोकू (1452–1455)</era>
-						<era type="177" draft="contributed">कोशो (1455–1457)</era>
-						<era type="178" draft="contributed">चोरोकू (1457–1460)</era>
-						<era type="179" draft="contributed">कांशो (1460–1466)</era>
-						<era type="180" draft="contributed">बुंशो (1466–1467)</era>
-						<era type="181" draft="contributed">ओनिन (1467–1469)</era>
-						<era type="182" draft="contributed">बुन्मेई (1469–1487)</era>
-						<era type="183" draft="contributed">चोक्यो (1487–1489)</era>
-						<era type="184" draft="contributed">ईंटोकू (1489–1492)</era>
-						<era type="185" draft="contributed">मेईओ (1492–1501)</era>
-						<era type="186" draft="contributed">बुंकी (1501–1504)</era>
-						<era type="187" draft="contributed">ईशो (1504–1521)</era>
-						<era type="188" draft="contributed">ताईएई (1521–1528)</era>
-						<era type="189" draft="contributed">क्योरोकू (1528–1532)</era>
-						<era type="190" draft="contributed">टेन्मन (1532–1555)</era>
-						<era type="191" draft="contributed">कोजी (1555–1558)</era>
-						<era type="192" draft="contributed">ईरोकू (1558–1570)</era>
-						<era type="193" draft="contributed">जेंकी (1570–1573)</era>
-						<era type="194" draft="contributed">टेंशो (1573–1592)</era>
-						<era type="195" draft="contributed">बुंरोकू (1592–1596)</era>
-						<era type="196" draft="contributed">केईचो (1596–1615)</era>
-						<era type="197" draft="contributed">जेनवा (1615–1624)</era>
-						<era type="198" draft="contributed">कान-एई (1624–1644)</era>
-						<era type="199" draft="contributed">शोहो (1644–1648)</era>
-						<era type="200" draft="contributed">केईआन (1648–1652)</era>
-						<era type="201" draft="contributed">शो (1652–1655)</era>
-						<era type="202" draft="contributed">मेईर्याकू (1655–1658)</era>
-						<era type="203" draft="contributed">मानजी (1658–1661)</era>
-						<era type="204" draft="contributed">कनबुन (1661–1673)</era>
-						<era type="205" draft="contributed">ईंपो (1673–1681)</era>
-						<era type="206" draft="contributed">टेंवा (1681–1684)</era>
-						<era type="207" draft="contributed">जोक्यो (1684–1688)</era>
-						<era type="208" draft="contributed">जेंरोकू (1688–1704)</era>
-						<era type="209" draft="contributed">होएई (1704–1711)</era>
-						<era type="210" draft="contributed">शोटूको (1711–1716)</era>
-						<era type="211" draft="contributed">क्योहो (1716–1736)</era>
-						<era type="212" draft="contributed">जेंबुन (1736–1741)</era>
-						<era type="213" draft="contributed">कांपो (1741–1744)</era>
-						<era type="214" draft="contributed">इंक्यो (1744–1748)</era>
-						<era type="215" draft="contributed">कान-एन (1748–1751)</era>
-						<era type="216" draft="contributed">होर्याकू (1751–1764)</era>
-						<era type="217" draft="contributed">मेईवा (1764–1772)</era>
-						<era type="218" draft="contributed">अन-एई (1772–1781)</era>
-						<era type="219" draft="contributed">टेनमेई (1781–1789)</era>
-						<era type="220" draft="contributed">कांसेई (1789–1801)</era>
-						<era type="221" draft="contributed">क्योवा (1801–1804)</era>
-						<era type="222" draft="contributed">बुंका (1804–1818)</era>
-						<era type="223" draft="contributed">बुंसेई (1818–1830)</era>
-						<era type="224" draft="contributed">टेंपो (1830–1844)</era>
-						<era type="225" draft="contributed">कोका (1844–1848)</era>
-						<era type="226" draft="contributed">काईए (1848–1854)</era>
-						<era type="227" draft="contributed">अंसेई (1854–1860)</era>
-						<era type="228" draft="contributed">मान-ईन (1860–1861)</era>
-						<era type="229" draft="contributed">बुंक्यौ (1861–1864)</era>
-						<era type="230" draft="contributed">जेंजी (1864–1865)</era>
-						<era type="231" draft="contributed">केईओ (1865–1868)</era>
 						<era type="232" draft="contributed">मेजी</era>
 						<era type="233" draft="contributed">ताईशो</era>
 						<era type="234" draft="contributed">शोवा</era>
@@ -3071,9 +2956,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>लिब्रेविले</exemplarCity>
 			</zone>
 			<zone type="Europe/London">
-				<long>
-					<daylight>ब्रिटिश ग्रीष्मकालीन समय</daylight>
-				</long>
 				<exemplarCity>लंदन</exemplarCity>
 			</zone>
 			<zone type="America/Grenada">
@@ -3164,9 +3046,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>जयापुरा</exemplarCity>
 			</zone>
 			<zone type="Europe/Dublin">
-				<long>
-					<daylight>आइरिश मानक समय</daylight>
-				</long>
 				<exemplarCity>डबलिन</exemplarCity>
 			</zone>
 			<zone type="Asia/Jerusalem">
@@ -3862,6 +3741,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Africa/Harare">
 				<exemplarCity>हरारे</exemplarCity>
 			</zone>
+			<metazone type="Acre">
+				<long>
+					<generic>एकर समय</generic>
+					<standard>एकर का मानक समय</standard>
+					<daylight>एकर ग्रीष्मकालीन समय</daylight>
+				</long>
+			</metazone>
 			<metazone type="Afghanistan">
 				<long>
 					<standard>अफ़गानिस्तान समय</standard>
@@ -4044,6 +3930,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>ब्राज़ीलिया ग्रीष्मकालीन समय</daylight>
 				</long>
 			</metazone>
+			<metazone type="British">
+				<long>
+					<generic>ब्रिटिश समय</generic>
+					<daylight>ब्रिटिश ग्रीष्मकालीन समय</daylight>
+				</long>
+			</metazone>
 			<metazone type="Brunei">
 				<long>
 					<standard>ब्रूनेई दारूस्सलम समय</standard>
@@ -4217,6 +4109,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>ग्रीनविच मीन टाइम</standard>
 				</long>
 			</metazone>
+			<metazone type="Greenland">
+				<long>
+					<generic>ग्रीनलैंड समय</generic>
+					<standard>ग्रीनलैंड मानक समय</standard>
+					<daylight>ग्रीनलैंड ग्रीष्मकालीन समय</daylight>
+				</long>
+			</metazone>
 			<metazone type="Greenland_Eastern">
 				<long>
 					<generic>पूर्वी ग्रीनलैंड समय</generic>
@@ -4243,7 +4142,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Hawaii">
 				<long>
-					<standard>हवाई–आल्यूशन मानक समय</standard>
+					<standard>हवाई समय</standard>
 				</long>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
@@ -4307,6 +4206,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>ईरान डेलाइट समय</daylight>
 				</long>
 			</metazone>
+			<metazone type="Irish">
+				<long>
+					<generic>आयरिश समय</generic>
+					<daylight>आइरिश मानक समय</daylight>
+				</long>
+			</metazone>
 			<metazone type="Irkutsk">
 				<long>
 					<generic>इर्कुत्स्क समय</generic>
@@ -4330,9 +4235,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Kamchatka">
 				<long>
-					<generic draft="contributed">पेट्रोपेवलास्क-कैमचात्सकी समय</generic>
-					<standard draft="contributed">पेट्रोपेवलास्क-कैमचात्सकी मानक समय</standard>
-					<daylight draft="contributed">पेट्रोपेवलास्क-कैमचात्सकी ग्रीष्मकालीन समय</daylight>
+					<generic>कैमचात्का समय</generic>
+					<standard>कैमचात्का मानक समय</standard>
+					<daylight>कैमचात्का ग्रीष्मकालीन समय</daylight>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan">
@@ -4599,16 +4504,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Samara">
 				<long>
-					<generic draft="contributed">समारा समय</generic>
-					<standard draft="contributed">समारा मानक समय</standard>
-					<daylight draft="contributed">समारा ग्रीष्मकालीन समय</daylight>
+					<generic>समारा समय</generic>
+					<standard>समारा मानक समय</standard>
+					<daylight>समारा ग्रीष्मकालीन समय</daylight>
 				</long>
 			</metazone>
 			<metazone type="Samoa">
 				<long>
-					<generic>समोआ समय</generic>
 					<standard>समोआ मानक समय</standard>
-					<daylight>समोआ डेलाइट समय</daylight>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">
@@ -4675,6 +4578,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>चुक समय</standard>
 				</long>
 			</metazone>
+			<metazone type="Turkey">
+				<long>
+					<generic>तुर्किये समय</generic>
+					<standard>तुर्किये मानक समय</standard>
+					<daylight>तुर्किये समर टाइम</daylight>
+				</long>
+			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
 					<generic>तुर्कमेनिस्तान समय</generic>
@@ -4692,6 +4602,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>उरुग्वे समय</generic>
 					<standard>उरुग्वे मानक समय</standard>
 					<daylight>उरुग्वे ग्रीष्मकालीन समय</daylight>
+				</long>
+			</metazone>
+			<metazone type="Urumqi">
+				<long>
+					<standard>ऊरूमची समय</standard>
 				</long>
 			</metazone>
 			<metazone type="Uzbekistan">
@@ -4908,7 +4823,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</currencyFormats>
 		<currencies>
 			<currency type="AED">
-				<displayName>संयुक्त अरब अमीरात दिरहाम</displayName>
+				<displayName>संयुक्त अरब अमीरात दिरहम</displayName>
+				<displayName count="one">संयुक्त अरब अमीरात दिरहम</displayName>
+				<displayName count="other">संयुक्त अरब अमीरात दिरहम</displayName>
 			</currency>
 			<currency type="AFA">
 				<displayName>अफगानी (1927–2002)</displayName>
@@ -5472,8 +5389,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="XCG">
 				<displayName>कैरीबियन गिल्डर</displayName>
-				<displayName count="one">कैरीबियन गिल्डर</displayName>
-				<displayName count="other">कैरीबियन गिल्डर</displayName>
 			</currency>
 			<currency type="XEU">
 				<displayName draft="contributed">यूरोपीय मुद्रा इकाई</displayName>
@@ -5503,8 +5418,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="ZWG">
 				<displayName>ज़िंबाब्वियन गोल्ड</displayName>
-				<displayName count="one">ज़िंबाब्वियन गोल्ड</displayName>
-				<displayName count="other">ज़िंबाब्वियन गोल्ड</displayName>
 			</currency>
 		</currencies>
 		<miscPatterns numberSystem="latn">
@@ -5513,11 +5426,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<minimalPairs>
 			<pluralMinimalPairs count="one">{0} घंटा</pluralMinimalPairs>
 			<pluralMinimalPairs count="other">{0} घंटे</pluralMinimalPairs>
+			<ordinalMinimalPairs ordinal="one">{0}ला दाहिना मोड़ लें.</ordinalMinimalPairs>
+			<ordinalMinimalPairs ordinal="two">{0}रा दाहिना मोड़ लें.</ordinalMinimalPairs>
 			<ordinalMinimalPairs ordinal="few">{0} दाहिना मोड़ लें.</ordinalMinimalPairs>
 			<ordinalMinimalPairs ordinal="many">{0}ठा दाहिना मोड़ लें.</ordinalMinimalPairs>
-			<ordinalMinimalPairs ordinal="one">{0}ला दाहिना मोड़ लें.</ordinalMinimalPairs>
 			<ordinalMinimalPairs ordinal="other">{0}वां दाहिना मोड़ लें.</ordinalMinimalPairs>
-			<ordinalMinimalPairs ordinal="two">{0}रा दाहिना मोड़ लें.</ordinalMinimalPairs>
 			<caseMinimalPairs case="nominative">{0} लगेगा/लगेंगे</caseMinimalPairs>
 			<caseMinimalPairs case="oblique">{0} का समय लगेगा</caseMinimalPairs>
 			<genderMinimalPairs gender="feminine">{0} बड़ी है</genderMinimalPairs>
@@ -5769,7 +5682,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>masculine</gender>
 			</unit>
 			<unit type="concentr-part">
-				<displayName>भाग</displayName>
 				<unitPattern count="one">{0} भाग</unitPattern>
 				<unitPattern count="other">{0} भागों</unitPattern>
 			</unit>
@@ -6260,9 +6172,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="length-yard">
 				<gender>masculine</gender>
-				<displayName>यार्ड</displayName>
-				<unitPattern count="one">{0} यार्ड</unitPattern>
-				<unitPattern count="one" case="oblique">{0} यार्ड</unitPattern>
+				<unitPattern count="one">{0} गज़</unitPattern>
+				<unitPattern count="one" case="oblique">{0} गज़</unitPattern>
 				<unitPattern count="other">{0} गज़</unitPattern>
 				<unitPattern count="other" case="oblique">{0} गज़</unitPattern>
 			</unit>
@@ -6572,6 +6483,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} मील प्रति घंटा</unitPattern>
 				<unitPattern count="other" case="oblique">{0} मील प्रति घंटा</unitPattern>
 			</unit>
+			<unit type="speed-beaufort">
+				<displayName>बोफ़र्ट</displayName>
+				<unitPattern count="one">बोफ़र्ट {0}</unitPattern>
+				<unitPattern count="other">बोफ़र्ट {0}</unitPattern>
+			</unit>
 			<unit type="temperature-generic">
 				<gender>feminine</gender>
 				<unitPattern count="one">{0}°</unitPattern>
@@ -6706,12 +6622,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="volume-pint-metric">
 				<gender>masculine</gender>
+				<displayName>मेट्रिक पाइंट</displayName>
+				<unitPattern count="one">{0} मेट्रिक पाइंट</unitPattern>
+				<unitPattern count="one" case="oblique">{0} मेट्रिक पाइंट</unitPattern>
+				<unitPattern count="other">{0} मेट्रिक पाइंट</unitPattern>
+				<unitPattern count="other" case="oblique">{0} मेट्रिक पाइंट</unitPattern>
 			</unit>
 			<unit type="volume-cup-metric">
 				<gender>masculine</gender>
+				<unitPattern count="one">{0} मीट्रिक कप</unitPattern>
+				<unitPattern count="one" case="oblique">{0} मेट्रिक कप</unitPattern>
+				<unitPattern count="other">{0} मीट्रिक कप</unitPattern>
+				<unitPattern count="other" case="oblique">{0} मेट्रिक कप</unitPattern>
 			</unit>
 			<unit type="volume-fluid-ounce-metric">
-				<displayName>मेट्रिक फ़्लूड आउंस</displayName>
 				<unitPattern count="one">{0} मेट्रिक फ़्लूड आउंस</unitPattern>
 				<unitPattern count="other">{0} मेट्रिक फ़्लूड आउंस</unitPattern>
 			</unit>
@@ -6879,11 +6803,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>पार्ट्स प्रति बिलियन</displayName>
 				<unitPattern count="one">{0} पार्ट प्रति बिलियन</unitPattern>
 				<unitPattern count="one" case="oblique">{0} पार्ट प्रति बिलियन</unitPattern>
-				<unitPattern count="other">{0} पार्ट्स प्रति बिलियन</unitPattern>
-				<unitPattern count="other" case="oblique">{0} पार्ट्स प्रति बिलियन</unitPattern>
+				<unitPattern count="other">{0} पार्ट प्रति बिलियन</unitPattern>
+				<unitPattern count="other" case="oblique">{0} पार्ट प्रति बिलियन</unitPattern>
 			</unit>
 			<unit type="duration-night">
 				<gender>feminine</gender>
+				<unitPattern count="one">{0} रात</unitPattern>
+				<unitPattern count="one" case="oblique">{0} रात</unitPattern>
+				<unitPattern count="other">{0} रातें</unitPattern>
+				<unitPattern count="other" case="oblique">{0} रातों</unitPattern>
 				<perUnitPattern>{0} प्रति रात</perUnitPattern>
 			</unit>
 			<coordinateUnit>
@@ -6919,70 +6847,28 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPrefixPattern>यो.{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p-27">
-				<unitPrefixPattern>रो{0}</unitPrefixPattern>
+				<unitPrefixPattern>r {0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p-30">
-				<unitPrefixPattern>क्वे{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p1">
-				<unitPrefixPattern>डेका {0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p2">
-				<unitPrefixPattern>हे.{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p3">
-				<unitPrefixPattern>कि.{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p6">
-				<unitPrefixPattern>मे.{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p9">
-				<unitPrefixPattern>गी.{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p12">
-				<unitPrefixPattern>टे.{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p15">
-				<unitPrefixPattern>पे.{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p18">
-				<unitPrefixPattern>ए.{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p21">
-				<unitPrefixPattern>ज़े.{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p24">
-				<unitPrefixPattern>योटा {0}</unitPrefixPattern>
+				<unitPrefixPattern>q {0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p27">
-				<unitPrefixPattern>रोन{0}</unitPrefixPattern>
+				<unitPrefixPattern>R {0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p30">
-				<unitPrefixPattern>क्वेटा{0}</unitPrefixPattern>
+				<unitPrefixPattern>Q {0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="1024p1">
-				<unitPrefixPattern>कि.बी.{0}</unitPrefixPattern>
+				<unitPrefixPattern>Ki {0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="1024p2">
-				<unitPrefixPattern>मे.बी.{0}</unitPrefixPattern>
+				<unitPrefixPattern>Mi {0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="1024p3">
-				<unitPrefixPattern>जी.बी.{0}</unitPrefixPattern>
+				<unitPrefixPattern>Gi {0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="1024p4">
-				<unitPrefixPattern>टे.बी.{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="1024p5">
-				<unitPrefixPattern>पे.बी.{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="1024p6">
-				<unitPrefixPattern>एक्ज़.बी.{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="1024p7">
-				<unitPrefixPattern>ज़े.बी.{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="1024p8">
-				<unitPrefixPattern>यो.बी.{0}</unitPrefixPattern>
+				<unitPrefixPattern>Ti {0}</unitPrefixPattern>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<displayName>गुरुत्व बल</displayName>
@@ -7220,13 +7106,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="electric-ampere">
 				<displayName>एम्पी॰</displayName>
-				<unitPattern count="one">{0} ए॰</unitPattern>
-				<unitPattern count="other">{0} ए॰</unitPattern>
+				<unitPattern count="one">{0} A</unitPattern>
+				<unitPattern count="other">{0} A</unitPattern>
 			</unit>
 			<unit type="electric-milliampere">
 				<displayName>मि॰ ए॰</displayName>
-				<unitPattern count="one">{0} मि॰ ए॰</unitPattern>
-				<unitPattern count="other">{0} मि॰ ए॰</unitPattern>
+				<unitPattern count="one">{0} mA</unitPattern>
+				<unitPattern count="other">{0} mA</unitPattern>
 			</unit>
 			<unit type="electric-ohm">
 				<displayName>ओम</displayName>
@@ -7330,8 +7216,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="length-yard">
 				<displayName>गज़</displayName>
-				<unitPattern count="one">{0} यार्ड</unitPattern>
-				<unitPattern count="other">{0} यार्ड</unitPattern>
+				<unitPattern count="one">{0} गज़</unitPattern>
+				<unitPattern count="other">{0} गज़</unitPattern>
 			</unit>
 			<unit type="length-foot">
 				<displayName>फ़ीट</displayName>
@@ -7459,18 +7345,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="pressure-pascal">
 				<displayName>पा॰</displayName>
-				<unitPattern count="one">{0} पा॰</unitPattern>
-				<unitPattern count="other">{0} पा॰</unitPattern>
+				<unitPattern count="one">{0} Pa</unitPattern>
+				<unitPattern count="other">{0} Pa</unitPattern>
 			</unit>
 			<unit type="pressure-kilopascal">
 				<displayName>किपा॰</displayName>
-				<unitPattern count="one">{0} किपा॰</unitPattern>
-				<unitPattern count="other">{0} किपा॰</unitPattern>
+				<unitPattern count="one">{0} kPa</unitPattern>
+				<unitPattern count="other">{0} kPa</unitPattern>
 			</unit>
 			<unit type="pressure-megapascal">
 				<displayName>मेपा॰</displayName>
-				<unitPattern count="one">{0} मेपा॰</unitPattern>
-				<unitPattern count="other">{0} मेपा॰</unitPattern>
+				<unitPattern count="one">{0} MPa</unitPattern>
+				<unitPattern count="other">{0} MPa</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>कि॰मी॰/घं॰</displayName>
@@ -7493,9 +7379,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} नॉट</unitPattern>
 			</unit>
 			<unit type="speed-beaufort">
-				<displayName>ब्यूफ़ोर्ट</displayName>
-				<unitPattern count="one">ब्यूफ़ोर्ट {0}</unitPattern>
-				<unitPattern count="other">ब्यूफ़ोर्ट {0}</unitPattern>
+				<displayName>बोफ़र्ट</displayName>
+				<unitPattern count="one">बोफ़र्ट {0}</unitPattern>
+				<unitPattern count="other">बोफ़र्ट {0}</unitPattern>
 			</unit>
 			<unit type="temperature-celsius">
 				<displayName>डिग्री सेल्सियस</displayName>
@@ -7581,9 +7467,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} मि॰ ली॰</unitPattern>
 			</unit>
 			<unit type="volume-pint-metric">
-				<displayName>मीट्रिक पिंट</displayName>
-				<unitPattern count="one">{0} मीट्रिक पिंट</unitPattern>
-				<unitPattern count="other">{0} मीट्रिक पिंट</unitPattern>
+				<unitPattern count="one">{0} mpt</unitPattern>
+				<unitPattern count="other">{0} mpt</unitPattern>
 			</unit>
 			<unit type="volume-cup-metric">
 				<displayName>मीट्रिक कप</displayName>
@@ -7766,6 +7651,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<compoundUnit type="10p-24">
 				<unitPrefixPattern>यो {0}</unitPrefixPattern>
 			</compoundUnit>
+			<compoundUnit type="10p-27">
+				<unitPrefixPattern>r {0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-30">
+				<unitPrefixPattern>q {0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="10p1">
 				<unitPrefixPattern>डे {0}</unitPrefixPattern>
 			</compoundUnit>
@@ -7785,7 +7676,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPrefixPattern>टे {0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p15">
-				<unitPrefixPattern>पे {0}</unitPrefixPattern>
+				<unitPrefixPattern>P{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p18">
 				<unitPrefixPattern>ए {0}</unitPrefixPattern>
@@ -7796,14 +7687,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<compoundUnit type="10p24">
 				<unitPrefixPattern>यो {0}</unitPrefixPattern>
 			</compoundUnit>
+			<compoundUnit type="10p27">
+				<unitPrefixPattern>R {0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="10p30">
-				<unitPrefixPattern>क्वे{0}</unitPrefixPattern>
+				<unitPrefixPattern>Q {0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="1024p1">
-				<unitPrefixPattern>किबी.{0}</unitPrefixPattern>
+				<unitPrefixPattern>Ki {0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="1024p2">
-				<unitPrefixPattern>मेबी.{0}</unitPrefixPattern>
+				<unitPrefixPattern>Mi {0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="1024p3">
 				<unitPrefixPattern>जीबी.{0}</unitPrefixPattern>
@@ -7887,19 +7781,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} व इं</unitPattern>
 				<unitPattern count="other">{0} व इं</unitPattern>
 			</unit>
-			<unit type="concentr-part">
-				<displayName>भाग</displayName>
-				<unitPattern count="one">{0} भाग</unitPattern>
-				<unitPattern count="other">{0} भाग</unitPattern>
-			</unit>
 			<unit type="concentr-part-per-1e6">
 				<displayName>ppm</displayName>
 			</unit>
 			<unit type="concentr-percent">
 				<displayName>%</displayName>
-			</unit>
-			<unit type="concentr-ofglucose">
-				<displayName>Glc</displayName>
 			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
 				<unitPattern count="one">{0} ली/100 किमी</unitPattern>
@@ -7953,21 +7839,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} नैनो से</unitPattern>
 				<unitPattern count="other">{0} नैनो से</unitPattern>
 			</unit>
-			<unit type="energy-calorie">
-				<unitPattern count="one">{0} कै</unitPattern>
-				<unitPattern count="other">{0} कै</unitPattern>
+			<unit type="electric-ampere">
+				<unitPattern count="one">{0} A</unitPattern>
+				<unitPattern count="other">{0} A</unitPattern>
+			</unit>
+			<unit type="electric-milliampere">
+				<unitPattern count="one">{0} mA</unitPattern>
+				<unitPattern count="other">{0} mA</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
 				<unitPattern count="one">{0} कै</unitPattern>
 				<unitPattern count="other">{0} कै</unitPattern>
-			</unit>
-			<unit type="energy-kilojoule">
-				<unitPattern count="one">{0} किजू</unitPattern>
-				<unitPattern count="other">{0} किजू</unitPattern>
-			</unit>
-			<unit type="energy-joule">
-				<unitPattern count="one">{0} जू</unitPattern>
-				<unitPattern count="other">{0} जू</unitPattern>
 			</unit>
 			<unit type="graphics-pixel">
 				<displayName>px</displayName>
@@ -8008,8 +7890,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="length-picometer">
 				<displayName>pm</displayName>
-				<unitPattern count="one">{0}पि॰मी॰</unitPattern>
-				<unitPattern count="other">{0}पि॰मी॰</unitPattern>
+			</unit>
+			<unit type="length-yard">
+				<unitPattern count="one">{0} गज़</unitPattern>
+				<unitPattern count="other">{0} गज़</unitPattern>
 			</unit>
 			<unit type="length-foot">
 				<unitPattern count="one">{0}′</unitPattern>
@@ -8073,22 +7957,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} औं॰</unitPattern>
 				<unitPattern count="other">{0} औं॰</unitPattern>
 			</unit>
-			<unit type="power-kilowatt">
-				<unitPattern count="one">{0} किवॉ</unitPattern>
-				<unitPattern count="other">{0} किवॉ</unitPattern>
-			</unit>
-			<unit type="power-watt">
-				<unitPattern count="one">{0} वॉ</unitPattern>
-				<unitPattern count="other">{0} वॉ</unitPattern>
-			</unit>
-			<unit type="power-horsepower">
-				<unitPattern count="one">{0} एचपी</unitPattern>
-				<unitPattern count="other">{0} एचपी</unitPattern>
-			</unit>
-			<unit type="pressure-ofhg">
-				<unitPattern count="one">{0} Hg</unitPattern>
-				<unitPattern count="other">{0} Hg</unitPattern>
-			</unit>
 			<unit type="pressure-inch-ofhg">
 				<displayName>″ Hg</displayName>
 				<unitPattern count="one">{0}&quot; Hg</unitPattern>
@@ -8097,6 +7965,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="pressure-millibar">
 				<unitPattern count="one">{0}mb</unitPattern>
 				<unitPattern count="other">{0}mb</unitPattern>
+			</unit>
+			<unit type="pressure-pascal">
+				<unitPattern count="one">{0} Pa</unitPattern>
+				<unitPattern count="other">{0} Pa</unitPattern>
+			</unit>
+			<unit type="pressure-kilopascal">
+				<unitPattern count="one">{0} kPa</unitPattern>
+				<unitPattern count="other">{0} kPa</unitPattern>
+			</unit>
+			<unit type="pressure-megapascal">
+				<unitPattern count="one">{0} MPa</unitPattern>
+				<unitPattern count="other">{0} MPa</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<unitPattern count="one">{0} किमी/घं</unitPattern>
@@ -8107,8 +7987,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} मीप्रघं</unitPattern>
 			</unit>
 			<unit type="speed-beaufort">
-				<unitPattern count="one">ब्यूफ़ोर्ट{0}</unitPattern>
-				<unitPattern count="other">ब्यूफ़ोर्ट{0}</unitPattern>
+				<displayName>Bft</displayName>
+				<unitPattern count="one">B {0}</unitPattern>
+				<unitPattern count="other">B {0}</unitPattern>
 			</unit>
 			<unit type="temperature-celsius">
 				<displayName>°से॰</displayName>
@@ -8165,8 +8046,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} मिली</unitPattern>
 				<unitPattern count="other">{0} मिली</unitPattern>
 			</unit>
-			<unit type="volume-fluid-ounce-metric">
-				<displayName>मेट्रिक फ़्लूड आउंस</displayName>
+			<unit type="volume-pint-metric">
+				<displayName>pt</displayName>
+				<unitPattern count="one">{0} mpt</unitPattern>
+				<unitPattern count="other">{0} mpt</unitPattern>
 			</unit>
 			<unit type="volume-acre-foot">
 				<unitPattern count="one">{0} एकड़ फ़ीट</unitPattern>
@@ -8188,11 +8071,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} इम्पी गैलन</unitPattern>
 				<unitPattern count="other">{0} इम्पी गैलन</unitPattern>
 				<perUnitPattern>{0}/इम्पी गैलन</perUnitPattern>
-			</unit>
-			<unit type="volume-pint">
-				<displayName>पा</displayName>
-				<unitPattern count="one">{0} पा</unitPattern>
-				<unitPattern count="other">{0} पा</unitPattern>
 			</unit>
 			<unit type="volume-fluid-ounce">
 				<displayName>fl oz</displayName>
@@ -8234,21 +8112,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} qt-Imp.</unitPattern>
 				<unitPattern count="other">{0} qt-Imp.</unitPattern>
 			</unit>
-			<unit type="energy-calorie-it">
-				<displayName>cal-IT</displayName>
-			</unit>
-			<unit type="energy-becquerel">
-				<unitPattern count="one">{0} Bq</unitPattern>
-				<unitPattern count="other">{0} Bq</unitPattern>
-			</unit>
-			<unit type="energy-sievert">
-				<unitPattern count="one">{0} Sv</unitPattern>
-				<unitPattern count="other">{0} Sv</unitPattern>
-			</unit>
-			<unit type="energy-gray">
-				<unitPattern count="one">{0} Gy</unitPattern>
-				<unitPattern count="other">{0} Gy</unitPattern>
-			</unit>
 			<unit type="duration-night">
 				<unitPattern count="one">{0}रात</unitPattern>
 				<unitPattern count="other">{0}रातें</unitPattern>
@@ -8257,7 +8120,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	</units>
 	<listPatterns>
 		<listPattern>
-			<listPatternPart type="end">{0}, और {1}</listPatternPart>
+			<listPatternPart type="end">{0} और {1}</listPatternPart>
 			<listPatternPart type="2">{0} और {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="or">
@@ -8268,7 +8131,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<listPatternPart type="end">{0} और {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="unit">
-			<listPatternPart type="end">{0}, और {1}</listPatternPart>
+			<listPatternPart type="end">{0} और {1}</listPatternPart>
 			<listPatternPart type="2">{0} और {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="unit-narrow">
@@ -8587,12 +8450,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</sampleName>
 		<sampleName item="nativeGS">
 			<nameField type="given">ललित</nameField>
-			<nameField type="surname">शर्मा</nameField>
+			<nameField type="surname">कुमार</nameField>
 		</sampleName>
 		<sampleName item="nativeGGS">
 			<nameField type="given">ललित</nameField>
 			<nameField type="given2">मोहन</nameField>
-			<nameField type="surname">शर्मा</nameField>
+			<nameField type="surname">कुमार</nameField>
 		</sampleName>
 		<sampleName item="nativeFull">
 			<nameField type="title">श्री</nameField>

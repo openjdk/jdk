@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,6 @@ class KQueuePoller extends Poller {
     private final Cleanable cleaner;
 
     KQueuePoller(Poller.Mode mode, boolean subPoller, boolean read) throws IOException {
-        boolean wakeable = (mode == Mode.POLLER_PER_CARRIER) && subPoller;
         int maxEvents = (subPoller) ? 16 : 64;
 
         int kqfd = KQueue.create();
@@ -58,11 +57,12 @@ class KQueuePoller extends Poller {
             address = KQueue.allocatePollArray(maxEvents);
 
             // register one end of the pipe with kqueue to allow for wakeup
-            if (wakeable) {
-                long fds = IOUtil.makePipe(false);
-                fd0 = (int) (fds >>> 32);
-                fd1 = (int) fds;
-                KQueue.register(kqfd, fd0, EVFILT_READ, EV_ADD);
+            long fds = IOUtil.makePipe(false);
+            fd0 = (int) (fds >>> 32);
+            fd1 = (int) fds;
+            int err = KQueue.register(kqfd, fd0, EVFILT_READ, EV_ADD);
+            if (err != 0) {
+                throw new IOException("kevent failed: " + err);
             }
         } catch (Throwable e) {
             FileDispatcherImpl.closeIntFD(kqfd);
@@ -79,9 +79,9 @@ class KQueuePoller extends Poller {
         this.fd0 = fd0;
         this.fd1 = fd1;
 
-        // create action to close kqueue, register cleaner when wakeable
+        // create action to close kqueue, register cleaner for per-carrier sub-pollers
         this.closer = closer(kqfd, address, fd0, fd1);
-        if (wakeable) {
+        if ((mode == Mode.POLLER_PER_CARRIER) && subPoller) {
             this.cleaner = CleanerFactory.cleaner().register(this, closer);
         } else {
             this.cleaner = null;
@@ -133,9 +133,6 @@ class KQueuePoller extends Poller {
 
     @Override
     void wakeupPoller() throws IOException {
-        if (fd1 < 0) {
-            throw new UnsupportedOperationException();
-        }
         IOUtil.write1(fd1, (byte)0);
     }
 

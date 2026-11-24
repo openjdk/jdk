@@ -998,6 +998,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="collation" type="ducet">𞤈𞤫𞤱𞤲𞤭𞤲𞥋𞤣𞤭𞤪𞤮 𞤔𞤭𞤩𞤼𞤢𞤲𞤣𞤫 𞤊𞤭𞤩𞤢𞤲𞤣𞤫 Unicode</type>
 			<type key="collation" type="search">𞤏𞤭𞤯𞤢𞤲𞤣𞤫 𞤖𞤵𞥅𞤩𞤵𞤲𞥋𞤣𞤫</type>
 			<type key="collation" type="standard">𞤖𞤢𞤱𞤪𞤭𞤼𞤢𞤲𞤣𞤫 𞤈𞤫𞤱𞤲𞤭𞤲𞥋𞤣𞤭𞤪𞤮 𞤔𞤭𞤩𞤼𞤢𞤲𞤣𞤫</type>
+			<type key="hc" type="c12">𞤐𞥋𞤔𞤵𞤩𞥆𞤵𞤣𞤭 𞤁𞤵𞤥𞤵𞤲𞥆𞤢 𞤐𞥋𞤔𞤢𞤥𞤲𞥋𞤣𞤭 𞥑𞥒</type>
+			<type key="hc" type="c24">𞤐𞥋𞤔𞤵𞤩𞥆𞤵𞤣𞤭 𞤁𞤵𞤥𞤵𞤲𞥆𞤢 𞤐𞥋𞤔𞤢𞤥𞤲𞥋𞤣𞤭 𞥒𞥔</type>
 			<type key="hc" type="h11">𞤐𞤶𞤵𞤩𞥆𞤵𞤣𞤭 𞤁𞤵𞤥𞤵𞤲𞥆𞤢 𞤐𞤶𞤢𞤥𞤲𞤣𞤭 𞥑𞥒 (𞥐-𞥑𞥒)</type>
 			<type key="hc" type="h12">𞤐𞥋𞤔𞤵𞤩𞥆𞤵𞤣𞤭 𞤁𞤵𞤥𞤵𞤲𞥆𞤢 𞤐𞥋𞤔𞤢𞤥𞤲𞥋𞤣𞤭 𞥑𞥒 (𞥑-𞥑𞥒)</type>
 			<type key="hc" type="h23">𞤐𞥋𞤔𞤵𞤩𞥆𞤵𞤣𞤭 𞤁𞤵𞤥𞤵𞤲𞥆𞤢 𞤐𞥋𞤔𞤢𞤥𞤲𞥋𞤣𞤭 𞥒𞥔 (𞥐-𞥒𞥓)</type>
@@ -1863,6 +1865,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yw" count="other">𞤴𞤮𞤲𞤼𞤫𞤪𞤫 w 𞤲𞤣𞤫𞤪 Y</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="mixed" draft="provisional">{0} – {1}</intervalFormatRange>
+							<intervalFormatRange type="non-numeric" draft="provisional">{0} – {1}</intervalFormatRange>
+							<intervalFormatRange type="numeric" draft="provisional">{0} – {1}</intervalFormatRange>
+						</intervalFormatRanges>
 						<intervalFormatItem id="Bh">
 							<greatestDifference id="h">h – h B</greatestDifference>
 						</intervalFormatItem>
@@ -2122,242 +2129,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</calendar>
 			<calendar type="japanese">
 				<eras>
-					<eraNames>
-						<era type="113">𞤔𞤮𞥅𞤺𞤫𞤲 (𞥑𞥒𞥑𞥑-𞥑𞥒𞥐𞥖)</era>
-					</eraNames>
 					<eraAbbr>
-						<era type="0">𞤚𞤢𞤴𞤳𞤢 (𞥖𞥔𞥕-𞥖𞥕𞥐)</era>
-						<era type="1">𞤖𞤢𞤳𞤵𞤧𞤭 (𞥖𞥕𞥐-𞥖𞥗𞥑)</era>
-						<era type="2">𞤖𞤢𞤳𞤵𞤸𞤮𞥅 (𞥖𞥗𞥒-𞥖𞥘𞥖)</era>
-						<era type="3">𞤡𞤵𞤷𞤮𞥅 (𞥖𞥘𞥖-𞥗𞥐𞥑)</era>
-						<era type="4">𞤚𞤢𞤴𞤸𞤮𞥅 (𞥗𞥐𞥑-𞥗𞥐𞥔)</era>
-						<era type="5">𞤑𞤫𞤴𞤵𞤲 (𞥗𞥐𞥔-𞥗𞥐𞥘)</era>
-						<era type="6">𞤏𞤢𞤣𞤮𞥅 (𞥗𞥐𞥘-𞥗𞥑𞥕)</era>
-						<era type="7">𞤈𞤫𞤴𞤳𞤭 (𞥗𞥑𞥕-𞥗𞥑𞥗)</era>
-						<era type="8">𞤒𞤮𞥅𞤪𞤮𞥅 (𞥗𞥑𞥗-𞥗𞥒𞥔)</era>
-						<era type="9">𞤔𞤭𞤲𞤳𞤭 (𞥗𞥒𞥔-𞥗𞥒𞥙)</era>
-						<era type="10">𞤚𞤫𞤥𞤨𞤭𞤴𞤮𞥅 (𞥗𞥒𞥙-𞥗𞥔𞥙)</era>
-						<era type="11">𞤚𞤫𞤥𞤨𞤭𞤴𞤮𞥅 𞤳𞤢𞤥𞤨𞤮𞥅 (𞥗𞥔𞥙-𞥗𞥔𞥙)</era>
-						<era type="12">𞤚𞤫𞤥𞤨𞤭𞤴𞤮𞥅 𞤧𞤮𞥅𞤸𞤮𞥅 (𞥗𞥔𞥙-𞥗𞥕𞥗)</era>
-						<era type="13">𞤚𞤫𞤥𞤨𞤭𞤴𞤮𞥅 𞤸𞤮𞥅𞤶𞤭 (𞥗𞥕𞥗-𞥗𞥖𞥕)</era>
-						<era type="14">𞤚𞤫𞤥𞤨𞤭𞤴𞤮𞥅 𞤶𞤭𞤲𞤺𞤮 (𞥗𞥖𞥕-𞥗𞥖𞥗)</era>
-						<era type="15">𞤔𞤭𞤲𞤺𞤮-𞤳𞤫𞤴𞤵𞥅𞤲 (𞥗𞥖𞥗-𞥗𞥗𞥐)</era>
-						<era type="16">𞤖𞤮𞥅𞤳𞤭 (𞥗𞥗𞥐-𞥗𞥘𞥐)</era>
-						<era type="17">𞤚𞤫𞤲-𞤮𞥅 (𞥗𞥘𞥑-𞥗𞥘𞥒)</era>
-						<era type="18">𞤉𞤲𞤪𞤢𞤴𞤳𞤵 (𞥗𞥘𞥒-𞥘𞥐𞥖)</era>
-						<era type="19">𞤁𞤢𞤴𞤣𞤮𞥅 (𞥘𞥐𞥖-𞥘𞥑𞥐)</era>
-						<era type="20">𞤑𞤮𞥅𞤲𞤭𞤲 (𞥘𞥑𞥐-𞥘𞥒𞥔)</era>
-						<era type="21">𞤚𞤫𞤲𞤧𞤮𞥅 (𞥘𞥒𞥔-𞥘𞥓𞥔)</era>
-						<era type="22">𞤔𞤮𞥅𞤱𞤢 (𞥘𞥓𞥔-𞥘𞥔𞥘)</era>
-						<era type="23">𞤑𞤢𞤶𞤮𞥅 (𞥘𞥔𞥘-𞥘𞥕𞥑)</era>
-						<era type="24">𞤐𞤭𞤲𞤶𞤵 (𞥘𞥕𞥑-𞥘𞥕𞥔)</era>
-						<era type="25">𞤅𞤢𞤴𞤳𞤮𞥅 (𞥘𞥕𞥔-𞥘𞥕𞥗)</era>
-						<era type="26">𞤚𞤫𞤲-𞤢𞤲 (𞥘𞥕𞥗-𞥘𞥕𞥙)</era>
-						<era type="27">𞤔𞤮𞥅𞤺𞤢𞤲 (𞥘𞥕𞥙-𞥘𞥗𞥗)</era>
-						<era type="28">𞤘𞤢𞤲𞤶𞤭𞤴𞤮𞥅 (𞥘𞥗𞥗-𞥘𞥘𞥕)</era>
-						<era type="29">𞤐𞤭𞤲𞥆𞤢 (𞥘𞥘𞥕-𞥘𞥘𞥙)</era>
-						<era type="30">𞤑𞤢𞤥𞤨𞤭𞤴𞤮𞥅 (𞥘𞥘𞥙-𞥘𞥙𞥘)</era>
-						<era type="31">𞤡𞤮𞥅𞤼𞤢𞤴 (𞥘𞥙𞥘-𞥙𞥐𞥑)</era>
-						<era type="32">𞤉𞤲𞤺𞤭𞥅 (𞥙𞥐𞥑-𞥙𞥒𞥓)</era>
-						<era type="33">𞤉𞤲𞥃𞤮𞥅 (𞥙𞥒𞥓-𞥙𞥓𞥑)</era>
-						<era type="34">𞤔𞤮𞥅𞤸𞤫𞤴 (𞥙𞥓𞥑-𞥙𞥓𞥘)</era>
-						<era type="35">𞤚𞤫𞤲𞤺𞤭𞤴𞤮𞥅 (𞥙𞥓𞥘-𞥙𞥔𞥗)</era>
-						<era type="36">𞤚𞤫𞤲𞤪𞤢𞤴𞤳𞤵 (𞥙𞥔𞥗-𞥙𞥕𞥗)</era>
-						<era type="37">𞤚𞤫𞤲𞤼𞤮𞤳𞤵 (𞥙𞥕𞥗-𞥙𞥖𞥑)</era>
-						<era type="38">𞤌𞥅𞤱𞤢 (𞥙𞥖𞥑-𞥙𞥖𞥔)</era>
-						<era type="39">𞤑𞤮𞥅𞤸𞤮𞥅 (𞥙𞥖𞥔-𞥙𞥖𞥘)</era>
-						<era type="40">𞤀𞤲𞥆𞤢 (𞥙𞥖𞥘-𞥙𞥗𞥐)</era>
-						<era type="41">𞤚𞤫𞤲𞤪𞤮𞤳𞤵 (𞥙𞥗𞥐-𞥙𞥗𞥓)</era>
-						<era type="42">𞤚𞤫𞤲𞥋𞤫𞤲 (𞥙𞥗𞥓-𞥙𞥗𞥖)</era>
-						<era type="43">𞤔𞤮𞥅𞤺𞤫𞤲 (𞥙𞥗𞥖-𞥙𞥗𞥘)</era>
-						<era type="44">𞤚𞤫𞤲𞤺𞤫𞤲 (𞥙𞥗𞥘-𞥙𞥘𞥓)</era>
-						<era type="45">𞤉𞤴𞤳𞤢𞤲 (𞥙𞥘𞥓-𞥙𞥘𞥕)</era>
-						<era type="46">𞤑𞤢𞤲𞥆𞤢 (𞥙𞥘𞥕-𞥙𞥘𞥗)</era>
-						<era type="47">𞤉𞤴𞥇𞤫𞤲 (𞥙𞥘𞥗-𞥙𞥘𞥙)</era>
-						<era type="48">𞤉𞤴𞤧𞤮 (𞥙𞥘𞥙-𞥙𞥙𞥐)</era>
-						<era type="49">𞤡𞤮𞥅𞤪𞤴𞤢𞤳𞤵 (𞥙𞥙𞥐-𞥙𞥙𞥕)</era>
-						<era type="50">𞤕𞤮𞥅𞤼𞤮𞤳𞤵 (𞥙𞥙𞥕-𞥙𞥙𞥙)</era>
-						<era type="51">𞤕𞤮𞥅𞤸𞤮𞥅 (𞥙𞥙𞥙-𞥑𞥐𞥐𞥔)</era>
-						<era type="52">𞤑𞤢𞤲𞤳𞤮𞥅 (𞥑𞥐𞥐𞥔-𞥑𞥐𞥑𞥒)</era>
-						<era type="53">𞤕𞤮𞥅𞤱𞤢 (𞥑𞥐𞥑𞥒-𞥑𞥐𞥑𞥗)</era>
-						<era type="54">𞤑𞤢𞤲𞥆𞤭𞤲 (𞥑𞥐𞥑𞥗-𞥑𞥐𞥒𞥑)</era>
-						<era type="55">𞤔𞤭𞤴𞤢𞤲 (𞥑𞥐𞥒𞥑-𞥑𞥐𞥒𞥔)</era>
-						<era type="56">𞤃𞤢𞤲𞤶𞤵 (𞥑𞥐𞥒𞥔-𞥑𞥐𞥒𞥘)</era>
-						<era type="57">𞤕𞤮𞥅𞤺𞤫𞤲 (𞥑𞥐𞥒𞥘-𞥑𞥐𞥓𞥗)</era>
-						<era type="58">𞤕𞤮𞥅𞤪𞤴𞤢𞤳𞤵 (𞥑𞥐𞥓𞥗-𞥑𞥐𞥔𞥐)</era>
-						<era type="59">𞤕𞤮𞥅𞤳𞤴𞤵𞥅 (𞥑𞥐𞥔𞥐-𞥑𞥐𞥔𞥔)</era>
-						<era type="60">𞤑𞤢𞤲𞤼𞤮𞤳𞤵 (𞥑𞥐𞥔𞥔-𞥑𞥐𞥔𞥖)</era>
-						<era type="61">𞤉𞤴𞥃𞤮𞥅 (𞥑𞥐𞥔𞥖-𞥑𞥐𞥕𞥓)</era>
-						<era type="62">𞤚𞤫𞤲𞤺𞤭 (𞥑𞥐𞥕𞥓-𞥑𞥐𞥕𞥘)</era>
-						<era type="63">𞤑𞤮𞥅𞤸𞤫𞤴 (𞥑𞥐𞥕𞥘-𞥑𞥐𞥖𞥕)</era>
-						<era type="64">𞤔𞤭𞤪𞤴𞤢𞤳𞤵 (𞥑𞥐𞥖𞥕-𞥑𞥐𞥖𞥙)</era>
-						<era type="65">𞤉𞤲𞤳𞤭𞤴𞤵𞥅 (𞥑𞥐𞥖𞥙-𞥑𞥐𞥗𞥔)</era>
-						<era type="66">𞤡𞤮𞥅𞤸𞤮 (𞥑𞥐𞥗𞥔-𞥑𞥐𞥗𞥗)</era>
-						<era type="67">𞤡𞤮𞥅𞤪𞤴𞤢𞤳𞤵 (𞥑𞥐𞥗𞥗-𞥑𞥐𞥘𞥑)</era>
-						<era type="68">𞤉𞤴𞤸𞤮𞥅 (𞥑𞥐𞥘𞥑-𞥑𞥐𞥘𞥔)</era>
-						<era type="69">𞤌𞥅𞤼𞤮𞤳𞤵 (𞥑𞥐𞥘𞥔-𞥑𞥐𞥘𞥗)</era>
-						<era type="70">𞤑𞤢𞤲𞤶𞤭 (𞥑𞥐𞥘𞥗-𞥑𞥐𞥙𞥔)</era>
-						<era type="71">𞤑𞤢𞤸𞤮𞥅 (𞥑𞥐𞥙𞥔-𞥑𞥐𞥙𞥖)</era>
-						<era type="72">𞤉𞤴𞤷𞤮𞥅 (𞥑𞥐𞥙𞥖-𞥑𞥐𞥙𞥗)</era>
-						<era type="73">𞤔𞤮𞥅𞤼𞤮𞤳𞤵 (𞥑𞥐𞥙𞥗-𞥑𞥐𞥙𞥙)</era>
-						<era type="74">𞤑𞤮𞥅𞤱𞤢 (𞥑𞥐𞥙𞥙-𞥑𞥑𞥐𞥔)</era>
-						<era type="75">𞤕𞤮𞥅𞤶𞤭 (𞥑𞥑𞥐𞥔-𞥑𞥑𞥐𞥖)</era>
-						<era type="76">𞤑𞤢𞥃𞤮𞥅 (𞥑𞥑𞥐𞥖-𞥑𞥑𞥐𞥘)</era>
-						<era type="77">𞤚𞤫𞤲𞥆𞤭𞤲 (𞥑𞥑𞥐𞥘-𞥑𞥑𞥑𞥐)</era>
-						<era type="78">𞤚𞤫𞤲-𞤫𞤴 (𞥑𞥑𞥑𞥐-𞥑𞥑𞥑𞥓)</era>
-						<era type="79">𞤉𞤴𞤳𞤭𞤴𞤵𞥅 (𞥑𞥑𞥑𞥓-𞥑𞥑𞥑𞥘)</era>
-						<era type="80">𞤘𞤫𞤲𞥇𞤴𞤭 (𞥑𞥑𞥑𞥘-𞥑𞥑𞥒𞥐)</era>
-						<era type="81">(𞤖𞤮𞥅𞤢𞤲 (𞥑𞥑𞥒𞥐-𞥑𞥑𞥒𞥔</era>
-						<era type="82">𞤚𞤫𞤲𞤶𞤭 (𞥑𞥑𞥒𞥔-𞥑𞥑𞥒𞥖)</era>
-						<era type="83">𞤁𞤢𞤴𞤶𞤭 (𞥑𞥑𞥒𞥖-𞥑𞥑𞥓𞥑)</era>
-						<era type="84">𞤚𞤫𞤲𞥃𞤮𞥅 (𞥑𞥑𞥓𞥑-𞥑𞥑𞥓𞥒)</era>
-						<era type="85">𞤕𞤮𞥅𞥃𞤮𞥅 (𞥑𞥑𞥓𞥒-𞥑𞥑𞥓𞥕)</era>
-						<era type="86">𞤖𞤮𞥅𞤫𞤲 (𞥑𞥑𞥓𞥕-𞥑𞥑𞥔𞥑)</era>
-						<era type="87">𞤉𞤴𞤶𞤭 (𞥑𞥑𞥔𞥑-𞥑𞥑𞥔𞥒)</era>
-						<era type="88">𞤑𞤮𞥅𞤶𞤭 (𞥑𞥑𞥔𞥒-𞥑𞥑𞥔𞥔)</era>
-						<era type="89">𞤚𞤫𞤲𞥇𞤴𞤮𞥅 (𞥑𞥑𞥔𞥔-𞥑𞥑𞥔𞥕)</era>
-						<era type="90">𞤑𞤭𞤴𞤵𞥅𞤢𞤲 (𞥑𞥑𞥔𞥕-𞥑𞥑𞥕𞥑)</era>
-						<era type="91">𞤐𞤭𞤲𞤨𞤫𞤴 (𞥑𞥑𞥕𞥑-𞥑𞥑𞥕𞥔)</era>
-						<era type="92">𞤑𞤭𞤴𞤵𞥅𞤶𞤵 (𞥑𞥑𞥕𞥔-𞥑𞥑𞥕𞥖)</era>
-						<era type="93">𞤖𞤮𞥅𞤺𞤫𞤲 (𞥑𞥑𞥕𞥖-𞥑𞥑𞥕𞥙)</era>
-						<era type="94">𞤖𞤫𞤴𞤶𞤭 (𞥑𞥑𞥕𞥙-𞥑𞥑𞥖𞥐)</era>
-						<era type="95">𞤉𞤴𞤪𞤭𞤴𞤢𞤳𞤵 (𞥑𞥑𞥖𞥐-𞥑𞥑𞥖𞥑)</era>
-						<era type="96">𞤌𞥅𞤸𞤮 (𞥑𞥑𞥖𞥑-𞥑𞥑𞥖𞥓)</era>
-						<era type="97">𞤕𞤮𞥅𞤳𞤢𞤲 (𞥑𞥑𞥖𞥓-𞥑𞥑𞥖𞥕)</era>
-						<era type="98">𞤉𞤴𞤥𞤢𞤲 (𞥑𞥑𞥖𞥕-𞥑𞥑𞥖𞥖)</era>
-						<era type="99">𞤐𞤭𞤲𞥇𞤢𞤲 (𞥑𞥑𞥖𞥖-𞥑𞥑𞥖𞥙)</era>
-						<era type="100">𞤑𞤢𞤮𞥅 (𞥑𞥑𞥖𞥙-𞥑𞥑𞥗𞥑)</era>
-						<era type="101">𞤡𞤮𞥅𞤢𞤲 (𞥑𞥑𞥗𞥑-𞥑𞥑𞥗𞥕)</era>
-						<era type="102">𞤀𞤲𞤺𞤫𞤲 (𞥑𞥑𞥗𞥕-𞥑𞥑𞥗𞥗)</era>
-						<era type="103">𞤔𞤭𞥃𞤮𞥅 (𞥑𞥑𞥗𞥗-𞥑𞥑𞥘𞥑)</era>
-						<era type="104">𞤒𞤮𞥅𞤱𞤢 (𞥑𞥑𞥘𞥑-𞥑𞥑𞥘𞥒)</era>
-						<era type="105">𞤔𞤵𞤫𞤴 (𞥑𞥑𞥘𞥒-𞥑𞥑𞥘𞥔)</era>
-						<era type="106">𞤘𞤫𞤲𞤪𞤭𞤴𞤢𞤳𞤵 (𞥑𞥑𞥘𞥔-𞥑𞥑𞥘𞥕)</era>
-						<era type="107">𞤄𞤵𞤲𞤶𞤭 (𞥑𞥑𞥘𞥕-𞥑𞥑𞥙𞥐)</era>
-						<era type="108">𞤑𞤫𞤲𞤳𞤭𞤴𞤵𞥅 (𞥑𞥑𞥙𞥐-𞥑𞥑𞥙𞥙)</era>
-						<era type="109">𞤡𞤮𞥅𞤶𞤭 (𞥑𞥑𞥙𞥙-𞥑𞥒𞥐𞥑)</era>
-						<era type="110">𞤑𞤫𞤲𞥆𞤭𞤲 (𞥑𞥒𞥐𞥑-𞥑𞥒𞥐𞥔)</era>
-						<era type="111">𞤘𞤫𞤲𞤳𞤭𞤴𞤵𞥅 (𞥑𞥒𞥐𞥔-𞥑𞥒𞥐𞥖)</era>
-						<era type="112">𞤑𞤫𞤲𞥇𞤫𞤴 (𞥑𞥒𞥐𞥖-𞥑𞥒𞥐𞥗)</era>
-						<era type="113">𞤔𞤮𞥅𞤺𞤫𞤲 (𞥑𞥒𞥐𞥗-𞥑𞥒𞥑𞥑)</era>
-						<era type="114">𞤑𞤫𞤲𞤪𞤭𞤴𞤢𞤳𞤵 (𞥑𞥒𞥑𞥑-𞥑𞥒𞥑𞥓)</era>
-						<era type="115">𞤑𞤫𞤥𞤨𞤮𞥅 (𞥑𞥒𞥑𞥓-𞥑𞥒𞥑𞥙)</era>
-						<era type="116">𞤔𞤮𞥅𞤳𞤭𞤴𞤵𞥅 (𞥑𞥒𞥑𞥙-𞥑𞥒𞥒𞥒)</era>
-						<era type="117">𞤔𞤮𞥅 (𞥑𞥒𞥒𞥒-𞥑𞥒𞥒𞥔)</era>
-						<era type="118">𞤘𞤫𞤲𞥆𞤭𞤲 (𞥑𞥒𞥒𞥔-𞥑𞥒𞥒𞥕)</era>
-						<era type="119">𞤑𞤢𞤪𞤮𞤳𞤵 (𞥑𞥒𞥒𞥕-𞥑𞥒𞥒𞥗)</era>
-						<era type="120">𞤀𞤲𞤼𞤫𞤴 (𞥑𞥒𞥒𞥗-𞥑𞥒𞥒𞥙)</era>
-						<era type="121">𞤑𞤢𞤲𞤳𞤭 (𞥑𞥒𞥒𞥙-𞥑𞥒𞥓𞥒)</era>
-						<era type="122">𞤔𞤮𞥅𞤫𞤴 (𞥑𞥒𞥓𞥒-𞥑𞥒𞥓𞥓)</era>
-						<era type="123">𞤚𞤫𞤥𞤨𞤵𞤳𞤵 (𞥑𞥒𞥓𞥓-𞥑𞥒𞥓𞥔)</era>
-						<era type="124">𞤄𞤵𞤲𞤪𞤭𞤴𞤢𞤳𞤵 (𞥑𞥒𞥓𞥔-𞥑𞥒𞥓𞥕)</era>
-						<era type="125">𞤑𞤢𞤼𞤫𞤴 (𞥑𞥒𞥓𞥕-𞥑𞥒𞥓𞥘)</era>
-						<era type="126">𞤈𞤢𞤴𞤳𞤵𞤲𞤭𞤲 (𞥑𞥒𞥓𞥘-𞥑𞥒𞥓𞥙)</era>
-						<era type="127">𞤉𞤲𞥇𞤮𞥅 (𞥑𞥒𞥓𞥙-𞥑𞥒𞥔𞥐)</era>
-						<era type="128">𞤐𞤭𞤲𞤶𞤭 (𞥑𞥒𞥔𞥐-𞥑𞥒𞥔𞥓)</era>
-						<era type="129">𞤑𞤢𞤲𞤺𞤫𞤲 (𞥑𞥒𞥔𞥓-𞥑𞥒𞥔𞥗)</era>
-						<era type="130">𞤖𞤮𞥅𞤶𞤭 (𞥑𞥒𞥔𞥗-𞥑𞥒𞥔𞥙)</era>
-						<era type="131">𞤑𞤫𞤲𞤷𞤮𞥅 (𞥑𞥒𞥔𞥙-𞥑𞥒𞥕𞥖)</era>
-						<era type="132">𞤑𞤮𞥅𞤺𞤫𞤲 (𞥑𞥒𞥕𞥖-𞥑𞥒𞥕𞥗)</era>
-						<era type="133">𞤡𞤮𞥅𞤳𞤢 (𞥑𞥒𞥕𞥗-𞥑𞥒𞥕𞥙)</era>
-						<era type="134">𞤡𞤮𞥅𞤺𞤫𞤲 (𞥑𞥒𞥕𞥙-𞥑𞥒𞥖𞥐)</era>
-						<era type="135">𞤄𞤵𞤲𞥇𞤮𞥅 (𞥑𞥒𞥖𞥐-𞥑𞥒𞥖𞥑)</era>
-						<era type="136">𞤑𞤮𞥅𞤷𞤮𞥅 (𞥑𞥒𞥖𞥑-𞥑𞥒𞥖𞥔)</era>
-						<era type="137">𞤄𞤵𞤲𞥇𞤫𞤴 (𞥑𞥒𞥖𞥔-𞥑𞥒𞥗𞥕)</era>
-						<era type="138">𞤑𞤫𞤲𞤶𞤭 (𞥑𞥒𞥗𞥕-𞥑𞥒𞥗𞥘)</era>
-						<era type="139">𞤑𞤮𞥅𞤢𞤲 (𞥑𞥒𞥗𞥘-𞥑𞥒𞥘𞥘)</era>
-						<era type="140">𞤡𞤮𞥅 (𞥑𞥒𞥘𞥘-𞥑𞥒𞥙𞥓)</era>
-						<era type="141">𞤉𞤴𞤲𞤭𞤲 (𞥑𞥒𞥙𞥓-𞥑𞥒𞥙𞥙)</era>
-						<era type="142">𞤡𞤮𞥅𞤢𞤲 (𞥑𞥒𞥙𞥙-𞥑𞥓𞥐𞥒)</era>
-						<era type="143">𞤑𞤫𞤲𞤺𞤫𞤲 (𞥑𞥓𞥐𞥒-𞥑𞥓𞥐𞥓)</era>
-						<era type="144">𞤑𞤢𞤺𞤫𞤲 (𞥑𞥓𞥐𞥓-𞥑𞥓𞥐𞥖)</era>
-						<era type="145">𞤚𞤮𞤳𞤵𞤶𞤭 (𞥑𞥓𞥐𞥖-𞥑𞥓𞥐𞥘)</era>
-						<era type="146">𞤉𞤲𞤳𞤭𞤴𞤮𞥅 (𞥑𞥓𞥐𞥘-𞥑𞥓𞥑𞥑)</era>
-						<era type="147">𞤌𞥅𞤷𞤮𞥅 (𞥑𞥓𞥑𞥑-𞥑𞥓𞥑𞥒)</era>
-						<era type="148">𞤡𞤮𞥅𞤱𞤢 (𞥑𞥓𞥑𞥒-𞥑𞥓𞥑𞥗)</era>
-						<era type="149">𞤄𞤵𞤥𞤨𞤮𞥅 (𞥑𞥓𞥑𞥗-𞥑𞥓𞥑𞥙)</era>
-						<era type="150">𞤘𞤫𞤲𞤮𞥅 (𞥑𞥓𞥑𞥙-𞥑𞥓𞥒𞥑)</era>
-						<era type="151">𞤘𞤫𞤲𞤳𞤮𞥅 (𞥑𞥓𞥒𞥑-𞥑𞥓𞥒𞥔)</era>
-						<era type="152">𞤡𞤮𞥅𞤷𞤵𞥅 (𞥑𞥓𞥒𞥔-𞥑𞥓𞥒𞥖)</era>
-						<era type="153">𞤑𞤢𞤪𞤴𞤢𞤳𞤵 (𞥑𞥓𞥒𞥖-𞥑𞥓𞥒𞥙)</era>
-						<era type="154">𞤘𞤫𞤲𞤼𞤮𞤳𞤵 (𞥑𞥓𞥒𞥙-𞥑𞥓𞥓𞥑)</era>
-						<era type="155">𞤘𞤫𞤲𞤳𞤮𞥅 (𞥑𞥓𞥓𞥑-𞥑𞥓𞥓𞥔)</era>
-						<era type="156">𞤑𞤫𞤲𞤥𞤵 (𞥑𞥓𞥓𞥔-𞥑𞥓𞥓𞥖)</era>
-						<era type="157">𞤉𞤲𞤺𞤫𞤲 (𞥑𞥓𞥓𞥖-𞥑𞥓𞥔𞥐)</era>
-						<era type="158">𞤑𞤮𞥅𞤳𞤮𞤳𞤵 (𞥑𞥓𞥔𞥐-𞥑𞥓𞥔𞥖)</era>
-						<era type="159">𞤡𞤮𞥅𞤸𞤫𞤴 (𞥑𞥓𞥔𞥖-𞥑𞥓𞥗𞥐)</era>
-						<era type="160">𞤑𞤫𞤲𞤼𞤮𞤳𞤵 (𞥑𞥓𞥗𞥐-𞥑𞥓𞥗𞥒)</era>
-						<era type="161">𞤄𞤵𞤲𞤷𞤵𞥅 (𞥑𞥓𞥗𞥒-𞥑𞥓𞥗𞥕)</era>
-						<era type="162">𞤚𞤫𞤲𞤶𞤵 (𞥑𞥓𞥗𞥕-𞥑𞥓𞥗𞥙)</era>
-						<era type="163">𞤑𞤮𞥅𞤪𞤴𞤢𞤳𞤵 (𞥑𞥓𞥗𞥙-𞥑𞥓𞥘𞥑)</era>
-						<era type="164">𞤑𞤮𞥅𞤱𞤢 (𞥑𞥓𞥘𞥑-𞥑𞥓𞥘𞥔)</era>
-						<era type="165">𞤘𞤫𞤲𞤷𞤵𞥅 (𞥑𞥓𞥘𞥔-𞥑𞥓𞥙𞥒)</era>
-						<era type="166">𞤃𞤫𞤴𞤼𞤮𞤳𞤵 (𞥑𞥓𞥘𞥔-𞥑𞥓𞥘𞥗)</era>
-						<era type="167">𞤑𞤢𞤳𞤫𞤴 (𞥑𞥓𞥘𞥗-𞥑𞥓𞥘𞥙)</era>
-						<era type="168">𞤑𞤮𞥅 (𞥑𞥓𞥘𞥙-𞥑𞥓𞥙𞥐)</era>
-						<era type="169">𞤃𞤫𞤴𞤼𞤮𞤳𞤵 (𞥑𞥓𞥙𞥐-𞥑𞥓𞥙𞥔)</era>
-						<era type="170">𞤌𞥅𞤫𞤴 (𞥑𞥓𞥙𞥔-𞥑𞥔𞥒𞥘)</era>
-						<era type="171">𞤡𞤮𞥅𞤷𞤮𞥅 (𞥑𞥔𞥒𞥘-𞥑𞥔𞥒𞥙)</era>
-						<era type="172">𞤉𞤴𞤳𞤭𞤴𞤮𞥅 (𞥑𞥔𞥒𞥙-𞥑𞥔𞥔𞥑)</era>
-						<era type="173">𞤑𞤢𞤳𞤭𞤼𞤧𞤵 (𞥑𞥔𞥔𞥑-𞥑𞥔𞥔𞥔)</era>
-						<era type="174">𞤄𞤵𞤲𞥇𞤢𞤲 (𞥑𞥔𞥔𞥔-𞥑𞥔𞥔𞥙)</era>
-						<era type="175">𞤖𞤮𞥅𞤼𞤮𞤳𞤵 (𞥑𞥔𞥔𞥙-𞥑𞥔𞥕𞥒)</era>
-						<era type="176">𞤑𞤭𞤴𞤮𞥅𞤼𞤮𞤳𞤵 (𞥑𞥔𞥕𞥒-𞥑𞥔𞥕𞥕)</era>
-						<era type="177">𞤑𞤮𞥅𞥃𞤮𞥅 (𞥑𞥔𞥕𞥕-𞥑𞥔𞥕𞥗)</era>
-						<era type="178">𞤕𞤮𞥅𞤪𞤮𞤳𞤵 (𞥑𞥔𞥕𞥗-𞥑𞥔𞥖𞥐)</era>
-						<era type="179">𞤑𞤢𞤲𞥃𞤮𞥅 (𞥑𞥔𞥖𞥐-𞥑𞥔𞥖𞥖)</era>
-						<era type="180">𞤄𞤵𞤲𞥃𞤮𞥅 (𞥑𞥔𞥖𞥖-𞥑𞥔𞥖𞥗)</era>
-						<era type="181">𞤌𞥅𞤲𞤭𞤲 (𞥑𞥔𞥖𞥗-𞥑𞥔𞥖𞥙)</era>
-						<era type="182">𞤄𞤵𞤲𞤥𞤫𞤴 (𞥑𞥔𞥕𞥙-𞥑𞥔𞥘𞥗)</era>
-						<era type="183">𞤕𞤮𞥅𞤳𞤴𞤮𞥅 (𞥑𞥔𞥘𞥗-𞥑𞥔𞥘𞥙)</era>
-						<era type="184">𞤉𞤲𞤼𞤮𞤳𞤵 (𞥑𞥔𞥘𞥙-𞥑𞥔𞥙𞥒)</era>
-						<era type="185">𞤃𞤫𞤴𞤮𞥅 (𞥑𞥔𞥙𞥒-𞥑𞥕𞥐𞥑)</era>
-						<era type="186">𞤄𞤵𞤲𞤳𞤭 (𞥑𞥕𞥐𞥑-𞥑𞥕𞥐𞥔)</era>
-						<era type="187">𞤉𞤴𞥃𞤮𞥅 (𞥑𞥕𞥐𞥔-𞥑𞥕𞥒𞥑)</era>
-						<era type="188">𞤚𞤢𞤴𞤫𞤴 (𞥑𞥕𞥒𞥑-𞥑𞥕𞥒𞥘)</era>
-						<era type="189">𞤑𞤭𞤴𞤮𞥅𞤪𞤮𞤳𞤵 (𞥑𞥕𞥒𞥘-𞥑𞥕𞥓𞥒)</era>
-						<era type="190">𞤚𞤫𞤥𞤦𞤵𞤲 (𞥑𞥕𞥓𞥒-𞥑𞥕𞥕𞥕)</era>
-						<era type="191">𞤑𞤮𞥅𞤶𞤭 (𞥑𞥕𞥕𞥕-𞥑𞥕𞥕𞥘)</era>
-						<era type="192">𞤉𞤴𞤪𞤮𞤳𞤵 (𞥑𞥕𞥕𞥘-𞥑𞥕𞥗𞥐)</era>
-						<era type="193">𞤘𞤫𞤲𞤳𞤭 (𞥑𞥕𞥗𞥐-𞥑𞥕𞥗𞥓)</era>
-						<era type="194">𞤚𞤫𞤲𞥃𞤮𞥅 (𞥑𞥕𞥗𞥓-𞥑𞥕𞥙𞥒)</era>
-						<era type="195">𞤄𞤵𞤲𞤪𞤮𞤳𞤵 (𞥑𞥕𞥙𞥒-𞥑𞥕𞥙𞥖)</era>
-						<era type="196">𞤑𞤫𞤴𞤷𞤮𞥅 (𞥑𞥕𞥙𞥖-𞥑𞥖𞥑𞥕)</era>
-						<era type="197">𞤘𞤫𞤲𞥆𞤢 (𞥑𞥖𞥑𞥕-𞥑𞥖𞥒𞥔)</era>
-						<era type="198">𞤑𞤢𞤲𞥇𞤫𞤴 (𞥑𞥖𞥒𞥔-𞥑𞥖𞥔𞥔)</era>
-						<era type="199">𞤡𞤮𞥅𞤸𞤮 (𞥑𞥖𞥔𞥔-𞥑𞥖𞥔𞥘)</era>
-						<era type="200">𞤑𞤫𞤴𞤢𞤲 (𞥑𞥖𞥔𞥘-𞥑𞥖𞥕𞥒)</era>
-						<era type="201">𞤔𞤮𞥅 (𞥑𞥖𞥕𞥒-𞥑𞥖𞥕𞥕)</era>
-						<era type="202">𞤃𞤫𞤴𞤪𞤫𞤳𞤭 (𞥑𞥖𞥕𞥕-𞥑𞥖𞥕𞥘)</era>
-						<era type="203">𞤃𞤢𞤲𞤶𞤭 (𞥑𞥖𞥕𞥘-𞥑𞥖𞥖𞥑)</era>
-						<era type="204">𞤑𞤢𞤲𞤦𞤵𞤲 (𞥑𞥖𞥖𞥑-𞥑𞥖𞥗𞥓)</era>
-						<era type="205">𞤉𞤥𞤨𞤮𞥅 (𞥑𞥖𞥗𞥓-𞥑𞥖𞥘𞥑)</era>
-						<era type="206">𞤚𞤫𞤲𞥆𞤢 (𞥑𞥖𞥘𞥑-𞥑𞥖𞥘𞥔)</era>
-						<era type="207">𞤔𞤮𞥅𞤳𞤭𞤴𞤮𞥅 (𞥑𞥖𞥘𞥔-𞥑𞥖𞥘𞥘)</era>
-						<era type="208">𞤘𞤫𞤲𞤪𞤮𞤳𞤵 (𞥑𞥖𞥘𞥘-𞥑𞥗𞥐𞥔)</era>
-						<era type="209">𞤖𞤮𞥅𞤫𞤴 (𞥑𞥗𞥐𞥔-𞥑𞥗𞥑𞥑)</era>
-						<era type="210">𞤡𞤮𞥅𞤼𞤮𞤳𞤵 (𞥑𞥗𞥑𞥑-𞥑𞥗𞥑𞥖)</era>
-						<era type="211">𞤑𞤭𞤴𞤮𞥅𞤸𞤮𞥅 (𞥑𞥗𞥑𞥖-𞥑𞥗𞥓𞥖)</era>
-						<era type="212">𞤘𞤫𞤥𞤦𞤵𞤲 (𞥑𞥗𞥓𞥖-𞥑𞥗𞥔𞥑)</era>
-						<era type="213">𞤑𞤢𞤥𞤨𞤮𞥅 (𞥑𞥗𞥔𞥑-𞥑𞥗𞥔𞥔)</era>
-						<era type="214">𞤉𞤲𞤳𞤭𞤴𞤮𞥅 (𞥑𞥗𞥔𞥔-𞥑𞥗𞥔𞥘)</era>
-						<era type="215">𞤑𞤢𞤲𞥇𞥇𞥇𞥇𞤫𞤲 (𞥑𞥗𞥔𞥘-𞥑𞥗𞥕𞥑)</era>
-						<era type="216">𞤖𞤮𞥅𞤪𞤫𞤳𞤭 (𞥑𞥗𞥕𞥑-𞥑𞥗𞥖𞥔)</era>
-						<era type="217">𞤃𞤫𞤴𞤱𞤢 (𞥑𞥗𞥖𞥔-𞥑𞥗𞥗𞥒)</era>
-						<era type="218">𞤀𞤲𞥇𞤫𞤴 (𞥑𞥗𞥗𞥒-𞥑𞥗𞥘𞥑)</era>
-						<era type="219">𞤚𞤫𞤲𞤥𞤫𞤴 (𞥑𞥗𞥘𞥑-𞥑𞥗𞥘𞥙)</era>
-						<era type="220">𞤑𞤢𞤲𞤧𞤫𞤴 (𞥑𞥗𞥘𞥙-𞥑𞥘𞥐𞥑)</era>
-						<era type="221">𞤑𞤭𞤴𞤮𞥅𞤱𞤢 (𞥑𞥘𞥐𞥑-𞥑𞥘𞥐𞥔)</era>
-						<era type="222">𞤄𞤵𞤲𞤳𞤢 (𞥑𞥘𞥐𞥔-𞥑𞥘𞥑𞥘)</era>
-						<era type="223">𞤄𞤵𞤲𞤧𞤫𞤴 (𞥑𞥘𞥑𞥘-𞥑𞥘𞥓𞥐)</era>
-						<era type="224">𞤚𞤫𞤥𞤨𞤮𞥅 (𞥑𞥘𞥓𞥐-𞥑𞥘𞥔𞥔)</era>
-						<era type="225">𞤑𞤮𞥅𞤳𞤢 (𞥑𞥘𞥔𞥔-𞥑𞥘𞥔𞥘)</era>
-						<era type="226">𞤑𞤢𞤫𞤴 (𞥑𞥘𞥔𞥘-𞥑𞥘𞥕𞥔)</era>
-						<era type="227">𞤀𞤲𞤧𞤫𞤴 (𞥑𞥘𞥕𞥔-𞥑𞥘𞥖𞥐)</era>
-						<era type="228">𞤃𞤫𞤲𞥇𞤢𞤲 (𞥑𞥘𞥖𞥐-𞥑𞥘𞥖𞥑)</era>
-						<era type="229">𞤄𞤵𞤲𞤳𞤭𞤴𞤵𞥅 (𞥑𞥘𞥖𞥑-𞥑𞥘𞥖𞥔)</era>
-						<era type="230">𞤘𞤫𞤲𞤶𞤭 (𞥑𞥘𞥖𞥔-𞥑𞥘𞥖𞥕)</era>
-						<era type="231">𞤑𞤫𞤴𞤮𞥅 (𞥑𞥘𞥖𞥕-𞥑𞥘𞥖𞥘)</era>
 						<era type="232">𞤃𞤫𞤴𞤶𞤭</era>
 						<era type="233">𞤚𞤢𞤴𞥃𞤮𞥅</era>
 						<era type="234">𞤡𞤮𞥅𞤱𞤢</era>
@@ -2365,237 +2137,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<era type="236">𞤈𞤫𞤴𞤱𞤢</era>
 					</eraAbbr>
 					<eraNarrow>
-						<era type="0">𞤚𞤢𞤴𞤳𞤢 (𞥖𞥔𞥕-𞥖𞥕𞥐)</era>
-						<era type="1">𞤖𞤢𞤳𞤵𞤧𞤭 (𞥖𞥕𞥐-𞥖𞥗𞥑)</era>
-						<era type="2">𞤖𞤢𞤳𞤵𞤸𞤮𞥅 (𞥖𞥗𞥒-𞥖𞥘𞥖)</era>
-						<era type="3">𞤡𞤵𞤷𞤮𞥅 (𞥖𞥘𞥖-𞥗𞥐𞥑)</era>
-						<era type="4">𞤚𞤢𞤴𞤸𞤮𞥅 (𞥗𞥐𞥑-𞥗𞥐𞥔)</era>
-						<era type="5">𞤑𞤫𞤴𞤵𞤲 (𞥗𞥐𞥔-𞥗𞥐𞥘)</era>
-						<era type="6">𞤏𞤢𞤣𞤮𞥅 (𞥗𞥐𞥘-𞥗𞥑𞥕)</era>
-						<era type="7">𞤈𞤫𞤴𞤳𞤭 (𞥗𞥑𞥕-𞥗𞥑𞥗)</era>
-						<era type="8">𞤒𞤮𞥅𞤪𞤮𞥅 (𞥗𞥑𞥗-𞥗𞥒𞥔)</era>
-						<era type="9">𞤔𞤭𞤲𞤳𞤭 (𞥗𞥒𞥔-𞥗𞥒𞥙)</era>
-						<era type="10">𞤚𞤫𞤥𞤨𞤭𞤴𞤮𞥅 (𞥗𞥒𞥙-𞥗𞥔𞥙)</era>
-						<era type="11">𞤚𞤫𞤥𞤨𞤭𞤴𞤮𞥅 𞤳𞤢𞤥𞤨𞤮𞥅 (𞥗𞥔𞥙-𞥗𞥔𞥙)</era>
-						<era type="12">𞤚𞤫𞤥𞤨𞤭𞤴𞤮𞥅 𞤧𞤮𞥅𞤸𞤮𞥅 (𞥗𞥔𞥙-𞥗𞥕𞥗)</era>
-						<era type="13">𞤚𞤫𞤥𞤨𞤭𞤴𞤮𞥅 𞤸𞤮𞥅𞤶𞤭 (𞥗𞥕𞥗-𞥗𞥖𞥕)</era>
-						<era type="14">𞤚𞤫𞤥𞤨𞤭𞤴𞤮𞥅 𞤶𞤭𞤲𞤺𞤮 (𞥗𞥖𞥕-𞥗𞥖𞥗)</era>
-						<era type="15">𞤔𞤭𞤲𞤺𞤮-𞤳𞤫𞤴𞤵𞥅𞤲 (𞥗𞥖𞥗-𞥗𞥗𞥐)</era>
-						<era type="16">𞤖𞤮𞥅𞤳𞤭 (𞥗𞥗𞥐-𞥗𞥘𞥐)</era>
-						<era type="17">𞤚𞤫𞤲-𞤮𞥅 (𞥗𞥘𞥑-𞥗𞥘𞥒)</era>
-						<era type="18">𞤉𞤲𞤪𞤢𞤴𞤳𞤵 (𞥗𞥘𞥒-𞥘𞥐𞥖)</era>
-						<era type="19">𞤁𞤢𞤴𞤣𞤮𞥅 (𞥘𞥐𞥖-𞥘𞥑𞥐)</era>
-						<era type="20">𞤑𞤮𞥅𞤲𞤭𞤲 (𞥘𞥑𞥐-𞥘𞥒𞥔)</era>
-						<era type="21">𞤚𞤫𞤲𞤧𞤮𞥅 (𞥘𞥒𞥔-𞥘𞥓𞥔)</era>
-						<era type="22">𞤔𞤮𞥅𞤱𞤢 (𞥘𞥓𞥔-𞥘𞥔𞥘)</era>
-						<era type="23">𞤑𞤢𞤶𞤮𞥅 (𞥘𞥔𞥘-𞥘𞥕𞥑)</era>
-						<era type="24">𞤐𞤭𞤲𞤶𞤵 (𞥘𞥕𞥑-𞥘𞥕𞥔)</era>
-						<era type="25">𞤅𞤢𞤴𞤳𞤮𞥅 (𞥘𞥕𞥔-𞥘𞥕𞥗)</era>
-						<era type="26">𞤚𞤫𞤲-𞤢𞤲 (𞥘𞥕𞥗-𞥘𞥕𞥙)</era>
-						<era type="27">𞤔𞤮𞥅𞤺𞤢𞤲 (𞥘𞥕𞥙-𞥘𞥗𞥗)</era>
-						<era type="28">𞤘𞤢𞤲𞤶𞤭𞤴𞤮𞥅 (𞥘𞥗𞥗-𞥘𞥘𞥕)</era>
-						<era type="29">𞤐𞤭𞤲𞥆𞤢 (𞥘𞥘𞥕-𞥘𞥘𞥙)</era>
-						<era type="30">𞤑𞤢𞤥𞤨𞤭𞤴𞤮𞥅 (𞥘𞥘𞥙-𞥘𞥙𞥘)</era>
-						<era type="31">𞤡𞤮𞥅𞤼𞤢𞤴 (𞥘𞥙𞥘-𞥙𞥐𞥑)</era>
-						<era type="32">𞤉𞤲𞤺𞤭𞥅 (𞥙𞥐𞥑-𞥙𞥒𞥓)</era>
-						<era type="33">𞤉𞤲𞥃𞤮𞥅 (𞥙𞥒𞥓-𞥙𞥓𞥑)</era>
-						<era type="34">𞤔𞤮𞥅𞤸𞤫𞤴 (𞥙𞥓𞥑-𞥙𞥓𞥘)</era>
-						<era type="35">𞤚𞤫𞤲𞤺𞤭𞤴𞤮𞥅 (𞥙𞥓𞥘-𞥙𞥔𞥗)</era>
-						<era type="36">𞤚𞤫𞤲𞤪𞤢𞤴𞤳𞤵 (𞥙𞥔𞥗-𞥙𞥕𞥗)</era>
-						<era type="37">𞤚𞤫𞤲𞤼𞤮𞤳𞤵 (𞥙𞥕𞥗-𞥙𞥖𞥑)</era>
-						<era type="38">𞤌𞥅𞤱𞤢 (𞥙𞥖𞥑-𞥙𞥖𞥔)</era>
-						<era type="39">𞤑𞤮𞥅𞤸𞤮𞥅 (𞥙𞥖𞥔-𞥙𞥖𞥘)</era>
-						<era type="40">𞤀𞤲𞥆𞤢 (𞥙𞥖𞥘-𞥙𞥗𞥐)</era>
-						<era type="41">𞤚𞤫𞤲𞤪𞤮𞤳𞤵 (𞥙𞥗𞥐-𞥙𞥗𞥓)</era>
-						<era type="42">𞤚𞤫𞤲𞥋𞤫𞤲 (𞥙𞥗𞥓-𞥙𞥗𞥖)</era>
-						<era type="43">𞤔𞤮𞥅𞤺𞤫𞤲 (𞥙𞥗𞥖-𞥙𞥗𞥘)</era>
-						<era type="44">𞤚𞤫𞤲𞤺𞤫𞤲 (𞥙𞥗𞥘-𞥙𞥘𞥓)</era>
-						<era type="45">𞤉𞤴𞤳𞤢𞤲 (𞥙𞥘𞥓-𞥙𞥘𞥕)</era>
-						<era type="46">𞤑𞤢𞤲𞥆𞤢 (𞥙𞥘𞥕-𞥙𞥘𞥗)</era>
-						<era type="47">𞤉𞤴𞥇𞤫𞤲 (𞥙𞥘𞥗-𞥙𞥘𞥙)</era>
-						<era type="48">𞤉𞤴𞤧𞤮 (𞥙𞥘𞥙-𞥙𞥙𞥐)</era>
-						<era type="49">𞤡𞤮𞥅𞤪𞤴𞤢𞤳𞤵 (𞥙𞥙𞥐-𞥙𞥙𞥕)</era>
-						<era type="50">𞤕𞤮𞥅𞤼𞤮𞤳𞤵 (𞥙𞥙𞥕-𞥙𞥙𞥙)</era>
-						<era type="51">𞤕𞤮𞥅𞤸𞤮𞥅 (𞥙𞥙𞥙-𞥑𞥐𞥐𞥔)</era>
-						<era type="52">𞤑𞤢𞤲𞤳𞤮𞥅 (𞥑𞥐𞥐𞥔-𞥑𞥐𞥑𞥒)</era>
-						<era type="53">𞤕𞤮𞥅𞤱𞤢 (𞥑𞥐𞥑𞥒-𞥑𞥐𞥑𞥗)</era>
-						<era type="54">𞤑𞤢𞤲𞥆𞤭𞤲 (𞥑𞥐𞥑𞥗-𞥑𞥐𞥒𞥑)</era>
-						<era type="55">𞤔𞤭𞤴𞤢𞤲 (𞥑𞥐𞥒𞥑-𞥑𞥐𞥒𞥔)</era>
-						<era type="56">𞤃𞤢𞤲𞤶𞤵 (𞥑𞥐𞥒𞥔-𞥑𞥐𞥒𞥘)</era>
-						<era type="57">𞤕𞤮𞥅𞤺𞤫𞤲 (𞥑𞥐𞥒𞥘-𞥑𞥐𞥓𞥗)</era>
-						<era type="58">𞤕𞤮𞥅𞤪𞤴𞤢𞤳𞤵 (𞥑𞥐𞥓𞥗-𞥑𞥐𞥔𞥐)</era>
-						<era type="59">𞤕𞤮𞥅𞤳𞤴𞤵𞥅 (𞥑𞥐𞥔𞥐-𞥑𞥐𞥔𞥔)</era>
-						<era type="60">𞤑𞤢𞤲𞤼𞤮𞤳𞤵 (𞥑𞥐𞥔𞥔-𞥑𞥐𞥔𞥖)</era>
-						<era type="61">𞤉𞤴𞥃𞤮𞥅 (𞥑𞥐𞥔𞥖-𞥑𞥐𞥕𞥓)</era>
-						<era type="62">𞤚𞤫𞤲𞤺𞤭 (𞥑𞥐𞥕𞥓-𞥑𞥐𞥕𞥘)</era>
-						<era type="63">𞤑𞤮𞥅𞤸𞤫𞤴 (𞥑𞥐𞥕𞥘-𞥑𞥐𞥖𞥕)</era>
-						<era type="64">𞤔𞤭𞤪𞤴𞤢𞤳𞤵 (𞥑𞥐𞥖𞥕-𞥑𞥐𞥖𞥙)</era>
-						<era type="65">𞤉𞤲𞤳𞤭𞤴𞤵𞥅 (𞥑𞥐𞥖𞥙-𞥑𞥐𞥗𞥔)</era>
-						<era type="66">𞤡𞤮𞥅𞤸𞤮 (𞥑𞥐𞥗𞥔-𞥑𞥐𞥗𞥗)</era>
-						<era type="67">𞤡𞤮𞥅𞤪𞤴𞤢𞤳𞤵 (𞥑𞥐𞥗𞥗-𞥑𞥐𞥘𞥑)</era>
-						<era type="68">𞤉𞤴𞤸𞤮𞥅 (𞥑𞥐𞥘𞥑-𞥑𞥐𞥘𞥔)</era>
-						<era type="69">𞤌𞥅𞤼𞤮𞤳𞤵 (𞥑𞥐𞥘𞥔-𞥑𞥐𞥘𞥗)</era>
-						<era type="70">𞤑𞤢𞤲𞤶𞤭 (𞥑𞥐𞥘𞥗-𞥑𞥐𞥙𞥔)</era>
-						<era type="71">𞤑𞤢𞤸𞤮𞥅 (𞥑𞥐𞥙𞥔-𞥑𞥐𞥙𞥖)</era>
-						<era type="72">𞤉𞤴𞤷𞤮𞥅 (𞥑𞥐𞥙𞥖-𞥑𞥐𞥙𞥗)</era>
-						<era type="73">𞤔𞤮𞥅𞤼𞤮𞤳𞤵 (𞥑𞥐𞥙𞥗-𞥑𞥐𞥙𞥙)</era>
-						<era type="74">𞤑𞤮𞥅𞤱𞤢 (𞥑𞥐𞥙𞥙-𞥑𞥑𞥐𞥔)</era>
-						<era type="75">𞤕𞤮𞥅𞤶𞤭 (𞥑𞥑𞥐𞥔-𞥑𞥑𞥐𞥖)</era>
-						<era type="76">𞤑𞤢𞥃𞤮𞥅 (𞥑𞥑𞥐𞥖-𞥑𞥑𞥐𞥘)</era>
-						<era type="77">𞤚𞤫𞤲𞥆𞤭𞤲 (𞥑𞥑𞥐𞥘-𞥑𞥑𞥑𞥐)</era>
-						<era type="78">𞤚𞤫𞤲-𞤫𞤴 (𞥑𞥑𞥑𞥐-𞥑𞥑𞥑𞥓)</era>
-						<era type="79">𞤉𞤴𞤳𞤭𞤴𞤵𞥅 (𞥑𞥑𞥑𞥓-𞥑𞥑𞥑𞥘)</era>
-						<era type="80">𞤘𞤫𞤲𞥇𞤴𞤭 (𞥑𞥑𞥑𞥘-𞥑𞥑𞥒𞥐)</era>
-						<era type="81">(𞤖𞤮𞥅𞤢𞤲 (𞥑𞥑𞥒𞥐-𞥑𞥑𞥒𞥔</era>
-						<era type="82">𞤚𞤫𞤲𞤶𞤭 (𞥑𞥑𞥒𞥔-𞥑𞥑𞥒𞥖)</era>
-						<era type="83">𞤁𞤢𞤴𞤶𞤭 (𞥑𞥑𞥒𞥖-𞥑𞥑𞥓𞥑)</era>
-						<era type="84">𞤚𞤫𞤲𞥃𞤮𞥅 (𞥑𞥑𞥓𞥑-𞥑𞥑𞥓𞥒)</era>
-						<era type="85">𞤕𞤮𞥅𞥃𞤮𞥅 (𞥑𞥑𞥓𞥒-𞥑𞥑𞥓𞥕)</era>
-						<era type="86">𞤖𞤮𞥅𞤫𞤲 (𞥑𞥑𞥓𞥕-𞥑𞥑𞥔𞥑)</era>
-						<era type="87">𞤉𞤴𞤶𞤭 (𞥑𞥑𞥔𞥑-𞥑𞥑𞥔𞥒)</era>
-						<era type="88">𞤑𞤮𞥅𞤶𞤭 (𞥑𞥑𞥔𞥒-𞥑𞥑𞥔𞥔)</era>
-						<era type="89">𞤚𞤫𞤲𞥇𞤴𞤮𞥅 (𞥑𞥑𞥔𞥔-𞥑𞥑𞥔𞥕)</era>
-						<era type="90">𞤑𞤭𞤴𞤵𞥅𞤢𞤲 (𞥑𞥑𞥔𞥕-𞥑𞥑𞥕𞥑)</era>
-						<era type="91">𞤐𞤭𞤲𞤨𞤫𞤴 (𞥑𞥑𞥕𞥑-𞥑𞥑𞥕𞥔)</era>
-						<era type="92">𞤑𞤭𞤴𞤵𞥅𞤶𞤵 (𞥑𞥑𞥕𞥔-𞥑𞥑𞥕𞥖)</era>
-						<era type="93">𞤖𞤮𞥅𞤺𞤫𞤲 (𞥑𞥑𞥕𞥖-𞥑𞥑𞥕𞥙)</era>
-						<era type="94">𞤖𞤫𞤴𞤶𞤭 (𞥑𞥑𞥕𞥙-𞥑𞥑𞥖𞥐)</era>
-						<era type="95">𞤉𞤴𞤪𞤭𞤴𞤢𞤳𞤵 (𞥑𞥑𞥖𞥐-𞥑𞥑𞥖𞥑)</era>
-						<era type="96">𞤌𞥅𞤸𞤮 (𞥑𞥑𞥖𞥑-𞥑𞥑𞥖𞥓)</era>
-						<era type="97">𞤕𞤮𞥅𞤳𞤢𞤲 (𞥑𞥑𞥖𞥓-𞥑𞥑𞥖𞥕)</era>
-						<era type="98">𞤉𞤴𞤥𞤢𞤲 (𞥑𞥑𞥖𞥕-𞥑𞥑𞥖𞥖)</era>
-						<era type="99">𞤐𞤭𞤲𞥇𞤢𞤲 (𞥑𞥑𞥖𞥖-𞥑𞥑𞥖𞥙)</era>
-						<era type="100">𞤑𞤢𞤮𞥅 (𞥑𞥑𞥖𞥙-𞥑𞥑𞥗𞥑)</era>
-						<era type="101">𞤡𞤮𞥅𞤢𞤲 (𞥑𞥑𞥗𞥑-𞥑𞥑𞥗𞥕)</era>
-						<era type="102">𞤀𞤲𞤺𞤫𞤲 (𞥑𞥑𞥗𞥕-𞥑𞥑𞥗𞥗)</era>
-						<era type="103">𞤔𞤭𞥃𞤮𞥅 (𞥑𞥑𞥗𞥗-𞥑𞥑𞥘𞥑)</era>
-						<era type="104">𞤒𞤮𞥅𞤱𞤢 (𞥑𞥑𞥘𞥑-𞥑𞥑𞥘𞥒)</era>
-						<era type="105">𞤔𞤵𞤫𞤴 (𞥑𞥑𞥘𞥒-𞥑𞥑𞥘𞥔)</era>
-						<era type="106">𞤘𞤫𞤲𞤪𞤭𞤴𞤢𞤳𞤵 (𞥑𞥑𞥘𞥔-𞥑𞥑𞥘𞥕)</era>
-						<era type="107">𞤄𞤵𞤲𞤶𞤭 (𞥑𞥑𞥘𞥕-𞥑𞥑𞥙𞥐)</era>
-						<era type="108">𞤑𞤫𞤲𞤳𞤭𞤴𞤵𞥅 (𞥑𞥑𞥙𞥐-𞥑𞥑𞥙𞥙)</era>
-						<era type="109">𞤡𞤮𞥅𞤶𞤭 (𞥑𞥑𞥙𞥙-𞥑𞥒𞥐𞥑)</era>
-						<era type="110">𞤑𞤫𞤲𞥆𞤭𞤲 (𞥑𞥒𞥐𞥑-𞥑𞥒𞥐𞥔)</era>
-						<era type="111">𞤘𞤫𞤲𞤳𞤭𞤴𞤵𞥅 (𞥑𞥒𞥐𞥔-𞥑𞥒𞥐𞥖)</era>
-						<era type="112">𞤑𞤫𞤲𞥇𞤫𞤴 (𞥑𞥒𞥐𞥖-𞥑𞥒𞥐𞥗)</era>
-						<era type="113">𞤔𞤮𞥅𞤺𞤫𞤲 (𞥑𞥒𞥐𞥗-𞥑𞥒𞥑𞥑)</era>
-						<era type="114">𞤑𞤫𞤲𞤪𞤭𞤴𞤢𞤳𞤵 (𞥑𞥒𞥑𞥑-𞥑𞥒𞥑𞥓)</era>
-						<era type="115">𞤑𞤫𞤥𞤨𞤮𞥅 (𞥑𞥒𞥑𞥓-𞥑𞥒𞥑𞥙)</era>
-						<era type="116">𞤔𞤮𞥅𞤳𞤭𞤴𞤵𞥅 (𞥑𞥒𞥑𞥙-𞥑𞥒𞥒𞥒)</era>
-						<era type="117">𞤔𞤮𞥅 (𞥑𞥒𞥒𞥒-𞥑𞥒𞥒𞥔)</era>
-						<era type="118">𞤘𞤫𞤲𞥆𞤭𞤲 (𞥑𞥒𞥒𞥔-𞥑𞥒𞥒𞥕)</era>
-						<era type="119">𞤑𞤢𞤪𞤮𞤳𞤵 (𞥑𞥒𞥒𞥕-𞥑𞥒𞥒𞥗)</era>
-						<era type="120">𞤀𞤲𞤼𞤫𞤴 (𞥑𞥒𞥒𞥗-𞥑𞥒𞥒𞥙)</era>
-						<era type="121">𞤑𞤢𞤲𞤳𞤭 (𞥑𞥒𞥒𞥙-𞥑𞥒𞥓𞥒)</era>
-						<era type="122">𞤔𞤮𞥅𞤫𞤴 (𞥑𞥒𞥓𞥒-𞥑𞥒𞥓𞥓)</era>
-						<era type="123">𞤚𞤫𞤥𞤨𞤵𞤳𞤵 (𞥑𞥒𞥓𞥓-𞥑𞥒𞥓𞥔)</era>
-						<era type="124">𞤄𞤵𞤲𞤪𞤭𞤴𞤢𞤳𞤵 (𞥑𞥒𞥓𞥔-𞥑𞥒𞥓𞥕)</era>
-						<era type="125">𞤑𞤢𞤼𞤫𞤴 (𞥑𞥒𞥓𞥕-𞥑𞥒𞥓𞥘)</era>
-						<era type="126">𞤈𞤢𞤴𞤳𞤵𞤲𞤭𞤲 (𞥑𞥒𞥓𞥘-𞥑𞥒𞥓𞥙)</era>
-						<era type="127">𞤉𞤲𞥇𞤮𞥅 (𞥑𞥒𞥓𞥙-𞥑𞥒𞥔𞥐)</era>
-						<era type="128">𞤐𞤭𞤲𞤶𞤭 (𞥑𞥒𞥔𞥐-𞥑𞥒𞥔𞥓)</era>
-						<era type="129">𞤑𞤢𞤲𞤺𞤫𞤲 (𞥑𞥒𞥔𞥓-𞥑𞥒𞥔𞥗)</era>
-						<era type="130">𞤖𞤮𞥅𞤶𞤭 (𞥑𞥒𞥔𞥗-𞥑𞥒𞥔𞥙)</era>
-						<era type="131">𞤑𞤫𞤲𞤷𞤮𞥅 (𞥑𞥒𞥔𞥙-𞥑𞥒𞥕𞥖)</era>
-						<era type="132">𞤑𞤮𞥅𞤺𞤫𞤲 (𞥑𞥒𞥕𞥖-𞥑𞥒𞥕𞥗)</era>
-						<era type="133">𞤡𞤮𞥅𞤳𞤢 (𞥑𞥒𞥕𞥗-𞥑𞥒𞥕𞥙)</era>
-						<era type="134">𞤡𞤮𞥅𞤺𞤫𞤲 (𞥑𞥒𞥕𞥙-𞥑𞥒𞥖𞥐)</era>
-						<era type="135">𞤄𞤵𞤲𞥇𞤮𞥅 (𞥑𞥒𞥖𞥐-𞥑𞥒𞥖𞥑)</era>
-						<era type="136">𞤑𞤮𞥅𞤷𞤮𞥅 (𞥑𞥒𞥖𞥑-𞥑𞥒𞥖𞥔)</era>
-						<era type="137">𞤄𞤵𞤲𞥇𞤫𞤴 (𞥑𞥒𞥖𞥔-𞥑𞥒𞥗𞥕)</era>
-						<era type="138">𞤑𞤫𞤲𞤶𞤭 (𞥑𞥒𞥗𞥕-𞥑𞥒𞥗𞥘)</era>
-						<era type="139">𞤑𞤮𞥅𞤢𞤲 (𞥑𞥒𞥗𞥘-𞥑𞥒𞥘𞥘)</era>
-						<era type="140">𞤡𞤮𞥅 (𞥑𞥒𞥘𞥘-𞥑𞥒𞥙𞥓)</era>
-						<era type="141">𞤉𞤴𞤲𞤭𞤲 (𞥑𞥒𞥙𞥓-𞥑𞥒𞥙𞥙)</era>
-						<era type="142">𞤡𞤮𞥅𞤢𞤲 (𞥑𞥒𞥙𞥙-𞥑𞥓𞥐𞥒)</era>
-						<era type="143">𞤑𞤫𞤲𞤺𞤫𞤲 (𞥑𞥓𞥐𞥒-𞥑𞥓𞥐𞥓)</era>
-						<era type="144">𞤑𞤢𞤺𞤫𞤲 (𞥑𞥓𞥐𞥓-𞥑𞥓𞥐𞥖)</era>
-						<era type="145">𞤚𞤮𞤳𞤵𞤶𞤭 (𞥑𞥓𞥐𞥖-𞥑𞥓𞥐𞥘)</era>
-						<era type="146">𞤉𞤲𞤳𞤭𞤴𞤮𞥅 (𞥑𞥓𞥐𞥘-𞥑𞥓𞥑𞥑)</era>
-						<era type="147">𞤌𞥅𞤷𞤮𞥅 (𞥑𞥓𞥑𞥑-𞥑𞥓𞥑𞥒)</era>
-						<era type="148">𞤡𞤮𞥅𞤱𞤢 (𞥑𞥓𞥑𞥒-𞥑𞥓𞥑𞥗)</era>
-						<era type="149">𞤄𞤵𞤥𞤨𞤮𞥅 (𞥑𞥓𞥑𞥗-𞥑𞥓𞥑𞥙)</era>
-						<era type="150">𞤘𞤫𞤲𞤮𞥅 (𞥑𞥓𞥑𞥙-𞥑𞥓𞥒𞥑)</era>
-						<era type="151">𞤘𞤫𞤲𞤳𞤮𞥅 (𞥑𞥓𞥒𞥑-𞥑𞥓𞥒𞥔)</era>
-						<era type="152">𞤡𞤮𞥅𞤷𞤵𞥅 (𞥑𞥓𞥒𞥔-𞥑𞥓𞥒𞥖)</era>
-						<era type="153">𞤑𞤢𞤪𞤴𞤢𞤳𞤵 (𞥑𞥓𞥒𞥖-𞥑𞥓𞥒𞥙)</era>
-						<era type="154">𞤘𞤫𞤲𞤼𞤮𞤳𞤵 (𞥑𞥓𞥒𞥙-𞥑𞥓𞥓𞥑)</era>
-						<era type="155">𞤘𞤫𞤲𞤳𞤮𞥅 (𞥑𞥓𞥓𞥑-𞥑𞥓𞥓𞥔)</era>
-						<era type="156">𞤑𞤫𞤲𞤥𞤵 (𞥑𞥓𞥓𞥔-𞥑𞥓𞥓𞥖)</era>
-						<era type="157">𞤉𞤲𞤺𞤫𞤲 (𞥑𞥓𞥓𞥖-𞥑𞥓𞥔𞥐)</era>
-						<era type="158">𞤑𞤮𞥅𞤳𞤮𞤳𞤵 (𞥑𞥓𞥔𞥐-𞥑𞥓𞥔𞥖)</era>
-						<era type="159">𞤡𞤮𞥅𞤸𞤫𞤴 (𞥑𞥓𞥔𞥖-𞥑𞥓𞥗𞥐)</era>
-						<era type="160">𞤑𞤫𞤲𞤼𞤮𞤳𞤵 (𞥑𞥓𞥗𞥐-𞥑𞥓𞥗𞥒)</era>
-						<era type="161">𞤄𞤵𞤲𞤷𞤵𞥅 (𞥑𞥓𞥗𞥒-𞥑𞥓𞥗𞥕)</era>
-						<era type="162">𞤚𞤫𞤲𞤶𞤵 (𞥑𞥓𞥗𞥕-𞥑𞥓𞥗𞥙)</era>
-						<era type="163">𞤑𞤮𞥅𞤪𞤴𞤢𞤳𞤵 (𞥑𞥓𞥗𞥙-𞥑𞥓𞥘𞥑)</era>
-						<era type="164">𞤑𞤮𞥅𞤱𞤢 (𞥑𞥓𞥘𞥑-𞥑𞥓𞥘𞥔)</era>
-						<era type="165">𞤘𞤫𞤲𞤷𞤵𞥅 (𞥑𞥓𞥘𞥔-𞥑𞥓𞥙𞥒)</era>
-						<era type="166">𞤃𞤫𞤴𞤼𞤮𞤳𞤵 (𞥑𞥓𞥘𞥔-𞥑𞥓𞥘𞥗)</era>
-						<era type="167">𞤑𞤢𞤳𞤫𞤴 (𞥑𞥓𞥘𞥗-𞥑𞥓𞥘𞥙)</era>
-						<era type="168">𞤑𞤮𞥅 (𞥑𞥓𞥘𞥙-𞥑𞥓𞥙𞥐)</era>
-						<era type="169">𞤃𞤫𞤴𞤼𞤮𞤳𞤵 (𞥑𞥓𞥙𞥐-𞥑𞥓𞥙𞥔)</era>
-						<era type="170">𞤌𞥅𞤫𞤴 (𞥑𞥓𞥙𞥔-𞥑𞥔𞥒𞥘)</era>
-						<era type="171">𞤡𞤮𞥅𞤷𞤮𞥅 (𞥑𞥔𞥒𞥘-𞥑𞥔𞥒𞥙)</era>
-						<era type="172">𞤉𞤴𞤳𞤭𞤴𞤮𞥅 (𞥑𞥔𞥒𞥙-𞥑𞥔𞥔𞥑)</era>
-						<era type="173">𞤑𞤢𞤳𞤭𞤼𞤧𞤵 (𞥑𞥔𞥔𞥑-𞥑𞥔𞥔𞥔)</era>
-						<era type="174">𞤄𞤵𞤲𞥇𞤢𞤲 (𞥑𞥔𞥔𞥔-𞥑𞥔𞥔𞥙)</era>
-						<era type="175">𞤖𞤮𞥅𞤼𞤮𞤳𞤵 (𞥑𞥔𞥔𞥙-𞥑𞥔𞥕𞥒)</era>
-						<era type="176">𞤑𞤭𞤴𞤮𞥅𞤼𞤮𞤳𞤵 (𞥑𞥔𞥕𞥒-𞥑𞥔𞥕𞥕)</era>
-						<era type="177">𞤑𞤮𞥅𞥃𞤮𞥅 (𞥑𞥔𞥕𞥕-𞥑𞥔𞥕𞥗)</era>
-						<era type="178">𞤕𞤮𞥅𞤪𞤮𞤳𞤵 (𞥑𞥔𞥕𞥗-𞥑𞥔𞥖𞥐)</era>
-						<era type="179">𞤑𞤢𞤲𞥃𞤮𞥅 (𞥑𞥔𞥖𞥐-𞥑𞥔𞥖𞥖)</era>
-						<era type="180">𞤄𞤵𞤲𞥃𞤮𞥅 (𞥑𞥔𞥖𞥖-𞥑𞥔𞥖𞥗)</era>
-						<era type="181">𞤌𞥅𞤲𞤭𞤲 (𞥑𞥔𞥖𞥗-𞥑𞥔𞥖𞥙)</era>
-						<era type="182">𞤄𞤵𞤲𞤥𞤫𞤴 (𞥑𞥔𞥕𞥙-𞥑𞥔𞥘𞥗)</era>
-						<era type="183">𞤕𞤮𞥅𞤳𞤴𞤮𞥅 (𞥑𞥔𞥘𞥗-𞥑𞥔𞥘𞥙)</era>
-						<era type="184">𞤉𞤲𞤼𞤮𞤳𞤵 (𞥑𞥔𞥘𞥙-𞥑𞥔𞥙𞥒)</era>
-						<era type="185">𞤃𞤫𞤴𞤮𞥅 (𞥑𞥔𞥙𞥒-𞥑𞥕𞥐𞥑)</era>
-						<era type="186">𞤄𞤵𞤲𞤳𞤭 (𞥑𞥕𞥐𞥑-𞥑𞥕𞥐𞥔)</era>
-						<era type="187">𞤉𞤴𞥃𞤮𞥅 (𞥑𞥕𞥐𞥔-𞥑𞥕𞥒𞥑)</era>
-						<era type="188">𞤚𞤢𞤴𞤫𞤴 (𞥑𞥕𞥒𞥑-𞥑𞥕𞥒𞥘)</era>
-						<era type="189">𞤑𞤭𞤴𞤮𞥅𞤪𞤮𞤳𞤵 (𞥑𞥕𞥒𞥘-𞥑𞥕𞥓𞥒)</era>
-						<era type="190">𞤚𞤫𞤥𞤦𞤵𞤲 (𞥑𞥕𞥓𞥒-𞥑𞥕𞥕𞥕)</era>
-						<era type="191">𞤑𞤮𞥅𞤶𞤭 (𞥑𞥕𞥕𞥕-𞥑𞥕𞥕𞥘)</era>
-						<era type="192">𞤉𞤴𞤪𞤮𞤳𞤵 (𞥑𞥕𞥕𞥘-𞥑𞥕𞥗𞥐)</era>
-						<era type="193">𞤘𞤫𞤲𞤳𞤭 (𞥑𞥕𞥗𞥐-𞥑𞥕𞥗𞥓)</era>
-						<era type="194">𞤚𞤫𞤲𞥃𞤮𞥅 (𞥑𞥕𞥗𞥓-𞥑𞥕𞥙𞥒)</era>
-						<era type="195">𞤄𞤵𞤲𞤪𞤮𞤳𞤵 (𞥑𞥕𞥙𞥒-𞥑𞥕𞥙𞥖)</era>
-						<era type="196">𞤑𞤫𞤴𞤷𞤮𞥅 (𞥑𞥕𞥙𞥖-𞥑𞥖𞥑𞥕)</era>
-						<era type="197">𞤘𞤫𞤲𞥆𞤢 (𞥑𞥖𞥑𞥕-𞥑𞥖𞥒𞥔)</era>
-						<era type="198">𞤑𞤢𞤲𞥇𞤫𞤴 (𞥑𞥖𞥒𞥔-𞥑𞥖𞥔𞥔)</era>
-						<era type="199">𞤡𞤮𞥅𞤸𞤮 (𞥑𞥖𞥔𞥔-𞥑𞥖𞥔𞥘)</era>
-						<era type="200">𞤑𞤫𞤴𞤢𞤲 (𞥑𞥖𞥔𞥘-𞥑𞥖𞥕𞥒)</era>
-						<era type="201">𞤔𞤮𞥅 (𞥑𞥖𞥕𞥒-𞥑𞥖𞥕𞥕)</era>
-						<era type="202">𞤃𞤫𞤴𞤪𞤫𞤳𞤭 (𞥑𞥖𞥕𞥕-𞥑𞥖𞥕𞥘)</era>
-						<era type="203">𞤃𞤢𞤲𞤶𞤭 (𞥑𞥖𞥕𞥘-𞥑𞥖𞥖𞥑)</era>
-						<era type="204">𞤑𞤢𞤲𞤦𞤵𞤲 (𞥑𞥖𞥖𞥑-𞥑𞥖𞥗𞥓)</era>
-						<era type="205">𞤉𞤥𞤨𞤮𞥅 (𞥑𞥖𞥗𞥓-𞥑𞥖𞥘𞥑)</era>
-						<era type="206">𞤚𞤫𞤲𞥆𞤢 (𞥑𞥖𞥘𞥑-𞥑𞥖𞥘𞥔)</era>
-						<era type="207">𞤔𞤮𞥅𞤳𞤭𞤴𞤮𞥅 (𞥑𞥖𞥘𞥔-𞥑𞥖𞥘𞥘)</era>
-						<era type="208">𞤘𞤫𞤲𞤪𞤮𞤳𞤵 (𞥑𞥖𞥘𞥘-𞥑𞥗𞥐𞥔)</era>
-						<era type="209">𞤖𞤮𞥅𞤫𞤴 (𞥑𞥗𞥐𞥔-𞥑𞥗𞥑𞥑)</era>
-						<era type="210">𞤡𞤮𞥅𞤼𞤮𞤳𞤵 (𞥑𞥗𞥑𞥑-𞥑𞥗𞥑𞥖)</era>
-						<era type="211">𞤑𞤭𞤴𞤮𞥅𞤸𞤮𞥅 (𞥑𞥗𞥑𞥖-𞥑𞥗𞥓𞥖)</era>
-						<era type="212">𞤘𞤫𞤥𞤦𞤵𞤲 (𞥑𞥗𞥓𞥖-𞥑𞥗𞥔𞥑)</era>
-						<era type="213">𞤑𞤢𞤥𞤨𞤮𞥅 (𞥑𞥗𞥔𞥑-𞥑𞥗𞥔𞥔)</era>
-						<era type="214">𞤉𞤲𞤳𞤭𞤴𞤮𞥅 (𞥑𞥗𞥔𞥔-𞥑𞥗𞥔𞥘)</era>
-						<era type="215">𞤑𞤢𞤲𞥇𞥇𞥇𞥇𞤫𞤲 (𞥑𞥗𞥔𞥘-𞥑𞥗𞥕𞥑)</era>
-						<era type="216">𞤖𞤮𞥅𞤪𞤫𞤳𞤭 (𞥑𞥗𞥕𞥑-𞥑𞥗𞥖𞥔)</era>
-						<era type="217">𞤃𞤫𞤴𞤱𞤢 (𞥑𞥗𞥖𞥔-𞥑𞥗𞥗𞥒)</era>
-						<era type="218">𞤀𞤲𞥇𞤫𞤴 (𞥑𞥗𞥗𞥒-𞥑𞥗𞥘𞥑)</era>
-						<era type="219">𞤚𞤫𞤲𞤥𞤫𞤴 (𞥑𞥗𞥘𞥑-𞥑𞥗𞥘𞥙)</era>
-						<era type="220">𞤑𞤢𞤲𞤧𞤫𞤴 (𞥑𞥗𞥘𞥙-𞥑𞥘𞥐𞥑)</era>
-						<era type="221">𞤑𞤭𞤴𞤮𞥅𞤱𞤢 (𞥑𞥘𞥐𞥑-𞥑𞥘𞥐𞥔)</era>
-						<era type="222">𞤄𞤵𞤲𞤳𞤢 (𞥑𞥘𞥐𞥔-𞥑𞥘𞥑𞥘)</era>
-						<era type="223">𞤄𞤵𞤲𞤧𞤫𞤴 (𞥑𞥘𞥑𞥘-𞥑𞥘𞥓𞥐)</era>
-						<era type="224">𞤚𞤫𞤥𞤨𞤮𞥅 (𞥑𞥘𞥓𞥐-𞥑𞥘𞥔𞥔)</era>
-						<era type="225">𞤑𞤮𞥅𞤳𞤢 (𞥑𞥘𞥔𞥔-𞥑𞥘𞥔𞥘)</era>
-						<era type="226">𞤑𞤢𞤫𞤴 (𞥑𞥘𞥔𞥘-𞥑𞥘𞥕𞥔)</era>
-						<era type="227">𞤀𞤲𞤧𞤫𞤴 (𞥑𞥘𞥕𞥔-𞥑𞥘𞥖𞥐)</era>
-						<era type="228">𞤃𞤫𞤲𞥇𞤢𞤲 (𞥑𞥘𞥖𞥐-𞥑𞥘𞥖𞥑)</era>
-						<era type="229">𞤄𞤵𞤲𞤳𞤭𞤴𞤵𞥅 (𞥑𞥘𞥖𞥑-𞥑𞥘𞥖𞥔)</era>
-						<era type="230">𞤘𞤫𞤲𞤶𞤭 (𞥑𞥘𞥖𞥔-𞥑𞥘𞥖𞥕)</era>
 						<era type="232">𞤃</era>
 						<era type="233">𞤚</era>
 						<era type="234">𞤅</era>
@@ -3254,7 +2795,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</fields>
 		<timeZoneNames>
 			<gmtFormat>𞤑𞤖𞤘{0}</gmtFormat>
-			<gmtZeroFormat>𞤑𞤖𞤘</gmtZeroFormat>
 			<regionFormat>{0} 𞤑𞤭𞤶𞤮𞥅𞤪𞤫</regionFormat>
 			<regionFormat type="daylight">{0} 𞤐𞤶𞤢𞤥𞤲𞤣𞤭 𞤕𞤫𞥅𞤯𞤵</regionFormat>
 			<regionFormat type="standard">{0} 𞤑𞤭𞤶𞤮𞥅𞤪𞤫 𞤖𞤢𞤱𞤪𞤵𞤲𞥋𞤣𞤫</regionFormat>
@@ -3732,9 +3272,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>𞤂𞤭𞥅𞤦𞤫𞤪𞤾𞤭𞥅𞤤</exemplarCity>
 			</zone>
 			<zone type="Europe/London">
-				<long>
-					<daylight>𞤑𞤭𞤶𞤮𞥅𞤪𞤫 𞤕𞤫𞥅𞤯𞥆𞤵 𞤄𞤪𞤭𞤼𞤢𞤲𞤭𞤴𞤢𞤲𞤳𞤮𞥅𞤪𞤫</daylight>
-				</long>
 				<exemplarCity>𞤂𞤮𞤲𞤣𞤮𞤲</exemplarCity>
 			</zone>
 			<zone type="America/Grenada">
@@ -3825,9 +3362,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>𞤔𞤢𞤴𞤢𞤨𞤵𞤪𞤢</exemplarCity>
 			</zone>
 			<zone type="Europe/Dublin">
-				<long>
-					<daylight>𞤑𞤭𞤶𞤮𞥅𞤪𞤫 𞤖𞤢𞤱𞤪𞤵𞤲𞥋𞤣𞤫 𞤋𞤪𞤤𞤢𞤲𞤣𞤭𞤲𞤳𞤮𞥅𞤪𞤫</daylight>
-				</long>
 				<exemplarCity>𞤁𞤵𞤦𞤵𞤤𞤫𞤲</exemplarCity>
 			</zone>
 			<zone type="Asia/Jerusalem">
@@ -4559,13 +4093,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>𞤑𞤭𞤶𞤮𞥅𞤪𞤫 𞤕𞤫𞥅𞤯𞤵 𞤀𞤤𞤢𞤧𞤳𞤢𞥄 𞤲𞤣𞤫𞤲</daylight>
 				</long>
 			</metazone>
-			<metazone type="Almaty">
-				<long>
-					<generic>𞤑𞤭𞤶𞤮𞥅𞤪𞤫 𞤀𞤤𞤥𞤢𞤼𞤭</generic>
-					<standard>𞤑𞤭𞤶𞤮𞥅𞤪𞤫 𞤖𞤢𞤱𞤪𞤵𞤲𞥋𞤣𞤫 𞤀𞤤𞤥𞤢𞤼𞤭</standard>
-					<daylight>𞤑𞤭𞤶𞤮𞥅𞤪𞤫 𞤕𞤫𞥅𞤯𞤵 𞤀𞤤𞤥𞤢𞤼𞤭</daylight>
-				</long>
-			</metazone>
 			<metazone type="Amazon">
 				<long>
 					<generic>𞤑𞤭𞤶𞤮𞥅𞤪𞤫 𞤀𞤥𞤢𞥁𞤮𞥅𞤲</generic>
@@ -4613,20 +4140,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>𞤑𞤭𞤶𞤮𞥅𞤪𞤫 𞤀𞥄𞤨𞤭𞤴𞤢</generic>
 					<standard>𞤑𞤭𞤶𞤮𞥅𞤪𞤫 𞤖𞤢𞤱𞤪𞤵𞤲𞥋𞤣𞤫 𞤀𞥄𞤨𞤭𞤴𞤢</standard>
 					<daylight>𞤑𞤭𞤶𞤮𞥅𞤪𞤫 𞤕𞤫𞥅𞤯𞤵 𞤀𞥄𞤨𞤭𞤴𞤢</daylight>
-				</long>
-			</metazone>
-			<metazone type="Aqtau">
-				<long>
-					<generic>𞤑𞤭𞤶𞤮𞥅𞤪𞤫 𞤀𞤳𞤼𞤢𞤱</generic>
-					<standard>𞤑𞤭𞤶𞤮𞥅𞤪𞤫 𞤖𞤢𞤱𞤪𞤵𞤲𞥋𞤣𞤫 𞤀𞤳𞤼𞤢𞤱</standard>
-					<daylight>𞤑𞤭𞤶𞤮𞥅𞤪𞤫 𞤕𞤫𞥅𞤯𞤵 𞤀𞤳𞤼𞤢𞤱</daylight>
-				</long>
-			</metazone>
-			<metazone type="Aqtobe">
-				<long>
-					<generic>𞤑𞤭𞤶𞤮𞥅𞤪𞤫 𞤀𞤳𞤼𞤮𞤦𞤭𞥅</generic>
-					<standard>𞤑𞤭𞤶𞤮𞥅𞤪𞤫 𞤖𞤢𞤱𞤪𞤵𞤲𞥋𞤣𞤫 𞤀𞤳𞤼𞤮𞤦𞤭𞥅</standard>
-					<daylight>𞤑𞤭𞤶𞤮𞥅𞤪𞤫 𞤕𞤫𞥅𞤯𞤵 𞤀𞤳𞤼𞤮𞤦𞤭𞥅</daylight>
 				</long>
 			</metazone>
 			<metazone type="Arabian">
@@ -4728,6 +4241,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>𞤑𞤭𞤶𞤮𞥅𞤪𞤫 𞤄𞤪𞤢𞤧𞤭𞤤𞤭𞤴𞤢𞥄</generic>
 					<standard>𞤑𞤭𞤶𞤮𞥅𞤪𞤫 𞤖𞤢𞤱𞤪𞤵𞤲𞥋𞤣𞤫 𞤄𞤪𞤢𞤧𞤭𞤤𞤭𞤴𞤢𞥄</standard>
 					<daylight>𞤑𞤭𞤶𞤮𞥅𞤪𞤫 𞤕𞤫𞥅𞤯𞤵 𞤄𞤪𞤢𞤧𞤭𞤤𞤭𞤴𞤢𞥄</daylight>
+				</long>
+			</metazone>
+			<metazone type="British">
+				<long>
+					<daylight>𞤑𞤭𞤶𞤮𞥅𞤪𞤫 𞤕𞤫𞥅𞤯𞥆𞤵 𞤄𞤪𞤭𞤼𞤢𞤲𞤭𞤴𞤢𞤲𞤳𞤮𞥅𞤪𞤫</daylight>
 				</long>
 			</metazone>
 			<metazone type="Brunei">
@@ -4922,11 +4440,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>𞤑𞤭𞤶𞤮𞥅𞤪𞤫 𞤕𞤫𞥅𞤯𞤵 𞤖𞤭𞥅𞤪𞤲𞤢𞥄𞤲𞤺𞤫 𞤘𞤭𞤪𞤤𞤢𞤲𞤣</daylight>
 				</long>
 			</metazone>
-			<metazone type="Guam">
-				<long>
-					<standard>𞤑𞤭𞤶𞤮𞥅𞤪𞤫 𞤖𞤢𞤱𞤪𞤵𞤲𞥋𞤣𞤫 𞤘𞤵𞤱𞤢𞥄𞤥</standard>
-				</long>
-			</metazone>
 			<metazone type="Gulf">
 				<long>
 					<standard>𞤑𞤭𞤶𞤮𞥅𞤪𞤫 𞤂𞤮𞥅𞤻𞤵</standard>
@@ -5000,6 +4513,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>𞤑𞤭𞤶𞤮𞥅𞤪𞤫 𞤕𞤫𞥅𞤯𞤵 𞤋𞤪𞤢𞥄𞤲</daylight>
 				</long>
 			</metazone>
+			<metazone type="Irish">
+				<long>
+					<daylight>𞤑𞤭𞤶𞤮𞥅𞤪𞤫 𞤖𞤢𞤱𞤪𞤵𞤲𞥋𞤣𞤫 𞤋𞤪𞤤𞤢𞤲𞤣𞤭𞤲𞤳𞤮𞥅𞤪𞤫</daylight>
+				</long>
+			</metazone>
 			<metazone type="Irkutsk">
 				<long>
 					<generic>𞤑𞤭𞤶𞤮𞥅𞤪𞤫 𞤋𞤪𞤳𞤵𞤼𞤭𞤧𞤳𞤵</generic>
@@ -5065,13 +4583,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>𞤑𞤭𞤶𞤮𞥅𞤪𞤫 𞤂𞤮𞤪𞤣𞤵-𞤖𞤮𞤱𞤫</generic>
 					<standard>𞤑𞤭𞤶𞤮𞥅𞤪𞤫 𞤖𞤢𞤱𞤪𞤵𞤲𞥋𞤣𞤫 𞤂𞤮𞤪𞤣𞤵-𞤖𞤮𞤱𞤫</standard>
 					<daylight>𞤑𞤭𞤶𞤮𞥅𞤪𞤫 𞤕𞤫𞥅𞤯𞤵 𞤂𞤮𞤪𞤣𞤵-𞤖𞤮𞤱𞤫</daylight>
-				</long>
-			</metazone>
-			<metazone type="Macau">
-				<long>
-					<generic>𞤑𞤭𞤶𞤮𞥅𞤪𞤫 𞤃𞤢𞤳𞤢𞤱𞤮𞥅</generic>
-					<standard>𞤑𞤭𞤶𞤮𞥅𞤪𞤫 𞤖𞤢𞤱𞤪𞤵𞤲𞥋𞤣𞤫 𞤃𞤢𞤳𞤢𞤱𞤮𞥅</standard>
-					<daylight>𞤑𞤭𞤶𞤮𞥅𞤪𞤫 𞤕𞤫𞥅𞤯𞤵 𞤃𞤢𞤳𞤢𞤱𞤮𞥅</daylight>
 				</long>
 			</metazone>
 			<metazone type="Magadan">
@@ -5268,13 +4779,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>𞤑𞤭𞤶𞤮𞥅𞤪𞤫 𞤆𞤭𞤴𞤮𞤲𞤴𞤢𞤲</standard>
 				</long>
 			</metazone>
-			<metazone type="Qyzylorda">
-				<long>
-					<generic>𞤑𞤭𞤶𞤮𞥅𞤪𞤫 𞤑𞤭𞤶𞤤𞤮𞤪𞤣𞤢𞥄</generic>
-					<standard>𞤑𞤭𞤶𞤮𞥅𞤪𞤫 𞤖𞤢𞤱𞤪𞤵𞤲𞥋𞤣𞤫 𞤑𞤭𞤶𞤤𞤮𞤪𞤣𞤢𞥄</standard>
-					<daylight>𞤑𞤭𞤶𞤮𞥅𞤪𞤫 𞤕𞤫𞥅𞤯𞤵 𞤑𞤭𞤶𞤤𞤮𞤪𞤣𞤢𞥄</daylight>
-				</long>
-			</metazone>
 			<metazone type="Reunion">
 				<long>
 					<standard>𞤑𞤭𞤶𞤮𞥅𞤪𞤫 𞤈𞤫𞤲𞤭𞤴𞤮𞤲</standard>
@@ -5294,9 +4798,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Samoa">
 				<long>
-					<generic>𞤑𞤭𞤶𞤮𞥅𞤪𞤫 𞤅𞤢𞤥𞤵𞤱𞤢</generic>
 					<standard>𞤑𞤭𞤶𞤮𞥅𞤪𞤫 𞤖𞤢𞤱𞤪𞤵𞤲𞥋𞤣𞤫 𞤅𞤢𞤥𞤵𞤱𞤢</standard>
-					<daylight>𞤑𞤭𞤶𞤮𞥅𞤪𞤫 𞤕𞤫𞥅𞤯𞤵 𞤅𞤢𞤥𞤵𞤱𞤢</daylight>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">

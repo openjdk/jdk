@@ -1204,7 +1204,7 @@ void VMError::report(outputStream* st, bool _verbose) {
     st->cr();
 
   STEP_IF("printing compressed klass pointers mode", _verbose)
-    CDS_ONLY(AOTMetaspace::print_on(st);)
+    AOTMetaspace::print_on(st);
     Metaspace::print_compressed_class_space(st);
     CompressedKlassPointers::print_mode(st);
     st->cr();
@@ -1425,7 +1425,7 @@ void VMError::print_vm_info(outputStream* st) {
 #endif
 
   // STEP("printing compressed class ptrs mode")
-  CDS_ONLY(AOTMetaspace::print_on(st);)
+  AOTMetaspace::print_on(st);
   Metaspace::print_compressed_class_space(st);
   CompressedKlassPointers::print_mode(st);
   st->cr();

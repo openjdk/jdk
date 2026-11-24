@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,6 @@ class EPollPoller extends Poller {
     private final Cleanable cleaner;
 
     EPollPoller(Poller.Mode mode, boolean subPoller, boolean read) throws IOException {
-        boolean wakeable = (mode == Mode.POLLER_PER_CARRIER) && subPoller;
         int maxEvents = (subPoller) ? 16 : 64;
 
         int epfd = EPoll.create();
@@ -57,10 +56,11 @@ class EPollPoller extends Poller {
             address = EPoll.allocatePollArray(maxEvents);
 
             // register one end of the pipe with epoll to allow for wakeup
-            if (wakeable) {
-                eventfd = new EventFD();
-                IOUtil.configureBlocking(eventfd.efd(), false);
-                EPoll.ctl(epfd, EPOLL_CTL_ADD, eventfd.efd(), EPOLLIN);
+            eventfd = new EventFD();
+            IOUtil.configureBlocking(eventfd.efd(), false);
+            int err = EPoll.ctl(epfd, EPOLL_CTL_ADD, eventfd.efd(), EPOLLIN);
+            if (err != 0) {
+                throw new IOException("epoll_ctl failed: " + err);
             }
         } catch (Throwable e) {
             FileDispatcherImpl.closeIntFD(epfd);
@@ -75,9 +75,9 @@ class EPollPoller extends Poller {
         this.address = address;
         this.eventfd = eventfd;
 
-        // create action to close epoll instance, register cleaner when wakeable
+        // create action to close epoll, register cleaner for per-carrier sub-pollers
         this.closer = closer(epfd, address, eventfd);
-        if (wakeable) {
+        if ((mode == Mode.POLLER_PER_CARRIER) && subPoller) {
             this.cleaner = CleanerFactory.cleaner().register(this, closer);
         } else {
             this.cleaner = null;
@@ -131,9 +131,6 @@ class EPollPoller extends Poller {
 
     @Override
     void wakeupPoller() throws IOException {
-        if (eventfd == null) {
-            throw new UnsupportedOperationException();
-        }
         eventfd.set();
     }
 
@@ -145,7 +142,7 @@ class EPollPoller extends Poller {
         while (i < n) {
             long eventAddress = EPoll.getEvent(address, i);
             int fd = EPoll.getDescriptor(eventAddress);
-            if (eventfd == null || fd != eventfd.efd()) {
+            if (fd != eventfd.efd()) {
                 polled(fd);
                 polled++;
             }

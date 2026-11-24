@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -153,6 +153,12 @@ getJPLISEnvironment(jvmtiEnv * jvmtienv);
  */
 extern JPLISInitializationError
 createNewJPLISAgent(JavaVM * vm, JPLISAgent **agent_ptr, const char * jarfile, jboolean printWarning);
+
+/* Disposes of the JPLIS agent and its environments.
+ * Only used when agent initialization fails; in normal usage the agent lives forever.
+ */
+extern void
+destroyJPLISAgent(JPLISAgent * agent);
 
 /* Adds can_redefine_classes capability */
 extern void

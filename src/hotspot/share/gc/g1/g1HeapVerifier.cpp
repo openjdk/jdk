@@ -150,12 +150,21 @@ public:
   }
 };
 
-class YoungRefCounterClosure : public OopClosure {
+class YoungOrHumongousRefCounterClosure : public OopClosure {
   G1CollectedHeap* _g1h;
   int              _count;
  public:
-  YoungRefCounterClosure(G1CollectedHeap* g1h) : _g1h(g1h), _count(0) {}
-  void do_oop(oop* p)       { if (_g1h->is_in_young(*p)) { _count++; } }
+  YoungOrHumongousRefCounterClosure(G1CollectedHeap* g1h) : _g1h(g1h), _count(0) {}
+  void do_oop(oop* p)       {
+    oop obj = *p;
+    if (obj == nullptr) {
+      return;
+    }
+    G1HeapRegion* r = _g1h->heap_region_containing(obj);
+    if (r->is_young() || r->is_humongous()) {
+      _count++;
+    }
+  }
   void do_oop(narrowOop* p) { ShouldNotReachHere(); }
 
   int count() { return _count; }
@@ -163,7 +172,7 @@ class YoungRefCounterClosure : public OopClosure {
 };
 
 class VerifyCLDClosure: public CLDClosure {
-  YoungRefCounterClosure _young_ref_counter_closure;
+  YoungOrHumongousRefCounterClosure _young_ref_counter_closure;
   OopClosure *_oop_closure;
  public:
   VerifyCLDClosure(G1CollectedHeap* g1h, OopClosure* cl) : _young_ref_counter_closure(g1h), _oop_closure(cl) {}
@@ -173,7 +182,7 @@ class VerifyCLDClosure: public CLDClosure {
     _young_ref_counter_closure.reset_count();
     cld->oops_do(&_young_ref_counter_closure, ClassLoaderData::_claim_none);
     if (_young_ref_counter_closure.count() > 0) {
-      guarantee(cld->has_modified_oops(), "CLD " PTR_FORMAT ", has young %d refs but is not dirty.", p2i(cld), _young_ref_counter_closure.count());
+      guarantee(cld->has_modified_or_humongous_oops(), "CLD " PTR_FORMAT ", has %d young or humongous refs but is not dirty.", p2i(cld), _young_ref_counter_closure.count());
     }
   }
 };
@@ -252,13 +261,13 @@ public:
     guarantee(!r->has_index_in_opt_cset(), "Region %u still has opt collection set index %u", r->hrm_index(), r->index_in_opt_cset());
     guarantee(is_in_full_gc() || !r->is_young() || r->rem_set()->is_complete(), "Remembered set for Young region %u must be complete outside full gc, is %s", r->hrm_index(), r->rem_set()->get_state_str());
     // Humongous and old regions regions might be of any state, so can't check here.
-    guarantee(!r->is_free() || !r->rem_set()->is_tracked(), "Remembered set for free region %u must be untracked, is %s", r->hrm_index(), r->rem_set()->get_state_str());
+    guarantee(!r->is_free() || !r->rem_set()->has_card_set_group(), "Remembered set for free region %u must not have a card set group, has %u", r->hrm_index(), r->rem_set()->card_set_group_id());
 
     if (r->is_continues_humongous()) {
       // Verify that the continues humongous regions' remembered set state
       // matches the one from the starts humongous region.
-      if (r->rem_set()->get_state_str() != r->humongous_start_region()->rem_set()->get_state_str()) {
-         log_error(gc, verify)("Remset states differ: Region %u (%s) remset %s with starts region %u (%s) remset %s",
+      if (r->rem_set()->card_set_group() != r->humongous_start_region()->rem_set()->card_set_group()) {
+         log_error(gc, verify)("Card set groups differ: Region %u (%s) remset %s with starts region %u (%s) remset %s",
                                r->hrm_index(),
                                r->get_short_type_str(),
                                r->rem_set()->get_state_str(),
@@ -434,7 +443,9 @@ void G1HeapVerifier::verify_region_sets() {
   _g1h->heap_region_iterate(&cl);
   cl.verify_counts(&_g1h->_old_set, &_g1h->_humongous_set, &_g1h->_hrm);
 
+  _g1h->collection_set()->verify();
   _g1h->collection_set_candidates()->verify();
+  _g1h->humongous_card_set_groups()->verify();
 }
 
 class G1VerifyRegionMarkingStateClosure : public G1HeapRegionClosure {
@@ -713,13 +724,18 @@ public:
         _failures = true;
         return true;
       }
-      if (hr->is_continues_humongous() && region_attr.is_humongous_candidate()) {
+      if (hr->is_starts_humongous() && !region_attr.is_humongous()) {
+        log_error(gc, verify)("## inconsistent region attr type %s for humongous starts region %u", region_attr.get_type_str(), i);
+        _failures = true;
+        return true;
+      }
+      if (hr->is_continues_humongous() && region_attr.is_humongous()) {
         log_error(gc, verify)("## inconsistent region attr type %s for continues humongous region %u", region_attr.get_type_str(), i);
         _failures = true;
         return true;
       }
     } else {
-      if (region_attr.is_humongous_candidate()) {
+      if (region_attr.is_humongous()) {
         log_error(gc, verify)("## inconsistent region attr type %s for non-humongous region %u", region_attr.get_type_str(), i);
         _failures = true;
         return true;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "oops/instanceKlass.hpp"
 #include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "services/classLoadingService.hpp"
 #include "services/memoryService.hpp"
@@ -151,12 +152,24 @@ void ClassLoadingService::reset_trace_class_unloading() {
   LogConfiguration::configure_stdout(level, false, LOG_TAGS(class, unload));
 }
 
+// Class-count readers can run concurrently with loading and unloading.
+static jlong read_class_count(PerfCounter* counter) {
+  return AtomicAccess::load(static_cast<jlong*>(counter->get_address()));
+}
+
+// Loading increments are serialized by Compile_lock.
+// Unloading increments run under ClassLoaderDataGraph_lock or at a safepoint.
+static void increment_class_count(PerfCounter* counter) {
+  jlong* const address = static_cast<jlong*>(counter->get_address());
+  AtomicAccess::store(address, AtomicAccess::load(address) + 1);
+}
+
 jlong ClassLoadingService::loaded_class_count() {
-  return _classes_loaded_count->get_value() + _shared_classes_loaded_count->get_value();
+  return read_class_count(_classes_loaded_count) + read_class_count(_shared_classes_loaded_count);
 }
 
 jlong ClassLoadingService::unloaded_class_count() {
-  return _classes_unloaded_count->get_value() + _shared_classes_unloaded_count->get_value();
+  return read_class_count(_classes_unloaded_count) + read_class_count(_shared_classes_unloaded_count);
 }
 
 jlong ClassLoadingService::loaded_class_bytes() {
@@ -168,11 +181,11 @@ jlong ClassLoadingService::unloaded_class_bytes() {
 }
 
 jlong ClassLoadingService::loaded_shared_class_count() {
-  return _shared_classes_loaded_count->get_value();
+  return read_class_count(_shared_classes_loaded_count);
 }
 
 jlong ClassLoadingService::unloaded_shared_class_count() {
-  return _shared_classes_unloaded_count->get_value();
+  return read_class_count(_shared_classes_unloaded_count);
 }
 
 jlong ClassLoadingService::loaded_shared_class_bytes() {
@@ -206,11 +219,13 @@ static size_t compute_class_size(InstanceKlass* k) {
 }
 
 void ClassLoadingService::notify_class_loaded(InstanceKlass* k, bool shared_class) {
+  assert_lock_strong(Compile_lock);
+  assert(k->init_state() == InstanceKlass::loaded, "invariant");
   DTRACE_CLASSLOAD_PROBE(loaded, k, shared_class);
   PerfCounter* classes_counter = (shared_class ? _shared_classes_loaded_count
                                                : _classes_loaded_count);
   // increment the count
-  classes_counter->inc();
+  increment_class_count(classes_counter);
 
   if (UsePerfData) {
     PerfCounter* classbytes_counter = (shared_class ? _shared_classbytes_loaded
@@ -222,9 +237,10 @@ void ClassLoadingService::notify_class_loaded(InstanceKlass* k, bool shared_clas
 }
 
 void ClassLoadingService::notify_class_unloaded(InstanceKlass* k) {
+  assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
   DTRACE_CLASSLOAD_PROBE(unloaded, k, false);
   // Classes that can be unloaded must be non-shared
-  _classes_unloaded_count->inc();
+  increment_class_count(_classes_unloaded_count);
 
   if (UsePerfData) {
     // add the class size
