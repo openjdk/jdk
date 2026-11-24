@@ -50,6 +50,7 @@ public class TestUnloadedArrayKlassAfterOOME_C1 {
         options.add("-Xmx12m");
         options.add("-XX:CompileCommand=compileonly," + getTestClass() + "::testNew");
         options.add("-XX:CompileCommand=compileonly," + getTestClass() + "::testArrayCopy");
+        options.add("-XX:CompileCommand=compileonly," + getTestClass() + "::testNewWithoutCatch");
         options.add(getTestClass());
 
         OutputAnalyzer oa = ProcessTools.executeTestJava(options);
@@ -93,6 +94,10 @@ public class TestUnloadedArrayKlassAfterOOME_C1 {
             }
         }
 
+	static Object[] testNewWithoutCatch() {
+	    return new Value[10];
+	}
+
         public static void main(String[] args) {
             Object[] array = new Object[10];
             Value value = new Value();
@@ -106,6 +111,11 @@ public class TestUnloadedArrayKlassAfterOOME_C1 {
             }
             testNew();
             testArrayCopy(array);
+	    try {
+		testNewWithoutCatch();
+	    }  catch (OutOfMemoryError expected) {
+                // Ignore
+            }
         }
     }
 }
