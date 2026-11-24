@@ -3407,11 +3407,11 @@ public class JavacParserTest extends TestCase {
                           void test3(boolean b1, boolean b2, Supplier<String> r) {
                               test3(i > j, j < i, Test::get);
                           }
-                          void test4(boolean b, Supplier<String> r) {
-                              test4(i < j >> k, Test::get);
+                          void test4(boolean b1, boolean b2, Supplier<String> r) {
+                              test4(i < j >> k, i < j, Test::get);
                           }
-                          void test5(boolean b, Supplier<String> r) {
-                              test5(i < j >>> k, Test::get);
+                          void test5(boolean b1, boolean b2, Supplier<String> r) {
+                              test5(i < j >>> k, i < j, Test::get);
                           }
                           void test6(boolean b1, boolean b2, Supplier<String> r) {
                               test6(i < j, i < j >> k, Test::get);
@@ -3464,12 +3464,12 @@ public class JavacParserTest extends TestCase {
                              test3(i > j, j < i, Test::get);
                          }
                          \n\
-                         void test4(boolean b, Supplier<String> r) {
-                             test4(i < j >> k, Test::get);
+                         void test4(boolean b1, boolean b2, Supplier<String> r) {
+                             test4(i < j >> k, i < j, Test::get);
                          }
                          \n\
-                         void test5(boolean b, Supplier<String> r) {
-                             test5(i < j >>> k, Test::get);
+                         void test5(boolean b1, boolean b2, Supplier<String> r) {
+                             test5(i < j >>> k, i < j, Test::get);
                          }
                          \n\
                          void test6(boolean b1, boolean b2, Supplier<String> r) {
