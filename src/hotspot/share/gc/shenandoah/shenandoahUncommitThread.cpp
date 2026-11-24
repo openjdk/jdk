@@ -89,7 +89,7 @@ void ShenandoahUncommitThread::run_service() {
           // Balance the uncommits a bit to avoid too eager uncommit.
           r->set_uncommit_time(now + plan_prompt * per_region_delay);
           plan_prompt++;
-        } else if (r->uncommit_time() == 0) {
+        } else if (r->uncommit_time() == DBL_MAX) {
           // Newly empty region, record it for eventual uncommit.
           r->set_uncommit_time(now + plan_deferred * per_region_delay + ShenandoahUncommitDelay / 1000);
           plan_deferred++;
