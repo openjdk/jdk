@@ -195,7 +195,7 @@ void ShenandoahTaskQueueSet::try_grow(ShenandoahTaskQueueSegment* seen_head) {
 }
 
 inline bool ShenandoahTaskTerminator::has_waiters() {
-  return _active_workers.load_relaxed() < _total_workers;
+  return _active_workers.load_acquire() < _total_workers;
 }
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHTASKQUEUE_INLINE_HPP

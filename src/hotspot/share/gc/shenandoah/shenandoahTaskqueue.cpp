@@ -211,7 +211,7 @@ bool ShenandoahTaskTerminator::offer_termination(bool cancellable) {
   _active_workers.fetch_then_sub((size_t)1, memory_order_seq_cst);
   SpinYield spin;
   while (true) {
-    if (_active_workers.load_relaxed() == 0) {
+    if (_active_workers.load_acquire() == 0) {
       // Consensus: everyone terminated
       assert(_queues->is_shared_empty(), "No more shared work");
       return true;
