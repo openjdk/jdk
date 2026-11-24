@@ -766,6 +766,7 @@ JNIEXPORT jlong JNICALL Java_apple_security_KeychainStore__1addItemToKeychain
         CFStringRef passwordStrRef = NULL;
         jsize passwordLen = 0;
         jchar *passwordChars = NULL;
+        jbyte *rawData = NULL;
 
         if (passwordObj) {
             passwordLen = (*env)->GetArrayLength(env, passwordObj);
@@ -784,7 +785,7 @@ JNIEXPORT jlong JNICALL Java_apple_security_KeychainStore__1addItemToKeychain
         }
 
         jsize dataSize = (*env)->GetArrayLength(env, rawDataObj);
-        jbyte *rawData = (*env)->GetByteArrayElements(env, rawDataObj, NULL);
+        rawData = (*env)->GetByteArrayElements(env, rawDataObj, NULL);
         if (rawData == NULL) {
             goto errOut;
         }
