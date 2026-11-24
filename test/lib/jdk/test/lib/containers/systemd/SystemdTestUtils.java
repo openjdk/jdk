@@ -321,6 +321,7 @@ public class SystemdTestUtils {
         addScopeMemoryProperties(javaCmd, opts);
         javaCmd.add("--scope");
         javaCmd.add(Path.of(Utils.TEST_JDK, "bin", "java").toString());
+        javaCmd.addAll(Arrays.asList(Utils.getTestJavaOpts()));
         javaCmd.addAll(opts.javaOpts);
         javaCmd.add(opts.classToRun);
         javaCmd.addAll(opts.classParams);
