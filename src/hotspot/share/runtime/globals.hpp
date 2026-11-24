@@ -1958,7 +1958,7 @@ const int ObjectAlignmentInBytes = 8;
           "Use platform unstable time where supported for timestamps only") \
                                                                             \
   product_pd(bool, ValueTypePassFieldsAsArgs, DIAGNOSTIC,                   \
-          "Pass each value type field as an argument at calls")             \
+             "Pass each value type field as an argument at calls")          \
                                                                             \
   product_pd(bool, ValueTypeReturnedAsFields, DIAGNOSTIC,                   \
           "Return fields instead of a value type reference")                \
