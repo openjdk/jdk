@@ -5,6 +5,8 @@
 #ifndef SPA_PARAM_PROFILER_H
 #define SPA_PARAM_PROFILER_H
 
+#include <spa/param/param.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -13,8 +15,6 @@ extern "C" {
  * \addtogroup spa_param
  * \{
  */
-
-#include <spa/param/param.h>
 
 /** properties for SPA_TYPE_OBJECT_Profiler */
 enum spa_profiler {
@@ -66,7 +66,8 @@ enum spa_profiler {
                               *      Long : finish,
                               *      Int : status,
                               *      Fraction : latency,
-                              *      Int : xrun_count))  */
+                              *      Int : xrun_count))
+                              *      Bool : async))  */
     SPA_PROFILER_followerClock,            /**< follower clock information
                               *  (Struct(
                               *      Int : clock id,

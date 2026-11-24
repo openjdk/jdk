@@ -5,16 +5,16 @@
 #ifndef PIPEWIRE_CORE_H
 #define PIPEWIRE_CORE_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <stdarg.h>
 #include <errno.h>
 
 #include <spa/utils/hook.h>
 
 #include <pipewire/type.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /** \defgroup pw_core Core
  *

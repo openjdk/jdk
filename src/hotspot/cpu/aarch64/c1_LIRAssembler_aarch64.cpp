@@ -493,7 +493,7 @@ void LIR_Assembler::return_op(LIR_Opr result, C1SafepointPollStub* code_stub) {
       if (vk->can_be_returned_as_fields()) {
         address unpack_handler = vk->unpack_handler();
         assert(unpack_handler != nullptr, "must be");
-        if (AOTCodeCache::is_on_for_dump()) {
+        if (compilation()->env()->is_aot_compile()) {
           // in AOT compiled code call the unpack handler indirectly
           // via the klass. The handler's blob does not currently get
           // saved to the archive. So, a direct call to the handler
@@ -598,7 +598,7 @@ void LIR_Assembler::const2reg(LIR_Opr src, LIR_Opr dest, LIR_PatchCode patch_cod
 
     case T_LONG: {
       assert(patch_code == lir_patch_none, "no patching handled here");
-      if (AOTCodeCache::is_on_for_dump()) {
+      if (compilation()->env()->is_aot_compile()) {
         address b = c->as_pointer();
         if (b == (address)ThreadIdentifier::unsafe_offset()) {
           __ lea(dest->as_register_lo(), ExternalAddress(b));

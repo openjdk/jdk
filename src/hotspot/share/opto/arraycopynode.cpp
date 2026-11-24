@@ -447,7 +447,7 @@ bool ArrayCopyNode::can_use_arraycopy_fast_path(const TypeAryPtr* src_ary, const
   if (src_ary->elem()->value_klass()->contains_oops()) {
     BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
     bool needs_barriers = bs->array_copy_requires_gc_barriers(is_alloc_tightly_coupled(), T_OBJECT, false, false,
-                                                              BarrierSetC2::Optimization);
+                                                              BarrierSetC2::Expansion);
     // When a flat array contains oops, we require GC barriers which we cannot handle
     return !needs_barriers;
   }

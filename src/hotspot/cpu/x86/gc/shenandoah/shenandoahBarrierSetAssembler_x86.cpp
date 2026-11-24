@@ -1003,7 +1003,7 @@ void ShenandoahBarrierStubC2::lrb(MacroAssembler& masm) {
     patchable_jump_if_gc_state(masm, state_to_check, noreg, noreg, &L_slow);
   }
 
-  bool is_aot = AOTCodeCache::is_on_for_dump();
+  const bool is_aot = Compile::current()->is_aot_compile();
 
   // Need temp to work, allocate one now.
   bool tmp_live;

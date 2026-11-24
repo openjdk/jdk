@@ -5,6 +5,8 @@
 #ifndef SPA_PARAM_FORMAT_H
 #define SPA_PARAM_FORMAT_H
 
+#include <spa/param/param.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -13,8 +15,6 @@ extern "C" {
  * \addtogroup spa_param
  * \{
  */
-
-#include <spa/param/param.h>
 
 /** media type for SPA_TYPE_OBJECT_Format */
 enum spa_media_type {
@@ -52,6 +52,11 @@ enum spa_media_subtype {
     SPA_MEDIA_SUBTYPE_flac,        /** since 0.3.65 */
     SPA_MEDIA_SUBTYPE_ape,        /** since 0.3.65 */
     SPA_MEDIA_SUBTYPE_opus,        /** since 0.3.68 */
+    SPA_MEDIA_SUBTYPE_ac3,        /** since 1.5.1 */
+    SPA_MEDIA_SUBTYPE_eac3,        /** since 1.5.1 */
+    SPA_MEDIA_SUBTYPE_truehd,    /** since 1.5.1 */
+    SPA_MEDIA_SUBTYPE_dts,        /** since 1.5.1 */
+    SPA_MEDIA_SUBTYPE_mpegh,    /** since 1.5.1 */
 
     SPA_MEDIA_SUBTYPE_START_Video    = 0x20000,
     SPA_MEDIA_SUBTYPE_h264,
@@ -67,6 +72,7 @@ enum spa_media_subtype {
     SPA_MEDIA_SUBTYPE_vp8,
     SPA_MEDIA_SUBTYPE_vp9,
     SPA_MEDIA_SUBTYPE_bayer,
+    SPA_MEDIA_SUBTYPE_h265,
 
     SPA_MEDIA_SUBTYPE_START_Image    = 0x30000,
     SPA_MEDIA_SUBTYPE_jpeg,
@@ -109,6 +115,10 @@ enum spa_format {
 
     SPA_FORMAT_AUDIO_AMR_bandMode,        /**< AMR band mode (Id enum spa_audio_amr_band_mode) */
 
+    SPA_FORMAT_AUDIO_MP3_channelMode,    /**< MP3 channel mode, (Id enum spa_audio_mp3_channel_mode) */
+
+    SPA_FORMAT_AUDIO_DTS_extType,        /**< DTS extension type (Id enum spa_audio_dts_ext_type) */
+
 
     /* Video Format keys */
     SPA_FORMAT_START_Video = 0x20000,
@@ -132,6 +142,9 @@ enum spa_format {
     SPA_FORMAT_VIDEO_level,            /**< (Int) */
     SPA_FORMAT_VIDEO_H264_streamFormat,    /**< (Id enum spa_h264_stream_format) */
     SPA_FORMAT_VIDEO_H264_alignment,    /**< (Id enum spa_h264_alignment) */
+    SPA_FORMAT_VIDEO_H265_streamFormat,    /**< (Id enum spa_h265_stream_format) */
+    SPA_FORMAT_VIDEO_H265_alignment,    /**< (Id enum spa_h265_alignment) */
+    SPA_FORMAT_VIDEO_deviceId,            /**< dev_t identifier (Bytes) */
 
     /* Image Format keys */
     SPA_FORMAT_START_Image = 0x30000,

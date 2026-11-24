@@ -954,7 +954,7 @@ void ShenandoahBarrierStubC2::lrb(MacroAssembler& masm) {
   }
 
   // Cset-check. Fall-through to slow if in collection set.
-  bool is_aot = AOTCodeCache::is_on_for_dump();
+  const bool is_aot = Compile::current()->is_aot_compile();
   if (!is_aot) {
     __ mov(_tmp1, ShenandoahHeap::in_cset_fast_test_addr());
     if (_narrow) {
