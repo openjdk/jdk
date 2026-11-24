@@ -23,8 +23,11 @@
 
 package jdk.jfr.jvm;
 
+import java.nio.file.Path;
+
 import jdk.jfr.Event;
-import jdk.jfr.consumer.RecordingStream;
+import jdk.jfr.Recording;
+import jdk.jfr.consumer.RecordingFile;
 import jdk.jfr.internal.StringPool;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.jfr.EventNames;
@@ -68,42 +71,35 @@ public class TestEventWriterLeaseExit {
         oversized.reject = "b".repeat(REJECT_LENGTH);
 
         TestThread worker = new TestThread(oversized::commit, "lease-exit-worker");
-        boolean[] workerEnded = {false};
+        try (Recording recording = new Recording()) {
+            recording.enable(TwoStringsEvent.class).withoutStackTrace();
+            recording.enable(EventNames.ThreadEnd);
+            recording.start();
 
-        try (RecordingStream stream = new RecordingStream()) {
-            stream.enable(TwoStringsEvent.class).withoutStackTrace();
-            stream.enable(EventNames.ThreadEnd);
+            Asserts.assertTrue(oversized.shouldCommit(), "Test event must be enabled");
+            worker.start();
+            worker.joinAndThrow();
 
-            stream.onMetadata(metadata -> {
-                // Metadata can be delivered more than once.
-                // Therefore, start the worker thread only once.
-                if (worker.getState() == Thread.State.NEW) {
-                    Asserts.assertTrue(oversized.shouldCommit(), "Test event must be enabled");
-                    worker.start();
+            Path dump = Path.of("lease-exit.jfr");
+            boolean workerEnded = false;
+            // join() can return before JFR emits ThreadEnd during native thread cleanup.
+            // Keep recording until a dump contains the event; stopping after join could lose it.
+            while (!workerEnded) {
+                recording.dump(dump);
+                for (var event : RecordingFile.readAllEvents(dump)) {
+                    String eventName = event.getEventType().getName();
+                    Asserts.assertFalse(eventName.equals(TwoStringsEvent.class.getName()),
+                        "Oversized event should have been discarded");
+                    if (eventName.equals(EventNames.ThreadEnd)
+                            && worker.getName().equals(event.getThread().getJavaName())) {
+                        workerEnded = true;
+                    }
                 }
-            });
-            stream.onEvent(TwoStringsEvent.class.getName(), event -> {
-                throw new AssertionError("Oversized event should have been discarded");
-            });
-            stream.onEvent(EventNames.ThreadEnd, event -> {
-                if (worker.getName().equals(event.getThread().getJavaName())) {
-                    workerEnded[0] = true;
-                    stream.close();
+                if (!workerEnded) {
+                    Thread.sleep(10);
                 }
-            });
-            stream.onError(error -> {
-                throw new AssertionError("Recording stream failed", error);
-            });
-
-            stream.start();
-            Asserts.assertTrue(workerEnded[0], "Worker ThreadEnd event was not received");
-
-            // ThreadEnd is also recorded if the worker failed. Propagate any
-            // exception captured by TestThread before it reached thread exit.
-            Throwable failure = worker.getUncaught();
-            if (failure != null) {
-                throw failure;
             }
+            recording.stop();
         }
     }
 }
