@@ -1019,9 +1019,6 @@ class Http2Connection implements Closeable {
                         } else {
                             resetStream(streamid, ResetFrame.PROTOCOL_ERROR);
                         }
-                    } else if (streamid >= nextstreamid) {
-                        // otherwise the stream has already been reset/closed
-                        resetStream(streamid, ResetFrame.PROTOCOL_ERROR);
                     }
                 }
                 return;
