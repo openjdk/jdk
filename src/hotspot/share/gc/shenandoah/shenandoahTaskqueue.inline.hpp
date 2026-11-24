@@ -182,15 +182,21 @@ inline bool ShenandoahTaskQueueStack::is_sliceable() {
 
 void ShenandoahTaskQueueSet::try_grow(ShenandoahTaskQueueSegment* seen_head) {
   if (_segments_head.load_acquire() != seen_head) {
-    // Head already moved, let caller rescan.
+    // Head already moved, let caller rescan before creating segments.
     return;
   }
+
+  // Create the segment and link it. Under contention, several threads may succeed
+  // to install their segments. This is a tradeoff for avoiding mmap churn.
+  // The temporary spike under contention would be managed by trimming code later.
   ShenandoahTaskQueueSegment* cand = ShenandoahTaskQueueSegment::create();
-  cand->set_next(seen_head);
-  if (_segments_head.compare_set(seen_head, cand)) {
-    _num_segments.fetch_then_add((size_t)1);
-  } else {
-    ShenandoahTaskQueueSegment::destroy(cand);
+  while (true) {
+    auto head = _segments_head.load_acquire();
+    cand->set_next(head);
+    if (_segments_head.compare_set(head, cand, memory_order_seq_cst)) {
+      _num_segments.fetch_then_add((size_t)1, memory_order_seq_cst);
+      break;
+    }
   }
 }
 
