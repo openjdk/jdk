@@ -2751,12 +2751,12 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_WPrinterJob_textOut
     }
 
     ::ExtTextOut((HDC)printDC,
-                    posX, posY,     // starting position for the text
-                    flags,          // glyphCodes?, y advances?
-                    NULL,           // optional clipping-opaquing rectangle
-                    wText,          // the Unicode text to draw
-                    static_cast<UINT>(strLen),
-                    advances);      // intercharacter advances or NULL
+                 posX, posY,     // starting position for the text
+                 flags,          // glyphCodes?, y advances?
+                 NULL,           // optional clipping-opaquing rectangle
+                 wText,          // the Unicode text to draw
+                 static_cast<UINT>(strLen),
+                 advances);      // intercharacter advances or NULL
 
     if (xadvances != NULL) {
         free(xadvances);
