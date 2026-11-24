@@ -24,6 +24,7 @@
 package jdk.jfr.event.io;
 
 import static jdk.test.lib.Asserts.assertEquals;
+import static jdk.jfr.event.io.IOHelper.assertClosedChannelException;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -32,7 +33,6 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.ByteBuffer;
-import java.nio.channels.ClosedChannelException;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.time.Duration;
@@ -105,47 +105,23 @@ public class TestSocketAdapterEvents {
                             addExpectedEvent(IOEvent.createSocketReadEvent(-1, s));
 
                             s.close();
-                            try {
-                                readInt = is.read();
-                                throw new AssertionError("Missing ClosedChannelException for is.read()");
-                            } catch (ClosedChannelException cce) {
-                                addExpectedEvent(IOEvent.createSocketReadEvent(0, s));
-                            }
+                            assertClosedChannelException(is::read, "is.read()");
+                            addExpectedEvent(IOEvent.createSocketReadEvent(0, s));
 
-                            try {
-                                readInt = is.read(bs);
-                                throw new AssertionError("Missing ClosedChannelException for is.read(byte[])");
-                            } catch (ClosedChannelException cce) {
-                                addExpectedEvent(IOEvent.createSocketReadEvent(0, s));
-                            }
+                            assertClosedChannelException(() -> is.read(bs), "is.read(byte[])");
+                            addExpectedEvent(IOEvent.createSocketReadEvent(0, s));
 
-                            try {
-                                readInt = is.read(bs, 0, 3);
-                                throw new AssertionError("Missing ClosedChannelException for is.read(byte[], int, int)");
-                            } catch (ClosedChannelException cce) {
-                                addExpectedEvent(IOEvent.createSocketReadEvent(0, s));
-                            }
+                            assertClosedChannelException(() -> is.read(bs, 0, 3), "is.read(byte[], int, int)");
+                            addExpectedEvent(IOEvent.createSocketReadEvent(0, s));
 
-                            try {
-                                os.write(42);
-                                throw new AssertionError("Missing ClosedChannelException for os.write(int)");
-                            } catch (ClosedChannelException cce) {
-                                addExpectedEvent(IOEvent.createSocketWriteEvent(0, s));
-                            }
+                            assertClosedChannelException(() -> os.write(42), "os.write(int)");
+                            addExpectedEvent(IOEvent.createSocketWriteEvent(0, s));
 
-                            try {
-                                os.write(bs);
-                                throw new AssertionError("Missing ClosedChannelException for os.write(byte[])");
-                            } catch (ClosedChannelException cce) {
-                                addExpectedEvent(IOEvent.createSocketWriteEvent(0, s));
-                            }
+                            assertClosedChannelException(() -> os.write(bs), "os.write(byte[])");
+                            addExpectedEvent(IOEvent.createSocketWriteEvent(0, s));
 
-                            try {
-                                os.write(bs, 0, 3);
-                                throw new AssertionError("Missing ClosedChannelException for os.write(byte[], int, int)");
-                            } catch (ClosedChannelException cce) {
-                                addExpectedEvent(IOEvent.createSocketWriteEvent(0, s));
-                            }
+                            assertClosedChannelException(() -> os.write(bs, 0, 3), "os.write(byte[], int, int)");
+                            addExpectedEvent(IOEvent.createSocketWriteEvent(0, s));
                         }
                     }
                 });

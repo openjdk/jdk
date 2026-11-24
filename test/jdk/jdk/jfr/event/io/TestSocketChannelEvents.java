@@ -24,13 +24,13 @@
 package jdk.jfr.event.io;
 
 import static jdk.test.lib.Asserts.assertEquals;
+import static jdk.jfr.event.io.IOHelper.assertClosedChannelException;
 
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.ByteBuffer;
-import java.nio.channels.ClosedChannelException;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.time.Duration;
@@ -101,33 +101,17 @@ public class TestSocketChannelEvents {
                             addExpectedEvent(IOEvent.createSocketReadEvent(-1, s));
 
                             sc.close();
-                            try {
-                                sc.read(bufA);
-                                throw new AssertionError("Missing ClosedChannelException for sc.read(ByteBuffer)");
-                            } catch (ClosedChannelException cce) {
-                                addExpectedEvent(IOEvent.createSocketReadEvent(0, s));
-                            }
+                            assertClosedChannelException(() -> sc.read(bufA), "sc.read(ByteBuffer)");
+                            addExpectedEvent(IOEvent.createSocketReadEvent(0, s));
 
-                            try {
-                                sc.read(new ByteBuffer[] { bufA, bufB }, 0, 2);
-                                throw new AssertionError("Missing ClosedChannelException for sc.read(ByteBuffer[], int, int)");
-                            } catch (ClosedChannelException cce) {
-                                addExpectedEvent(IOEvent.createSocketReadEvent(0, s));
-                            }
+                            assertClosedChannelException(() -> sc.read(new ByteBuffer[] { bufA, bufB }, 0, 2), "sc.read(ByteBuffer[], int, int)");
+                            addExpectedEvent(IOEvent.createSocketReadEvent(0, s));
 
-                            try {
-                                sc.write(bufA);
-                                throw new AssertionError("Missing ClosedChannelException for sc.write(ByteBuffer)");
-                            } catch (ClosedChannelException cce) {
-                                addExpectedEvent(IOEvent.createSocketWriteEvent(0, s));
-                            }
+                            assertClosedChannelException(() -> sc.write(bufA), "sc.write(ByteBuffer)");
+                            addExpectedEvent(IOEvent.createSocketWriteEvent(0, s));
 
-                            try {
-                                sc.write(new ByteBuffer[] { bufA, bufB }, 0, 2);
-                                throw new AssertionError("Missing ClosedChannelException for sc.write(ByteBuffer[], int, int)");
-                            } catch (ClosedChannelException cce) {
-                                addExpectedEvent(IOEvent.createSocketWriteEvent(0, s));
-                            }
+                            assertClosedChannelException(() -> sc.write(new ByteBuffer[] { bufA, bufB }, 0, 2), "sc.write(ByteBuffer[], int, int)");
+                            addExpectedEvent(IOEvent.createSocketWriteEvent(0, s));
                         }
                     }
                 });

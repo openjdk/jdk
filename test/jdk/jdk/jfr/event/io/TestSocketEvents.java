@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 package jdk.jfr.event.io;
 
 import static jdk.test.lib.Asserts.assertEquals;
-
+import static jdk.jfr.event.io.IOHelper.assertSocketException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -32,7 +32,6 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -43,7 +42,7 @@ import jdk.test.lib.jfr.Events;
 import jdk.test.lib.thread.TestThread;
 import jdk.test.lib.thread.XRun;
 
-/**
+/*
  * @test
  * @summary test socket read/write events on Socket
  * @requires vm.flagless
@@ -101,12 +100,9 @@ public class TestSocketEvents {
 
                             OutputStream os = s.getOutputStream();
                             os.close();
-                            try {
-                                os.write(42);
-                                throw new AssertionError("Missing SocketException for os.write(42)");
-                            } catch (SocketException cce) {
-                                addExpectedEvent(IOEvent.createSocketWriteEvent(0, s));
-                            }
+
+                            assertSocketException(() -> os.write(42), "os.write(int)");
+                            addExpectedEvent(IOEvent.createSocketWriteEvent(0, s));
                         }
                     }
                 });
@@ -123,12 +119,9 @@ public class TestSocketEvents {
                         os.write(writeBuf);
                         addExpectedEvent(IOEvent.createSocketWriteEvent(writeBuf.length, s));
                         is.close();
-                        try {
-                            is.read();
-                            throw new AssertionError("Missing SocketException for is.read()");
-                        } catch (SocketException cce) {
-                            addExpectedEvent(IOEvent.createSocketReadEvent(0, s));
-                        }
+
+                        assertSocketException(() -> is.read(), "is.read()");
+                        addExpectedEvent(IOEvent.createSocketReadEvent(0, s));
                     }
                 }
 
