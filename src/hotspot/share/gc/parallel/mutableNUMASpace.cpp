@@ -538,7 +538,7 @@ void MutableNUMASpace::initialize(MemRegion mr,
   const bool use_parallel_numa_pretouch = AlwaysPreTouch &&
                                           pretouch_workers != nullptr &&
                                           old_region.is_empty();
-  GrowableArray<PSNUMAPretouchRegion> pretouch_regions(2 * lgrp_spaces()->length(), mtGC);
+  GrowableArray<PSNUMAPretouchRegion> pretouch_regions(lgrp_spaces()->length(), mtGC);
 
   for (int i = 0; i < lgrp_spaces()->length(); i++) {
     LGRPSpace *ls = lgrp_spaces()->at(i);
