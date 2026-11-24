@@ -58,7 +58,7 @@ public class TestAOTCacheFlagsCleanup {
         IterativeTester tester = new IterativeTester();
         tester.runAOTRetrainWorkflow(true);
     }
-    
+
     static class NonIterativeTester extends CDSAppTester {
         public NonIterativeTester() {
             super("NonIterativeTester");
