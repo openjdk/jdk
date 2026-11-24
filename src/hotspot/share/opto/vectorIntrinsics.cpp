@@ -2066,7 +2066,7 @@ bool LibraryCallKit::inline_vector_rearrange() {
        mask_klass->const_oop() == nullptr ||
        !is_klass_initialized(mask_klass))) {
     log_if_needed("  ** mask_klass argument not initialized");
-    return false; // not supported
+    return false;
   }
   if (!arch_supports_vector(Op_AndV, num_elem, elem_bt, VecMaskNotUsed)) {
     log_if_needed("  ** not supported: arity=2 op=and vlen=%d etype=%s ismask=no",
