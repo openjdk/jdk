@@ -3437,9 +3437,7 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
     Arguments::print_on(&st);
   }
 
-#if INCLUDE_CDS
   AOTClassLocationConfig::init_boot_classpath();
-#endif
 
   return JNI_OK;
 }
