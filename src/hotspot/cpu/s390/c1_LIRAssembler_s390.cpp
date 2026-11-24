@@ -3115,21 +3115,6 @@ int LIR_Assembler::store_value_type_fields_to_buf(ciValueKlass* vk) {
   return 0;
 }
 
-void LIR_Assembler::emit_opFlattenedArrayCheck(LIR_OpFlattenedArrayCheck* op) {
-  // We are loading/storing from/to an array that *may* be a flat array (the
-  // declared type is Object[], abstract[], interface[] or VT.ref[]).
-  // If this array is a flat array, take the slow path.
-  __ test_flat_array_oop(op->array()->as_register(), op->tmp()->as_register(), *op->stub()->entry());
-}
-
-void LIR_Assembler::emit_opNullFreeArrayCheck(LIR_OpNullFreeArrayCheck* op) {
-  // We are storing into an array that *may* be null-free (the declared type is
-  // Object[], abstract[], interface[] or VT.ref[]).
-  Register tmp = op->tmp()->as_register();
-  __ z_lg(tmp, oopDesc::mark_offset_in_bytes(), op->array()->as_register());
-  __ z_tmll(tmp, markWord::null_free_array_bit_in_place);
-}
-
 void LIR_Assembler::emit_opSubstitutabilityCheck(LIR_OpSubstitutabilityCheck* op) {
   Label L_oops_equal;
   Label L_oops_not_equal;

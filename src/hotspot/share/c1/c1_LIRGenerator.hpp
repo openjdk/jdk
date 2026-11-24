@@ -374,11 +374,9 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   void access_sub_element(LIRItem& array, LIRItem& index, LIR_Opr& result, ciField* field, size_t sub_offset);
   LIR_Opr get_and_load_element_address(LIRItem& array, LIRItem& index);
   static bool needs_flat_array_store_check(StoreIndexed* x);
-  void check_flat_array(LIR_Opr array, CodeStub* slow_path);
   LIR_Condition is_array_flat(LIRItem& array, CodeEmitInfo* info);
   static bool needs_null_free_array_store_check(StoreIndexed* x);
   LIR_Condition is_array_null_free(LIRItem& array, CodeEmitInfo* info);
-  void check_null_free_array(LIRItem& array, LIRItem& value,  CodeEmitInfo* info);
   void substitutability_check(IfOp* x, LIRItem& left, LIRItem& right, LIRItem& t_val, LIRItem& f_val);
   void substitutability_check(If* x, LIRItem& left, LIRItem& right);
   void substitutability_check_common(Value left_val, Value right_val, LIRItem& left, LIRItem& right,
@@ -589,7 +587,7 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   void profile_parameters(Base* x);
   void profile_parameters_at_call(ProfileCall* x);
   void profile_flags(ciMethodData* md, ciProfileData* load_store, int flag, LIR_Condition condition = lir_cond_always);
-  void profile_null_free_array(LIRItem array, ciMethodData* md, ciProfileData* load_store);
+  void profile_null_free_array(LIRItem array, ciMethodData* md, ciProfileData* load_store, CodeEmitInfo* info);
   template <class ArrayData> void profile_array_type(AccessIndexed* x, ciMethodData*& md, ArrayData*& load_store);
   void profile_element_type(Value element, ciMethodData* md, ciArrayLoadData* load_store);
   bool profile_value_klass(ciMethodData* md, ciProfileData* data, Value value, int flag);

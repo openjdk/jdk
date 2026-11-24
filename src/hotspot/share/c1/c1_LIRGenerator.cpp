@@ -2178,11 +2178,6 @@ LIR_Opr LIRGenerator::access_flat_array(AccessIndexed* x, LIRItem& array, LIRIte
   return LIR_OprFact::illegalOpr;
 }
 
-void LIRGenerator::check_flat_array(LIR_Opr array, CodeStub* slow_path) {
-  LIR_Opr tmp = new_register(T_METADATA);
-  __ check_flat_array(array, tmp, slow_path);
-}
-
 // Returns the condition code used.
 LIR_Condition LIRGenerator::is_array_flat(LIRItem& array, CodeEmitInfo* info) {
 #ifndef _LP64
@@ -2209,20 +2204,6 @@ LIR_Condition LIRGenerator::is_array_null_free(LIRItem& array, CodeEmitInfo* inf
   __ cmp(lir_cond_notEqual, mark_word, LIR_OprFact::longConst(0));
 #endif // _LP64
   return lir_cond_notEqual;
-}
-
-void LIRGenerator::check_null_free_array(LIRItem& array, LIRItem& value, CodeEmitInfo* info) {
-  LabelObj* L_end = new LabelObj();
-  LIR_Opr tmp = new_register(T_METADATA);
-  __ check_null_free_array(array.result(), tmp);
-#ifdef RISCV
-  // tmp is used to hold the result of null free array check on riscv
-  // See LIR_Assembler::emit_opNullFreeArrayCheck
-  __ cmp(lir_cond_equal, tmp, LIR_OprFact::metadataConst(nullptr));
-#endif
-  __ branch(lir_cond_equal, L_end->label());
-  __ null_check(value.result(), info);
-  __ branch_destination(L_end->label());
 }
 
 bool LIRGenerator::needs_flat_array_store_check(StoreIndexed* x) {
@@ -2323,7 +2304,7 @@ void LIRGenerator::do_StoreIndexed(StoreIndexed* x) {
       profile_array_type(x, md, store_data);
       assert(store_data->is_ArrayStoreData(), "incorrect profiling entry");
       if (x->array()->maybe_null_free_array()) {
-        profile_null_free_array(array, md, data);
+        profile_null_free_array(array, md, data, new CodeEmitInfo(range_check_info));
       }
     }
   }
@@ -2833,14 +2814,15 @@ void LIRGenerator::do_LoadIndexed(LoadIndexed* x) {
     // The result operand can be used across block boundaries because is locked to one register.
     LIR_Opr result = rlock_result(x, x->elt_type());
 
+    CodeEmitInfo* check_info = null_check_info != nullptr ? null_check_info : range_check_info;
     if (x->should_profile() && x->array()->maybe_null_free_array()) {
-      profile_null_free_array(array, md, data);
+      profile_null_free_array(array, md, data, new CodeEmitInfo(check_info));
     }
 
     if (x->elt_type() == T_OBJECT && x->array()->maybe_flat_array()) {
       assert(x->delayed() == nullptr, "Delayed LoadIndexed only apply to loaded_flat_arrays");
       LateControlFlowDiamond lcfd(this, x, [&](BlockBegin* taken, BlockBegin* not_taken) {
-        const LIR_Condition cond = is_array_flat(array, new CodeEmitInfo(range_check_info));
+        const LIR_Condition cond = is_array_flat(array, new CodeEmitInfo(check_info));
         __ branch(cond, taken);
         __ jump(not_taken);
       });
@@ -3474,7 +3456,7 @@ void LIRGenerator::profile_flags(ciMethodData* md, ciProfileData* data, int flag
   LIR_Opr update;
   if (condition != lir_cond_always) {
     update = new_register(T_INT);
-    __ cmove(condition, LIR_OprFact::intConst(0), LIR_OprFact::intConst(flag), update, T_INT);
+    __ cmove(condition, LIR_OprFact::intConst(flag), LIR_OprFact::intConst(0), update, T_INT);
   } else {
     update = LIR_OprFact::intConst(flag);
   }
@@ -3482,17 +3464,10 @@ void LIRGenerator::profile_flags(ciMethodData* md, ciProfileData* data, int flag
   __ store(flags, addr);
 }
 
-void LIRGenerator::profile_null_free_array(LIRItem array, ciMethodData* md, ciProfileData* data) {
+void LIRGenerator::profile_null_free_array(LIRItem array, ciMethodData* md, ciProfileData* data, CodeEmitInfo* info) {
   assert(compilation()->profile_array_accesses(), "array access profiling is disabled");
-  LabelObj* L_end = new LabelObj();
-  LIR_Opr tmp = new_register(T_METADATA);
-  __ check_null_free_array(array.result(), tmp);
-#ifdef RISCV
-  // tmp is used to hold the result of null free array check on riscv
-  // See LIR_Assembler::emit_opNullFreeArrayCheck
-  __ cmp(lir_cond_equal, tmp, LIR_OprFact::metadataConst(nullptr));
-#endif
-  profile_flags(md, data, ArrayStoreData::null_free_array_byte_constant(), lir_cond_equal);
+  const LIR_Condition cond = is_array_null_free(array, info);
+  profile_flags(md, data, ArrayStoreData::null_free_array_byte_constant(), cond);
 }
 
 template <class ArrayData> void LIRGenerator::profile_array_type(AccessIndexed* x, ciMethodData*& md, ArrayData*& load_store) {
