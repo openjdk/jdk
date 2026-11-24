@@ -48,7 +48,7 @@ public class InitUnsupported {
                 -----END PRIVATE KEY-----
                 """, KeyPair.class);
 
-        // secp384r1 ket pair
+        // secp384r1 key pair
         var kpn = KeyPairGenerator.getInstance("EC").generateKeyPair();
 
         // We init with supported keys first to confirm that init failure
