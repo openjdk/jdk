@@ -41,7 +41,7 @@ class ShenandoahUncommitThread : public ConcurrentGCThread {
   // Indicates that regions are being actively uncommitted
   ShenandoahSharedFlag _uncommit_in_progress;
 
-  // Indicates that current stride needs to be restarted.
+  // Indicates that current stride needs to be restarted
   ShenandoahSharedFlag _restart;
 
   // This lock is used to coordinate allowing or forbidding regions to be uncommitted
@@ -65,11 +65,8 @@ public:
   // Periodically check for regions to uncommit
   void run_service() override;
 
-  // Wake up this thread and try to uncommit for changed soft max size
+  // Request this thread to handle uncommits promptly.
   void request_prompt_uncommit();
-
-  // Wake up this thread and try to uncommit for min heap size
-  void notify_explicit_gc_requested();
 
   // Wait for uncommit operations to stop, returns immediately if uncommit thread is idle
   void forbid_uncommit();
