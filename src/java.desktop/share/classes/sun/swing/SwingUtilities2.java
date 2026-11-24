@@ -83,6 +83,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.UIDefaults;
 import javax.swing.UIManager;
 import javax.swing.event.TreeModelEvent;
+import javax.swing.plaf.ComponentUI;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumnModel;
 import javax.swing.text.DefaultCaret;
@@ -120,6 +121,67 @@ import static java.awt.geom.AffineTransform.TYPE_TRANSLATION;
  *
  */
 public class SwingUtilities2 {
+
+    // Records components whose UI delegates are being installed/uninstalled
+    // in this thread
+    private static final ThreadLocal<UIDelegateContext> UI_DELEGATE_CONTEXT =
+            new ThreadLocal<>();
+
+    // Installs the UI delegate while preserving application key-map entries/bindings
+    // through SwingUtilities.replaceUIInputMap()/replaceUIActionMap()
+    public static void installUI(ComponentUI ui, JComponent component) {
+        changeUI(ui, component, true);
+    }
+
+    // Uninstalls the UI delegate while preserving application key-map entries/bindings
+    // through SwingUtilities.replaceUIInputMap()/replaceUIActionMap()
+    public static void uninstallUI(ComponentUI ui, JComponent component) {
+        changeUI(ui, component, false);
+    }
+
+    // Returns whether the component is undergoing UI installation/uninstallation
+    public static boolean isChangingUI(JComponent component) {
+        for (UIDelegateContext frame = UI_DELEGATE_CONTEXT.get(); frame != null;
+             frame = frame.previous) {
+            if (frame.component == component) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Records the component while installing or uninstalling the UI delegate,
+    // allowing SwingUtilities to preserve application key bindings.
+    // Restore the previous context on completion
+    private static void changeUI(ComponentUI ui, JComponent component,
+                                 boolean install) {
+        UIDelegateContext previous = UI_DELEGATE_CONTEXT.get();
+        UI_DELEGATE_CONTEXT.set(new UIDelegateContext(component, previous));
+        try {
+            if (install) {
+                ui.installUI(component);
+            } else {
+                ui.uninstallUI(component);
+            }
+        } finally {
+            if (previous == null) {
+                UI_DELEGATE_CONTEXT.remove();
+            } else {
+                UI_DELEGATE_CONTEXT.set(previous);
+            }
+        }
+    }
+
+    private static final class UIDelegateContext {
+        private final JComponent component;
+        private final UIDelegateContext previous;
+
+        private UIDelegateContext(JComponent component, UIDelegateContext previous) {
+            this.component = component;
+            this.previous = previous;
+        }
+    }
+
 
     // Maintain a cache of CACHE_SIZE fonts and the left side bearing
      // of the characters falling into the range MIN_CHAR_INDEX to
