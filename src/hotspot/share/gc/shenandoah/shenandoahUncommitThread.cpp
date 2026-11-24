@@ -84,17 +84,19 @@ void ShenandoahUncommitThread::run_service() {
     for (size_t i = _heap->num_regions(); i > 0; i--) {
       ShenandoahHeapRegion* r = _heap->get_region(i - 1);
       if (r->is_empty_committed()) {
-        if (prompt_request) {
-          // Prompt request received.
-          // Balance the uncommits a bit to avoid too eager uncommit.
-          r->set_uncommit_time(now + plan_prompt * per_region_delay);
-          plan_prompt++;
-        } else if (r->uncommit_time() == DBL_MAX) {
-          // Newly empty region, record it for eventual uncommit.
-          r->set_uncommit_time(now + plan_deferred * per_region_delay + ShenandoahUncommitDelay / 1000);
-          plan_deferred++;
-        } else if (r->uncommit_time() <= now) {
+        double uncommit_time = r->uncommit_time();
+        if (uncommit_time <= now) {
+          // Region matches the deadline, uncommit it.
           plan_uncommit++;
+        } else if (prompt_request) {
+          // Non-matching regions under prompt request get the early deadline.
+          // We still want to balance the uncommits a bit to avoid too eager uncommit.
+          r->set_uncommit_time(MIN2(uncommit_time, now + plan_prompt * per_region_delay));
+          plan_prompt++;
+        } else if (uncommit_time == DBL_MAX) {
+          // Newly empty regions get the later deadline.
+          r->set_uncommit_time(now + plan_deferred * per_region_delay + double(ShenandoahUncommitDelay) / 1000);
+          plan_deferred++;
         }
       }
     }
