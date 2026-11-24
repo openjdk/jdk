@@ -967,13 +967,6 @@ class Http2Connection implements Closeable {
         if (streamid == 0) {
             handleConnectionFrame(frame);
         } else {
-            if (frame instanceof SettingsFrame) {
-                // The stream identifier for a SETTINGS frame MUST be zero
-                protocolError(ErrorFrame.PROTOCOL_ERROR,
-                        "The stream identifier for a SETTINGS frame MUST be zero");
-                return;
-            }
-
             if (frame instanceof PushPromiseFrame && !serverPushEnabled()) {
                 String protocolError = "received a PUSH_PROMISE when SETTINGS_ENABLE_PUSH is 0";
                 protocolError(ErrorFrame.PROTOCOL_ERROR, protocolError);
