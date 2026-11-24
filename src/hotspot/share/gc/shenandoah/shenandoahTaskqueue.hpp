@@ -363,6 +363,7 @@ public:
 
   bool is_empty();
   inline bool is_shared_empty();
+  inline size_t shared_count();
 
   void clear();
   void flush_to_shared();
@@ -379,6 +380,7 @@ public:
   ShenandoahTaskTerminator(int workers, ShenandoahTaskQueueSet* queues);
 
   bool offer_termination(bool cancellable);
+  int waiters();
   bool has_waiters();
 };
 

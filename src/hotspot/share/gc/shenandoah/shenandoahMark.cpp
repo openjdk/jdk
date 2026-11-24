@@ -125,6 +125,7 @@ void ShenandoahMark::mark_loop_work(T* cl, ShenandoahLiveData* live_data, uint w
   ShenandoahTaskQueue* q = get_queue(worker_id);
   ShenandoahTaskQueue* old_q = get_old_queue(worker_id);
   ShenandoahTask t;
+  uint active_workers = heap->workers()->active_workers();
 
   assert(_generation->type() == GENERATION, "Sanity: %d != %d", _generation->type(), GENERATION);
   _generation->ref_processor()->set_mark_closure(worker_id, cl);
@@ -140,12 +141,6 @@ void ShenandoahMark::mark_loop_work(T* cl, ShenandoahLiveData* live_data, uint w
       satb_mq_set.apply_closure_to_completed_buffer(&drain_satb);
     }
 
-    if (terminator->has_waiters() && queues->is_shared_empty()) {
-      // There are waiters without apparent shared work in the queues.
-      // Share some of our work now.
-      q->share_work();
-    }
-
     uint work = 0;
     for (uint i = 0; i < stride; i++) {
       if (q->pop(t)) {
@@ -153,6 +148,13 @@ void ShenandoahMark::mark_loop_work(T* cl, ShenandoahLiveData* live_data, uint w
         work++;
       } else {
         break;
+      }
+    }
+
+    if (work > 0) {
+      // Share some of our work if there are possible active workers that are running dry.
+      for (size_t i = queues->shared_count(); i < active_workers - 1; i++) {
+        q->share_work();
       }
     }
 

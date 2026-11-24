@@ -102,6 +102,10 @@ inline bool ShenandoahTaskQueueSet::is_shared_empty() {
   return _shared_count.load_relaxed() == 0;
 }
 
+inline size_t ShenandoahTaskQueueSet::shared_count() {
+  return _shared_count.load_relaxed();
+}
+
 inline ShenandoahTaskQueueStack* ShenandoahTaskQueueSet::pick_shared() {
   if (_shared_count.load_relaxed() == 0) {
     return nullptr;
@@ -201,8 +205,16 @@ void ShenandoahTaskQueueSet::try_grow(ShenandoahTaskQueueSegment* seen_head) {
   }
 }
 
+inline int ShenandoahTaskTerminator::waiters() {
+  size_t active = _active_workers.load_relaxed();
+  if (_total_workers > active) {
+    return _total_workers - active;
+  }
+  return 0;
+}
+
 inline bool ShenandoahTaskTerminator::has_waiters() {
-  return _active_workers.load_acquire() < _total_workers;
+  return waiters() > 0;
 }
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHTASKQUEUE_INLINE_HPP
