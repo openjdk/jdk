@@ -98,7 +98,7 @@ JNIEXPORT jobject JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_connect
      */
     hModule = LoadLibrary(libraryNameStr);
     if (hModule == NULL) {
-        FormatMessage(
+        DWORD fret = FormatMessage(
             FORMAT_MESSAGE_ALLOCATE_BUFFER |
             FORMAT_MESSAGE_FROM_SYSTEM |
             FORMAT_MESSAGE_IGNORE_INSERTS,
@@ -109,15 +109,19 @@ JNIEXPORT jobject JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_connect
             0,
             NULL
         );
-        exceptionMessage = (char *) malloc(sizeof(char) *
-                (strlen((LPTSTR) lpMsgBuf) + strlen(libraryNameStr) + 1));
-        if (exceptionMessage == NULL) {
-            p11ThrowOutOfMemoryError(env, 0);
-            goto cleanup;
+        if (fret != 0) {
+            exceptionMessage = (char *) malloc(sizeof(char) *
+                    (strlen((LPTSTR) lpMsgBuf) + strlen(libraryNameStr) + 1));
+            if (exceptionMessage == NULL) {
+                p11ThrowOutOfMemoryError(env, 0);
+                goto cleanup;
+            }
+            strcpy(exceptionMessage, (LPTSTR) lpMsgBuf);
+            strcat(exceptionMessage, libraryNameStr);
+            p11ThrowIOException(env, (LPTSTR) exceptionMessage);
+        } else {
+            p11ThrowIOException(env, "LoadLibrary failed");
         }
-        strcpy(exceptionMessage, (LPTSTR) lpMsgBuf);
-        strcat(exceptionMessage, libraryNameStr);
-        p11ThrowIOException(env, (LPTSTR) exceptionMessage);
         goto cleanup;
     }
 
@@ -165,7 +169,7 @@ JNIEXPORT jobject JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_connect
                 getFunctionListStr);
         if (C_GetFunctionList == NULL) {
             TRACE1("Connect: No %s func\n", getFunctionListStr);
-            FormatMessage(
+            DWORD fret = FormatMessage(
                 FORMAT_MESSAGE_ALLOCATE_BUFFER |
                 FORMAT_MESSAGE_FROM_SYSTEM |
                 FORMAT_MESSAGE_IGNORE_INSERTS,
@@ -176,7 +180,11 @@ JNIEXPORT jobject JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_connect
                 0,
                 NULL
             );
-            p11ThrowIOException(env, (LPTSTR) lpMsgBuf);
+            if (fret != 0) {
+                p11ThrowIOException(env, (LPTSTR) lpMsgBuf);
+            } else {
+                p11ThrowIOException(env, "GetProcAddress failed");
+            }
             goto cleanup;
         }
         TRACE1("Connect: Found %s func\n", getFunctionListStr);
@@ -195,7 +203,7 @@ JNIEXPORT jobject JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_connect
                 "C_GetFunctionList");
         if (C_GetFunctionList == NULL) {
             TRACE0("Connect: No C_GetFunctionList func\n");
-            FormatMessage(
+            DWORD fret = FormatMessage(
                 FORMAT_MESSAGE_ALLOCATE_BUFFER |
                 FORMAT_MESSAGE_FROM_SYSTEM |
                 FORMAT_MESSAGE_IGNORE_INSERTS,
@@ -206,7 +214,11 @@ JNIEXPORT jobject JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_connect
                 0,
                 NULL
             );
-            p11ThrowIOException(env, (LPTSTR) lpMsgBuf);
+            if (fret != 0) {
+                p11ThrowIOException(env, (LPTSTR) lpMsgBuf);
+            } else {
+                p11ThrowIOException(env, "GetProcAddress failed");
+            }
             goto cleanup;
         }
         TRACE0("Connect: Found C_GetFunctionList func\n");
