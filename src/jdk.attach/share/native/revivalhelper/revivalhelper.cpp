@@ -36,40 +36,43 @@
  * Show usage message, and exit with an error status.
  */
 void usageExit(const char* s) {
-    error("usage: %s [ -L/path/to/libdir ] [ -R/path/for/dir ] COREFILE jcmd DCOMMAND...\n", s);
+    error("usage: %s [ -L/path/to/libdir ] [ -R/path/for/dir ] COREFILE jcmd COMMAND...", s);
 }
 
 int main(int argc, char** argv) {
     char* corename;
-    const char* libdirs = nullptr;
-    const char* revival_data = nullptr;
+    char* libdirs = nullptr;
+    char* revival_cache = nullptr;
     char command[BUFLEN];
     memset(command, 0, BUFLEN);
     int n = 1;
 
-    if (argc < 4) {
-        usageExit(argv[0]);
-    }
-    // Arguments:
-    while (true) {
+    // Limit n to argc, but expect to break out of this loop with more arguments still to read.
+    while (n < argc) {
         if (strncmp(argv[n], "-L", 2) == 0) {
             // -L/path/to/libdir
-            // Can be a list of directories, delimited by path separator char : or ;
+            if (libdirs != nullptr) {
+                error("Specify -L" FILE_SEPARATOR "PATH only once.  Can contain multiple directories separated with %s", PATH_SEPARATOR);
+            }
             if (strlen(argv[n]) > 2) {
                 libdirs = argv[n] + 2;
                 n++;
             } else {
-                error("Use -L/PATH to specify library directory, e.g. -L/my/libs");
+                error("Use -L" FILE_SEPARATOR "PATH to specify library directory.");
             }
         } else if (strncmp(argv[n], "-R", 2) == 0) {
             // -R/path/for/dir
+            if (revival_cache != nullptr) {
+                error("Specify -R" FILE_SEPARATOR "PATH only once.");
+            }
             if (strlen(argv[n]) > 2) {
-                revival_data = argv[n] + 2;
+                revival_cache = argv[n] + 2;
                 n++;
             } else {
-                error("Use -R/PATH to specify directory to contain revival cache, e.g. -R/my/dir");
+                error("Use -R" FILE_SEPARATOR "PATH to specify directory for revival cache.");
             }
         } else {
+            // Not -L or -R, proceed to read other arguments.
             break;
         }
     }
@@ -81,7 +84,8 @@ int main(int argc, char** argv) {
 
     // jcmd expected argument:
     if (strcmp(argv[n++], "jcmd") != 0) {
-        error("jcmd keyword expected.");
+        warn("jcmd keyword expected:");
+        usageExit(argv[0]);
     }
     // Build jcmd command line from all additional arguments:
     for (int i = n; i < argc; i++) {
@@ -91,7 +95,7 @@ int main(int argc, char** argv) {
         strncat(command, argv[i], BUFLEN - 1 - strlen(command));
     }
 
-    int e = revive_image(corename, libdirs, revival_data);
+    int e = revive_image(corename, libdirs, revival_cache);
     if (e < 0) {
         logv("revivalhelper: revive failed: %d\n", e);
         // Will call revived_exit below, don't call error().

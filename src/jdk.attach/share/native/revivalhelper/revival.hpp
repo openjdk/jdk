@@ -56,7 +56,7 @@
 // Filenames
 #define MAPPINGS_FILENAME "core.mappings"
 #define SYMBOLS_FILENAME "core.symbols"
-#define REVIVAL_SUFFIX ".revival"
+#define CACHE_DIR_SUFFIX ".jcmd"
 
 // Essential symbols to resolve are defined in "SYM_" macros.
 // These are "C" and common to all platforms:
@@ -80,8 +80,8 @@
 #include <sys/time.h>
 
 #define JVM_FILENAME "libjvm.so"
-#define FILE_SEPARATOR  "/"
-#define PATH_SEPARATOR  ":"
+#define FILE_SEPARATOR "/"
+#define PATH_SEPARATOR ":"
 
 //
 // Windows
@@ -98,8 +98,8 @@ void normalize_path_pd(char* s);
 void tls_fixup_pd(void* tlsPtr);
 
 #define JVM_FILENAME "jvm.dll"
-#define FILE_SEPARATOR  "\\"
-#define PATH_SEPARATOR  ";"
+#define FILE_SEPARATOR "\\"
+#define PATH_SEPARATOR ";"
 
 #ifndef PATH_MAX
 #define PATH_MAX 32767
@@ -272,12 +272,12 @@ void init_pd();
  * Create a memory mapping at some vaddr, of some length in bytes, from a file at some offset.
  * Return address of allocation, or -1 for failure.
 */
-void* do_mmap_pd(void* addr, size_t length, const char* filename, int fd, size_t offset);
+void* do_mmap_pd(void* addr, size_t length, const char* filename, int fd, size_t offset, int prot);
 
 /**
  * Create a memory mapped allocation at a given address, length.
  */
-void* do_map_allocate_pd(void* addr, size_t length, int prot);
+void* do_map_allocate_pd(void* addr, size_t length, int prot, bool guard);
 
 /**
  * Return the VMThread created.

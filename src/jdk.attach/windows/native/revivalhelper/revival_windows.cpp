@@ -48,7 +48,6 @@
 #include "minidump.hpp"
 #include "pefile.hpp"
 
-DWORD stdProt = PAGE_EXECUTE_READWRITE;
 uint64_t vaddr_align;
 uint64_t heap_test;
 char* editbin = nullptr;
@@ -151,12 +150,19 @@ unsigned long long max_user_vaddr_pd() {
     return 0x7FFFFFFFFFFF;
 }
 
+const char* mem(int protect) {
+    return (protect & PAGE_GUARD) == 0 ? "no guard" : "PAGE_GUARD";
+}
+
 void printMemBasicInfo(MEMORY_BASIC_INFORMATION meminfo) {
     uint64_t end = (uint64_t) meminfo.BaseAddress + meminfo.RegionSize;
     fprintf(stderr, "Meminfo: AllocationBase: 0x%016llx   BaseAddress: 0x%016llx - 0x%016llx  "
-            "RegionSize: 0x%llx  AllocProt: 0x%lx Prot: 0x%lx, State: 0x%lx\n",
+            "RegionSize: 0x%llx  AllocProt: 0x%lx (%s) Prot: 0x%lx (%s), State: 0x%lx\n",
             (uint64_t) meminfo.AllocationBase, (uint64_t) meminfo.BaseAddress, end,
-            (uint64_t) meminfo.RegionSize, meminfo.AllocationProtect, meminfo.Protect, meminfo.State
+            (uint64_t) meminfo.RegionSize,
+            meminfo.AllocationProtect, mem(meminfo.AllocationProtect),
+            meminfo.Protect, mem(meminfo.Protect),
+            meminfo.State
         );
 }
 
@@ -213,7 +219,7 @@ void init_pd() {
 void create_minidump() {
     char filename[PATH_MAX];
     snprintf(filename, PATH_MAX - 1, "revival_dump_%ld.mdmp", _getpid());
-    MINIDUMP_TYPE dumpType =  (MINIDUMP_TYPE)(MiniDumpWithFullMemory | MiniDumpWithHandleData | MiniDumpWithFullMemoryInfo | MiniDumpWithThreadInfo | MiniDumpWithUnloadedModules);
+    MINIDUMP_TYPE dumpType = (MINIDUMP_TYPE)(MiniDumpWithFullMemory | MiniDumpWithHandleData | MiniDumpWithFullMemoryInfo | MiniDumpWithThreadInfo | MiniDumpWithUnloadedModules);
     HANDLE hFile = CreateFile(filename, GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
     if (hFile == INVALID_HANDLE_VALUE) {
         warn("%s: CreateFile failed for MiniDump: 0x%x", filename, GetLastError());
@@ -238,14 +244,13 @@ const char* conflict_check_pd(void* vaddr, unsigned long long length) {
     return nullptr;
 }
 
-void set_prot(void* addr, uint64_t length, DWORD prot) {
+void remove_guard(void* addr, uint64_t length) {
     DWORD lpfOldProtect;
-    if (!VirtualProtect((PVOID) addr, length, prot, &lpfOldProtect)) {
-        logv("set_prot: failed (1) setting prot (0x%lx) for: 0x%p, len 0x%lx: error 0x%x.",  prot, addr, length, GetLastError());
-        if (logLevel >= LOG_VERBOSE) {
-            printMemBasicInfo(addr);
-            diagWait();
-        }
+    if (!VirtualProtect((PVOID) addr, length, PAGE_EXECUTE_READWRITE, &lpfOldProtect)) {
+        logv("remove_guard: failed (1) setting prot for: 0x%p, len 0x%lx: error 0x%x.",  addr, length, GetLastError());
+    }
+    if (!VirtualProtect((PVOID) addr, length, lpfOldProtect & !PAGE_GUARD, &lpfOldProtect)) {
+        logv("remove_guard: failed (2) setting prot (0x%lx) for: 0x%p, len 0x%lx: error 0x%x.",  lpfOldProtect, addr, length, GetLastError());
     }
 }
 
@@ -259,6 +264,9 @@ LONG WINAPI topLevelUnhandledExceptionFilter(struct _EXCEPTION_POINTERS* excepti
     // _M_ARM64 would be: pc = exceptionInfo->ContextRecord->Pc;
     error("revival: handler: unsupported platform");
 #endif
+    if (exceptionInfo->ExceptionRecord->NumberParameters < 2) {
+        error("revival: handler: ExceptionInformation missing: NumberParameters = %d", exceptionInfo->ExceptionRecord->NumberParameters);
+    }
     uint64_t addr = (uint64_t) exceptionInfo->ExceptionRecord->ExceptionInformation[1];
     logv("revival: handler: PID %ld thread: 0x%lx pc 0x%llx address 0x%llx ", _getpid(), GetCurrentThreadId(), pc, addr);
 
@@ -266,9 +274,14 @@ LONG WINAPI topLevelUnhandledExceptionFilter(struct _EXCEPTION_POINTERS* excepti
     for (iter = delayedCopySegments.begin(); iter != delayedCopySegments.end(); iter++) {
         if (iter->contains((uint64_t) addr)) {
             logv("revival: Delayed Copy Segment: si_addr = %p in segment %p", addr, iter->vaddr);
-            set_prot(iter->vaddr, iter->length, stdProt);
-            revival_mapping_docopy(core_filename, iter->vaddr, iter->length, iter->file_offset);
-            return EXCEPTION_CONTINUE_EXECUTION;
+            // PAGE_GUARD reset should be automatic, but size of our segment may exceed what Windows will reset:
+            remove_guard(iter->vaddr, iter->length);
+            if (revival_mapping_docopy(core_filename, iter->vaddr, iter->length, iter->file_offset) == 0) {
+                return EXCEPTION_CONTINUE_EXECUTION;
+            } else {
+                warn("revival: Delayed Copy Segment: si_addr = %p in segment %p: copy failed.", addr, iter->vaddr);
+                break;
+            }
         }
     }
     if (logLevel >= LOG_DEBUG) {
@@ -360,7 +373,7 @@ bool can_lazycopy_pd(void* addr) {
     }
 }
 
-void* do_mmap_pd(void* addr, size_t length, const char* filename, int fd, size_t offset) {
+void* do_mmap_pd(void* addr, size_t length, const char* filename, int fd, size_t offset, int prot) {
     // Fail quickly if unaligned (MiniDump contents not usually aligned):
     uint64_t offsetAligned = align_down(offset, vaddr_alignment_pd());
     if (offsetAligned != offset) {
@@ -369,18 +382,19 @@ void* do_mmap_pd(void* addr, size_t length, const char* filename, int fd, size_t
     }
     LPVOID p = nullptr;
     HANDLE h2;
-    HANDLE h = CreateFile(filename, GENERIC_READ | GENERIC_EXECUTE, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
-    if (h == nullptr) {
+    HANDLE h = CreateFile(filename, GENERIC_READ | GENERIC_WRITE | GENERIC_EXECUTE, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+    if (h == INVALID_HANDLE_VALUE) {
         logv("do_mmap_pd: CreateFile failed: %s: 0x%lx", filename, GetLastError());
         return (void*) -1;
     } else {
-        h2 = CreateFileMapping(h, nullptr, stdProt, 0, 0, nullptr);
+        h2 = CreateFileMapping(h, nullptr, prot, 0, 0, nullptr);
         if (h2 == nullptr) {
             logv("do_mmap_pd: CreateFileMapping failed: %s: 0x%lx", filename, GetLastError());
+            CloseHandle(h);
             return (void*) -1;
         }
     }
-    p = pMapViewOfFile3(h2, hProc, (PVOID) addr, offset, length, MEM_REPLACE_PLACEHOLDER, stdProt, nullptr, 0);
+    p = pMapViewOfFile3(h2, hProc, (PVOID) addr, offset, length, MEM_REPLACE_PLACEHOLDER, prot, nullptr, 0);
     if ((uint64_t) p != (uint64_t) addr) {
         logv("do_mmap_pd: MapViewOfFile3 0x%p failed, ret=0x%p error=0x%lx", addr, p, GetLastError());
         p = (void*) -1;
@@ -391,11 +405,7 @@ void* do_mmap_pd(void* addr, size_t length, const char* filename, int fd, size_t
     return (void*) p;
 }
 
-void* do_map_allocate_pd_VirtualAlloc2(void* addr, size_t length, bool use_guard /* use PAGE_GUARD */) {
-    DWORD prot = stdProt;
-    if (use_guard && enableLazyCopy) {
-        prot |= PAGE_GUARD;
-    }
+void* do_map_allocate_pd_VirtualAlloc2(void* addr, size_t length, int prot) {
     MEMORY_BASIC_INFORMATION meminfo;
     virtualQueryOrErrorExit(addr, &meminfo);
     void* p = pVirtualAlloc2(hProc, (PVOID) addr, length, MEM_RESERVE | MEM_COMMIT, prot, nullptr, 0);
@@ -422,7 +432,7 @@ void* do_map_allocate_pd_VirtualAlloc2(void* addr, size_t length, bool use_guard
                 // Could consider expanding allocation, but not observed in practice.
                 return (void*) -1;
             }
-        } else if (e  == ERROR_INVALID_ADDRESS /* 0x1e7 */) {
+        } else if (e == ERROR_INVALID_ADDRESS /* 0x1e7 */) {
             // Already mapped, conflict? e.g. jvm data.  Is more allocation needed?  This is seen in practice.
             logd("do_map_allocate_pd__VirtualAlloc2: requested 0x%llx got 0x%lx not valid, already mapped?", addr, p);
             uint64_t wanted_end = (uint64_t) addr + (uint64_t) length;
@@ -431,8 +441,8 @@ void* do_map_allocate_pd_VirtualAlloc2(void* addr, size_t length, bool use_guard
                 return addr;
             } else {
                 size_t remaining = (uint64_t) wanted_end - existing_end;
-                logd("do_map_allocate_pd_VirtualAlloc2: existing. remaining = 0x%llx use_guard = 0x%x", remaining, use_guard);
-                void* r = do_map_allocate_pd_VirtualAlloc2((void*) existing_end, remaining, use_guard);
+                logd("do_map_allocate_pd_VirtualAlloc2: existing. remaining = 0x%llx prot = 0x%x", remaining, prot);
+                void* r = do_map_allocate_pd_VirtualAlloc2((void*) existing_end, remaining, prot);
                 logd("do_map_allocate_pd_VirtualAlloc2: done recurse");
                 // Return original requested address on success:
                 if ((uint64_t) r == (uint64_t) existing_end) {
@@ -448,7 +458,7 @@ void* do_map_allocate_pd_VirtualAlloc2(void* addr, size_t length, bool use_guard
     return p;
 }
 
-void* do_map_allocate_pd(void* vaddr, size_t length, int prot /* 0 for guarded, or 1 for standard RWX permission */) {
+void* do_map_allocate_pd(void* vaddr, size_t length, int prot, bool guard) {
     // Alignment: mappings file is created with minidump addresses, not necessarily 64k aligned.
     uint64_t vaddr_aligned = align_down((uint64_t) vaddr, vaddr_alignment_pd());
     uint64_t diff = (uint64_t) vaddr - (uint64_t) vaddr_aligned;
@@ -460,8 +470,11 @@ void* do_map_allocate_pd(void* vaddr, size_t length, int prot /* 0 for guarded, 
             (void*) vaddr, (void*) vaddr_aligned, length, length_aligned);
     }
 
+    if (guard && enableLazyCopy) {
+        prot |= PAGE_GUARD;
+    }
     uint64_t r = (uint64_t) do_map_allocate_pd_VirtualAlloc2((void*) vaddr_aligned, length_aligned, prot);
-    // Accept the aligned down address and return as if the requested vaddr was honoured.
+    // Accept an aligned down address and return as if the requested vaddr was honoured.
     if (r == vaddr_aligned) {
         return vaddr;
     } else {
@@ -475,7 +488,7 @@ char* readstring_at_offset_pd(const char* filename, uint64_t offset) {
         warn("cannot open %s", filename);
         return (char*) -1;
     }
-    uint64_t pos = _lseeki64(fd, offset, SEEK_SET);
+    __int64 pos = _lseeki64(fd, offset, SEEK_SET);
     if (pos < 0) {
         warn("readstring_at_pd: %s: seek(%ld) fails %d : %s", filename, offset, errno, strerror(errno));
         close(fd);
@@ -497,7 +510,7 @@ uint64_t read_pointer_at_offset_pd(const char* filename, uint64_t offset) {
         warn("cannot open %s", filename);
         return 0;
     }
-    uint64_t pos = _lseeki64(fd, offset, SEEK_SET);
+    __int64 pos = _lseeki64(fd, offset, SEEK_SET);
     if (pos < 0) {
         warn("read_pointer_at_pd: %s: seek(%ld) fails %d : %s", filename, offset, errno, strerror(errno));
         close(fd);
@@ -563,7 +576,7 @@ int relocate_sharedlib_pd(const char* filename, const void* address) {
         // EDITBIN.EXE /DYNAMICBASE:NO /REBASE:BASE=0xaddress filename
         char command[BUFLEN];
         memset(command, 0, BUFLEN);
-        snprintf(command, BUFLEN - 1, "%s /DYNAMICBASE:NO /REBASE:BASE=0x%llx %s", editbin, (uint64_t) address, filename);
+        snprintf(command, BUFLEN - 1, "\"%s\" /DYNAMICBASE:NO /REBASE:BASE=0x%llx %s", editbin, (uint64_t) address, filename);
         int e = system(command);
         logv("relocate_sharedlib_pd: '%s' returns %d", command, e);
         return e;
@@ -678,7 +691,7 @@ void write_symbols(int symbols_fd, const char* symbols[], int count, const char*
     // Using SymFromName() on jvm.dll after relocation will give final absolute addresses.
     PLOADED_IMAGE image = ImageLoad(JVM_FILENAME, revival_dirname);
     if (image == nullptr) {
-        error("write_symbols: ImageLoad error '%s': %d", GetLastError());
+        error("write_symbols: ImageLoad error: %d", GetLastError());
     }
     HANDLE h2 = (HANDLE) 1;
     bool e = SymInitialize(h2, nullptr, false);
@@ -770,7 +783,7 @@ void copy_and_relocate(const char* srcfile, const char* destdir, uint64_t addres
     char* p = strstr(debuginfo_path, ".dll");
     if (p != nullptr) {
         // It is a dll, check for .pdb and .map files.
-        // JDK builds now create e.g. file.dll.pdb  but also check for just file.pdb
+        // JDK builds now create e.g. file.dll.pdb but also check for just file.pdb
         snprintf(p, PATH_MAX - 1, ".pdb"); // Append to debuginfo_path in place of .dll
         if (file_exists_pd(debuginfo_path)) {
             // file.pdb exists
@@ -808,8 +821,7 @@ void copy_and_relocate(const char* srcfile, const char* destdir, uint64_t addres
     }
 }
 
-void copy_and_relocate(MiniDump dump, const char* destdir) {
-    logv("copy_and_relocate");
+void copy_and_relocate(MiniDump& dump, const char* destdir) {
     if (!allLibraries) {
         Segment* jvm_mapping = dump.get_library_mapping(JVM_FILENAME);
         copy_and_relocate(jvm_mapping->name, destdir, (uint64_t) jvm_mapping->vaddr);
@@ -837,9 +849,9 @@ int create_revival_cache_pd(const char* corename, const char* revival_dirname, c
         warn("JVM library from MiniDump not found.");
         error("For cores from other systems, or if JDK at path in core has changed, use -L to specify JVM location.");
     }
-    logv("JVM = '%s' at address %p", jvm_mapping->name,  jvm_mapping->vaddr);
+    logv("JVM = '%s' at address %p", jvm_mapping->name, jvm_mapping->vaddr);
     if (!file_exists_pd( jvm_mapping->name)) {
-        error("No file for JVM '%s'",  jvm_mapping->name);
+        error("No file for JVM '%s'", jvm_mapping->name);
     }
 
     {
@@ -848,7 +860,7 @@ int create_revival_cache_pd(const char* corename, const char* revival_dirname, c
         if (!pefile.find_data_segs(jvm_mapping->vaddr, &jvm_data_seg, nullptr)) {
             error("Failed to find JVM data segments.");
         }
-        logv("JVM .data  SEG: 0x%llx - 0x%llx", jvm_data_seg->start(),  jvm_data_seg->end());
+        logv("JVM .data  SEG: 0x%llx - 0x%llx", jvm_data_seg->start(), jvm_data_seg->end());
         dump.set_jvm_data(jvm_data_seg);
 
         // Create mappings file:

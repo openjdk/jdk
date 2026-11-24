@@ -199,7 +199,7 @@ bool ELFFile::is_elf(const char* filename) {
 }
 
 bool ELFFile::is_valid() {
-    return fd >= 0 &&  m != nullptr;
+    return fd >= 0 && m != nullptr;
 }
 
 bool ELFFile::is_core() {
@@ -351,6 +351,7 @@ uint64_t ELFFile::find_dynamic_value(Elf64_Shdr* s, int tag) {
 void ELFFile::relocate_dyn_array(long displacement, Elf64_Dyn* dyn, int count) {
     logd("relocate_dyn_array: updating %d", count);
     // Get our mmapped address of the array:
+    // d_ptr is a virtual address, relative to file base (file is ET_DYN).
     uint64_t* p = (uint64_t*) ((uint64_t) m + dyn->d_un.d_ptr);
     // Relocate contents:
     for (int i = 0; i < count; i++) {
@@ -445,7 +446,11 @@ char* ELFFile::find_note_by_type(Elf64_Phdr* notes_ph, Elf64_Word type) {
         if (nhdr->n_type == type) {
             return pos;
         }
+        // Move to to next item: increment, and possibly align:
         pos += nhdr->n_descsz;
+        while (((unsigned long long) pos & 0x3) != 0) {
+            pos++;
+        }
         nhdr = (Elf64_Nhdr*) pos;
     }
     return nullptr;

@@ -230,7 +230,7 @@ bool ranges_distinct(uint64_t start1, uint64_t end1, uint64_t start2, uint64_t e
     if (end2 < start2) {
         error("ranges_distinct: range error 2");
     }
-    return end1 <= start2 || start1 > end2;
+    return end1 <= start2 || start1 >= end2;
 }
 
 bool clash_range(uint64_t v1, uint64_t v2, uint64_t t1, uint64_t t2) {
@@ -272,12 +272,12 @@ void conflict_check(void* vaddr, size_t length) {
  * Create a memory mapping, at some virtual address, directly from a file/offset/length.
  * Return -1 on failure.
  */
-int revival_mapping_mmap(void* vaddr, size_t length, size_t offset, const char* filename, int fd) {
+int revival_mapping_mmap(void* vaddr, size_t length, size_t offset, const char* filename, int fd, int prot) {
     int e = 0;
     logd("revival_mapping_mmap: " PTR_FORMAT " - " PTR_FORMAT " len=0x%zx file offset=0x%llx",
          (uintptr_t) vaddr, (uintptr_t) ((uint64_t) vaddr + length), length, (long long) offset);
 
-    void* mapped_addr = do_mmap_pd(vaddr, length, filename, fd, offset);
+    void* mapped_addr = do_mmap_pd(vaddr, length, filename, fd, offset, prot);
     if (mapped_addr != vaddr) {
         logd("revival_mapping_mmap: mapping failed: wanted vaddr: %p returned: %p", vaddr, mapped_addr);
         // ...common on Windows.
@@ -292,8 +292,8 @@ int revival_mapping_mmap(void* vaddr, size_t length, size_t offset, const char* 
 /**
  * Create a memory allocation at some address, length.
  */
-int revival_mapping_allocate(void* vaddr, size_t length, int prot) {
-    void* e = do_map_allocate_pd(vaddr, length, prot);
+int revival_mapping_allocate(void* vaddr, size_t length, int prot, bool guard) {
+    void* e = do_map_allocate_pd(vaddr, length, prot, guard);
     if (e != vaddr) {
         return -1;
     }
@@ -347,26 +347,24 @@ int revival_mapping_docopy(const char* filename, void* vaddr, size_t length, siz
  * Used when a mapping cannot be performed directly from the file, usually due to alignment problems
  * (so expect file offset to not be aligned).
  *
- * Usually set up a delayed copy to be satisfied later in response to a fault, but do the copy now if
- * that is no possible.
- *
- * This method is used on Windows, where file alignment hinders direct mapping from MiniDump, and
- * also on a Linux "gcore" (dumped by gdb).
+ * Set up a delayed copy to be satisfied later in response to a fault if possible, or do the copy now.
  *
  * Return -1 on error.
  */
-int revival_mapping_copy(void* vaddr, size_t length, size_t offset, bool allocate, const char* filename, int fd) {
+int revival_mapping_copy(void* vaddr, size_t length, size_t offset, bool allocate, const char* filename, int fd, int prot) {
     logd("revival_mapping_copy: alloc=%d vaddr " PTR_FORMAT " - " PTR_FORMAT " len=" SIZE_FORMAT_X_0 " from file offset 0x%llx",
          allocate, (uintptr_t) vaddr, (uintptr_t) ((uint64_t) vaddr + length), length, (long long) offset);
 
+    bool guard = can_lazycopy_pd(vaddr);
+
     if (allocate) {
-        int e = revival_mapping_allocate(vaddr, length, 0); // 0 for no permission, copy in on fault.
+        int e = revival_mapping_allocate(vaddr, length, prot, guard);
         if (e < 0) {
             warn("revival_mapping_copy: allocation required at 0x%llx : allocation failed: %d", (unsigned long long) vaddr, e);
             return -1;
         }
     }
-    if (can_lazycopy_pd(vaddr)) {
+    if (guard) {
         // Set up a delayed copy, to be called by the handler.
         // We needed to make the mapping to ensure it can be done, and not fail later.
         Segment* seg = new Segment(vaddr, length, offset, length);
@@ -401,9 +399,9 @@ void* load_sharedlibrary_fromdir(const char* dirname, const char* libname, void*
  *
  * The core.mappings little language:
  *
- * M    map directly from core                      revival_mapping_mmap(vaddr, length, offset, filename, core_fd);
- * m    map allocation, not backed by core          revival_mapping_allocate(void* vaddr, size_t length);
- * C    copy data (into an earlier "m" allocation)  revival_mapping_copy(vaddr, length, offset, false, filename, core_fd);
+ * M    map directly from core                      call revival_mapping_mmap()
+ * m    map allocation, not backed by core          call revival_mapping_allocate()
+ * C    copy data (into an earlier "m" allocation)  call revival_mapping_copy()
  */
 int mappings_file_read(const char* corename, const char* dirname, const char* mappings_filename) {
     char s1[BUFLEN];
@@ -525,18 +523,24 @@ int mappings_file_read(const char* corename, const char* dirname, const char* ma
             void* vaddr = (void*) strtoull(s2, &endptr, 16);
             size_t length = strtoull(s6, &endptr, 16);
             size_t offset = strtoull(s4, &endptr, 16);
+            // Permissions not currently implemented (s7 is not parsed), simply pass RWX
+#ifndef WINDOWS
+            int prot = PROT_READ | PROT_WRITE | PROT_EXEC;
+#else
+            int prot = PAGE_EXECUTE_READWRITE;
+#endif
             // Different length in memory and length in file not needed, not implemented.  Field s4 ignored.
             if (strncmp(s1, "M", 1) == 0) {
                 // Map memory from core:
                 conflict_check(vaddr, length);
-                int e = revival_mapping_mmap(vaddr, length, offset, corename, core_fd);
+                int e = revival_mapping_mmap(vaddr, length, offset, corename, core_fd, prot);
                 if (e < 0) {
-                    // On failure, try copying.  Used for a Linux gcore (gdb) as file offsets are not aligned.
-                    // Also on Windows, vaddr and file offset generally not aligned in MiniDump.
+                    // On failure, try copying.  Expected for a Linux gcore (gdb) as file offsets are not aligned,
+                    // and on Windows, where vaddr and file offset are generally not aligned in MiniDump.
                     // Allocate, and fail if allocation fails, to avoid an accidental overwrite.
-                    e  = revival_mapping_copy(vaddr, length, offset, true /* allocate */, corename, core_fd);
+                    e  = revival_mapping_copy(vaddr, length, offset, true /* allocate */, corename, core_fd, prot);
                     logd("mappings_file_read: retry M 0x%llx using revival_mapping_copy returns: %d", (unsigned long long) vaddr, e);
-                    if (e < 0 ) {
+                    if (e < 0) {
                         exitForRetry();
                     } else {
                         MtoC_count++;
@@ -547,18 +551,17 @@ int mappings_file_read(const char* corename, const char* dirname, const char* ma
             } else if (strncmp(s1, "m", 1) == 0) {
                 // Allocate only, file offset/length not used:
                 conflict_check(vaddr, length);
-                int e = revival_mapping_allocate(vaddr, length, 0); // No permission, will be filled by a "C" line, delayed copy.
+                int e = revival_mapping_allocate(vaddr, length, prot, true); // Use guard, will be populated by a "C" line, delayed copy.
                 if (e < 0) {
                     warn("mappings_file_read: m 0x%llx failed: %d", (unsigned long long) vaddr, e);
-                    e = revival_mapping_allocate(vaddr, length, 1); // With permission, will not be a delayed copy
+                    e = revival_mapping_allocate(vaddr, length, prot, false); // No guard, will not be a delayed copy.
                     exitForRetry();
                 } else {
                     m_count++;
                 }
             } else if (strncmp(s1, "C", 1) == 0) {
-                // Copy: "C" lines are to populate allocations in "m" lines.
-                // No allocation, an "m" line already allocated.
-                int e = revival_mapping_copy(vaddr, length, offset, false /* allocate */, corename, core_fd);
+                // "C" (copy) lines are to populate earlier allocations in "m" lines (no new allocation here).
+                int e = revival_mapping_copy(vaddr, length, offset, false /* allocate */, corename, core_fd, prot);
                 if (e < 0) {
                     warn("mappings_file_read: 'C' copy failed for seg at 0x%llx: %d", (unsigned long long) vaddr, e);
                     exitForRetry();
@@ -611,7 +614,7 @@ void* symbol_resolve_from_symbol_file(const char* sym) {
     while (fgets(line_buffer, BUFLEN, f) != nullptr) {
         memset(s1, 0, BUFLEN);
         memset(s2, 0, BUFLEN);
-        e = sscanf(line_buffer, "%128s %32s\n", s1, s2);  // symbol, address
+        e = sscanf(line_buffer, "%128s %32s\n", s1, s2); // symbol, address
         if (e == 2) {
             if (strncmp(s1, sym, BUFLEN) == 0) {
                 char* endptr;
@@ -787,7 +790,9 @@ char* find_filename_in_libdirs(const char* libdirs, const char* filename) {
     while (end != nullptr) {
         // Separator found, check that directory.  Skip if zero length.
         int len = (int) (end - start);
-        if (len > 0) {
+        if (len >= PATH_MAX) {
+            warn("revival: library directory too long (%d), ignored.", len);
+        } else if (len > 0) {
             strncpy(dir, start, len);
             dir[len] = 0;
             result = find_filename_in_dir(dir, filename);
@@ -914,9 +919,9 @@ char* revival_dirname_create(const char* corename, const char* revival_cache_pat
     }
     int len;
     if (revival_cache_path != nullptr) {
-        len = snprintf(buf, PATH_MAX - 1, "%s" FILE_SEPARATOR "%s" REVIVAL_SUFFIX, revival_cache_path, basename_pd((char*) corename));
+        len = snprintf(buf, PATH_MAX - 1, "%s" FILE_SEPARATOR "%s" CACHE_DIR_SUFFIX, revival_cache_path, basename_pd((char*) corename));
     } else {
-        len = snprintf(buf, PATH_MAX - 1, "%s" REVIVAL_SUFFIX, corename);
+        len = snprintf(buf, PATH_MAX - 1, "%s" CACHE_DIR_SUFFIX, corename);
     }
     if (len >= PATH_MAX) {
         error("Revival directory name too long.");
@@ -989,7 +994,7 @@ void version_check(const char* corename, const char* directory, const char* file
         error("JVM version check failed: pointer invalid.");
     }
     char* vm_release_binary = readstring_at_offset_pd(jvm_name, vm_release_offset);
-    logv("revival: Version check: version from binary:  %s", vm_release_binary);
+    logv("revival: Version check: version from binary: '%s'", vm_release_binary);
 
     if (strncmp(vm_release_core, vm_release_binary, PATH_MAX) != 0) {
         error("JVM version check failed: mismatch, core '%s', jvm binary '%s'", vm_release_core, vm_release_binary);
@@ -1025,7 +1030,7 @@ int revive_image(const char* corename, const char* libdirs, const char* revival_
     start_time = GetTickCount64();
 #endif
     if (!file_exists_pd(corename)) {
-        warn("revive_image: '%s': file  not found", corename);
+        warn("revive_image: '%s': file not found", corename);
         return -1;
     }
     if (!file_canread_pd(corename)) {

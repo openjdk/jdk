@@ -153,8 +153,8 @@ void init_pd() {
         warn("revival: init_pd: sysconf retuns 0x%lx: %s", value, strerror(errno));
         value = 0x1000;
     }
-    vaddr_align = value;
-    logd("revival: init_pd: vaddr_alignment (pagesize) = 0x%llx", (unsigned long long) vaddr_alignment_pd());
+    vaddr_align = value - 1;
+    logd("revival: init_pd: vaddr_alignment = 0x%llx", (unsigned long long) vaddr_alignment_pd());
 
     // Addresses for later conflict checking.
     void* h = dlopen(nullptr, RTLD_NOW | RTLD_LOCAL);
@@ -309,9 +309,8 @@ bool can_lazycopy_pd(void* addr) {
     return true;
 }
 
-void* do_mmap_pd(void* addr, size_t length, const char* filename, int fd, size_t offset) {
+void* do_mmap_pd(void* addr, size_t length, const char* filename, int fd, size_t offset, int prot) {
     int flags = MAP_PRIVATE | MAP_FIXED;
-    int prot = PROT_READ | PROT_WRITE | PROT_EXEC;
     // Values given should simply work for a regular Linux core file.
     // Failure with EINVAL is expected on a Linux gcore (gdb) due to unaligned file offsets.
     void* e = mmap(addr, length, prot, flags, fd, offset);
@@ -322,10 +321,9 @@ void* do_mmap_pd(void* addr, size_t length, const char* filename, int fd, size_t
     return e;
 }
 
-void* do_map_allocate_pd(void* vaddr, size_t length, int prot) {
-    if (prot == 1) {
-        prot = PROT_READ | PROT_WRITE | PROT_EXEC;
-    } else {
+// prot = 0 for guarded, 1 for RWX, or a literal value to pass to mmap.
+void* do_map_allocate_pd(void* vaddr, size_t length, int prot, bool guard) {
+    if (guard) {
         prot = PROT_NONE;
     }
     int flags = MAP_ANONYMOUS | MAP_PRIVATE | MAP_FIXED | MAP_NORESERVE;
@@ -355,7 +353,7 @@ void* symbol_dynamiclookup_pd(void* h, const char* str) {
  * Catch errors and do mapping of writable areas on demand.
  */
 void handler(int sig, siginfo_t* info, void* ucontext) {
-    void* addr  = (void*) info->si_addr;
+    void* addr = (void*) info->si_addr;
     logv("revival: handler: sig = %d for address %p", sig, addr);
     if (addr == nullptr) {
         warn("handler: null address");
@@ -372,8 +370,12 @@ void handler(int sig, siginfo_t* info, void* ucontext) {
             if (e < 0) {
                 error("revival: mprotect failed: %d", e);
             }
-            revival_mapping_docopy(core_filename, iter->vaddr, iter->length, iter->file_offset);
-            return;
+            if (revival_mapping_docopy(core_filename, iter->vaddr, iter->length, iter->file_offset) == 0) {
+                return;
+            } else {
+                warn("revival: Delayed Copy Segment: si_addr = %p in segment %p: copy failed.", addr, iter->vaddr);
+                break;
+            }
         }
     }
     if (logLevel >= LOG_DEBUG) {
@@ -403,7 +405,7 @@ void install_handler_pd() {
 
 void* load_sharedobject_pd(const char* name, void* vaddr) {
     void* actual = nullptr;
-    void* h = dlopen(name,  RTLD_NOW | RTLD_GLOBAL);
+    void* h = dlopen(name, RTLD_NOW | RTLD_GLOBAL);
     if (!h) {
         warn("load_sharedobject_pd: dlopen failed: %s: %s", name, dlerror());
         return (void*) -1;
@@ -452,8 +454,8 @@ bool copy_file_pd(const char* srcfile, const char* destfile) {
     bool result = false;
     ssize_t count;
     ssize_t e;
-    int fd_src;
-    int fd_dest = 0;
+    int fd_src = -1;
+    int fd_dest = -1;
 
     fd_src = open(srcfile, O_RDONLY, S_IRUSR);
     if (fd_src < 0) {
@@ -474,18 +476,23 @@ bool copy_file_pd(const char* srcfile, const char* destfile) {
         result = true;
     }
 out:
-    close(fd_src);
-    close(fd_dest);
+    if (fd_src >= 0) {
+        close(fd_src);
+    }
+    if (fd_dest >= 0) {
+        close(fd_dest);
+    }
     return result;
 }
 
-void relocate_sharedlib_pd(const char* filename, const uint64_t address) {
+int relocate_sharedlib_pd(const char* filename, const uint64_t address) {
     ELFFile lib(filename, nullptr, true);
     if (lib.is_sharedlib()) {
         logv("Relocate %s to 0x%lx", filename, address);
         lib.relocate(address /* assume library currently has zero base address */);
         logv("Relocate done");
     }
+    return 0;
 }
 
 void write_mem_mappings(ELFFile& core, int mappings_fd) {
@@ -610,8 +617,7 @@ void copy_and_relocate(const char* srcfile, const char* destdir, uint64_t addres
     }
 }
 
-void copy_and_relocate(ELFFile core, const char* destdir) {
-    logv("copy_and_relocate: all=%d", allLibraries);
+void copy_and_relocate(ELFFile& core, const char* destdir) {
     if (!allLibraries) {
         Segment* jvm_mapping = core.get_file_mapping(JVM_FILENAME);
         copy_and_relocate(jvm_mapping->name, destdir, (uint64_t) jvm_mapping->vaddr);

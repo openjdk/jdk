@@ -366,7 +366,7 @@ Segment* MiniDump::readSegment(MINIDUMP_MEMORY_DESCRIPTOR64* d, RVA64* currentRV
         if (seg == nullptr) {
             return nullptr;
         }
-        if (seg->start() >= (uint64_t) 0x7FFE0000 &&  seg->start() <= 0x7FFEF000) {
+        if (seg->start() >= (uint64_t) 0x7FFE0000 && seg->start() <= 0x7FFEF000) {
             logd("readSegment: skip seg: 0x%llx - 0x%llx", seg->start(), seg->end());
             retry = true; // Memory from kernel we can't map.  Ignore, go to next segment.
             continue;
