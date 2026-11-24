@@ -439,7 +439,7 @@ JRT_BLOCK_ENTRY(void, OptoRuntime::new_array_nozero_C(Klass* array_type, int len
 
     // Optimized zeroing.
     assert(is_aligned(hs_bytes, BytesPerLong), "must be 8-byte aligned");
-    const size_t aligned_hs = hs_bytes / BytesPerLong;
+    const size_t aligned_hs = hs_bytes / HeapWordSize;
     Copy::fill_to_aligned_words(obj+aligned_hs, size-aligned_hs);
   }
 
