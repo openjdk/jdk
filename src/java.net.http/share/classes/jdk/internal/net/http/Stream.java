@@ -604,14 +604,16 @@ class Stream<T> extends ExchangeImpl<T> {
         if (debug.on()) debug.log("incoming: %s", frame);
         var cancelled = checkRequestCancelled() || closed;
         if ((frame instanceof HeaderFrame hf)) {
+            if (hf.getFlag(HeaderFrame.END_STREAM)) {
+                endStreamSeen = true;
+            }
             if (hf.endHeaders()) {
                 Log.logTrace("handling response (streamid={0})", streamid);
                 handleResponse(hf);
-            }
-            if (hf.getFlag(HeaderFrame.END_STREAM)) {
-                endStreamSeen = true;
-                if (debug.on()) debug.log("handling END_STREAM: %d", streamid);
-                receiveDataFrame(new DataFrame(streamid, DataFrame.END_STREAM, List.of()));
+                if (endStreamSeen) {
+                    if (debug.on()) debug.log("handling END_STREAM: %d", streamid);
+                    receiveDataFrame(new DataFrame(streamid, DataFrame.END_STREAM, List.of()));
+                }
             }
         } else if (frame instanceof DataFrame df) {
             if (df.getFlag(DataFrame.END_STREAM)) endStreamSeen = true;
