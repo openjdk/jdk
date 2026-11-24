@@ -183,7 +183,7 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
   __ movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), NULL_WORD);
 
   if (state == atos && ValueTypeReturnedAsFields) {
-    __ store_value_type_fields_to_buf(nullptr);
+    __ store_value_type_fields_to_buf(nullptr, true /* from_interpreter */);
   }
 
   __ restore_bcp();
