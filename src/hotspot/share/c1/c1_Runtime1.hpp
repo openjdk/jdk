@@ -111,6 +111,7 @@ static void init_AOTAddressTable(GrowableArray<address>& external_addresses);
   static void new_multi_array (JavaThread* current, Klass* klass, int rank, jint* dims);
   static void load_flat_array(JavaThread* current, flatArrayOopDesc* array, int index);
   static void store_flat_array(JavaThread* current, flatArrayOopDesc* array, int index, oopDesc* value);
+  static void store_flat_nonatomic_field(JavaThread* current, oopDesc* destination, oopDesc* source, ResolvedFieldEntry* entry);
   static int  substitutability_check(JavaThread* current, oopDesc* left, oopDesc* right);
   static void buffer_value_args(JavaThread* current, Method* method);
   static void buffer_value_args_no_receiver(JavaThread* current, Method* method);

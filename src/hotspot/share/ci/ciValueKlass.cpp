@@ -158,7 +158,7 @@ ciConstant ciValueKlass::get_field_map() const {
 // only be used to reset the payload of fields or array elements and should not be leaked
 // elsewhere.
 ciConstant ciValueKlass::get_null_reset_value() {
-  assert(is_initialized(), "null_reset_value is only allocated during initialization of %s", name()->as_utf8());
+  assert(has_null_reset_value(), "null-reset value must be available for %s", name()->as_utf8());
   VM_ENTRY_MARK
   ValueKlass* vk = get_ValueKlass();
   oop null_reset_value = vk->null_reset_value();

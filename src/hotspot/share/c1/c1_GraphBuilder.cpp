@@ -29,6 +29,7 @@
 #include "c1/c1_Instruction.hpp"
 #include "c1/c1_InstructionPrinter.hpp"
 #include "c1/c1_ValueType.hpp"
+#include "c1_globals_aarch64.hpp"
 #include "ci/ciCallSite.hpp"
 #include "ci/ciField.hpp"
 #include "ci/ciFlatArrayKlass.hpp"
@@ -2141,6 +2142,13 @@ void GraphBuilder::access_field(Bytecodes::Code code) {
       break;
     }
     case Bytecodes::_putfield: {
+      bool is_non_atomic_non_null_free = field->is_flat() && !field->is_atomic() && !field->is_null_free();
+      if (C1UseNonAtomicFlatFieldStoreRuntime && is_non_atomic_non_null_free &&
+          (C1UseNonAtomicFlatFieldStoreRuntimeALot || !field->type()->as_value_klass()->has_null_reset_value())) {
+        // The current slow path traps to the runtime, which may cause a safepoint.
+        // Retain the state for deoptimization
+        state_before = copy_state_before();
+      }
       Value val = pop(type);
       obj = apop();
       if (state_before == nullptr) {
@@ -2180,31 +2188,36 @@ void GraphBuilder::access_field(Bytecodes::Code code) {
           copy_value_content(value_klass, val, value_klass->payload_offset(), obj, offset, state_before, null_checks, field);
           assert(!null_checks.needs_src && !null_checks.needs_dst, "null checks should have been emitted");
         } else {
-          if (!value_klass->is_initialized()) {
-            // null_reset_value is not available, bailout for now
-            bailout("store to an uninitialized nullable non-atomic flat field");
-            return;
-          }
           CopyNullChecks null_checks = { false, true };
+          Value object_null = append(new Constant(objectNull));
+
           if (value_klass->is_empty()) {
             // The content copy emits no access that can implicitly null-check the holder.
             null_check(obj);
             null_checks.needs_dst = false;
           }
-
-          // Store the subfields when field is a nullable non-atomic field
-          Value object_null = append(new Constant(objectNull));
-          Value null_reset_value = load_null_reset_value(value_klass);
-          Value src = append(new IfOp(val, Instruction::neq, object_null, val, null_reset_value, state_before, false));
-          copy_value_content(value_klass, src, value_klass->payload_offset(), obj, offset, state_before, null_checks);
-          assert(!null_checks.needs_src && !null_checks.needs_dst, "null checks should have been emitted");
-
-          // Store the null marker
-          Value int_one = append(new Constant(new IntConstant(1)));
-          Value int_zero = append(new Constant(intZero));
-          Value nm = append(new IfOp(val, Instruction::neq, object_null, int_one, int_zero, state_before, false));
-          Value nm_offset = append(new Constant(new LongConstant(offset + value_klass->null_marker_offset_in_payload())));
-          append(new UnsafePut(T_BOOLEAN, obj, nm_offset, nm, false));
+          if (C1UseNonAtomicFlatFieldStoreRuntimeALot || !value_klass->has_null_reset_value()) {
+            // Only respect the user option if the platform supports the stub
+            if (!pd_C1UseNonAtomicFlatFieldStoreRuntime || !C1UseNonAtomicFlatFieldStoreRuntime) {
+              bailout("runtime support for nullable non-atomic flat field stores is disabled or not available");
+              return;
+            }
+            // Defer to runtime
+            append(new StoreField(obj, offset, field, val, false, state_before, needs_patching));
+            return;
+          } else {
+            // Store the subfields when a null-reset value is available
+            Value null_reset_value = load_null_reset_value(value_klass);
+            Value src = append(new IfOp(val, Instruction::neq, object_null, val, null_reset_value, state_before, false));
+            copy_value_content(value_klass, src, value_klass->payload_offset(), obj, offset, state_before, null_checks);
+            assert(!null_checks.needs_src && !null_checks.needs_dst, "null checks should have been emitted");
+            // Store the null marker
+            Value int_one = append(new Constant(new IntConstant(1)));
+            Value int_zero = append(new Constant(intZero));
+            Value nm = append(new IfOp(val, Instruction::neq, object_null, int_one, int_zero, state_before, false));
+            Value nm_offset = append(new Constant(new LongConstant(offset + value_klass->null_marker_offset_in_payload())));
+            append(new UnsafePut(T_BOOLEAN, obj, nm_offset, nm, false));
+          }
         }
       }
       break;

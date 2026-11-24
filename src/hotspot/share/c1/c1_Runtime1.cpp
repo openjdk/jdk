@@ -58,6 +58,7 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/valuePayload.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/atomicAccess.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
@@ -307,6 +308,9 @@ bool Runtime1::generate_blob_for(BufferBlob* buffer_blob, StubId id) {
 #ifdef ASSERT
   // Make sure that stubs that need oopmaps have them
   switch (id) {
+  case StubId::c1_store_flat_nonatomic_field_id:
+    expect_oop_map = pd_C1UseNonAtomicFlatFieldStoreRuntime;
+    break;
     // These stubs don't need to have an oopmap
   case StubId::c1_dtrace_object_alloc_id:
   case StubId::c1_slow_subtype_check_id:
@@ -613,6 +617,13 @@ JRT_ENTRY(void, Runtime1::store_flat_array(JavaThread* current, flatArrayOopDesc
   } else {
     array->obj_at_put(index, value, CHECK);
   }
+JRT_END
+
+JRT_ENTRY(void, Runtime1::store_flat_nonatomic_field(JavaThread* current,
+                                                   oopDesc* destination, oopDesc* source,
+                                                   ResolvedFieldEntry* entry))
+  FlatFieldPayload payload(instanceOop(destination), entry);
+  payload.write(valueOop(source), CHECK);
 JRT_END
 
 JRT_ENTRY(int, Runtime1::substitutability_check(JavaThread* current, oopDesc* left, oopDesc* right))

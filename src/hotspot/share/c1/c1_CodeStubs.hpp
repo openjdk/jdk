@@ -255,6 +255,28 @@ class LoadFlattenedArrayStub: public CodeStub {
 #endif // PRODUCT
 };
 
+class StoreFlatNonatomicFieldStub: public CodeStub {
+ private:
+  LIR_Opr          _dest;
+  LIR_Opr          _src;
+  LIR_Opr          _resolved_field_entry;
+  CodeEmitInfo*    _info;
+
+ public:
+  StoreFlatNonatomicFieldStub(LIR_Opr dest, LIR_Opr src, LIR_Opr field_entry, CodeEmitInfo* info);
+  virtual void emit_code(LIR_Assembler* e);
+  virtual CodeEmitInfo* info() const { return _info; }
+  virtual void visit(LIR_OpVisitState* visitor) {
+    visitor->do_slow_case(_info);
+    visitor->do_input(_dest);
+    visitor->do_input(_src);
+    visitor->do_input(_resolved_field_entry);
+  }
+
+#ifndef PRODUCT
+  virtual void print_name(outputStream* out) const { out->print("StoreFlatNonatomicFieldStub"); }
+#endif // PRODUCT
+};
 
 class StoreFlattenedArrayStub: public CodeStub {
  private:

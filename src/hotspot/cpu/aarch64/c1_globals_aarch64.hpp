@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -57,5 +57,7 @@ define_pd_global(bool, UseTypeProfile,               false);
 
 define_pd_global(bool, OptimizeSinglePrecision,      true );
 define_pd_global(bool, CSEArrayLength,               false);
+
+define_pd_global(bool, C1UseNonAtomicFlatFieldStoreRuntime, true);
 
 #endif // CPU_AARCH64_C1_GLOBALS_AARCH64_HPP

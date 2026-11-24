@@ -22,6 +22,7 @@
  *
  */
 
+#include "c1/c1_CodeStubs.hpp"
 #include "c1/c1_Compilation.hpp"
 #include "c1/c1_Defs.hpp"
 #include "c1/c1_FrameMap.hpp"
@@ -1670,12 +1671,16 @@ void LIRGenerator::do_StoreField(StoreField* x) {
   }
 #endif
 
+  bool uses_flat_store_runtime_stub = field->is_flat() && !field->is_atomic();
   if (x->needs_null_check() &&
       (needs_patching ||
        MacroAssembler::needs_explicit_null_check(x->offset()))) {
     // Emit an explicit null check because the offset is too large.
     // If the class is not loaded and the object is null, we need to deoptimize to throw a
     // NoClassDefFoundError in the interpreter instead of an implicit NPE from compiled code.
+    __ null_check(object.result(), new CodeEmitInfo(info), /* deoptimize */ needs_patching);
+  } else if (uses_flat_store_runtime_stub && x->needs_null_check()) {
+    // We're about to emit a runtime call which assumes a non-null receiver
     __ null_check(object.result(), new CodeEmitInfo(info), /* deoptimize */ needs_patching);
   }
 
@@ -1690,41 +1695,59 @@ void LIRGenerator::do_StoreField(StoreField* x) {
   if (field->is_flat()) {
     ciValueKlass* vk = field->type()->as_value_klass();
 
-#ifdef ASSERT
-    assert(field->is_atomic(), "No atomic access required %s.%s", field->holder()->name()->as_utf8(), field->name()->as_utf8());
-    // ZGC does not support compressed oops, so only one oop can be in the payload which is written by a "normal" oop store.
-    assert(!vk->contains_oops() || !UseZGC, "ZGC does not support embedded oops in flat fields");
-#endif
+    if (!field->is_atomic()) {
+      if (compilation()->env()->is_aot_compile()) {
+        bailout("non-atomic nullable flat field runtime store requires field-entry relocation");
+        return;
+      }
+      ValueStack* state = x->state_before();
+      address entry = state->scope()->method()->resolved_field_entry_at_bci(state->bci());
+      if (entry == nullptr) {
+        bailout("unresolved non-atomic flat field runtime store");
+        return;
+      }
+      LIR_Opr field_entry = new_pointer_register();
+      __ move(LIR_OprFact::intptrConst(entry), field_entry);
+      // The stub requires three arguments, but a store normally only requires two. So, we extend the
+      // reserved argument area.
+      frame_map()->update_reserved_argument_area_size(3 * BytesPerWord);
+      CodeStub* stub = new StoreFlatNonatomicFieldStub(object.result(), value.result(), field_entry,
+                                                     state_for(x, state));
+      __ jump(stub);
+      __ branch_destination(stub->continuation());
+    } else {
+      // ZGC does not support embedded oops in atomic flat fields.
+      assert(!vk->contains_oops() || !UseZGC, "ZGC does not support embedded oops in flat fields");
+      // Zero the payload
+      BasicType bt = vk->atomic_size_to_basic_type(field->is_null_free());
+      LIR_Opr payload = new_register((bt == T_LONG) ? bt : T_INT);
+      LIR_Opr zero = (bt == T_LONG) ? LIR_OprFact::longConst(0) : LIR_OprFact::intConst(0);
+      __ move(zero, payload);
 
-    // Zero the payload
-    BasicType bt = vk->atomic_size_to_basic_type(field->is_null_free());
-    LIR_Opr payload = new_register((bt == T_LONG) ? bt : T_INT);
-    LIR_Opr zero = (bt == T_LONG) ? LIR_OprFact::longConst(0) : LIR_OprFact::intConst(0);
-    __ move(zero, payload);
-
-    bool is_constant_null = value.is_constant() && value.value()->is_null_obj();
-    if (!is_constant_null) {
-      LabelObj* L_isNull = new LabelObj();
-      bool needs_null_check = !value.is_constant();
-      if (needs_null_check) {
-        __ cmp(lir_cond_equal, value.result(), LIR_OprFact::oopConst(nullptr));
-        __ branch(lir_cond_equal, L_isNull->label());
+      bool is_constant_null = value.is_constant() && value.value()->is_null_obj();
+      if (!is_constant_null) {
+        LabelObj* L_isNull = new LabelObj();
+        bool needs_null_check = !value.is_constant();
+        if (needs_null_check) {
+          __ cmp(lir_cond_equal, value.result(), LIR_OprFact::oopConst(nullptr));
+          __ branch(lir_cond_equal, L_isNull->label());
+        }
+        // Load payload (if not empty) and set null marker (if not null-free)
+        if (!vk->is_empty()) {
+          access_load_at(decorators, bt, value, LIR_OprFact::intConst(vk->payload_offset()), payload);
+        }
+        if (!field->is_null_free()) {
+          __ logical_or(payload, null_marker_mask(bt, field), payload);
+        }
+        if (needs_null_check) {
+          __ branch_destination(L_isNull->label());
+        }
       }
-      // Load payload (if not empty) and set null marker (if not null-free)
-      if (!vk->is_empty()) {
-        access_load_at(decorators, bt, value, LIR_OprFact::intConst(vk->payload_offset()), payload);
-      }
-      if (!field->is_null_free()) {
-        __ logical_or(payload, null_marker_mask(bt, field), payload);
-      }
-      if (needs_null_check) {
-        __ branch_destination(L_isNull->label());
-      }
+      access_store_at(decorators, bt, object, LIR_OprFact::intConst(x->offset()), payload,
+                      // Make sure to emit an implicit null check and pass the information
+                      // that this is a flat store that might require gc barriers for oop fields.
+                      info != nullptr ? new CodeEmitInfo(info) : nullptr, info, vk);
     }
-    access_store_at(decorators, bt, object, LIR_OprFact::intConst(x->offset()), payload,
-                    // Make sure to emit an implicit null check and pass the information
-                    // that this is a flat store that might require gc barriers for oop fields.
-                    info != nullptr ? new CodeEmitInfo(info) : nullptr, info, vk);
     return;
   }
 
