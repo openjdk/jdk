@@ -1561,24 +1561,6 @@ void AOTMetaspace::writing_error(oop exception_oop) {
   }
 }
 
-void AOTMetaspace::clear_aot_cache_flags_on_failure() {
-  // Cannot disable UseAOTCacheCpuFeaturesOnly because it may have already been processed.
-  // Cannot disable AOTCompatibleOopCompression because it may already been processed.
-  FLAG_SET_ERGO(AOTReplayTraining, false);
-  FLAG_SET_ERGO(AOTCompileEagerly, false);
-  if (!CDSConfig::is_redumping_aot_configuration() || !AOTIgnoreIncompatibleCacheInTraining) {
-    FLAG_SET_ERGO(AOTRecordTraining, false);
-    CDSConfig::disable_dumping_aot_code();
-    AOTCodeCache::disable_caching();
-  }
-  // The base archive cannot be mapped. We cannot dump the dynamic shared archive.
-  AutoCreateSharedArchive = false;
-  CDSConfig::disable_dumping_dynamic_archive();
-  // Set UseSharedSpaces at the end because some previous checks may depend on UseSharedSpaces.
-  // For example is_redumping_aot_configuration() relies on UseSharedSpaces.
-  UseSharedSpaces = false;
-}
-
 void AOTMetaspace::initialize_runtime_shared_and_meta_spaces() {
   assert(CDSConfig::is_using_archive(), "Must be called when UseSharedSpaces is enabled");
   MapArchiveResult result = MAP_ARCHIVE_OTHER_FAILURE;
@@ -1622,21 +1604,27 @@ void AOTMetaspace::initialize_runtime_shared_and_meta_spaces() {
     if (CDSConfig::is_dumping_dynamic_archive()) {
       aot_log_warning(aot)("-XX:ArchiveClassesAtExit is unsupported when base CDS archive is not loaded. Run with -Xlog:cds for more info.");
     }
-    clear_aot_cache_flags_on_failure();
     if (PrintSharedArchiveAndExit) {
       AOTMetaspace::unrecoverable_loading_error("Unable to use shared archive.");
+    } else if (RequireSharedSpaces) {
+      AOTMetaspace::unrecoverable_loading_error("Unable to map shared spaces");
+    } else if (CDSConfig::is_redumping_aot_configuration()) {
+      assert(AOTIgnoreIncompatibleCacheInTraining, "Or else RequireSharedSpaces would have been set");
+      log_error(aot)("-XX:AOTCache=%s is ignored because it is incompatible with the current VM settings", AOTCache);
     } else {
-      if (RequireSharedSpaces) {
-        AOTMetaspace::unrecoverable_loading_error("Unable to map shared spaces");
-      } else {
-        if (CDSConfig::is_dumping_aot_configuration()) {
-          precond(AOTIgnoreIncompatibleCacheInTraining);
-          log_error(aot)("-XX:AOTCache=%s is ignored because it is incompatible with the current VM settings", AOTCache);
-        } else {
-          report_loading_error("Unable to map shared spaces");
-        }
-      }
+      report_loading_error("Unable to map shared spaces");
     }
+    FLAG_SET_ERGO(AOTReplayTraining, false);
+    FLAG_SET_ERGO(AOTCompileEagerly, false);
+    if (!CDSConfig::is_redumping_aot_configuration()) {
+      AOTCodeCache::disable_caching();
+    }
+    // The base archive cannot be mapped. We cannot dump the dynamic shared archive.
+    AutoCreateSharedArchive = false;
+    CDSConfig::disable_dumping_dynamic_archive();
+    // Set UseSharedSpaces at the end because some previous checks may depend on UseSharedSpaces.
+    // For example is_redumping_aot_configuration() relies on UseSharedSpaces.
+    UseSharedSpaces = false;
   }
 
   // If mapping failed and -XShare:on, the vm should exit

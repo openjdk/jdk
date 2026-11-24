@@ -84,7 +84,6 @@ private:
   static void exercise_runtime_cds_code(TRAPS) NOT_CDS_RETURN;
   static void dump_static_archive_impl(StaticArchiveBuilder& builder, TRAPS) NOT_CDS_RETURN;
   static void load_classes(TRAPS) NOT_CDS_RETURN;
-  static void clear_aot_cache_flags_on_failure() NOT_CDS_RETURN;
 
 public:
   static Symbol* symbol_rs_base() {
