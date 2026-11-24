@@ -92,7 +92,6 @@ public class SecondarySupersLookupLarge {
         for (int n = first; n <= last; n++) {
             interfaces[n] = genInterface(name.apply(n));
         }
-        System.out.println("interfaceCount = " + interfaces.length);
         return interfaces;
     }
 
@@ -199,8 +198,6 @@ public class SecondarySupersLookupLarge {
                 .getConstructor().newInstance();
             testInstances[i] = (AClass)anObject;
         }
-
-        System.out.println("testInstance = " + testInstance);
     }
 
     private static void test(Object obj, Class<?> cls, boolean expected) {
@@ -251,5 +248,4 @@ public class SecondarySupersLookupLarge {
         }
         if (found)  throw new RuntimeException();
     }
-
 }
