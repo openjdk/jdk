@@ -1507,7 +1507,7 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_storeCertificate
         }
         else if (jCertStoreLocation == KEYSTORE_LOCATION_LOCALMACHINE) {
             hCertStore = CertOpenStore(CERT_STORE_PROV_SYSTEM_A, 0, NULL,
-                CERT_SYSTEM_STORE_LOCAL_MACHINE | CERT_STORE_MAXIMUM_ALLOWED_FLAG, pszCertStoreName);
+                CERT_SYSTEM_STORE_LOCAL_MACHINE, pszCertStoreName);
         }
         else {
             ThrowException(env, KEYSTORE_EXCEPTION, ERROR_INVALID_PARAMETER);
@@ -1666,14 +1666,9 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_storeCertificate
             }
 
             // Record whether the private key container is machine-specific
-            DWORD keysetType = 0;
-            DWORD keysetTypeLen = sizeof(keysetType);
-            if (!::CryptGetProvParam((HCRYPTPROV) hCryptProv,
-                PP_KEYSET_TYPE, (BYTE*) &keysetType, &keysetTypeLen, 0)) {
-                ThrowException(env, KEYSTORE_EXCEPTION, GetLastError());
-                __leave;
-            }
-            keyProviderInfo.dwFlags = keysetType;
+            keyProviderInfo.dwFlags =
+                jCertStoreLocation == KEYSTORE_LOCATION_LOCALMACHINE
+                    ? CRYPT_MACHINE_KEYSET : 0;
 
             // Set no provider parameters
             keyProviderInfo.cProvParam = 0;
@@ -1790,7 +1785,7 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_removeCertificate
         }
         else if (jCertStoreLocation == KEYSTORE_LOCATION_LOCALMACHINE) {
             hCertStore = CertOpenStore(CERT_STORE_PROV_SYSTEM_A, 0, NULL,
-                CERT_SYSTEM_STORE_LOCAL_MACHINE | CERT_STORE_MAXIMUM_ALLOWED_FLAG, pszCertStoreName);
+                CERT_SYSTEM_STORE_LOCAL_MACHINE, pszCertStoreName);
         }
         else {
             ThrowException(env, KEYSTORE_EXCEPTION, ERROR_INVALID_PARAMETER);

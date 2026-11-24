@@ -192,11 +192,11 @@ abstract class CKeyStore extends KeyStoreSpi {
             }
             CKey privateKey = getPrivateKey();
             if (privateKey != null) {
+                long hCryptProvider = privateKey.getHCryptProvider();
                 if (privateKey.getHCryptKey() != 0) {
-                    long hCryptProvider = privateKey.getHCryptProvider();
                     destroyKeyContainer(CKey.getContainerName(hCryptProvider), hCryptProvider);
                 } else {
-                    removeCngKey(privateKey.getHCryptProvider());
+                    removeCngKey(hCryptProvider);
                 }
             }
         }
