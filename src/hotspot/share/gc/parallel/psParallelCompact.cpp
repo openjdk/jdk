@@ -1937,6 +1937,10 @@ void PSParallelCompact::decrement_destination_counts(ParCompactionManager* cm,
         // MoveAndUpdateShadowClosure::complete_region).
         copy_back(sd.region_to_addr(cur->shadow_region()), sd.region_to_addr(cur));
         ParCompactionManager::push_shadow_region_mt_safe(cur->shadow_region());
+      } else if (cur->is_shadow()) {
+        // A shadow worker owns the region, but hasn't published a filled scratch copy.
+        // It may still be waiting for scratch space, so notify.
+        ParCompactionManager::notify_shadow_region_waiters();
       }
     }
   }

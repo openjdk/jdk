@@ -157,6 +157,7 @@ public:
   static const size_t InvalidShadow = ~0;
   static size_t  pop_shadow_region_mt_safe(PSParallelCompact::RegionData* region_ptr);
   static void    push_shadow_region_mt_safe(size_t shadow_region);
+  static void    notify_shadow_region_waiters();
   static void    push_shadow_region(size_t shadow_region);
   static void    remove_all_shadow_regions();
 

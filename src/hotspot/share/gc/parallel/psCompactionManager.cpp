@@ -183,6 +183,11 @@ void ParCompactionManager::push_shadow_region_mt_safe(size_t shadow_region) {
   ml.notify();
 }
 
+void ParCompactionManager::notify_shadow_region_waiters() {
+  MonitorLocker ml(_shadow_region_monitor, Mutex::_no_safepoint_check_flag);
+  ml.notify_all();
+}
+
 void ParCompactionManager::push_shadow_region(size_t shadow_region) {
   _shadow_region_array->push(shadow_region);
 }
