@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 8394820
+ * @key headful
  * @summary Verifies application key bindings are not cleared on L&F change
  * @run main UpdateUIKeepsBindings
  */
