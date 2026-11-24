@@ -1083,9 +1083,6 @@ void ciEnv::make_code_usable(JavaThread* thread, ciMethod* target, bool aot_prel
       method->set_code(method, nm);
 #if INCLUDE_CDS
       if (aot_preload) {
-        MethodCounters* mc = method->get_method_counters(thread);
-        assert(mc != nullptr, "CompileBroker should create MethodCounters if it is missing");
-        mc->set_aot_preload_code_entry(aot_code_entry);
         nm->set_aot_preloaded(true);
       }
 #endif
