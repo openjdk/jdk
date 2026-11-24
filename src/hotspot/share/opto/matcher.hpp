@@ -224,6 +224,8 @@ public:
   static uint int_pressure_limit();
   // Number of float live ranges that constitute high register pressure
   static uint float_pressure_limit();
+  // Number of vector mask live ranges that constitute high register pressure
+  static uint mask_pressure_limit();
 
   // List of IfFalse or IfTrue Nodes that indicate a taken null test.
   // List is valid in the post-matching space.

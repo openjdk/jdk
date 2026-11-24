@@ -2773,6 +2773,14 @@ void Matcher::specialize_generic_vector_operands() {
   }
 }
 
+uint Matcher::mask_pressure_limit() {
+  if (!OptoRegSchedulingMask || !Matcher::has_predicated_vectors()) {
+    return 0;
+  }
+  const RegMask* rm = idealreg2regmask[Op_RegVectMask];
+  return (rm == nullptr) ? 0 : rm->size() / RegMask::SlotsPerRegVectMask;
+}
+
 uint Matcher::vector_length(const Node* n) {
   const TypeVect* vt = n->bottom_type()->as_vect();
   return vt->length();

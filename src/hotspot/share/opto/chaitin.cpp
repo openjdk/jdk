@@ -215,6 +215,8 @@ PhaseChaitin::PhaseChaitin(uint unique, PhaseCFG &cfg, Matcher &matcher, bool sc
   , _sched_float_pressure(0, Matcher::float_pressure_limit())
   , _scratch_int_pressure(0, Matcher::int_pressure_limit())
   , _scratch_float_pressure(0, Matcher::float_pressure_limit())
+  , _sched_mask_pressure(0, Matcher::mask_pressure_limit())
+  , _scratch_mask_pressure(0, Matcher::mask_pressure_limit())
 {
   Compile::TracePhase tp(_t_ctorChaitin);
 
