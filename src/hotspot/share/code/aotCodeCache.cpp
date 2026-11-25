@@ -3877,26 +3877,21 @@ bool AOTCodeCache::write_klass(Klass* klass) {
     }
     klass = oak->bottom_klass(); // overwrites klass
   }
-  uint init_state = 0;
   if (klass->is_instance_klass()) {
-    // A few classes are initialized in the assembly phase before code generation.
-    // When run in production, the code will assume they are initialized, again.
     InstanceKlass* ik = InstanceKlass::cast(klass);
-    init_state = (ik->is_initialized() ? 1 : 0);
     can_write &= AOTCacheAccess::can_generate_aot_code_for(ik);
   } else {
     assert(klass->is_typeArray_klass(), "must be");
     can_write &= AOTCacheAccess::can_generate_aot_code(klass);
   }
   ResourceMark rm;
-  uint state = (array_dim << 1) | (init_state & 1);
   if (can_write) {
     DataKind kind = DataKind::Klass;
     if (!write_kind(kind)) {
       return false;
     }
-    // Record state of instance klass initialization and array dimensions.
-    if (!write_int(state)) {
+    // Record array dimensions.
+    if (!write_int(array_dim)) {
       return false;
     }
     // Record array's properties
@@ -3909,21 +3904,23 @@ bool AOTCodeCache::write_klass(Klass* klass) {
     }
     log_debug(aot, codecache, metadata)("%d (A%d): Registered klass: %s%s%s @ 0x%08x",
               compile_id(), comp_level(), klass->external_name(),
-              (!klass->is_instance_klass() ? "" : (init_state == 1 ? " (initialized)" : " (not-initialized)")),
+              (!klass->is_instance_klass() ? "" : (InstanceKlass::cast(klass)->is_initialized() ?
+                                                  " (initialized)" : " (not-initialized)")),
               (array_dim > 0 ? " (object array)" : ""), cast_to_u4(klass_narrow_ptr));
     return true;
   }
   log_debug(aot, codecache, metadata)("%d (A%d): Klass is not registered: %s%s%s",
             compile_id(), comp_level(), klass->external_name(),
-            (!klass->is_instance_klass() ? "" : (init_state == 1 ? " (initialized)" : " (not-initialized)")),
+            (!klass->is_instance_klass() ? "" : (InstanceKlass::cast(klass)->is_initialized() ?
+                                                " (initialized)" : " (not-initialized)")),
             (array_dim > 0 ? " (object array)" : ""));
   set_lookup_failed();
   return false;
 }
 
 Klass* AOTCodeReader::read_klass(JavaThread* thread) {
-  uint state;
-  if (!read_int((int*)&state)) {
+  uint array_dim;
+  if (!read_int((int*)&array_dim)) {
     return nullptr;
   }
   uint array_desc;
@@ -3934,8 +3931,6 @@ Klass* AOTCodeReader::read_klass(JavaThread* thread) {
   if (!read_int((int*)&klass_narrow_ptr)) {
     return nullptr;
   }
-  uint init_state = (state  & 1);
-  uint array_dim  = (state >> 1);
   Klass* k = AOTCacheAccess::narrow_ptr_to_klass(klass_narrow_ptr);
   if (k == nullptr || !AOTMetaspace::in_aot_cache((address)k)) {
     // Something changed in CDS
@@ -3952,27 +3947,7 @@ Klass* AOTCodeReader::read_klass(JavaThread* thread) {
               compile_id(), comp_level(), k->external_name());
     return nullptr;
   }
-  // If the klass was seen to be initialized during AOT cache assembly,
-  // it must also be initialized here, in the production run, when this nmethod loads.
-  // Exception:  "preload" code (AP4) can handle uninitialized classes.
-  // There is no exception for A1, A2 code or A4 code.
-  //
-  // Note: This init-state check is of minor importance compared to the clinit deps
-  // list/counter on this nmethod's CompileTrainingData, which has already determined
-  // the nmethod's readiness to load.  (For many more details, see comments near
-  // CompileTrainingData::_init_deps_left.)  This check is superficially similar,
-  // but it checks a relatively small number of classes, which may or may not be
-  // necessary to the nmethod's compiled code.  Think of it as an extra sanity check.
-  // But it is an approximate check, and may fail spuriously, discarding good AOT code.
-  // After JDK-8380476 FIXME:  Maybe get rid of this approximate check; replace with
-  // a more accurate and efficient check based on dependencies.hpp (new DepType).
-  // (Also, the metadata for arrays should have its own DataKind::ArrayKlass.)
-  if (k->is_instance_klass() && !InstanceKlass::cast(k)->is_initialized() && (init_state == 1) && !_entry->for_preload()) {
-    set_lookup_failed("Klass is not initialized");
-    log_debug(aot, codecache, metadata)("%d (A%d): Lookup failed for klass %s: not initialized",
-              compile_id(), comp_level(), k->external_name());
-    return nullptr;
-  }
+  // FIXME: The metadata for arrays should have its own DataKind::ArrayKlass.
   if (array_dim > 0) {
     assert(k->is_instance_klass() || k->is_typeArray_klass(), "sanity check");
     Klass* ak = k->array_klass_or_null(array_dim);
