@@ -119,6 +119,7 @@ public:
   f(UseNullFreeNonAtomicValueFlattening) \
   f(ValueTypePassFieldsAsArgs) \
   f(ValueTypeReturnedAsFields) \
+  f(Use16ByteAtomicFlattening) \
   /* end */
 
 class AOTMustMatchFlags {

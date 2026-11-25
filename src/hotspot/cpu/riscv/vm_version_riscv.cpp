@@ -344,6 +344,10 @@ void VM_Version::common_initialize() {
     warning("ValueTypeReturnedAsFields is not supported on this CPU");
     FLAG_SET_DEFAULT(ValueTypeReturnedAsFields, false);
   }
+  if (Use16ByteAtomicFlattening) {
+    warning("Use16ByteAtomicFlattening not supported on this CPU");
+    FLAG_SET_DEFAULT(Use16ByteAtomicFlattening, false);
+  }
 }
 
 #ifdef COMPILER2

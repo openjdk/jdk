@@ -1219,6 +1219,15 @@ class LoadVectorNode : public LoadNode {
 #endif
 };
 
+// Load a vector from memory. In contrast to LoadVectorNode, this requires the access to be atomic.
+class LoadVectorAtomicNode final : public LoadVectorNode {
+public:
+  LoadVectorAtomicNode(Node* c, Node* mem, Node* adr, const TypePtr* at, const TypeVect* vt, MemOrd mo)
+    : LoadVectorNode(c, mem, adr, at, vt, UnknownControl) {}
+  int Opcode() const final;
+  int store_Opcode() const final { return Op_StoreVectorAtomic; }
+};
+
 // Gather:
 //   indices: int-vector of indices
 //   adr: memory address (e.g. array base plus offset)
@@ -1284,6 +1293,15 @@ class StoreVectorNode : public StoreNode {
   bool must_verify_alignment() const { return _must_verify_alignment; }
   void set_must_verify_alignment() { _must_verify_alignment = true; }
 #endif
+};
+
+// Store a vector into memory. In contrast to StoreVectorNode, this requires the access to be
+// atomic.
+class StoreVectorAtomicNode final : public StoreVectorNode {
+public:
+  StoreVectorAtomicNode(Node* c, Node* mem, Node* adr, const TypePtr* at, Node* val)
+    : StoreVectorNode(c, mem, adr, at, val) {}
+  int Opcode() const final;
 };
 
 // Scatter:

@@ -28,6 +28,7 @@
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/atomicAccess.hpp"
 #include "runtime/globals.hpp"
+#include "runtime/vm_version.hpp"
 #include "utilities/align.hpp"
 #include "utilities/bytes.hpp"
 #include "utilities/debug.hpp"
@@ -78,6 +79,16 @@ class Copy : AllStatic {
   //
 
   // HeapWords
+
+  static void copy16_atomic(const void* from, void* to) {
+#if defined(AMD64) && defined(LINUX)
+    assert_params_ok(from, to, 16);
+    assert(VM_Version::supports_fast_16byte_atomic_access(), "not supported");
+    pd_copy16_atomic(to, from);
+#else // AMD64 && LINUX
+    ShouldNotReachHere();
+#endif // AMD64 && LINUX
+  }
 
   // Word-aligned words,    conjoint, not atomic on each word
   static void conjoint_words(const HeapWord* from, HeapWord* to, size_t count) {
@@ -161,8 +172,17 @@ class Copy : AllStatic {
   // of two which divides all of from, to, and size, whichever is smaller.
   static void conjoint_memory_atomic(const void* from, void* to, size_t size);
 
-  static void copy_value_content(const void* from, void* to, size_t size);
-  static void clear_value_content(void* to, size_t size);
+  // Modify the payload of a value object
+  static void copy_value_object_payload(const void* from, void* to, size_t size);
+  static void clear_value_object_payload(void* to, size_t size);
+
+  // Copy a part of an object, may include the header, the start is not guaranteed to align to the
+  // largest atomic element in the copied segment, but it is guaranteed to align to the template
+  // parameter alignment
+  template <size_t alignment>
+  static void copy_object_payload_partial(const void* from, void* to, size_t size);
+  template <size_t alignment>
+  static void clear_object_payload_partial(void* to, size_t size);
 
   // bytes,                 conjoint array, atomic on each byte (not that it matters)
   static void arrayof_conjoint_jbytes(const HeapWord* from, HeapWord* to, size_t count) {
@@ -332,6 +352,15 @@ class Copy : AllStatic {
   }
 
   // These methods raise a fatal if they detect a problem.
+
+  static void assert_disjoint(uintptr_t from_cursor, uintptr_t to_cursor, size_t size) {
+    if (from_cursor < to_cursor) {
+      assert(from_cursor + size <= to_cursor, "not disjoint");
+    } else {
+      assert(to_cursor < from_cursor, "from == to?");
+      assert(to_cursor + size <= from_cursor, "not disjoint");
+    }
+  }
 
   static void assert_disjoint(const HeapWord* from, HeapWord* to, size_t count) {
     assert(params_disjoint(from, to, count), "source and dest overlap");

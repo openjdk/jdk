@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -266,6 +266,11 @@ void VM_Version::initialize() {
   if (UseVectorizedMismatchIntrinsic) {
     warning("vectorizedMismatch intrinsic is not available on this CPU.");
     FLAG_SET_DEFAULT(UseVectorizedMismatchIntrinsic, false);
+  }
+
+  if (Use16ByteAtomicFlattening) {
+    warning("Use16ByteAtomicFlattening not supported on this CPU");
+    FLAG_SET_DEFAULT(Use16ByteAtomicFlattening, false);
   }
 
 #ifdef COMPILER2

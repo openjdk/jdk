@@ -22,12 +22,21 @@
  *
  */
 
+#include "runtime/atomicAccess.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/align.hpp"
 #include "utilities/byteswap.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/debug.hpp"
 
+// A 16-byte payload that needs accessing atomically
+class Payload16 {
+public:
+  alignas(16) char _payload[16];
+};
+
+static_assert(std::is_trivial_v<Payload16>);
 
 // Copy bytes; larger units are filled atomically if everything is aligned.
 void Copy::conjoint_memory_atomic(const void* from, void* to, size_t size) {
@@ -53,75 +62,248 @@ void Copy::conjoint_memory_atomic(const void* from, void* to, size_t size) {
   }
 }
 
-#define COPY_ALIGNED_SEGMENT(t)                                                \
-  if (bits % sizeof(t) == 0) {                                                 \
-    size_t segment = remaining_bytes / sizeof(t);                              \
-    if (segment > 0) {                                                         \
-      Copy::conjoint_##t##s_atomic((const t*)cursor_from, (t*)cursor_to,       \
-                                   segment);                                   \
-      remaining_bytes -= segment * sizeof(t);                                  \
-      cursor_from = (void*)(((char*)cursor_from) + segment * sizeof(t));       \
-      cursor_to = (void*)(((char*)cursor_to) + segment * sizeof(t));           \
-    }                                                                          \
+template <size_t access_size>
+static void copy_object_payload_access(uintptr_t& from_cursor, uintptr_t& to_cursor, size_t& remaining_bytes) {
+  if constexpr (access_size == sizeof(jbyte)) {
+    AtomicAccess::store(reinterpret_cast<jbyte*>(to_cursor), AtomicAccess::load(reinterpret_cast<jbyte*>(from_cursor)));
+  } else if constexpr (access_size == sizeof(jshort)) {
+    AtomicAccess::store(reinterpret_cast<jshort*>(to_cursor), AtomicAccess::load(reinterpret_cast<jshort*>(from_cursor)));
+  } else if constexpr (access_size == sizeof(jint)) {
+    AtomicAccess::store(reinterpret_cast<jint*>(to_cursor), AtomicAccess::load(reinterpret_cast<jint*>(from_cursor)));
+  } else if constexpr (access_size == sizeof(jlong)) {
+    AtomicAccess::store(reinterpret_cast<jlong*>(to_cursor), AtomicAccess::load(reinterpret_cast<jlong*>(from_cursor)));
+  } else {
+    static_assert(access_size == sizeof(Payload16));
+    Copy::copy16_atomic(reinterpret_cast<void*>(from_cursor), reinterpret_cast<void*>(to_cursor));
   }
 
-void Copy::copy_value_content(const void* from, void* to, size_t size) {
+  from_cursor += access_size;
+  to_cursor += access_size;
+  remaining_bytes -= access_size;
+}
+
+template <size_t access_size>
+static void copy_value_object_payload_loop(uintptr_t& from_cursor, uintptr_t& to_cursor, size_t& remaining_bytes) {
+  while (remaining_bytes >= access_size) {
+    copy_object_payload_access<access_size>(from_cursor, to_cursor, remaining_bytes);
+  }
+}
+
+void Copy::copy_value_object_payload(const void* from, void* to, size_t size) {
   // The alignment of the containing object must satisfy the alignment of all
   // its fields, as such we can safely copy atomically starting at the largest
   // atomic size which the payloads are aligned to. Any trailing payload smaller
   // than this atomic size must have a lower alignment requirement. This
   // property holds recursively down to the smallest atomic size.
-  const uintptr_t bits = (uintptr_t)from | (uintptr_t)to;
-  const void* cursor_from = from;
-  void* cursor_to = to;
+  uintptr_t from_cursor = uintptr_t(from);
+  uintptr_t to_cursor = uintptr_t(to);
+  if (from_cursor == to_cursor) {
+    return;
+  }
+  assert_disjoint(from_cursor, to_cursor, size);
+  uintptr_t bits = from_cursor | to_cursor;
   size_t remaining_bytes = size;
-  COPY_ALIGNED_SEGMENT(jlong)
-  COPY_ALIGNED_SEGMENT(jint)
-  COPY_ALIGNED_SEGMENT(jshort)
-  if (remaining_bytes > 0) {
-    Copy::conjoint_jbytes(cursor_from, cursor_to, remaining_bytes);
+  if (Use16ByteAtomicFlattening && bits % sizeof(Payload16) == 0) {
+    copy_value_object_payload_loop<sizeof(Payload16)>(from_cursor, to_cursor, remaining_bytes);
+  }
+  if (bits % sizeof(jlong) == 0) {
+    copy_value_object_payload_loop<sizeof(jlong)>(from_cursor, to_cursor, remaining_bytes);
+  }
+  if (bits % sizeof(jint) == 0) {
+    copy_value_object_payload_loop<sizeof(jint)>(from_cursor, to_cursor, remaining_bytes);
+  }
+  if (bits % sizeof(jshort) == 0) {
+    copy_value_object_payload_loop<sizeof(jshort)>(from_cursor, to_cursor, remaining_bytes);
+  }
+  copy_value_object_payload_loop<sizeof(jbyte)>(from_cursor, to_cursor, remaining_bytes);
+
+  postcond(remaining_bytes == 0);
+  postcond(from_cursor - size == uintptr_t(from));
+  postcond(to_cursor - size == uintptr_t(to));
+}
+
+template <size_t access_size>
+static void clear_object_payload_access(uintptr_t& to_cursor, size_t& remaining_bytes) {
+  if constexpr (access_size == sizeof(jbyte)) {
+    AtomicAccess::store(reinterpret_cast<jbyte*>(to_cursor), jbyte(0));
+  } else if constexpr (access_size == sizeof(jshort)) {
+    AtomicAccess::store(reinterpret_cast<jshort*>(to_cursor), jshort(0));
+  } else if constexpr (access_size == sizeof(jint)) {
+    AtomicAccess::store(reinterpret_cast<jint*>(to_cursor), jint(0));
+  } else if constexpr (access_size == sizeof(jlong)) {
+    AtomicAccess::store(reinterpret_cast<jlong*>(to_cursor), jlong(0));
+  } else {
+    Payload16 tmp;
+    ::memset(&tmp, 0, sizeof(tmp));
+    static_assert(access_size == sizeof(Payload16));
+    Copy::copy16_atomic(&tmp, reinterpret_cast<void*>(to_cursor));
+  }
+
+  to_cursor += access_size;
+  remaining_bytes -= access_size;
+}
+
+template <size_t access_size>
+static void clear_value_object_payload_loop(uintptr_t& to_cursor, size_t& remaining_bytes) {
+  while (remaining_bytes >= access_size) {
+    clear_object_payload_access<access_size>(to_cursor, remaining_bytes);
   }
 }
 
-#undef COPY_ALIGNED_SEGMENT
-
-template <typename T>
-static void clear_value_content_helper(uintptr_t* to_cursor_addr, size_t* remaining_bytes_addr) {
-  uintptr_t& to_cursor = *to_cursor_addr;
-  size_t& remaining_bytes = *remaining_bytes_addr;
-
-  if (to_cursor % sizeof(T) == 0 && remaining_bytes >= sizeof(T)) {
-    const size_t copy_bytes = align_down(remaining_bytes, sizeof(T));
-    Copy::fill_to_memory_atomic((void*)to_cursor, copy_bytes);
-    to_cursor += copy_bytes;
-    remaining_bytes -= copy_bytes;
-  }
-}
-
-void Copy::clear_value_content(void* to, size_t size) {
+void Copy::clear_value_object_payload(void* to, size_t size) {
   // The alignment of the containing object must satisfy the alignment of all
   // its fields, as such we can safely copy atomically starting at the largest
   // atomic size which the payloads are aligned to. Any trailing payload smaller
   // than this atomic size must have a lower alignment requirement. This
   // property holds recursively down to the smallest atomic size.
   uintptr_t to_cursor = uintptr_t(to);
+  uintptr_t bits = to_cursor;
   size_t remaining_bytes = size;
-
-  // Clear jlong alignend segments
-  clear_value_content_helper<jlong>(&to_cursor, &remaining_bytes);
-
-  // Clear jint alignend segments
-  clear_value_content_helper<jint>(&to_cursor, &remaining_bytes);
-
-  // Clear jshort alignend segments
-  clear_value_content_helper<jshort>(&to_cursor, &remaining_bytes);
-
-  // Clear remaining bytes
-  clear_value_content_helper<jbyte>(&to_cursor, &remaining_bytes);
+  if (Use16ByteAtomicFlattening && bits % sizeof(Payload16) == 0) {
+    clear_value_object_payload_loop<sizeof(Payload16)>(to_cursor, remaining_bytes);
+  }
+  if (bits % sizeof(jlong) == 0) {
+    clear_value_object_payload_loop<sizeof(jlong)>(to_cursor, remaining_bytes);
+  }
+  if (bits % sizeof(jint) == 0) {
+    clear_value_object_payload_loop<sizeof(jint)>(to_cursor, remaining_bytes);
+  }
+  if (bits % sizeof(jshort) == 0) {
+    clear_value_object_payload_loop<sizeof(jshort)>(to_cursor, remaining_bytes);
+  }
+  clear_value_object_payload_loop<sizeof(jbyte)>(to_cursor, remaining_bytes);
 
   postcond(remaining_bytes == 0);
   postcond(to_cursor - size == uintptr_t(to));
 }
+
+template <size_t alignment>
+void Copy::copy_object_payload_partial(const void* from, void* to, size_t size) {
+  static_assert(alignment == sizeof(jlong), "not implemented");
+  uintptr_t from_cursor = uintptr_t(from);
+  uintptr_t to_cursor = uintptr_t(to);
+  assert((from_cursor | to_cursor) % alignment == 0, "invalid alignment");
+  if (from_cursor == to_cursor) {
+    return;
+  }
+  assert_disjoint(from_cursor, to_cursor, size);
+
+  // For example, an object has the layout (oop, jlong, Payload16), and we want to start copying
+  // from the jlong field, then we will have to do an atomic 8-byte copy, then an atomic 16-byte
+  // copy. In that case, although from_cursor and to_cursor are not divisible by sizeof(Payload16),
+  // they are congruent module sizeof(Payload16), and since sizeof(Payload16) is a power of 2, it
+  // means that (from_cursor ^ to_cursor) % sizeof(Payload16) == 0.
+  size_t atomic_size;
+  if (Use16ByteAtomicFlattening && (from_cursor ^ to_cursor) % sizeof(Payload16) == 0) {
+    atomic_size = sizeof(Payload16);
+  } else {
+    atomic_size = sizeof(jlong);
+  }
+
+  size_t remaining_bytes = size;
+  auto copy_jlong = [&]() {
+    AtomicAccess::store(reinterpret_cast<jlong*>(to_cursor), AtomicAccess::load(reinterpret_cast<jlong*>(from_cursor)));
+    from_cursor += sizeof(jlong);
+    to_cursor += sizeof(jlong);
+    remaining_bytes -= sizeof(jlong);
+  };
+
+  if (atomic_size == sizeof(Payload16)) {
+    if (remaining_bytes >= sizeof(jlong) && to_cursor % sizeof(Payload16) != 0) {
+      copy_jlong();
+    }
+
+    while (remaining_bytes >= sizeof(Payload16)) {
+      copy16_atomic(reinterpret_cast<void*>(from_cursor), reinterpret_cast<void*>(to_cursor));
+      from_cursor += sizeof(Payload16);
+      to_cursor += sizeof(Payload16);
+      remaining_bytes -= sizeof(Payload16);
+    }
+
+    if (remaining_bytes >= sizeof(jlong)) {
+      copy_jlong();
+    }
+  } else {
+    while (remaining_bytes >= sizeof(jlong)) {
+      copy_jlong();
+    }
+  }
+  if (remaining_bytes >= sizeof(jint)) {
+    copy_object_payload_access<sizeof(jint)>(from_cursor, to_cursor, remaining_bytes);
+  }
+  if (remaining_bytes >= sizeof(jshort)) {
+    copy_object_payload_access<sizeof(jshort)>(from_cursor, to_cursor, remaining_bytes);
+  }
+  if (remaining_bytes >= sizeof(jbyte)) {
+    copy_object_payload_access<sizeof(jbyte)>(from_cursor, to_cursor, remaining_bytes);
+  }
+
+  postcond(remaining_bytes == 0);
+  postcond(from_cursor - size == uintptr_t(from));
+  postcond(to_cursor - size == uintptr_t(to));
+}
+
+template void Copy::copy_object_payload_partial<sizeof(jlong)>(const void *from, void *to, size_t size);
+
+template <size_t alignment>
+void Copy::clear_object_payload_partial(void* to, size_t size) {
+  static_assert(alignment == sizeof(jlong), "not implemented");
+  uintptr_t to_cursor = uintptr_t(to);
+  precond(to_cursor % alignment == 0);
+
+  // For example, an object has the layout (oop, jlong, Payload16), and we want to start clearing
+  // from the jlong field, then we will have to do an atomic 8-byte store, then an atomic 16-byte
+  // store, even if to_cursor is not divisible by sizeof(Payload16).
+  size_t atomic_size;
+  if (Use16ByteAtomicFlattening) {
+    atomic_size = sizeof(Payload16);
+  } else {
+    atomic_size = sizeof(jlong);
+  }
+
+  size_t remaining_bytes = size;
+  auto clear_jlong = [&]() {
+    AtomicAccess::store(reinterpret_cast<jlong*>(to_cursor), jlong(0));
+    to_cursor += sizeof(jlong);
+    remaining_bytes -= sizeof(jlong);
+  };
+
+  if (atomic_size == sizeof(Payload16)) {
+    if (remaining_bytes >= sizeof(jlong) && to_cursor % sizeof(Payload16) != 0) {
+      clear_jlong();
+    }
+
+    Payload16 tmp;
+    ::memset(&tmp, 0, sizeof(tmp));
+    while (remaining_bytes >= sizeof(Payload16)) {
+      copy16_atomic(&tmp, reinterpret_cast<void*>(to_cursor));
+      to_cursor += sizeof(Payload16);
+      remaining_bytes -= sizeof(Payload16);
+    }
+
+    if (remaining_bytes >= sizeof(jlong)) {
+      clear_jlong();
+    }
+  } else {
+    while (remaining_bytes >= sizeof(jlong)) {
+      clear_jlong();
+    }
+  }
+  if (remaining_bytes >= sizeof(jint)) {
+    clear_object_payload_access<sizeof(jint)>(to_cursor, remaining_bytes);
+  }
+  if (remaining_bytes >= sizeof(jshort)) {
+    clear_object_payload_access<sizeof(jshort)>(to_cursor, remaining_bytes);
+  }
+  if (remaining_bytes >= sizeof(jbyte)) {
+    clear_object_payload_access<sizeof(jbyte)>(to_cursor, remaining_bytes);
+  }
+
+  postcond(remaining_bytes == 0);
+  postcond(to_cursor - size == uintptr_t(to));
+}
+
+template void Copy::clear_object_payload_partial<sizeof(jlong)>(void *to, size_t size);
 
 class CopySwap : AllStatic {
 public:
