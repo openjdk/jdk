@@ -45,7 +45,6 @@ void VMError::install_secondary_signal_handler() {
 // Write a hint to the stream in case siginfo relates to a segv/bus error
 // and the offending address points into CDS archive.
 void VMError::check_failing_cds_access(outputStream* st, const void* siginfo) {
-#if INCLUDE_CDS
   if (siginfo && CDSConfig::is_using_archive()) {
     const EXCEPTION_RECORD* const er = (const EXCEPTION_RECORD*)siginfo;
     if (er->ExceptionCode == EXCEPTION_IN_PAGE_ERROR &&
@@ -59,7 +58,6 @@ void VMError::check_failing_cds_access(outputStream* st, const void* siginfo) {
       }
     }
   }
-#endif
 }
 
 // Error reporting cancellation: there is no easy way to implement this on Windows, because we do

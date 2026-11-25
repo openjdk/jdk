@@ -477,9 +477,9 @@ growMetaNames(jzfile *zip)
     jint i;
     /* double the meta names array */
     const jint new_metacount = zip->metacount << 1;
-    zip->metanames =
-        realloc(zip->metanames, new_metacount * sizeof(zip->metanames[0]));
-    if (zip->metanames == NULL) return -1;
+    char** new_metanames = realloc(zip->metanames, new_metacount * sizeof(zip->metanames[0]));
+    if (new_metanames == NULL) return -1;
+    zip->metanames = new_metanames;
     for (i = zip->metacount; i < new_metacount; i++)
         zip->metanames[i] = NULL;
     zip->metacurrent = zip->metacount;
@@ -954,7 +954,9 @@ readCENHeader(jzfile *zip, jlong cenpos, jint bufsize)
     if (readFullyAt(zfd, cen, bufsize, cenpos) == -1)     goto Catch;
     censize = CENSIZE(cen);
     if (censize <= bufsize) return cen;
-    if ((cen = realloc(cen, censize)) == NULL)              goto Catch;
+    char* new_cen = realloc(cen, censize);
+    if (new_cen == NULL) goto Catch;
+    cen = new_cen;
     if (readFully(zfd, cen+bufsize, censize-bufsize) == -1) goto Catch;
     return cen;
 

@@ -5,12 +5,12 @@
 #ifndef SPA_ENUM_TYPES_H
 #define SPA_ENUM_TYPES_H
 
+#include <spa/utils/type.h>
+#include <spa/pod/pod.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <spa/utils/type.h>
-#include <spa/pod/pod.h>
 
 /**
  * \addtogroup spa_types

@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,9 @@ JDK_SRC_HOME="./../../../../../"
 JAVA="${JAVA_HOME}/bin/java"
 JAVAC="${JAVA_HOME}/bin/javac"
 BUILDLOG_FILE="./build.log"
-SPP_CLASSNAME="build.tools.spp.Spp"
-# Windows: Classpath Separator is ';'
-# Linux: ':'
-SEPARATOR=":"
-TYPEPREFIX=""
+SPP="${JDK_SRC_HOME}/make/jdk/src/classes/build/tools/spp/Spp.java"
+typeprefix=""
+abstractbitsvectortype=""
 TEMPLATE_FILE="unit_tests.template"
 TEST_ITER_COUNT=100
 
@@ -57,7 +55,7 @@ function LogRun () {
 # Windows uses ";", while Unix-based OSes use ":"
 uname_s=$(uname -s)
 VECTORTESTS_HOME_CP=$VECTORTESTS_HOME
-if [ "x${VAR_OS_ENV}" == "xwindows.cygwin" ]; then
+if [ "x${VAR_OS_ENV:-}" == "xwindows.cygwin" ]; then
   VECTORTESTS_HOME_CP=$(cygpath -pw $VECTORTESTS_HOME)
 fi
 

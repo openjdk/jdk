@@ -496,6 +496,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="gregorian">Arminaatu Gregoriyee</type>
 			<type key="calendar" type="gregorian" scope="core">Gregorian</type>
 			<type key="calendar" type="iso8601">ISO-8601 Calendar</type>
+			<type key="calendar" type="iso8601" scope="core">Griogairianach</type>
 			<type key="collation" type="standard">SSO (Toftalin wiñ gën a xam)</type>
 			<type key="collation" type="standard" scope="core">Njàng miir</type>
 			<type key="numbers" type="latn">Siifari Tugal</type>
@@ -785,6 +786,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yMMMd">d MMM y</dateFormatItem>
 						<dateFormatItem id="yMMMEd">E, d MMM y</dateFormatItem>
 						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
+						<dateFormatItem id="yMMMMd" draft="contributed">d MMMM y</dateFormatItem>
+						<dateFormatItem id="yMMMMEd" draft="contributed">EEE, d MMMM y</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
 						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
 					</availableFormats>
@@ -1207,16 +1210,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Etc/Unknown">
 				<exemplarCity>Dëkk buñ xamul</exemplarCity>
 			</zone>
-			<zone type="Europe/London">
+			<metazone type="Acre">
 				<long>
-					<daylight>Waxtu ete bu Grande Bretagne</daylight>
+					<generic>Jamonoy Acre</generic>
+					<standard>Acre waxtu buñ miin</standard>
+					<daylight>Waxtu ete bu Acre</daylight>
 				</long>
-			</zone>
-			<zone type="Europe/Dublin">
-				<long>
-					<daylight>waxtu Irlande</daylight>
-				</long>
-			</zone>
+			</metazone>
 			<metazone type="Afghanistan">
 				<long>
 					<standard>waxtu Afganistan</standard>
@@ -1392,6 +1392,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Brasilia summer time</daylight>
 				</long>
 			</metazone>
+			<metazone type="British">
+				<long>
+					<generic>Waxtu Grande Bretagne</generic>
+					<daylight>Waxtu ete bu Grande Bretagne</daylight>
+				</long>
+			</metazone>
 			<metazone type="Brunei">
 				<long>
 					<standard>Brunei Darussalam</standard>
@@ -1565,6 +1571,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>GMT (waxtu Greenwich)</standard>
 				</long>
 			</metazone>
+			<metazone type="Greenland">
+				<long>
+					<generic>Àm Ghraonlainn</generic>
+					<standard>Àm Coitcheann Ghraonlainn</standard>
+					<daylight>Àm Samhraidh Ghraonlainn</daylight>
+				</long>
+			</metazone>
 			<metazone type="Greenland_Eastern">
 				<long>
 					<generic>waxtu penku Greenland</generic>
@@ -1591,7 +1604,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Hawaii">
 				<long>
-					<standard>Waxtu buñ jagleel Hawaii-Aleutian</standard>
+					<standard>Waxtu Hawaii</standard>
 				</long>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
@@ -1652,6 +1665,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Waxtu bëccëg ci Iran</daylight>
 				</long>
 			</metazone>
+			<metazone type="Irish">
+				<long>
+					<generic>Waxtu Irlande</generic>
+					<daylight>Waxtu estàndaaru Irlande</daylight>
+				</long>
+			</metazone>
 			<metazone type="Irkutsk">
 				<long>
 					<generic>Waxtu rkutsk</generic>
@@ -1671,6 +1690,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Japon</generic>
 					<standard>Waxtu japon</standard>
 					<daylight>Japon waxtu bëccëg</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kamchatka">
+				<long>
+					<generic>Waxtu Kamchatka</generic>
+					<standard>Kamchatka waxtu</standard>
+					<daylight>Jamonoy ete ci Kamchatka</daylight>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan">
@@ -1935,11 +1961,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Sakhalin Sakhalin</daylight>
 				</long>
 			</metazone>
+			<metazone type="Samara">
+				<long>
+					<generic>Waxtu Samara</generic>
+					<standard>Samara Waxtu</standard>
+					<daylight>Waxtu été bu Samara</daylight>
+				</long>
+			</metazone>
 			<metazone type="Samoa">
 				<long>
-					<generic>waxtu Samoa</generic>
 					<standard>Samoa Standard Time</standard>
-					<daylight>Samoa waxtu bëccëg</daylight>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">
@@ -2006,6 +2037,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>Waxtu Chuuk</standard>
 				</long>
 			</metazone>
+			<metazone type="Turkey">
+				<long>
+					<generic>Waxtu Turki</generic>
+					<standard>Jamonoy Turki</standard>
+					<daylight>Jamonoy ete ci Turki</daylight>
+				</long>
+			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
 					<generic>Waxtu Turkmenistan</generic>
@@ -2023,6 +2061,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Waxtu Urugway</generic>
 					<standard>Uruguay waxtu buñ miin</standard>
 					<daylight>Uruguay waxtu ete</daylight>
+				</long>
+			</metazone>
+			<metazone type="Urumqi">
+				<long>
+					<standard>Waxtu Urumqi</standard>
 				</long>
 			</metazone>
 			<metazone type="Uzbekistan">
@@ -2741,7 +2784,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="XCG">
 				<displayName>Gildiye Karayib</displayName>
-				<displayName count="other">Gildiye Karayib</displayName>
 			</currency>
 			<currency type="XOF">
 				<displayName>Franc CFA bu Afrik Sowwu-jant</displayName>
@@ -2767,13 +2809,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="ZWG">
 				<displayName>Zimbabwean ZiG</displayName>
-				<displayName count="other">Zimbabwean ZiG</displayName>
 			</currency>
 		</currencies>
 		<miscPatterns numberSystem="latn">
 			<pattern type="atLeast">⩾{0}</pattern>
 		</miscPatterns>
 		<minimalPairs>
+			<pluralMinimalPairs count="other" draft="contributed">{0} fan</pluralMinimalPairs>
 			<ordinalMinimalPairs ordinal="other">Jël {0} ci ndeyjoor.</ordinalMinimalPairs>
 		</minimalPairs>
 	</numbers>

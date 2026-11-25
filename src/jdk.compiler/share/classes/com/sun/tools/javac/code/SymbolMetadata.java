@@ -199,39 +199,43 @@ public class SymbolMetadata {
     public SymbolMetadata appendUniqueTypes(List<Attribute.TypeCompound> l) {
         if (l.isEmpty()) {
             // no-op
-        } else if (type_attributes.isEmpty()) {
-            type_attributes = l;
+        } else {
+            type_attributes = appendUniqueTypeAttributes(type_attributes, l);
+        }
+        return this;
+    }
+
+    public SymbolMetadata appendUniqueInitTypeAttributes(List<Attribute.TypeCompound> l) {
+        if (l.isEmpty()) {
+            // no-op
+        } else {
+            init_type_attributes = appendUniqueTypeAttributes(init_type_attributes, l);
+        }
+        return this;
+    }
+
+    public SymbolMetadata appendUniqueClassInitTypeAttributes(List<Attribute.TypeCompound> l) {
+        if (l.isEmpty()) {
+            // no-op
+        } else {
+            clinit_type_attributes = appendUniqueTypeAttributes(clinit_type_attributes, l);
+        }
+        return this;
+    }
+
+    private List<Attribute.TypeCompound> appendUniqueTypeAttributes(List<Attribute.TypeCompound> existing,
+                                                                    List<Attribute.TypeCompound> toAppend) {
+        if (existing.isEmpty()) {
+            return toAppend;
         } else {
             // TODO: in case we expect a large number of annotations, this
             // might be inefficient.
-            for (Attribute.TypeCompound tc : l) {
-                if (!type_attributes.contains(tc))
-                    type_attributes = type_attributes.append(tc);
+            for (Attribute.TypeCompound tc : toAppend) {
+                if (!existing.contains(tc))
+                    existing = existing.append(tc);
             }
+            return existing;
         }
-        return this;
-    }
-
-    public SymbolMetadata appendInitTypeAttributes(List<Attribute.TypeCompound> l) {
-        if (l.isEmpty()) {
-            // no-op
-        } else if (init_type_attributes.isEmpty()) {
-            init_type_attributes = l;
-        } else {
-            init_type_attributes = init_type_attributes.appendList(l);
-        }
-        return this;
-    }
-
-    public SymbolMetadata appendClassInitTypeAttributes(List<Attribute.TypeCompound> l) {
-        if (l.isEmpty()) {
-            // no-op
-        } else if (clinit_type_attributes.isEmpty()) {
-            clinit_type_attributes = l;
-        } else {
-            clinit_type_attributes = clinit_type_attributes.appendList(l);
-        }
-        return this;
     }
 
     public SymbolMetadata prepend(List<Attribute.Compound> l) {

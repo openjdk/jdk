@@ -26,6 +26,7 @@
 #define SHARE_GC_G1_G1IHOPCONTROL_HPP
 
 #include "memory/allocation.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/numberSeq.hpp"
 
 class G1Predictions;
@@ -44,7 +45,7 @@ class G1IHOPControl : public CHeapObj<mtGC> {
 
   // The target maximum occupancy of the heap. The target occupancy is the number
   // of bytes when marking should be finished and reclaim started.
-  size_t _target_occupancy;
+  Atomic<size_t> _target_occupancy;
 
   // Percentage of maximum heap capacity we should avoid to touch
   const size_t _heap_reserve_percent;
@@ -79,7 +80,7 @@ class G1IHOPControl : public CHeapObj<mtGC> {
   // The "effective" target occupancy the algorithm wants to keep until the start
   // of Mixed GCs. This is typically lower than the target occupancy, as the
   // algorithm needs to consider restrictions by the environment.
-  size_t effective_target_occupancy() const;
+  size_t effective_target_occupancy(size_t target_occupancy) const;
 
   void print_log(size_t non_young_occupancy,
                  size_t non_humongous_allocation,

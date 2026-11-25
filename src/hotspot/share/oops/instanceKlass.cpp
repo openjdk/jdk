@@ -1780,6 +1780,7 @@ void InstanceKlass::add_to_hierarchy(JavaThread* current) {
     MutexLocker ml(current, Compile_lock);
 
     set_init_state(InstanceKlass::loaded);
+    ClassLoadingService::notify_class_loaded(this, in_aot_cache());
     // make sure init_state store is already done.
     // The compiler reads the hierarchy outside of the Compile_lock.
     // Access ordering is used to add to hierarchy.
@@ -3322,7 +3323,7 @@ bool InstanceKlass::can_be_verified_at_dumptime() const {
     return false;
   }
 
-  if (CDSConfig::is_dumping_final_static_archive() && fail_over_verified()) {
+  if (CDSConfig::is_dumping_aot_cache() && fail_over_verified()) {
     // This is a class with version >50 but was verified with the old verifier in the training run,
     // which had -XX:+AOTClassLinking. However, we are now in the assembly run with -XX:-AOTClassLinking.
     // As AOTSystemDictionary::check_verification_constraints() does not support this case,

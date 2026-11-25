@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "splashscreen_config.h"
 #include "splashscreen_gfx.h"
 #include "jni.h"
+#include <limits.h>
 
 JNIEXPORT int
 SplashLoadMemory(void *pdata, int size); /* requires preloading the file */
@@ -185,9 +186,9 @@ int SplashDecodePngStream(Splash * splash, SplashStream * stream);
 
 int BitmapToYXBandedRectangles(ImageRect * pSrcRect, RECT_T * out);
 
-#define SAFE_TO_ALLOC(c, sz)                                               \
-    (((c) > 0) && ((sz) > 0) &&                                            \
-     ((0xffffffffu / ((unsigned int)(c))) > (unsigned int)(sz)))
+#define SAFE_TO_ALLOC(c, sz) \
+    (((c) > 0) && ((sz) > 0) && \
+     ((size_t)(c) <= (size_t)INT_MAX / (size_t)(sz)))
 
 #define dbgprintf printf
 

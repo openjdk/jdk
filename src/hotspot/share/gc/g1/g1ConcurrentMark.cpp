@@ -451,7 +451,6 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
   _tasks(nullptr),
   _task_queues(new G1CMTaskQueueSet(_max_num_tasks)),
   _terminator(_max_num_tasks, _task_queues),
-  _partial_array_state_manager(new PartialArrayStateManager(_max_num_tasks)),
 
   _first_overflow_barrier_sync(),
   _second_overflow_barrier_sync(),
@@ -552,10 +551,6 @@ bool G1ConcurrentMark::is_in_marking_or_rebuild() const {
 
 bool G1ConcurrentMark::is_in_reset_for_next_cycle() const {
   return cm_thread()->is_in_reset_for_next_cycle();
-}
-
-PartialArrayStateManager* G1ConcurrentMark::partial_array_state_manager() const {
-  return _partial_array_state_manager;
 }
 
 G1ConcurrentMarkThread* G1ConcurrentMark::cm_thread() const {
@@ -871,21 +866,18 @@ void G1ConcurrentMark::cleanup_for_next_mark() {
 
   clear_bitmap(_concurrent_workers, true);
 
-  reset_partial_array_state_manager();
+  reset_partial_array_splitters();
 
   // Should not have changed state yet (even if a Full GC interrupted us).
   guarantee(is_in_reset_for_next_cycle(), "invariant");
 }
 
-void G1ConcurrentMark::reset_partial_array_state_manager() {
+void G1ConcurrentMark::reset_partial_array_splitters() {
+  // All concurrent and remark workers have stopped using partial-array states.
+  // Reset every splitter before marking resumes: stolen tasks may have placed
+  // slots from one splitter's arena on another splitter's free-list.
   for (uint i = 0; i < _max_num_tasks; ++i) {
-    _tasks[i]->unregister_partial_array_splitter();
-  }
-
-  partial_array_state_manager()->reset();
-
-  for (uint i = 0; i < _max_num_tasks; ++i) {
-    _tasks[i]->register_partial_array_splitter();
+    _tasks[i]->reset_partial_array_splitter();
   }
 }
 
@@ -2249,14 +2241,8 @@ void G1CMTask::reset_for_restart() {
   TASKQUEUE_STATS_ONLY(_task_queue->stats.reset());
 }
 
-void G1CMTask::register_partial_array_splitter() {
-
-  ::new (&_partial_array_splitter) PartialArraySplitter(_cm->partial_array_state_manager(),
-                                                        _cm->max_num_tasks());
-}
-
-void G1CMTask::unregister_partial_array_splitter() {
-  _partial_array_splitter.~PartialArraySplitter();
+void G1CMTask::reset_partial_array_splitter() {
+  _partial_array_splitter.reset();
 }
 
 bool G1CMTask::should_exit_termination() {
@@ -3013,7 +2999,7 @@ G1CMTask::G1CMTask(uint worker_id,
   _cm(cm),
   _mark_bitmap(nullptr),
   _task_queue(task_queue),
-  _partial_array_splitter(_cm->partial_array_state_manager(), _cm->max_num_tasks()),
+  _partial_array_splitter(_cm->max_num_tasks()),
   _mark_stats_cache(mark_stats, G1RegionMarkStatsCache::RegionMarkStatsCacheSize),
   _calls(0),
   _time_target_ms(0.0),

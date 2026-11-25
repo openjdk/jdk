@@ -355,8 +355,8 @@ public:
     const Type* res = _opnds[0]->type();
     // The type system around pointers is complex, do not rely on operand type then
     assert(res != nullptr, "must be not null");
-    assert(is_MachTemp() || res->isa_ptr() == nullptr, "must not be a pointer");
-    assert(is_MachTemp() || res->isa_narrowoop() == nullptr, "must not be a narrow oop");
+    assert(is_MachTemp() || !res->is_ptr(), "must not be a pointer");
+    assert(is_MachTemp() || !res->is_narrowoop(), "must not be a narrow oop");
     return res;
   }
 
@@ -478,9 +478,6 @@ public:
   virtual const class Type* bottom_type() const { return TypeRawPtr::NOTNULL; }
   virtual uint ideal_reg() const { return Op_RegP; }
   virtual uint oper_input_base() const { return 1; }
-
-  virtual bool requires_postalloc_expand() const;
-  virtual void postalloc_expand(GrowableArray <Node *> *nodes, PhaseRegAlloc *ra_);
 
   virtual void emit(C2_MacroAssembler* masm, PhaseRegAlloc* ra_) const;
   virtual uint size(PhaseRegAlloc* ra_) const;

@@ -2882,11 +2882,8 @@ void C2_MacroAssembler::element_compare(Register a1, Register a2, Register resul
   vfirst_m(tmp2, vrs);
   bgez(tmp2, DONE);
   sub(cnt, cnt, tmp1);
-  if (!islatin) {
-    slli(tmp1, tmp1, 1); // get byte counts
-  }
-  add(a1, a1, tmp1);
-  add(a2, a2, tmp1);
+  shift_left_add(a1, tmp1, a1, islatin ? 0 : 1, tmp2);
+  shift_left_add(a2, tmp1, a2, islatin ? 0 : 1, tmp2);
   bnez(cnt, loop);
 
   mv(result, true);
@@ -3155,6 +3152,7 @@ void C2_MacroAssembler::string_indexof_char_v(Register str1, Register cnt1,
                                               Register ch, Register result,
                                               Register tmp1, Register tmp2,
                                               bool isL) {
+  assert_different_registers(str1, cnt1, ch, result, tmp1, tmp2);
   mv(result, zr);
 
   Label loop, MATCH, DONE;
@@ -3168,8 +3166,7 @@ void C2_MacroAssembler::string_indexof_char_v(Register str1, Register cnt1,
 
   add(result, result, tmp1);
   sub(cnt1, cnt1, tmp1);
-  if (!isL) slli(tmp1, tmp1, 1);
-  add(str1, str1, tmp1);
+  shift_left_add(str1, tmp1, str1, isL ? 0 : 1, tmp1);
   bnez(cnt1, loop);
 
   mv(result, -1);
@@ -3615,5 +3612,17 @@ void C2_MacroAssembler::slidedown_v(VectorRegister dst, VectorRegister src,
   } else {
     mv(tmp, offset);
     vslidedown_vx(dst, src, tmp);
+  }
+}
+
+// Move elements up a vector register group.
+// Offset is the start index (offset) for the destination.
+void C2_MacroAssembler::slideup_v(VectorRegister dst, VectorRegister src,
+                                  uint32_t offset, Register tmp) {
+  if (is_uimm5(offset)) {
+    vslideup_vi(dst, src, offset);
+  } else {
+    mv(tmp, offset);
+    vslideup_vx(dst, src, tmp);
   }
 }

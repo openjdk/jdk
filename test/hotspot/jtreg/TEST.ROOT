@@ -61,6 +61,7 @@ requires.properties= \
     java.enablePreview \
     vm.simpleArch \
     vm.bits \
+    vm.endian \
     vm.flightRecorder \
     vm.gc.G1 \
     vm.gc.Serial \
