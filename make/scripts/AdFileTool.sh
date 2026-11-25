@@ -32,8 +32,12 @@ die() {
 usage() {
   cat >&2 <<EOF
 Usage:
-  $(basename "$0") verify <ad-file>...
-  $(basename "$0") regenerate <ad-file>...
+  $(basename "$0") [--m4 <path>] verify <ad-file>...
+  $(basename "$0") [--m4 <path>] regenerate <ad-file>...
+
+Options:
+  --m4 <path>
+      Path to the m4 executable to use.
 
 Modes:
   verify
@@ -75,6 +79,24 @@ EOF
 extract_m4_source_file() {
   sed -n 's/.*generated automatically from \(.*_ad\.m4\).*/\1/p' <<< "$1"
 }
+
+M4=m4
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --m4)
+      [[ $# -ge 2 ]] || die "Missing argument for --m4"
+      M4="$2"
+      shift 2
+      ;;
+    verify|regenerate)
+      break
+      ;;
+    *)
+      die "Unknown option: $1"
+      ;;
+  esac
+done
 
 MODE="${1:-}"
 [[ -n "$MODE" ]] || usage
@@ -128,7 +150,7 @@ for adfile in "${adfiles[@]}"; do
 
     generated="$tmpdir/$(basename "$adfile").generated"
 
-    m4 "$m4file" > "$generated"
+    "$M4" "$m4file" > "$generated"
 
     if [[ "$MODE" == "verify" ]]; then
       if ! cmp -s "$generated" "$adfile"; then
@@ -161,7 +183,7 @@ for adfile in "${adfiles[@]}"; do
     section="$tmpdir/${m4base}.section"
     generated="$tmpdir/${m4base}.generated"
 
-    m4 "$m4file" |
+    "$M4" "$m4file" |
     awk \
       -v b="$begin" \
       -v e="$end" '

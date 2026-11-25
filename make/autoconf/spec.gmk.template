@@ -768,6 +768,7 @@ LN := @LN@
 MIG := @MIG@
 MKDIR := @MKDIR@
 MV := @MV@
+M4 := @M4@
 NICE := @NICE@
 PANDOC := @PANDOC@
 TIDY := @TIDY@
