@@ -171,18 +171,19 @@ BOOL AwtMenuItem::CheckMenuCreation(JNIEnv *env, jobject self, HMENU hMenu)
         }
         else
         {
-            TCHAR *buf;
-            FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM,
-                NULL, dw, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                (LPTSTR)&buf, 0, NULL);
-            jstring s = JNU_NewStringPlatform(env, buf);
-            if (s == NULL) {
-                throw std::bad_alloc();
+            TCHAR *buf = NULL;
+            DWORD fret = FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                                       NULL, dw, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&buf, 0, NULL);
+            if (fret != 0) {
+                jstring s = JNU_NewStringPlatform(env, buf);
+                if (s == NULL) {
+                    throw std::bad_alloc();
+                }
+                createError = JNU_NewObjectByName(env, "java/lang/InternalError",
+                                                       "(Ljava/lang/String;)V", s);
+                LocalFree(buf);
+                env->DeleteLocalRef(s);
             }
-            createError = JNU_NewObjectByName(env, "java/lang/InternalError",
-                                                   "(Ljava/lang/String;)V", s);
-            LocalFree(buf);
-            env->DeleteLocalRef(s);
         }
         if (createError == NULL) {
             throw std::bad_alloc();
