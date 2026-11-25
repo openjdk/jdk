@@ -26,15 +26,7 @@
  * @summary Test value class constructor debugging
  * @library ..
  * @enablePreview
- *
- * @comment No other references
  * @run main CtorDebuggingTest
- *
- * @comment All references exist
- * @run main CtorDebuggingTest 1 2 3
- *
- * @comment No reference at step 2
- * @run main CtorDebuggingTest 1 3
  */
 
 import java.io.IOException;
@@ -54,6 +46,7 @@ import com.sun.jdi.IncompatibleThreadStateException;
 import com.sun.jdi.IntegerValue;
 import com.sun.jdi.Location;
 import com.sun.jdi.ObjectReference;
+import com.sun.jdi.OpaqueFrameException;
 import com.sun.jdi.ReferenceType;
 import com.sun.jdi.StackFrame;
 import com.sun.jdi.ThreadReference;
@@ -67,75 +60,73 @@ import com.sun.jdi.request.EventRequest;
 import com.sun.jdi.request.EventRequestManager;
 
 /*
- * The test reproduces scenarios when ObjectReference for value object is fetched during the object construction
- * and the object content is changed later. When "this" ObjectReference for value object is requested,
- * JDI returns existing reference if there are other references to the equal value object or create a new one otherwise.
- * The test debugs "new Value(3,6)" statement by setting breakpoints in Value class constructor at locations
- * when the object being constructed is (0,0), (3,0) and (3,6).
- *
- * Test scenarios are defined by test arguments; TestScaffold passes them creating debuggee process (TargetApp class).
- * Debugsee initializes static fields with value objects (0,0), (3,0), (3,6) depending on the passed arguments.
- * Debugger gets ObjectReferences for the fields before testing.
- *
- * Tested scenarios:
- * - no existing references;
- * - all 3 references exists;
- * - there are references for 1 and 3 breakpoints.
- *
+ * The test reproduces scenarios when "this" for a value object is fetched during
+ * object construction. OpaqueFrameException is expected.
  */
 public class CtorDebuggingTest extends TestScaffold {
-
-    static value class Value {
+    static abstract value class AbstractValueClass {
         int x;
         int y;
-        Value(int x, int y) {
-            this.x = x;                 // @1 breakpoint
-            this.y = y;                 // @2 breakpoint
-            System.out.println(".");    // @3 breakpoint
+        AbstractValueClass(int x, int y) {
+            this.x = x;                 // @0 breakpoint
+            this.y = y;
+            super();
+            System.out.println("AbstractValueClass() after super() call");    // @1 breakpoint
+      }
+    }
+
+    static value class ValueSubClass extends AbstractValueClass {
+        int z;
+        ValueSubClass(int x, int y, int z) {
+            this.z = z;                 // @2 breakpoint
+            super(x, y);
+            System.out.println("ValueSubclass() after super() call");    // @3 breakpoint
+       }
+    }
+
+    static class NonValueSubClass extends AbstractValueClass {
+        int z;
+        NonValueSubClass(int x, int y, int z) {
+            this.z = z;                 // @4 breakpoint
+            super(x, y);
+            System.out.println("NonValueSubClass() after super() call");    // @5 breakpoint
+       }
+    }
+
+    static value class FieldLessValueClass {
+        FieldLessValueClass() {
+            System.out.println("FieldLessValueClass() before super() call");    // @6 breakpoint
+            super();
         }
     }
 
     static class TargetApp {
-        public static Value v1;
-        public static Value v2;
-        public static Value v3;
-
         public static void main(String[] args) throws Exception {
-            // ensure the class is loaded
-            Class.forName(Value.class.getName());
-            List<String> argList = Arrays.asList(args);
-            if (argList.contains("1")) {
-                v1 = new Value(0, 0);
-            }
-            if (argList.contains("2")) {
-                v2 = new Value(3, 0);
-            }
-            if (argList.contains("3")) {
-                v3 = new Value(3, 6);
-            }
+            // ensure the classes are loaded
+            Class.forName(AbstractValueClass.class.getName());
+            Class.forName(ValueSubClass.class.getName());
+            Class.forName(NonValueSubClass.class.getName());
+            Class.forName(FieldLessValueClass.class.getName());
             System.out.println(">>main"); // @prepared breakpoint
-            Value v = new Value(3, 6);
+            ValueSubClass       v1 = new ValueSubClass(3, 6, 9);
+            NonValueSubClass    v2 = new NonValueSubClass(3, 6, 9);
+            FieldLessValueClass v3 = new FieldLessValueClass();
             System.out.println("<<main"); // @done breakpoint
         }
     }
 
+    enum BreakpointResult {
+        GOT_OFE,
+        NO_OFE,
+        NO_OFE_NULL_THIS
+    }
 
     public static void main(String[] args) throws Exception {
         new CtorDebuggingTest(args).startTests();
     }
 
-    Field xField;
-    Field yField;
-
     CtorDebuggingTest(String args[]) {
         super(args);
-    }
-
-    ObjectReference getStaticFieldObject(ReferenceType cls, String fieldName) throws Exception {
-        Field field = cls.fieldByName(fieldName);
-        ObjectReference result = (ObjectReference)cls.getValue(field);
-        System.out.println(fieldName + " static field: " + valueString(result));
-        return result;
     }
 
     ObjectReference getThisObject(BreakpointEvent bkptEvent) {
@@ -143,34 +134,6 @@ public class CtorDebuggingTest extends TestScaffold {
             return bkptEvent.thread().frame(0).thisObject();
         } catch (IncompatibleThreadStateException ex) {
             throw new RuntimeException("Cannot get 'this' object", ex);
-        }
-    }
-
-    String valueString(ObjectReference obj) {
-        if (obj == null) {
-            return "null";
-        }
-        IntegerValue ix = (IntegerValue)obj.getValue(xField);
-        IntegerValue iy = (IntegerValue)obj.getValue(yField);
-        return obj + " (" + "x: " + ix + ", y: " + iy + ")";
-    }
-
-    void assertEquals(Object obj1, Object obj2) {
-        if (!Objects.equals(obj1, obj2)) {
-            throw new RuntimeException("Must be equal: " + obj1 + " and " + obj2);
-        }
-        // Sanity check that equal objects has equal hashCode.
-        if (obj1 != null) {
-            if (obj1.hashCode() != obj2.hashCode()) {
-                throw new RuntimeException("Equal objects have different hashCode: "
-                                           + obj1.hashCode() + " and " + obj2.hashCode());
-            }
-        }
-    }
-
-    void assertNotEquals(Object obj1, Object obj2) {
-        if (Objects.equals(obj1, obj2)) {
-            throw new RuntimeException("Must be different: " + obj1 + " and " + obj2);
         }
     }
 
@@ -234,8 +197,7 @@ public class CtorDebuggingTest extends TestScaffold {
     // This helper class is a listener which resumes debuggee after breakpoints.
     class MultiBreakpointHandler extends TargetAdapter {
         boolean needToResume = false;
-        // the map stores "this" in all breakpoints
-        Map<BreakpointRequest, ObjectReference> thisObjects = new HashMap<>();
+        Map<BreakpointRequest, BreakpointResult> breakpointResults = new HashMap<>();
 
         @Override
         public void eventSetComplete(EventSet set) {
@@ -245,37 +207,40 @@ public class CtorDebuggingTest extends TestScaffold {
             }
         }
 
-        BreakpointRequest addBreakpoint(Location loc, ObjectReference filterObject) {
+        BreakpointRequest addBreakpoint(Location loc) {
             final BreakpointRequest request = eventRequestManager().createBreakpointRequest(loc);
-            if (filterObject != null) {
-                request.addInstanceFilter(filterObject);
-            }
             request.enable();
 
             TargetAdapter adapter = new TargetAdapter() {
                 @Override
                 public void breakpointReached(BreakpointEvent event) {
                     if (request.equals(event.request())) {
-                        ObjectReference thisObject = getThisObject(event);
-                        System.out.println("BreakpointEvent: " + event
-                                           + " (instanceFilter: " + valueString(filterObject) + ")"
-                                           + ", this = " + valueString(thisObject));
-                        thisObjects.put((BreakpointRequest)event.request(), thisObject);
+                        BreakpointRequest eventReq = (BreakpointRequest)event.request();
+                        System.out.println("BreakpointEvent: " + event);
+                        BreakpointResult result;
+                        try {
+                            ObjectReference thisObject = getThisObject(event);
+                            result = thisObject != null ? BreakpointResult.NO_OFE
+                                                        : BreakpointResult.NO_OFE_NULL_THIS;
+                        } catch (OpaqueFrameException e) {
+                            result = BreakpointResult.GOT_OFE;
+                            throw new RuntimeException(e);
+                        }
+                        breakpointResults.put(eventReq, result);
+                        System.out.println("BreakpointEvent: result = " + result);
                         needToResume = true;
+                        event.request().disable();
                         removeThisListener();
                     }
                 }
             };
 
             addListener(adapter);
-
-            System.out.println("Breakpoint added: " + loc
-                               + " (instanceFilter: " + valueString(filterObject) + ")");
-
+            System.out.println("Breakpoint added: " + loc);
             return request;
         }
 
-        // Resumes the debuggee and goes through all breackpoints until the location specified is reached.
+        // Resumes the debuggee and goes through all breakpoints until the location specified is reached.
         void resumeTo(Location loc) {
             final BreakpointRequest request = eventRequestManager().createBreakpointRequest(loc);
             request.enable();
@@ -312,7 +277,7 @@ public class CtorDebuggingTest extends TestScaffold {
                 synchronized (en) {
                     vm().resume();
                     while (!en.completed && !en.disconnected) {
-                        en.wait();
+                        en.wait(5000);
                     }
                 }
             } catch (InterruptedException e) {
@@ -323,15 +288,6 @@ public class CtorDebuggingTest extends TestScaffold {
             if (en.disconnected) {
                 throw new RuntimeException("VM Disconnected before requested event occurred");
             }
-        }
-
-        // check if the breakpoint was hit.
-        boolean breakpointHit(BreakpointRequest bkpt) {
-            return thisObjects.containsKey(bkpt);
-        }
-
-        ObjectReference thisAtBreakpoint(BreakpointRequest bkpt) {
-            return thisObjects.get(bkpt);
         }
     }
 
@@ -352,88 +308,78 @@ public class CtorDebuggingTest extends TestScaffold {
         resumeTo(locPrepared);
         System.out.println("PREPARED");
 
-        ClassType valueClass = (ClassType)findReferenceType(Value.class.getName());
-        System.out.println(Value.class.getName() + ": " + valueClass);
-        xField = valueClass.fieldByName("x");
-        yField = valueClass.fieldByName("y");
+        ClassType abstractValueClass = (ClassType)findReferenceType(AbstractValueClass.class.getName());
+        System.out.println(AbstractValueClass.class.getName() + ": " + abstractValueClass);
+        ClassType valueSubClass = (ClassType)findReferenceType(ValueSubClass.class.getName());
+        System.out.println(ValueSubClass.class.getName() + ": " + valueSubClass);
+        ClassType nonValueSubClass = (ClassType)findReferenceType(NonValueSubClass.class.getName());
+        System.out.println(NonValueSubClass.class.getName() + ": " + nonValueSubClass);
+        ClassType fieldLessValueClass = (ClassType)findReferenceType(FieldLessValueClass.class.getName());
+        System.out.println(FieldLessValueClass.class.getName() + ": " + fieldLessValueClass);
 
-        verifyClassIsValueClass(valueClass, true);
+        verifyClassIsValueClass(abstractValueClass, true);
+        verifyClassIsValueClass(valueSubClass, true);
+        verifyClassIsValueClass(nonValueSubClass, false);
+        verifyClassIsValueClass(fieldLessValueClass, true);
         verifyClassIsValueClass(targetClass, false);
-
-        // Get references for pre-created objects created by debuggee.
-        ObjectReference v1 = getStaticFieldObject(targetClass, "v1");
-        ObjectReference v2 = getStaticFieldObject(targetClass, "v2");
-        ObjectReference v3 = getStaticFieldObject(targetClass, "v3");
 
         MultiBreakpointHandler breakpointHandler = new MultiBreakpointHandler();
 
-        // Breakpoints for location when "this" is (0,0).
-        Location loc1 = findLocation(valueClass, breakpoints.get("1"));
-        BreakpointRequest bkpt1 = breakpointHandler.addBreakpoint(loc1, null);
-        BreakpointRequest bkpt1_v1 = v1 == null ? null : breakpointHandler.addBreakpoint(loc1, v1);
-        BreakpointRequest bkpt1_v2 = v2 == null ? null : breakpointHandler.addBreakpoint(loc1, v2);
-        BreakpointRequest bkpt1_v3 = v3 == null ? null : breakpointHandler.addBreakpoint(loc1, v3);
+        final int NUM_BREAKPOINTS = 7;
+        BreakpointRequest bpReqs[] = new BreakpointRequest[NUM_BREAKPOINTS];
+        Location loc;
 
-        // Breakpoints for location when "this" is (3,0).
-        Location loc2 = findLocation(valueClass, breakpoints.get("2"));
-        BreakpointRequest bkpt2 = breakpointHandler.addBreakpoint(loc2, null);
-        BreakpointRequest bkpt2_v1 = v1 == null ? null : breakpointHandler.addBreakpoint(loc2, v1);
-        BreakpointRequest bkpt2_v2 = v2 == null ? null : breakpointHandler.addBreakpoint(loc2, v2);
-        BreakpointRequest bkpt2_v3 = v3 == null ? null : breakpointHandler.addBreakpoint(loc2, v3);
+        loc = findLocation(abstractValueClass, breakpoints.get("0"));
+        bpReqs[0] = breakpointHandler.addBreakpoint(loc);
+        loc = findLocation(abstractValueClass, breakpoints.get("1"));
+        bpReqs[1] = breakpointHandler.addBreakpoint(loc);
 
-        // Breakpoints for location when "this" is (3,6).
-        Location loc3 = findLocation(valueClass, breakpoints.get("3"));
-        BreakpointRequest bkpt3 = breakpointHandler.addBreakpoint(loc3, null);
-        BreakpointRequest bkpt3_v1 = v1 == null ? null : breakpointHandler.addBreakpoint(loc3, v1);
-        BreakpointRequest bkpt3_v2 = v2 == null ? null : breakpointHandler.addBreakpoint(loc3, v2);
-        BreakpointRequest bkpt3_v3 = v3 == null ? null : breakpointHandler.addBreakpoint(loc3, v3);
+        loc = findLocation(valueSubClass, breakpoints.get("2"));
+        bpReqs[2] = breakpointHandler.addBreakpoint(loc);
+        loc = findLocation(valueSubClass, breakpoints.get("3"));
+        bpReqs[3] = breakpointHandler.addBreakpoint(loc);
+
+        loc = findLocation(nonValueSubClass, breakpoints.get("4"));
+        bpReqs[4] = breakpointHandler.addBreakpoint(loc);
+        loc = findLocation(nonValueSubClass, breakpoints.get("5"));
+        bpReqs[5] = breakpointHandler.addBreakpoint(loc);
+
+        loc = findLocation(fieldLessValueClass, breakpoints.get("6"));
+        bpReqs[6] = breakpointHandler.addBreakpoint(loc);
 
         // Go through all breakpoints.
         breakpointHandler.resumeTo(locDone);
 
+        resumeToVMDisconnect();
         System.out.println("DONE");
 
-        // Analyze gathered data depending on the testcase.
-        if (v1 == null && v2 == null && v3 == null) {
-            // No other references.
-            // ObjectID is generated at the 1st breakpoint (reference to a snapshot of heap object being constructed),
-            // and later we get snapshots of the updated oop as its content is changing.
-            assertNotEquals(breakpointHandler.thisAtBreakpoint(bkpt1), breakpointHandler.thisAtBreakpoint(bkpt2));
-            assertNotEquals(breakpointHandler.thisAtBreakpoint(bkpt2), breakpointHandler.thisAtBreakpoint(bkpt3));
-            // There is no breakpoints with instance filter.
-        } else if (v1 != null && v2 != null && v3 != null) {
-            // Existing references to value objects with the same content as the object being constructed.
-            assertEquals(breakpointHandler.thisAtBreakpoint(bkpt1), v1);
-            assertEquals(breakpointHandler.thisAtBreakpoint(bkpt1_v1), v1);
-            assertEquals(breakpointHandler.thisAtBreakpoint(bkpt1_v2), null);
-            assertEquals(breakpointHandler.thisAtBreakpoint(bkpt1_v3), null);
-            assertEquals(breakpointHandler.thisAtBreakpoint(bkpt2), v2);
-            assertEquals(breakpointHandler.thisAtBreakpoint(bkpt2_v1), null);
-            assertEquals(breakpointHandler.thisAtBreakpoint(bkpt2_v2), v2);
-            assertEquals(breakpointHandler.thisAtBreakpoint(bkpt2_v3), null);
-            assertEquals(breakpointHandler.thisAtBreakpoint(bkpt3), v3);
-            assertEquals(breakpointHandler.thisAtBreakpoint(bkpt3_v1), null);
-            assertEquals(breakpointHandler.thisAtBreakpoint(bkpt3_v2), null);
-            assertEquals(breakpointHandler.thisAtBreakpoint(bkpt3_v3), v3);
-        } else if (v1 != null && v2 == null && v3 != null) {
-            // At 2nd breakpoint new ObjectID is generated.
-            ObjectReference thisAt2 = breakpointHandler.thisAtBreakpoint(bkpt2);
-            assertNotEquals(thisAt2, null);
-            assertNotEquals(thisAt2, v1);
-            // Now thisAt2 should not have the same content as v3.
-            assertNotEquals(thisAt2, v3);
-            // At breakpoint 1 this == v1.
-            assertEquals(breakpointHandler.thisAtBreakpoint(bkpt1), v1);
-            assertEquals(breakpointHandler.thisAtBreakpoint(bkpt1_v1), v1);
-            assertEquals(breakpointHandler.thisAtBreakpoint(bkpt1_v3), null);
-            // At breakpoint 3 this == v3.
-            assertEquals(breakpointHandler.thisAtBreakpoint(bkpt3), v3);
-            assertEquals(breakpointHandler.thisAtBreakpoint(bkpt3_v1), null);
-            assertEquals(breakpointHandler.thisAtBreakpoint(bkpt3_v3), v3);
-        } else {
-            throw new RuntimeException("Unknown test case");
+        // Check to make sure each breakpoint was hit and resulted in OpaqueFrameException when
+        // accessing "this", except for breakoint 6, which should not result in OpaqueFrameException
+        boolean failed = false;
+        for (int i = 0; i < NUM_BREAKPOINTS; i++) {
+            BreakpointResult result = breakpointHandler.breakpointResults.get(bpReqs[i]);
+            if (result == null) {
+                System.out.println("ERROR: Missed breakpoint " + i);
+                failed = true;
+            } else if (i == 6) {
+                if (result == BreakpointResult.GOT_OFE) {
+                    System.out.println("ERROR: Got OpaqueFrameException at breakpoint " + i);
+                    failed = true;
+                } else if (result == BreakpointResult.NO_OFE_NULL_THIS) {
+                    System.out.println("ERROR: Got null 'this' at breakpoint " + i);
+                    failed = true;
+                } else {
+                    System.out.println("PASSED: Got `this` at breakpoint " + i);
+                }
+            } else if (i != 6 && result != BreakpointResult.GOT_OFE) {
+                System.out.println("ERROR: Failed to get OpaqueFrameException at breakpoint " + i);
+                failed = true;
+            } else {
+                System.out.println("PASSED: Got OpaqueFrameException at breakpoint " + i);
+            }
         }
-
-        resumeToVMDisconnect();
+        if (failed) {
+            throw new RuntimeException("One or more missing or unexpected OpaqueFrameExceptions");
+        }
     }
 }
