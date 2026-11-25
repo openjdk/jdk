@@ -2869,27 +2869,63 @@ void C2_MacroAssembler::java_round_double_v(VectorRegister dst, VectorRegister s
 }
 
 void C2_MacroAssembler::element_compare(Register a1, Register a2, Register result, Register cnt, Register tmp1, Register tmp2,
-                                        VectorRegister vr1, VectorRegister vr2, VectorRegister vrs, bool islatin, Label &DONE,
-                                        Assembler::LMUL lmul) {
-  Label loop;
+                                        bool islatin, Label &DIFF) {
   Assembler::SEW sew = islatin ? Assembler::e8 : Assembler::e16;
 
-  bind(loop);
-  vsetvli(tmp1, cnt, sew, lmul);
-  vlex_v(vr1, a1, sew);
-  vlex_v(vr2, a2, sew);
-  vmsne_vv(vrs, vr1, vr2);
-  vfirst_m(tmp2, vrs);
-  bgez(tmp2, DONE);
-  sub(cnt, cnt, tmp1);
-  if (!islatin) {
-    slli(tmp1, tmp1, 1); // get byte counts
-  }
-  add(a1, a1, tmp1);
-  add(a2, a2, tmp1);
-  bnez(cnt, loop);
+  Label COMPARE_ONCE, COMPARE_M2, LARGE, LOOP, SAME;
+  // Callers reserve v4-v7 as implicit vector TEMP operands in their .ad rules.
+  // v4 and v6 start non-overlapping register groups aligned for LMUL=m2.
+  const VectorRegister va = v4;
+  const VectorRegister vb = v6;
+  const int elems_m1 = MaxVectorSize / (islatin ? 1 : 2);
 
-  mv(result, true);
+  // Short input: one vl-bounded m1 compare, no loop.
+  mv(tmp1, elems_m1);
+  bgt(cnt, tmp1, COMPARE_M2);
+  vsetvli(tmp1, cnt, sew, Assembler::m1, Assembler::ma, Assembler::ta);
+  bind(COMPARE_ONCE);
+  vlex_v(va, a1, sew);
+  vlex_v(vb, a2, sew);
+  vmsne_vv(va, va, vb);
+  vfirst_m(tmp2, va);
+  bgez(tmp2, DIFF);
+  j(SAME);
+
+  // Medium input: one vl-bounded m2 compare.
+  bind(COMPARE_M2);
+  mv(tmp1, 2 * elems_m1);
+  bgt(cnt, tmp1, LARGE);
+  vsetvli(tmp1, cnt, sew, Assembler::m2, Assembler::ma, Assembler::ta);
+  j(COMPARE_ONCE);
+
+  // Long input: full m2 groups at fixed vl, then one vl-bounded
+  // compare covering the tail.
+
+  const int large_loop_size = 2 * MaxVectorSize;
+
+  bind(LARGE);
+  vsetvli(tmp1, x0, sew, Assembler::m2, Assembler::ma, Assembler::ta);
+
+  bind(LOOP);
+  vlex_v(va, a1, sew);
+  vlex_v(vb, a2, sew);
+  vmsne_vv(va, va, vb);
+  vfirst_m(tmp2, va);
+  bgez(tmp2, DIFF);
+  sub(cnt, cnt, tmp1);
+  add(a1, a1, large_loop_size, tmp2);
+  add(a2, a2, large_loop_size, tmp2);
+  bge(cnt, tmp1, LOOP);
+  beqz(cnt, SAME);
+
+  // Tail: one vl-bounded m2 compare covers the rest.
+  vsetvli(tmp1, cnt, sew, Assembler::m2, Assembler::ma, Assembler::ta);
+  j(COMPARE_ONCE);
+
+  bind(SAME);
+  if (result != zr) {
+    mv(result, true);
+  }
 }
 
 void C2_MacroAssembler::string_equals_v(Register a1, Register a2, Register result, Register cnt) {
@@ -2901,7 +2937,7 @@ void C2_MacroAssembler::string_equals_v(Register a1, Register a2, Register resul
 
   mv(result, false);
 
-  element_compare(a1, a2, result, cnt, tmp1, tmp2, v2, v4, v2, true, DONE, Assembler::m2);
+  element_compare(a1, a2, result, cnt, tmp1, tmp2, true, DONE);
 
   bind(DONE);
   BLOCK_COMMENT("} string_equals_v");
@@ -2959,7 +2995,7 @@ void C2_MacroAssembler::arrays_equals_v(Register a1, Register a2, Register resul
   la(a1, Address(a1, base_offset));
   la(a2, Address(a2, base_offset));
 
-  element_compare(a1, a2, result, cnt1, tmp1, tmp2, v2, v4, v2, elem_size == 1, DONE, Assembler::m2);
+  element_compare(a1, a2, result, cnt1, tmp1, tmp2, elem_size == 1, DONE);
 
   bind(DONE);
 
@@ -2975,8 +3011,6 @@ void C2_MacroAssembler::string_compare_v(Register str1, Register str2, Register 
 
   bool str1_isL = encLL || encLU;
   bool str2_isL = encLL || encUL;
-
-  int minCharsInWord = encLL ? wordSize : wordSize / 2;
 
   BLOCK_COMMENT("string_compare_v {");
 
@@ -2998,13 +3032,7 @@ void C2_MacroAssembler::string_compare_v(Register str1, Register str2, Register 
   // Please check below document for string size distribution statistics.
   // https://cr.openjdk.org/~shade/density/string-density-report.pdf
   if (str1_isL == str2_isL) { // LL or UU
-    // Below construction of v regs and lmul is based on test on 2 different boards,
-    // vlen == 128 and vlen == 256 respectively.
-    if (!encLL && MaxVectorSize == 16) { // UU
-      element_compare(str1, str2, zr, cnt2, tmp1, tmp2, v4, v8, v4, encLL, DIFFERENCE, Assembler::m4);
-    } else { // UU + MaxVectorSize or LL
-      element_compare(str1, str2, zr, cnt2, tmp1, tmp2, v2, v4, v2, encLL, DIFFERENCE, Assembler::m2);
-    }
+    element_compare(str1, str2, zr, cnt2, tmp1, tmp2, encLL, DIFFERENCE);
 
     j(DONE);
   } else { // LU or UL
