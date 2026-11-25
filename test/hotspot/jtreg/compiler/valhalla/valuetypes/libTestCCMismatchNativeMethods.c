@@ -26,18 +26,8 @@
 JNIEXPORT jint JNICALL
 Java_compiler_valhalla_valuetypes_B1_m1(JNIEnv* env, jobject receiver, jobject vt1, jobject vt2) {
   jclass cls = (*env)->GetObjectClass(env, vt2);
-  jfieldID fid0 = (*env)->GetFieldID(env, cls, "x0", "I");
-  jfieldID fid1 = (*env)->GetFieldID(env, cls, "x1", "I");
-  jfieldID fid2 = (*env)->GetFieldID(env, cls, "x2", "I");
-  jfieldID fid3 = (*env)->GetFieldID(env, cls, "x3", "I");
-  jfieldID fid4 = (*env)->GetFieldID(env, cls, "x4", "I");
-  jfieldID fid5 = (*env)->GetFieldID(env, cls, "x5", "I");
-  return (*env)->GetIntField(env, vt2, fid0) +
-    (*env)->GetIntField(env, vt2, fid1) +
-    (*env)->GetIntField(env, vt2, fid2) +
-    (*env)->GetIntField(env, vt2, fid3) +
-    (*env)->GetIntField(env, vt2, fid4) +
-    (*env)->GetIntField(env, vt2, fid5);
+  jmethodID mid = (*env)->GetMethodID(env, cls, "sum", "()I");
+  return (*env)->CallIntMethod(env, vt2, mid);
 }
 
 JNIEXPORT jobject JNICALL
@@ -50,18 +40,8 @@ Java_compiler_valhalla_valuetypes_B1_m2(JNIEnv* env, jobject receiver) {
 JNIEXPORT jint JNICALL
 Java_compiler_valhalla_valuetypes_D2_m1(JNIEnv* env, jobject receiver, jobject vt1, jobject vt2) {
   jclass cls = (*env)->GetObjectClass(env, vt2);
-  jfieldID fid0 = (*env)->GetFieldID(env, cls, "x0", "I");
-  jfieldID fid1 = (*env)->GetFieldID(env, cls, "x1", "I");
-  jfieldID fid2 = (*env)->GetFieldID(env, cls, "x2", "I");
-  jfieldID fid3 = (*env)->GetFieldID(env, cls, "x3", "I");
-  jfieldID fid4 = (*env)->GetFieldID(env, cls, "x4", "I");
-  jfieldID fid5 = (*env)->GetFieldID(env, cls, "x5", "I");
-  return (*env)->GetIntField(env, vt2, fid0) +
-    (*env)->GetIntField(env, vt2, fid1) +
-    (*env)->GetIntField(env, vt2, fid2) +
-    (*env)->GetIntField(env, vt2, fid3) +
-    (*env)->GetIntField(env, vt2, fid4) +
-    (*env)->GetIntField(env, vt2, fid5);
+  jmethodID mid = (*env)->GetMethodID(env, cls, "sum", "()I");
+  return (*env)->CallIntMethod(env, vt2, mid);
 }
 
 JNIEXPORT jobject JNICALL
@@ -74,22 +54,8 @@ Java_compiler_valhalla_valuetypes_D2_m2(JNIEnv* env, jobject receiver) {
 JNIEXPORT jint JNICALL
 Java_compiler_valhalla_valuetypes_V1_add(JNIEnv* env, jobject receiver, jobject vt1) {
   jclass cls = (*env)->GetObjectClass(env, receiver);
-  jfieldID fid0 = (*env)->GetFieldID(env, cls, "x0", "I");
-  jfieldID fid1 = (*env)->GetFieldID(env, cls, "x1", "I");
-  jfieldID fid2 = (*env)->GetFieldID(env, cls, "x2", "I");
-  jfieldID fid3 = (*env)->GetFieldID(env, cls, "x3", "I");
-  jfieldID fid4 = (*env)->GetFieldID(env, cls, "x4", "I");
-  jfieldID fid5 = (*env)->GetFieldID(env, cls, "x5", "I");
-  return (*env)->GetIntField(env, receiver, fid0) +
-    (*env)->GetIntField(env, receiver, fid1) +
-    (*env)->GetIntField(env, receiver, fid2) +
-    (*env)->GetIntField(env, receiver, fid3) +
-    (*env)->GetIntField(env, receiver, fid4) +
-    (*env)->GetIntField(env, receiver, fid5) +
-    (*env)->GetIntField(env, vt1, fid0) +
-    (*env)->GetIntField(env, vt1, fid1) +
-    (*env)->GetIntField(env, vt1, fid2) +
-    (*env)->GetIntField(env, vt1, fid3) +
-    (*env)->GetIntField(env, vt1, fid4) +
-    (*env)->GetIntField(env, vt1, fid5);
+  jmethodID mid = (*env)->GetMethodID(env, cls, "sum", "()I");
+  jint res1 = (*env)->CallIntMethod(env, receiver, mid);
+  jint res2 = (*env)->CallIntMethod(env, vt1, mid);
+  return (jint)(((unsigned int)res1) + ((unsigned int)res2));
 }

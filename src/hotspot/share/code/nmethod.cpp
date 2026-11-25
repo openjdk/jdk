@@ -1258,14 +1258,14 @@ void nmethod::init_defaults(CodeBuffer *code_buffer, const CodeOffsets* offsets)
   _skipped_instructions_size = code_buffer->total_skipped_instructions_size();
 
   if (offsets->value(CodeOffsets::Value_Entry) != CodeOffsets::no_such_entry_point) {
-    CHECKED_CAST(_value_entry_offset            , uint16_t, offsets->value(CodeOffsets::Value_Entry));
+    CHECKED_CAST(_value_entry_offset, uint16_t, offsets->value(CodeOffsets::Value_Entry));
   } else {
-    _value_entry_offset             = _entry_offset;
+    _value_entry_offset = _entry_offset;
   }
   if (offsets->value(CodeOffsets::Verified_Value_Entry) != CodeOffsets::no_such_entry_point) {
-    CHECKED_CAST(_verified_value_entry_offset   , uint16_t, offsets->value(CodeOffsets::Verified_Value_Entry));
+    CHECKED_CAST(_verified_value_entry_offset, uint16_t, offsets->value(CodeOffsets::Verified_Value_Entry));
   } else {
-    _verified_value_entry_offset    = _verified_entry_offset;
+    _verified_value_entry_offset = _verified_entry_offset;
   }
   if (offsets->value(CodeOffsets::Verified_Value_Entry_RO) != CodeOffsets::no_such_entry_point) {
     CHECKED_CAST(_verified_value_ro_entry_offset, uint16_t, offsets->value(CodeOffsets::Verified_Value_Entry_RO));

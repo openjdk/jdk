@@ -629,7 +629,7 @@ void LIR_Assembler::emit_std_entries() {
     assert(ValueTypePassFieldsAsArgs, "must be");
     CompiledEntrySignature ces(method()->get_Method());
     ces.compute_calling_conventions(false);
-    CodeOffsets::Entries ro_entry_type = ces.c1_value_ro_entry_type();
+    CodeOffsets::Entries ro_entry_type = ces.c1_native_value_ro_entry_type();
 
     // UEP: check icache and fall-through
     if (ro_entry_type != CodeOffsets::Verified_Value_Entry) {

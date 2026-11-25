@@ -27,6 +27,7 @@ import jdk.test.lib.Utils;
 import jdk.test.whitebox.WhiteBox;
 import jdk.internal.vm.annotation.LooselyConsistentValue;
 import jdk.internal.vm.annotation.NullRestricted;
+import jdk.test.lib.Asserts;
 
 /*
  * @test
@@ -35,9 +36,11 @@ import jdk.internal.vm.annotation.NullRestricted;
  * @enablePreview
  * @library /test/lib
  * @modules java.base/jdk.internal.vm.annotation
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
- * @run main/othervm -Xbatch -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:-WhiteBoxAPI ${test.main.class}
- * @run main/othervm -Xbatch -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:-WhiteBoxAPI
+ * @run main/othervm -Xbatch -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI ${test.main.class}
+ * @run main/othervm -Xbatch -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   -XX:+IgnoreUnrecognizedVMOptions -XX:ThrowOOMEAtC2iC1NativeEntryPoints=3 ${test.main.class}
  */
 
@@ -46,6 +49,8 @@ public class TestCCMismatchNativeMethods {
     static {
         System.loadLibrary("TestCCMismatchNativeMethods");
     }
+
+    private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
 
     static public int test1(A1 a) {
         return a.m1(myObject.v1, myObject.v1);
@@ -92,57 +97,29 @@ public class TestCCMismatchNativeMethods {
         V1 v1 = myObject.v1;
         try {
             for (int i = 0; i < 20_000; i++) {
-                if (test1(a1) != v1.sum()) {
-                    throw new RuntimeException("incorrect result");
-                }
-                if (test1(b1) != v1.sum()) {
-                    throw new RuntimeException("incorrect result");
-                }
-                if (test1(c1) != v1.sum()) {
-                    throw new RuntimeException("incorrect result");
-                }
-                if (test2(a2, v1) != v1.sum()) {
-                    throw new RuntimeException("incorrect result");
-                }
-                if (test2(b2, v1) != v1.sum()) {
-                    throw new RuntimeException("incorrect result");
-                }
-                if (test2(c2, v1) != v1.sum()) {
-                    throw new RuntimeException("incorrect result");
-                }
-                if (test3(a1) != v1.sum()) {
-                    throw new RuntimeException("incorrect result");
-                }
-                if (test3(b1) != v1.sum()) {
-                    throw new RuntimeException("incorrect result");
-                }
-                if (test3(c1) != v1.sum()) {
-                    throw new RuntimeException("incorrect result");
-                }
-                if (test4(a2) != v1.sum()) {
-                    throw new RuntimeException("incorrect result");
-                }
-                if (test4(b2) != v1.sum()) {
-                    throw new RuntimeException("incorrect result");
-                }
-                if (test4(c2) != v1.sum()) {
-                    throw new RuntimeException("incorrect result");
-                }
-                if (test5(v1, v1) != v1.sum() * 2) {
-                    throw new RuntimeException("incorrect result");
-                }
-                if (test5(new A3(), v1) != v1.sum() * 2) {
-                    throw new RuntimeException("incorrect result");
-                }
-                if (test5(new A4(), v1) != v1.sum() * 2) {
-                    throw new RuntimeException("incorrect result");
-                }
+                Asserts.assertEQ(test1(a1), v1.sum());
+                Asserts.assertEQ(test1(b1), v1.sum());
+                Asserts.assertEQ(test1(c1), v1.sum());
+                Asserts.assertEQ(test2(a2, v1), v1.sum());
+                Asserts.assertEQ(test2(b2, v1), v1.sum());
+                Asserts.assertEQ(test2(c2, v1), v1.sum());
+                Asserts.assertEQ(test3(a1), v1.sum());
+                Asserts.assertEQ(test3(b1), v1.sum());
+                Asserts.assertEQ(test3(c1), v1.sum());
+                Asserts.assertEQ(test4(a2), v1.sum());
+                Asserts.assertEQ(test4(b2), v1.sum());
+                Asserts.assertEQ(test4(c2), v1.sum());
+                Asserts.assertEQ(test5(v1, v1), v1.sum() * 2);
+                Asserts.assertEQ(test5(new A3(), v1), v1.sum() * 2);
+                Asserts.assertEQ(test5(new A4(), v1), v1.sum() * 2);
             }
             UnloadedClass.loadClassAndRerun();
         } catch (OutOfMemoryError oome) {
             oom = true;
         }
-
+        if (oom != (WHITE_BOX.getIntVMFlag("ThrowOOMEAtC2iC1NativeEntryPoints").intValue() == 3)) {
+            throw new RuntimeException(oom ? "unexpected OOME" : "no OOME");
+        }
     }
 }
 
@@ -157,30 +134,14 @@ class UnloadedClass {
         D2 d2 = new D2();
         V1 v1 = TestCCMismatchNativeMethods.myObject.v1;
         for (int i = 0; i < 20_000; i++) {
-            if (TestCCMismatchNativeMethods.test2(a2, v1) != v1.sum()) {
-                throw new RuntimeException("incorrect result");
-            }
-            if (TestCCMismatchNativeMethods.test2(b2, v1) != v1.sum()) {
-                throw new RuntimeException("incorrect result");
-            }
-            if (TestCCMismatchNativeMethods.test2(c2, v1) != v1.sum()) {
-                throw new RuntimeException("incorrect result");
-            }
-            if (TestCCMismatchNativeMethods.test2(d2, v1) != v1.sum()) {
-                throw new RuntimeException("incorrect result");
-            }
-            if (TestCCMismatchNativeMethods.test4(a2) != v1.sum()) {
-                throw new RuntimeException("incorrect result");
-            }
-            if (TestCCMismatchNativeMethods.test4(b2) != v1.sum()) {
-                throw new RuntimeException("incorrect result");
-            }
-            if (TestCCMismatchNativeMethods.test4(c2) != v1.sum()) {
-                throw new RuntimeException("incorrect result");
-            }
-            if (TestCCMismatchNativeMethods.test4(d2) != v1.sum()) {
-                throw new RuntimeException("incorrect result");
-            }
+            Asserts.assertEQ(TestCCMismatchNativeMethods.test2(a2, v1), v1.sum());
+            Asserts.assertEQ(TestCCMismatchNativeMethods.test2(b2, v1), v1.sum());
+            Asserts.assertEQ(TestCCMismatchNativeMethods.test2(c2, v1), v1.sum());
+            Asserts.assertEQ(TestCCMismatchNativeMethods.test2(d2, v1), v1.sum());
+            Asserts.assertEQ(TestCCMismatchNativeMethods.test4(a2), v1.sum());
+            Asserts.assertEQ(TestCCMismatchNativeMethods.test4(b2), v1.sum());
+            Asserts.assertEQ(TestCCMismatchNativeMethods.test4(c2), v1.sum());
+            Asserts.assertEQ(TestCCMismatchNativeMethods.test4(d2), v1.sum());
         }
     }
 }

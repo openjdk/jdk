@@ -2789,7 +2789,7 @@ CompiledEntrySignature::CompiledEntrySignature(Method* method) :
 
 // See if we can save space by sharing the same entry for VIEP and VIEP(RO),
 // or the same entry for VEP and VIEP(RO).
-CodeOffsets::Entries CompiledEntrySignature::c1_value_ro_entry_type() const {
+CodeOffsets::Entries CompiledEntrySignature::c1_native_value_ro_entry_type() const {
   if (!has_scalarized_args()) {
     // VEP/VIEP/VIEP(RO) all share the same entry. There's no packing.
     return CodeOffsets::Verified_Entry;

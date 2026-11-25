@@ -2327,7 +2327,7 @@ void SharedRuntime::emit_std_entries(MacroAssembler* masm, const methodHandle& m
     assert(ValueTypePassFieldsAsArgs, "must be");
     CompiledEntrySignature ces(method());
     ces.compute_calling_conventions(false);
-    CodeOffsets::Entries ro_entry_type = ces.c1_value_ro_entry_type();
+    CodeOffsets::Entries ro_entry_type = ces.c1_native_value_ro_entry_type();
 
     __ align(CodeEntryAlignment);
     // UEP: check icache and fall-through

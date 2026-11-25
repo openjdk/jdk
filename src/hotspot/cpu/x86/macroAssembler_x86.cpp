@@ -10814,7 +10814,7 @@ int MacroAssembler::scalarized_entry(const CompiledEntrySignature* ces, int fram
 
   // The runtime call might safepoint, make sure nmethod entry barrier is executed
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  // C1 code is not hot enough to micro optimize the nmethod entry barrier with an out-of-line stub
+  // C1/native code is not hot enough to micro optimize the nmethod entry barrier with an out-of-line stub
   bs->nmethod_entry_barrier(this, nullptr /* slow_path */, nullptr /* continuation */);
 
   mov_metadata(rbx, ces->method());

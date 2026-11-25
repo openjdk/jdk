@@ -1023,7 +1023,7 @@ public:
 
   bool has_scalarized_args()           const { return _sig != _sig_cc; }
   bool needs_stack_repair()            const { return _needs_stack_repair; }
-  CodeOffsets::Entries c1_value_ro_entry_type() const;
+  CodeOffsets::Entries c1_native_value_ro_entry_type() const;
 
   CompiledEntrySignature(Method* method = nullptr);
   void compute_calling_conventions(bool link_time = true);
