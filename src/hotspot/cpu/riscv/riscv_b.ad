@@ -171,7 +171,7 @@ instruct convS2UI_reg_reg_b(iRegINoSp dst, iRegIorL2I src, immI_16bits mask) %{
   ins_pipe(ialu_reg);
 %}
 
-instruct convI2L_andI_16bits_b(iRegLNoSp dst, iRegI src, immI_16bits mask) %{
+instruct convI2L_andI_16bits_b(iRegLNoSp dst, iRegIorL2I src, immI_16bits mask) %{
   predicate(UseZbb);
   match(Set dst (ConvI2L (AndI src mask)));
 

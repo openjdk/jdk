@@ -13040,19 +13040,6 @@ instruct orI_rReg_rReg_imm_ndd(rRegI dst, rRegI src1, immI src2, rFlagsReg cr)
   ins_pipe(ialu_reg);
 %}
 
-instruct orI_rReg_imm_rReg_ndd(rRegI dst, immI src1, rRegI src2, rFlagsReg cr)
-%{
-  predicate(UseAPX);
-  match(Set dst (OrI src1 src2));
-  effect(KILL cr);
-  flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag, PD::Flag_ndd_demotable_opr1);
-
-  format %{ "eorl     $dst, $src2, $src1\t# int ndd" %}
-  ins_encode %{
-    __ eorl($dst$$Register, $src2$$Register, $src1$$constant, false);
-  %}
-  ins_pipe(ialu_reg);
-%}
 
 // Or Register with Memory
 instruct orI_rReg_mem(rRegI dst, memory src, rFlagsReg cr)
@@ -13586,7 +13573,7 @@ instruct orL_rReg_castP2X_ndd(rRegL dst, rRegL src1, any_RegP src2, rFlagsReg cr
   predicate(UseAPX);
   match(Set dst (OrL src1 (CastP2X src2)));
   effect(KILL cr);
-  flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag);
+  flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag, PD::Flag_ndd_demotable_opr1);
 
   format %{ "eorq     $dst, $src1, $src2\t# long ndd" %}
   ins_encode %{
@@ -13620,20 +13607,6 @@ instruct orL_rReg_rReg_imm_ndd(rRegL dst, rRegL src1, immL32 src2, rFlagsReg cr)
   format %{ "eorq     $dst, $src1, $src2\t# long ndd" %}
   ins_encode %{
     __ eorq($dst$$Register, $src1$$Register, $src2$$constant, false);
-  %}
-  ins_pipe(ialu_reg);
-%}
-
-instruct orL_rReg_imm_rReg_ndd(rRegL dst, immL32 src1, rRegL src2, rFlagsReg cr)
-%{
-  predicate(UseAPX);
-  match(Set dst (OrL src1 src2));
-  effect(KILL cr);
-  flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag, PD::Flag_ndd_demotable_opr1);
-
-  format %{ "eorq     $dst, $src2, $src1\t# long ndd" %}
-  ins_encode %{
-    __ eorq($dst$$Register, $src2$$Register, $src1$$constant, false);
   %}
   ins_pipe(ialu_reg);
 %}
@@ -13744,7 +13717,7 @@ instruct xorL_rReg_im1(rRegL dst, immL_M1 imm)
   ins_pipe(ialu_reg);
 %}
 
-instruct xorL_rReg_im1_ndd(rRegL dst,rRegL src, immL_M1 imm)
+instruct xorL_rReg_im1_ndd(rRegL dst, rRegL src, immL_M1 imm)
 %{
   predicate(UseAPX);
   match(Set dst (XorL src imm));
@@ -13773,7 +13746,7 @@ instruct xorL_rReg_imm(rRegL dst, immL32 src, rFlagsReg cr)
   ins_pipe(ialu_reg);
 %}
 
-instruct xorL_rReg_rReg_imm(rRegL dst, rRegL src1, immL32 src2, rFlagsReg cr)
+instruct xorL_rReg_rReg_imm_ndd(rRegL dst, rRegL src1, immL32 src2, rFlagsReg cr)
 %{
   // Strict predicate check to make selection of xorL_rReg_im1_ndd cost agnostic if immL32 src2 is -1.
   predicate(UseAPX && n->in(2)->bottom_type()->as_long()->get_con() != -1L);
@@ -14794,8 +14767,7 @@ instruct rep_stos(rcx_RegL cnt, rdi_RegP base, regD tmp, immL0 zero, rax_RegL va
                   Universe dummy, rFlagsReg cr)
 %{
   predicate((UseAVX <= 2) &&
-            !((ClearArrayNode*)n)->is_large() &&
-            ((ClearArrayNode*)n)->is_zero_fill());
+            !((ClearArrayNode*)n)->is_large());
   match(Set dummy (ClearArray (Binary cnt base) zero));
   effect(USE_KILL cnt, USE_KILL base, TEMP tmp, KILL val, KILL cr);
 
@@ -14916,8 +14888,7 @@ instruct rep_stos_evex(rcx_RegL cnt, rdi_RegP base, legRegD tmp, kReg ktmp, immL
                        Universe dummy, rFlagsReg cr)
 %{
   predicate((UseAVX > 2) &&
-            !((ClearArrayNode*)n)->is_large() &&
-            ((ClearArrayNode*)n)->is_zero_fill());
+            !((ClearArrayNode*)n)->is_large());
   match(Set dummy (ClearArray (Binary cnt base) zero));
   ins_cost(125);
   effect(USE_KILL cnt, USE_KILL base, TEMP tmp, TEMP ktmp, KILL val, KILL cr);
@@ -15040,8 +15011,7 @@ instruct rep_stos_large(rcx_RegL cnt, rdi_RegP base, regD tmp, immL0 zero, rax_R
                         Universe dummy, rFlagsReg cr)
 %{
   predicate((UseAVX <= 2) &&
-            ((ClearArrayNode*)n)->is_large() &&
-            ((ClearArrayNode*)n)->is_zero_fill());
+            ((ClearArrayNode*)n)->is_large());
   match(Set dummy (ClearArray (Binary cnt base) zero));
   effect(USE_KILL cnt, USE_KILL base, TEMP tmp, KILL val, KILL cr);
 
@@ -15142,8 +15112,7 @@ instruct rep_stos_large_evex(rcx_RegL cnt, rdi_RegP base, legRegD tmp, kReg ktmp
                              Universe dummy, rFlagsReg cr)
 %{
   predicate((UseAVX > 2) &&
-            ((ClearArrayNode*)n)->is_large() &&
-            ((ClearArrayNode*)n)->is_zero_fill());
+            ((ClearArrayNode*)n)->is_large());
   match(Set dummy (ClearArray (Binary cnt base) zero));
   effect(USE_KILL cnt, USE_KILL base, TEMP tmp, TEMP ktmp, KILL val, KILL cr);
 
@@ -15244,8 +15213,7 @@ instruct rep_stos_im(immL cnt, rRegP base, regD tmp, immL0 zero, rRegI val, kReg
 %{
   predicate((MaxVectorSize >= 32) &&
             VM_Version::supports_avx512vl() &&
-            !((ClearArrayNode*)n)->is_large() &&
-            ((ClearArrayNode*)n)->is_zero_fill());
+            !((ClearArrayNode*)n)->is_large());
   match(Set dummy (ClearArray (Binary cnt base) zero));
   ins_cost(100);
   effect(TEMP tmp, TEMP val, TEMP ktmp, KILL cr);

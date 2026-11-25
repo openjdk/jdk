@@ -325,16 +325,18 @@ BFX1_INSN(L, I, L2I, exact_log2_long, get_long, 31, 31,       immL_positive_bitm
 // This pattern is automatically generated from aarch64_ad.m4
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 
-// Can skip int2long conversions after AND with small bitmask
-instruct ubfizIConvI2LAndI(iRegLNoSp dst, iRegI src, immI_bitmask msk)
+// AND with a positive immediate. The result will be positive so no
+// sign extension is needed, and the implicit zero extension of `andw`
+// zeroes the high 32 bits.
+instruct convI2L_andI_reg_imm(iRegLNoSp dst, iRegIorL2I src, immILogPos msk)
 %{
   match(Set dst (ConvI2L (AndI src msk)));
   ins_cost(INSN_COST);
-  format %{ "ubfiz $dst, $src, 0, exact_log2($msk + 1) " %}
+  format %{ "and  $dst, $src, $msk\t# int -> long" %}
   ins_encode %{
-    __ ubfiz(as_Register($dst$$reg), as_Register($src$$reg), 0, exact_log2($msk$$constant + 1));
+    __ andw(as_Register($dst$$reg), as_Register($src$$reg), (uint64_t)($msk$$constant));
   %}
-  ins_pipe(ialu_reg_shift);
+  ins_pipe(ialu_reg_imm);
 %}
 
 

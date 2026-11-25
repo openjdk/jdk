@@ -22,6 +22,7 @@
  *
  */
 
+#include "cds/aotClassLocation.hpp"
 #include "cds/aotLogging.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
@@ -3435,6 +3436,8 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
     LogStream st(Log(arguments)::info());
     Arguments::print_on(&st);
   }
+
+  AOTClassLocationConfig::init_boot_classpath();
 
   return JNI_OK;
 }

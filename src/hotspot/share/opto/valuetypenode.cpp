@@ -2172,10 +2172,25 @@ void LoadFlatNode::expand_atomic(PhaseIterGVN& igvn) const {
   Node* base = this->base();
   Node* ptr = this->ptr();
 
+  int oop_off_1 = -1;
+  int oop_off_2 = -1;
+  collect_oop_offsets(_vk, oop_off_1, oop_off_2);
+
+  assert((oop_off_1 == -1 && oop_off_2 == -1) ||  // No oops
+         (oop_off_1 == 0  && oop_off_2 == -1) ||  // One oop at either offset
+         (oop_off_1 == 4  && oop_off_2 == -1) ||
+         (oop_off_1 == 0  && oop_off_2 == 4)  ||  // Two oops at either offsets
+         (oop_off_1 == 4  && oop_off_2 == 0),
+         "invalid layout for %s: oop_off_1=%d, oop_off_2=%d",
+         _vk->name()->as_utf8(), oop_off_1, oop_off_2);
+
+  bool has_oops = (oop_off_1 != -1);
+
   Node* payload;
   kit.insert_mem_bar(Op_MemBarCPUOrder);
   if (int atomic_size = _vk->atomic_size(_null_free); atomic_size > int(sizeof(jlong))) {
     assert(atomic_size == 16, "unexpected atomic_size %d", atomic_size);
+    assert(!has_oops, "not supported");
     Node* mem = kit.reset_memory();
     kit.set_all_memory(mem);
     LoadNode* load = new LoadVectorAtomicNode(kit.control(), mem, ptr, igvn.type(ptr)->as_ptr(), TypeVect::make(T_BYTE, 16), MemNode::MemOrd::unordered);
@@ -2183,9 +2198,24 @@ void LoadFlatNode::expand_atomic(PhaseIterGVN& igvn) const {
     payload = igvn.transform(load);
     igvn.C->set_max_vector_size(MAX2<uint>(igvn.C->max_vector_size(), atomic_size));
   } else {
+    // Epsilon: does not care about oop loads.
+    // Serial/Parallel: do not care about oop loads.
+    // G1: does not care about oop loads.
+    // Shenandoah: LBE, needs special handling.
+    // Z: does not produce flat atomics on this shape.
+    assert(!has_oops || !UseZGC, "ZGC does not have special loads with oops");
+    bool needs_special = has_oops && UseShenandoahGC;
+
     BasicType payload_bt = _vk->atomic_size_to_basic_type(_null_free);
+    assert(!needs_special || payload_bt == T_LONG, "Unexpected payload type");
     payload = kit.access_load_at(base, ptr, TypeRawPtr::BOTTOM, Type::get_const_basic_type(payload_bt), payload_bt,
-                                       _decorators | C2_MISMATCHED | C2_CONTROL_DEPENDENT_LOAD | C2_UNKNOWN_CONTROL_LOAD, kit.control());
+                                    _decorators | C2_MISMATCHED | C2_CONTROL_DEPENDENT_LOAD | C2_UNKNOWN_CONTROL_LOAD | (needs_special ? C2_SPECIAL_ACCESS : 0),
+                                    kit.control());
+    if (needs_special) {
+      assert(payload->Opcode() == Op_LoadLSpecial, "must be special");
+      Node* oop_offset_node = (oop_off_2 == -1) ? igvn.intcon(oop_off_1) : igvn.intcon(-1);
+      payload->add_req(oop_offset_node);
+    }
   }
   kit.insert_mem_bar(Op_MemBarCPUOrder);
 
@@ -2200,6 +2230,28 @@ void LoadFlatNode::expand_atomic(PhaseIterGVN& igvn) const {
   }
 
   expand_projs_atomic(igvn, kit.control(), payload);
+}
+
+void LoadFlatNode::collect_oop_offsets(ciValueKlass* vk, int& oop_off_1, int& oop_off_2) {
+  oop_off_1 = -1;
+  oop_off_2 = -1;
+
+  // Iterate over the fields and find oops
+  for (int i = 0; i < vk->nof_nonstatic_fields(); i++) {
+    ciField* field = vk->nonstatic_field_at(i);
+    int field_offset_in_payload = field->offset_in_bytes() - vk->payload_offset();
+    if (!field->type()->is_primitive_type()) {
+      // Narrow oop field
+      assert(UseCompressedOops, "Naturally atomic");
+      assert(field_offset_in_payload == 0 || field_offset_in_payload == 4, "Unexpected oop offset. field_offset_in_payload=%d", field_offset_in_payload);
+      if (oop_off_1 == -1) {
+        oop_off_1 = field_offset_in_payload;
+      } else {
+        assert(oop_off_2 == -1, "already set");
+        oop_off_2 = field_offset_in_payload;
+      }
+    }
+  }
 }
 
 void LoadFlatNode::collect_field_types(ciValueKlass* vk, const Type** field_types, int idx, int limit, bool null_free, bool trust_null_free_oop) {
@@ -2435,48 +2487,51 @@ void StoreFlatNode::expand_atomic(PhaseIterGVN& igvn) const {
   Node* payload = convert_to_payload(igvn, kit.control(), value, _null_free, oop_off_1, oop_1, oop_off_2, oop_2);
 
   ciValueKlass* vk = igvn.type(value)->value_klass();
-  // convert_to_payload should give us the offsets of up to 2 oops of vk in oop_off_1 and oop_off_2. The following holds:
-  // - they must be valid offsets for oops (0 or 4) or -1 (no oop)
-  // - if there is at least one oop, oop_off_1 != oop_off_2, i.e. oop_off_1 == oop_off_2 only if they are both -1, i.e. offsets are distincts
-  // - in case there is only one oop, its offset is stored in oop_off_1, and oop_off_2 == -1
-  // - oop_off_{i} == -1 <=> oop_{i} == nullptr;
-  assert(oop_off_1 == -1 || oop_off_1 == 0 || oop_off_1 == 4, "invalid layout for %s, first oop at offset %d", vk->name()->as_utf8(), oop_off_1);
-  assert(oop_off_2 == -1 || oop_off_2 == 0 || oop_off_2 == 4, "invalid layout for %s, second oop at offset %d", vk->name()->as_utf8(), oop_off_2);
-  assert(oop_off_1 != oop_off_2 || oop_off_1 == -1, "we should have: oop_off_1 == oop_off_2 => oop_off_1 == -1. But oop_off_1=oop_off_2=%d", oop_off_1);
-  assert(oop_off_1 != -1 || oop_off_2 == -1, "we should have: oop_off_1 == -1 => oop_off_2 == -1. But oop_off_1=%d, oop_off_2=%d", oop_off_1, oop_off_2);
+
+  assert((oop_off_1 == -1 && oop_off_2 == -1) ||  // No oops
+         (oop_off_1 == 0  && oop_off_2 == -1) ||  // One oop at either offset
+         (oop_off_1 == 4  && oop_off_2 == -1) ||
+         (oop_off_1 == 0  && oop_off_2 == 4)  ||  // Two oops at either offsets
+         (oop_off_1 == 4  && oop_off_2 == 0),
+         "invalid layout for %s: oop_off_1=%d, oop_off_2=%d",
+         vk->name()->as_utf8(), oop_off_1, oop_off_2);
+
   assert((oop_off_1 == -1) == oop_1->is_top(), "oop_off_1 == -1 iff. oop_1 is top, but oop_off_1=%d, is oop_1 top=%d", oop_off_1, oop_1->is_top());
   assert((oop_off_2 == -1) == oop_2->is_top(), "oop_off_2 == -1 iff. oop_2 is top, but oop_off_2=%d, is oop_2 top=%d", oop_off_2, oop_2->is_top());
+  bool has_oops = (oop_off_1 != -1);
+
   kit.insert_mem_bar(Op_MemBarCPUOrder);
   if (int atomic_size = vk->atomic_size(_null_free); atomic_size > int(sizeof(jlong))) {
     assert(atomic_size == 16, "unexpected atomic_size %d", atomic_size);
-    assert(oop_off_1 == -1 && oop_off_2 == -1, "not supported");
+    assert(!has_oops, "not supported");
     Node* mem = kit.reset_memory();
     kit.set_all_memory(mem);
     StoreNode* store = new StoreVectorAtomicNode(kit.control(), mem, ptr, igvn.type(ptr)->as_ptr(), payload);
     store->set_mismatched_access();
     kit.set_memory(igvn.transform(store), TypeRawPtr::BOTTOM);
     igvn.C->set_max_vector_size(MAX2<uint>(igvn.C->max_vector_size(), atomic_size));
-  } else if (!UseG1GC || oop_off_1 == -1) {
-    BasicType payload_bt = vk->atomic_size_to_basic_type(_null_free);
-    // No oop fields or no late barrier expansion. Emit an atomic store of the payload and add GC barriers if needed.
-    assert(oop_off_2 == -1 || !UseG1GC, "sanity");
-    // ZGC does not support compressed oops, so only one oop can be in the payload which is written by a "normal" oop store.
-    assert((oop_off_1 == -1 && oop_off_2 == -1) || !UseZGC, "ZGC does not support embedded oops in flat fields");
-    kit.access_store_at(base, ptr, TypeRawPtr::BOTTOM, payload, Type::get_const_basic_type(payload_bt), payload_bt, _decorators | C2_MISMATCHED, true, value);
   } else {
-    // Contains oops and requires late barrier expansion. Emit a special store node that allows to emit GC barriers in the backend.
+    // Epsilon: does not care about oop stores.
+    // Serial/Parallel: handle it separately.
+    // G1: LBE, needs special handling.
+    // Shenandoah: LBE, needs special handling.
+    // Z: does not produce flat atomics on this shape.
+    assert(!has_oops || !UseZGC, "ZGC does not have special stores with oops");
+    bool needs_special = has_oops && (UseG1GC || UseShenandoahGC);
     BasicType payload_bt = vk->atomic_size_to_basic_type(_null_free);
-    assert(UseG1GC, "Unexpected GC");
-    assert(payload_bt == T_LONG, "Unexpected payload type");
-    Node* store_special = kit.access_store_at(base, ptr, TypeRawPtr::BOTTOM, payload, TypeLong::LONG, T_LONG, _decorators | C2_MISMATCHED | C2_SPECIAL_ACCESS, true, value);
-    assert(store_special->Opcode() == Op_StoreLSpecial, "must be special");
+    assert(!needs_special || payload_bt == T_LONG, "Unexpected payload type");
 
-    // If one oop, set the offset (if no offset is set, two oops are assumed by the backend)
-    Node* oop_offset = (oop_off_2 == -1) ? igvn.intcon(oop_off_1) : igvn.C->top();
-    store_special->add_req(oop_offset);
-    assert(!oop_1->is_top(), "if no oop, the store shouldn't be special");
-    store_special->add_req(oop_1);
-    store_special->add_req(oop_2);
+    Node* store = kit.access_store_at(base, ptr, TypeRawPtr::BOTTOM, payload, Type::get_const_basic_type(payload_bt), payload_bt,
+                                      _decorators | C2_MISMATCHED | (needs_special ? C2_SPECIAL_ACCESS : 0),
+                                      true, value);
+    if (needs_special) {
+      assert(store->Opcode() == Op_StoreLSpecial, "must be special");
+      assert(!oop_1->is_top(), "if no oop, the store shouldn't be special");
+      Node* oop_offset_node = (oop_off_2 == -1) ? igvn.intcon(oop_off_1) : igvn.C->top();
+      store->add_req(oop_offset_node);
+      store->add_req(oop_1);
+      store->add_req(oop_2);
+    }
   }
   kit.insert_mem_bar(Op_MemBarCPUOrder);
 

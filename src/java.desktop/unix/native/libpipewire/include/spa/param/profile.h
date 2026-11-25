@@ -5,6 +5,8 @@
 #ifndef SPA_PARAM_PROFILE_H
 #define SPA_PARAM_PROFILE_H
 
+#include <spa/param/param.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -13,8 +15,6 @@ extern "C" {
  * \addtogroup spa_param
  * \{
  */
-
-#include <spa/param/param.h>
 
 /** properties for SPA_TYPE_OBJECT_ParamProfile */
 enum spa_param_profile {

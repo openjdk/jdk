@@ -986,7 +986,7 @@ class SealedCompilationTests extends CompilationTestCase {
             non-sealed interface I extends A {}
             """
         )) {
-            assertFail("compiler.err.class.method.or.field.expected", s);
+            assertFail("compiler.err.illegal.combination.of.modifiers", s);
         }
     }
 

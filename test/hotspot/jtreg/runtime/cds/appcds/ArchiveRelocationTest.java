@@ -43,6 +43,7 @@ public class ArchiveRelocationTest {
         try {
             test(false);
             test(true);
+            testRelocMode2();
         } catch (SkippedException s) {
             s.printStackTrace();
             throw new RuntimeException("Archive mapping should always succeed after JDK-8231610 (did the machine run out of memory?)");
@@ -67,8 +68,7 @@ public class ArchiveRelocationTest {
         String logArg = "-Xlog:cds=debug,cds+reloc=debug,aot+heap";
         String unlockArg = "-XX:+UnlockDiagnosticVMOptions";
         String nmtArg = "-XX:NativeMemoryTracking=detail";
-        String relocMsg1 = "ArchiveRelocationMode == 1: always map archive(s) at an alternative address";
-        String relocMsg2 = "Try to map archive(s) at an alternative address";
+        String relocMsg = "ArchiveRelocationMode == 1: always map archive(s) at an alternative address";
 
         OutputAnalyzer out = TestCommon.dump(appJar,
                 TestCommon.list(mainClass),
@@ -78,13 +78,38 @@ public class ArchiveRelocationTest {
         TestCommon.run("-cp", appJar, unlockArg, runRelocArg, logArg,  mainClass)
                 .assertNormalExit(output -> {
                     if (run_reloc) {
-                        if (!output.contains(relocMsg1) && !output.contains(relocMsg2)) {
-                            throw new RuntimeException("Relocation messages \"" + relocMsg1 +
-                                "\" and \"" + relocMsg2 + "\" are missing from the output");
+                        if (!output.contains(relocMsg)) {
+                            throw new RuntimeException("Relocation messages \"" + relocMsg + "\" is missing from the output");
                         }
                     } else {
                         output.shouldContain("ArchiveRelocationMode: 0");
                     }
+                });
+    }
+
+    // Create archive with SharedBaseAddress=0 to indicate JVM should map the archive at OS provided address during production run.
+    // Do production run with ArchiveRelocationMode=2 which forces JVM to always use the requested address.
+    // This combination should cause JVM to exit with error message.
+    static void testRelocMode2() throws Exception {
+        System.out.println("============================================================");
+        System.out.println("testRelocMode2 with SharedBaseAddress=0");
+        System.out.println("============================================================");
+        String appJar = ClassFileInstaller.getJarPath("hello.jar");
+        String mainClass = "Hello";
+        String runRelocArg = "-XX:ArchiveRelocationMode=2";
+        String logArg = "-Xlog:cds=debug,cds+reloc=debug,aot+heap";
+        // SharedBaseAddress=0 forces JVM to map archive at OS selected address
+        String sharedBaseArg = "-XX:SharedBaseAddress=0";
+        String unlockArg = "-XX:+UnlockDiagnosticVMOptions";
+        String relocMsg = "Cannot use ArchiveRelocationMode=2 when the archive was created with -XX:SharedBaseAddress=0";
+
+        OutputAnalyzer out = TestCommon.dump(appJar,
+                TestCommon.list(mainClass),
+                unlockArg, sharedBaseArg, logArg);
+        out.shouldContain("Relocating archive from");
+        TestCommon.run("-cp", appJar, unlockArg, runRelocArg, logArg,  mainClass)
+            .assertAbnormalExit(output -> {
+                    output.shouldContain(relocMsg);
                 });
     }
 }
