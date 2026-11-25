@@ -2066,7 +2066,13 @@ void PhaseIterGVN::make_dependent_paths_dead_if_top(Node* dead_node, const Type*
     if (n->is_CFG()) {
       Node* control_input = n->in(0);
       if (control_input != nullptr && !control_input->is_top()) {
-        // record it in dead path to later insert a Halt node, if it doesn't die in the meantime
+        // If the dead node is the safepoint of an outer strip mined loop, it causes the outer strip mined loop's
+        // backedge to be removed while the inner loop remains marked as strip mined. The safepoint captures the state
+        // at the end of a single java loop from which the inner and outer loops were created. If the safepoint is dead,
+        // the tail of the java loop is unreachable and so are the tails of both the inner and outer loops: it's safe to
+        // remove the backedge of the inner loop as well.
+        // Do this before the control input of the safepoint is made top so it's feasible to find the inner loop and
+        // verify that the safepoint indeed belongs to the outer strip mined loop for that inner loop.
         if (n->is_SafePoint()) {
           if (n->in(0) != nullptr && n->in(0)->in(0) != nullptr && n->in(0)->in(0)->is_CountedLoopEnd()) {
             CountedLoopEndNode* cle = n->in(0)->in(0)->as_CountedLoopEnd();
@@ -2079,6 +2085,7 @@ void PhaseIterGVN::make_dependent_paths_dead_if_top(Node* dead_node, const Type*
             }
           }
         }
+        // record it in dead path to later insert a Halt node, if it doesn't die in the meantime
         dead_path()->add_req(control_input);
         _worklist.push(dead_path());
         replace_input_of(n, 0, C->top());
