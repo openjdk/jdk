@@ -56,11 +56,10 @@ import javax.net.ssl.TrustManagerFactory;
 @Fork(value = 3)
 public class SSLHandshake {
 
-    private static final SSLContext SSL_SERVER_CTX_ECDSA_P256 =
-            getServerContext(TestCertificates.AUTH_PROFILE_ECDSA_P256);
-    private static final SSLContext SSL_SERVER_CTX_MLDSA65 =
-            getServerContext(TestCertificates.AUTH_PROFILE_MLDSA65);
+    // one global server context
+    private static final SSLContext sslServerCtx = getServerContext();
 
+    // per-thread client contexts
     private SSLContext sslClientCtx;
 
     private SSLEngine clientEngine;
@@ -96,12 +95,11 @@ public class SSLHandshake {
 
     private String tlsVersion;
     private String namedGroup;
-    private String authProfile;
     private String[] sigSchemes;
 
-    private static SSLContext getServerContext(String authProfile) {
+    private static SSLContext getServerContext() {
         try {
-            KeyStore ks = TestCertificates.getKeyStore(authProfile);
+            KeyStore ks = TestCertificates.getKeyStore();
 
             KeyManagerFactory kmf = KeyManagerFactory.getInstance(
                     KeyManagerFactory.getDefaultAlgorithm());
@@ -115,29 +113,16 @@ public class SSLHandshake {
         }
     }
 
-    private static String[] getSigSchemes(String authProfile,
-            String tlsVersion) {
+    private static String[] getSigSchemes(String authProfile, String tlsVersion) {
         if (!"TLSv1.3".equals(tlsVersion)) {
             return null;
         }
 
         return switch (authProfile) {
             case TestCertificates.AUTH_PROFILE_ECDSA_P256 ->
-                    new String[] {"ecdsa_secp256r1_sha256",
-                            "rsa_pkcs1_sha384"};
+                    new String[] {"ecdsa_secp256r1_sha256"};
             case TestCertificates.AUTH_PROFILE_MLDSA65 ->
-                    new String[] {"mldsa65", "rsa_pkcs1_sha384"};
-            default -> throw new IllegalArgumentException(
-                    "Unknown auth profile: " + authProfile);
-        };
-    }
-
-    private static SSLContext getProfileServerContext(String authProfile) {
-        return switch (authProfile) {
-            case TestCertificates.AUTH_PROFILE_ECDSA_P256 ->
-                    SSL_SERVER_CTX_ECDSA_P256;
-            case TestCertificates.AUTH_PROFILE_MLDSA65 ->
-                    SSL_SERVER_CTX_MLDSA65;
+                    new String[] {"mldsa65"};
             default -> throw new IllegalArgumentException(
                     "Unknown auth profile: " + authProfile);
         };
@@ -164,7 +149,7 @@ public class SSLHandshake {
                     "Unknown named group: " + components[1]);
         };
 
-        authProfile = switch (components[2]) {
+        String authProfile = switch (components[2]) {
             case "ECDSA" -> TestCertificates.AUTH_PROFILE_ECDSA_P256;
             case "MLDSA65" -> TestCertificates.AUTH_PROFILE_MLDSA65;
             default -> throw new IllegalArgumentException(
@@ -173,7 +158,7 @@ public class SSLHandshake {
 
         sigSchemes = getSigSchemes(authProfile, tlsVersion);
 
-        KeyStore ts = TestCertificates.getTrustStore(authProfile);
+        KeyStore ts = TestCertificates.getTrustStore();
 
         TrustManagerFactory tmf = TrustManagerFactory.getInstance(
                 TrustManagerFactory.getDefaultAlgorithm());
@@ -264,7 +249,7 @@ public class SSLHandshake {
          * Configure the serverEngine to act as a server in the SSL/TLS
          * handshake.
          */
-        serverEngine = getProfileServerContext(authProfile).createSSLEngine();
+        serverEngine = sslServerCtx.createSSLEngine();
         serverEngine.setUseClientMode(false);
 
         /*
