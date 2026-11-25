@@ -99,8 +99,8 @@ public class AgentBootClassPath {
             if (runMode == RunMode.ASSEMBLY) {
                 // Make sure boot2.jar is not included in the classpath(s) of the config file
                 out.shouldContain("Reading classpath(s) from AgentBootClassPathApp.aotconfig (size = 3)");
-                out.shouldMatch("class,path.*boot.* .1. = .*/boot1.jar");
-                out.shouldMatch("class,path.*app.* .2. = .*/app.jar");
+                out.shouldMatch("class,path.*boot.* .1. = .*boot1.jar");
+                out.shouldMatch("class,path.*app.* .2. = .*app.jar");
             }
             if (runMode.isApplicationExecuted()) {
                 out.shouldContain("AgentBootClassPathBoot1 loader = null");
