@@ -28,13 +28,27 @@ import jdk.test.lib.Asserts;
 
 /**
  * @test
- * @bug 8391280
+ * @bug 8391280 8393019
  * @summary Test macro expansion of merged flat-array checks with array and klass inputs
+ * @key stress randomness
+ * @requires vm.compiler2.enabled
  * @enablePreview
  * @library /test/lib
  * @modules java.base/jdk.internal.value
  * @run main ${test.main.class}
  * @run main/othervm -Xbatch
+ *                   -XX:CompileCommand=compileonly,${test.main.class}::test*
+ *                   ${test.main.class}
+ * @run main/othervm -Xbatch -XX:-TieredCompilation
+ *                   -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:ConditionalMoveLimit=4
+ *                   -XX:+StressIGVN -XX:StressSeed=4
+ *                   -XX:CompileCommand=compileonly,${test.main.class}::test*
+ *                   ${test.main.class}
+ * @run main/othervm -Xbatch -XX:-TieredCompilation
+ *                   -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:ConditionalMoveLimit=4
+ *                   -XX:+StressIGVN
  *                   -XX:CompileCommand=compileonly,${test.main.class}::test*
  *                   ${test.main.class}
  */
@@ -103,6 +117,35 @@ public class TestFlatArrayCheckExpansion {
         return res;
     }
 
+    // Forcing two outputs to the FlatArrayCheck:
+    // Naively, notFlat would be
+    //     CMove(Bool(FlatArrayCheck, !=), false=0, true=1)
+    // But CMove doesn't like having 0 on the false-case (with true-case being constant),
+    // so it is tranformed into
+    //     CMove(Bool(FlatArrayCheck, ==), false=1, true=0)
+    // On the other hand, (notFlat ? 1 : 2)
+    //     CMove(Bool(FlatArrayCheck, !=), false=2, true=1)
+    // So we end up with a FlatArrayCheck with two Bool output:
+    // one with condition "==", and one "!=". This test makes sure we support FlatArrayCheck
+    // with multiple outputs.
+    static int test5(Object[] array, int i) {
+        boolean notFlat = !ValueClass.isFlatArray(array);
+        Object value = array[i];
+        return (notFlat ? 1 : 2) + (value == null ? 4 : 8);
+    }
+
+    // Pretty much the same as above, but in the situation we want to move the flatness check
+    // above the loop.
+    static int test6(Object[] array) {
+        int res = 0;
+        for (int i = 0; i < 4; i++) {
+            boolean notFlat = !ValueClass.isFlatArray(array);
+            Object value = array[i];
+            res += (notFlat ? 1 : 2) + (value == null ? 4 : 8);
+        }
+        return res;
+    }
+
     public static void main(String[] args) {
         Object[] refArray = {1, 2, 3, 4};
         Integer[] flatArray = {1, 2, 3, 4};
@@ -124,6 +167,12 @@ public class TestFlatArrayCheckExpansion {
             Asserts.assertEQ(test4(refArray, flatArray), 18);
             Asserts.assertEQ(test4(flatArray, refArray), isFlat ? 14 : 18);
             Asserts.assertEQ(test4(flatArray, flatArray), isFlat ? 14 : 18);
+
+            Asserts.assertEQ(test5(refArray, 0), 9);
+            Asserts.assertEQ(test5(flatArray, 0), isFlat ? 10 : 9);
+
+            Asserts.assertEQ(test6(refArray), 36);
+            Asserts.assertEQ(test6(flatArray), isFlat ? 40 : 36);
         }
     }
 }

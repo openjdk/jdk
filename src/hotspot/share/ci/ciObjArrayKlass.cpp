@@ -133,6 +133,17 @@ ciSymbol* ciObjArrayKlass::construct_array_name(ciSymbol* element_name,
   return ciSymbol::make(name);
 }
 
+ciObjArrayKlass* ciObjArrayKlass::get_unloaded_named_klass(ciKlass* element_klass) {
+  ASSERT_IN_VM;
+  ciSymbol* array_name = construct_array_name(element_klass->name(), 1);
+  if (array_name == ciEnv::unloaded_cisymbol()) {
+    return ciEnv::unloaded_ciobjarrayklass();
+  }
+  return
+    CURRENT_ENV->get_unloaded_klass(element_klass, array_name)
+                        ->as_obj_array_klass();
+}
+
 // ------------------------------------------------------------------
 // ciObjArrayKlass::make_impl
 //
@@ -146,7 +157,7 @@ ciObjArrayKlass* ciObjArrayKlass::make_impl(ciKlass* element_klass, bool refined
     if (HAS_PENDING_EXCEPTION) {
       CLEAR_PENDING_EXCEPTION;
       CURRENT_THREAD_ENV->record_out_of_memory_failure();
-      return ciEnv::unloaded_ciobjarrayklass();
+      return get_unloaded_named_klass(element_klass);
     }
     if (!refined_type) {
       return CURRENT_THREAD_ENV->get_obj_array_klass(array);
@@ -168,7 +179,7 @@ ciObjArrayKlass* ciObjArrayKlass::make_impl(ciKlass* element_klass, bool refined
     if (HAS_PENDING_EXCEPTION) {
       CLEAR_PENDING_EXCEPTION;
       CURRENT_THREAD_ENV->record_out_of_memory_failure();
-      return ciEnv::unloaded_ciobjarrayklass();
+      return get_unloaded_named_klass(element_klass);
     }
     assert(array != nullptr, "klass_with_properties should return a klass or throw");
     assert(!force_ref_layout || array->is_refArray_klass(), "must be a reference array klass");
@@ -180,13 +191,7 @@ ciObjArrayKlass* ciObjArrayKlass::make_impl(ciKlass* element_klass, bool refined
   }
 
   // The array klass was unable to be made or the element klass was not loaded.
-  ciSymbol* array_name = construct_array_name(element_klass->name(), 1);
-  if (array_name == ciEnv::unloaded_cisymbol()) {
-    return ciEnv::unloaded_ciobjarrayklass();
-  }
-  return
-    CURRENT_ENV->get_unloaded_klass(element_klass, array_name)
-                        ->as_obj_array_klass();
+  return get_unloaded_named_klass(element_klass);
 }
 
 // ------------------------------------------------------------------

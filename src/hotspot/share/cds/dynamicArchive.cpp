@@ -28,12 +28,12 @@
 #include "cds/aotCompressedPointers.hpp"
 #include "cds/aotLogging.hpp"
 #include "cds/aotMetaspace.hpp"
+#include "cds/aotSystemDictionary.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.inline.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/dynamicArchive.hpp"
-#include "cds/heapShared.hpp"
 #include "cds/lambdaFormInvokers.hpp"
 #include "cds/lambdaProxyClassDictionary.hpp"
 #include "cds/regeneratedClasses.hpp"
@@ -41,7 +41,6 @@
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/javaStackTraceClasses.hpp"
 #include "classfile/symbolTable.hpp"
-#include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gc_globals.hpp"
@@ -119,12 +118,12 @@ public:
 
   void doit_inner() {
     verify_universe("Before CDS dynamic dump");
-    DEBUG_ONLY(SystemDictionaryShared::NoClassLoadingMark nclm);
+    DEBUG_ONLY(AOTSystemDictionary::NoClassLoadingMark nclm);
 
     // Block concurrent class unloading from changing the _dumptime_table
     MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
 
-    if (SystemDictionaryShared::is_dumptime_table_empty()) {
+    if (AOTSystemDictionary::is_dumptime_table_empty()) {
       log_warning(cds, dynamic)("There is no class to be included in the dynamic archive.");
       return;
     }
@@ -158,7 +157,7 @@ public:
       SymbolTable::write_to_archive(symbols());
 
       ArchiveBuilder::OtherROAllocMark mark;
-      SystemDictionaryShared::write_to_archive(false);
+      AOTSystemDictionary::write_to_archive(false);
       cl_config = AOTClassLocationConfig::dumptime()->write_to_archive();
 
       serialized_data = ro_region()->top();
@@ -182,7 +181,7 @@ public:
 
   virtual void iterate_roots(MetaspaceClosure* it) {
     AOTArtifactFinder::all_cached_classes_do(it);
-    SystemDictionaryShared::dumptime_classes_do(it);
+    AOTSystemDictionary::dumptime_classes_do(it);
   }
 };
 
@@ -359,7 +358,7 @@ public:
 
 void DynamicArchive::serialize(SerializeClosure* soc) {
   SymbolTable::serialize_shared_table_header(soc, false);
-  SystemDictionaryShared::serialize_dictionary_headers(soc, false);
+  AOTSystemDictionary::serialize_dictionary_headers(soc, false);
 }
 
 void DynamicArchive::dump_impl(bool jcmd_request, const char* archive_name, TRAPS) {

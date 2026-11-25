@@ -35,6 +35,23 @@
  *
  */
 
+/*
+ * @test
+ * @bug 8146416
+ * @library /test/lib /
+ *
+ * @requires os.arch == "aarch64"
+ * @requires vm.compiler2.enabled
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *      -XX:+WhiteBoxAPI -Xbatch -Xmx100m
+ *      -XX:CompileCommand=exclude,compiler.uncommontrap.DeoptReallocFailure::main
+ *      -XX:+UnlockExperimentalVMOptions -XX:+PreferCallBasedUncommonTraps
+ *      compiler.uncommontrap.DeoptReallocFailure
+ *
+ */
+
 package compiler.uncommontrap;
 
 import jdk.test.whitebox.WhiteBox;

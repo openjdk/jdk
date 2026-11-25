@@ -21,8 +21,9 @@
  * questions.
  *
  */
-#ifndef SHARE_VM_OOPS_FLATARRAYKLASS_INLINE_HPP
-#define SHARE_VM_OOPS_FLATARRAYKLASS_INLINE_HPP
+
+#ifndef SHARE_OOPS_FLATARRAYKLASS_INLINE_HPP
+#define SHARE_OOPS_FLATARRAYKLASS_INLINE_HPP
 
 #include "oops/flatArrayKlass.hpp"
 
@@ -130,4 +131,4 @@ void FlatArrayKlass::oop_oop_iterate_elements_range(flatArrayOop a, OopClosureTy
   }
 }
 
-#endif // SHARE_VM_OOPS_FLATARRAYKLASS_INLINE_HPP
+#endif // SHARE_OOPS_FLATARRAYKLASS_INLINE_HPP

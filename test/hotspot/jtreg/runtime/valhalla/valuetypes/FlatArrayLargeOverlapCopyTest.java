@@ -24,12 +24,15 @@
 
 /*
  * @test
+ * @key stress
  * @summary Ensures large overlapping flat array copies do not overflow payload iterator offsets.
  * @enablePreview
  * @requires os.maxMemory >= 7G
+ * @requires (vm.opt.UseArrayFlattening == null | vm.opt.UseArrayFlattening == "true")
+ * @requires (vm.opt.UseNullableAtomicValueFlattening == null | vm.opt.UseNullableAtomicValueFlattening == "true")
  * @modules java.base/jdk.internal.value
  * @run main/othervm/timeout=240 -Xint -Xmx6G
- *                               runtime.valhalla.valuetypes.FlatArrayLargeOverlapCopyTest
+ *                               ${test.main.class}
  */
 
 package runtime.valhalla.valuetypes;

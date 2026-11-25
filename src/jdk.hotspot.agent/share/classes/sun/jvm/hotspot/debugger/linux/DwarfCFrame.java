@@ -200,6 +200,11 @@ public class DwarfCFrame extends BasicCFrame {
         }
     }
 
+    /**
+     * For a native sender PC (a return address), look up the library, FDE, CFI row and symbol at PC - 1.
+     * Use the exact PC for the top frame and the frame restored from a signal context,
+     * also for signal trampoline PCs, and for code cache (Java) PCs.
+     */
     @Override
     public CFrame sender(ThreadProxy th) {
         return sender(th, null, null, null);

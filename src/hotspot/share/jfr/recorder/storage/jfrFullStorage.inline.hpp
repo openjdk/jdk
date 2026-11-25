@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_JFR_RECORDER_STORAGE_JFRSTORAGEFULLLIST_INLINE_HPP
-#define SHARE_JFR_RECORDER_STORAGE_JFRSTORAGEFULLLIST_INLINE_HPP
+#ifndef SHARE_JFR_RECORDER_STORAGE_JFRFULLSTORAGE_INLINE_HPP
+#define SHARE_JFR_RECORDER_STORAGE_JFRFULLSTORAGE_INLINE_HPP
 
 #include "jfr/recorder/storage/jfrFullStorage.hpp"
 
@@ -122,4 +122,4 @@ void JfrFullStorage<ValueType, NodeType, AllocPolicy>::iterate(Callback& cb) {
   _queue->iterate(cb);
 }
 
-#endif // SHARE_JFR_RECORDER_STORAGE_JFRSTORAGEFULLLIST_INLINE_HPP
+#endif // SHARE_JFR_RECORDER_STORAGE_JFRFULLSTORAGE_INLINE_HPP

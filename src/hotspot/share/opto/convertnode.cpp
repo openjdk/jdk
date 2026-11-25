@@ -55,7 +55,6 @@ const Type* Conv2BNode::Value(PhaseGVN* phase) const {
   if( t == TypePtr::NULL_PTR ) return TypeInt::ZERO;
   const TypePtr *tp = t->isa_ptr();
   if(tp != nullptr) {
-    if( tp->ptr() == TypePtr::AnyNull ) return Type::TOP;
     if( tp->ptr() == TypePtr::Constant) return TypeInt::ONE;
     if (tp->ptr() == TypePtr::NotNull)  return TypeInt::ONE;
     return TypeInt::BOOL;
@@ -762,13 +761,6 @@ bool Compile::push_thru_add(PhaseGVN* phase, Node* z, const TypeInteger* tz, con
 
 //------------------------------Ideal------------------------------------------
 Node* ConvI2LNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  if (in(1) != nullptr && phase->type(in(1)) != Type::TOP) {
-    Node* progress = TypeNode::Ideal(phase, can_reshape);
-    if (progress != nullptr) {
-      return progress;
-    }
-  }
-
   const TypeLong* this_type = this->type()->is_long();
   if (can_reshape && !phase->C->post_loop_opts_phase()) {
     // makes sure we run ::Value to potentially remove type assertion after loop opts
@@ -871,13 +863,6 @@ const Type* ConvL2INode::Value(PhaseGVN* phase) const {
 // Return a node which is more "ideal" than the current node.
 // Blow off prior masking to int
 Node* ConvL2INode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  if (in(1) != nullptr && phase->type(in(1)) != Type::TOP) {
-    Node* progress = TypeNode::Ideal(phase, can_reshape);
-    if (progress != nullptr) {
-      return progress;
-    }
-  }
-
   Node *andl = in(1);
   uint andl_op = andl->Opcode();
   if( andl_op == Op_AndL ) {

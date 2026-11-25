@@ -21,14 +21,14 @@
  * questions.
  */
 
-#ifndef SHARE_PRIMS_FOREIGN_GLOBALS_INLINE_HPP
-#define SHARE_PRIMS_FOREIGN_GLOBALS_INLINE_HPP
+#ifndef SHARE_PRIMS_FOREIGNGLOBALS_INLINE_HPP
+#define SHARE_PRIMS_FOREIGNGLOBALS_INLINE_HPP
 
 #include "prims/foreignGlobals.hpp"
 
 #include "classfile/javaClasses.hpp"
 #include "oops/objArrayOop.hpp"
-#include "oops/oopCast.inline.hpp"
+#include "oops/oop.inline.hpp"
 #include "oops/oopsHierarchy.hpp"
 
 template<typename T>
@@ -46,4 +46,4 @@ inline const char* null_safe_string(const char* str) {
   return str == nullptr ? "null" : str;
 }
 
-#endif // SHARE_PRIMS_FOREIGN_GLOBALS_INLINE_HPP
+#endif // SHARE_PRIMS_FOREIGNGLOBALS_INLINE_HPP

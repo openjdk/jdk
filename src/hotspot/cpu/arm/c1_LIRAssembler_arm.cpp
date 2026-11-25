@@ -2115,7 +2115,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
   if (basic_type == T_ARRAY) basic_type = T_OBJECT;
 
   // If we don't know anything or it's an object array, just go through the generic arraycopy
-  if (default_type == nullptr) {
+  if (default_type == nullptr || !default_type->is_loaded()) {
 
     // save arguments, because they will be killed by a runtime call
     save_in_reserved_area(R0, R1, R2, R3);

@@ -152,7 +152,7 @@
   product(double, G1LastPLABAverageOccupancy, 50.0, EXPERIMENTAL,           \
                "The expected average occupancy of the last PLAB in "        \
                "percent.")                                                  \
-               range(0.001, 100.0)                                          \
+               range(0.0, 99.999)                                           \
                                                                             \
   product(size_t, G1SATBBufferSize, 1*K,                                    \
           "Number of entries in an SATB log buffer.")                       \

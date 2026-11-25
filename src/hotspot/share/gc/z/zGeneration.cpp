@@ -28,6 +28,7 @@
 #include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/isGCActiveMark.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
+#include "gc/z/zAdaptiveHeap.inline.hpp"
 #include "gc/z/zBarrierSet.hpp"
 #include "gc/z/zBarrierSetAssembler.hpp"
 #include "gc/z/zBarrierSetNMethod.hpp"
@@ -195,10 +196,20 @@ void ZGeneration::flip_age_pages(const ZRelocationSetSelector* selector) {
 }
 
 static double fragmentation_limit(ZGenerationId generation) {
+  double min_fragmentation = 0.0;
+  if (ZAdaptiveHeapSizing && ZHeap::heap()->is_alloc_stalling()) {
+    // It can be dangerous to defragment too much when the critical
+    // reserve of machine memory is used.  When
+    // stalling starts, there should be very limited amounts of
+    // external fragmentation in the system. If we can't easily
+    // recover memory after this point, rather consider throwing
+    // OOME and calling it a day.
+    min_fragmentation = 25;
+  }
   if (generation == ZGenerationId::old) {
-    return ZFragmentationLimit;
+    return MAX2(ZFragmentationLimit, min_fragmentation);
   } else {
-    return ZYoungCompactionLimit;
+    return MAX2(ZYoungCompactionLimit, min_fragmentation);
   }
 }
 
@@ -386,6 +397,9 @@ void ZGeneration::at_collection_start(ConcurrentGCTimer* gc_timer) {
 void ZGeneration::at_collection_end() {
   workers()->set_inactive();
   stat_cycle()->at_end(stat_workers(), should_record_stats());
+  if (should_record_stats() && ZAdaptiveHeapSizing) {
+    ZHeap::heap()->adapt_heuristic_max_capacity(_id);
+  }
   // The heap at collection end data is gathered at relocate end
   clear_gc_timer();
 }
@@ -742,7 +756,7 @@ uint ZGenerationYoung::compute_tenuring_threshold(ZRelocationSetSelectorStats st
 
   const size_t young_garbage = ZGeneration::young()->stat_heap()->garbage_at_mark_end();
   const size_t young_allocated = ZGeneration::young()->stat_heap()->allocated_at_mark_end();
-  const size_t soft_max_capacity = ZHeap::heap()->soft_max_capacity();
+  const size_t heuristic_max_capacity = ZHeap::heap()->heuristic_max_capacity();
 
   // The life expectancy shows by what factor on average one age changes between
   // two ages in the age table. Values below 1 indicate generational behaviour where
@@ -764,7 +778,7 @@ uint ZGenerationYoung::compute_tenuring_threshold(ZRelocationSetSelectorStats st
   // resident part of the young generation is compared to the entire heap. Values
   // below 1 indicate it is relatively big. Conversely, values above 1 indicate
   // it is relatively small.
-  const double young_residency_reciprocal = double(soft_max_capacity) / double(young_live_total);
+  const double young_residency_reciprocal = double(heuristic_max_capacity) / double(young_live_total);
 
   // The old residency factor clamps the old residency reciprocal to
   // at least 1. That implies this factor is 1 unless the resident memory of
@@ -779,14 +793,24 @@ uint ZGenerationYoung::compute_tenuring_threshold(ZRelocationSetSelectorStats st
   // The allocated to garbage ratio, compares the ratio of newly allocated
   // memory since GC started to how much garbage we are freeing up. The higher
   // the value, the harder it is for the YC to keep up with the allocation rate.
-  const double allocated_garbage_ratio = double(young_allocated) / double(young_garbage + 1);
+  const double allocated_garbage_ratio = MIN2(double(young_allocated) / double(young_garbage + 1), 1.0);
+
+  // The amount of CPU spent being spent collecting the young generation vs
+  // the old generation. Since the CPU time of both generations contribute
+  // to the adaptive heap sizing, we want to reduce the amount of time spent
+  // in the most dominant generation.
+  const double young_to_old_gc_time_ratio = ZAdaptiveHeap::young_to_old_gc_time();
+
+  // If there is urgency for promotion we should be aggressive, and if it can
+  // reduce total GC time, we should also be more aggressive.
+  const double promotion_aggressiveness = MAX2(allocated_garbage_ratio, young_to_old_gc_time_ratio);
 
   // We slow down the young residency factor with a log. A larger log slows
   // it down faster. We select a log between 2 - 16 scaled by the allocated
   // to garbage factor. This selects a larger log when the GC has a harder
   // time keeping up, which causes more promotions to the old generation,
   // making the young collections faster so they can catch up.
-  const double young_log = MAX2(MIN2(allocated_garbage_ratio, 1.0) * 16, 2.0);
+  const double young_log = MAX2(promotion_aggressiveness * 16, 2.0);
 
   // The young log residency is essentially the young residency factor, but slowed
   // down by the log_{young_log}(X) function described above.
@@ -802,6 +826,7 @@ uint ZGenerationYoung::compute_tenuring_threshold(ZRelocationSetSelectorStats st
   log_trace(gc, reloc)("Young Allocated: %zuM", young_allocated / M);
   log_trace(gc, reloc)("Young Garbage: %zuM", young_garbage / M);
   log_debug(gc, reloc)("Allocated To Garbage: %.1f", allocated_garbage_ratio);
+  log_debug(gc, reloc)("Young To Old GC Time: %.1f", young_to_old_gc_time_ratio);
   log_trace(gc, reloc)("Young Log: %.1f", young_log);
   log_trace(gc, reloc)("Young Residency Reciprocal: %.1f", young_residency_reciprocal);
   log_trace(gc, reloc)("Young Residency Factor: %.1f", young_residency_factor);

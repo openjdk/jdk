@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -196,6 +196,7 @@ public class TestHostnameChecker {
         check(checker, "altfoo1.com", cert3, true);
         check(checker, "altfoo2.com", cert3, true);
         check(checker, "5.6.7.8", cert3, true);
+        check(checker, "::ffff:5.6.7.8", cert3, true);
         check(checker, "foo.bar.com", cert4, true);
         check(checker, "altfoo.bar.com", cert4, false);
         check(checker, "2001:db8:3c4d:15::1a2f:1a2b", cert5, true);
@@ -221,6 +222,7 @@ public class TestHostnameChecker {
         check(checker, "altfoo1.com", cert3, true);
         check(checker, "altfoo2.com", cert3, true);
         check(checker, "5.6.7.8", cert3, true);
+        check(checker, "::ffff:5.6.7.8", cert3, true);
         check(checker, "foo.bar.com", cert4, true);
         check(checker, "altfoo.bar.com", cert4, false);
     }
@@ -239,11 +241,11 @@ public class TestHostnameChecker {
                  throws Exception {
         try {
             checker.match(name, cert);
-            if (expectedResult == false) {
+            if (!expectedResult) {
                 throw new Exception("Passed invalid test: " + name);
             }
         } catch (CertificateException e) {
-            if (expectedResult == true) {
+            if (expectedResult) {
                 throw new Exception("Failed valid test: " + name, e);
             }
         }

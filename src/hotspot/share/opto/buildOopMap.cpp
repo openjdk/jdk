@@ -360,10 +360,10 @@ OopMap *OopFlow::build_oop_map( Node *n, int max_reg, PhaseRegAlloc *regalloc, i
 #ifdef ASSERT
       if (t->isa_rawptr()) {
         ResourceMark rm;
-        Unique_Node_List worklist;
+        Unique_Node_List<const Node> worklist;
         worklist.push(def);
         for (uint i = 0; i < worklist.size(); i++) {
-          Node* m = worklist.at(i);
+          const Node* m = worklist.at(i);
           if (C->cfg()->_raw_oops.member(m)) {
             def->dump();
             m->dump();

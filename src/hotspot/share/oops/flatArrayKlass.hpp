@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_OOPS_FLATARRAYKLASS_HPP
-#define SHARE_VM_OOPS_FLATARRAYKLASS_HPP
+#ifndef SHARE_OOPS_FLATARRAYKLASS_HPP
+#define SHARE_OOPS_FLATARRAYKLASS_HPP
 
 #include "classfile/classLoaderData.hpp"
 #include "oops/arrayKlass.hpp"
@@ -153,4 +153,4 @@ private:
   void oop_verify_on(oop obj, outputStream* st) override;
 };
 
-#endif
+#endif // SHARE_OOPS_FLATARRAYKLASS_HPP

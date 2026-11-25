@@ -22,8 +22,8 @@
  *
  */
 
+#include "cds/aotHeap.hpp"
 #include "cds/aotReferenceObjSupport.hpp"
-#include "cds/heapShared.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -32,7 +32,6 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/oopCast.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/javaCalls.hpp"
@@ -97,7 +96,7 @@ class KeepAliveObjectsTable : public HashTable<oop, bool,
     36137, // prime number
     AnyObj::C_HEAP,
     mtClassShared,
-    HeapShared::oop_address_hash> {};
+    AOTHeap::oop_address_hash> {};
 
 static KeepAliveObjectsTable* _keep_alive_objs_table;
 static OopHandle _keep_alive_objs_array;
@@ -227,7 +226,7 @@ bool AOTReferenceObjSupport::check_if_ref_obj(oop obj) {
                            PTR_FORMAT ")", p2i(_null_queue.resolve()));
       log_error(aot, heap)("%s", (referent == nullptr) ?
                            "referent cannot be null" : "referent is not registered with CDS.keepAlive()");
-      HeapShared::debug_trace();
+      AOTHeap::debug_trace();
       AOTMetaspace::unrecoverable_writing_error();
     }
 

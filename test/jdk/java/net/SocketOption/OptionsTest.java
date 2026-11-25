@@ -50,6 +50,10 @@ public class OptionsTest {
             return new Test<T>(option, value);
         }
 
+        @Override
+        public String toString() {
+            return "Test SocketOption: " + option + " with value: " + value;
+        }
     }
 
     // The tests set the option using the new API, read back the set value
@@ -131,6 +135,7 @@ public class OptionsTest {
 
     static <T> void test(Socket s, Test<T> test) throws Exception {
         SocketOption<T> option = test.option;
+        System.out.println(s.getClass().getName() + " - " + test);
         s.setOption(option, test.value);
         T value1 = s.getOption(test.option);
         T value2 = (T) legacyGetOption(Socket.class, s, test.option);
@@ -139,6 +144,7 @@ public class OptionsTest {
 
     static <T> void test(ServerSocket ss, Test<T> test) throws Exception {
         SocketOption<T> option = test.option;
+        System.out.println(ss.getClass().getName() + " - " + test);
         ss.setOption(option, test.value);
         T value1 = ss.getOption(test.option);
         T value2 = (T) legacyGetOption(ServerSocket.class, ss, test.option);
@@ -147,6 +153,7 @@ public class OptionsTest {
 
     static <T> void test(DatagramSocket ds, Test<T> test) throws Exception {
         SocketOption<T> option = test.option;
+        System.out.println(ds.getClass().getName() + " - " + test);
         ds.setOption(option, test.value);
         T value1 = ds.getOption(test.option);
         T value2 = (T) legacyGetOption(ds.getClass(), ds, test.option);

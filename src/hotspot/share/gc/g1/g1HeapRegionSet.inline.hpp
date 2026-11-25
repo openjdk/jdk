@@ -120,95 +120,11 @@ inline void G1FreeRegionList::add_ordered(G1HeapRegion* hr) {
   increase_num_regions(hr->node_index());
 }
 
-inline G1HeapRegion* G1FreeRegionList::remove_from_head_impl() {
-  G1HeapRegion* result = _head;
-  _head = result->next();
-  if (_head == nullptr) {
-    _tail = nullptr;
-  } else {
-    _head->set_prev(nullptr);
-  }
-  result->set_next(nullptr);
-  return result;
-}
-
-inline G1HeapRegion* G1FreeRegionList::remove_from_tail_impl() {
-  G1HeapRegion* result = _tail;
-
-  _tail = result->prev();
-  if (_tail == nullptr) {
-    _head = nullptr;
-  } else {
-    _tail->set_next(nullptr);
-  }
-  result->set_prev(nullptr);
-  return result;
-}
-
-inline G1HeapRegion* G1FreeRegionList::remove_region(bool from_head) {
-  check_mt_safety();
-  verify_optional();
-
-  if (is_empty()) {
-    return nullptr;
-  }
-  assert_free_region_list(num_regions() > 0 && _head != nullptr && _tail != nullptr, "invariant");
-
-  G1HeapRegion* hr;
-
-  if (from_head) {
-    hr = remove_from_head_impl();
-  } else {
-    hr = remove_from_tail_impl();
-  }
-
-  if (_last == hr) {
-    _last = nullptr;
-  }
-
-  // remove() will verify the region and check mt safety.
-  remove(hr);
-
-  decrease_num_regions(hr->node_index());
-
-  return hr;
-}
-
-inline G1HeapRegion* G1FreeRegionList::remove_region_with_node_index(bool from_head,
-                                                                 uint requested_node_index) {
-  assert(UseNUMA, "Invariant");
-
-  const uint max_search_depth = G1NUMA::numa()->max_search_depth();
-  G1HeapRegion* cur;
-
-  // Find the region to use, searching from _head or _tail as requested.
-  size_t cur_depth = 0;
-  if (from_head) {
-    for (cur = _head;
-         cur != nullptr && cur_depth < max_search_depth;
-         cur = cur->next(), ++cur_depth) {
-      if (requested_node_index == cur->node_index()) {
-        break;
-      }
-    }
-  } else {
-    for (cur = _tail;
-         cur != nullptr && cur_depth < max_search_depth;
-         cur = cur->prev(), ++cur_depth) {
-      if (requested_node_index == cur->node_index()) {
-        break;
-      }
-    }
-  }
-
-  // Didn't find a region to use.
-  if (cur == nullptr || cur_depth >= max_search_depth) {
-    return nullptr;
-  }
-
+inline void G1FreeRegionList::unlink_from_list(G1HeapRegion* r) {
+  precond(r != nullptr);
   // Splice the region out of the list.
-  G1HeapRegion* prev = cur->prev();
-  G1HeapRegion* next = cur->next();
+  G1HeapRegion* prev = r->prev();
+  G1HeapRegion* next = r->next();
   if (prev == nullptr) {
     _head = next;
   } else {
@@ -219,17 +135,66 @@ inline G1HeapRegion* G1FreeRegionList::remove_region_with_node_index(bool from_h
   } else {
     next->set_prev(prev);
   }
-  cur->set_prev(nullptr);
-  cur->set_next(nullptr);
+  r->set_prev(nullptr);
+  r->set_next(nullptr);
+}
 
-  if (_last == cur) {
+inline void G1FreeRegionList::remove_from_list(G1HeapRegion* r) {
+  precond(r != nullptr);
+
+  unlink_from_list(r);
+  if (_last == r) {
     _last = nullptr;
   }
 
-  remove(cur);
-  decrease_num_regions(cur->node_index());
+  remove(r);
+  decrease_num_regions(r->node_index());
+}
 
+inline G1HeapRegion* G1FreeRegionList::find_region_to_remove(bool from_head, uint requested_node_index) {
+  G1HeapRegion* cur = nullptr;
+
+  if (G1NUMA::numa()->is_enabled() && requested_node_index != G1NUMA::AnyNodeIndex) {
+    const uint max_search_depth = G1NUMA::numa()->max_search_depth();
+    // Find the region to use, searching from _head or _tail as requested.
+    uint cur_depth = 0;
+    if (from_head) {
+      for (cur = _head;
+          cur != nullptr && cur_depth < max_search_depth;
+          cur = cur->next(), ++cur_depth) {
+        if (requested_node_index == cur->node_index()) {
+          return cur;
+        }
+      }
+    } else {
+      for (cur = _tail;
+          cur != nullptr && cur_depth < max_search_depth;
+          cur = cur->prev(), ++cur_depth) {
+        if (requested_node_index == cur->node_index()) {
+          return cur;
+        }
+      }
+    }
+  }
+  // Either we could not find a region on the correct NUMA node within the search depth, or
+  // we do not care about the node placement. In either case take the next region from the
+  // requested end of the list.
+  cur = from_head ? _head : _tail;
   return cur;
+}
+
+inline G1HeapRegion* G1FreeRegionList::remove_region(bool from_head, uint requested_node_index) {
+  check_mt_safety();
+  verify_optional();
+
+  if (is_empty()) {
+    return nullptr;
+  }
+  assert_free_region_list(num_regions() > 0 && _head != nullptr && _tail != nullptr, "invariant");
+
+  G1HeapRegion* r = find_region_to_remove(from_head, requested_node_index);
+  remove_from_list(r);
+  return r;
 }
 
 inline void G1FreeRegionList::NodeInfo::increase_num_regions(uint node_index) {

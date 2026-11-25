@@ -37,7 +37,7 @@ import jtreg.SkippedException;
 
 /**
  * @test
- * @bug 8374482 8376264 8376284 8377395
+ * @bug 8374482 8376264 8376284 8377395 8390621
  * @requires vm.hasSA
  * @requires vm.gc != "Z"
  * @requires os.family == "linux"
@@ -72,12 +72,16 @@ public class TestJhsdbJstackMixedCore {
     }
 
     public static void main(String... args) throws Throwable {
-        if (Platform.isMusl()) {
-            throw new SkippedException("This test does not work on musl libc.");
-        }
-
         // Check whether the symbol of signal trampoline is available.
         var libc = SATestUtils.getLibCPath();
+
+        if (Platform.isMusl()) {
+            if (!Platform.isX64()) {
+                throw new SkippedException("This platform is not supported.");
+            } else if (SATestUtils.getDebugInfo(libc) == null) {
+                throw new SkippedException("libc debug info is not available.");
+            }
+        }
 
         // SA distinguishes the frame is signal trampoline if the function
         // is named "__restore_rt".

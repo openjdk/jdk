@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,13 @@
 /*
  * @test
  * @summary Even if LoadableDescriptors fail, we observe correct operation.
-            This uses a custom classloader to ensure that classloading/linking will
-            initially fail due to LoadableDescriptors.
-   @compile OuterValue.java
-   @compile InnerValue.java
+ *          This uses a custom classloader to ensure that classloading/linking will
+ *          initially fail due to LoadableDescriptors.
  * @enablePreview
- * @run junit runtime.valhalla.valuetypes.classloading.PreLoadFailuresDoNotImpactApplicationTest
+ * @requires (vm.opt.PreloadClasses == null | vm.opt.PreloadClasses == "true")
+ * @compile OuterValue.java
+ * @compile InnerValue.java
+ * @run junit ${test.main.class}
  */
 
 package runtime.valhalla.valuetypes.classloading;

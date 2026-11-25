@@ -115,7 +115,7 @@ public:
   bool is_unreachable_region(const PhaseGVN* phase);
 #ifdef ASSERT
   bool is_in_infinite_subgraph();
-  static bool are_all_nodes_in_infinite_subgraph(Unique_Node_List& worklist);
+  static bool are_all_nodes_in_infinite_subgraph(Unique_Node_List<const Node>& worklist);
 #endif //ASSERT
   LoopStatus loop_status() const { return _loop_status; };
   void set_loop_status(LoopStatus status);
@@ -321,8 +321,8 @@ class PhiNode : public TypeNode {
   bool wait_for_region_igvn(PhaseGVN* phase);
   bool is_data_loop(RegionNode* r, Node* uin, const PhaseGVN* phase);
 
-  static Node* clone_through_phi(Node* root_phi, const Type* t, uint c, PhaseIterGVN* igvn);
-  static Node* merge_through_phi(Node* root_phi, PhaseIterGVN* igvn);
+  static Node* clone_through_phi(PhiNode* root_phi, const Type* t, uint c, PhaseIterGVN* igvn);
+  static Node* merge_through_phi(PhiNode* root_phi, PhaseIterGVN* igvn);
 
   bool must_wait_for_region_in_irreducible_loop(PhaseGVN* phase) const;
 
@@ -391,7 +391,6 @@ public:
   bool try_clean_memory_phi(PhaseIterGVN* igvn);
   virtual int Opcode() const;
   virtual bool pinned() const { return in(0) != nullptr; }
-  virtual const TypePtr *adr_type() const { verify_adr_type(true); return _adr_type; }
 
   void  set_inst_mem_id(int inst_mem_id) { _inst_mem_id = inst_mem_id; }
   int inst_mem_id() const { return _inst_mem_id; }
@@ -432,6 +431,12 @@ public:
 
   const TypeTuple* collect_types(PhaseGVN* phase) const;
   bool can_be_replaced_by(PhaseGVN* phase, const PhiNode* other) const;
+
+private:
+  const TypePtr* out_adr_type_impl() const final {
+    verify_adr_type(true);
+    return _adr_type;
+  }
 };
 
 //------------------------------GotoNode---------------------------------------
@@ -805,19 +810,16 @@ class JumpProjNode : public JProjNode {
 
  private:
   const int  _dest_bci;
-  const uint _proj_no;
-  const int  _switch_val;
  public:
-  JumpProjNode(Node* jumpnode, uint proj_no, int dest_bci, int switch_val)
-    : JProjNode(jumpnode, proj_no), _dest_bci(dest_bci), _proj_no(proj_no), _switch_val(switch_val) {
+  JumpProjNode(Node* jumpnode, uint proj_no, int dest_bci)
+    : JProjNode(jumpnode, proj_no), _dest_bci(dest_bci) {
     init_class_id(Class_JumpProj);
   }
 
   virtual int Opcode() const;
   virtual const Type* bottom_type() const { return Type::CONTROL; }
   int  dest_bci()    const { return _dest_bci; }
-  int  switch_val()  const { return _switch_val; }
-  uint proj_no()     const { return _proj_no; }
+  uint proj_no()     const { return _con; }
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
   virtual void dump_compact_spec(outputStream *st) const;
@@ -879,6 +881,7 @@ public:
   CreateExNode(const Type* t, Node* control, Node* i_o) : TypeNode(t, 2) {
     init_req(0, control);
     init_req(1, i_o);
+    init_class_id(Class_CreateEx);
   }
   virtual int Opcode() const;
   virtual Node* Identity(PhaseGVN* phase);

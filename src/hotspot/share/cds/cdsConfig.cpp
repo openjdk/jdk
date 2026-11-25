@@ -22,19 +22,23 @@
  *
  */
 
+#include "cds/aotHeap.hpp"
 #include "cds/aotLogging.hpp"
 #include "cds/aotMapLogger.hpp"
+#include "cds/aotMetaspace.hpp"
+#include "cds/aotModules.hpp"
+#include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/classListWriter.hpp"
 #include "cds/filemap.hpp"
-#include "cds/heapShared.inline.hpp"
-#include "classfile/classLoaderDataShared.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "code/aotCodeCache.hpp"
+#include "compiler/compilerDefinitions.inline.hpp"
 #include "include/jvm_io.h"
 #include "logging/log.hpp"
 #include "memory/universe.hpp"
 #include "prims/jvmtiAgentList.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
@@ -63,6 +67,8 @@ const char* CDSConfig::_input_static_archive_path = nullptr;
 const char* CDSConfig::_input_dynamic_archive_path = nullptr;
 const char* CDSConfig::_output_archive_path = nullptr;
 
+double CDSConfig::_aot_compile_threshold_scaling = 1.0;
+
 JavaThread* CDSConfig::_dumper_thread = nullptr;
 
 int CDSConfig::get_status() {
@@ -82,8 +88,8 @@ void CDSConfig::ergo_initialize() {
 
   if (is_dumping_static_archive() && !is_dumping_final_static_archive()) {
     // Note: -Xshare and -XX:AOTMode flags are mutually exclusive.
-    // - Classic workflow: -Xshare:on and -Xshare:dump cannot take effect at the same time.
-    // - JEP 483 workflow: -XX:AOTMode:record and -XX:AOTMode=on cannot take effect at the same time.
+    // - Classic CDS workflow: -Xshare:on and -Xshare:dump cannot take effect at the same time.
+    // - AOT workflow: -XX:AOTMode:record and -XX:AOTMode=required cannot take effect at the same time.
     // So we can never come to here with RequireSharedSpaces==true.
     assert(!RequireSharedSpaces, "sanity");
 
@@ -116,7 +122,7 @@ void CDSConfig::ergo_initialize() {
     precond(allow_only_single_java_thread());
 
     // The AttachListenerThread may execute Java code or load new classes. It might see
-    // unexpected results after HeapShared::prepare_for_archiving().
+    // unexpected results after AOTHeap::prepare_for_archiving().
     //
     // We disable all new incoming attach requests, so you can't use jcmd, etc, on this JVM.
     // Since we are not running any application code in this JVM and only executed a very
@@ -509,6 +515,11 @@ void CDSConfig::check_aotmode_off() {
 }
 
 void CDSConfig::check_aotmode_auto_or_on() {
+  if (AOTMode != nullptr && strcmp(AOTMode, "on") == 0) {
+    warning("Option -XX:AOTMode-on was deprecated in version 28 and will likely be "
+            "removed in a future release. Use option -XX:AOTMode=required instead.");
+  }
+
   if (!FLAG_IS_DEFAULT(AOTConfiguration)) {
     vm_exit_during_initialization(err_msg("AOTConfiguration can only be used with when AOTMode is record or create (selected AOTMode = %s)",
                                           FLAG_IS_DEFAULT(AOTMode) ? "auto" : AOTMode));
@@ -663,11 +674,17 @@ bool CDSConfig::check_vm_args_consistency(bool patch_mod_javabase, bool mode_fla
   }
 
   if (AOTClassLinking) {
-    // If AOTClassLinking is specified, enable all AOT optimizations by default.
+    // If AOTClassLinking is specified, enable all these optimizations by default.
     FLAG_SET_ERGO_IF_DEFAULT(AOTInvokeDynamicLinking, true);
   } else {
-    // AOTInvokeDynamicLinking depends on AOTClassLinking.
+    // All of these *might* depend on AOTClassLinking. Better be safe than sorry.
     FLAG_SET_ERGO(AOTInvokeDynamicLinking, false);
+
+    if (CDSConfig::is_dumping_archive()) {
+      FLAG_SET_ERGO(AOTRecordTraining, false);
+      FLAG_SET_ERGO(AOTReplayTraining, false);
+      AOTCodeCache::disable_caching();
+    }
   }
 
   if (is_dumping_static_archive()) {
@@ -681,6 +698,12 @@ bool CDSConfig::check_vm_args_consistency(bool patch_mod_javabase, bool mode_fla
         // counter-productive. Switching back to mixed mode improves testing time
         // with AOT and -Xcomp.
         Arguments::set_mode_flags(Arguments::_mixed);
+      }
+      _aot_compile_threshold_scaling = CompileThresholdScaling; // Preserve for A2 compilation
+      if (CompileThresholdScaling < 1.0) {
+        // Set flag to default value to avoid excessive normal JIT
+        // compilations during assembly phase.
+        FLAG_SET_ERGO(CompileThresholdScaling, 1.0);
       }
     } else if (!mode_flag_cmd_line) {
       // By default, -Xshare:dump runs in interpreter-only mode, which is required for deterministic archive.
@@ -745,7 +768,8 @@ bool CDSConfig::check_vm_args_consistency(bool patch_mod_javabase, bool mode_fla
 
 void CDSConfig::setup_compiler_args() {
   // AOT profiles and AOT-compiled code are supported only in the JEP 483 workflow.
-  bool can_dump_profile_and_compiled_code = AOTClassLinking && new_aot_flags_used();
+  bool can_dump_profile_and_compiled_code = !CompilerConfig::is_interpreter_only() && AOTClassLinking && new_aot_flags_used();
+  bool can_use_profile_and_compiled_code = !CompilerConfig::is_interpreter_only() && new_aot_flags_used();
 
   if (is_dumping_preimage_static_archive() && can_dump_profile_and_compiled_code) {
     // JEP 483 workflow -- training
@@ -756,13 +780,23 @@ void CDSConfig::setup_compiler_args() {
     // JEP 483 workflow -- assembly
     FLAG_SET_ERGO(AOTRecordTraining, false);
     FLAG_SET_ERGO_IF_DEFAULT(AOTReplayTraining, true);
-    AOTCodeCache::enable_caching(); // Generate AOT code during assembly phase.
+    // Generate AOT code only when training data enabled
+    if (AOTReplayTraining) {
+      AOTCodeCache::enable_caching();
+    } else {
+      AOTCodeCache::disable_caching();
+    }
     disable_dumping_aot_code();     // Don't dump AOT code until metadata and heap are dumped.
-  } else if (is_using_archive() && new_aot_flags_used()) {
+  } else if (is_using_archive() && can_use_profile_and_compiled_code) {
     // JEP 483 workflow -- production
     FLAG_SET_ERGO(AOTRecordTraining, false);
     FLAG_SET_ERGO_IF_DEFAULT(AOTReplayTraining, true);
-    AOTCodeCache::enable_caching();
+    // Use AOT code only when training data enabled
+    if (AOTReplayTraining) {
+      AOTCodeCache::enable_caching();
+    } else {
+      AOTCodeCache::disable_caching();
+    }
   } else {
     FLAG_SET_ERGO(AOTReplayTraining, false);
     FLAG_SET_ERGO(AOTRecordTraining, false);
@@ -858,7 +892,7 @@ bool CDSConfig::is_using_only_default_archive() {
 }
 
 bool CDSConfig::is_logging_lambda_form_invokers() {
-  return ClassListWriter::is_enabled() || is_dumping_dynamic_archive();
+  return ClassListWriter::is_enabled() || is_dumping_dynamic_archive() || is_dumping_preimage_static_archive();
 }
 
 bool CDSConfig::is_dumping_regenerated_lambdaform_invokers() {
@@ -991,7 +1025,7 @@ bool CDSConfig::is_dumping_heap() {
 }
 
 bool CDSConfig::is_loading_heap() {
-  return HeapShared::is_archived_heap_in_use();
+  return AOTHeap::is_archived_heap_in_use();
 }
 
 bool CDSConfig::is_dumping_klass_subgraphs() {
@@ -1031,7 +1065,7 @@ void CDSConfig::disable_full_module_graph() {
 }
 
 bool CDSConfig::is_using_full_module_graph() {
-  if (ClassLoaderDataShared::is_full_module_graph_loaded()) {
+  if (AOTModules::is_full_module_graph_loaded()) {
     return true;
   }
 
@@ -1039,7 +1073,7 @@ bool CDSConfig::is_using_full_module_graph() {
     return false;
   }
 
-  if (is_using_archive() && HeapShared::can_use_archived_heap()) {
+  if (is_using_archive() && AOTHeap::can_use_archived_heap()) {
     // Classes used by the archived full module graph are loaded in JVMTI early phase.
     assert(!(JvmtiExport::should_post_class_file_load_hook() && JvmtiExport::has_early_class_hook_env()),
            "CDS should be disabled if early class hooks are enabled");
@@ -1060,7 +1094,7 @@ void CDSConfig::stop_dumping_full_module_graph(const char* reason) {
 }
 
 void CDSConfig::stop_using_full_module_graph(const char* reason) {
-  assert(!ClassLoaderDataShared::is_full_module_graph_loaded(), "you call this function too late!");
+  assert(!AOTModules::is_full_module_graph_loaded(), "you call this function too late!");
   if (_is_using_full_module_graph) {
     _is_using_full_module_graph = false;
     if (reason != nullptr) {

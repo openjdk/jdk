@@ -35,6 +35,21 @@
  *                   ${test.main.class}
  */
 
+/**
+ * @test
+ * @bug 8358889
+ * @summary Test that a spilled uncommon trap request is handled properly.
+ * @requires vm.compiler2.enabled
+ * @requires os.arch == "aarch64"
+ * @library /test/lib
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:-TieredCompilation -Xcomp
+ *                   -XX:+UnlockExperimentalVMOptions -XX:+PreferCallBasedUncommonTraps
+ *                   -XX:StressSeed=403 -XX:+StressGCM
+ *                   -XX:CompileCommand=compileonly,${test.main.class}::test
+ *                   -XX:CompileCommand=dontinline,${test.main.class}::dontInline
+ *                   ${test.main.class}
+ */
+
 import jdk.test.lib.Asserts;
 
 public class TestSpilledUncommonTrapRequest {

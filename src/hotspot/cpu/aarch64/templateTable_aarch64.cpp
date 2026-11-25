@@ -29,9 +29,9 @@
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/tlab_globals.hpp"
+#include "interpreter/interp_masm.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
-#include "interpreter/interp_masm.hpp"
 #include "interpreter/templateTable.hpp"
 #include "memory/universe.hpp"
 #include "oops/methodData.hpp"
@@ -45,6 +45,7 @@
 #include "prims/methodHandles.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/synchronizer.hpp"
@@ -2020,12 +2021,14 @@ void TemplateTable::if_acmp(Condition cc) {
   Label taken, not_taken;
   __ pop_ptr(r1);
 
-  __ profile_acmp(r2, r1, r0, r4);
 
-  Register is_value_type_mask = rscratch1;
-  __ mov(is_value_type_mask, markWord::value_type_pattern);
 
   if (Arguments::is_valhalla_enabled()) {
+    __ profile_acmp(r2, r1, r0, r4);
+
+    Register is_value_type_mask = rscratch1;
+    __ mov(is_value_type_mask, markWord::value_type_pattern);
+
     // The substitutability test is only necessary if r1 and r0 are not the same...
     __ cmp(r1, r0);
     __ br(Assembler::EQ, (cc == equal) ? taken : not_taken);
@@ -2724,9 +2727,9 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   // volatile accesses forms a sequentially-consistent set of
   // operations when combined with STLR and LDAR.  Without a leading
   // membar it's possible for a simple Dekker test to fail if loads
-  // use LDR;DMB but stores use STLR.  This can happen if C2 compiles
+  // use LDR;DMB but stores use STLR. This can happen if C1 or C2 compiles
   // the stores in one method and we interpret the loads in another.
-  if (!CompilerConfig::is_c1_or_interpreter_only()){
+  {
     Label notVolatile;
     __ tbz(flags, ResolvedFieldEntry::is_volatile_shift, notVolatile);
     __ membar(MacroAssembler::AnyAny);
@@ -2785,7 +2788,9 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
       __ b(Done);
     } else {
       Label is_flat;
-      __ test_field_is_flat(flags, noreg /* temp */, is_flat);
+      if (UseFieldFlattening) {
+        __ test_field_is_flat(flags, noreg /* temp */, is_flat);
+      }
       __ load_heap_oop(r0, field, rscratch1, rscratch2);
       __ push(atos);
       if (rc == may_rewrite) {
@@ -2793,15 +2798,17 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
       }
       __ b(Done);
       __ bind(is_flat);
-      // field is flat (null-free or nullable with a null-marker)
-      __ mov(r0, obj);
-      __ read_flat_field(cache, r0);
-      __ verify_oop(r0);
-      __ push(atos);
-      if (rc == may_rewrite) {
-        patch_bytecode(Bytecodes::_fast_vgetfield, bc, r1);
+      if (UseFieldFlattening) {
+        // field is flat (null-free or nullable with a null-marker)
+        __ mov(r0, obj);
+        __ read_flat_field(cache, r0);
+        __ verify_oop(r0);
+        __ push(atos);
+        if (rc == may_rewrite) {
+          patch_bytecode(Bytecodes::_fast_vgetfield, bc, r1);
+        }
+        __ b(Done);
       }
-      __ b(Done);
     }
   }
 
@@ -2886,10 +2893,12 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
 
   __ bind(Done);
 
-  Label notVolatile;
-  __ tbz(flags, ResolvedFieldEntry::is_volatile_shift, notVolatile);
-  __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
-  __ bind(notVolatile);
+  {
+    Label notVolatile;
+    __ tbz(flags, ResolvedFieldEntry::is_volatile_shift, notVolatile);
+    __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
+    __ bind(notVolatile);
+  }
 }
 
 
@@ -3044,7 +3053,9 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
         __ b(Done);
       } else {
         Label null_free_reference, is_flat, rewrite_value;
-        __ test_field_is_flat(flags, noreg /* temp */, is_flat);
+        if (UseFieldFlattening) {
+          __ test_field_is_flat(flags, noreg /* temp */, is_flat);
+        }
         __ test_field_is_null_free_value_type(flags, noreg /* temp */, null_free_reference);
         pop_and_check_object(obj);
         // Store into the field
@@ -3063,8 +3074,10 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
         do_oop_store(_masm, field, r0, IN_HEAP);
         __ b(rewrite_value);
         __ bind(is_flat);
-        pop_and_check_object(r7);
-        __ write_flat_field(cache, off, index, flags, r7);
+        if (UseFieldFlattening) {
+          pop_and_check_object(r7);
+          __ write_flat_field(cache, index, flags, r7);
+        }
         __ bind(rewrite_value);
         if (rc == may_rewrite) {
           patch_bytecode(Bytecodes::_fast_vputfield, bc, r19, true, byte_no);
@@ -3275,8 +3288,6 @@ void TemplateTable::fast_storefield(TosState state)
     __ bind(notVolatile);
   }
 
-  Label notVolatile;
-
   // Get object from stack
   pop_and_check_object(r2);
 
@@ -3287,18 +3298,25 @@ void TemplateTable::fast_storefield(TosState state)
   switch (bytecode()) {
   case Bytecodes::_fast_vputfield:
     {
-      Label is_flat, done;
-      __ test_field_is_flat(r5, noreg /* temp */, is_flat);
-      __ null_check(r0);
-      do_oop_store(_masm, field, r0, IN_HEAP);
-      __ b(done);
-      __ bind(is_flat);
-      __ load_field_entry(r4, r5);
-      // Re-shuffle registers because of VM calls calling convention
-      __ mov(r19, r1);
-      __ mov(r7, r2);
-      __ write_flat_field(r4, r19, r6, r8, r7);
-      __ bind(done);
+      if (Arguments::is_valhalla_enabled()) {
+        Label is_flat, done;
+        if (UseFieldFlattening) {
+          __ test_field_is_flat(r5, noreg /* temp */, is_flat);
+        }
+        __ null_check(r0);
+        do_oop_store(_masm, field, r0, IN_HEAP);
+        __ b(done);
+        __ bind(is_flat);
+        if (UseFieldFlattening) {
+          __ load_field_entry(r4, r5);
+          // Re-shuffle registers because of VM calls calling convention
+          __ mov(r7, r2);
+          __ write_flat_field(r4, r6, r8, r7);
+        }
+        __ bind(done);
+      } else {
+        __ should_not_reach_here();
+      }
     }
     break;
   case Bytecodes::_fast_aputfield:
@@ -3385,9 +3403,9 @@ void TemplateTable::fast_accessfield(TosState state)
   // volatile accesses forms a sequentially-consistent set of
   // operations when combined with STLR and LDAR.  Without a leading
   // membar it's possible for a simple Dekker test to fail if loads
-  // use LDR;DMB but stores use STLR.  This can happen if C2 compiles
+  // use LDR;DMB but stores use STLR. This can happen if C1 or C2 compiles
   // the stores in one method and we interpret the loads in another.
-  if (!CompilerConfig::is_c1_or_interpreter_only()) {
+  {
     Label notVolatile;
     __ tbz(r3, ResolvedFieldEntry::is_volatile_shift, notVolatile);
     __ membar(MacroAssembler::AnyAny);
@@ -3398,9 +3416,13 @@ void TemplateTable::fast_accessfield(TosState state)
   switch (bytecode()) {
   case Bytecodes::_fast_vgetfield:
     {
-      // field is flat
-      __ read_flat_field(r2, r0);
-      __ verify_oop(r0);
+      if (UseFieldFlattening) {
+        // field is flat
+        __ read_flat_field(r2, r0);
+        __ verify_oop(r0);
+      } else {
+        __ should_not_reach_here();
+      }
     }
     break;
   case Bytecodes::_fast_agetfield:
@@ -3455,9 +3477,9 @@ void TemplateTable::fast_xaccess(TosState state)
   // volatile accesses forms a sequentially-consistent set of
   // operations when combined with STLR and LDAR.  Without a leading
   // membar it's possible for a simple Dekker test to fail if loads
-  // use LDR;DMB but stores use STLR.  This can happen if C2 compiles
+  // use LDR;DMB but stores use STLR. This can happen if C1 or C2 compiles
   // the stores in one method and we interpret the loads in another.
-  if (!CompilerConfig::is_c1_or_interpreter_only()) {
+  {
     Label notVolatile;
     __ load_unsigned_byte(r3, Address(r2, in_bytes(ResolvedFieldEntry::flags_offset())));
     __ tbz(r3, ResolvedFieldEntry::is_volatile_shift, notVolatile);
@@ -4105,8 +4127,10 @@ void TemplateTable::monitorenter()
   __ null_check(r0);
 
   Label is_value_type;
-  __ ldr(rscratch1, Address(r0, oopDesc::mark_offset_in_bytes()));
-  __ test_markword_is_value_type(rscratch1, is_value_type);
+  if (Arguments::is_valhalla_enabled()) {
+    __ ldr(rscratch1, Address(r0, oopDesc::mark_offset_in_bytes()));
+    __ test_markword_is_value_type(rscratch1, is_value_type);
+  }
 
   const Address monitor_block_top(
         rfp, frame::interpreter_frame_monitor_block_top_offset * wordSize);
@@ -4211,9 +4235,11 @@ void TemplateTable::monitorenter()
   __ dispatch_next(vtos);
 
   __ bind(is_value_type);
-  __ call_VM(noreg, CAST_FROM_FN_PTR(address,
-                    InterpreterRuntime::throw_identity_exception), r0);
-  __ should_not_reach_here();
+  if (Arguments::is_valhalla_enabled()) {
+    __ call_VM(noreg, CAST_FROM_FN_PTR(address,
+                      InterpreterRuntime::throw_identity_exception), r0);
+    __ should_not_reach_here();
+  }
 }
 
 
@@ -4224,17 +4250,19 @@ void TemplateTable::monitorexit()
   // check for null object
   __ null_check(r0);
 
-  const int is_value_type_mask = markWord::value_type_pattern;
-  Label has_identity;
-  __ ldr(rscratch1, Address(r0, oopDesc::mark_offset_in_bytes()));
-  __ mov(rscratch2, is_value_type_mask);
-  __ andr(rscratch1, rscratch1, rscratch2);
-  __ cmp(rscratch1, rscratch2);
-  __ br(Assembler::NE, has_identity);
-  __ call_VM(noreg, CAST_FROM_FN_PTR(address,
-                     InterpreterRuntime::throw_illegal_monitor_state_exception));
-  __ should_not_reach_here();
-  __ bind(has_identity);
+  if (Arguments::is_valhalla_enabled()) {
+    const int is_value_type_mask = markWord::value_type_pattern;
+    Label has_identity;
+    __ ldr(rscratch1, Address(r0, oopDesc::mark_offset_in_bytes()));
+    __ mov(rscratch2, is_value_type_mask);
+    __ andr(rscratch1, rscratch1, rscratch2);
+    __ cmp(rscratch1, rscratch2);
+    __ br(Assembler::NE, has_identity);
+    __ call_VM(noreg, CAST_FROM_FN_PTR(address,
+                       InterpreterRuntime::throw_illegal_monitor_state_exception));
+    __ should_not_reach_here();
+    __ bind(has_identity);
+  }
 
   const Address monitor_block_top(
         rfp, frame::interpreter_frame_monitor_block_top_offset * wordSize);

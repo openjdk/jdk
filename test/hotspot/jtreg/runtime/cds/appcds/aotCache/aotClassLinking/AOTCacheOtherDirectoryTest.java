@@ -74,7 +74,7 @@ public class AOTCacheOtherDirectoryTest {
             .runAOTTrainingAndAssemblyWorkflow();
 
         // Sanity test, run from same directory
-        String[] cmdLine = new String[] { "-XX:-AOTClassLinking", "-XX:AOTMode=on",
+        String[] cmdLine = new String[] { "-XX:-AOTClassLinking", "-XX:AOTMode=required",
                                           "-XX:AOTCache=" + targetDirName + File.separator + aotCacheName + ".aot",
                                           "-Xlog:cds,aot=trace,aot+map+oops=trace:file=production1.map:none:filesize=0",
                                           "-cp", destPath.toString(), mainClass};
@@ -84,7 +84,7 @@ public class AOTCacheOtherDirectoryTest {
         output.shouldContain("CodeSource = " + realPath);
 
         // At runtime, run from /target so the classpath is different but use the same JAR
-        String[] cmdLine2 = new String[] { "-XX:-AOTClassLinking", "-XX:AOTMode=on",
+        String[] cmdLine2 = new String[] { "-XX:-AOTClassLinking", "-XX:AOTMode=required",
                                            "-XX:AOTCache=" + aotCacheName + ".aot",
                                            "-Xlog:cds,aot=trace,aot+map+oops=trace:file=production2.map:none:filesize=0",
                                            "-cp", jarName, mainClass};
@@ -95,7 +95,7 @@ public class AOTCacheOtherDirectoryTest {
         output.shouldContain("CodeSource = " + realPath);
 
         // At runtime, run from /target2 so the classpath is different but use the same JAR
-        String[] cmdLine3 = new String[] { "-XX:-AOTClassLinking", "-XX:AOTMode=on",
+        String[] cmdLine3 = new String[] { "-XX:-AOTClassLinking", "-XX:AOTMode=required",
                                            "-XX:AOTCache=" + targetDirName + File.separator + aotCacheName + ".aot",
                                            "-Xlog:cds,aot=trace,aot+map+oops=trace:file=production3.map:none:filesize=0",
                                            "-cp", destPath2.toString(), mainClass};

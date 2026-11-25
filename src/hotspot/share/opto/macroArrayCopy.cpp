@@ -89,7 +89,7 @@ Node* PhaseMacroExpand::make_leaf_call(Node* ctrl, Node* mem,
                                        Node* parm2, Node* parm3,
                                        Node* parm4, Node* parm5,
                                        Node* parm6, Node* parm7) {
-  Node* call = new CallLeafNoFPNode(call_type, call_addr, call_name, adr_type);
+  Node* call = new CallLeafNoFPNode(call_type, call_addr, call_name, adr_type, TypePtr::BOTTOM);
   call->init_req(TypeFunc::Control, ctrl);
   call->init_req(TypeFunc::I_O    , top());
   call->init_req(TypeFunc::Memory , mem);
@@ -306,10 +306,12 @@ Node* PhaseMacroExpand::mark_word_test(Node** ctrl, Node* obj, MergeMemNode* mem
 }
 
 Node* PhaseMacroExpand::generate_flat_array_guard(Node** ctrl, Node* array, MergeMemNode* mem, RegionNode* region) {
+  assert(UseArrayFlattening, "Should not be called if flat arrays are disabled");
   return mark_word_test(ctrl, array, mem, markWord::flat_array_bit_in_place, region);
 }
 
 Node* PhaseMacroExpand::generate_null_free_array_guard(Node** ctrl, Node* array, MergeMemNode* mem, RegionNode* region) {
+  assert(Arguments::is_valhalla_enabled(), "Should not be called if value types are disabled");
   return mark_word_test(ctrl, array, mem, markWord::null_free_array_bit_in_place, region);
 }
 
@@ -1123,7 +1125,7 @@ MergeMemNode* PhaseMacroExpand::generate_slow_arraycopy(ArrayCopyNode *ac,
 
   const TypeFunc* call_type = OptoRuntime::slow_arraycopy_Type();
   CallNode* call = new CallStaticJavaNode(call_type, OptoRuntime::slow_arraycopy_Java(),
-                                          "slow_arraycopy", TypePtr::BOTTOM);
+                                          "slow_arraycopy", TypePtr::BOTTOM, TypePtr::BOTTOM);
 
   call->init_req(TypeFunc::Control, *ctrl);
   call->init_req(TypeFunc::I_O    , *io);
@@ -1298,6 +1300,7 @@ void PhaseMacroExpand::generate_unchecked_arraycopy(Node** ctrl, MergeMemNode** 
 const TypePtr* PhaseMacroExpand::adjust_for_flat_array(const TypeAryPtr* top_dest, Node*& src_offset,
                                                        Node*& dest_offset, Node*& length, BasicType& dest_elem,
                                                        Node*& dest_length) {
+  assert(UseArrayFlattening, "Should not be called if flat arrays are not enabled");
 #ifdef ASSERT
   assert(top_dest->elem()->make_ptr()->is_instptr()->is_valueklassptr(), "must be concrete value klass");
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
@@ -1590,8 +1593,10 @@ void PhaseMacroExpand::expand_arraycopy_node(ArrayCopyNode *ac) {
     // We need to be careful here because 'adjust_for_flat_array' will adjust offsets/length etc. which then does not work anymore for the slow call to SharedRuntime::slow_arraycopy_C.
     assert(top_src->is_flat() == top_dest->is_flat(), "must have bailed out before");
     if (Arguments::is_valhalla_enabled() && !flat_and_same_nullness) {
-      generate_flat_array_guard(&ctrl, src, merge_mem, slow_region);
-      generate_flat_array_guard(&ctrl, dest, merge_mem, slow_region);
+      if (UseArrayFlattening) {
+        generate_flat_array_guard(&ctrl, src, merge_mem, slow_region);
+        generate_flat_array_guard(&ctrl, dest, merge_mem, slow_region);
+      }
       generate_null_free_array_guard(&ctrl, dest, merge_mem, slow_region);
     }
   }

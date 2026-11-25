@@ -27,21 +27,25 @@
  * @summary C1 crashes in Canonicalizer::do_ArrayLength() after fix for JDK-8150102
  *
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
- *                   -XX:CompileThreshold=100 -XX:+TieredCompilation -XX:TieredStopAtLevel=1
+ *                   -XX:CompileThreshold=100 -XX:CompileThresholdScaling=1.0
+ *                   -XX:+TieredCompilation -XX:TieredStopAtLevel=1
  *                   -XX:-BackgroundCompilation
  *                   compiler.c1.CanonicalizeArrayLength
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
- *                   -XX:CompileThreshold=100 -XX:+TieredCompilation -XX:TieredStopAtLevel=3
+ *                   -XX:CompileThreshold=100 -XX:CompileThresholdScaling=1.0
+ *                   -XX:+TieredCompilation -XX:TieredStopAtLevel=3
  *                   -XX:-BackgroundCompilation
  *                   -XX:+PatchALot
  *                   compiler.c1.CanonicalizeArrayLength
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
- *                   -XX:CompileThreshold=100 -XX:+TieredCompilation -XX:TieredStopAtLevel=1
+ *                   -XX:CompileThreshold=100 -XX:CompileThresholdScaling=1.0
+ *                   -XX:+TieredCompilation -XX:TieredStopAtLevel=1
  *                   -XX:-BackgroundCompilation
  *                   -XX:ScavengeRootsInCode=0
  *                   compiler.c1.CanonicalizeArrayLength
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
- *                   -XX:CompileThreshold=100 -XX:+TieredCompilation -XX:TieredStopAtLevel=1
+ *                   -XX:CompileThreshold=100 -XX:CompileThresholdScaling=1.0
+ *                   -XX:+TieredCompilation -XX:TieredStopAtLevel=1
  *                   -XX:-BackgroundCompilation -XX:ScavengeRootsInCode=1
  *                   compiler.c1.CanonicalizeArrayLength
  */

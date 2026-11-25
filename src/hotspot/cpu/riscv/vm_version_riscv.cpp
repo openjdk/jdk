@@ -104,14 +104,6 @@ void VM_Version::common_initialize() {
 
   setup_cpu_available_features();
 
-  // check if satp.mode is supported, currently supports up to SV48(RV64)
-  if (satp_mode.value() > VM_SV48 || satp_mode.value() < VM_MBARE) {
-    vm_exit_during_initialization(
-      err_msg(
-         "Unsupported satp mode: SV%d. Only satp modes up to sv48 are supported for now.",
-         (int)satp_mode.value()));
-  }
-
   if (UseRVA20U64) {
     useRVA20U64Profile();
   }
@@ -230,19 +222,6 @@ void VM_Version::common_initialize() {
     }
   } else {
     FLAG_SET_DEFAULT(UsePopCountInstruction, false);
-  }
-
-  if (UseZicboz && zicboz_block_size.value() > 0) {
-    assert(is_power_of_2(zicboz_block_size.value()), "Sanity");
-    if (FLAG_IS_DEFAULT(UseBlockZeroing)) {
-      FLAG_SET_DEFAULT(UseBlockZeroing, true);
-    }
-    if (FLAG_IS_DEFAULT(BlockZeroingLowLimit)) {
-      FLAG_SET_DEFAULT(BlockZeroingLowLimit, 4 * zicboz_block_size.value());
-    }
-  } else if (UseBlockZeroing) {
-    warning("Block zeroing is not available");
-    FLAG_SET_DEFAULT(UseBlockZeroing, false);
   }
 
   if (UseRVV) {

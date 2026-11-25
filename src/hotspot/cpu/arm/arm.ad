@@ -5799,18 +5799,6 @@ instruct rsbshrI_reg_imm_reg(iRegI dst, iRegI src1, immU5 src2, iRegI src3) %{
   ins_pipe(ialu_reg_reg);
 %}
 
-// Immediate Subtraction
-instruct subI_reg_aimmI(iRegI dst, iRegI src1, aimmI src2) %{
-  match(Set dst (SubI src1 src2));
-
-  size(4);
-  format %{ "sub_32 $dst,$src1,$src2\t! int" %}
-  ins_encode %{
-    __ sub_32($dst$$Register, $src1$$Register, $src2$$constant);
-  %}
-  ins_pipe(ialu_reg_imm);
-%}
-
 instruct subI_reg_immRotneg(iRegI dst, iRegI src1, aimmIneg src2) %{
   match(Set dst (AddI src1 src2));
 
@@ -5846,25 +5834,6 @@ instruct subL_reg_reg(iRegL dst, iRegL src1, iRegL src2, flagsReg icc ) %{
     __ sbc($dst$$Register->successor(), $src1$$Register->successor(), $src2$$Register->successor());
   %}
   ins_pipe(ialu_reg_reg);
-%}
-
-// TODO
-
-// Immediate Subtraction
-// TODO: try immLRot2 instead, (0, $con$$constant) becomes
-// (hi($con$$constant), lo($con$$constant)) becomes
-instruct subL_reg_immRot(iRegL dst, iRegL src1, immLlowRot con, flagsReg icc) %{
-  match(Set dst (SubL src1 con));
-  effect (KILL icc);
-
-  size(8);
-  format %{ "SUB    $dst.lo,$src1.lo,$con\t! long\n\t"
-            "SBC    $dst.hi,$src1.hi,0" %}
-  ins_encode %{
-    __ subs($dst$$Register, $src1$$Register, $con$$constant);
-    __ sbc($dst$$Register->successor(), $src1$$Register->successor(), 0);
-  %}
-  ins_pipe(ialu_reg_imm);
 %}
 
 // Long negation

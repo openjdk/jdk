@@ -160,7 +160,7 @@ private:
   static void log_klass_training_data(KlassTrainingData* ktd, address requested_addr, const char* type_name, int bytes, Thread* current);
   static void log_method_training_data(MethodTrainingData* mtd, address requested_addr, const char* type_name, int bytes, Thread* current);
   static void log_compile_training_data(CompileTrainingData* ctd, address requested_addr, const char* type_name, int bytes, Thread* current);
-
+  static void log_ac_region();
 
 #if INCLUDE_CDS_JAVA_HEAP
   static void dumptime_log_mapped_heap_region(AOTMappedHeapInfo* mapped_heap_info);

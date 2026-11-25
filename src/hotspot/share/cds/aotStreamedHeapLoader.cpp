@@ -22,13 +22,13 @@
  *
  */
 
+#include "cds/aotHeap.inline.hpp"
 #include "cds/aotMetaspace.hpp"
+#include "cds/aotModules.hpp"
 #include "cds/aotStreamedHeapLoader.hpp"
 #include "cds/aotThread.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/filemap.hpp"
-#include "cds/heapShared.inline.hpp"
-#include "classfile/classLoaderDataShared.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/vmClasses.hpp"
@@ -41,7 +41,6 @@
 #include "oops/access.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/oopCast.inline.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
@@ -330,7 +329,7 @@ void AOTStreamedHeapLoader::copy_object_impl(oopDesc* archive_object,
     // A concurrent GC thread might racingly read the object payload after GC is enabled.
     InPlaceLinkingOopClosure cl(heap_object, linker);
     heap_object->oop_iterate(&cl);
-    HeapShared::remap_loaded_metadata(heap_object);
+    AOTHeap::remap_loaded_metadata(heap_object);
     return;
   }
 
@@ -354,7 +353,7 @@ void AOTStreamedHeapLoader::copy_object_impl(oopDesc* archive_object,
   // shady metadata fields from the archive that do not point at real metadata.
   // We deal with this by explicitly reading the requested address from the
   // archive and fixing it to real Metadata before writing it into the heap object.
-  HeapShared::do_metadata_offsets(heap_object, [&](int metadata_offset) {
+  AOTHeap::do_metadata_offsets(heap_object, [&](int metadata_offset) {
     BitMap::idx_t metadata_field_idx = header_bit + (size_t)metadata_offset / sizeof(RawElementT);
     BitMap::idx_t skip = word_scale;
     assert(metadata_field_idx >= start_bit && metadata_field_idx + skip <= end_bit,
@@ -799,6 +798,8 @@ void AOTStreamedHeapLoader::cleanup() {
   }
 
   FREE_C_HEAP_ARRAY(_object_index_to_heap_object_table);
+  _object_index_to_heap_object_table = nullptr;
+  _roots_archive = nullptr;
 
   // Unmap regions
   FileMapInfo::current_info()->unmap_region(AOTMetaspace::hp);

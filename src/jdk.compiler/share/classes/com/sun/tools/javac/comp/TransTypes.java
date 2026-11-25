@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -720,6 +720,10 @@ public class TransTypes extends TreeTranslator {
                     rcvr = new VarSymbol(SYNTHETIC, names.fromString("rec$"), tree.getQualifierExpression().type, owner);
                     rcvr.pos = tree.pos;
                     receiverExpression = attr.makeNullCheck(tree.getQualifierExpression());
+                    if (receiverExpression.hasTag(Tag.NULLCHK)) {
+                        Type t = types.skipTypeVars(tree.getQualifierExpression().type, false);
+                        receiverExpression.type = t.isCompound() ? erasure(tree.sym.owner.type) : erasure(t);
+                    }
                     break;
                 case UNBOUND:
                     // The receiver is the first parameter, extract it and
@@ -962,7 +966,11 @@ public class TransTypes extends TreeTranslator {
             if (tree.def == null) {
                 tree.encl = translate(tree.encl, erasure(tree.encl.type));
             } else {
-                tree.args = tree.args.prepend(attr.makeNullCheck(tree.encl));
+                JCExpression expr = attr.makeNullCheck(tree.encl);
+                if (expr.hasTag(Tag.NULLCHK)) {
+                    expr.type = erasure(tree.encl.type);
+                }
+                tree.args = tree.args.prepend(expr);
                 tree.encl = null;
             }
         }

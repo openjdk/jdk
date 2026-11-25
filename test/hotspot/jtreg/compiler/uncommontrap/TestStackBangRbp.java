@@ -32,6 +32,20 @@
  *      compiler.uncommontrap.TestStackBangRbp
  */
 
+/*
+ * @test
+ * @bug 8028308
+ * @summary rbp not restored when stack overflow is thrown from deopt/uncommon trap blobs
+ *
+ * @requires os.arch == "aarch64"
+ * @requires vm.compiler2.enabled
+ * @run main/othervm -XX:-BackgroundCompilation -Xss512K -XX:-UseOnStackReplacement
+ *      -XX:CompileCommand=dontinline,compiler.uncommontrap.TestStackBangRbp::m1
+ *      -XX:CompileCommand=exclude,compiler.uncommontrap.TestStackBangRbp::m2
+ *      -XX:+UnlockExperimentalVMOptions -XX:+PreferCallBasedUncommonTraps
+ *      compiler.uncommontrap.TestStackBangRbp
+ */
+
 package compiler.uncommontrap;
 
 public class TestStackBangRbp {

@@ -37,9 +37,8 @@ G1CollectionSetCandidates::G1CollectionSetCandidates() :
 { }
 
 G1CollectionSetCandidates::~G1CollectionSetCandidates() {
+  clear();
   FREE_C_HEAP_ARRAY(_contains_map);
-  _from_marking_groups.clear();
-  _retained_groups.clear();
 }
 
 bool G1CollectionSetCandidates::is_from_marking(G1HeapRegion* r) const {

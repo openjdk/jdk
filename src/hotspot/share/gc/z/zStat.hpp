@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,7 @@ class ZRelocationSetSelectorGroupStats;
 class ZStatSampler;
 class ZStatSamplerHistory;
 class ZStatWorkers;
+struct ZMemoryPressureMetrics;
 struct ZStatCounterData;
 struct ZStatSamplerData;
 
@@ -234,6 +235,9 @@ private:
   void set_used_at_start(size_t used) const;
   size_t used_at_start() const;
 
+  void set_max_at_start(size_t max) const;
+  size_t max_at_start() const;
+
 public:
   ZStatPhaseCollection(const char* name, bool minor);
 
@@ -353,6 +357,7 @@ struct ZStatMutatorAllocRateStats {
   double _avg;
   double _predict;
   double _sd;
+  size_t _sampling_granule;
 };
 
 //
@@ -377,6 +382,37 @@ public:
   static void initialize();
 
   static ZStatMutatorAllocRateStats stats();
+};
+
+class ZStatSystemMemoryUsage : public AllStatic {
+private:
+  class ZSystemMemoryUsage {
+  private:
+    NumberSeq _highest_usages;
+    Atomic<double> _highest_usage;
+    Atomic<double> _memory_stability;
+
+  public:
+    ZSystemMemoryUsage();
+
+    void record_usage(double usage);
+    double memory_stability();
+    void sample_and_collect();
+  };
+
+  static ZSystemMemoryUsage _container_usage;
+  static ZSystemMemoryUsage _machine_usage;
+
+public:
+  static void record(const ZMemoryPressureMetrics& metrics);
+  static void record_container_usage(double usage);
+  static void record_machine_usage(double usage);
+
+  // Returns 0.0 when memory usage is constant, and increases as memory spikes appear
+  static double container_memory_stability();
+  static double machine_memory_stability();
+
+  static void sample_and_collect();
 };
 
 //
@@ -414,6 +450,7 @@ struct ZStatCycleStats {
   double _sd_parallelizable_time;
   double _avg_parallelizable_duration;
   double _sd_parallelizable_duration;
+  double _last_total_vtime;
 };
 
 //
@@ -430,6 +467,8 @@ private:
   NumberSeq _parallelizable_time;
   NumberSeq _parallelizable_duration;
   double    _last_active_workers;
+  jlong     _start_vtime;
+  double    _last_total_vtime;
 
   bool is_warm();
   bool is_time_trustable();
@@ -462,6 +501,8 @@ private:
   Tickspan _accumulated_duration;
   Tickspan _accumulated_time;
 
+  volatile double _accumulated_vtime;
+
   double accumulated_duration();
   double accumulated_time();
   uint active_workers();
@@ -475,7 +516,22 @@ public:
   double get_and_reset_duration();
   double get_and_reset_time();
 
+  void add_accumulated_vtime(double vtime);
+  double get_and_reset_vtime();
+
   ZStatWorkersStats stats();
+};
+
+//
+// Stat memory workers
+//
+class ZStatMemoryWorkers : public AllStatic {
+private:
+  static volatile double _accumulated_vtime;
+
+public:
+  static void add_accumulated_vtime(double vtime);
+  static double get_and_reset_vtime();
 };
 
 //
@@ -603,7 +659,7 @@ private:
   } _at_initialize;
 
   struct ZAtGenerationCollectionStart {
-    size_t soft_max_capacity;
+    size_t heuristic_max_capacity;
     size_t capacity;
     size_t free;
     size_t used;
@@ -611,7 +667,7 @@ private:
   } _at_collection_start;
 
   struct ZAtMarkStart {
-    size_t soft_max_capacity;
+    size_t heuristic_max_capacity;
     size_t capacity;
     size_t free;
     size_t used;
@@ -668,7 +724,7 @@ private:
 
   size_t capacity_high() const;
   size_t capacity_low() const;
-  size_t free(size_t used) const;
+  size_t free(size_t used, size_t capacity) const;
   size_t mutator_allocated(size_t used, size_t freed, size_t relocated) const;
   size_t garbage(size_t freed, size_t relocated, size_t promoted) const;
   size_t reclaimed(size_t freed, size_t relocated, size_t promoted) const;
@@ -684,10 +740,11 @@ public:
   void at_relocate_start(const ZPageAllocatorStats& stats);
   void at_relocate_end(const ZPageAllocatorStats& stats, bool record_stats);
 
-  static size_t max_capacity();
+  size_t max_at_collection_start() const;
   size_t used_at_collection_start() const;
   size_t used_at_mark_start() const;
   size_t used_generation_at_mark_start() const;
+  size_t used_generation_at_relocate_end() const;
   size_t live_at_mark_end() const;
   size_t allocated_at_mark_end() const;
   size_t garbage_at_mark_end() const;

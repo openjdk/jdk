@@ -48,14 +48,14 @@ public class OopField extends Field {
       throw new InternalError();
     }
     var heap = obj.getHeap();
-    if (isFlat()) {
-      var layout = ((InstanceKlass)obj.getKlass()).getValueFieldLayoutInfoArray().at(getFieldIndex());
-      ValueKlass vk = layout.getKlass();
-
-      // OopHandle does not allow to call addOffsetTo() due to prevent interior
-      // object pointers. So addOffsetToAsOopHandle() is required here.
-      Address payload = obj.getHandle().addOffsetToAsOopHandle(getOffset());
-      return heap.newOop(payload, vk, this);
+    if (obj.isArray()) {
+      if (((Array)obj).isFlatArray()) {
+        return heap.newFlattenedOop(obj, this);
+      } else {
+        return heap.newOop(getValueAsOopHandle(obj));
+      }
+    } else if (isFlat()) {
+      return heap.newFlattenedOop(obj, this);
     } else {
       return heap.newOop(getValueAsOopHandle(obj));
     }

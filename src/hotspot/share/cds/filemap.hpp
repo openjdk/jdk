@@ -30,7 +30,6 @@
 #include "cds/aotMetaspace.hpp"
 #include "cds/aotStreamedHeap.hpp"
 #include "cds/archiveUtils.hpp"
-#include "cds/heapShared.hpp"
 #include "include/cds.h"
 #include "logging/logLevel.hpp"
 #include "memory/allocation.hpp"
@@ -112,7 +111,9 @@ public:
   f(UseNullFreeAtomicValueFlattening) \
   f(UseNullableAtomicValueFlattening) \
   f(UseNullableNonAtomicValueFlattening) \
-  f(FlatteningBudget)
+  f(FlatteningBudget) \
+  f(RestrictReservedStack) \
+  f(DiagnoseSyncOnValueBasedClasses)
 
 
 class CDSMustMatchFlags {
@@ -125,6 +126,7 @@ private:
 
   inline static void do_print(outputStream* st, bool v);
   LP64_ONLY(inline static void do_print(outputStream* st, uint v);)
+  LP64_ONLY(inline static void do_print(outputStream* st, int v);)
   inline static void do_print(outputStream* st, intx v);
   inline static void do_print(outputStream* st, uintx v);
   inline static void do_print(outputStream* st, double v);
@@ -410,6 +412,7 @@ public:
   size_t remove_bitmap_zeros(CHeapBitMap* map);
   char* write_bitmap_region(CHeapBitMap* rw_ptrmap,
                             CHeapBitMap* ro_ptrmap,
+                            CHeapBitMap* ac_ptrmap,
                             AOTMappedHeapInfo* mapped_heap_info,
                             AOTStreamedHeapInfo* streamed_heap_info,
                             size_t &size_in_bytes);
@@ -430,6 +433,7 @@ public:
   bool  read_region(int i, char* base, size_t size, bool do_commit);
   char* map_bitmap_region();
   bool  map_aot_code_region(ReservedSpace rs);
+  void  unmap_aot_code_region();
   char* map_forwarding_region();
   void  unmap_region(int i);
   void  close();
@@ -493,6 +497,7 @@ public:
 
   MapArchiveResult map_region(int i, intx addr_delta, char* mapped_base_address, ReservedSpace rs);
   bool  relocate_pointers_in_core_regions(intx addr_delta);
+  bool  relocate_pointers_in_aot_code_region();
   char* map_auxiliary_region(int region_index, bool read_only);
 
 public:

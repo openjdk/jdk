@@ -747,7 +747,7 @@ void BarrierSetC2::clone(GraphKit* kit, Node* src_base, Node* dst_base, Node* si
   Node* n = kit->gvn().transform(ac);
   if (n == ac) {
     const TypePtr* raw_adr_type = TypeRawPtr::BOTTOM;
-    ac->set_adr_type(TypeRawPtr::BOTTOM);
+    ac->set_out_adr_type(TypeRawPtr::BOTTOM);
     kit->set_predefined_output_for_runtime_call(ac, ac->in(TypeFunc::Memory), raw_adr_type);
   } else {
     kit->set_all_memory(n);
@@ -1063,12 +1063,12 @@ bool BarrierSetC2::is_allocation(const Node* node) {
   return offset == in_bytes(Thread::tlab_top_offset());
 }
 
-void BarrierSetC2::elide_dominated_barriers(Node_List& accesses, Node_List& access_dominators) const {
+void BarrierSetC2::elide_dominated_barriers(const Node_List<MachNode>& accesses, const Node_List<Node>& access_dominators) const {
   Compile* const C = Compile::current();
   PhaseCFG* const cfg = C->cfg();
 
   for (uint i = 0; i < accesses.size(); i++) {
-    MachNode* const access = accesses.at(i)->as_Mach();
+    MachNode* const access = accesses.at(i);
     intptr_t access_offset;
     const Node* const access_obj = get_base_and_offset(access, access_offset);
     Block* const access_block = cfg->get_block_for_node(access);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,6 @@ import com.sun.net.httpserver.*;
  */
 class Request {
 
-    static final int BUF_LEN = 2048;
     static final byte CR = 13;
     static final byte LF = 10;
     static final byte FIRST_CHAR = 32;
@@ -60,11 +59,6 @@ class Request {
         } while ("".equals(startLine));
     }
 
-
-    char[] buf = new char[BUF_LEN];
-    int pos;
-    StringBuffer lineBuf;
-
     public InputStream inputStream() {
         return is;
     }
@@ -79,8 +73,8 @@ class Request {
      */
 
     public String readLine() throws IOException {
-        boolean gotCR = false, gotLF = false;
-        pos = 0; lineBuf = new StringBuffer();
+        boolean gotLF = false;
+        StringBuilder lineBuf = new StringBuilder();
         long lsize = 32;
 
         // For the first request that comes on a clear connection
@@ -106,34 +100,19 @@ class Request {
             if (c == -1) {
                 return null;
             }
-            if (gotCR) {
-                if (c == LF) {
-                    gotLF = true;
-                } else {
-                    gotCR = false;
-                    consume(CR);
-                    if (firstClearRequest && offset == 0) {
-                        if (c < FIRST_CHAR) {
-                            throw new ProtocolException("Unexpected start of request line");
-                        }
-                        offset++;
-                    }
-                    consume(c);
-                    lsize = lsize + 2;
-                }
+            if (c == CR || c == LF) {
+                checkCRLF(c);
+                gotLF = true;
             } else {
-                if (c == CR) {
-                    gotCR = true;
-                } else {
-                    if (firstClearRequest && offset == 0) {
-                        if (c < FIRST_CHAR) {
-                            throw new ProtocolException("Unexpected start of request line");
-                        }
-                        offset++;
+                if (firstClearRequest && offset == 0) {
+                    if (c < FIRST_CHAR) {
+                        throw new ProtocolException("Unexpected start of request line");
                     }
-                    consume(c);
-                    lsize = lsize + 1;
+                    offset++;
                 }
+                checkCtl(c);
+                lineBuf.append((char)c);
+                lsize = lsize + 1;
             }
             if (maxReqHeaderSize > 0 && lsize > maxReqHeaderSize) {
                 throw new IOException("Maximum header (" +
@@ -141,16 +120,7 @@ class Request {
                         ServerConfig.getMaxReqHeaderSize() + ".");
             }
         }
-        lineBuf.append(buf, 0, pos);
-        return new String(lineBuf);
-    }
-
-    private void consume(int c) throws IOException {
-        if (pos == BUF_LEN) {
-            lineBuf.append(buf);
-            pos = 0;
-        }
-        buf[pos++] = (char)c;
+        return lineBuf.toString();
     }
 
     /**
@@ -161,7 +131,23 @@ class Request {
     }
 
     Headers hdrs = null;
-    @SuppressWarnings("fallthrough")
+
+    void checkCRLF(int firstc) throws IOException {
+        if (firstc == CR) {
+            int c = is.read();
+            if (c != LF) {
+                throw new ProtocolException("Invalid CR in request header");
+            }
+        }
+    }
+
+    void checkCtl(int c) throws IOException {
+        if (c == 0x7f ||
+                c < ' ' && c != CR && c!= LF && c != '\t') {
+            throw new ProtocolException("Invalid character in request header");
+        }
+    }
+
     Headers headers() throws IOException {
         if (hdrs != null) {
             return hdrs;
@@ -175,20 +161,16 @@ class Request {
 
         // check for empty headers
         if (firstc == CR || firstc == LF) {
-            int c = is.read();
-            if (c == CR || c == LF) {
-                return hdrs;
-            }
-            s[0] = (char)firstc;
-            len = 1;
-            firstc = c;
+            checkCRLF(firstc);
+            return hdrs;
         }
         long hsize = startLine.length() + 32L;
 
         while (firstc != LF && firstc != CR && firstc >= 0) {
             int keyend = -1;
             int c;
-            boolean inKey = firstc > ' ';
+            boolean inKey = firstc != ' ' && firstc != '\t';
+            checkCtl(firstc);
             s[len++] = (char) firstc;
             hsize = hsize + 1;
     parseloop:{
@@ -200,27 +182,26 @@ class Request {
                         ? maxReqHeaderSize - hsize - 32
                         : Long.MAX_VALUE;
                 while ((c = is.read()) >= 0) {
+                    checkCtl(c);
                     switch (c) {
-                      /*fallthrough*/
                       case ':':
-                        if (inKey && len > 0)
+                        if (inKey && len > 0) {
                             keyend = len;
-                        inKey = false;
+                            inKey = false;
+                        }
                         break;
                       case '\t':
                         c = ' ';
-                      case ' ':
-                        inKey = false;
                         break;
                       case CR:
                       case LF:
-                        firstc = is.read();
-                        if (c == CR && firstc == LF) {
-                            firstc = is.read();
-                            if (firstc == CR)
-                                firstc = is.read();
+                        checkCRLF(c);
+                        if (inKey) {
+                            throw new ProtocolException("Missing field separator");
                         }
-                        if (firstc == LF || firstc == CR || firstc > ' ')
+                        firstc = is.read();
+                        checkCRLF(firstc);
+                        if (firstc != ' ' && firstc != '\t')
                             break parseloop;
                         /* continuation */
                         c = ' ';
@@ -255,7 +236,7 @@ class Request {
             }
             String v;
             if (keyend >= len)
-                v = new String();
+                v = "";
             else
                 v = String.copyValueOf(s, keyend, len - keyend);
 

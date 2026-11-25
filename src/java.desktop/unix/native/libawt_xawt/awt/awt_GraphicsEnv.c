@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1153,19 +1153,19 @@ JNIEnv *env, jobject this, jint visualNum, jint screen)
     DASSERT(screen >= 0 && screen < awt_numScreens);
 
     AwtGraphicsConfigData *adata = NULL;
-    AwtScreenData asd = x11Screens[screen];
+    AwtScreenData *asd = &x11Screens[screen];
     int i;
     int depth;
     XImage * tempImage;
 
     /* If haven't gotten all of the configs yet, do it now. */
-    if (asd.numConfigs == 0) {
-        getAllConfigs (env, screen, &asd);
+    if (asd->numConfigs == 0) {
+        getAllConfigs (env, screen, asd);
     }
 
     /* Check the graphicsConfig for this visual */
-    for (i = 0; i < asd.numConfigs; i++) {
-        AwtGraphicsConfigDataPtr agcPtr = asd.configs[i];
+    for (i = 0; i < asd->numConfigs; i++) {
+        AwtGraphicsConfigDataPtr agcPtr = asd->configs[i];
         if ((jint)agcPtr->awt_visInfo.visualid == visualNum) {
            adata = agcPtr;
            break;
@@ -1188,6 +1188,10 @@ JNIEnv *env, jobject this, jint visualNum, jint screen)
     tempImage = XCreateImage(awt_display,
                              adata->awt_visInfo.visual,
                              depth, ZPixmap, 0, NULL, 1, 1, 32, 0);
+    if (tempImage == NULL) {
+        JNU_ThrowIllegalArgumentException(env, "XCreateImage failed");
+        return;
+    }
     adata->pixelStride = (tempImage->bits_per_pixel + 7) / 8;
     (*env)->SetIntField(env, this, x11GraphicsConfigIDs.bitsPerPixel,
                         (jint)tempImage->bits_per_pixel);

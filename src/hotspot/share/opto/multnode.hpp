@@ -205,7 +205,6 @@ public:
   virtual int Opcode() const;
   virtual bool is_CFG() const;
   virtual const Type *bottom_type() const;
-  virtual const TypePtr *adr_type() const;
   virtual bool pinned() const;
   virtual Node* Identity(PhaseGVN* phase);
   virtual const Type* Value(PhaseGVN* phase) const;
@@ -226,6 +225,9 @@ public:
   //                                             other_proj->[region->..]call_uct"
   // null otherwise
   CallStaticJavaNode* is_uncommon_trap_if_pattern(Deoptimization::DeoptReason reason = Deoptimization::Reason_none) const;
+
+private:
+  virtual const TypePtr* out_adr_type_impl() const;
 };
 
 // A ProjNode variant that captures an adr_type(). Used as a projection of InitializeNode to have the right adr_type()
@@ -246,11 +248,12 @@ protected:
 public:
   NarrowMemProjNode(InitializeNode* src, const TypePtr* adr_type);
 
-  virtual const TypePtr* adr_type() const {
+  virtual int Opcode() const;
+
+private:
+  const TypePtr* out_adr_type_impl() const final {
     return _adr_type;
   }
-
-  virtual int Opcode() const;
 };
 
 template <class Callback> ProjNode* MultiNode::apply_to_projs(DUIterator_Fast& imax, DUIterator_Fast& i, Callback callback, uint which_proj) const {
@@ -284,7 +287,7 @@ private:
   const TypeTuple* _tf;
   const TypePtr* _adr_type;
 
-  TupleNode(const TypeTuple* tf, const TypePtr* adr_type) : MultiNode(tf->cnt()), _tf(tf), _adr_type(adr_type) {}
+  TupleNode(const TypeTuple* tf, const TypePtr* out_adr_type) : MultiNode(tf->cnt()), _tf(tf), _adr_type(out_adr_type) {}
 
   template <typename... NN>
   static void make_helper(TupleNode* tn, uint i, Node* node, NN... nn) {
@@ -300,16 +303,18 @@ public:
    * TupleNode::make(tf, adr_type, input1, input2, input3, input4)
    */
   template <typename... NN>
-  static TupleNode* make(const TypeTuple* tf, const TypePtr* adr_type, NN... nn) {
-    TupleNode* tn = new TupleNode(tf, adr_type);
+  static TupleNode* make(const TypeTuple* tf, const TypePtr* out_adr_type, NN... nn) {
+    TupleNode* tn = new TupleNode(tf, out_adr_type);
     make_helper(tn, 0, nn...);
     return tn;
   }
 
   int            Opcode()      const override;
   const Type*    bottom_type() const override { return _tf; }
-  const TypePtr* adr_type()    const override { return _adr_type; }
   uint           size_of()     const override { return sizeof(TupleNode); }
+
+private:
+  const TypePtr* out_adr_type_impl() const final { return _adr_type; }
 };
 
 #endif // SHARE_OPTO_MULTNODE_HPP

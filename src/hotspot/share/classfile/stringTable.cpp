@@ -22,10 +22,10 @@
  *
  */
 
+#include "cds/aotHeap.inline.hpp"
 #include "cds/aotMappedHeapLoader.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/cdsConfig.hpp"
-#include "cds/heapShared.inline.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/compactHashtable.hpp"
 #include "classfile/javaClasses.inline.hpp"
@@ -76,7 +76,7 @@ const double CLEAN_DEAD_HIGH_WATER_MARK = 0.5;
 #if INCLUDE_CDS_JAVA_HEAP
 inline oop StringTable::read_string_from_compact_hashtable(address base_address, u4 index) {
   assert(AOTMappedHeapLoader::is_in_use(), "sanity");
-  oop s = HeapShared::get_root((int)index, false);
+  oop s = AOTHeap::get_root((int)index, false);
   assert(java_lang_String::is_instance(s), "must be");
   return s;
 }
@@ -909,7 +909,7 @@ void StringtableDCmd::execute(DCmdSource source, TRAPS) {
 // Sharing
 #if INCLUDE_CDS_JAVA_HEAP
 size_t StringTable::shared_entry_count() {
-  assert(HeapShared::is_loading_mapping_mode(), "should not reach here");
+  assert(AOTHeap::is_loading_mapping_mode(), "should not reach here");
   return _shared_table.entry_count();
 }
 
@@ -935,18 +935,18 @@ oop StringTable::lookup_shared(const jchar* name, int len) {
 void StringTable::init_shared_table() {
   assert(SafepointSynchronize::is_at_safepoint(), "inside AOT safepoint");
   precond(CDSConfig::is_dumping_heap());
-  assert(HeapShared::is_writing_mapping_mode(), "not used for streamed oops");
+  assert(AOTHeap::is_writing_mapping_mode(), "not used for streamed oops");
 
   int n = 0;
   auto copy_into_aot_heap = [&] (WeakHandle* val) {
     oop string = val->peek();
-    if (string != nullptr && !HeapShared::is_string_too_large_to_archive(string)) {
+    if (string != nullptr && !AOTHeap::is_string_too_large_to_archive(string)) {
       // If string is too large, don't put it into the string table.
       // - If there are no other references to it, it won't be stored into the archive,
       //   so we are all good.
-      // - If there's a reference to it, we will report an error inside HeapShared.cpp and
+      // - If there's a reference to it, we will report an error inside AOTHeap.cpp and
       //   dumping will fail.
-      HeapShared::archive_interned_string(string);
+      AOTHeap::archive_interned_string(string);
     }
     n++;
     return true;
@@ -959,16 +959,16 @@ void StringTable::init_shared_table() {
 void StringTable::write_shared_table() {
   assert(SafepointSynchronize::is_at_safepoint(), "inside AOT safepoint");
   precond(CDSConfig::is_dumping_heap());
-  assert(HeapShared::is_writing_mapping_mode(), "not used for streamed oops");
+  assert(AOTHeap::is_writing_mapping_mode(), "not used for streamed oops");
 
   _shared_table_for_dumping.reset();
   CompactHashtableWriter writer((int)items_count_acquire(), ArchiveBuilder::string_stats());
 
   auto copy_into_shared_table = [&] (WeakHandle* val) {
     oop string = val->peek();
-    if (string != nullptr && !HeapShared::is_string_too_large_to_archive(string)) {
+    if (string != nullptr && !AOTHeap::is_string_too_large_to_archive(string)) {
       unsigned int hash = java_lang_String::hash_code(string);
-      int root_id = HeapShared::append_root(string);
+      int root_id = AOTHeap::append_root(string);
       writer.add(hash, root_id);
     }
     return true;

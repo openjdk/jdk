@@ -131,6 +131,9 @@
                  Register op1, Register op2,
                  Register dst, Register src);
 
+  void enc_cmove_zero_one(int cmpFlag,
+                          Register op1, Register op2, Register dst);
+
   void enc_cmove_cmp_fp(int cmpFlag,
                         FloatRegister op1, FloatRegister op2,
                         Register dst, Register src, bool is_single);
@@ -141,6 +144,25 @@
   void enc_cmove_fp_cmp_fp(int cmpFlag, FloatRegister op1, FloatRegister op2,
                            FloatRegister dst, FloatRegister src,
                            bool cmp_single, bool cmov_single);
+
+  void enc_cmove_cmp_fp_zero_one(int cmpFlag,
+                                 FloatRegister op1, FloatRegister op2,
+                                 Register dst);
+
+  void compress_bits_v(VectorRegister dst, VectorRegister src, VectorRegister bit_mask,
+                       VectorRegister src_tmp, VectorRegister mask_tmp,
+                       VectorRegister tmp1, VectorRegister tmp2,
+                       BasicType bt, uint vector_length,
+                       VectorMask vm = Assembler::unmasked);
+
+  void expand_bits_v(VectorRegister dst, VectorRegister src, VectorRegister bit_mask,
+                     VectorRegister src_tmp, VectorRegister mask_tmp,
+                     VectorRegister mask_move1, VectorRegister mask_move2,
+                     VectorRegister mask_move3, VectorRegister mask_move4,
+                     VectorRegister mask_move5, VectorRegister mask_move6,
+                     VectorRegister tmp1, VectorRegister tmp2,
+                     BasicType bt, uint vector_length,
+                     VectorMask vm = Assembler::unmasked);
 
   void spill(Register r, bool is64, int offset) {
     is64 ? sd(r, Address(sp, offset))
@@ -261,6 +283,10 @@
                           VectorRegister tmp1, VectorRegister tmp2,
                           bool is_double, bool is_min, uint vector_length,
                           VectorMask vm = Assembler::unmasked);
+
+  void reduce_mul_fp_v(FloatRegister dst, FloatRegister src1, VectorRegister src2,
+                       VectorRegister vtmp1, VectorRegister vtmp2,
+                       bool is_double, uint vector_length);
 
   void reduce_integral_v(Register dst, Register src1,
                         VectorRegister src2, VectorRegister tmp,

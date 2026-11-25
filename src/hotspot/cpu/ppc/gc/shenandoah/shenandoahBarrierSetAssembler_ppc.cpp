@@ -763,7 +763,7 @@ void ShenandoahBarrierSetAssembler::keepalive_barrier_c1_stub(LIR_Assembler* ce,
 
   // If 'do_load()' returns false, the to-be-stored value is already available in 'obj'
   if (stub->do_load()) {
-    ce->mem2reg(stub->addr(), stub->obj(), T_OBJECT, lir_patch_none, nullptr, false);
+    ce->mem2reg(stub->addr(), stub->obj(), T_OBJECT, lir_patch_none, stub->info(), false);
   }
 
   // Fast path: reference is null.

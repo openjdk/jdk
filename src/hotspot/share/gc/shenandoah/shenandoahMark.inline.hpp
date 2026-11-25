@@ -34,6 +34,7 @@
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.inline.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
+#include "gc/shenandoah/shenandoahForwarding.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
@@ -53,7 +54,7 @@ void ShenandoahMark::do_task(ShenandoahObjToScanQueue* q, T* cl, ShenandoahLiveD
 
   shenandoah_assert_not_forwarded(nullptr, obj);
   shenandoah_assert_marked(nullptr, obj);
-  shenandoah_assert_not_in_cset_except(nullptr, obj, ShenandoahHeap::heap()->cancelled_gc());
+  shenandoah_assert_not_in_cset_except(nullptr, obj, ShenandoahHeap::heap()->cancelled_gc() || ShenandoahHeap::heap()->has_self_forwarded_objects());
 
   Klass* klass = obj->klass();
 
@@ -160,10 +161,9 @@ void ShenandoahMark::count_liveness(ShenandoahLiveData* live_data, oop obj, Klas
   if (GENERATION == YOUNG || (GENERATION == GLOBAL && region->is_young())) {
     assert(heap->mode()->is_generational(), "Only if generational");
     assert(region->is_young(), "Only for young objects");
-    const uint age = ShenandoahHeap::get_object_age(obj);
+    const uint age = ShenandoahForwarding::age(obj);
     ShenandoahAgeCensus* const census = ShenandoahGenerationalHeap::heap()->age_census();
-    CENSUS_NOISE(census->add(age, region->age(), region->youth(), size, worker_id);)
-    NO_CENSUS_NOISE(census->add(age, region->age(), size, worker_id);)
+    census->add(age, region->age(), size, worker_id);
   }
 
   if (!region->is_humongous_start()) {
@@ -392,7 +392,7 @@ void ShenandoahMark::mark_non_generational_ref(T* p, ShenandoahObjToScanQueue* q
     oop obj = CompressedOops::decode_not_null(o);
 
     shenandoah_assert_not_forwarded(p, obj);
-    shenandoah_assert_not_in_cset_except(p, obj, ShenandoahHeap::heap()->cancelled_gc());
+    shenandoah_assert_not_in_cset_except(p, obj, ShenandoahHeap::heap()->cancelled_gc() || ShenandoahHeap::heap()->has_self_forwarded_objects());
 
     mark_ref(q, mark_context, weak, obj);
 

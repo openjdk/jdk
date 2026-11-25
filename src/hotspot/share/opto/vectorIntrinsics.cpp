@@ -279,7 +279,6 @@ bool LibraryCallKit::arch_supports_vector(int sopc, int num_elem, BasicType type
         is_supported = Matcher::match_rule_supported_vector_masked(sopc, num_elem, type);
       }
     }
-    is_supported |= Matcher::supports_vector_predicate_op_emulation(sopc, num_elem, type);
 
     if (!is_supported) {
       non_product_log_if_needed("Rejected vector mask predicate using (%s,%s,%d) because architecture does not support it",
@@ -1366,11 +1365,45 @@ bool LibraryCallKit::inline_vector_gather_scatter(bool is_scatter) {
   }
 
   // Check that the vector holding indices is supported by architecture
-  // For sub-word gathers expander receive index array.
-  if (!is_subword_type(elem_bt) && !arch_supports_vector(Op_LoadVector, idx_num_elem, T_INT, VecMaskNotUsed)) {
+  if (!arch_supports_vector(Op_LoadVector, idx_num_elem, T_INT, VecMaskNotUsed)) {
     log_if_needed("  ** not supported: arity=%d op=%s/loadindex vlen=%d etype=int is_masked_op=%d",
                   is_scatter, is_scatter ? "scatter" : "gather",
                   idx_num_elem, is_masked_op ? 1 : 0);
+    return false; // not supported
+  }
+
+  // Currently, subword is not supported.
+  // Note: we used to have an x64 subword gather implementation before, but it was buggy.
+  //       JDK-8318650 had introduced the subword gather implementation:
+  //         - We loaded from indexMap once to perform checkIndex
+  //         - And then we loaded again from indexMap in the LoadVectorGather(Masked)
+  //           backend implementation. But if a second thread mutated the indexMap,
+  //           we would not have checked the index again, and possibly performed out
+  //           of bounds accesses.
+  //         - The reason for using indexMap directly was that subword gather requires
+  //           an int-index per subword element, and so the indices vector would have
+  //           to be larger than the output vector, or we would need multiple index
+  //           vectors. Just loading from indexMap seemed like an elegant solution,
+  //           but unfortunetely, it leads to TOCTOU bugs.
+  //
+  //       JDK-8383689 removed subword gather again.
+  //
+  //       In the future, we could consider re-implementing subword gather. We would
+  //       have to ensure to only load the indices once, and perform checkIndex and
+  //       indexing from that same index vector. We may also want to change the API,
+  //       so that one can provide an index vector, rather than a indexMap array.
+  //       Since vectors are immutable, the indexCheck and indexing would trivially
+  //       be consuming the same indices. And the API user could compute arbitrary
+  //       indices, and would not have to round-trip them via an indexMap array.
+  //       However: so far, no hardware we are aware of can actually perform
+  //       vectorized subword gather/scatter. So the implementation would actually
+  //       need to be a scalar emulation. The JDK-8318650 performed scalar loads
+  //       from the indexMap. A re-implementation would instead have to extract
+  //       elements from the index vector. The performance impact has not yet been
+  //       investigated.
+  if (is_subword_type(elem_bt)) {
+    log_if_needed("  ** not supported: subword type etype=%s",
+                  type2name(elem_bt));
     return false; // not supported
   }
 
@@ -1380,17 +1413,7 @@ bool LibraryCallKit::inline_vector_gather_scatter(bool is_scatter) {
   // Save state and restore on bailout
   SavedState old_state(this);
 
-  Node* addr = nullptr;
-  if (!is_subword_type(elem_bt)) {
-    addr = make_unsafe_address(base, offset, elem_bt, true);
-  } else {
-    assert(!is_scatter, "Only supports gather operation for subword types now");
-    uint header = arrayOopDesc::base_offset_in_bytes(elem_bt);
-    assert(offset->is_Con() && offset->bottom_type()->is_long()->get_con() == header,
-           "offset must be the array base offset");
-    Node* index = argument(15);
-    addr = array_element_address(base, index, elem_bt);
-  }
+  Node* addr = make_unsafe_address(base, offset, elem_bt, true);
 
   const TypeAryPtr* arr_type = gvn().type(addr)->isa_aryptr();
 
@@ -1417,18 +1440,13 @@ bool LibraryCallKit::inline_vector_gather_scatter(bool is_scatter) {
   }
 
   // Get the indexes for gather/scatter.
-  Node* indexes = nullptr;
+  // Note: we have already loaded the indices from indexMap into a vector,
+  //       and performed checkIndex on it. We must now use that same vector,
+  //       and not reload from the indexMap again.
   const TypeInstPtr* vbox_idx_type = TypeInstPtr::make_exact(TypePtr::NotNull, vbox_idx_klass);
-  if (is_subword_type(elem_bt)) {
-    Node* indexMap = argument(16);
-    Node* indexM   = argument(17);
-    indexes = array_element_address(indexMap, indexM, T_INT);
-  } else {
-    // Get the first index vector.
-    indexes = unbox_vector(argument(9), vbox_idx_type, T_INT, idx_num_elem);
-    if (indexes == nullptr) {
-      return false;
-    }
+  Node* indexes = unbox_vector(argument(9), vbox_idx_type, T_INT, idx_num_elem);
+  if (indexes == nullptr) {
+    return false;
   }
 
   // Get the vector mask value.
@@ -1826,6 +1844,12 @@ bool LibraryCallKit::inline_vector_slice() {
   int num_elem = vlen->get_con();
   BasicType elem_bt = get_vector_primitive_lane_type(vltype);
 
+  jint origin_con = origin->get_con();
+  if (origin_con < 0 || origin_con > num_elem) {
+    log_if_needed("  ** vector slice origin %d out of range [0, %d]", origin_con, num_elem);
+    return false;
+  }
+
   if (!arch_supports_vector(Op_VectorSlice, num_elem, elem_bt, VecMaskNotUsed)) {
     log_if_needed("  ** not supported: arity=2 op=slice vlen=%d etype=%s",
                     num_elem, type2name(elem_bt));
@@ -1842,7 +1866,7 @@ bool LibraryCallKit::inline_vector_slice() {
   }
 
   // Defining origin in terms of number of bytes to make it type agnostic value.
-  Node* origin_node = gvn().intcon(origin->get_con() * type2aelembytes(elem_bt));
+  Node* origin_node = gvn().intcon(origin_con * type2aelembytes(elem_bt));
   const TypeVect* vector_type = TypeVect::make(elem_bt, num_elem);
   Node* operation = gvn().transform(trace_vector(new VectorSliceNode(v1, v2, origin_node, vector_type)));
   Node* box = box_vector(operation, vbox_type, elem_bt, num_elem);

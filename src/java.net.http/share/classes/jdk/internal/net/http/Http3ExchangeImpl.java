@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,6 +84,8 @@ import jdk.internal.net.http.quic.streams.QuicStreamWriter;
 
 import static jdk.internal.net.http.common.Utils.readContentLength;
 import static jdk.internal.net.http.http3.ConnectionSettings.UNLIMITED_MAX_FIELD_SECTION_SIZE;
+import static jdk.internal.net.http.quic.streams.QuicReceiverStream.ReceivingStreamState.DATA_READ;
+import static jdk.internal.net.http.quic.streams.QuicReceiverStream.ReceivingStreamState.DATA_RECVD;
 
 /**
  * This class represents an HTTP/3 Request/Response stream.
@@ -196,7 +198,12 @@ final class Http3ExchangeImpl<T> extends Http3Stream<T> {
     }
 
     void recordError(Throwable closeCause) {
-        errorRef.compareAndSet(null, closeCause);
+        if (!allDataReceivedButStillBuffered()) {
+            // only record the error if we have not received
+            // all bytes; Otherwise we can let the caller
+            // pull them.
+            errorRef.compareAndSet(null, closeCause);
+        }
     }
 
     private sealed class HeadersConsumer extends StreamHeadersConsumer permits PushHeadersConsumer {
@@ -1722,6 +1729,31 @@ final class Http3ExchangeImpl<T> extends Http3Stream<T> {
         // to be exhausted.
         stopRequested = true;
         readScheduler.runOrSchedule();
+    }
+
+    // We do not want to cancel the exchange on orderly
+    // close if all data has been received but some of
+    // it is still buffered. In that case we will
+    // let the client pull the buffered data even
+    // after the underlying connection has closed.
+    boolean shouldCancelOnOrderlyClose() {
+        return !allDataReceivedButStillBuffered();
+    }
+
+    private boolean allDataReceivedButStillBuffered() {
+        // if responseReceived is true, no data is still
+        // buffered
+        if (responseReceived) return false;
+
+        // if the headerFrameReader is blocked, the data
+        // the QPack decoder is waiting for may not be present
+        // in the decoder stream, or may never arrive:
+        // in this case, we will consider that not all data has
+        // arrived, regardless of our receiving stream state.
+        if (headerFrameReader.isBlocked()) return false;
+
+        var state = stream.receivingState();
+        return state == DATA_RECVD || state == DATA_READ;
     }
 
     // This loop is triggered to push response body data into

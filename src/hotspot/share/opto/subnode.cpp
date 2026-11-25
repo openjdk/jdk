@@ -1004,9 +1004,9 @@ const Type *CmpPNode::sub( const Type *t1, const Type *t2 ) const {
   const TypePtr *r1 = t2->is_ptr();
 
   // Undefined inputs makes for an undefined result
-  if( TypePtr::above_centerline(r0->_ptr) ||
-      TypePtr::above_centerline(r1->_ptr) )
+  if (TypePtr::is_top(r0->_ptr) || TypePtr::is_top(r1->_ptr)) {
     return Type::TOP;
+  }
 
   if (r0 == r1 && r0->singleton()) {
     // Equal pointer constants (klasses, nulls, etc.)
@@ -2222,16 +2222,32 @@ const Type* ReverseLNode::Value(PhaseGVN* phase) const {
   return bottom_type();
 }
 
-Node* ReverseINode::Identity(PhaseGVN* phase) {
-  if (in(1)->Opcode() == Op_ReverseI) {
-    return in(1)->in(1);
+static Node* simplify_involution(PhaseGVN* phase, Node* involution) {
+  if (involution->in(1)->Opcode() == involution->Opcode()) {
+    Node* original = involution->in(1)->in(1);
+    const TypeInt* type = phase->type(original)->isa_int();
+    // Operations on sub-int types might not be "real" involutions for values outside their type range,
+    // for example, a ReverseBytesS node with an input larger than short.
+    // Make sure not to drop potential truncations.
+    if (type == nullptr || involution->bottom_type()->is_int()->contains(type)) {
+      return original;
+    }
   }
-  return this;
+  return involution;
+}
+
+Node* NegNode::Identity(PhaseGVN* phase) {
+  return simplify_involution(phase, this);
+}
+
+Node* ReverseBytesNode::Identity(PhaseGVN* phase) {
+  return simplify_involution(phase, this);
+}
+
+Node* ReverseINode::Identity(PhaseGVN* phase) {
+  return simplify_involution(phase, this);
 }
 
 Node* ReverseLNode::Identity(PhaseGVN* phase) {
-  if (in(1)->Opcode() == Op_ReverseL) {
-    return in(1)->in(1);
-  }
-  return this;
+  return simplify_involution(phase, this);
 }

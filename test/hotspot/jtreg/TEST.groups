@@ -553,10 +553,15 @@ tier1_runtime_appcds = \
   runtime/cds/appcds/aotCache/HelloAOTCache.java \
   runtime/cds/appcds/aotCode \
   runtime/cds/appcds/HelloTest.java \
-  -runtime/cds/appcds/aotCode/AOTCodeFlags.java
+  -runtime/cds/appcds/aotCode/AOTCodeFlags.java \
+  -runtime/cds/appcds/aotCode/TestAOTCodeCounters.java \
+  -runtime/cds/appcds/aotCode/TestAOTCodeFeatures.java
 
 tier1_runtime_appcds_exclude = \
   runtime/cds/appcds/ \
+  runtime/cds/appcds/aotCode/AOTCodeFlags.java \
+  runtime/cds/appcds/aotCode/TestAOTCodeCounters.java \
+  runtime/cds/appcds/aotCode/TestAOTCodeFeatures.java \
   -:tier1_runtime_appcds
 
 tier1_runtime_no_cds = \
@@ -587,6 +592,7 @@ tier1_serviceability = \
   -serviceability/jvmti/RedefineClasses/RedefineRunningMethods.java \
   -serviceability/jvmti/RedefineClasses/RedefineRunningMethodsWithBacktrace.java \
   -serviceability/jvmti/RedefineClasses/TestRedefineObject.java \
+  -serviceability/jvmti/SetBreakpoint/BreakpointMetaspaceOOM.java \
   -serviceability/sa/ClhsdbScanOops.java \
   -serviceability/sa/ClhsdbJstackXcompStress.java \
   -serviceability/sa/TestJmapCore.java \

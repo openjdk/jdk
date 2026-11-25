@@ -34,6 +34,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -41,14 +42,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Semaphore;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLServerSocket;
 
+import jdk.internal.net.http.frame.DataFrame;
+import jdk.internal.net.http.frame.FramesEncoder;
 import jdk.internal.net.http.frame.HeadersFrame;
 import jdk.internal.net.http.frame.Http2Frame;
 import jdk.internal.net.http.frame.SettingsFrame;
@@ -62,14 +65,17 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static java.net.http.HttpClient.Version.HTTP_2;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /*
  * @test
- * @bug 8385131
+ * @bug 8385131 8394607
  * @summary Verifies that if the HttpClient receives a GOAWAY frame on a HTTP/2 connection,
  *          then the HttpClient terminates the connection as promptly as appropriate instead
- *          of relying on the idle connection management to do so.
+ *          of relying on the idle connection management to do so. Also verifies that if
+ *          the server closes the connection first, the client can still receive the response
+ *          bytes after the connection is closed.
  * @library /test/lib
  * @build jdk.test.lib.net.SimpleSSLContext jdk.test.lib.RandomFactory jdk.test.lib.net.URIBuilder
  * @comment An arbitrary high value for idle connection timeout to prevent idle
@@ -84,14 +90,22 @@ class H2GoAwayPromptConnectionClose {
     private static final String REQUEST_PATH =
             "/" + H2GoAwayPromptConnectionClose.class.getSimpleName();
 
+    private static final String XKEY = "x-send-response-and-close";
+    private static final String RESPONSE = """
+            Lorem ipsum dolor sit amet,
+            caesarem legato alacrem.
+            """;
+    private static final Random random = RandomFactory.getRandom();
+
     private static final SSLContext sslCtx = SimpleSSLContext.findSSLContext();
     private static final ExecutorService executor = Executors.newCachedThreadPool();
     private static HttpClient client;
     private static MinimalH2OnlyServer server;
 
-    // a latch that is counted down when the server notices a EOF on the connection's input stream
-    // due to the client closing the connection.
-    private static final CountDownLatch connTerminationLatch = new CountDownLatch(1);
+    // a semaphore that is released when the server notices an EOF on the connection's
+    // input stream due to the client closing the connection, or when the server
+    // closes the connection without waiting for the client
+    private static final Semaphore connTerminationLatch = new Semaphore(0);
 
     @BeforeAll
     static void beforeAll() throws Exception {
@@ -142,6 +156,7 @@ class H2GoAwayPromptConnectionClose {
                 .port(serverAddr.getPort())
                 .path(REQUEST_PATH)
                 .build();
+        assertEquals(0, connTerminationLatch.availablePermits());
         final HttpRequest req = HttpRequest.newBuilder().version(HTTP_2).uri(reqURI).build();
         System.err.println("issuing request: " + req);
         final HttpResponse<String> resp = client.send(req, BodyHandlers.ofString());
@@ -149,11 +164,71 @@ class H2GoAwayPromptConnectionClose {
         assertEquals(HTTP_2, resp.version(), "unexpected HTTP version in response");
 
         System.err.println("awaiting connection termination");
-        connTerminationLatch.await();
+        connTerminationLatch.acquire();
     }
 
     /*
-     * The test requires fine grained control over when the server sends the GOAWAY frame
+     * Issues a "https" HTTP/2 request and expects the request to complete normally.
+     * On the server side, in addition to sending the HTTP/2 response, the server also sends
+     * a GOAWAY frame to the client. In this scenario, the server sends a response body
+     * composed of several DATA frames, then immediately closes the connection after
+     * having sent the response body bytes and GOAWAY.
+     * The client waits for the server to close the connection, then waits for a short
+     * delay before starting to pull the response body bytes from the HttpResponseInputStream.
+     * The test completes successfully only if the client is able to pull all the response bytes
+     * from the input stream, despite the server having already closed the connection.
+     * If it fails to pull all the bytes, then it's a sign that the exchange was
+     * cancelled immediately on reception of the connection FIN, despite having buffered all
+     * the response bytes.
+     * This scenario will usually fail without the fix for JDK-8394607.
+     */
+    @Test
+    void testBufferedResponseReceived() throws Exception {
+        System.out.println("testBufferedResponseReceived");
+        final InetSocketAddress serverAddr = server.getServerAddress();
+        final URI reqURI = URIBuilder.newBuilder()
+                .scheme("https")
+                .host(serverAddr.getAddress())
+                .port(serverAddr.getPort())
+                .path(REQUEST_PATH)
+                .build();
+        final HttpRequest req = HttpRequest.newBuilder().version(HTTP_2)
+                .uri(reqURI)
+                .header(XKEY, "yes")
+                .build();
+        for (int i=0; i < 5; i++) {
+            assertEquals(0, connTerminationLatch.availablePermits());
+            System.out.printf("issuing request[%s]: %s%n", i, req);
+            System.err.printf("issuing request[%s]: %s%n", i, req);
+            final HttpResponse<InputStream> resp = client.send(req, BodyHandlers.ofInputStream());
+            assertEquals(200, resp.statusCode(), "unexpected status code");
+            assertEquals(HTTP_2, resp.version(), "unexpected HTTP version in response");
+            System.out.println("awaiting connection termination");
+            System.err.println("awaiting connection termination");
+            connTerminationLatch.acquire();
+
+            // At this point the server has closed the connection.
+            // Wait a little bit to give a chance to the client to
+            // observe connection closure, since having closed the
+            // connection from the server side doesn't guarantee that
+            // the TCP FIN has reached the client side and has already
+            // been processed.
+            Thread.sleep(random.nextLong(100, 1000));
+
+            // Start pulling the bytes from the input stream. The bytes
+            // should have been all received and buffered, so it should
+            // be possible to pull them even though the connection was closed
+            System.out.println("Pulling response bytes");
+            System.err.println("Pulling response bytes");
+            byte[] bytes = resp.body().readAllBytes();
+            assertArrayEquals(RESPONSE.getBytes(StandardCharsets.UTF_8), bytes);
+            System.out.printf("Got expected response for request[%s]%n", i);
+            System.err.printf("Got expected response for request[%s]%n", i);
+        }
+    }
+
+    /*
+     * The test requires fine-grained control over when the server sends the GOAWAY frame
      * over the HTTP/2 connection and also to detect that the client has closed the underlying
      * connection. So we read/write HTTP/2 protocol messages directly over a
      * ServerSocket/Socket pair, instead of using the HTTP servers in the test library.
@@ -210,7 +285,6 @@ class H2GoAwayPromptConnectionClose {
 
     // Processes the data on a single HTTP/2 socket connection
     private static final class Handler implements Runnable {
-        private static final Random random = RandomFactory.getRandom();
         // number of bytes that are taken by the (common) Length and Type fields of
         // a HTTP/2 frame
         private static final int SIZE_OF_LENGTH_AND_TYPE_FIELDS = 9;
@@ -224,6 +298,8 @@ class H2GoAwayPromptConnectionClose {
         private final Socket socket;
         private final String logId;
 
+        private final FramesEncoder framesEncoder = new FramesEncoder();
+
         private record ParsedRequest(int streamId, Map<String, List<String>> headers) {
 
             /*
@@ -231,6 +307,17 @@ class H2GoAwayPromptConnectionClose {
              */
             private String getRequestPath() {
                 final List<String> vals = headers.get(":path");
+                if (vals == null || vals.isEmpty()) {
+                    return null;
+                }
+                return vals.getFirst();
+            }
+
+            // the XKEY header indicates whether the client
+            // wants the server to send response bytes and
+            // immediately close the connection after that
+            private String getXKey() {
+                final List<String> vals = headers.get(XKEY);
                 if (vals == null || vals.isEmpty()) {
                     return null;
                 }
@@ -246,6 +333,7 @@ class H2GoAwayPromptConnectionClose {
 
         private void log(final String msg) {
             System.err.println("[" + this.logId + "] " + msg);
+            System.out.println("[" + this.logId + "] " + msg);
         }
 
         @Override
@@ -283,6 +371,14 @@ class H2GoAwayPromptConnectionClose {
                 throw new IOException("unexpected request path " + reqPath);
             }
             log("received HTTP/2 request " + req.headers + " on stream " + req.streamId);
+
+            // if XKEY is "yes" we will send a response body and close
+            // the socket from the server side immediately after
+            log(XKEY +": " + req.getXKey());
+            final String responseBody = "yes".equals(req.getXKey())
+                    ? RESPONSE
+                    : null;
+
             // send the HTTP/2 response for the stream as well as a GOAWAY frame on the connection.
             // we randomly decide which one gets sent first and it shouldn't matter
             // which order they are sent, the end result for the client should be the same
@@ -292,16 +388,25 @@ class H2GoAwayPromptConnectionClose {
             if (sendGoAwayFirst) {
                 sendGoAway(req.streamId);
                 log("sent GOAWAY");
-                sendResponse(req.streamId);
+                sendResponse(req.streamId, responseBody);
                 log("sent a HTTP/2 response");
             } else {
-                sendResponse(req.streamId);
+                sendResponse(req.streamId, responseBody);
                 log("sent a HTTP/2 response");
                 sendGoAway(req.streamId);
                 log("sent GOAWAY");
             }
-            // wait for the client to close the connection
-            waitForEOF();
+
+            if (responseBody == null) {
+                // testConnectionTermination:
+                //    wait for the client to close the connection
+                waitForEOF();
+            } else {
+                // testBufferedResponseReceived:
+                //    close the connection and notify the client
+                socket.close();
+                connTerminationLatch.release();
+            }
         }
 
         private void readClientPreface() throws IOException {
@@ -460,7 +565,7 @@ class H2GoAwayPromptConnectionClose {
             out.flush();
         }
 
-        private void sendResponse(final int streamId) throws IOException {
+        private void sendResponse(final int streamId, String response) throws IOException {
             // HPACK encoder
             final Encoder encoder = new Encoder(MAX_HEADER_TABLE_CAPACITY);
             encoder.header(":status", "200");
@@ -477,7 +582,11 @@ class H2GoAwayPromptConnectionClose {
             frame[1] = (byte) ((fieldBlock.length >> 8) & 0xFF);
             frame[2] = (byte) (fieldBlock.length & 0xFF);
             frame[3] = 0x01; // HEADERS frame type
-            frame[4] = 0x05; // flags =  END_STREAM (0x01) | END_HEADERS (0x04)
+            if (response == null) {
+                frame[4] = 0x05; // flags =  END_STREAM (0x01) | END_HEADERS (0x04)
+            } else {
+                frame[4] = 0x04; // flags =  END_HEADERS (0x04)
+            }
             frame[5] = (byte) ((streamId >> 24) & 0x7F);
             frame[6] = (byte) ((streamId >> 16) & 0xFF);
             frame[7] = (byte) ((streamId >> 8) & 0xFF);
@@ -488,6 +597,35 @@ class H2GoAwayPromptConnectionClose {
             final OutputStream out = socket.getOutputStream();
             out.write(frame);
             out.flush();
+            if (response != null) {
+                writeResponseBody(out, streamId, response);
+            }
+        }
+
+        private void writeResponseBody(OutputStream out, int streamId, String response) throws IOException {
+            log("Sending response body");
+            byte[] bytes = response.getBytes(StandardCharsets.UTF_8);
+            ByteBuffer payload = ByteBuffer.wrap(bytes);
+            assert bytes.length > 10 : "response body needs more than 10 bytes";
+            // send body in several data frames, by chunks of 10 bytes
+            for (int i = 0 ; i < bytes.length ; i += 10) {
+                payload.position(i);
+                payload.limit(Math.min(i + 10, bytes.length));
+                int flags = payload.limit() < bytes.length
+                        ? 0
+                        : DataFrame.END_STREAM;
+                DataFrame dataFrame = new DataFrame(streamId, flags, payload);
+                log("Sending DataFrame: " + dataFrame);
+                for (ByteBuffer buffer : framesEncoder.encodeFrame(dataFrame)) {
+                    if (buffer.hasRemaining()) {
+                        byte[] towrite = new byte[buffer.remaining()];
+                        log("Writing %s bytes".formatted(towrite.length));
+                        buffer.get(towrite);
+                        out.write(towrite);
+                        out.flush();
+                    }
+                }
+            }
         }
 
         private void waitForEOF() throws IOException {
@@ -495,7 +633,7 @@ class H2GoAwayPromptConnectionClose {
             final Instant start = Instant.now();
             this.socket.getInputStream().readAllBytes();
             // let the test know that the connection has been terminated
-            connTerminationLatch.countDown();
+            connTerminationLatch.release();
             final Instant end = Instant.now();
             log("took " + Duration.between(start, end) + " to reach EOF");
         }

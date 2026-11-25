@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,9 @@
  *
  */
 
+#include "cds/aotHeap.hpp"
 #include "cds/aotMetaspace.hpp"
 #include "cds/aotOopChecker.hpp"
-#include "cds/heapShared.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/vmClasses.hpp"
@@ -71,7 +71,7 @@ void AOTOopChecker::check(oop obj) {
       ResourceMark rm;
       log_error(aot)("Must cache only URLs with jrt/file protocols but got: %s",
                      java_lang_String::as_quoted_ascii(protocol));
-      HeapShared::debug_trace();
+      AOTHeap::debug_trace();
       AOTMetaspace::unrecoverable_writing_error();
     }
   }

@@ -124,17 +124,15 @@ void ParCompactionManager::push_objArray(objArrayOop obj) {
   _mark_and_push_closure.do_klass(obj->klass());
 
   size_t array_length = obj->length();
-  size_t initial_chunk_size =
-    _partial_array_splitter.start(&_marking_stack, obj, nullptr, array_length, ObjArrayMarkingStride);
-  follow_array(obj, 0, initial_chunk_size);
+  PartialArraySplitter::Claim chunk =
+    _partial_array_splitter.start(&_marking_stack, obj, array_length, ObjArrayMarkingStride);
+  follow_array(chunk._array, chunk._start, chunk._end);
 }
 
 void ParCompactionManager::process_array_chunk(PartialArrayState* state, bool stolen) {
-  // Access before release by claim().
-  oop obj = state->source();
   PartialArraySplitter::Claim claim =
     _partial_array_splitter.claim(state, &_marking_stack, stolen);
-  follow_array(objArrayOop(obj), claim._start, claim._end);
+  follow_array(claim._array, claim._start, claim._end);
 }
 
 void ParCompactionManager::follow_marking_stacks() {
@@ -172,14 +170,12 @@ void ParCompactionManager::drain_region_stacks() {
 size_t ParCompactionManager::pop_shadow_region_mt_safe(PSParallelCompact::RegionData* region_ptr) {
   MonitorLocker ml(_shadow_region_monitor, Mutex::_no_safepoint_check_flag);
   while (true) {
+    // If the heap region has no remaining destination dependencies, use it directly.
+    if (region_ptr->available()) {
+      return InvalidShadow;
+    }
     if (!_shadow_region_array->is_empty()) {
       return _shadow_region_array->pop();
-    }
-    // Check if the corresponding heap region is available now.
-    // If so, we don't need to get a shadow region anymore, and
-    // we return InvalidShadow to indicate such a case.
-    if (region_ptr->claimed()) {
-      return InvalidShadow;
     }
     ml.wait(1);
   }

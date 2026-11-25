@@ -32,6 +32,20 @@
  *                   compiler.uncommontrap.TraceDeoptimizationNoRealloc
  */
 
+/*
+ * @test
+ * @bug 8067144
+ * @summary -Xlog:deoptimization=debug tries to print realloc'ed objects even when there are none
+ *
+ * @requires os.arch == "aarch64"
+ * @requires vm.compiler2.enabled
+ * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement
+ *                   -XX:+UnlockDiagnosticVMOptions -XX:-DisplayVMOutput
+ *                   -Xlog:deoptimization=debug
+ *                   -XX:+UnlockExperimentalVMOptions -XX:+PreferCallBasedUncommonTraps
+ *                   compiler.uncommontrap.TraceDeoptimizationNoRealloc
+ */
+
 package compiler.uncommontrap;
 
 public class TraceDeoptimizationNoRealloc {

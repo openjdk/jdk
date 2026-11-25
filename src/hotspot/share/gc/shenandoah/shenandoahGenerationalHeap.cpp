@@ -78,8 +78,7 @@ size_t ShenandoahGenerationalHeap::unsafe_max_tlab_alloc() const {
   return MIN2(ShenandoahHeapRegion::max_tlab_size_bytes(), young_generation()->available());
 }
 
-ShenandoahGenerationalHeap::ShenandoahGenerationalHeap(ShenandoahCollectorPolicy* policy) :
-  ShenandoahHeap(policy),
+ShenandoahGenerationalHeap::ShenandoahGenerationalHeap() :
   _age_census(nullptr),
   _min_plab_size(calculate_min_plab()),
   _max_plab_size(calculate_max_plab()),
@@ -118,6 +117,11 @@ void ShenandoahGenerationalHeap::initialize_heuristics() {
   _old_generation = new ShenandoahOldGeneration(max_workers());
   _young_generation->initialize_heuristics(mode());
   _old_generation->initialize_heuristics(mode());
+}
+
+bool ShenandoahGenerationalHeap::wait_for_old_collection(uint timeout_seconds) {
+  const auto gen_ctrl_thread = static_cast<ShenandoahGenerationalControlThread*>(_control_thread);
+  return gen_ctrl_thread->wait_for_gc_cycle(GCCause::_shenandoah_concurrent_gc, old_generation(), timeout_seconds);
 }
 
 void ShenandoahGenerationalHeap::initialize_serviceability() {
@@ -178,15 +182,15 @@ bool ShenandoahGenerationalHeap::requires_barriers(stackChunkOop obj) const {
   return false;
 }
 
-void ShenandoahGenerationalHeap::evacuate_collection_set(ShenandoahGeneration* generation, bool concurrent) {
+void ShenandoahGenerationalHeap::evacuate_collection_set(ShenandoahGeneration* generation) {
   ShenandoahRegionIterator regions;
-  ShenandoahGenerationalEvacuationTask task(this, generation, &regions, concurrent, false /* only promote regions */);
+  ShenandoahGenerationalEvacuationTask task(this, generation, &regions, false /* only promote regions */);
   workers()->run_task(&task);
 }
 
-void ShenandoahGenerationalHeap::promote_regions_in_place(ShenandoahGeneration* generation, bool concurrent) {
+void ShenandoahGenerationalHeap::promote_regions_in_place(ShenandoahGeneration* generation) {
   ShenandoahRegionIterator regions;
-  ShenandoahGenerationalEvacuationTask task(this, generation, &regions, concurrent, true /* only promote regions */);
+  ShenandoahGenerationalEvacuationTask task(this, generation, &regions, true /* only promote regions */);
   workers()->run_task(&task);
 }
 
@@ -195,39 +199,43 @@ oop ShenandoahGenerationalHeap::evacuate_object(oop p, Thread* thread) {
 
   ShenandoahHeapRegion* from_region = heap_region_containing(p);
   assert(!from_region->is_humongous(), "never evacuate humongous objects");
+  if (has_self_forwarded_objects() && from_region->has_self_forwards()) {
+    // We don't want GC threads to evacuate objects in regions that have evacuation failures. We'd
+    // rather have them concentrate on regions that still have a chance of being completely evacuated.
+    return ShenandoahForwarding::try_forward_to(p, p);
+  }
 
   // Try to keep the object in the same generation
   const ShenandoahAffiliation target_gen = from_region->affiliation();
 
   if (target_gen == YOUNG_GENERATION) {
-    markWord mark = p->mark();
-    if (mark.is_marked()) {
-      // Already forwarded.
-      return ShenandoahForwarding::get_forwardee(p);
+    oop resolved = ShenandoahForwarding::forwardee_or_null(p);
+    if (resolved != nullptr) {
+      return resolved;
     }
-
-    if (age_census()->is_tenurable(from_region->age() + mark.age())) {
+    if (age_census()->is_tenurable(from_region->age() + ShenandoahForwarding::age(p))) {
       // If the object is tenurable, try to promote it
-      oop result = try_evacuate_object<YOUNG_GENERATION, OLD_GENERATION>(p, thread, from_region->age());
+      oop result = try_evacuate_object<YOUNG_GENERATION, OLD_GENERATION>(p, thread, from_region);
 
       // If we failed to promote this aged object, we'll fall through to code below and evacuate to young-gen.
       if (result != nullptr) {
         return result;
       }
     }
-    return try_evacuate_object<YOUNG_GENERATION, YOUNG_GENERATION>(p, thread, from_region->age());
+    return try_evacuate_object<YOUNG_GENERATION, YOUNG_GENERATION>(p, thread, from_region);
   }
 
   assert(target_gen == OLD_GENERATION, "Expected evacuation to old");
-  return try_evacuate_object<OLD_GENERATION, OLD_GENERATION>(p, thread, from_region->age());
+  return try_evacuate_object<OLD_GENERATION, OLD_GENERATION>(p, thread, from_region);
 }
 
 // try_evacuate_object registers the object and dirties the associated remembered set information when evacuating
 // to OLD_GENERATION.
 template<ShenandoahAffiliation FROM_GENERATION, ShenandoahAffiliation TO_GENERATION>
-oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, uint from_region_age) {
+oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, ShenandoahHeapRegion* from_region) {
   bool alloc_from_lab = true;
   bool has_plab = false;
+  uint from_region_age = from_region->age();
   HeapWord* copy = nullptr;
   size_t size = ShenandoahForwarding::size(p);
   constexpr bool is_promotion = (TO_GENERATION == OLD_GENERATION) && (FROM_GENERATION == YOUNG_GENERATION);
@@ -301,7 +309,7 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, uint 
   if (copy == nullptr) {
     if (TO_GENERATION == OLD_GENERATION) {
       if (FROM_GENERATION == YOUNG_GENERATION) {
-        // Signal that promotion failed. Will evacuate this old object somewhere in young gen.
+        // Signal that promotion failed. We will retry to evacuate this old object somewhere in young gen.
         old_generation()->handle_failed_promotion(thread, size);
         return nullptr;
       } else {
@@ -311,24 +319,20 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, uint 
       }
     }
 
-    control_thread()->handle_alloc_failure_evac(size);
-
     // Install the self-forwarded bit so other evacuators/LRBs see the
-    // object as "already handled, do not try to evacuate". The CAS may
-    // fail if another thread concurrently installed a real forwardee or
-    // self-forwarded first.
-    markWord old_mark = p->mark();
-    if (old_mark.is_forwarded()) {
-      return ShenandoahForwarding::get_forwardee(p);
+    // object as "already handled, do not try to evacuate".
+    oop fwd = ShenandoahForwarding::try_forward_to(p, p);
+    if (fwd == p) {
+      // Now self-forwarded. Flag the from-region so that other threads
+      // don't waste time evacuating this region.
+      set_has_self_forwarded_objects();
+      from_region->set_has_self_forwards();
     }
-    oop winner = ShenandoahForwarding::try_forward_to_self(p, old_mark);
-    if (winner == nullptr) {
-      // We own the self-forwarding. Flag the from-region so the degen/full
-      // GC entry drain knows to scan it for self_fwd bits to clear.
-      heap_region_containing(p)->set_has_self_forwards();
-      return p;
-    }
-    return winner;
+
+    // It does not matter if this thread did the self forwarding or not.
+    // This thread failed to allocate an evacuation copy.
+    ShenandoahThreadLocalData::set_has_evac_failures(thread, true);
+    return fwd;
   }
 
   if (ShenandoahEvacTracking) {
@@ -339,22 +343,22 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, uint 
   Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(p), copy, size);
   oop copy_val = cast_to_oop(copy);
 
-  // Update the age of the evacuated object
-  if (TO_GENERATION == YOUNG_GENERATION) {
-    increase_object_age(copy_val, from_region_age + 1);
-  }
-
-  // Relativize stack chunks before publishing the copy. After the forwarding CAS,
-  // mutators can see the copy and thaw it via the fast path if flags == 0. We must
-  // relativize derived pointers and set gc_mode before that happens. Skip if the
-  // copy's mark word is already a forwarding pointer (another thread won the race
-  // and overwrote the original's header before we copied it).
   if (!ShenandoahForwarding::is_forwarded(copy_val)) {
+    // Relativize stack chunks before publishing the copy. After the forwarding CAS,
+    // mutators can see the copy and thaw it via the fast path if flags == 0. We must
+    // relativize derived pointers and set gc_mode before that happens. Skip if the
+    // copy's mark word is already a forwarding pointer (another thread won the race
+    // and overwrote the original's header before we copied it).
     ContinuationGCSupport::relativize_stack_chunk(copy_val);
+
+    // Update the age of the evacuated object
+    if (TO_GENERATION == YOUNG_GENERATION) {
+      ShenandoahForwarding::increase_age(copy_val, from_region_age + 1);
+    }
   }
 
   // Try to install the new forwarding pointer.
-  oop result = ShenandoahForwarding::try_update_forwardee(p, copy_val);
+  oop result = ShenandoahForwarding::try_forward_to(p, copy_val);
   if (result == copy_val) {
     // Successfully evacuated. Our copy is now the public one!
     if (ShenandoahEvacTracking) {
@@ -400,9 +404,9 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, uint 
   return result;
 }
 
-template oop ShenandoahGenerationalHeap::try_evacuate_object<YOUNG_GENERATION, YOUNG_GENERATION>(oop p, Thread* thread, uint from_region_age);
-template oop ShenandoahGenerationalHeap::try_evacuate_object<YOUNG_GENERATION, OLD_GENERATION>(oop p, Thread* thread, uint from_region_age);
-template oop ShenandoahGenerationalHeap::try_evacuate_object<OLD_GENERATION, OLD_GENERATION>(oop p, Thread* thread, uint from_region_age);
+template oop ShenandoahGenerationalHeap::try_evacuate_object<YOUNG_GENERATION, YOUNG_GENERATION>(oop p, Thread* thread, ShenandoahHeapRegion* from_region);
+template oop ShenandoahGenerationalHeap::try_evacuate_object<YOUNG_GENERATION, OLD_GENERATION>(oop p, Thread* thread, ShenandoahHeapRegion* from_region);
+template oop ShenandoahGenerationalHeap::try_evacuate_object<OLD_GENERATION, OLD_GENERATION>(oop p, Thread* thread, ShenandoahHeapRegion* from_region);
 
 // Call this function at the end of a GC cycle in order to establish proper sizes of young and old reserves,
 // setting the old-generation balance so that GC can perform the anticipated evacuations.
@@ -679,17 +683,12 @@ void ShenandoahGenerationalHeap::coalesce_and_fill_old_regions(bool concurrent) 
     }
   };
 
-  ShenandoahPhaseTimings::Phase phase = concurrent ?
-          ShenandoahPhaseTimings::conc_coalesce_and_fill :
-          ShenandoahPhaseTimings::degen_gc_coalesce_and_fill;
-
   // This is not cancellable
-  ShenandoahGlobalCoalesceAndFill coalesce(phase);
+  ShenandoahGlobalCoalesceAndFill coalesce(ShenandoahPhaseTimings::conc_coalesce_and_fill);
   workers()->run_task(&coalesce);
   old_generation()->set_parsable(true);
 }
 
-template<bool CONCURRENT>
 class ShenandoahGenerationalUpdateHeapRefsTask : public WorkerTask {
 private:
   // For update refs, _generation will be young or global. Mixed collections use the young generation.
@@ -713,16 +712,10 @@ public:
   }
 
   void work(uint worker_id) override {
-    if (CONCURRENT) {
-      ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::conc_update_refs, ShenandoahPhaseTimings::Work, worker_id, true);
-      ShenandoahConcurrentWorkerSession worker_session(worker_id);
-      SuspendibleThreadSetJoiner stsj;
-      do_work<ShenandoahConcUpdateRefsClosure>(worker_id);
-    } else {
-      ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::degen_gc_update_refs, ShenandoahPhaseTimings::Work, worker_id, true);
-      ShenandoahParallelWorkerSession worker_session(worker_id);
-      do_work<ShenandoahNonConcUpdateRefsClosure>(worker_id);
-    }
+    ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::conc_update_refs, ShenandoahPhaseTimings::Work, worker_id, true);
+    ShenandoahConcurrentWorkerSession worker_session(worker_id);
+    SuspendibleThreadSetJoiner stsj;
+    do_work<ShenandoahUpdateRefsClosure<true>>(worker_id);
   }
 
 private:
@@ -730,7 +723,7 @@ private:
   void do_work(uint worker_id) {
     T cl;
 
-    if (CONCURRENT && (worker_id == 0)) {
+    if (worker_id == 0) {
       // We ask the first worker to replenish the Mutator free set by moving regions previously reserved to hold the
       // results of evacuation.  These reserves are no longer necessary because evacuation has completed.
       size_t cset_regions = _heap->collection_set()->count();
@@ -741,7 +734,6 @@ private:
       // next GC cycle.
       _heap->free_set()->move_regions_from_collector_to_mutator(cset_regions);
     }
-    // If !CONCURRENT, there's no value in expanding Mutator free set
 
     ShenandoahHeapRegion* r = _regions->next();
     // We update references for global, mixed, and young collections.
@@ -753,7 +745,7 @@ private:
       assert(update_watermark >= r->bottom(), "sanity");
 
       log_debug(gc)("Update refs worker " UINT32_FORMAT ", looking at region %zu", worker_id, r->index());
-      if (r->is_active() && !r->is_cset()) {
+      if (r->is_update_required()) {
         if (r->is_young()) {
           _heap->marked_object_oop_iterate(r, &cl, update_watermark);
         } else if (r->is_old()) {
@@ -779,7 +771,7 @@ private:
         }
       }
 
-      if (_heap->check_cancelled_gc_and_yield(CONCURRENT)) {
+      if (_heap->check_cancelled_gc_and_yield()) {
         return;
       }
 
@@ -800,13 +792,15 @@ private:
   template<class T>
   void update_references_in_remembered_set(uint worker_id, T &cl, const ShenandoahMarkingContext* ctx, bool is_mixed) {
 
-    struct ShenandoahRegionChunk assignment;
+    ShenandoahRegionChunk assignment;
     ShenandoahScanRemembered* scanner = _heap->old_generation()->card_scan();
 
-    while (!_heap->check_cancelled_gc_and_yield(CONCURRENT) && _work_chunks->next(&assignment)) {
+    while (!_heap->check_cancelled_gc_and_yield() && _work_chunks->next(&assignment)) {
       // Keep grabbing next work chunk to process until finished, or asked to yield
       ShenandoahHeapRegion* r = assignment._r;
-      if (r->is_active() && !r->is_cset() && r->is_old()) {
+      if (r->is_update_required() && r->is_old()) {
+        // allocations into old (i.e., promotions or evacuations) do _not_ update references
+        // when they copy, so we move the UWM up for each such allocation.
         HeapWord* start_of_range = r->bottom() + assignment._chunk_offset;
         HeapWord* end_of_range = r->get_update_watermark();
         if (end_of_range > start_of_range + assignment._chunk_size) {
@@ -840,8 +834,8 @@ private:
 
   template<class T>
   void update_references_in_old_region(T &cl, const ShenandoahMarkingContext* ctx, ShenandoahScanRemembered* scanner,
-                                    const ShenandoahHeapRegion* r, HeapWord* start_of_range,
-                                    HeapWord* end_of_range) const {
+                                       const ShenandoahHeapRegion* r, HeapWord* start_of_range,
+                                       HeapWord* end_of_range) const {
     // In case last object in my range spans boundary of my chunk, I may need to scan all the way to top()
     ShenandoahObjectToOopBoundedClosure<T> objs(&cl, start_of_range, r->top());
 
@@ -857,7 +851,10 @@ private:
     while (p < end_of_range) {
       // p is known to point to the beginning of marked object obj
       oop obj = cast_to_oop(p);
-      objs.do_object(obj);
+      if (!ShenandoahForwarding::is_real_forwarded(obj)) {
+        // Update references in the object if it was not evacuated
+        objs.do_object(obj);
+      }
       HeapWord* prev_p = p;
       p += ShenandoahForwarding::size(obj);
       if (p < tams) {
@@ -900,20 +897,16 @@ private:
   }
 };
 
-void ShenandoahGenerationalHeap::update_heap_references(ShenandoahGeneration* generation, bool concurrent) {
-  assert(!is_full_gc_in_progress(), "Only for concurrent and degenerated GC");
-  const uint nworkers = workers()->active_workers();
-  ShenandoahRegionChunkIterator work_list(nworkers);
-  if (concurrent) {
-    ShenandoahGenerationalUpdateHeapRefsTask<true> task(generation, &_update_refs_iterator, &work_list);
-    workers()->run_task(&task);
-  } else {
-    ShenandoahGenerationalUpdateHeapRefsTask<false> task(generation, &_update_refs_iterator, &work_list);
-    workers()->run_task(&task);
-  }
+void ShenandoahGenerationalHeap::update_heap_references(ShenandoahGeneration* generation) {
+  assert(!is_full_gc_in_progress(), "Only for concurrent GC");
+  ShenandoahRegionChunkIterator work_list(this);
+  ShenandoahRegionIterator update_refs_iterator(this);
+  ShenandoahGenerationalUpdateHeapRefsTask task(generation, &update_refs_iterator, &work_list);
+  workers()->run_task(&task);
 
   if (ShenandoahEnableCardStats) {
     // Only do this if we are collecting card stats
+    const uint nworkers = workers()->active_workers();
     ShenandoahScanRemembered* card_scan = old_generation()->card_scan();
     assert(card_scan != nullptr, "Card table must exist when card stats are enabled");
     card_scan->log_card_stats(nworkers, CARD_STAT_UPDATE_REFS);
@@ -986,16 +979,6 @@ void ShenandoahGenerationalHeap::final_update_refs_update_region_states() {
   ShenandoahUpdateRegionAges ages(marking_context());
   auto cl = ShenandoahCompositeRegionClosure::of(pins, ages);
   parallel_heap_region_iterate(&cl);
-}
-
-void ShenandoahGenerationalHeap::complete_degenerated_cycle() {
-  shenandoah_assert_heaplocked_or_safepoint();
-  if (!old_generation()->is_parsable()) {
-    ShenandoahGCPhase phase(ShenandoahPhaseTimings::degen_gc_coalesce_and_fill);
-    coalesce_and_fill_old_regions(false);
-  }
-
-  old_generation()->maybe_log_promotion_failure_stats(false);
 }
 
 void ShenandoahGenerationalHeap::complete_concurrent_cycle() {

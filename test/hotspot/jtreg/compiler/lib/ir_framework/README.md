@@ -60,6 +60,11 @@ A custom run test gives full control over the invocation of the `@Test` annotate
 
 More information on checked tests with a precise definition can be found in the Javadocs of [Run](./Run.java). Concrete examples on how to specify a custom run test can be found in [CustomRunTestsExample](../../../testlibrary_tests/ir_framework/examples/CustomRunTestExample.java).
 
+#### Skipping a Test Completely When Encountering Problems
+When a test execution is failing due to a VM problem (crash, wrong execution etc.) without having an immediate fix, it is preferred to specify [@Skip](./Skip.java) at the `@Test`-method to disable the test over commenting the test out.
+
+Specifying `@Skip` allows the IR Framework to still execute the skipped test on command by using the property flag `-DIgnoreSkip=true`. This can be useful when trying to quickly verify if a disabled test is still failing or not.
+
 ### 2.2 IR Verification
 The main feature of this framework is to perform a simple but yet powerful regex-based C2 IR matching on the output of `-XX:+PrintIdeal`, `-XX:+PrintOptoAssembly` and/or on specific compile phases emitted by the compile command `-XX:CompileCommand=PrintIdealPhase` which supports the same set of compile phases as the Ideal Graph Visualizer (IGV).
 
@@ -187,6 +192,7 @@ The framework provides various stress and debug flags. They should mainly be use
 - `-DWaitForCompilationTimeout=20`: Change the default waiting time (default: 10s) for a compilation of a `@Test` annotated method with compilation level [WAIT\_FOR\_COMPILATION](./CompLevel.java).
 - `-DIgnoreCompilerControls=true`: Ignore all compiler controls applied in the framework. This includes any compiler control annotations (`@DontCompile`, `@DontInline`, `@ForceCompile`, `@ForceInline`, `@ForceCompileStaticInitializer`), the exclusion of `@Run` and `@Check` methods from compilation, and the directive to not inline `@Test` annotated methods.
 - `-DPreferCommandLineFlags=true`: Prefer flags set via the command line over flags specified by the tests.
+- `-DIgnoreSkip=true`: Additionally run all skipped tests (i.e. tests with a `@Skip` annotation).
 
 ## 3. Test Framework Execution
 This section gives an overview of how the framework is executing a JTreg test that calls the framework from within its `main()` method.

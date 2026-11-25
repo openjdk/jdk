@@ -32,6 +32,7 @@
 
 // Predefined classes
 class ciField;
+class ciFlatArrayKlass;
 class ValueStack;
 class InstructionPrinter;
 class IRScope;
@@ -510,7 +511,8 @@ class Instruction: public CompilationResourceObj {
     return _next;
   }
 
-  bool is_loaded_flat_array() const;
+  ciFlatArrayKlass* as_loaded_flat_array_klass_or_null() const;
+  bool is_loaded_flat_array() const { return as_loaded_flat_array_klass_or_null() != nullptr; }
   bool maybe_flat_array() const;
   bool maybe_null_free_array() const;
 

@@ -32,6 +32,18 @@
 
 package jdk.internal.org.commonmark.node;
 
+/**
+ * A fenced code block, e.g.:
+ * <pre>
+ * ```
+ * foo
+ * bar
+ * ```
+ * </pre>
+ * <p>
+ *
+ * @see <a href="https://spec.commonmark.org/0.31.2/#fenced-code-blocks">CommonMark Spec</a>
+ */
 public class FencedCodeBlock extends Block {
 
     private String fenceCharacter;
@@ -99,7 +111,7 @@ public class FencedCodeBlock extends Block {
     }
 
     /**
-     * @see <a href="http://spec.commonmark.org/0.18/#info-string">CommonMark spec</a>
+     * @see <a href="http://spec.commonmark.org/0.31.2/#info-string">CommonMark spec</a>
      */
     public String getInfo() {
         return info;

@@ -23,6 +23,7 @@
  */
 
 #include "cds/aotConstantPoolResolver.hpp"
+#include "cds/aotSystemDictionary.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.inline.hpp"
 #include "cds/cdsConfig.hpp"
@@ -31,7 +32,6 @@
 #include "classfile/javaClasses.hpp"
 #include "classfile/javaStackTraceClasses.hpp"
 #include "classfile/systemDictionary.hpp"
-#include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
@@ -190,9 +190,9 @@ void FinalImageRecipes::load_all_classes(TRAPS) {
     if (k->is_instance_klass()) {
       InstanceKlass* ik = InstanceKlass::cast(k);
       if (ik->defined_by_other_loaders()) {
-        SystemDictionaryShared::init_dumptime_info(ik);
-        SystemDictionaryShared::add_unregistered_class(THREAD, ik);
-        SystemDictionaryShared::copy_unregistered_class_size_and_crc32(ik);
+        AOTSystemDictionary::init_dumptime_info(ik);
+        AOTSystemDictionary::add_unregistered_class(THREAD, ik);
+        AOTSystemDictionary::copy_unregistered_class_size_and_crc32(ik);
       } else if (!ik->is_hidden()) {
         Klass* actual = SystemDictionary::resolve_or_fail(ik->name(), class_loader, true, CHECK);
         if (actual != ik) {

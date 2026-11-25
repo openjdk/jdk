@@ -26,6 +26,7 @@
 package jdk.internal.net.http;
 
 import java.io.IOException;
+import java.net.ProtocolException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -141,7 +142,7 @@ class ResponseContent {
         volatile boolean cr = false;  // tryReadChunkLength has found CR
         volatile int chunkext = 0;    // number of bytes already read in the chunk extension
         volatile int digits = 0;      // number of chunkLength bytes already read
-        volatile int bytesToConsume;  // number of bytes that still need to be consumed before proceeding
+        volatile int crlfBytesToConsume;  // number of CRLF bytes that still need to be consumed
         volatile ChunkState state = ChunkState.READING_LENGTH; // current state
         volatile AbstractSubscription sub;
         ChunkedBodyParser(Consumer<Throwable> onComplete) {
@@ -252,8 +253,8 @@ class ResponseContent {
         private int tryReadChunkLen(ByteBuffer chunkbuf) throws IOException {
             assert state == ChunkState.READING_LENGTH;
             while (chunkbuf.hasRemaining()) {
-                if (chunkext + digits >= MAX_CHUNK_HEADER_SIZE) {
-                    throw new IOException("Chunk header size too long: " + (chunkext + digits));
+                if (chunkext >= MAX_CHUNK_HEADER_SIZE - digits) {
+                    throw new IOException("Chunk header size too long: " + (chunkext + (long) digits));
                 }
                 int c = chunkbuf.get();
                 if (cr) {
@@ -265,8 +266,8 @@ class ResponseContent {
                 }
                 if (c == CR) {
                     cr = true;
-                    if (digits == 0 && debug.on()) {
-                        debug.log("tryReadChunkLen: invalid chunk header? No digits in chunkLen?");
+                    if (digits == 0) {
+                        throw new ProtocolException("Chunk header doesn't contain any digits");
                     }
                 } else if (cr == false && chunkext > 0) {
                     // we have seen a non digit character after the chunk length.
@@ -291,41 +292,33 @@ class ResponseContent {
                         }
                     } else {
                         digits++;
-                        partialChunklen = partialChunklen * 16 + digit;
+                        long nextPartialChunklen = partialChunklen * 16L + digit;
+                        if (nextPartialChunklen > Integer.MAX_VALUE) {
+                            throw new ProtocolException("chunk length too big: " + nextPartialChunklen);
+                        }
+                        partialChunklen = (int) nextPartialChunklen;
                     }
                 }
             }
             return -1;
         }
 
-
-        // try to consume as many bytes as specified by bytesToConsume.
-        // returns the number of bytes that still need to be consumed.
-        // In practice this method is only called to consume one CRLF pair
-        // with bytesToConsume set to 2, so it will only return 0 (if completed),
-        // 1, or 2 (if chunkbuf doesn't have the 2 chars).
-        private int tryConsumeBytes(ByteBuffer chunkbuf) throws IOException {
-            int n = bytesToConsume;
-            if (n > 0) {
-                int e = Math.min(chunkbuf.remaining(), n);
-
-                // verifies some assertions
-                // this methods is called only to consume CRLF
-                if (Utils.ASSERTIONSENABLED) {
-                    assert n <= 2 && e <= 2;
-                    ByteBuffer tmp = chunkbuf.slice();
-                    // if n == 2 assert that we will first consume CR
-                    assert (n == 2 && e > 0) ? tmp.get() == CR : true;
-                    // if n == 1 || n == 2 && e == 2 assert that we then consume LF
-                    assert (n == 1 || e == 2) ? tmp.get() == LF : true;
+        private boolean tryConsumeCRLF(ByteBuffer buffer) throws ProtocolException {
+            assert crlfBytesToConsume >= 0 && crlfBytesToConsume <= 2;
+            for (; crlfBytesToConsume > 0 && buffer.remaining() > 0; crlfBytesToConsume--) {
+                byte b = buffer.get();
+                if (crlfBytesToConsume == 1) {  // 1 byte to go (implies already consumed CR), check LF
+                    if (b != LF) {
+                        throw new ProtocolException("LF expected");
+                    }
+                } else {                        // 2 bytes to go, check CR
+                    assert crlfBytesToConsume == 2;
+                    if (b != CR) {
+                        throw new ProtocolException("CR expected");
+                    }
                 }
-
-                chunkbuf.position(chunkbuf.position() + e);
-                n -= e;
-                bytesToConsume = n;
             }
-            assert n >= 0;
-            return n;
+            return crlfBytesToConsume == 0;
         }
 
         /**
@@ -338,7 +331,7 @@ class ResponseContent {
          */
         ByteBuffer tryReadOneHunk(ByteBuffer chunk) throws IOException {
             int unfulfilled = bytesremaining;
-            int toconsume = bytesToConsume;
+            int toconsume = crlfBytesToConsume;
             ChunkState st = state;
             if (st == ChunkState.READING_LENGTH && chunklen == -1) {
                 if (debug.on()) debug.log(() ->  "Trying to read chunk len"
@@ -349,7 +342,7 @@ class ResponseContent {
                 if (debug.on()) debug.log("Got chunk len %d", clen);
                 cr = false; partialChunklen = 0;
                 unfulfilled = bytesremaining =  clen;
-                if (clen == 0) toconsume = bytesToConsume = 2; // that was the last chunk
+                if (clen == 0) toconsume = crlfBytesToConsume = 2; // that was the last chunk
                 else st = state = ChunkState.READING_DATA; // read the data
             }
 
@@ -357,12 +350,12 @@ class ResponseContent {
                 if (debug.on())
                     debug.log("Trying to consume bytes: %d (remaining in buffer: %s)",
                               toconsume, chunk.remaining());
-                if (tryConsumeBytes(chunk) > 0) {
+                if (!tryConsumeCRLF(chunk)) {
                     return READMORE;
                 }
             }
 
-            toconsume = bytesToConsume;
+            toconsume = crlfBytesToConsume;
             assert toconsume == 0;
 
 
@@ -394,7 +387,7 @@ class ResponseContent {
                     debug.log( "Returning chunk bytes: %d", bytes2return);
                 returnBuffer = Utils.sliceWithLimitedCapacity(chunk, bytes2return).asReadOnlyBuffer();
                 unfulfilled = bytesremaining -= bytes2return;
-                if (unfulfilled == 0) bytesToConsume = 2;
+                if (unfulfilled == 0) crlfBytesToConsume = 2;
             }
 
             assert unfulfilled >= 0;
@@ -408,7 +401,7 @@ class ResponseContent {
                 // then we will come back here later - skipping the block
                 // that reads data because remaining==0, and finding
                 // that the two bytes are now consumed.
-                if (tryConsumeBytes(chunk) == 0) {
+                if (tryConsumeCRLF(chunk)) {
                     // we're done for this chunk! reset all states and
                     // prepare to read the next chunk.
                     chunklen = -1;

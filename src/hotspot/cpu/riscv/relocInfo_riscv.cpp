@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -50,6 +50,9 @@ void Relocation::pd_set_data_value(address x, bool verify_only) {
       }
       break;
     }
+    case relocInfo::metadata_type:
+      bytes = MacroAssembler::patch_metadata(addr(), x);
+      break;
     default:
       bytes = MacroAssembler::pd_patch_instruction_size(addr(), x);
       break;
@@ -127,4 +130,12 @@ void poll_Relocation::fix_relocation_after_move(const CodeBuffer* src, CodeBuffe
 }
 
 void metadata_Relocation::pd_fix_value(address x) {
+}
+
+address trampoline_stub_Relocation::pd_destination() {
+  return reinterpret_cast<address>(Bytes::get_native_u8(addr()));
+}
+
+void trampoline_stub_Relocation::pd_set_destination(address x) {
+  Bytes::put_native_u8(addr(), reinterpret_cast<uint64_t>(x));
 }

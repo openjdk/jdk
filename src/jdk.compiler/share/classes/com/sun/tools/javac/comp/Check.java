@@ -2150,7 +2150,7 @@ public class Check {
         }
         if (allowValueClasses && origin.isValueClass() && names.finalize.equals(m.name)) {
             if (m.overrides(syms.objectFinalize, origin, types, false)) {
-                log.warning(tree.pos(), Warnings.ValueFinalize);
+                log.error(tree.pos(), Errors.ValueFinalize);
             }
         }
         if (allowRecords && origin.isRecord()) {
@@ -2995,7 +2995,7 @@ public class Check {
 
     private void checkAccessFromSerializableElementInner(final JCTree tree, boolean isLambda) {
         Symbol sym = TreeInfo.symbol(tree);
-        if (!sym.kind.matches(KindSelector.VAL_MTH)) {
+        if (!sym.kind.matches(KindSelector.VAL_MTH) || sym.kind == ERR) {
             return;
         }
 
