@@ -630,7 +630,7 @@ class DumpThreads {
             try {
                 parkingThread.join();
             } catch (Throwable e) {
-                fail(e);
+                e.printStackTrace();
             }
         });
         parkingThread.start();
@@ -683,19 +683,19 @@ class DumpThreads {
             } catch (InterruptedException _) {
                 // expected
             } catch (Throwable e) {
-                fail(e);
+                e.printStackTrace();
             }
         });
         thread.start();
-        StructuredTaskScope<?, ?, ?> scope = queue.take();
-        awaitWaiting(thread, "java.util.concurrent.StructuredTaskScopeImpl.join");
-        long tid = thread.threadId();
         try {
+            // wait for thread to start and park in join
+            StructuredTaskScope<?, ?, ?> scope = queue.take();
             String scopeId = Objects.toIdentityString(scope);
+            awaitWaiting(thread, "java.util.concurrent.StructuredTaskScopeImpl.join");
 
             // thread dump in plain text should have "parking to wait for" line
             List<String> lines = dumpThreadsToPlainText();
-            ThreadFields fields = findThread(tid, lines);
+            ThreadFields fields = findThread(thread.threadId(), lines);
             assertNotNull(fields, "thread not found");
             assertEquals("WAITING", fields.state());
             String line = find(lines, "- parking to wait for <" + scopeId + ">");
@@ -1020,7 +1020,7 @@ class DumpThreads {
         boolean found = false;
         while (!found) {
             Thread.State state = target.getState();
-            assertTrue(state != TERMINATED);
+            assertTrue(state != TERMINATED, "Thread has terminated");
             found = (state == WAITING || state == TIMED_WAITING)
                     && Arrays.stream(target.getStackTrace())
                     .anyMatch(f -> f.getClassName().equals(className)
