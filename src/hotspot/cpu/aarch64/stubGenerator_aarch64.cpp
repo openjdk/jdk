@@ -9029,14 +9029,15 @@ class StubGenerator: public StubCodeGenerator {
     }
   }
 
-  // Perform high/low multiplication with signed 7x55 bit limbs
-  void mulhl_P384(Register a, Register b, Register high, Register low, Register c[], int i, int j) {
+  // output a * b as 2*55 bit products in (high, low) and
+  // accumulate (high, low) into (c[i], c[i+1])
+  void mulhl_P384(Register a, Register b, Register high, Register low, Register c[], int i) {
     __ smulh(high, a, b);
     __ mul(low, a, b);
     __ extr(high, high, low, BPL_P384);
     __ andr(low, low,  MASK_P384);
-    __ add(c[i + j], c[i + j], low);
-    __ add(c[i + j + 1], c[i + j + 1], high);
+    __ add(c[i], c[i], low);
+    __ add(c[i + 1], c[i + 1], high);
   }
 
   /**
@@ -9093,7 +9094,7 @@ class StubGenerator: public StubCodeGenerator {
       __ ldr(b, Address(bLimbs, i * 8));
       for (int j = 0; j < LIMBS_P384; j++) {
         __ ldr(a, Address(aLimbs, j * 8));
-        mulhl_P384(a, b, high, low, c, i, j);
+        mulhl_P384(a, b, high, low, c, i + j);
       }
     }
 
@@ -9166,7 +9167,7 @@ class StubGenerator: public StubCodeGenerator {
     // Perform high/low multiplication with signed 7x55-bit limbs
     for (int i = 0; i < LIMBS_P384; i++) {
       __ ldr(aArg, Address(aLimbs, i * 8));
-      mulhl_P384(aArg, aArg, high, low, c, i, i);
+      mulhl_P384(aArg, aArg, high, low, c, i * 2);
       for (int j = i + 1; j < LIMBS_P384; j++) {
         __ ldr(a, Address(aLimbs, j * 8));
         __ smulh(high, a, aArg);
