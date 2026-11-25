@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8371155 8379550 8381965 8384843
+ * @bug 8371155 8379550 8381965 8384843 8392468
  * @summary Verify type annotations on local-like variables are propagated to
  *          their types at an appropriate time.
  * @library /tools/lib
@@ -745,6 +745,363 @@ public class TypeAnnotationsOnVariables {
                              "        Test$TypeAnno");
     }
 
+    @Test
+    void catchParameter() throws Exception {
+        Path src = base.resolve("src");
+        Path classes = base.resolve("classes");
+        tb.writeJavaFiles(src,
+                          """
+                          import java.io.IOException;
+                          import java.lang.annotation.ElementType;
+                          import java.lang.annotation.Target;
+
+                          class Test {
+                              @Target(ElementType.TYPE_USE)
+                              @interface TypeAnno { }
+                              @Target(ElementType.TYPE_USE)
+                              @interface TypeAnno2 { }
+
+                              static class C1 {
+                                  static {
+                                      try {
+                                          new Object();
+                                      } catch (@TypeAnno Exception ex1) {}
+                                  }
+                              }
+
+                              static class C2 {
+                                  static {
+                                      try {
+                                          new Object();
+                                      } catch (java.lang.@TypeAnno Exception ex2) {}
+                                  }
+                              }
+
+                              static class C3 {
+                                  static {
+                                      try {
+                                          throw new IOException();
+                                      } catch (java.io.IOException | java.lang.@TypeAnno RuntimeException ex3) {}
+                                  }
+                              }
+
+                              static class C4 {
+                                  static {
+                                      try {
+                                          throw new IOException();
+                                      } catch (java.io.@TypeAnno IOException | java.lang.RuntimeException ex4) {}
+                                  }
+                              }
+
+                              static class C5 {
+                                  static {
+                                      try {
+                                          throw new IOException();
+                                      } catch (java.io.@TypeAnno IOException | java.lang.@TypeAnno RuntimeException ex5) {}
+                                  }
+                              }
+
+                              static class C6 {
+                                  static {
+                                      try {
+                                          throw new IOException();
+                                      } catch (@TypeAnno IOException | @TypeAnno RuntimeException ex6) {}
+                                  }
+                              }
+
+                              static class C7 {
+                                  {
+                                      try {
+                                          throw new IOException();
+                                      } catch (java.io.@TypeAnno IOException | java.lang.@TypeAnno RuntimeException ex7) {}
+                                  }
+                              }
+
+                              static class C8 {
+                                  static {
+                                      try {
+                                          throw new IOException();
+                                      } catch (java.io.@TypeAnno IOException | java.lang.@TypeAnno RuntimeException ex8) {}
+                                  }
+                                  static {
+                                      try {
+                                          throw new IOException();
+                                      } catch (java.io.@TypeAnno2 IOException | java.lang.@TypeAnno2 RuntimeException ex9) {}
+                                  }
+                                  {
+                                      try {
+                                          throw new IOException();
+                                      } catch (java.io.@TypeAnno IOException | java.lang.@TypeAnno RuntimeException exa) {}
+                                  }
+                                  {
+                                      try {
+                                          throw new IOException();
+                                      } catch (java.io.@TypeAnno2 IOException | java.lang.@TypeAnno2 RuntimeException exb) {}
+                                  }
+                              }
+
+                              void test(Exception param) {
+                                  try {
+                                      new Object();
+                                  } catch (@TypeAnno Exception exc) {}
+                              }
+                          }
+                          """);
+        Files.createDirectories(classes);
+        List<String> actual = new ArrayList<>();
+        new JavacTask(tb)
+                .options("-d", classes.toString())
+                .files(tb.findJavaFiles(src))
+                .callback(task -> {
+                    task.addTaskListener(new TaskListener() {
+                        @Override
+                        public void finished(TaskEvent e) {
+                            if (e.getKind() != TaskEvent.Kind.ANALYZE) {
+                                return ;
+                            }
+                            Trees trees = Trees.instance(task);
+                            new TreePathScanner<Void, Void>() {
+                                @Override
+                                public Void visitVariable(VariableTree node, Void p) {
+                                    actual.add(node.getName() + ": " + typeToString(trees.getTypeMirror(getCurrentPath())));
+                                    return super.visitVariable(node, p);
+                                }
+                            }.scan(e.getCompilationUnit(), null);
+                        }
+                    });
+                })
+                .run()
+                .writeAll();
+
+        List<String> expected = List.of(
+            "ex1: java.lang.@Test.TypeAnno Exception",
+            "ex2: java.lang.@Test.TypeAnno Exception",
+            "ex3: java.io.IOException | java.lang.@Test.TypeAnno RuntimeException",
+            "ex4: java.io.@Test.TypeAnno IOException | java.lang.RuntimeException",
+            "ex5: java.io.@Test.TypeAnno IOException | java.lang.@Test.TypeAnno RuntimeException",
+            "ex6: java.io.@Test.TypeAnno IOException | java.lang.@Test.TypeAnno RuntimeException",
+            "ex7: java.io.@Test.TypeAnno IOException | java.lang.@Test.TypeAnno RuntimeException",
+            "ex8: java.io.@Test.TypeAnno IOException | java.lang.@Test.TypeAnno RuntimeException",
+            "ex9: java.io.@Test.TypeAnno2 IOException | java.lang.@Test.TypeAnno2 RuntimeException",
+            "exa: java.io.@Test.TypeAnno IOException | java.lang.@Test.TypeAnno RuntimeException",
+            "exb: java.io.@Test.TypeAnno2 IOException | java.lang.@Test.TypeAnno2 RuntimeException",
+            "param: java.lang.Exception",
+            "exc: java.lang.@Test.TypeAnno Exception"
+        );
+
+        actual.forEach(System.out::println);
+        if (!expected.equals(actual)) {
+            throw new AssertionError("Expected: " + expected + ", but got: " + actual);
+        }
+
+        Path testClass = classes.resolve("Test.class");
+        TestClassDesc testClassDesc = TestClassDesc.create(testClass);
+
+        checkTypeAnnotations(testClassDesc,
+                             "test",
+                             this::getAnnotationsFromCode,
+                             "        0: LTest$TypeAnno;(): EXCEPTION_PARAMETER, exception_index=0",
+                             "          Test$TypeAnno");
+
+        Path c1 = classes.resolve("Test$C1.class");
+        TestClassDesc testClassDescC1 = TestClassDesc.create(c1);
+
+        checkTypeAnnotations(testClassDescC1,
+                             "<clinit>",
+                             this::getAnnotationsFromCode,
+                             "        0: LTest$TypeAnno;(): EXCEPTION_PARAMETER, exception_index=0",
+                             "          Test$TypeAnno");
+
+        Path c2 = classes.resolve("Test$C2.class");
+        TestClassDesc testClassDescC2 = TestClassDesc.create(c2);
+
+        checkTypeAnnotations(testClassDescC2,
+                             "<clinit>",
+                             this::getAnnotationsFromCode,
+                             "        0: LTest$TypeAnno;(): EXCEPTION_PARAMETER, exception_index=0",
+                             "          Test$TypeAnno");
+
+        Path c3 = classes.resolve("Test$C3.class");
+        TestClassDesc testClassDescC3 = TestClassDesc.create(c3);
+
+        checkTypeAnnotations(testClassDescC3,
+                             "<clinit>",
+                             this::getAnnotationsFromCode,
+                             "        0: LTest$TypeAnno;(): EXCEPTION_PARAMETER, exception_index=1",
+                             "          Test$TypeAnno");
+
+        Path c4 = classes.resolve("Test$C4.class");
+        TestClassDesc testClassDescC4 = TestClassDesc.create(c4);
+
+        checkTypeAnnotations(testClassDescC4,
+                             "<clinit>",
+                             this::getAnnotationsFromCode,
+                             "        0: LTest$TypeAnno;(): EXCEPTION_PARAMETER, exception_index=0",
+                             "          Test$TypeAnno");
+
+        Path c5 = classes.resolve("Test$C5.class");
+        TestClassDesc testClassDescC5 = TestClassDesc.create(c5);
+
+        checkTypeAnnotations(testClassDescC5,
+                             "<clinit>",
+                             this::getAnnotationsFromCode,
+                             "        0: LTest$TypeAnno;(): EXCEPTION_PARAMETER, exception_index=0",
+                             "          Test$TypeAnno",
+                             "        1: LTest$TypeAnno;(): EXCEPTION_PARAMETER, exception_index=1",
+                             "          Test$TypeAnno");
+
+        Path c6 = classes.resolve("Test$C6.class");
+        TestClassDesc testClassDescC6 = TestClassDesc.create(c6);
+
+        checkTypeAnnotations(testClassDescC6,
+                             "<clinit>",
+                             this::getAnnotationsFromCode,
+                             "        0: LTest$TypeAnno;(): EXCEPTION_PARAMETER, exception_index=0",
+                             "          Test$TypeAnno",
+                             "        1: LTest$TypeAnno;(): EXCEPTION_PARAMETER, exception_index=1",
+                             "          Test$TypeAnno");
+
+        Path c7 = classes.resolve("Test$C7.class");
+        TestClassDesc testClassDescC7 = TestClassDesc.create(c7);
+
+        checkTypeAnnotations(testClassDescC7,
+                             "<init>",
+                             this::getAnnotationsFromCode,
+                             "        0: LTest$TypeAnno;(): EXCEPTION_PARAMETER, exception_index=0",
+                             "          Test$TypeAnno",
+                             "        1: LTest$TypeAnno;(): EXCEPTION_PARAMETER, exception_index=1",
+                             "          Test$TypeAnno");
+
+        Path c8 = classes.resolve("Test$C8.class");
+        TestClassDesc testClassDescC8 = TestClassDesc.create(c8);
+
+        checkTypeAnnotations(testClassDescC8,
+                             "<clinit>",
+                             this::getAnnotationsFromCode,
+                             "        0: LTest$TypeAnno;(): EXCEPTION_PARAMETER, exception_index=0",
+                             "          Test$TypeAnno",
+                             "        1: LTest$TypeAnno;(): EXCEPTION_PARAMETER, exception_index=1",
+                             "          Test$TypeAnno",
+                             "        2: LTest$TypeAnno2;(): EXCEPTION_PARAMETER, exception_index=2",
+                             "          Test$TypeAnno",
+                             "        3: LTest$TypeAnno2;(): EXCEPTION_PARAMETER, exception_index=3",
+                             "          Test$TypeAnno");
+        checkTypeAnnotations(testClassDescC8,
+                             "<init>",
+                             this::getAnnotationsFromCode,
+                             "        0: LTest$TypeAnno;(): EXCEPTION_PARAMETER, exception_index=0",
+                             "          Test$TypeAnno",
+                             "        1: LTest$TypeAnno;(): EXCEPTION_PARAMETER, exception_index=1",
+                             "          Test$TypeAnno",
+                             "        2: LTest$TypeAnno2;(): EXCEPTION_PARAMETER, exception_index=2",
+                             "          Test$TypeAnno",
+                             "        3: LTest$TypeAnno2;(): EXCEPTION_PARAMETER, exception_index=3",
+                             "          Test$TypeAnno");
+    }
+
+    @Test
+    void resourceVariable() throws Exception {
+        Path src = base.resolve("src");
+        Path classes = base.resolve("classes");
+        tb.writeJavaFiles(src,
+                          """
+                          import java.io.IOException;
+                          import java.lang.annotation.ElementType;
+                          import java.lang.annotation.Target;
+
+                          class Test {
+                              @Target(ElementType.TYPE_USE)
+                              @interface TypeAnno { }
+
+                              static class C1 {
+                                  static {
+                                      try (@TypeAnno AutoCloseable ac1 = null) {
+                                      } catch (Exception ex) {}
+                                  }
+                              }
+
+                              static class C2 {
+                                  static {
+                                      try (java.lang. @TypeAnno AutoCloseable ac2 = null) {
+                                      } catch (Exception ex) {}
+                                  }
+                              }
+
+                              void test(Exception param) {
+                                  try (@TypeAnno AutoCloseable ac3 = null) {
+                                  } catch (Exception ex) {}
+                              }
+                          }
+                          """);
+        Files.createDirectories(classes);
+        List<String> actual = new ArrayList<>();
+        new JavacTask(tb)
+                .options("-d", classes.toString())
+                .files(tb.findJavaFiles(src))
+                .callback(task -> {
+                    task.addTaskListener(new TaskListener() {
+                        @Override
+                        public void finished(TaskEvent e) {
+                            if (e.getKind() != TaskEvent.Kind.ANALYZE) {
+                                return ;
+                            }
+                            Trees trees = Trees.instance(task);
+                            new TreePathScanner<Void, Void>() {
+                                @Override
+                                public Void visitVariable(VariableTree node, Void p) {
+                                    actual.add(node.getName() + ": " + typeToString(trees.getTypeMirror(getCurrentPath())));
+                                    return super.visitVariable(node, p);
+                                }
+                            }.scan(e.getCompilationUnit(), null);
+                        }
+                    });
+                })
+                .run()
+                .writeAll();
+
+        List<String> expected = List.of(
+            "ac1: java.lang.@Test.TypeAnno AutoCloseable",
+            "ex: java.lang.Exception",
+            "ac2: java.lang.@Test.TypeAnno AutoCloseable",
+            "ex: java.lang.Exception",
+            "param: java.lang.Exception",
+            "ac3: java.lang.@Test.TypeAnno AutoCloseable",
+            "ex: java.lang.Exception"
+        );
+
+        actual.forEach(System.out::println);
+        if (!expected.equals(actual)) {
+            throw new AssertionError("Expected: " + expected + ", but got: " + actual);
+        }
+
+        Path testClass = classes.resolve("Test.class");
+        TestClassDesc testClassDesc = TestClassDesc.create(testClass);
+
+        checkTypeAnnotations(testClassDesc,
+                             "test",
+                             this::getAnnotationsFromCode,
+                             "        0: LTest$TypeAnno;(): RESOURCE_VARIABLE, {start_pc=2, length=10, index=2}",
+                             "          Test$TypeAnno");
+
+        Path c1 = classes.resolve("Test$C1.class");
+        TestClassDesc testClassDescC1 = TestClassDesc.create(c1);
+
+        checkTypeAnnotations(testClassDescC1,
+                             "<clinit>",
+                             this::getAnnotationsFromCode,
+                             "        0: LTest$TypeAnno;(): RESOURCE_VARIABLE, {start_pc=2, length=10, index=0}",
+                             "          Test$TypeAnno");
+
+        Path c2 = classes.resolve("Test$C2.class");
+        TestClassDesc testClassDescC2 = TestClassDesc.create(c2);
+
+        checkTypeAnnotations(testClassDescC2,
+                             "<clinit>",
+                             this::getAnnotationsFromCode,
+                             "        0: LTest$TypeAnno;(): RESOURCE_VARIABLE, {start_pc=2, length=10, index=0}",
+                             "          Test$TypeAnno");
+    }
+
     private void checkTypeAnnotations(TestClassDesc testClassDesc,
                                       String lambdaMethodName,
                                       String... expectedEntries) throws IOException {
@@ -823,7 +1180,16 @@ public class TypeAnnotationsOnVariables {
             }
         }
 
-        List<List<String>> methodContents = feature2Text.entrySet().stream().filter(e -> e.getKey().contains(" " + nameOfMethodToCheck + "(")).map(Entry::getValue).toList();
+        String methodKey = switch (nameOfMethodToCheck) {
+            case "<clinit>" -> " static {";
+            case "<init>" -> {
+                String fileName = testClassDesc.pathToClass().getFileName().toString();
+                yield " " + fileName.substring(0, fileName.indexOf('.'));
+            }
+            default -> " " + nameOfMethodToCheck + "(";
+        };
+
+        List<List<String>> methodContents = feature2Text.entrySet().stream().filter(e -> e.getKey().contains(methodKey)).map(Entry::getValue).toList();
 
         assertEquals(1, methodContents.size(), methodContents.toString());
 

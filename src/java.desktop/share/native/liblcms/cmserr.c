@@ -619,6 +619,7 @@ static
 void* defMtxCreate(cmsContext id)
 {
     _cmsMutex* ptr_mutex = (_cmsMutex*) _cmsMalloc(id, sizeof(_cmsMutex));
+    if (ptr_mutex == NULL) return NULL;
     _cmsInitMutexPrimitive(ptr_mutex);
     return (void*) ptr_mutex;
 }
@@ -777,3 +778,43 @@ cmsBool _cmsRegisterParallelizationPlugin(cmsContext ContextID, cmsPluginBase* D
     return TRUE;
 }
 
+void _cmsAllocHeaderPluginChunk(struct _cmsContext_struct* ctx,
+                                const struct _cmsContext_struct* src)
+{
+    ctx->chunks[HeaderPlugin] = NULL;
+
+    if (src != NULL && src->chunks[HeaderPlugin] != NULL)
+        ctx->chunks[HeaderPlugin] = _cmsSubAllocDup(ctx->MemPool,
+                                                   src->chunks[HeaderPlugin],
+                                                   sizeof(_cmsHeaderPluginChunkType));
+}
+
+cmsBool _cmsRegisterHeaderPlugin(cmsContext ContextID, cmsPluginBase* Data)
+{
+    cmsPluginHeader* Plugin = (cmsPluginHeader*)Data;
+    struct _cmsContext_struct* ctx = _cmsGetContext(ContextID);
+    _cmsHeaderPluginChunkType* Chunk;
+
+    if (Data == NULL) {
+        ctx->chunks[HeaderPlugin] = NULL;
+        return TRUE;
+    }
+
+    if (Plugin->ReadPtr == NULL || Plugin->WritePtr == NULL)
+        return FALSE;
+
+    Chunk = (_cmsHeaderPluginChunkType*)ctx->chunks[HeaderPlugin];
+    if (Chunk == NULL) {
+        Chunk = (_cmsHeaderPluginChunkType*)
+            _cmsPluginMalloc(ContextID, sizeof(_cmsHeaderPluginChunkType));
+        if (Chunk == NULL)
+            return FALSE;
+
+        ctx->chunks[HeaderPlugin] = Chunk;
+    }
+
+    Chunk->ICCVersion = Plugin->ICCVersion;
+    Chunk->ReadPtr    = Plugin->ReadPtr;
+    Chunk->WritePtr   = Plugin->WritePtr;
+    return TRUE;
+}

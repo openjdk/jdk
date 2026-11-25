@@ -5,6 +5,8 @@
 #ifndef SPA_BLUETOOTH_TYPES_H
 #define SPA_BLUETOOTH_TYPES_H
 
+#include <spa/param/bluetooth/audio.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -13,8 +15,6 @@ extern "C" {
  * \addtogroup spa_param
  * \{
  */
-
-#include <spa/param/bluetooth/audio.h>
 
 #define SPA_TYPE_INFO_BluetoothAudioCodec        SPA_TYPE_INFO_ENUM_BASE "BluetoothAudioCodec"
 #define SPA_TYPE_INFO_BLUETOOTH_AUDIO_CODEC_BASE    SPA_TYPE_INFO_BluetoothAudioCodec ":"
@@ -44,6 +44,7 @@ static const struct spa_type_info spa_type_bluetooth_audio_codec[] = {
     { SPA_BLUETOOTH_AUDIO_CODEC_CVSD, SPA_TYPE_Int, SPA_TYPE_INFO_BLUETOOTH_AUDIO_CODEC_BASE "cvsd", NULL },
     { SPA_BLUETOOTH_AUDIO_CODEC_MSBC, SPA_TYPE_Int, SPA_TYPE_INFO_BLUETOOTH_AUDIO_CODEC_BASE "msbc", NULL },
     { SPA_BLUETOOTH_AUDIO_CODEC_LC3_SWB, SPA_TYPE_Int, SPA_TYPE_INFO_BLUETOOTH_AUDIO_CODEC_BASE "lc3_swb", NULL },
+    { SPA_BLUETOOTH_AUDIO_CODEC_LC3_A127, SPA_TYPE_Int, SPA_TYPE_INFO_BLUETOOTH_AUDIO_CODEC_BASE "lc3_a127", NULL },
 
     { SPA_BLUETOOTH_AUDIO_CODEC_LC3, SPA_TYPE_Int, SPA_TYPE_INFO_BLUETOOTH_AUDIO_CODEC_BASE "lc3", NULL },
 

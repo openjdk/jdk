@@ -5,15 +5,15 @@
 #ifndef SPA_LOOP_H
 #define SPA_LOOP_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <errno.h>
 
 #include <spa/utils/defs.h>
 #include <spa/utils/hook.h>
 #include <spa/support/system.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifndef SPA_API_LOOP
  #ifdef SPA_API_IMPL
@@ -38,7 +38,7 @@ extern "C" {
 struct spa_loop { struct spa_interface iface; };
 
 #define SPA_TYPE_INTERFACE_LoopControl    SPA_TYPE_INFO_INTERFACE_BASE "LoopControl"
-#define SPA_VERSION_LOOP_CONTROL    1
+#define SPA_VERSION_LOOP_CONTROL    2
 struct spa_loop_control { struct spa_interface iface; };
 
 #define SPA_TYPE_INTERFACE_LoopUtils    SPA_TYPE_INFO_INTERFACE_BASE "LoopUtils"
@@ -105,6 +105,7 @@ struct spa_loop_methods {
 
     /** Invoke a function in the context of this loop.
      * May be called from any thread and multiple threads at the same time.
+     *
      * If called from the loop's thread, all callbacks previously queued with
      * invoke() will be run synchronously, which might cause unexpected
      * reentrancy problems.
@@ -119,8 +120,11 @@ struct spa_loop_methods {
      *             an object that has identity.
      * \param size The size of data to copy.
      * \param block If \true, do not return until func has been called. Otherwise,
-     *              returns immediately. Passing \true does not risk a deadlock because
-     *              the data thread is never allowed to wait on any other thread.
+     *              returns immediately. Passing \true can cause a deadlock when
+     *              the calling thread is holding the loop context lock. A blocking
+     *              invoke should never be done from a realtime thread. Also beware
+     *              of blocking invokes between 2 threads as you can easily end up
+     *              in a deadly embrace.
      * \param user_data An opaque pointer passed to func.
      * \return `-EPIPE` if the internal ring buffer filled up,
      *         if block is \false, 0 if seq was SPA_ID_INVALID or
@@ -132,6 +136,24 @@ struct spa_loop_methods {
                const void *data,
                size_t size,
                bool block,
+               void *user_data);
+
+    /** Call a function with the loop lock acquired
+     * May be called from any thread and multiple threads at the same time.
+     *
+     * \param[in] object The callbacks data.
+     * \param func The function to be called.
+     * \param seq An opaque sequence number. This will be made
+     *            available to func.
+     * \param[in] data Data that will be passed to func.
+     * \param size The size of data.
+     * \param user_data An opaque pointer passed to func.
+     * \return the return value of func. */
+    int (*locked) (void *object,
+               spa_invoke_func_t func,
+               uint32_t seq,
+               const void *data,
+               size_t size,
                void *user_data);
 };
 
@@ -158,6 +180,15 @@ SPA_API_LOOP int spa_loop_invoke(struct spa_loop *object,
             spa_loop, &object->iface, invoke, 0, func, seq, data,
             size, block, user_data);
 }
+SPA_API_LOOP int spa_loop_locked(struct spa_loop *object,
+        spa_invoke_func_t func, uint32_t seq, const void *data,
+        size_t size, void *user_data)
+{
+    return spa_api_method_r(int, -ENOTSUP,
+            spa_loop, &object->iface, locked, 0, func, seq, data,
+            size, user_data);
+}
+
 
 /** Control hooks. These hooks can't be removed from their
  *  callbacks and must be removed from a safe place (when the loop
@@ -166,10 +197,10 @@ struct spa_loop_control_hooks {
 #define SPA_VERSION_LOOP_CONTROL_HOOKS    0
     uint32_t version;
     /** Executed right before waiting for events. It is typically used to
-     * release locks. */
+     * release locks or integrate other fds into the loop. */
     void (*before) (void *data);
     /** Executed right after waiting for events. It is typically used to
-     * reacquire locks. */
+     * reacquire locks or integrate other fds into the loop. */
     void (*after) (void *data);
 };
 
@@ -213,7 +244,7 @@ SPA_API_LOOP void spa_loop_control_hook_after(struct spa_hook_list *l)
 struct spa_loop_control_methods {
     /* the version of this structure. This can be used to expand this
      * structure in the future */
-#define SPA_VERSION_LOOP_CONTROL_METHODS    1
+#define SPA_VERSION_LOOP_CONTROL_METHODS    2
     uint32_t version;
 
     /** get the loop fd
@@ -244,7 +275,7 @@ struct spa_loop_control_methods {
      * This function should be called before calling iterate and is
      * typically used to capture the thread that this loop will run in.
      * It should ideally be called once from the thread that will run
-     * the loop.
+     * the loop. This function will lock the loop.
      */
     void (*enter) (void *object);
     /** Leave a loop
@@ -252,6 +283,8 @@ struct spa_loop_control_methods {
      *
      * It should ideally be called once after calling iterate when the loop
      * will no longer be iterated from the thread that called enter().
+     *
+     * This function will unlock the loop.
      */
     void (*leave) (void *object);
 
@@ -260,8 +293,10 @@ struct spa_loop_control_methods {
      * \param timeout an optional timeout in milliseconds.
      *    0 for no timeout, -1 for infinite timeout.
      *
-     * This function will block
-     * up to \a timeout milliseconds and then dispatch the fds with activity.
+     * This function will first unlock the loop and then block
+     * up to \a timeout milliseconds, lock the loop again and then
+     * dispatch the fds with activity.
+     *
      * The number of dispatched fds is returned.
      */
     int (*iterate) (void *object, int timeout);
@@ -275,6 +310,70 @@ struct spa_loop_control_methods {
      * returns 1 on success, 0 or negative errno value on error.
      */
     int (*check) (void *object);
+
+    /** Lock the loop.
+     * This will ensure the loop is not in the process of dispatching
+     * callbacks. Since version 2:2
+     *
+     * \param[in] object the control
+     * \return 0 on success or a negative return value on error.
+     */
+    int (*lock) (void *object);
+
+    /** Unlock the loop.
+     * Unlocks the loop again so that callbacks can be dispatched
+     * again. Since version 2:2
+     *
+     * \param[in] object the control
+     * \return 0 on success or a negative return value on error.
+     */
+    int (*unlock) (void *object);
+
+    /** get the absolute time
+     * Get the current time with \ref timeout that can be used in wait.
+     * Since version 2:2
+     *
+     * This function can be called from any thread.
+     */
+    int (*get_time) (void *object, struct timespec *abstime, int64_t timeout);
+
+    /** Wait for a signal
+     * Wait until a thread performs signal. Since version 2:2
+     *
+     * This function must be called with the loop lock. Because this is a
+     * blocking call, it should not be performed from a realtime thread.
+     *
+     * \param[in] object the control
+     * \param[in] abstime the maximum time to wait for the signal or NULL
+     * \return 0 on success or a negative return value on error.
+     */
+    int (*wait) (void *object, const struct timespec *abstime);
+
+    /** Signal waiters
+     * Wake up all threads blocked in wait. Since version 2:2
+     * When wait_for_accept is set, this functions blocks until all
+     * threads performed accept.
+     *
+     * This function must be called with the loop lock and is safe to
+     * call from a realtime thread source dispatch functions when
+     * wait_for_accept is false.
+     *
+     * \param[in] object the control
+     * \param[in] wait_for_accept block for accept
+     * \return 0 on success or a negative return value on error.
+     */
+    int (*signal) (void *object, bool wait_for_accept);
+
+    /** Accept signalers
+     * Resume the thread that signaled with wait_for accept.
+     *
+     * This function must be called with the loop lock and is safe to
+     * call from a realtime thread source dispatch functions.
+     *
+     * \param[in] object the control
+     * \return 0 on success or a negative return value on error.
+     */
+    int (*accept) (void *object);
 };
 
 SPA_API_LOOP int spa_loop_control_get_fd(struct spa_loop_control *object)
@@ -313,6 +412,38 @@ SPA_API_LOOP int spa_loop_control_check(struct spa_loop_control *object)
 {
     return spa_api_method_r(int, -ENOTSUP,
             spa_loop_control, &object->iface, check, 1);
+}
+SPA_API_LOOP int spa_loop_control_lock(struct spa_loop_control *object)
+{
+    return spa_api_method_r(int, -ENOTSUP,
+            spa_loop_control, &object->iface, lock, 2);
+}
+SPA_API_LOOP int spa_loop_control_unlock(struct spa_loop_control *object)
+{
+    return spa_api_method_r(int, -ENOTSUP,
+            spa_loop_control, &object->iface, unlock, 2);
+}
+SPA_API_LOOP int spa_loop_control_get_time(struct spa_loop_control *object,
+        struct timespec *abstime, int64_t timeout)
+{
+    return spa_api_method_r(int, -ENOTSUP,
+            spa_loop_control, &object->iface, get_time, 2, abstime, timeout);
+}
+SPA_API_LOOP int spa_loop_control_wait(struct spa_loop_control *object,
+        const struct timespec *abstime)
+{
+    return spa_api_method_r(int, -ENOTSUP,
+            spa_loop_control, &object->iface, wait, 2, abstime);
+}
+SPA_API_LOOP int spa_loop_control_signal(struct spa_loop_control *object, bool wait_for_accept)
+{
+    return spa_api_method_r(int, -ENOTSUP,
+            spa_loop_control, &object->iface, signal, 2, wait_for_accept);
+}
+SPA_API_LOOP int spa_loop_control_accept(struct spa_loop_control *object)
+{
+    return spa_api_method_r(int, -ENOTSUP,
+            spa_loop_control, &object->iface, accept, 2);
 }
 
 typedef void (*spa_source_io_func_t) (void *data, int fd, uint32_t mask);

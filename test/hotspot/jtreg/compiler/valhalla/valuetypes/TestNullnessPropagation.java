@@ -27,12 +27,9 @@ import compiler.lib.ir_framework.*;
 import compiler.valhalla.valuetypes.ValueTypes;
 import jdk.test.lib.Asserts;
 
-import static compiler.lib.ir_framework.IRNode.LSHIFT_L;
-
 /*
  * @test
  * @bug 8395611 8396195
- * @requires vm.endian == "little"
  * @summary Test nullness propagation during parsing
  * @library /test/lib  /
  * @enablePreview
@@ -40,6 +37,8 @@ import static compiler.lib.ir_framework.IRNode.LSHIFT_L;
  */
 
 public class TestNullnessPropagation {
+
+    private static final String MYVALUE_NOTNULL = "ValueType.*#instptr:.*TestNullnessPropagation\\$MyValue:NotNull";
 
     public static void main(String[] args) {
         ValueTypes.getFramework()
@@ -55,16 +54,12 @@ public class TestNullnessPropagation {
         MyValue v;
     }
 
-    // Why IR verification is looking for a LSHIFT_L node?
-    // Without the nullness propagation fix, C2 reconstructs the value v using
-    // a formulae like this one:
-    //   (I2L(null_marker) << 32) | (I2L(L2I(CastP2X(EncodeP(v.o_ref)))) & 0ffff_ffff)
-    // The value of the null marker dynamically read from a buffered value or
-    // a method argument has to be shifted to be put at the right place.
-    // With the nullness propagation fixed, C2 uses a ConL node to directly get
-    // the null_marker bit set in place, and no shift operation is needed.
+    // Check that the non-nullness has been propagated correctly
+    // by the parser by checking that the ValueType node used by
+    // the field store is marked NotNull (used for test 0 and 1).
     @Test
-    @IR(failOn = {LSHIFT_L})
+    @IR(phase = CompilePhase.AFTER_PARSING,
+        counts = {MYVALUE_NOTNULL, "> 0"})
     public Holder test0(MyValue v) {
         if (v == null) {
             return null;
@@ -86,7 +81,8 @@ public class TestNullnessPropagation {
 
     // Same IR verification rule as for test0
     @Test
-    @IR(failOn = {LSHIFT_L})
+    @IR(phase = CompilePhase.AFTER_PARSING,
+        counts = {MYVALUE_NOTNULL, "> 0"})
     public Holder test1(MyValue v) {
         if (v != null) {
             Holder h = new Holder();
@@ -104,5 +100,22 @@ public class TestNullnessPropagation {
         Asserts.assertEQ(h.v, v);
         Holder nh = test1(null);
         Asserts.assertNull(nh);
+    }
+
+    @Test
+    @IR(phase = CompilePhase.AFTER_PARSING,
+        failOn = {IRNode.NULL_CHECK_TRAP})
+    public Object test2(MyValue v) {
+        if (v == null) {
+            return null;
+        }
+        return v.o;
+    }
+
+    @Run(test = "test2")
+    public void test2_verifier() {
+        Asserts.assertNull(test2(null));
+        var mv = new MyValue();
+        Asserts.assertEQ(test2(mv), mv.o);
     }
 }

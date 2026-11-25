@@ -453,7 +453,7 @@ LIR_Opr ZBarrierSetC1::atomic_cmpxchg_at_resolved(LIRAccess& access, LIRItem& cm
   __ cas_obj(access.resolved_addr()->as_address_ptr()->base(),
              cmp_value_opr,
              new_value_zpointer,
-#ifdef RISCV
+#ifdef RISCV64
              access.gen()->new_register(T_OBJECT),
              access.gen()->new_register(T_OBJECT),
              access.gen()->new_register(T_OBJECT));

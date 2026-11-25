@@ -23,9 +23,10 @@
 
 /*
  * @test
+ * @bug 8389219 8389220 8396201
  * @summary Tests heapwalking API (FollowReferences, IterateThroughHeap, GetObjectsWithTags) for value objects.
  * @requires vm.jvmti
- * @modules java.base/jdk.internal.vm.annotation java.base/jdk.internal.value
+ * @modules java.base/jdk.internal.misc java.base/jdk.internal.vm.annotation java.base/jdk.internal.value
  * @enablePreview
  * @run main/othervm/native -agentlib:ValueHeapwalkingTest
  *                          -XX:+UnlockDiagnosticVMOptions
@@ -44,6 +45,7 @@ import java.lang.ref.Reference;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import jdk.internal.misc.Unsafe;
 import jdk.internal.value.ValueClass;
 import jdk.internal.vm.annotation.NullRestricted;
 
@@ -74,6 +76,22 @@ public class ValueHeapwalkingTest {
             this.v1 = new Value(i);
             this.v2 = new Value(i+1);
             super();
+        }
+    }
+
+    static class Loader extends ClassLoader {
+        @NullRestricted
+        public Value2 v2_0;
+
+        Loader() {
+            v2_0 = new Value2(200);
+            super();
+        }
+
+        void defineEmptyClass() {
+            byte[] bytes = java.lang.classfile.ClassFile.of().build(
+                    java.lang.constant.ClassDesc.of("EmptyClass"), builder -> {});
+            defineClass(null, bytes, 0, bytes.length);
         }
     }
 
@@ -250,7 +268,12 @@ public class ValueHeapwalkingTest {
     public static void main(String[] args) throws Exception {
         System.loadLibrary("ValueHeapwalkingTest");
         ValueHolder holder = new ValueHolder(10);
+        Loader loader = new Loader();
+        loader.defineEmptyClass();
 
+        if (!Unsafe.getUnsafe().isFlatField(Loader.class.getDeclaredField("v2_0"))) {
+            throw new RuntimeException("loader.v2_0 expected to be flattened");
+        }
         setTag(Value.class, TAG_VALUE_CLASS);
         setTag(Value2.class, TAG_VALUE2_CLASS);
         setTag(ValueHolder.class, TAG_HOLDER_CLASS);
@@ -268,8 +291,8 @@ public class ValueHeapwalkingTest {
             System.out.println(tagStr(i) + " count: " + count(i));
         }
         int reachableValueHolderCount = 1;
-        // v2_1, v2_2, v2_arr
-        int reachableValue2Count = reachableValueHolderCount * (2 + nonNullCount(holder.v2_arr));
+        // v2_0, v2_1, v2_2, v2_arr
+        int reachableValue2Count = 1 + reachableValueHolderCount * (2 + nonNullCount(holder.v2_arr));
         // ValueHolder: v1, v2, v_arr
         // Value2: v1, v2
         int reachableValueCount = reachableValueHolderCount * (2 + nonNullCount(holder.v_arr))
@@ -335,13 +358,15 @@ public class ValueHeapwalkingTest {
                 throw new RuntimeException("unexpected object");
             }
         }
+        // loader.v2_0 is untagged because its loader referrer is untagged
         int expectedTaggedCount = 5 // TAG_VALUE_CLASS/TAG_VALUE2_CLASS/TAG_HOLDER_CLASS/TAG_VALUE_ARRAY/TAG_VALUE2_ARRAY
-                + reachableValue2Count + reachableValueCount;
+                + reachableValue2Count - 1 + reachableValueCount;
         if (count !=  expectedTaggedCount) {
             throw new RuntimeException("unexpected getObjectWithTags result: " + count
                                      + ", expected " + expectedTaggedCount);
         }
 
+        Reference.reachabilityFence(loader);
         Reference.reachabilityFence(holder);
     }
 }

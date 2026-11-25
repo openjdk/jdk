@@ -95,6 +95,8 @@ SplashInitFrameShape(Splash * splash, int imageIndex)
     RGNDATAHEADER *pRgnHdr;
     ImageRect maskRect;
 
+    splash->frames[imageIndex].hRgn = NULL;
+
     if (!splash->maskRequired)
         return;
 

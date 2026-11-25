@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,9 +95,12 @@ SplashDecodeGif(Splash * splash, GifFileType * gif)
         return 0;
     }
     stride = gif->SWidth * splash->imageFormat.depthBytes;
-    if (splash->byteAlignment > 1)
-        stride =
-            (stride + splash->byteAlignment - 1) & ~(splash->byteAlignment - 1);
+    if (splash->byteAlignment > 1) {
+        if (stride > INT_MAX - (splash->byteAlignment - 1)) {
+            return 0;
+        }
+        stride = (stride + splash->byteAlignment - 1) & ~(splash->byteAlignment - 1);
+    }
 
     if (!SAFE_TO_ALLOC(gif->SHeight, stride)) {
         return 0;
