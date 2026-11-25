@@ -2656,8 +2656,8 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
       return u->Opcode() == Op_ExpandBits && u->in(1) == use;
     });
   }
-  // If changed AddI/SubI inputs, check CmpU for range check optimization.
-  if (use_op == Op_AddI || use_op == Op_SubI) {
+  // If changed AddI/SubI/ModI inputs, check CmpU for range check optimization.
+  if (use_op == Op_AddI || use_op == Op_SubI || use_op == Op_ModI) {
     add_users_to_worklist_if(worklist, use, [](Node* u) {
       return u->Opcode() == Op_CmpU;
     });
