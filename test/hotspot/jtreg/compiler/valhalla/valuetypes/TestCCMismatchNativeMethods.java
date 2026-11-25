@@ -114,7 +114,7 @@ public class TestCCMismatchNativeMethods {
                 Asserts.assertEQ(test5(new A4(), v1), v1.sum() * 2);
             }
             UnloadedClass.loadClassAndRerun();
-        } catch (OutOfMemoryError oome) {
+        } catch (OutOfMemoryError oome) { // OOME triggered by ThrowOOMEAtC2iC1NativeEntryPoints expected here
             oom = true;
         }
         if (oom != (WHITE_BOX.getIntVMFlag("ThrowOOMEAtC2iC1NativeEntryPoints").intValue() == 3)) {
