@@ -43,7 +43,7 @@ import jdk.test.lib.jfr.Events;
 import jdk.test.lib.thread.TestThread;
 import jdk.test.lib.thread.XRun;
 
-/**
+/*
  * @test
  * @bug 8397189
  * @summary test socket read/write events on SocketChannel
