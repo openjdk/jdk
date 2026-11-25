@@ -241,9 +241,9 @@ TEST_VM(AssemblerPPC, load_const_optimized_consec_ones) {
 //
 TEST_VM(AssemblerPPC, load_const_optimized_field16) {
   for (uint64_t c = 1; c <= 0xff; c++) {
-    uint64_t lo = c & 0xf;
-    uint64_t hi = (c >> 4) & 0xf;
-    uint64_t value = hi | lo;
+    uint64_t lo = c & 0x0f;
+    uint64_t hi = c & 0xf0;
+    uint64_t value = (hi << 8) | lo;
     uint64_t value2 = value | 0x0ff0;
     for (int pos = 0; pos <= 48; pos++) {
       check_constant((long)(value << pos));
