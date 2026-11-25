@@ -224,7 +224,6 @@ public class CtorDebuggingTest extends TestScaffold {
                                                         : BreakpointResult.NO_OFE_NULL_THIS;
                         } catch (OpaqueFrameException e) {
                             result = BreakpointResult.GOT_OFE;
-                            throw new RuntimeException(e);
                         }
                         breakpointResults.put(eventReq, result);
                         System.out.println("BreakpointEvent: result = " + result);
@@ -247,22 +246,22 @@ public class CtorDebuggingTest extends TestScaffold {
 
             class EventNotification {
                 boolean completed = false;
-                boolean disconnected = false;
             }
             final EventNotification en = new EventNotification();
 
             TargetAdapter adapter = new TargetAdapter() {
                 public void eventReceived(Event event) {
                     if (request.equals(event.request())) {
-                        synchronized (en) {
+                        synchronized (CtorDebuggingTest.this) {
                             en.completed = true;
-                            en.notifyAll();
+                            CtorDebuggingTest.this.notifyAll();
+                            System.out.println("resumeTo: reached resumeTo point: " + event);
                         }
                         removeThisListener();
                     } else if (event instanceof VMDisconnectEvent) {
-                        synchronized (en) {
-                            en.disconnected = true;
-                            en.notifyAll();
+                        synchronized (CtorDebuggingTest.this) {
+                            CtorDebuggingTest.this.notifyAll();
+                            System.out.println("resumeTo: got VMDisconnectEvent");
                         }
                         removeThisListener();
                     }
@@ -274,10 +273,10 @@ public class CtorDebuggingTest extends TestScaffold {
             addListener(this);
 
             try {
-                synchronized (en) {
+                synchronized (CtorDebuggingTest.this) {
                     vm().resume();
-                    while (!en.completed && !en.disconnected) {
-                        en.wait(5000);
+                    while (!en.completed && !vmDisconnected) {
+                        CtorDebuggingTest.this.wait();
                     }
                 }
             } catch (InterruptedException e) {
@@ -285,7 +284,10 @@ public class CtorDebuggingTest extends TestScaffold {
 
             removeListener(this);
 
-            if (en.disconnected) {
+            if (!en.completed) {
+                throw new RuntimeException("JDI event handler failed");
+            }
+            if (vmDisconnected) {
                 throw new RuntimeException("VM Disconnected before requested event occurred");
             }
         }
