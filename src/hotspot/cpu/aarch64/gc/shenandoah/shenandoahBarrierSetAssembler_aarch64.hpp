@@ -94,7 +94,9 @@ public:
 #ifdef COMPILER2
   // Entry points from Matcher
   void load_c2(const MachNode* node, MacroAssembler* masm, Register dst, Address addr, Register tmp1, Register tmp2, bool is_narrow, bool is_acquire);
+  void load_c2_special(const MachNode* node, MacroAssembler* masm, Register dst, Address src, int offset, Register tmp1, Register tmp2, Register tmp3);
   void store_c2(const MachNode* node, MacroAssembler* masm, Address dst, bool dst_narrow, Register src, bool src_narrow, Register tmp1, Register tmp2, Register tmp3, bool is_volatile);
+  void store_c2_special(const MachNode* node, MacroAssembler* masm, Address dst, Register src, int offset, Register tmp1, Register tmp2, Register tmp3);
   void compare_and_set_c2(const MachNode* node, MacroAssembler* masm, Register res, Register addr, Register oldval,
       Register newval, Register tmp1, Register tmp2, Register tmp3, bool exchange, bool narrow, bool weak, bool acquire);
   void get_and_set_c2(const MachNode* node, MacroAssembler* masm, Register preval, Register newval, Register addr, Register tmp1, Register tmp2, Register tmp3, bool acquire);

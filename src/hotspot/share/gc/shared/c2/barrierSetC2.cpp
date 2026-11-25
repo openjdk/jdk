@@ -204,6 +204,7 @@ Node* BarrierSetC2::load_at_resolved(C2Access& access, const Type* val_type) con
   bool unknown_control = (decorators & C2_UNKNOWN_CONTROL_LOAD) != 0;
   bool unsafe = (decorators & C2_UNSAFE_ACCESS) != 0;
   bool immutable = (decorators & C2_IMMUTABLE_MEMORY) != 0;
+  bool special = (decorators & C2_SPECIAL_ACCESS) != 0;
 
   MemNode::MemOrd mo = access.mem_node_mo();
   LoadNode::ControlDependency dep = unknown_control ? LoadNode::UnknownControl : LoadNode::DependsOnlyOnTest;
@@ -215,6 +216,7 @@ Node* BarrierSetC2::load_at_resolved(C2Access& access, const Type* val_type) con
     Node* control = control_dependent ? parse_access.control() : nullptr;
 
     if (immutable) {
+      assert(!special, "Special loads are not immutable");
       Compile* C = Compile::current();
       Node* mem = kit->immutable_memory();
       load = LoadNode::make(kit->gvn(), control, mem, adr,
@@ -224,10 +226,11 @@ Node* BarrierSetC2::load_at_resolved(C2Access& access, const Type* val_type) con
     } else {
       load = kit->make_load(control, adr, val_type, access.type(), mo,
                             dep, requires_atomic_access, unaligned, mismatched, unsafe,
-                            access.barrier_data());
+                            access.barrier_data(), special);
     }
   } else {
     assert(access.is_opt_access(), "either parse or opt access");
+    assert(!special, "Special loads are only parse accesses");
     C2OptAccess& opt_access = static_cast<C2OptAccess&>(access);
     Node* control = control_dependent ? opt_access.ctl() : nullptr;
     MergeMemNode* mm = opt_access.mem();

@@ -79,7 +79,6 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/synchronizer.hpp"
-#include "services/classLoadingService.hpp"
 #include "services/diagnosticCommand.hpp"
 #include "services/finalizerService.hpp"
 #include "services/threadService.hpp"
@@ -1197,6 +1196,11 @@ InstanceKlass* SystemDictionary::load_shared_class(InstanceKlass* ik,
   assert(AtomicAccess::add(&ik->_shared_class_load_count, 1) == 1, "shared class loaded more than once");
   Symbol* class_name = ik->name();
 
+  if (AOTSystemDictionary::is_excluded_by_alternate_system_loader(ik)) {
+    ik->set_shared_loading_failed();
+    return nullptr;
+  }
+
   if (!is_shared_class_visible(class_name, ik, pkg_entry, class_loader)) {
     ik->set_shared_loading_failed();
     return nullptr;
@@ -1281,9 +1285,6 @@ void SystemDictionary::load_shared_class_misc(InstanceKlass* ik, ClassLoaderData
     s2 path_index = ik->shared_classpath_index();
     ik->set_classpath_index(path_index);
   }
-
-  // notify a class loaded from shared object
-  ClassLoadingService::notify_class_loaded(ik, true /* shared class */);
 
   if (CDSConfig::is_dumping_with_input_archive()) {
     AOTSystemDictionary::init_dumptime_info_from_input_archive(ik);
