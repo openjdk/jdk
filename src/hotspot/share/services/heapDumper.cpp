@@ -813,6 +813,13 @@ class DumperSupport : AllStatic {
   static void dump_instance(AbstractDumpWriter* writer, uintptr_t id, oop o, int offset, InstanceKlass* ik,
                             DumperClassCacheTable* class_cache, DumperFlatObjectList* flat_fields,
                             FlatObjectIdProvider* id_provider);
+  // create HPROF_GC_OBJ_ARRAY_DUMP record for a ClassLoader instance's loaded
+  // classes
+  static void dump_classloader_classes_array(AbstractDumpWriter* writer,
+                                             ClassLoaderData* cld,
+                                             uintptr_t array_id,
+                                             u4 array_length,
+                                             size_t classes_count);
   // creates HPROF_GC_CLASS_DUMP record for the given instance class
   static void dump_instance_class(AbstractDumpWriter* writer, InstanceKlass* ik);
   // creates HPROF_GC_CLASS_DUMP record for a given array class
@@ -1407,12 +1414,12 @@ void DumperSupport::dump_instance(AbstractDumpWriter* writer, uintptr_t id, oop 
 
   dump_instance_fields(writer, o, offset, cache_entry, flat_fields);
 
+  // Write ClassLoader.<classes> synthetic instance field.
   ClassLoaderData* cld = nullptr;
   uintx classes_count = 0;
-  u4 length = 0;
+  u4 array_length = 0;
   uintptr_t array_id = 0;
   if (java_lang_ClassLoader::is_subclass(ik)) {
-    // Write ClassLoader <classes> array.
     cld = ClassLoaderData::class_loader_data_or_null(o);
     if (cld != nullptr && cld->is_alive()) {
       ClassLoaderLoadedClassesCounter classes_counter;
@@ -1422,8 +1429,8 @@ void DumperSupport::dump_instance(AbstractDumpWriter* writer, uintptr_t id, oop 
       if (classes_count > 0) {
         // sizeof(u1) + 2 * sizeof(u4) + sizeof(objectID) + sizeof(classID)
         short header_size = 1 + 2 * 4 + 2 * sizeof(address);
-        length = checked_cast<u4>(header_size + classes_count * sizeof(address));
-        array_id = id_provider->get_id(length);
+        array_length = checked_cast<u4>(header_size + classes_count * sizeof(address));
+        array_id = id_provider->get_id(array_length);
       }
     }
     writer->write_objectID(array_id);
@@ -1432,7 +1439,17 @@ void DumperSupport::dump_instance(AbstractDumpWriter* writer, uintptr_t id, oop 
   writer->end_sub_record();
 
   if (java_lang_ClassLoader::is_subclass(ik) && classes_count > 0) {
-    writer->start_sub_record(HPROF_GC_OBJ_ARRAY_DUMP, length);
+    dump_classloader_classes_array(writer, cld, array_id,
+                                   array_length, classes_count);
+  }
+}
+
+void DumperSupport::dump_classloader_classes_array(AbstractDumpWriter* writer,
+                                                   ClassLoaderData* cld,
+                                                   uintptr_t array_id,
+                                                   u4 array_length,
+                                                   size_t classes_count) {
+    writer->start_sub_record(HPROF_GC_OBJ_ARRAY_DUMP, array_length);
     writer->write_objectID(array_id);
     writer->write_u4(STACK_TRACE_ID);
     writer->write_u4(checked_cast<u4>(classes_count));
@@ -1444,7 +1461,6 @@ void DumperSupport::dump_instance(AbstractDumpWriter* writer, uintptr_t id, oop 
     cld->classes_do(&classes_dumper);
 
     writer->end_sub_record();
-  }
 }
 
 // creates HPROF_GC_CLASS_DUMP record for the given instance class
