@@ -259,6 +259,13 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
 bool ShenandoahAdaptiveHeuristics::trigger_for_humongous(double anticipated_gc_duration) {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   bool trigger = false;
+
+  const size_t max_requested = heap->max_humongous_region_count_requested_since_gc_end();
+  if (max_requested > heap->humongous_budget_request_size()) {
+    ShenandoahHeapLocker locker(heap->lock());
+    heap->update_humongous_budget(max_requested);
+  }
+
   const size_t humongous_budget_since_gc_end = heap->humongous_budget_region_count();
   const size_t humongous_requested = heap->total_humongous_region_count_requested_since_gc_end();
   const size_t humongous_budget_curr = (humongous_budget_since_gc_end > humongous_requested ? humongous_budget_since_gc_end - humongous_requested : 0) * ShenandoahHeapRegion::region_size_bytes();

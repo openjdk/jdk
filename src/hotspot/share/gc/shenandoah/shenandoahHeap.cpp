@@ -1779,6 +1779,27 @@ void ShenandoahHeap::record_humongous_triggered_gc() {
   _humongous_triggered_gc.store_relaxed(true);
 }
 
+void ShenandoahHeap::update_humongous_budget(size_t max_requested_region_count) {
+  shenandoah_assert_heaplocked();
+  size_t empty_region_array_size = 0;
+  size_t empty_humongous_region_sum = 0;
+  free_set()->build_empty_region_array(empty_humongous_region_sum, empty_region_array_size);
+
+  // Only count the part of each run usable by requests of k regions:
+  // a 2-region hole contributes nothing to 3-region requests.
+  size_t humongous_budget = 0;
+  for (size_t i = 0; i < empty_region_array_size; i++) {
+    const size_t run = free_set()->empty_region_array()[i];
+    humongous_budget += (max_requested_region_count == 0) ? run : (run / max_requested_region_count) * max_requested_region_count;
+  }
+  log_debug(gc, ergo)("Humongous budget: %zu regions for request size %zu regions, %zu runs",
+                      humongous_budget, max_requested_region_count, empty_region_array_size);
+
+  humongous_budget += _total_humongous_region_count_requested_since_gc_end.load_relaxed();
+  _humongous_budget_region_count.store_relaxed(humongous_budget);
+  _humongous_budget_request_size.store_relaxed(k);
+}
+
 void ShenandoahHeap::on_cycle_end(ShenandoahGeneration* generation) {
   assert(gc_cause() != GCCause::_no_gc, "cause wasn't set");
 
@@ -1813,17 +1834,8 @@ void ShenandoahHeap::on_cycle_end(ShenandoahGeneration* generation) {
                     prob_failure * 100, _humongous_allocation_history.sample_count(),
                     risk_high ? ", humongous alloc failure risk high" : "");
 
-      // Only count the part of each run usable by requests of the largest recent size:
-      // a 2-region hole contributes nothing to 3-region requests.
-      const size_t k = _humongous_allocation_history.max_requested_region_count(ShenandoahHeuristicsMaxHumongousLookBackWindow); // probably not worth a flag?
-      size_t humongous_budget = 0;
-      for (size_t i = 0; i < empty_region_array_size; i++) {
-        const size_t run = free_set()->empty_region_array()[i];
-        humongous_budget += (k == 0) ? run : (run / k) * k;
-      }
-      log_debug(gc, ergo)("Humongous budget: %zu regions for request size %zu regions, %zu runs",
-                         humongous_budget, k, empty_region_array_size);
-      _humongous_budget_region_count.store_relaxed(humongous_budget);
+      const size_t max_requested_region_count = _humongous_allocation_history.max_requested_region_count(ShenandoahHeuristicsMaxHumongousLookBackWindow); // probably not worth a flag?
+      update_humongous_budget(max_requested_region_count);
 
       const size_t sum_at_trigger = _empty_humongous_region_count_at_trigger.load_relaxed();
       const bool triggered_by_humongous = _humongous_triggered_gc.exchange(false, memory_order_relaxed);

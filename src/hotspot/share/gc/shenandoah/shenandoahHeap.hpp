@@ -276,6 +276,7 @@ private:
   Atomic<size_t> _humongous_alloc_backoff_epochs_left;
   static const uint humongous_backoff_max_epochs = 16;
   Atomic<size_t> _humongous_budget_region_count;
+  Atomic<size_t> _humongous_budget_request_size; // request size (regions) the budget was computed for
   ShenandoahHumongousAllocationHistory _humongous_allocation_history;
   ShenandoahDecayAllocRate _alloc_rate_decay;
   ShenandoahDecayAllocRate _humongous_alloc_rate_decay;
@@ -317,6 +318,12 @@ public:
   size_t humongous_budget_region_count() const {
     return _humongous_budget_region_count.load_relaxed();
   }
+
+  size_t humongous_budget_request_size() const {
+    return _humongous_budget_request_size.load_relaxed();
+  }
+
+  void update_humongous_budget(size_t k);
 
   size_t humongous_alloc_backoff_epochs_left() const {
     return _humongous_alloc_backoff_epochs_left.load_relaxed();
