@@ -40,7 +40,7 @@ import jdk.test.lib.jfr.TestClassLoader;
  * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
- * @modules java.base/jdk.internal.misc
+ * @modules java.instrument jdk.jfr
  * @build jdk.jfr.event.runtime.TestClasses
  * @run main/othervm jdk.jfr.event.runtime.TestClassLoadingStatisticsEvent
  */
