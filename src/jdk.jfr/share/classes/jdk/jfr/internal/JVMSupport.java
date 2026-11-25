@@ -66,8 +66,7 @@ public final class JVMSupport {
         try {
             // Will typically throw UnsatisfiedLinkError if
             // there is no native implementation
-            JVM.isAvailable();
-            return true;
+            return JVM.isAvailable();
         } catch (Throwable t) {
             return false;
         }
