@@ -1797,7 +1797,7 @@ void ShenandoahHeap::update_humongous_budget(size_t max_requested_region_count) 
 
   humongous_budget += _total_humongous_region_count_requested_since_gc_end.load_relaxed();
   _humongous_budget_region_count.store_relaxed(humongous_budget);
-  _humongous_budget_request_size.store_relaxed(k);
+  _humongous_budget_request_size.store_relaxed(max_requested_region_count);
 }
 
 void ShenandoahHeap::on_cycle_end(ShenandoahGeneration* generation) {
