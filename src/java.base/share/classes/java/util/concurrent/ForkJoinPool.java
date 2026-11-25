@@ -335,7 +335,7 @@ public class ForkJoinPool extends AbstractExecutorService
      *
      *  * Several variants of the poll operation are needed for cases
      *    in which we must look at the task at base slot to check if
-     *    can be taken, and then use compareAndSet, not getAndSet to
+     *    a task can be taken, and then use compareAndSet, not getAndSet to
      *    extract if still available. Usages within helpJoin,
      *    helpComplete, helpAsyncBlocker are all of this form. Across
      *    all of them, we minimize contention windows in part by
@@ -404,7 +404,7 @@ public class ForkJoinPool extends AbstractExecutorService
      * lockRunState is implemented as a spin/sleep loop. Here and
      * elsewhere spin constants are short enough to apply even on
      * systems with few available processors, but also use
-     * Thread.yield to be more cautious).  In addition to checking
+     * Thread.yield to be more cautious.  In addition to checking
      * pool status, reads of runState sometimes serve as acquire
      * fences before reading other fields.
      *
@@ -527,7 +527,7 @@ public class ForkJoinPool extends AbstractExecutorService
      *    an empty queue, resulting in O(log(#threads)) steps to full
      *    activation. Emptiness must be conservatively (and somwhat
      *    expensively) approximated using a Dekker-like construction
-     *    checking emptiness of previous slot) which may result in
+     *    checking emptiness of previous slot, which may result in
      *    unnecessary signals.  Also, to reduce resource usages in
      *    some cases, at the expense of slower startup in others,
      *    activation of an idle thread is preferred over creating a
@@ -537,7 +537,7 @@ public class ForkJoinPool extends AbstractExecutorService
      *    turn generate others) come in serially from only a single
      *    producer, each worker taking a task from a queue should
      *    propagate a signal if there are more tasks in that queue
-     *    (again using an adjacent-slot check.  This is equivalent to,
+     *    (again using an adjacent-slot check).  This is equivalent to,
      *    but generally faster than, arranging the stealer take
      *    multiple tasks, re-pushing one or more on its own queue, and
      *    signalling (because its queue is empty), also resulting in
@@ -572,9 +572,9 @@ public class ForkJoinPool extends AbstractExecutorService
      * others, which also reduces bookkeeping, cache traffic, and
      * scanning overhead. But it also reduces fairness, which is
      * partially counteracted by giving up on detected interference
-     * and by limiting a the runs to a bound (MAX_CONSEC_STEALS) large
-     * enough not to much impact localitty, while still avoiding
-     * infinite unfairness.
+     * and by limiting runs to a bound (MAX_CONSEC_STEALS) large
+     * enough not to much impact locality, while still avoiding
+     * indefinite unfairness.
      *
      * Contention reduction. When stealers don't stay out of each
      * others way, or out of the way of task producers, the resulting
@@ -614,11 +614,12 @@ public class ForkJoinPool extends AbstractExecutorService
      * deactivate(). Deactivation may have been a mistake, because new
      * tasks could have arrived between the scan and setting state
      * (phase) to IDLE and enqueing in ctl. So method deactivate must
-     * do a recheck that no tasks exist that the worker needs to take
-     * to maintain liveness without any signal, if so
+     * recheck whether any tasks exist that the worker needs to take
+     * to maintain liveness without any signal, and if so
      * re-activating. If not, it blocks in awaitWork() waiting for a
      * signal (or termination). This presents some engineering
      * tradeoffs:
+     *
      *  * If workers give up too soon in runWorker and then
      *    reactivate, the resulting constant flickering leads to
      *    massive contention on "ctl" and other fields.
@@ -693,18 +694,17 @@ public class ForkJoinPool extends AbstractExecutorService
      * have completed and all tasks in all queues have been cancelled.
      * Because abrupt termination may entail a lot of work
      * interrupting workers and cancelling all their tasks (sometimes
-     * millions of them), tryTerminate entails every caller helping
-     * out, while also avoiding contention storms: Each caller checks
-     * for unreleased workers, and also checks every queue for
-     * uncancelled tasks, but give up on polling contention (unless
-     * the pool is otherwise empty, in which case retrying until
-     * complete). Because shutdownNow-based termination relies on
-     * interrupts, there is no guarantee that workers will stop if
-     * their tasks ignore interrupts.  Class InterruptibleTask (see
-     * below) further arranges runState checks before executing task
-     * bodies, and ensures interrupts while terminating. Even so,
-     * there are no guarantees because tasks may internally enter
-     * unbounded loops.
+     * millions of them), each caller of tryTerminate helps out, while
+     * also avoiding contention storms: Each caller checks for
+     * unreleased workers, and also checks every queue for uncancelled
+     * tasks, but give up on polling contention (unless the pool is
+     * otherwise empty, in which case retrying until complete).
+     * Because shutdownNow-based termination relies on interrupts,
+     * there is no guarantee that workers will stop if their tasks
+     * ignore interrupts.  Class InterruptibleTask (see below) further
+     * arranges runState checks before executing task bodies, and
+     * ensures interrupts while terminating. Even so, there are no
+     * guarantees because tasks may internally enter unbounded loops.
      *
      * Trimming workers. To release resources after periods of lack of
      * use, a worker starting to wait when the pool is quiescent will
@@ -938,7 +938,7 @@ public class ForkJoinPool extends AbstractExecutorService
      *
      * Performance is very sensitive to placement of instances of
      * ForkJoinPool and WorkQueues and their queue arrays, as well as
-     * the placement of their fields. Caches misses and contention due
+     * the placement of their fields. Cache misses and contention due
      * to false-sharing have been observed to slow down some programs
      * by more than a factor of four. Effects may vary across initial
      * memory configuarations, applications, and different garbage
@@ -970,10 +970,10 @@ public class ForkJoinPool extends AbstractExecutorService
      * (cardmarks etc), and reduce the number of resizes, which are
      * not especially fast because they require atomic transfers.
      * Currently, arrays for workers are initialized to be large
-     * enough to avoid resizing in most tree-structured tasks, expand
-     * by factors of 4 (not 2) until much larger. (Maintenance note:
-     * any changes in fields, queues, or their uses, or JVM layout
-     * policies, must be accompanied by re-evaluation of these
+     * enough to avoid resizing in most tree-structured tasks, and
+     * expand by factors of 4 (not 2) until much larger. (Maintenance
+     * note: any changes in fields, queues, or their uses, or JVM
+     * layout policies, must be accompanied by re-evaluation of these
      * placement and sizing decisions.)
      *
      * Style notes
@@ -1451,8 +1451,10 @@ public class ForkJoinPool extends AbstractExecutorService
             nsteals += stolen;
             int src = U.getInt(this, SOURCE);
             U.putInt(this, SOURCE, NOSOURCE);
-            if (f != null)
+            if (f != null) {
                 f.resetThreadLocals();
+                Thread.interrupted();
+            }
             return src;
         }
 
@@ -2214,9 +2216,8 @@ public class ForkJoinPool extends AbstractExecutorService
     private int awaitWork(WorkQueue w, int phase) {
         if (w == null)                   // currently impossible
             return 0;
-        boolean parked = false;
         long deadline = 0L;
-        int activePhase = phase + IDLE;
+        int parked = 0, activePhase = phase + IDLE;
         for (;;) {
             boolean trimmable; long d, c;
             Thread.interrupted();        // clear status
@@ -2228,7 +2229,7 @@ public class ForkJoinPool extends AbstractExecutorService
                 (((c = ctl) & RC_MASK) == 0L && (int)c == activePhase)) {
                 boolean canTrim = false;
                 long now = System.currentTimeMillis();
-                if (!parked) {
+                if (parked == 0) {
                     d = deadline = now + keepAlive;
                     if (w.source == TRIM_ON_EMPTY) {
                         w.source = NOSOURCE;
@@ -2246,21 +2247,20 @@ public class ForkJoinPool extends AbstractExecutorService
                 d = 0L;
             if (((phase = w.phase) & IDLE) == 0)
                 break;
-            if (!parked) {
+            if (parked == 0) {
                 Thread.yield();          // yield before park
                 if (((phase = w.phase) & IDLE) == 0)
                     break;
                 LockSupport.setCurrentBlocker(this);
-                w.parking = 1;
+                w.parking = parked = 1;  // must recheck
                 if (((phase = w.phase) & IDLE) == 0)
                     break;
-                parked = true;
             }
             U.park(trimmable, d);
             if (((phase = w.phase) & IDLE) == 0)
                 break;
         }
-        if (parked) {
+        if (parked != 0) {
             w.parking = 0;
             LockSupport.setCurrentBlocker(null);
         }
