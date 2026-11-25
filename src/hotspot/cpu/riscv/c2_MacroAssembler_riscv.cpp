@@ -2882,11 +2882,8 @@ void C2_MacroAssembler::element_compare(Register a1, Register a2, Register resul
   vfirst_m(tmp2, vrs);
   bgez(tmp2, DONE);
   sub(cnt, cnt, tmp1);
-  if (!islatin) {
-    slli(tmp1, tmp1, 1); // get byte counts
-  }
-  add(a1, a1, tmp1);
-  add(a2, a2, tmp1);
+  shift_left_add(a1, tmp1, a1, islatin ? 0 : 1, tmp2);
+  shift_left_add(a2, tmp1, a2, islatin ? 0 : 1, tmp2);
   bnez(cnt, loop);
 
   mv(result, true);
