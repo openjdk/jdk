@@ -1115,7 +1115,7 @@ Java_sun_font_FontConfigManager_getFontConfig
                 /* If we reach the end without finding non-variable fonts, reset */
                 if ((skipVarFonts == 1) && (fontCount == 0) && (j == (nfonts - 1))) {
                     skipVarFonts = 0;
-                    skippedVarFonts = 0;
+                    skippedVarFont = 0;
                     j = -1;
                 }
                 continue;
