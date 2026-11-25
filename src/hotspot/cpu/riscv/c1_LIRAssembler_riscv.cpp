@@ -942,8 +942,9 @@ void LIR_Assembler::emit_opBranch(LIR_OpBranch* op) {
 
 Register LIR_Assembler::load_cmp_constant(LIR_Opr src) {
   BasicType type = src->type();
-  guarantee(type == T_INT || type == T_LONG || type == T_ADDRESS || type == T_METADATA || is_reference_type(type),
-            "unexpected constant type for a CPU comparison");
+  assert(type == T_INT || type == T_LONG || type == T_ADDRESS ||
+         type == T_METADATA || is_reference_type(type),
+         "unexpected constant type for a CPU comparison");
   if (is_null_or_zero_constant(type, src)) {
     return zr;
   }
