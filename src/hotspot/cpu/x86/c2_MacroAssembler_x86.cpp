@@ -1608,13 +1608,10 @@ void C2_MacroAssembler::load_vector_mask(XMMRegister dst, XMMRegister src, int v
 
 void C2_MacroAssembler::load_vector_mask(KRegister dst, XMMRegister src, XMMRegister xtmp, bool novlbwdq, int vlen_enc) {
   if (novlbwdq) {
-    vpmovsxbd(xtmp, src, vlen_enc);
-    evpcmpd(dst, k0, xtmp, ExternalAddress(StubRoutines::x86::vector_int_mask_cmp_bits()),
-            Assembler::eq, true, vlen_enc, noreg);
+    vpmovzxbd(xtmp, src, vlen_enc);
+    evptestmd(dst, xtmp, xtmp, vlen_enc);
   } else {
-    vpxor(xtmp, xtmp, xtmp, vlen_enc);
-    vpsubb(xtmp, xtmp, src, vlen_enc);
-    evpmovb2m(dst, xtmp, vlen_enc);
+    evptestmb(dst, src, src, vlen_enc);
   }
 }
 

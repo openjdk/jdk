@@ -22797,14 +22797,13 @@ instruct loadMask64(kReg dst, vec src, vec xtmp) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct loadMask_evex(kReg dst, vec src,  vec xtmp) %{
+instruct loadMask_evex(kReg dst, vec src) %{
   predicate(n->bottom_type()->is_pvectmask() && VM_Version::supports_avx512vlbw());
   match(Set dst (VectorLoadMask src));
-  effect(TEMP xtmp);
-  format %{ "vector_loadmask_byte $dst, $src\t! using $xtmp as TEMP" %}
+  format %{ "vector_loadmask_byte $dst, $src" %}
   ins_encode %{
     int vlen_enc = vector_length_encoding(in(1));
-    __ load_vector_mask($dst$$KRegister, $src$$XMMRegister, $xtmp$$XMMRegister,
+    __ load_vector_mask($dst$$KRegister, $src$$XMMRegister, xnoreg,
                         false, vlen_enc);
   %}
   ins_pipe( pipe_slow );
