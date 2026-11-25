@@ -4207,6 +4207,14 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
     break;
   }
 
+  // Drop control dependency. No node sharing is possible anymore.
+  // Cmp nodes benefit from lack of control when it comes to scheduling.
+  case Op_FastLock:
+  case Op_FastUnlock: {
+    n->set_req(0, nullptr);
+    break;
+  }
+
   // Mem nodes need explicit cases to satisfy assert(!n->is_Mem()) in default.
   case Op_StoreF:
   case Op_LoadF:
