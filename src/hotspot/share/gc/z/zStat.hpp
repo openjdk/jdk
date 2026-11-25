@@ -132,6 +132,8 @@ private:
   const ZStatUnitPrinter _printer;
 
 public:
+  static void initialize();
+
   ZStatSampler(const char* group,
                const char* name,
                ZStatUnitPrinter printer);

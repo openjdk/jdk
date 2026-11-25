@@ -43,9 +43,17 @@ public class StressArchiveUnmapping {
         SimpleCDSAppTester.of("StressArchiveUnmapping")
             .classpath("app.jar")
             .addVmArgs("-XX:+UnlockDiagnosticVMOptions",
+                       "-XX:ArchiveRelocationMode=0",
                        "-XX:+AOTStressArchiveUnmapping",
-                       "-Xlog:aot,class+path")
+                       "-Xlog:aot,class+path",
+                       "-Xlog:aot=debug")
             .appCommandLine("StressArchiveUnmappingApp")
+            .setAssemblyChecker((OutputAnalyzer out) -> {
+                    out.shouldContain("Try to map archive(s) at an alternative address");
+                })
+            .setProductionChecker((OutputAnalyzer out) -> {
+                    out.shouldContain("Try to map archive(s) at an alternative address");
+                })
             .runAOTWorkflow();
     }
 }

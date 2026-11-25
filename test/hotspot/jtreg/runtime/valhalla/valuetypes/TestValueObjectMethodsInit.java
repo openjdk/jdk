@@ -27,6 +27,7 @@
  * @summary Test ValueObjectMethods class initialization
  * @bug 8391022
  * @requires vm.cds.supports.aot.class.linking
+ * @requires vm.flagless
  * @comment DeoptimizeALot flag requires debug VM
  * @requires vm.debug
  * @library /test/lib

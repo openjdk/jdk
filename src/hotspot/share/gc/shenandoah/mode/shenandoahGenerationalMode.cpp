@@ -66,6 +66,9 @@ void ShenandoahGenerationalMode::initialize_flags() const {
     case ShenandoahHeuristicsFlag::Heuristic::STATIC:
       // Nothing to do, static mode just checks min free threshold which adaptive also does
       break;
+    case ShenandoahHeuristicsFlag::Heuristic::PASSIVE:
+      // This is also acceptable, but will be handled in the regulator thread
+      break;
     case ShenandoahHeuristicsFlag::Heuristic::COMPACT:
       // Configure flags in accordance with the heuristic
       ShenandoahCompactHeuristics::configure();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ public class SpecifySysLoaderProp {
     String jarFileName = "sysloader.jar";
     String appJar = TestCommon.getTestJar(jarFileName);
     TestCommon.testDump(appJar, TestCommon.list("ReportMyLoader"));
-    String warning = "Archived non-system classes are disabled because the java.system.class.loader property is specified";
+    String warning = "Archived application classes are disabled because the java.system.class.loader property is specified";
 
 
     // (0) Baseline. Do not specify -Djava.system.class.loader

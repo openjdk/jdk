@@ -5,12 +5,12 @@
 #ifndef SPA_AUDIO_AAC_TYPES_H
 #define SPA_AUDIO_AAC_TYPES_H
 
+#include <spa/utils/type.h>
+#include <spa/param/audio/aac.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <spa/utils/type.h>
-#include <spa/param/audio/aac.h>
 
 /**
  * \addtogroup spa_param

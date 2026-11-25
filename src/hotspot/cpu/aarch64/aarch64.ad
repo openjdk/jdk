@@ -1768,11 +1768,6 @@ int ConstantTable::calculate_table_base_offset() const {
   return 0;  // absolute addressing, no offset
 }
 
-bool MachConstantBaseNode::requires_postalloc_expand() const { return false; }
-void MachConstantBaseNode::postalloc_expand(GrowableArray <Node *> *nodes, PhaseRegAlloc *ra_) {
-  ShouldNotReachHere();
-}
-
 void MachConstantBaseNode::emit(C2_MacroAssembler* masm, PhaseRegAlloc* ra_) const {
   // Empty encoding
 }
@@ -2626,11 +2621,7 @@ Assembler::Condition to_assembler_cond(BoolTest::mask cond) {
 
 // Binary src (Replicate con)
 static bool is_valid_sve_arith_imm_pattern(Node* n, Node* m) {
-  if (n == nullptr || m == nullptr) {
-    return false;
-  }
-
-  if (UseSVE == 0 || m->Opcode() != Op_Replicate) {
+  if (n == nullptr || UseSVE == 0 || !Node::is_exact<Op_Replicate>(m)) {
     return false;
   }
 
@@ -2666,11 +2657,7 @@ static bool is_valid_sve_arith_imm_pattern(Node* n, Node* m) {
 
 // (XorV src (Replicate m1))
 static bool is_vector_bitwise_not_pattern(Node* n, Node* m) {
-  if (n != nullptr && m != nullptr) {
-    return n->Opcode() == Op_XorV &&
-           VectorNode::is_all_ones_vector(m);
-  }
-  return false;
+  return Node::is_exact<Op_XorV>(n) && m != nullptr && VectorNode::is_all_ones_vector(m);
 }
 
 // Returns true if (n, m) matches "(XorVMask vm2 (MaskAll m1))" and that XorVMask
@@ -2681,12 +2668,9 @@ static bool is_vector_bitwise_not_pattern(Node* n, Node* m) {
 // Limitation: the "andNot" rule still cannot be matched if "m" has other
 // uses outside this pattern.
 static bool is_vector_mask_not_operand_in_andnot_pattern(Node* n, Node* m) {
-  if (n == nullptr || m == nullptr) {
-    return false;
-  }
-
-  if (VectorNode::is_all_ones_vector(m) &&
-      n->Opcode() == Op_XorVMask &&
+  if (m != nullptr &&
+      Node::is_exact<Op_XorVMask>(n) &&
+      VectorNode::is_all_ones_vector(m) &&
       n->outcnt() == 1 &&
       n->unique_out()->Opcode() == Op_AndVMask) {
     // If another input of the AndVMask is also a mask-not pattern that would
@@ -4482,6 +4466,18 @@ operand immSLog()
 operand immILog()
 %{
   predicate(Assembler::operand_valid_for_logical_immediate(/*is32*/true, (uint64_t)n->get_int()));
+  match(ConI);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// 32-bit logical immediate with the sign bit clear.
+operand immILogPos()
+%{
+  predicate(n->get_int() > 0
+            && Assembler::operand_valid_for_logical_immediate(/*is32*/true, (uint64_t)n->get_int()));
   match(ConI);
 
   op_cost(0);
@@ -11779,16 +11775,18 @@ instruct ubfizLConvL2Ix(iRegINoSp dst, iRegL src, immI lshift, immL_positive_bit
 // This pattern is automatically generated from aarch64_ad.m4
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 
-// Can skip int2long conversions after AND with small bitmask
-instruct ubfizIConvI2LAndI(iRegLNoSp dst, iRegI src, immI_bitmask msk)
+// AND with a positive immediate. The result will be positive so no
+// sign extension is needed, and the implicit zero extension of `andw`
+// zeroes the high 32 bits.
+instruct convI2L_andI_reg_imm(iRegLNoSp dst, iRegIorL2I src, immILogPos msk)
 %{
   match(Set dst (ConvI2L (AndI src msk)));
   ins_cost(INSN_COST);
-  format %{ "ubfiz $dst, $src, 0, exact_log2($msk + 1) " %}
+  format %{ "and  $dst, $src, $msk\t# int -> long" %}
   ins_encode %{
-    __ ubfiz(as_Register($dst$$reg), as_Register($src$$reg), 0, exact_log2($msk$$constant + 1));
+    __ andw(as_Register($dst$$reg), as_Register($src$$reg), (uint64_t)($msk$$constant));
   %}
-  ins_pipe(ialu_reg_shift);
+  ins_pipe(ialu_reg_imm);
 %}
 
 
@@ -14235,8 +14233,7 @@ instruct clearArray_reg_reg(iRegL_R11 cnt, iRegP_R10 base, iRegL val, Universe d
 instruct clearArray_imm_reg(immL cnt, iRegP_R10 base, iRegL_R11 temp, immL0 zero, Universe dummy, rFlagsReg cr)
 %{
   predicate((uint64_t)n->in(2)->in(1)->get_long()
-            < (uint64_t)(BlockZeroingLowLimit >> LogBytesPerWord)
-            && !((ClearArrayNode*)n)->requires_word_fill());
+            < (uint64_t)(BlockZeroingLowLimit >> LogBytesPerWord));
   match(Set dummy (ClearArray (Binary cnt base) zero));
   effect(TEMP temp, USE_KILL base, KILL cr);
 

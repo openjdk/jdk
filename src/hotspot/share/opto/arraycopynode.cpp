@@ -447,7 +447,7 @@ bool ArrayCopyNode::can_use_arraycopy_fast_path(const TypeAryPtr* src_ary, const
   if (src_ary->elem()->value_klass()->contains_oops()) {
     BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
     bool needs_barriers = bs->array_copy_requires_gc_barriers(is_alloc_tightly_coupled(), T_OBJECT, false, false,
-                                                              BarrierSetC2::Optimization);
+                                                              BarrierSetC2::Expansion);
     // When a flat array contains oops, we require GC barriers which we cannot handle
     return !needs_barriers;
   }
@@ -834,10 +834,10 @@ bool ArrayCopyNode::may_modify(const TypeOopPtr* t_oop, PhaseValues* phase) cons
 }
 
 bool ArrayCopyNode::may_modify_helper(const TypeOopPtr* t_oop, Node* n, PhaseValues* phase, ArrayCopyNode*& ac) {
-  if (n != nullptr &&
-      n->is_ArrayCopy() &&
-      n->as_ArrayCopy()->may_modify(t_oop, phase)) {
-    ac = n->as_ArrayCopy();
+  if (ArrayCopyNode* n_copy = isa<ArrayCopyNode>(n);
+      n_copy != nullptr &&
+      n_copy->may_modify(t_oop, phase)) {
+    ac = n_copy;
     return true;
   }
   return false;
