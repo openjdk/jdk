@@ -26,6 +26,8 @@
  * @bug 8386578
  * @summary Return value checks for intrinsic capable methods
  *
+ * @modules java.base/sun.security.provider
+ *
  * @run main/othervm/timeout=600 -Xbatch
  *      -XX:CompileThreshold=500 -XX:+UnlockDiagnosticVMOptions
  *      --add-opens java.base/sun.security.provider=ALL-UNNAMED
@@ -40,15 +42,19 @@
 
 package compiler.intrinsics.sha;
 
-import java.lang.reflect.Method;
+import sun.security.provider.SHA3Parallel;
 
 public class TestInvoke {
-    private static final String DOUBLE_KECCAK_METHOD_ID = "doubleKeccak"; /* SHA3 doubleKeccak */
-    private static final String QUAD_KECCAK_METHOD_ID = "quadKeccak"; /* SHA3 quadKeccak */
-    private static volatile int valSave;    /* store return value from method */
+    private static final String DOUBLE_KECCAK_METHOD_ID
+            = "doubleKeccak";                          /* SHA3 doubleKeccak */
+    private static final String QUAD_KECCAK_METHOD_ID
+            = "quadKeccak";                            /* SHA3 quadKeccak */
+    private static final String SHA3_PARALLEL_CLASS_ID
+            = "sun.security.provider.SHA3Parallel";    /* SHA3 parallel class */
+    private static volatile int valSave;               /* store return value from method */
 
     public static void main(String[] args) throws Exception {
-        String klass = "sun.security.provider.SHA3Parallel";
+        String klass = SHA3_PARALLEL_CLASS_ID;
         String method = System.getProperty("method", DOUBLE_KECCAK_METHOD_ID);
         int iters = 20000;
 
@@ -61,41 +67,45 @@ public class TestInvoke {
         System.out.println("method = " + method);
 
         try {
-            Method m;
-            if (method.equals(DOUBLE_KECCAK_METHOD_ID) == true) {
-                m = Class.forName(klass).getDeclaredMethod(method,
-                        long[].class, long[].class);
-            } else if (method.equals(QUAD_KECCAK_METHOD_ID) == true) {
-                m = Class.forName(klass).getDeclaredMethod(method,
-                        long[].class, long[].class, long[].class, long[].class);
-            } else {
-                System.out.println("TestInvoke Error: invalid method provided!");
-                throw new Exception("TestInvoke Error");
+            switch (klass) {
+                case SHA3_PARALLEL_CLASS_ID:
+                    break;
+                default:
+                    throw new Exception("TestInvoke Error: invalid class provided!");
             }
-            m.setAccessible(true);
 
-            long[] buf0 = new long[25];
+            switch (method) {
+                case DOUBLE_KECCAK_METHOD_ID:
+                case QUAD_KECCAK_METHOD_ID:
+                    break;
+                default:
+                    throw new Exception("TestInvoke Error: invalid method provided!");
+            }
+
             int actual = 0;
+            if (klass.equals("sun.security.provider.SHA3Parallel") == true) {
+                byte[] baseBuf = new byte[168];
+                byte[][] bufArr = { baseBuf, baseBuf, baseBuf, baseBuf };
+                var parRun = new SHA3Parallel.Shake128Parallel(bufArr);
 
-            /* repeatedly get result */
-            for (int i = 0; i < iters; i++) {
-                if (method.equals(DOUBLE_KECCAK_METHOD_ID) == true) {
-                    actual = (int) m.invoke(null, buf0, buf0);
-                } else if (method.equals(QUAD_KECCAK_METHOD_ID) == true) {
-                    actual = (int) m.invoke(null, buf0, buf0, buf0, buf0);
+                /* repeatedly get result */
+                for (int i = 0; i < iters; i++) {
+                    if (method.equals(DOUBLE_KECCAK_METHOD_ID) == true) {
+                        actual = parRun.squeezeBlock(2);
+                    } else if (method.equals(QUAD_KECCAK_METHOD_ID) == true) {
+                        actual = parRun.squeezeBlock(4);
+                    }
+                    valSave = actual;
                 }
-                valSave = actual;
             }
 
             /* check result */
             if (actual != expected) {
-                System.out.println("TestInvoke Error: ");
-                System.out.println("expected = " + expected);
-                System.out.println("actual = " + actual);
-                throw new Exception("TestInvoke Error");
+                System.out.println("expected = " + expected + ", actual = " + actual);
+                throw new Exception("TestInvoke Error: expected value does not match actual value");
             }
         } catch (Exception e) {
-            throw new Exception("Exception: " + e, e);
+            throw new RuntimeException(e);
         }
     }
 }

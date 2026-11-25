@@ -44,7 +44,7 @@ public class InvokeSanityTestBase {
 
     private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
     private static final int ITERATIONS
-            = WHITE_BOX.getIntxVMFlag("Tier4InvocationThreshold").intValue() + 50;
+            = WHITE_BOX.getIntxVMFlag("Tier4InvocationThreshold").intValue() + 10_000;
     private static final String KLASS = "sun.security.provider.SHA3Parallel";
 
     private final BooleanSupplier predicate;
