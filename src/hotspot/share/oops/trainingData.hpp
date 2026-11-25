@@ -381,14 +381,11 @@ private:
         return _deps->at(i);
       } else ShouldNotReachHere();
     }
-    void at_put(int i, E dep) const {
+    void at_put(int i, E dep) {
       TrainingDataLocker::assert_locked_or_snapshotted();
       assert(i >= 0 && i < length(), "oob");
-      if (_deps_dyn != nullptr) {
-        return _deps_dyn->at_put(i, dep);
-      } else if (_deps != nullptr) {
-        return _deps->at_put(i, dep);
-      } else ShouldNotReachHere();
+      copy_on_write_if_necessary();
+      _deps_dyn->at_put(i, dep);
     }
     bool append_if_missing(E dep) {
       TrainingDataLocker::assert_can_add();

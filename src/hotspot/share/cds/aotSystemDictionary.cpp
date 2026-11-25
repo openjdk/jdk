@@ -412,6 +412,10 @@ bool AOTSystemDictionary::check_self_exclusion(InstanceKlass* k) {
 
 const char* AOTSystemDictionary::check_self_exclusion_helper(InstanceKlass* k, bool& log_warning) {
   assert_lock_strong(DumpTimeTable_lock);
+  if (AOTSystemDictionary::is_excluded_by_alternate_system_loader(k)) {
+    return "Defined in built-in app class loader";
+  }
+
   if (CDSConfig::is_dumping_with_input_archive() && k->defined_by_other_loaders()
       && k->in_aot_cache()) {
     return nullptr; // Do not exclude: unregistered classes are passed from input archive to output archive..
@@ -659,7 +663,9 @@ InstanceKlass* AOTSystemDictionary::find_or_load_shared_class(
       return nullptr;
     }
 
-    if (SystemDictionary::is_system_class_loader(class_loader()) ||
+    bool is_builtin_app_loader = SystemDictionary::is_system_class_loader(class_loader()) &&
+                                 !CDSConfig::using_alternate_system_loader();
+    if (is_builtin_app_loader ||
         SystemDictionary::is_platform_class_loader(class_loader())) {
       ClassLoaderData *loader_data = register_loader(class_loader);
       Dictionary* dictionary = loader_data->dictionary();
@@ -1041,6 +1047,13 @@ void AOTSystemDictionary::set_excluded(InstanceKlass* k) {
   assert(CDSConfig::is_dumping_archive(), "sanity");
   DumpTimeClassInfo* info = get_info(k);
   info->set_excluded();
+}
+
+bool AOTSystemDictionary::is_excluded_by_alternate_system_loader(InstanceKlass* ik) {
+  // When using an alternate system loader, there are no guarantees that
+  // the loader will delegate to the built-in application loader, so classes
+  // defined by the built-in app loader should be excluded.
+  return CDSConfig::using_alternate_system_loader() && ik->defined_by_app_loader();
 }
 
 void AOTSystemDictionary::set_class_has_failed_verification(InstanceKlass* ik) {

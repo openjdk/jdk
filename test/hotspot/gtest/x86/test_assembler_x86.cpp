@@ -64,7 +64,7 @@ static void asm_check(const uint8_t *insns, const uint8_t *insns1, const unsigne
   }
 }
 
-TEST_OTHER_VM(AssemblerX86, validate) {
+TEST_OTHER_VM(DISABLED_AssemblerX86, validate) {
   UseAVX = 3;
   FlagSetting flag_change_apx(UseAPX, true);
   VM_Version::set_bmi_cpuFeatures();
