@@ -1218,7 +1218,7 @@ void TemplateInterpreterGenerator::bang_stack_shadow_pages(bool native_call) {
   __ bind(L_done);
 
   // Commit the prospective SP, now that we have validated the stack headroom.
-  __ mov(sp, prospective_sp);
+  __ andr(sp, prospective_sp, -16);
 }
 
 // Interpreter stub for calling a native method. (asm interpreter)
