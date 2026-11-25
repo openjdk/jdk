@@ -424,6 +424,9 @@ void SaveLiveRegisters::initialize(BarrierStubC2* stub) {
 
   // Remove C-ABI SOE registers and tmp regs
   _gp_regs -= RegSet::range(x18, x27) + RegSet::of(x2, x5) + RegSet::of(x8, x9);
+
+  // Remove C-ABI SOE fp registers
+  _fp_regs -= FloatRegSet::range(f18, f27) + FloatRegSet::of(f8, f9);
 }
 
 SaveLiveRegisters::SaveLiveRegisters(MacroAssembler* masm, BarrierStubC2* stub)

@@ -27,6 +27,7 @@
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
 #include "cds/archiveBuilder.hpp"
+#include "ci/ciEnv.hpp"
 #include "ci/ciValueKlass.hpp"
 #include "code/aotCodeCache.hpp"
 #include "code/compiledIC.hpp"
@@ -5689,7 +5690,7 @@ void MacroAssembler::load_byte_map_base(Register reg) {
 void MacroAssembler::load_aotrc_address(Register reg, address a) {
 #if INCLUDE_CDS
   assert(AOTRuntimeConstants::contains(a), "address out of range for data area");
-  if (AOTCodeCache::is_on_for_dump()) {
+  if (ciEnv::current()->is_aot_compile()) {
     // all aotrc field addresses should be registered in the AOTCodeCache address table
     la(reg, ExternalAddress(a));
   } else {

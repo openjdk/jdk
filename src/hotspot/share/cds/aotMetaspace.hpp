@@ -43,6 +43,14 @@ class StaticArchiveBuilder;
 
 template<class E> class Array;
 
+// These enum values correspond to the possible values of ArchiveRelocationMode option.
+// Do not change them, or else it will break functionality of ArchiveRelocationMode option.
+enum ArchiveRelocationModeValue {
+  REQUESTED_ADDR_FALLBACK_OS_ADDR = 0,
+  OS_ADDR_ONLY = 1,
+  REQUESTED_ADDR_ONLY = 2
+};
+
 enum MapArchiveResult {
   MAP_ARCHIVE_SUCCESS,
   MAP_ARCHIVE_MMAP_FAILURE,

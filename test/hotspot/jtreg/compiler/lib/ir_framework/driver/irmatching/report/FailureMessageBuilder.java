@@ -111,7 +111,8 @@ public class FailureMessageBuilder implements MatchResultVisitor {
     @Override
     public void enter(IRRuleMatchResult result) {
         indentation.add();
-        msg.append(indentation).append("* @IR rule ").append(result.irRuleId()).append(": \"")
+        String skippedPrefix = result.irAnno().skip() ? "* [Marked as skip] " : "* ";
+        msg.append(indentation).append(skippedPrefix).append("@IR rule ").append(result.irRuleId()).append(": \"")
            .append(result.irAnno()).append("\"").append(System.lineSeparator());
     }
 

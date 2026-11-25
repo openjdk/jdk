@@ -213,6 +213,7 @@ private:
     Compile::current()->add_flat_access(this);
   }
 
+  static void collect_oop_offsets(ciValueKlass* vk, int& oop_off_1, int& oop_off_2);
   static void collect_field_types(ciValueKlass* vk, const Type** field_types, int idx, int limit, bool null_free, bool trust_null_free_oop);
   ValueTypeNode* collect_projs(GraphKit* kit, ciValueKlass* vk, int proj_con, bool null_free);
   void expand_projs_atomic(PhaseIterGVN& gvn, Node* ctrl, Node* payload) const;
