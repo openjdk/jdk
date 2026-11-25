@@ -1961,10 +1961,12 @@ public class JavacParser implements Parser {
                             nextKind == TokenKind.DOT ||
                             nextKind == TokenKind.LBRACKET ||
                             nextKind == TokenKind.COLCOL;
+                    } else if (depth < 0) {
+                        return false;
                     }
                     break;
                 case COLCOL:
-                    return true;
+                    return depth == 0;
                 default:
                     return false;
             }
