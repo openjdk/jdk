@@ -81,21 +81,22 @@ public class ClassStaticFieldReachabilityTest {
 
         assertTrue(dump.exists() && dump.isFile(), "Failed to create heap dump");
 
-        Snapshot snapshot = Reader.readFile(dump.getPath(), true, 0);
-        snapshot.resolve(true);
-        JavaClass fooClass = snapshot.findClass("ClassStaticFieldReachabilityTest$Foo");
-        JavaClass barClass = snapshot.findClass("ClassStaticFieldReachabilityTest$Bar");
-        Enumeration<JavaHeapObject> barObjs = barClass.getInstances(false);
-        if (!barObjs.hasMoreElements()) {
-            throw new Exception("No Bar instances found");
+        try (Snapshot snapshot = Reader.readFile(dump.getPath(), true, 0)) {
+            snapshot.resolve(true);
+            JavaClass fooClass = snapshot.findClass("ClassStaticFieldReachabilityTest$Foo");
+            JavaClass barClass = snapshot.findClass("ClassStaticFieldReachabilityTest$Bar");
+            Enumeration<JavaHeapObject> barObjs = barClass.getInstances(false);
+            if (!barObjs.hasMoreElements()) {
+                throw new Exception("No Bar instances found");
+            }
+            JavaHeapObject barObj = barObjs.nextElement();
+            assertTrue(snapshot.rootsetReferencesTo(barObj, false).length > 0,
+                       "Root set reference to instance of Bar should not be empty");
+            assertTrue(snapshot.rootsetReferencesTo(fooClass, false).length > 0,
+                       "Root set reference to Foo Class should not be empty");
+            assertTrue(fooClass.getInstancesCount(false) == 0,
+                       "Foo class instance count should be 0");
         }
-        JavaHeapObject barObj = barObjs.nextElement();
-        assertTrue(snapshot.rootsetReferencesTo(barObj, false).length > 0,
-                   "Root set reference to instance of Bar should not be empty");
-        assertTrue(snapshot.rootsetReferencesTo(fooClass, false).length > 0,
-                   "Root set reference to Foo Class should not be empty");
-        assertTrue(fooClass.getInstancesCount(false) == 0,
-                   "Foo class instance count should be 0");
 
         dump.delete();
     }
