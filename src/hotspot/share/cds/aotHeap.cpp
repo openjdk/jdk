@@ -67,6 +67,7 @@
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
+#include "oops/resolvedMethodEntry.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/resolvedMethodTable.hpp"
@@ -960,16 +961,6 @@ void AOTHeap::copy_java_mirror(oop orig_mirror, oop scratch_m) {
   }
 }
 
-static objArrayOop get_archived_resolved_references(InstanceKlass* src_ik) {
-  if (AOTSystemDictionary::is_builtin_loader(src_ik->class_loader_data())) {
-    objArrayOop rr = src_ik->constants()->resolved_references_or_null();
-    if (rr != nullptr && !AOTHeap::is_too_large_to_archive(rr)) {
-      return AOTHeap::scratch_resolved_references(src_ik->constants());
-    }
-  }
-  return nullptr;
-}
-
 int AOTHeap::archive_exception_instance(oop exception) {
   bool success = archive_reachable_objects_from(1, _dump_time_special_subgraph, exception);
   assert(success, "sanity");
@@ -1065,16 +1056,33 @@ void AOTHeap::scan_java_mirror(oop orig_mirror) {
   }
 }
 
+void AOTHeap::append_appendix_roots(InstanceKlass *orig_ik, refArrayOop rr) {
+  Array<ResolvedMethodEntry> *method_entries = orig_ik->constants()->cache()->resolved_method_entries();
+  if (method_entries != nullptr) {
+    for (int i = 0; i < method_entries->length(); i++) {
+      ResolvedMethodEntry* rme = method_entries->adr_at(i);
+      if (rme->has_appendix()) {
+        oop appendix = rr->obj_at(rme->resolved_references_index());
+        if (appendix != nullptr) {
+          append_root(appendix);
+        }
+      }
+    }
+  }
+}
+
 void AOTHeap::scan_java_class(Klass* orig_k) {
   scan_java_mirror(orig_k->java_mirror());
 
   if (orig_k->is_instance_klass()) {
     InstanceKlass* orig_ik = InstanceKlass::cast(orig_k);
-    orig_ik->constants()->prepare_resolved_references_for_archiving();
-    objArrayOop rr = get_archived_resolved_references(orig_ik);
+    refArrayOop rr = orig_ik->constants()->prepare_resolved_references_for_archiving();
     if (rr != nullptr) {
       bool success = AOTHeap::archive_reachable_objects_from(1, _dump_time_special_subgraph, rr);
       assert(success, "must be");
+      if (AOTCodeCache::is_dumping_code()) {
+        append_appendix_roots(orig_ik, rr);
+      }
     }
   }
 }

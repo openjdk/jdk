@@ -486,6 +486,9 @@ private:
   // Used by AOTArtifactFinder
   static void start_scanning_for_oops();
   static void end_scanning_for_oops();
+
+  static void append_appendix_roots(InstanceKlass *orig_ik, refArrayOop rr);
+
   static void scan_java_class(Klass* k);
   static void scan_java_mirror(oop orig_mirror);
   static void copy_and_rescan_aot_inited_mirror(InstanceKlass* ik);

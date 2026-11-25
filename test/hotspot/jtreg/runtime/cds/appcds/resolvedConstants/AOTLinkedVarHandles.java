@@ -25,7 +25,7 @@
 /*
  * @test
  * @summary AOT resolution of VarHandle invocation
- * @bug 8343245
+ * @bug 8343245 8398128
  * @requires vm.cds
  * @requires vm.cds.supports.aot.class.linking
  * @library /test/lib
@@ -35,26 +35,34 @@
  * @run driver AOTLinkedVarHandles
  */
 
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.VarHandle;
-import jdk.test.lib.cds.CDSOptions;
-import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.cds.SimpleCDSAppTester;
 import jdk.test.lib.helpers.ClassFileInstaller;
 import jdk.test.lib.process.OutputAnalyzer;
 
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
+import java.util.List;
+
+import static java.lang.foreign.ValueLayout.JAVA_FLOAT;
+
 public class AOTLinkedVarHandles {
     static final String appJar = ClassFileInstaller.getJarPath("app.jar");
     static final String mainClass = AOTLinkedVarHandlesApp.class.getName();
+
+    private static final List<String> methodNames = List.of("plainArray", "arrayVarHandle", "segmentGetNative");
+    private static final List<String> codes = List.of("\\(A4\\)", "\\(AP4\\)");
 
     public static void main(String[] args) throws Exception {
         SimpleCDSAppTester t = SimpleCDSAppTester.of("AOTLinkedVarHandles")
             .classpath(appJar)
             .appCommandLine(mainClass)
             .addVmArgs("-esa",
-                       "-XX:+AOTClassLinking",
-                       "-Xlog:aot+resolve=trace",
-                       "-Xlog:cds+class=debug")
+                "-XX:+AOTClassLinking",
+                "-Xlog:aot+resolve=trace",
+                "-Xlog:aot+codecache+nmethod=info",
+                "-Xlog:cds+class=debug")
             .setTrainingChecker((OutputAnalyzer output) -> {
                 output.shouldContain("Hello AOTLinkedVarHandlesApp");
             })
@@ -63,20 +71,32 @@ public class AOTLinkedVarHandles {
                 output.shouldMatch(s + "java/lang/invoke/VarHandle.compareAndExchangeAcquire:\\(\\[DIDI\\)D =>");
                 output.shouldMatch(s + "java/lang/invoke/VarHandle.get:\\(\\[DI\\)D => ");
                 output.shouldNotContain("rejected .* CP entry.*");
+                methodNames.forEach(m ->
+                    output.shouldNotMatch("'AOTLinkedVarHandlesApp\\.%s\\(.*store to AOT Code Cache failed".formatted(m))
+                );
+                methodNames.forEach(m -> codes.forEach(c ->
+                    output.shouldMatch("%s 'AOTLinkedVarHandlesApp\\.%s\\(.*wrote to AOT Code Cache".formatted(c, m))
+                ));
+
             })
             .runAOTTrainingAndAssemblyWorkflow();
 
         t.setVmArgs("-Xlog:cds,aot", "-esa")
-        .setProductionChecker((OutputAnalyzer output) -> {
-            output.shouldContain("Hello AOTLinkedVarHandlesApp");
-        })
-        .productionRun();
+            .setProductionChecker((OutputAnalyzer output) -> {
+                output.shouldContain("Hello AOTLinkedVarHandlesApp");
+            })
+            .productionRun();
     }
+
 }
 
 class AOTLinkedVarHandlesApp {
     static final VarHandle initialized;
     static final VarHandle lazy;
+    static final int N = 1024;
+    static final float[] ARRAY = new float[N];
+    static final MemorySegment NATIVE = Arena.global().allocate(4L * N, 4);
+    static final VarHandle ARRAY_VH = MethodHandles.arrayElementVarHandle(float[].class);
     static long longField = 5678;
     static long seed;
 
@@ -89,13 +109,15 @@ class AOTLinkedVarHandlesApp {
         }
     }
 
-    static class Data {
-        static long longField = seed;
-    }
-
     public static void main(String args[]) {
+
         seed = 1234;
         System.out.println("Hello AOTLinkedVarHandlesApp");
+
+        double total = 0;
+        for (int r = 0; r < 30_000; r++) total += plainArray() + arrayVarHandle() + segmentGetNative();
+        System.out.println(total);
+
         long a = (long) lazy.get();
         long b = (long) initialized.get();
         System.out.println(a);
@@ -108,7 +130,7 @@ class AOTLinkedVarHandlesApp {
         }
 
         VarHandle vh = MethodHandles.arrayElementVarHandle(double[].class);
-        double[] array = new double[] {1.0};
+        double[] array = new double[]{1.0};
         int index = 0;
         int v = 4;
 
@@ -121,5 +143,30 @@ class AOTLinkedVarHandlesApp {
         if (r != 4.0) {
             throw new RuntimeException("Unexpected result: " + r);
         }
+    }
+
+    static float plainArray() {
+        float[] a = ARRAY;
+        float acc = 0f;
+        for (int i = 0; i < N; i++) acc += a[i];
+        return acc;
+    }
+
+    static float arrayVarHandle() {
+        float[] a = ARRAY;
+        float acc = 0f;
+        for (int i = 0; i < N; i++) acc += (float) ARRAY_VH.get(a, i); // explicit VarHandle: not stored
+        return acc;
+    }
+
+    static float segmentGetNative() {
+        MemorySegment s = NATIVE;
+        float acc = 0f;
+        for (int i = 0; i < N; i++) acc += s.get(JAVA_FLOAT, 4L * i); // VarHandle inside get(): not stored
+        return acc;
+    }
+
+    static class Data {
+        static long longField = seed;
     }
 }
