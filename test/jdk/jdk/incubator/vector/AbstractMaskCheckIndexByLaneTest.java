@@ -231,20 +231,20 @@ public class AbstractMaskCheckIndexByLaneTest {
         return VectorMask.fromValues(SPECIES, bits);
     }
 
-    record TestCase(boolean shouldThrow, long offset, long length, int esize,
+    record TestCase(boolean expectIOOBE, long offset, long length, int esize,
                     VectorMask<Byte> mask) {
 
         void run(Method m) throws Exception {
             try {
                 m.invoke(mask, offset, length, IOTA_BYTE_LANES, esize);
-                if (shouldThrow) {
+                if (expectIOOBE) {
                     throw new AssertionError("Expected IndexOutOfBoundsException");
                 }
             } catch (InvocationTargetException e) {
                 if (!(e.getCause() instanceof IndexOutOfBoundsException)) {
                     throw e;
                 }
-                if (!shouldThrow) {
+                if (!expectIOOBE) {
                     throw new AssertionError("Unexpected IndexOutOfBoundsException",
                             e.getCause());
                 }
