@@ -5,11 +5,11 @@
 #ifndef SPA_LIST_H
 #define SPA_LIST_H
 
+#include <spa/utils/defs.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <spa/utils/defs.h>
 
 #ifndef SPA_API_LIST
  #ifdef SPA_API_IMPL

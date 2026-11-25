@@ -5,6 +5,10 @@
 #ifndef SPA_DEBUG_TYPES_H
 #define SPA_DEBUG_TYPES_H
 
+#include <spa/utils/type-info.h>
+
+#include <string.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -13,10 +17,6 @@ extern "C" {
  * \addtogroup spa_debug
  * \{
  */
-
-#include <spa/utils/type-info.h>
-
-#include <string.h>
 
 #ifndef SPA_API_DEBUG_TYPES
  #ifdef SPA_API_IMPL

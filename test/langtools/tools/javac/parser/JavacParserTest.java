@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7073631 7159445 7156633 8028235 8065753 8205418 8205913 8228451 8237041 8253584 8246774 8256411 8256149 8259050 8266436 8267221 8271928 8275097 8293897 8295401 8304671 8310326 8312093 8312204 8315452 8337976 8324859 8344706 8351260 8370865 8369489 8392939
+ * @bug 7073631 7159445 7156633 8028235 8065753 8205418 8205913 8228451 8237041 8253584 8246774 8256411 8256149 8259050 8266436 8267221 8271928 8275097 8293897 8295401 8304671 8310326 8312093 8312204 8315452 8337976 8324859 8344706 8351260 8370865 8369489 8392939 8398032
  * @summary tests error and diagnostics positions
  * @author  Jan Lahoda
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -3384,6 +3384,104 @@ public class JavacParserTest extends TestCase {
                          @interface Ann2 {
                              \n\
                              public String value();
+                         }
+                     }""");
+    }
+
+    @Test //JDK-8398032
+    void testParseMethodReference() throws IOException {
+        String code = """
+                      package tests;
+
+                      import java.lang.annotation.*;
+                      import java.util.function.*;
+
+                      class Test {
+                          int i, j, k;
+                          void test1(boolean b, Supplier<String> r) {
+                              test1(i < j, Test::get);
+                          }
+                          void test2(boolean b1, boolean b2, Supplier<String> r) {
+                              test2(i < j, j > i, Test::get);
+                          }
+                          void test3(boolean b1, boolean b2, Supplier<String> r) {
+                              test3(i > j, j < i, Test::get);
+                          }
+                          void test4(boolean b1, boolean b2, Supplier<String> r) {
+                              test4(i < j >> k, i < j, Test::get);
+                          }
+                          void test5(boolean b1, boolean b2, Supplier<String> r) {
+                              test5(i < j >>> k, i < j, Test::get);
+                          }
+                          void test6(boolean b1, boolean b2, Supplier<String> r) {
+                              test6(i < j, i < j >> k, Test::get);
+                          }
+                          void test7(boolean b1, boolean b2, Supplier<String> r) {
+                              test7(i < j, i < j >>> k, Test::get);
+                          }
+                          private static String get() {
+                              return null;
+                          }
+                      }
+                      """;
+        DiagnosticCollector<JavaFileObject> coll =
+                new DiagnosticCollector<>();
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, coll,
+                List.of("-XDrawDiagnostics"),
+                null, Arrays.asList(new MyFileObject(code)));
+        CompilationUnitTree cut = ct.parse().iterator().next();
+
+        String astAsText = toStringWithErrors(cut).replaceAll("\\R", "\n");
+
+        ct.analyze();
+
+        assertTrue("Expected no errors, but got: " + coll.getDiagnostics(),
+                   coll.getDiagnostics().isEmpty());
+
+        System.out.println("RESULT\n" + astAsText);
+        assertEquals("incorrect AST",
+                     astAsText,
+                     """
+                     package tests;
+
+                     import java.lang.annotation.*;
+                     import java.util.function.*;
+
+                     class Test {
+                         int i;
+                         int j;
+                         int k;
+                         \n\
+                         void test1(boolean b, Supplier<String> r) {
+                             test1(i < j, Test::get);
+                         }
+                         \n\
+                         void test2(boolean b1, boolean b2, Supplier<String> r) {
+                             test2(i < j, j > i, Test::get);
+                         }
+                         \n\
+                         void test3(boolean b1, boolean b2, Supplier<String> r) {
+                             test3(i > j, j < i, Test::get);
+                         }
+                         \n\
+                         void test4(boolean b1, boolean b2, Supplier<String> r) {
+                             test4(i < j >> k, i < j, Test::get);
+                         }
+                         \n\
+                         void test5(boolean b1, boolean b2, Supplier<String> r) {
+                             test5(i < j >>> k, i < j, Test::get);
+                         }
+                         \n\
+                         void test6(boolean b1, boolean b2, Supplier<String> r) {
+                             test6(i < j, i < j >> k, Test::get);
+                         }
+                         \n\
+                         void test7(boolean b1, boolean b2, Supplier<String> r) {
+                             test7(i < j, i < j >>> k, Test::get);
+                         }
+                         \n\
+                         private static String get() {
+                             return null;
                          }
                      }""");
     }

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
- * Copyright (c) 2020, 2024, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2020, 2026, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1811,6 +1811,13 @@ public:
     assert_cond(instr != nullptr);
     return extract_opcode(instr) == 0b0010011 &&
            extract_funct3(instr) == 0b101 &&
+           Assembler::extract(Assembler::ld_instr(instr), 31, 26) == 0b000000;
+  }
+
+  static bool is_slli_at(address instr) {
+    assert_cond(instr != nullptr);
+    return extract_opcode(instr) == 0b0010011 &&
+           extract_funct3(instr) == 0b001 &&
            Assembler::extract(Assembler::ld_instr(instr), 31, 26) == 0b000000;
   }
 

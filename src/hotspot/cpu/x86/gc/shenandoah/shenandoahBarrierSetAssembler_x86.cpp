@@ -267,7 +267,6 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
 
     // Optimized cset-test
     __ movptr(tmp1, dst);
-#if INCLUDE_CDS
     if (AOTCodeCache::is_on_for_dump()) {
       assert_different_registers(tmp1, tmp2, rcx);
       __ lea(tmp2, ExternalAddress(AOTRuntimeConstants::grain_shift_address()));
@@ -277,9 +276,7 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
       __ pop(rcx);
       __ lea(tmp2, ExternalAddress(AOTRuntimeConstants::cset_base_address()));
       __ movptr(tmp2, Address(tmp2));
-    } else
-#endif
-    {
+    } else {
       __ shrptr(tmp1, ShenandoahHeapRegion::region_size_bytes_shift_jint());
       __ movptr(tmp2, (intptr_t) ShenandoahHeap::in_cset_fast_test_addr());
     }
@@ -514,16 +511,13 @@ void ShenandoahBarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj
   assert_different_registers(obj, tmp1, tmp2);
   // Check if the oop is in the right area of memory
   __ movptr(tmp1, obj);
-#if INCLUDE_CDS
   if (AOTCodeCache::is_on_for_dump()) {
     __ lea(tmp2, ExternalAddress(AOTRuntimeConstants::verify_oop_mask_address()));
     __ movptr(tmp2, Address(tmp2));
     __ andptr(tmp1, tmp2);
     __ lea(tmp2, ExternalAddress(AOTRuntimeConstants::verify_oop_bits_address()));
     __ movptr(tmp2, Address(tmp2));
-  } else
-#endif
-  {
+  } else {
     __ movptr(tmp2, (intptr_t) Universe::verify_oop_mask());
     __ andptr(tmp1, tmp2);
     __ movptr(tmp2, (intptr_t) Universe::verify_oop_bits());
@@ -729,7 +723,37 @@ void ShenandoahBarrierSetAssembler::load_c2(const MachNode* node, MacroAssembler
     __ movq(dst, src);
   }
 
-  ShenandoahBarrierStubC2::load_post(masm, node, dst, src, noreg, noreg, narrow);
+  ShenandoahBarrierStubC2::load_post(masm, node, dst, src, noreg, noreg, narrow, noreg);
+}
+
+void ShenandoahBarrierSetAssembler::load_c2_special(const MachNode* node, MacroAssembler* masm,
+                                                    Register dst, Address src, int offset, Register tmp) {
+  assert(src.index() == noreg, "Base register only");
+  assert(src.disp() == 0, "Base register only");
+  Register src_base = src.base();
+
+  bool first_oop = offset == 0 || offset == -1;
+  bool second_oop = offset == 4 || offset == -1;
+
+  // Do the actual load. This load is the candidate for implicit null check, and MUST come first.
+  // We must perform a single load for atomicity reasons.
+  __ movq(dst, Address(src_base));
+
+  // Separate words into tmp and dst.
+  __ movl(tmp, dst);
+  __ shrq(dst, 32);
+
+  // Do barriers if needed.
+  if (first_oop) {
+    ShenandoahBarrierStubC2::load_post(masm, node, tmp, Address(src_base), noreg, noreg, /* narrow = */ true, dst);
+  }
+  if (second_oop) {
+    ShenandoahBarrierStubC2::load_post(masm, node, dst, Address(src_base, 4), noreg, noreg, /* narrow = */ true, tmp);
+  }
+
+  // Recombine barrier results into dst.
+  __ shlq(dst, 32);
+  __ orq(dst, tmp);
 }
 
 void ShenandoahBarrierSetAssembler::store_c2(const MachNode* node, MacroAssembler* masm,
@@ -758,6 +782,31 @@ void ShenandoahBarrierSetAssembler::store_c2(const MachNode* node, MacroAssemble
   }
 
   ShenandoahBarrierStubC2::store_post(masm, node, dst, tmp, noreg);
+}
+
+void ShenandoahBarrierSetAssembler::store_c2_special(const MachNode* node, MacroAssembler* masm,
+                                                     Address dst, Register src, int offset, Register tmp) {
+  assert(dst.index() == noreg, "Base register only");
+  assert(dst.disp() == 0, "Base register only");
+  Register dst_base = dst.base();
+
+  bool first_oop = offset == 0 || offset == -1;
+  bool second_oop = offset == 4 || offset == -1;
+
+  if (first_oop) {
+    ShenandoahBarrierStubC2::store_pre(masm, node, Address(dst_base), tmp, noreg, noreg, true);
+  }
+  if (second_oop) {
+    ShenandoahBarrierStubC2::store_pre(masm, node, Address(dst_base, 4), tmp, noreg, noreg, true);
+  }
+
+  // Do the actual store
+  __ movq(Address(dst_base), src);
+
+  if (first_oop || second_oop) {
+    // Since the atomic store is aligned, we can update one card for both oops.
+    ShenandoahBarrierStubC2::store_post(masm, node, Address(dst_base), tmp, noreg);
+  }
 }
 
 void ShenandoahBarrierSetAssembler::compare_and_set_c2(const MachNode* node, MacroAssembler* masm,
@@ -1009,7 +1058,7 @@ void ShenandoahBarrierStubC2::lrb(MacroAssembler& masm) {
     patchable_jump_if_gc_state(masm, state_to_check, noreg, noreg, &L_slow);
   }
 
-  bool is_aot = AOTCodeCache::is_on_for_dump();
+  const bool is_aot = Compile::current()->is_aot_compile();
 
   // Need temp to work, allocate one now.
   bool tmp_live;

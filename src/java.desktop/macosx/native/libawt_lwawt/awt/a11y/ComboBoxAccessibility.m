@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2022, JetBrains s.r.o.. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -29,13 +29,7 @@
 #import "ThreadUtilities.h"
 #import "JNIUtilities.h"
 
-static jclass sjc_CAccessibility = NULL;
-
-static jmethodID sjm_getAccessibleName = NULL;
-#define GET_ACCESSIBLENAME_METHOD_RETURN(ret) \
-    GET_CACCESSIBILITY_CLASS_RETURN(ret); \
-    GET_STATIC_METHOD_RETURN(sjm_getAccessibleName, sjc_CAccessibility, "getAccessibleName", \
-                     "(Ljavax/accessibility/Accessible;Ljava/awt/Component;)Ljava/lang/String;", ret);
+DECLARE_CLASS_ONLY(sjc_CAccessibility);
 
 @implementation ComboBoxAccessibility
 

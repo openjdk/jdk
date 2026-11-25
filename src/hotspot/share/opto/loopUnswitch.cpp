@@ -216,9 +216,9 @@ void PhaseIdealLoop::collect_flat_array_checks(const IdealLoopTree* loop, Node_L
   assert(flat_array_checks.size() == 0, "should be empty initially");
   for (uint i = 0; i < loop->_body.size(); i++) {
     Node* next = loop->_body.at(i);
-    if (next->is_If() && next->as_If()->is_flat_array_check(&_igvn) && loop->is_invariant(next->in(1)) &&
-        !loop->is_loop_exit(next)) {
-      flat_array_checks.push(next->as_If());
+    if (IfNode* iff = next->isa_If(); iff != nullptr && iff->is_flat_array_check(&_igvn) && loop->is_invariant(next->in(1)) &&
+        !loop->is_loop_exit(iff)) {
+      flat_array_checks.push(iff);
     }
   }
 }

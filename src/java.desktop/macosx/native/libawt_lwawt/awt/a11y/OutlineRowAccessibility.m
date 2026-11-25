@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, JetBrains s.r.o.. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -32,7 +32,7 @@
 #import "OutlineAccessibility.h"
 #import "sun_lwawt_macosx_CAccessibility.h"
 
-static jclass sjc_CAccessibility = NULL;
+DECLARE_CLASS_ONLY(sjc_CAccessibility);
 
 @implementation OutlineRowAccessibility
 

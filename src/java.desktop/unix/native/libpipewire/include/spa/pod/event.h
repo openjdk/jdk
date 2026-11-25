@@ -5,11 +5,11 @@
 #ifndef SPA_EVENT_H
 #define SPA_EVENT_H
 
+#include <spa/pod/pod.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <spa/pod/pod.h>
 
 /**
  * \addtogroup spa_pod

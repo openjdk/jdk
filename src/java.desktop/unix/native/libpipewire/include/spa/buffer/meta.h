@@ -5,12 +5,12 @@
 #ifndef SPA_META_H
 #define SPA_META_H
 
+#include <spa/utils/defs.h>
+#include <spa/pod/pod.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <spa/utils/defs.h>
-#include <spa/pod/pod.h>
 
 #ifndef SPA_API_META
  #ifdef SPA_API_IMPL
@@ -37,9 +37,16 @@ enum spa_meta_type {
     SPA_META_Busy,            /**< don't write to buffer when count > 0 */
     SPA_META_VideoTransform,    /**< struct spa_meta_transform */
     SPA_META_SyncTimeline,        /**< struct spa_meta_sync_timeline */
-
     _SPA_META_LAST,            /**< not part of ABI/API */
+
+    SPA_META_START_custom        = 0x200,
+
+    SPA_META_START_features        = 0x10000,    /* features start, these have 0 size, the
+                             * type in the upper 16 bits and a bitmask in
+                             * the lower 16 bits with type specific features. */
 };
+
+#define SPA_META_TYPE_FEATURES(type,features)    (((type)<<16)|(features))
 
 /**
  * A metadata element.
@@ -183,7 +190,12 @@ struct spa_meta_videotransform {
  * this metadata as SPA_PARAM_BUFFERS_metaType when negotiating a buffer
  * layout with 2 extra fds.
  */
+#define SPA_META_FEATURE_SYNC_TIMELINE_RELEASE    (1<<0)    /**< metadata supports RELEASE */
+
 struct spa_meta_sync_timeline {
+#define SPA_META_SYNC_TIMELINE_UNSCHEDULED_RELEASE    (1<<0)    /**< this flag is set by the producer and cleared
+                                  *  by the consumer when it promises to signal
+                                  *  the release point */
     uint32_t flags;
     uint32_t padding;
     uint64_t acquire_point;            /**< the timeline acquire point, this is when the data

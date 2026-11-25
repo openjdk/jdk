@@ -76,6 +76,7 @@
 #include "runtime/timerTrace.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/ostream.hpp"
+#include "utilities/quickSort.hpp"
 #ifdef COMPILER1
 #include "c1/c1_Runtime1.hpp"
 #include "gc/g1/c1/g1BarrierSetC1.hpp"
@@ -979,6 +980,7 @@ bool AOTCodeCache::Config::verify() const {
 // Header
 // AOT preload code entries 'AOTCodeEntry preload_entries[preload_entries_count]' array
 // AOT preload code
+// 'uint preload_table[preload_entries_count]' array
 // AOT entries for adapters, stubs, code 'AOTCodeEntry load_entries[entries_count]' array
 // AOT adapters, stubs, code
 // 'uint search_entries[2 * entries_count]' array
@@ -1040,10 +1042,16 @@ bool AOTCodeCache::Header::verify(uint load_size) const {
     return false;
   }
 
+  uint pre_table_offset = preload_table_offset();
+  size_t pre_table_end  = verify_section(pre_table_offset, preload_count, sizeof(uint), preload_end, "preload table");
+  if (pre_table_end == 0) {
+    return false;
+  }
+
   // Check normal entries
   uint normal_offset = entries_offset();
   uint normal_count  = entries_count();
-  size_t normal_end  = verify_section(normal_offset, normal_count, entry_size, preload_end, "normal entries");
+  size_t normal_end  = verify_section(normal_offset, normal_count, entry_size, pre_table_end, "normal entries");
   if (normal_end == 0) {
     return false;
   }
@@ -1363,6 +1371,7 @@ AOTCodeEntry* AOTCodeCache::find_code_entry(const methodHandle& method, uint com
         const char* target_name = method->name_and_sig_as_C_string();
         log.print_cr("Missing entry for '%s' (comp_level %d, id: " UINT32_FORMAT_X_0 ")", target_name, (uint)comp_level, id);
       }
+      return nullptr;
 #ifdef ASSERT
     } else {
       assert(!entry->has_clinit_barriers(), "only preload code should have clinit barriers");
@@ -1373,8 +1382,30 @@ AOTCodeEntry* AOTCodeCache::find_code_entry(const methodHandle& method, uint com
 #endif
     }
 
+    if (entry->not_entrant()) {
+      return nullptr;
+    }
+
+    // There is harmless concurrency here when reading fields in the AOTCodeEntry.
+    // The _loaded field is monotonic. It is set in nmethod::new_nmethod under
+    // CodeCache_lock while ciEnv::register_aot_method holds MethodCompileQueue_lock.
+    // We might race with other threads which quickly queue and then load
+    // the method, and harmlessly conclude that this code entry is still loadable.
+    // Even if we manage to queue a second load concurrently,
+    // CompileBroker::compile_method_base checks, under the MCQ lock, with
+    // compilation_is_in_queue and compilation_is_complete, to avoid duplicate work.
+    if (entry->is_loaded()) {
+      return nullptr; // AOT code for this entry was loaded already by other thread.
+    }
+
+    if (entry->is_verified()) {
+      // With VerifyAOTCode AOT code is only verified without installation
+      assert(VerifyAOTCode, "sanity");
+      return nullptr; // AOT code was already verified
+    }
+
 #ifdef COMPILER2
-    if (entry != nullptr && entry->has_vectors() && !EnableVectorSupport) {
+    if (entry->has_vectors() && !EnableVectorSupport) {
       log_debug(aot, codecache, nmethod)("AOT Tier4 code skipped: incompatible EnableVectorSupport: true vs current %u", EnableVectorSupport);
       return nullptr;
     }
@@ -1609,6 +1640,44 @@ AOTCodeEntry* AOTCodeCache::search_entry(AOTCodeEntry::Kind kind, uint id, uint 
   return nullptr;
 }
 
+AOTCodeEntry* AOTCodeCache::find_preload_entry(uint method_id) {
+  assert(is_using_code(), "AOT code caching should be enabled");
+  uint count = _load_header->preload_entries_count();
+  if (count == 0) {
+    return nullptr;
+  }
+  AOTCodeEntry* preload_entry = (AOTCodeEntry*)addr(_load_header->preload_entries_offset());
+  uint* preload_table = (uint*)addr(_load_header->preload_table_offset());
+
+  // Binary search
+  uint l = 0;
+  uint h = count;
+  while (l < h) {
+    uint mid = l + ((h - l) >> 1);
+    uint index = preload_table[mid];
+    if (index >= count) {
+      log_warning(aot, codecache)("Damaged preload table: index %u >= count %u", index, count);
+      return nullptr;
+    }
+    uint id = preload_entry[index].id();
+    if (id < method_id) {
+      l = mid + 1;
+    } else {
+      h = mid;
+    }
+  }
+  if (l == count) {
+    return nullptr;
+  }
+  uint index = preload_table[l];
+  if (index >= count) {
+    log_warning(aot, codecache)("Damaged preload table: index %u >= count %u", index, count);
+    return nullptr;
+  }
+  AOTCodeEntry* entry = &preload_entry[index];
+  return (entry->for_preload() && entry->id() == method_id) ? entry : nullptr;
+}
+
 void AOTCodeCache::invalidate_entry(AOTCodeEntry* entry) {
   assert(entry!= nullptr, "all entries should be read already");
   if (entry->try_set_not_entrant()) {
@@ -1654,13 +1723,10 @@ void AOTCodeCache::invalidate_entry(AOTCodeEntry* entry) {
     // most likely because some dependencies changed during run.
     // We can still use normal AOT code if preload code is
     // invalidated - normal AOT code has less restrictions.
-    MethodCounters* mc = entry->method()->method_counters();
-    if (mc != nullptr && mc->aot_preload_code_entry() != nullptr) {
-      AOTCodeEntry* preload_entry = mc->aot_preload_code_entry();
-      if (preload_entry != nullptr) {
-        assert(preload_entry->for_preload(), "expecting only such entries here");
-        invalidate_entry(preload_entry);
-      }
+    AOTCodeEntry* preload_entry = find_preload_entry(entry->id());
+    if (preload_entry != nullptr) {
+      assert(preload_entry->for_preload(), "expecting only such entries here");
+      invalidate_entry(preload_entry);
     }
   }
 }
@@ -1748,10 +1814,11 @@ bool AOTCodeCache::finish_write() {
     uint header_size = (uint)align_up(sizeof(AOTCodeCache::Header), DATA_ALIGNMENT);
     uint search_count = code_count * 2;
     uint search_size = search_count * sizeof(uint);
+    uint preload_table_size = code_count * sizeof(uint);
     uint entries_size = (uint)align_up(code_count * sizeof(AOTCodeEntry), DATA_ALIGNMENT); // In bytes
     // _write_position should include code and strings
     uint code_alignment = code_count * DATA_ALIGNMENT; // We align_up code size when storing it.
-    uint total_size = header_size + _write_position + code_alignment + search_size + entries_size;
+    uint total_size = header_size + _write_position + code_alignment + search_size + preload_table_size + entries_size;
     assert(total_size < max_aot_code_size(), "AOT Code size (" UINT32_FORMAT " bytes) is greater than AOTCodeMaxSize(" UINT32_FORMAT " bytes).", total_size, max_aot_code_size());
 
     // Allocate in AOT Cache buffer
@@ -1808,6 +1875,28 @@ bool AOTCodeCache::finish_write() {
       current += size;
     }
     FREE_C_HEAP_ARRAY(preload_sorted);
+
+    current = align_up(current, DATA_ALIGNMENT);
+    uint preload_table_offset = current - start;
+    if (preload_entries_cnt > 0) {
+      // Create ordered search table for preload entries [id].
+      // The table is used only in AOTCodeCache::invalidate_entry().
+      uint* preload_table = NEW_C_HEAP_ARRAY(uint, preload_entries_cnt, mtCode);
+      for (int i = 0; i < (int)preload_entries_cnt; i++) {
+        preload_table[i] = i;
+      }
+      // Sort preload entry indices based on _id (Method's offset in AOT cache).
+      QuickSort::sort(preload_table, preload_entries_cnt,
+                      [preload_entries](uint i, uint j) {
+                        uint a = preload_entries[i].id();
+                        uint b = preload_entries[j].id();
+                        return a > b ? 1 : a < b ? -1 : 0;
+                      });
+      uint sz = preload_entries_cnt * sizeof(uint);
+      copy_bytes((const char*)preload_table, (address)current, sz);
+      current += sz;
+      FREE_C_HEAP_ARRAY(preload_table);
+    }
 
     // Store the rest of AOTCodeEntry
     uint entries_count = 0;
@@ -1877,7 +1966,7 @@ bool AOTCodeCache::finish_write() {
     // Finalize header
     AOTCodeCache::Header* header = (AOTCodeCache::Header*)start;
     header->init(size,
-                 preload_entries_cnt, preload_entries_offset,
+                 preload_entries_cnt, preload_entries_offset, preload_table_offset,
                  entries_count, new_entries_offset, search_table_offset,
                  (uint)strings_count, strings_offset,
                  stats.entry_count(AOTCodeEntry::Adapter), stats.entry_count(AOTCodeEntry::SharedBlob),
@@ -3152,7 +3241,7 @@ void AOTCodeCache::preload_aot_code(TRAPS) {
     uint entries_offset = _load_header->preload_entries_offset();
     // Boundaries of preload code
     uint low_bound  = entries_offset + preload_entries_count * sizeof(AOTCodeEntry);
-    uint high_bound = _load_header->entries_offset(); // Following section
+    uint high_bound = _load_header->preload_table_offset(); // Following section
     AOTCodeEntry* preload_entry = (AOTCodeEntry*)addr(entries_offset);
     // AOTCodePreloadStop is inclusive
     uint last_preload_index = MIN2(preload_entries_count - 1, AOTCodePreloadStop);

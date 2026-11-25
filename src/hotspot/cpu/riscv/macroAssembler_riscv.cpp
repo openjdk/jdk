@@ -27,6 +27,7 @@
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
 #include "cds/archiveBuilder.hpp"
+#include "ci/ciEnv.hpp"
 #include "ci/ciValueKlass.hpp"
 #include "code/aotCodeCache.hpp"
 #include "code/compiledIC.hpp"
@@ -522,13 +523,10 @@ void MacroAssembler::_verify_oop(Register reg, const char* s, const char* file, 
     ResourceMark rm;
     stringStream ss;
     ss.print("verify_oop: %s: %s (%s:%d)", reg->name(), s, file, line);
-#if INCLUDE_CDS
     if (AOTCodeCache::is_on_for_dump() && !code_section()->scratch_emit()) {
       // This will duplicate string to preserve it.
       b = AOTCodeCache::add_C_string(ss.as_string());
-    } else
-#endif
-    {
+    } else {
       b = code_string(ss.as_string());
     }
   }
@@ -713,13 +711,10 @@ void MacroAssembler::_verify_oop_addr(Address addr, const char* s, const char* f
     ResourceMark rm;
     stringStream ss;
     ss.print("verify_oop_addr: %s (%s:%d)", s, file, line);
-#if INCLUDE_CDS
     if (AOTCodeCache::is_on_for_dump() && !code_section()->scratch_emit()) {
       // This will duplicate string to preserve it.
       b = AOTCodeCache::add_C_string(ss.as_string());
-    } else
-#endif
-    {
+    } else {
       b = code_string(ss.as_string());
     }
   }
@@ -5681,13 +5676,11 @@ void MacroAssembler::get_thread(Register thread) {
 }
 
 void MacroAssembler::load_byte_map_base(Register reg) {
-#if INCLUDE_CDS
   if (AOTCodeCache::is_on_for_dump()) {
     address byte_map_base_adr = AOTRuntimeConstants::card_table_base_address();
     ld(reg, ExternalAddress(byte_map_base_adr));
     return;
   }
-#endif
   CardTableBarrierSet* ctbs = CardTableBarrierSet::barrier_set();
   // Strictly speaking the card table base isn't an address at all, and it might
   // even be negative. It is thus materialised as a constant.
@@ -5697,7 +5690,7 @@ void MacroAssembler::load_byte_map_base(Register reg) {
 void MacroAssembler::load_aotrc_address(Register reg, address a) {
 #if INCLUDE_CDS
   assert(AOTRuntimeConstants::contains(a), "address out of range for data area");
-  if (AOTCodeCache::is_on_for_dump()) {
+  if (ciEnv::current()->is_aot_compile()) {
     // all aotrc field addresses should be registered in the AOTCodeCache address table
     la(reg, ExternalAddress(a));
   } else {
