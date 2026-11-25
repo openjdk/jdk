@@ -10546,8 +10546,8 @@ instruct cmpP_narrowOop_imm0_branch(cmpOpEqNe cmp, iRegN op1, immP_0 zero, label
 
 // Patterns for far conditional branches
 
-// cr (mapped to t1) is zero on lock/unlock success and nonzero on failure.
-// Only eq/ne tests are meaningful.
+// FastLock/FastUnlock set cr (t1) to zero on success and nonzero on failure.
+// C2 tests this result only for equality or inequality with zero.
 instruct far_cmpFlag_branch(cmpOpEqNe cmp, rFlagsReg cr, label lbl) %{
   match(If cmp cr);
   effect(USE lbl);
