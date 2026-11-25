@@ -62,7 +62,8 @@ public class MemoryLayoutTypeRetentionTest {
                 .withByteAlignment(BYTE_ALIGNMENT)
                 .withoutName()
                 .withName(NAME)
-                .withOrder(BYTE_ORDER);
+                .withOrder(BYTE_ORDER)
+                .withSignedness(false);
         check(v);
     }
 
@@ -72,7 +73,8 @@ public class MemoryLayoutTypeRetentionTest {
                 .withByteAlignment(BYTE_ALIGNMENT)
                 .withoutName()
                 .withName(NAME)
-                .withOrder(BYTE_ORDER);
+                .withOrder(BYTE_ORDER)
+                .withSignedness(false);
         check(v);
     }
 
@@ -82,7 +84,8 @@ public class MemoryLayoutTypeRetentionTest {
                 .withByteAlignment(BYTE_ALIGNMENT)
                 .withoutName()
                 .withName(NAME)
-                .withOrder(BYTE_ORDER);
+                .withOrder(BYTE_ORDER)
+                .withSignedness(false);
         check(v);
     }
 
@@ -102,7 +105,8 @@ public class MemoryLayoutTypeRetentionTest {
                 .withByteAlignment(BYTE_ALIGNMENT)
                 .withoutName()
                 .withName(NAME)
-                .withOrder(BYTE_ORDER);
+                .withOrder(BYTE_ORDER)
+                .withSignedness(false);
         check(v);
     }
 
@@ -194,6 +198,11 @@ public class MemoryLayoutTypeRetentionTest {
                 .withoutName()
                 .withName(NAME);
         check(v);
+    }
+
+    public void check(ValueLayout.OfIntegral i) {
+        check((ValueLayout) i);
+        assertFalse(i.isSigned());
     }
 
     public void check(ValueLayout v) {

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -237,7 +237,8 @@ AC_DEFUN_ONCE([LIB_SETUP_FREETYPE],
     fi
   fi
 
-  AC_MSG_RESULT([Using freetype: $FREETYPE_TO_USE])
+  AC_MSG_CHECKING([for which freetype to use])
+  AC_MSG_RESULT([$FREETYPE_TO_USE])
 
   AC_SUBST(FREETYPE_TO_USE)
   AC_SUBST(FREETYPE_CFLAGS)

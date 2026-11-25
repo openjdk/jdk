@@ -5,6 +5,10 @@
 #ifndef SPA_CONTROL_TYPES_H
 #define SPA_CONTROL_TYPES_H
 
+#include <spa/utils/defs.h>
+#include <spa/utils/type.h>
+#include <spa/control/control.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -13,10 +17,6 @@ extern "C" {
  * \addtogroup spa_control
  * \{
  */
-
-#include <spa/utils/defs.h>
-#include <spa/utils/type-info.h>
-#include <spa/control/control.h>
 
 /* base for parameter object enumerations */
 #define SPA_TYPE_INFO_Control        SPA_TYPE_INFO_ENUM_BASE "Control"

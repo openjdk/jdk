@@ -5,15 +5,15 @@
 #ifndef PIPEWIRE_PROPERTIES_H
 #define PIPEWIRE_PROPERTIES_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <stdarg.h>
 
 #include <spa/utils/cleanup.h>
 #include <spa/utils/dict.h>
 #include <spa/utils/string.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifndef PW_API_PROPERTIES
 #define PW_API_PROPERTIES static inline

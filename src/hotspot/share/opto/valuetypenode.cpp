@@ -380,7 +380,7 @@ bool ValueTypeNode::make_scalar_in_safepoints(PhaseIterGVN* igvn, bool allow_oop
     }
   } else {
     use_oop = allow_oop && is_allocated(igvn) &&
-              (oop->is_Con() || oop->is_Parm() || oop->is_Load() || (oop->isa_DecodeN() && oop->in(1)->is_Load()));
+              (oop->is_Con() || oop->is_Parm() || oop->is_Load() || (oop->is_DecodeN() && oop->in(1)->is_Load()));
   }
 
   ResourceMark rm;
@@ -704,7 +704,7 @@ bool ValueTypeNode::can_emit_substitutability_check(PhaseGVN* phase, Node* lhs, 
     return true;
   }
 
-  if (!lhs->is_ValueType() && (rhs == nullptr || !rhs->is_ValueType())) {
+  if (!lhs->is_ValueType() && !is<ValueTypeNode>(rhs)) {
     return false;
   }
 
@@ -713,7 +713,7 @@ bool ValueTypeNode::can_emit_substitutability_check(PhaseGVN* phase, Node* lhs, 
   }
 
   ValueTypeNode* lhs_value = lhs->as_ValueType();
-  ValueTypeNode* rhs_value = rhs != nullptr ? rhs->isa_ValueType() : nullptr;
+  ValueTypeNode* rhs_value = isa<ValueTypeNode>(rhs);
   if (rhs_value != nullptr && lhs_value->type()->value_klass() != rhs_value->type()->value_klass()) {
     // Dead code, can skip the substitutability check
     return true;
@@ -1405,8 +1405,7 @@ static void replace_allocation(PhaseIterGVN* igvn, Node* res, Node* dom) {
 
 Node* ValueTypeNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   Node* oop = get_oop();
-  if (oop->isa_ValueType() && !phase->type(oop)->maybe_null()) {
-    ValueTypeNode* vtptr = oop->as_ValueType();
+  if (ValueTypeNode* vtptr = oop->isa_ValueType(); vtptr != nullptr && !phase->type(oop)->maybe_null()) {
     assert(value_klass() == vtptr->value_klass(), "inconsistent types");
     set_oop(*phase, vtptr->get_oop());
     set_is_buffered(*phase);
@@ -1449,7 +1448,7 @@ Node* ValueTypeNode::Ideal(PhaseGVN* phase, bool can_reshape) {
         if (alloc != nullptr && alloc->in(AllocateNode::ValueType) == this && !alloc->_is_scalar_replaceable) {
           // Found a re-allocation
           Node* res = alloc->result_cast();
-          if (res != nullptr && res->is_CheckCastPP()) {
+          if (is<CheckCastPPNode>(res)) {
             // Replace allocation by oop and unlink AllocateNode
             replace_allocation(igvn, res, oop);
             igvn->replace_input_of(alloc, AllocateNode::ValueType, igvn->C->top());
@@ -1800,11 +1799,11 @@ Node* ValueTypeNode::is_loaded(PhaseGVN* phase, ciValueKlass* vk, Node* base, in
         }
       }
     }
-    if (value->isa_DecodeN()) {
+    if (value->is_DecodeN()) {
       // Skip DecodeN
       value = value->in(1);
     }
-    if (value->isa_Load()) {
+    if (value->is_Load()) {
       // Check if base and offset of field load matches value type layout
       intptr_t loffset = 0;
       Node* lbase = AddPNode::Ideal_base_and_offset(value->in(MemNode::Address), phase, loffset);
@@ -1974,7 +1973,7 @@ void ValueTypeNode::remove_redundant_allocations(PhaseIdealLoop* phase) const {
     AllocateNode* alloc = fast_out(i)->isa_Allocate();
     if (alloc != nullptr && alloc->in(AllocateNode::ValueType) == this && !alloc->_is_scalar_replaceable) {
       Node* res = alloc->result_cast();
-      if (res == nullptr || !res->is_CheckCastPP()) {
+      if (!is<CheckCastPPNode>(res)) {
         break; // No unique CheckCastPP
       }
       // Search for a dominating allocation of the same value type
@@ -1983,7 +1982,7 @@ void ValueTypeNode::remove_redundant_allocations(PhaseIdealLoop* phase) const {
         AllocateNode* alloc_other = fast_out(j)->isa_Allocate();
         if (alloc_other != nullptr && alloc_other->in(AllocateNode::ValueType) == this && !alloc_other->_is_scalar_replaceable) {
           Node* res_other = alloc_other->result_cast();
-          if (res_other != nullptr && res_other->is_CheckCastPP() && res_other != res_dom &&
+          if (is<CheckCastPPNode>(res_other) && res_other != res_dom &&
               phase->is_dominator(res_other->in(0), res_dom->in(0))) {
             res_dom = res_other;
           }
@@ -2194,10 +2193,40 @@ void LoadFlatNode::expand_atomic(PhaseIterGVN& igvn) const {
   Node* base = this->base();
   Node* ptr = this->ptr();
 
+  int oop_off_1 = -1;
+  int oop_off_2 = -1;
+  collect_oop_offsets(_vk, oop_off_1, oop_off_2);
+
+  assert((oop_off_1 == -1 && oop_off_2 == -1) ||  // No oops
+         (oop_off_1 == 0  && oop_off_2 == -1) ||  // One oop at either offset
+         (oop_off_1 == 4  && oop_off_2 == -1) ||
+         (oop_off_1 == 0  && oop_off_2 == 4)  ||  // Two oops at either offsets
+         (oop_off_1 == 4  && oop_off_2 == 0),
+         "invalid layout for %s: oop_off_1=%d, oop_off_2=%d",
+         _vk->name()->as_utf8(), oop_off_1, oop_off_2);
+
+  bool has_oops = (oop_off_1 != -1);
+
+  // Epsilon: does not care about oop loads.
+  // Serial/Parallel: do not care about oop loads.
+  // G1: does not care about oop loads.
+  // Shenandoah: LBE, needs special handling.
+  // Z: does not produce flat atomics on this shape.
+  assert(!has_oops || !UseZGC, "ZGC does not have special loads with oops");
+  bool needs_special = has_oops && UseShenandoahGC;
+
   BasicType payload_bt = _vk->atomic_size_to_basic_type(_null_free);
+  assert(!needs_special || payload_bt == T_LONG, "Unexpected payload type");
+
   kit.insert_mem_bar(Op_MemBarCPUOrder);
-  Node* payload = kit.access_load_at(base, ptr, TypeRawPtr::BOTTOM, Type::get_const_basic_type(payload_bt), payload_bt,
-                                     _decorators | C2_MISMATCHED | C2_CONTROL_DEPENDENT_LOAD | C2_UNKNOWN_CONTROL_LOAD, kit.control());
+  Node* load = kit.access_load_at(base, ptr, TypeRawPtr::BOTTOM, Type::get_const_basic_type(payload_bt), payload_bt,
+                                  _decorators | C2_MISMATCHED | C2_CONTROL_DEPENDENT_LOAD | C2_UNKNOWN_CONTROL_LOAD | (needs_special ? C2_SPECIAL_ACCESS : 0),
+                                  kit.control());
+  if (needs_special) {
+    assert(load->Opcode() == Op_LoadLSpecial, "must be special");
+    Node* oop_offset_node = (oop_off_2 == -1) ? igvn.intcon(oop_off_1) : igvn.intcon(-1);
+    load->add_req(oop_offset_node);
+  }
   kit.insert_mem_bar(Op_MemBarCPUOrder);
 
   Node* old_ctrl = proj_out_or_null(TypeFunc::Control);
@@ -2210,7 +2239,29 @@ void LoadFlatNode::expand_atomic(PhaseIterGVN& igvn) const {
     igvn.replace_node(old_mem, new_mem);
   }
 
-  expand_projs_atomic(igvn, kit.control(), payload);
+  expand_projs_atomic(igvn, kit.control(), load);
+}
+
+void LoadFlatNode::collect_oop_offsets(ciValueKlass* vk, int& oop_off_1, int& oop_off_2) {
+  oop_off_1 = -1;
+  oop_off_2 = -1;
+
+  // Iterate over the fields and find oops
+  for (int i = 0; i < vk->nof_nonstatic_fields(); i++) {
+    ciField* field = vk->nonstatic_field_at(i);
+    int field_offset_in_payload = field->offset_in_bytes() - vk->payload_offset();
+    if (!field->type()->is_primitive_type()) {
+      // Narrow oop field
+      assert(UseCompressedOops, "Naturally atomic");
+      assert(field_offset_in_payload == 0 || field_offset_in_payload == 4, "Unexpected oop offset. field_offset_in_payload=%d", field_offset_in_payload);
+      if (oop_off_1 == -1) {
+        oop_off_1 = field_offset_in_payload;
+      } else {
+        assert(oop_off_2 == -1, "already set");
+        oop_off_2 = field_offset_in_payload;
+      }
+    }
+  }
 }
 
 void LoadFlatNode::collect_field_types(ciValueKlass* vk, const Type** field_types, int idx, int limit, bool null_free, bool trust_null_free_oop) {
@@ -2406,35 +2457,47 @@ void StoreFlatNode::expand_atomic(PhaseIterGVN& igvn) const {
 
   int oop_off_1 = -1;
   int oop_off_2 = -1;
-  Node* payload = convert_to_payload(igvn, kit.control(), value, _null_free, oop_off_1, oop_off_2);
+  Node* oop_1 = igvn.C->top();
+  Node* oop_2 = igvn.C->top();
+  Node* payload = convert_to_payload(igvn, kit.control(), value, _null_free, oop_off_1, oop_1, oop_off_2, oop_2);
 
   ciValueKlass* vk = igvn.type(value)->value_klass();
-  // convert_to_payload should give us the offsets of up to 2 oops of vk in oop_off_1 and oop_off_2. The following holds:
-  // - they must be valid offsets for oops (0 or 4) or -1 (no oop)
-  // - if there is at least one oop, oop_off_1 != oop_off_2, i.e. oop_off_1 == oop_off_2 only if they are both -1, i.e. offsets are distincts
-  // - in case there is only one oop, its offset is stored in oop_off_1, and oop_off_2 == -1
-  assert(oop_off_1 == -1 || oop_off_1 == 0 || oop_off_1 == 4, "invalid layout for %s, first oop at offset %d", vk->name()->as_utf8(), oop_off_1);
-  assert(oop_off_2 == -1 || oop_off_2 == 0 || oop_off_2 == 4, "invalid layout for %s, second oop at offset %d", vk->name()->as_utf8(), oop_off_2);
-  assert(oop_off_1 != oop_off_2 || oop_off_1 == -1, "we should have: oop_off_1 == oop_off_2 => oop_off_1 == -1. But oop_off_1=oop_off_2=%d", oop_off_1);
-  assert(oop_off_1 != -1 || oop_off_2 == -1, "we should have: oop_off_1 == -1 => oop_off_2 == -1. But oop_off_1=%d, oop_off_2=%d", oop_off_1, oop_off_2);
+
+  assert((oop_off_1 == -1 && oop_off_2 == -1) ||  // No oops
+         (oop_off_1 == 0  && oop_off_2 == -1) ||  // One oop at either offset
+         (oop_off_1 == 4  && oop_off_2 == -1) ||
+         (oop_off_1 == 0  && oop_off_2 == 4)  ||  // Two oops at either offsets
+         (oop_off_1 == 4  && oop_off_2 == 0),
+         "invalid layout for %s: oop_off_1=%d, oop_off_2=%d",
+         vk->name()->as_utf8(), oop_off_1, oop_off_2);
+
+  assert((oop_off_1 == -1) == oop_1->is_top(), "oop_off_1 == -1 iff. oop_1 is top, but oop_off_1=%d, is oop_1 top=%d", oop_off_1, oop_1->is_top());
+  assert((oop_off_2 == -1) == oop_2->is_top(), "oop_off_2 == -1 iff. oop_2 is top, but oop_off_2=%d, is oop_2 top=%d", oop_off_2, oop_2->is_top());
+
+  bool has_oops = (oop_off_1 != -1);
+
+  // Epsilon: does not care about oop stores.
+  // Serial/Parallel: handle it separately.
+  // G1: LBE, needs special handling.
+  // Shenandoah: LBE, needs special handling.
+  // Z: does not produce flat atomics on this shape.
+  assert(!has_oops || !UseZGC, "ZGC does not have special stores with oops");
+  bool needs_special = has_oops && (UseG1GC || UseShenandoahGC);
+
   BasicType payload_bt = vk->atomic_size_to_basic_type(_null_free);
+  assert(!needs_special || payload_bt == T_LONG, "Unexpected payload type");
+
   kit.insert_mem_bar(Op_MemBarCPUOrder);
-  if (!UseG1GC || oop_off_1 == -1) {
-    // No oop fields or no late barrier expansion. Emit an atomic store of the payload and add GC barriers if needed.
-    assert(oop_off_2 == -1 || !UseG1GC, "sanity");
-    // ZGC does not support compressed oops, so only one oop can be in the payload which is written by a "normal" oop store.
-    assert((oop_off_1 == -1 && oop_off_2 == -1) || !UseZGC, "ZGC does not support embedded oops in flat fields");
-    kit.access_store_at(base, ptr, TypeRawPtr::BOTTOM, payload, Type::get_const_basic_type(payload_bt), payload_bt, _decorators | C2_MISMATCHED, true, value);
-  } else {
-    // Contains oops and requires late barrier expansion. Emit a special store node that allows to emit GC barriers in the backend.
-    assert(UseG1GC, "Unexpected GC");
-    assert(payload_bt == T_LONG, "Unexpected payload type");
-    // If one oop, set the offset (if no offset is set, two oops are assumed by the backend)
-    Node* oop_offset = (oop_off_2 == -1) ? igvn.intcon(oop_off_1) : nullptr;
-    Node* mem = kit.reset_memory();
-    kit.set_all_memory(mem);
-    Node* store = igvn.transform(new StoreLSpecialNode(kit.control(), mem, ptr, TypeRawPtr::BOTTOM, payload, oop_offset, MemNode::unordered));
-    kit.set_memory(store, TypeRawPtr::BOTTOM);
+  Node* store = kit.access_store_at(base, ptr, TypeRawPtr::BOTTOM, payload, Type::get_const_basic_type(payload_bt), payload_bt,
+                                    _decorators | C2_MISMATCHED | (needs_special ? C2_SPECIAL_ACCESS : 0),
+                                    true, value);
+  if (needs_special) {
+    assert(store->Opcode() == Op_StoreLSpecial, "must be special");
+    assert(!oop_1->is_top(), "if no oop, the store shouldn't be special");
+    Node* oop_offset_node = (oop_off_2 == -1) ? igvn.intcon(oop_off_1) : igvn.C->top();
+    store->add_req(oop_offset_node);
+    store->add_req(oop_1);
+    store->add_req(oop_2);
   }
   kit.insert_mem_bar(Op_MemBarCPUOrder);
 
@@ -2450,9 +2513,11 @@ void StoreFlatNode::expand_atomic(PhaseIterGVN& igvn) const {
 }
 
 // Convert the field values to a payload value of type 'bt'
-Node* StoreFlatNode::convert_to_payload(PhaseIterGVN& igvn, Node* ctrl, ValueTypeNode* value, bool null_free, int& oop_off_1, int& oop_off_2) {
+Node* StoreFlatNode::convert_to_payload(PhaseIterGVN& igvn, Node* ctrl, ValueTypeNode* value, bool null_free, int& oop_off_1, Node*& oop_1, int& oop_off_2, Node*& oop_2) {
   oop_off_1 = -1;
+  oop_1 = igvn.C->top();
   oop_off_2 = -1;
+  oop_2 = igvn.C->top();
   ciValueKlass* vk = igvn.type(value)->value_klass();
   BasicType payload_bt = vk->atomic_size_to_basic_type(null_free);
   Node* payload = igvn.zerocon(payload_bt);
@@ -2486,6 +2551,12 @@ Node* StoreFlatNode::convert_to_payload(PhaseIterGVN& igvn, Node* ctrl, ValueTyp
       }
 
       field_value = igvn.transform(new EncodePNode(field_value, val_type));
+      if (oop_1->is_top()) {
+        oop_1 = field_value;
+      } else {
+        assert(oop_2->is_top(), "already set");
+        oop_2 = field_value;
+      }
       field_value = igvn.transform(new CastP2XNode(ctrl, field_value));
       field_value = igvn.transform(new ConvL2INode(field_value));
       field_bt = T_INT;

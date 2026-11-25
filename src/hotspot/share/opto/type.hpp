@@ -1588,19 +1588,19 @@ public:
   virtual void dump2( Dict &d, uint depth, outputStream *st ) const;
 #endif
 private:
-  const TypeOopPtr* as_reference_type(const Type* other) const {
+  static const TypeOopPtr* as_reference_type(const Type* other) {
     return other->as_oopptr();
   }
 
-  bool is_array_type(const TypeOopPtr* other) const {
+  static bool is_array_type(const TypeOopPtr* other) {
     return other->is_aryptr();
   }
 
-  const TypeAryPtr* as_array_type(const TypeOopPtr* other) const {
+  static const TypeAryPtr* as_array_type(const TypeOopPtr* other) {
     return other->as_aryptr();
   }
 
-  bool is_instance_type(const TypeOopPtr* other) const {
+  static bool is_instance_type(const TypeOopPtr* other) {
     return other->is_instptr();
   }
 };
@@ -1862,6 +1862,7 @@ public:
   virtual const TypeKlassPtr* as_klass_type(bool try_for_exact = false) const;
 
   virtual bool can_be_value_array() const;
+  bool has_compatible_arraycopy_layout(const TypeAryPtr* other) const;
 
   // Convenience common pre-built types.
   static const TypeAryPtr* BOTTOM;
@@ -2014,19 +2015,19 @@ public:
   };
 
 private:
-  const TypeKlassPtr* as_reference_type(const Type* other) const {
+  static const TypeKlassPtr* as_reference_type(const Type* other) {
     return other->as_klassptr();
   }
 
-  bool is_array_type(const TypeKlassPtr* other) const {
+  static bool is_array_type(const TypeKlassPtr* other) {
     return other->is_aryklassptr();
   }
 
-  const TypeAryKlassPtr* as_array_type(const TypeKlassPtr* other) const {
+  static const TypeAryKlassPtr* as_array_type(const TypeKlassPtr* other) {
     return other->as_aryklassptr();
   }
 
-  bool is_instance_type(const TypeKlassPtr* other) const {
+  static bool is_instance_type(const TypeKlassPtr* other) {
     return other->is_instklassptr();
   }
 };

@@ -29,6 +29,7 @@
  * @modules java.compiler
  *          java.instrument
  * @requires vm.jvmti
+ * @requires vm.flagless
  * @run main RedefineClassHelper
  * @run driver RelocatorTest
  */

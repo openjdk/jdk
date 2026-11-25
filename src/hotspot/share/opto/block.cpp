@@ -1136,7 +1136,7 @@ void PhaseCFG::postalloc_expand(PhaseRegAlloc* _ra) {
         uint req = n->req();
         remove.clear();
         for (uint k = 0; k < req; ++k) {
-          if (n->in(k) && n->in(k)->is_MachTemp()) {
+          if (Node::is<MachTempNode>(n->in(k))) {
             remove.push(n->in(k)); // MachTemps which are inputs to the old node have to be removed.
             n->in(k)->del_req(0);
             j--;

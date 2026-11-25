@@ -1780,6 +1780,7 @@ void InstanceKlass::add_to_hierarchy(JavaThread* current) {
     MutexLocker ml(current, Compile_lock);
 
     set_init_state(InstanceKlass::loaded);
+    ClassLoadingService::notify_class_loaded(this, in_aot_cache());
     // make sure init_state store is already done.
     // The compiler reads the hierarchy outside of the Compile_lock.
     // Access ordering is used to add to hierarchy.

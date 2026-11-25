@@ -5853,7 +5853,7 @@ template <class T1, class T2> bool TypePtr::is_java_subtype_of_helper_for_instan
   if (!this_one->is_loaded() || !other->is_loaded()) {
     return false;
   }
-  if (!this_one->is_instance_type(other)) {
+  if (!T1::is_instance_type(other)) {
     return false;
   }
 
@@ -5890,7 +5890,7 @@ template <class T1, class T2> bool TypePtr::is_same_java_type_as_helper_for_inst
   if (!this_one->is_loaded() || !other->is_loaded()) {
     return false;
   }
-  if (!this_one->is_instance_type(other)) {
+  if (!T1::is_instance_type(other)) {
     return false;
   }
   return this_one->klass()->equals(other->klass()) && this_one->_interfaces->eq(other->_interfaces);
@@ -5906,11 +5906,11 @@ template <class T1, class T2> bool TypePtr::maybe_java_subtype_of_helper_for_ins
     return true;
   }
 
-  if (this_one->is_array_type(other)) {
+  if (T1::is_array_type(other)) {
     return !this_exact && this_one->klass()->equals(ciEnv::current()->Object_klass())  && other->_interfaces->contains(this_one->_interfaces);
   }
 
-  assert(this_one->is_instance_type(other), "unsupported");
+  assert(T1::is_instance_type(other), "unsupported");
 
   if (this_exact && other_exact) {
     return this_one->is_java_subtype_of(other);
@@ -5987,6 +5987,46 @@ bool TypeInstPtr::can_be_value_array() const {
 
 bool TypeAryPtr::can_be_value_array() const {
   return elem()->make_ptr() && elem()->make_ptr()->is_instptr() && elem()->make_ptr()->as_instptr()->_klass->can_be_value_klass();
+}
+
+// Does 'this' array and 'other' array have compatible layouts for applying arraycopy?
+// - Return true : We know that the layouts are compatible.
+// - Return false: We either don't know or have shown that they are not compatible.
+bool TypeAryPtr::has_compatible_arraycopy_layout(const TypeAryPtr* other) const {
+  BasicType src_elem_bt = elem()->array_element_basic_type();
+  BasicType dest_elem_bt = other->elem()->array_element_basic_type();
+  if (::is_reference_type(src_elem_bt, true)) { src_elem_bt = T_OBJECT; }
+  if (::is_reference_type(dest_elem_bt, true)) { dest_elem_bt = T_OBJECT; }
+  if (src_elem_bt != dest_elem_bt) {
+    // Different element types and thus not the same array -> incompatible
+    return false;
+  }
+  if (!is_java_primitive(src_elem_bt) && src_elem_bt != T_OBJECT) {
+    // Unsupported or unknown element type -> we don't know if they have compatible layouts
+    return false;
+  }
+
+  if (is_not_flat() && other->is_not_flat()) {
+    // Both are type arrays or have reference layouts -> compatible
+    return true;
+  }
+
+  // 'this' and 'other' could both be exact, but we might still not know all of their array properties. In this case,
+  // exact_klass() could return the same refined array klass even though we have different layouts at runtime. We can
+  // therefore not assume compatibility if the array properties are unknown to be matching.
+  // Note that we do not need to care about atomicity for flat arrays. Atomic flat layouts can only have an element size
+  // of 1, 2, 4, or 8 bytes. We can use the corresponding primitive arraycopy stubs which copy the elements atomically.
+  // Flat arrays with elements larger than 8 bytes cannot have an atomic layout.
+  bool same_known_nullness = (is_null_free() && other->is_null_free()) ||
+                             (is_not_null_free() && other->is_not_null_free());
+  if (is_flat() && other->is_flat() &&
+      same_known_nullness &&
+      klass_is_exact() && other->klass_is_exact() && exact_klass() == other->exact_klass()) {
+    // Same refined array klass and same flatness and nullness -> same physical layout -> compatible
+    return true;
+  }
+  // Otherwise, we don't have more information and must assume incompatibility.
+  return false;
 }
 
 const TypeAryKlassPtr *TypeAryKlassPtr::make(PTR ptr, const Type* elem, ciKlass* k, Offset offset, bool not_flat, bool not_null_free, bool flat, bool null_free, bool atomic, bool refined_type) {
@@ -6132,7 +6172,7 @@ ciKlass* TypeAryPtr::exact_klass_helper() const {
       k = ciObjArrayKlass::make(k->as_array_klass()->element_klass(), false);
     }
     if (klass_is_exact()) {
-      return ciObjArrayKlass::make(k, true, is_null_free(), is_atomic());
+      return ciObjArrayKlass::make(k, true, is_null_free(), is_atomic(), is_not_flat());
     } else {
       // We may reach here if called recursively, must be an unrefined type then
       return ciObjArrayKlass::make(k, false);
@@ -6349,13 +6389,13 @@ template <class T1, class T2> bool TypePtr::is_java_subtype_of_helper_for_array(
     return false;
   }
 
-  if (this_one->is_instance_type(other)) {
+  if (T1::is_instance_type(other)) {
     return other->klass() == ciEnv::current()->Object_klass() && this_one->_interfaces->contains(other->_interfaces) &&
            other_exact;
   }
 
-  assert(this_one->is_array_type(other), "");
-  const T1* other_ary = this_one->as_array_type(other);
+  assert(T1::is_array_type(other), "");
+  const T1* other_ary = T1::as_array_type(other);
   bool other_top_or_bottom = (other_ary->base_element_type(dummy) == Type::TOP || other_ary->base_element_type(dummy) == Type::BOTTOM);
   if (other_top_or_bottom) {
     return false;
@@ -6367,7 +6407,7 @@ template <class T1, class T2> bool TypePtr::is_java_subtype_of_helper_for_array(
     if (other->is_null_free() && !this_one->is_null_free()) {
       return false; // A nullable array can't be a subtype of a null-free array
     }
-    return this_one->as_reference_type(this_elem)->is_java_subtype_of_helper(this_one->as_reference_type(other_elem), this_exact, other_exact);
+    return T1::as_reference_type(this_elem)->is_java_subtype_of_helper(T1::as_reference_type(other_elem), this_exact, other_exact);
   }
   if (this_elem == nullptr && other_elem == nullptr) {
     return this_one->klass()->is_subtype_of(other->klass());
@@ -6385,11 +6425,11 @@ template <class T1, class T2> bool TypePtr::is_same_java_type_as_helper_for_arra
   int dummy;
   bool this_top_or_bottom = (this_one->base_element_type(dummy) == Type::TOP || this_one->base_element_type(dummy) == Type::BOTTOM);
 
-  if (!this_one->is_array_type(other) ||
+  if (!T1::is_array_type(other) ||
       !this_one->is_loaded() || !other->is_loaded() || this_top_or_bottom) {
     return false;
   }
-  const T1* other_ary = this_one->as_array_type(other);
+  const T1* other_ary = T1::as_array_type(other);
   bool other_top_or_bottom = (other_ary->base_element_type(dummy) == Type::TOP || other_ary->base_element_type(dummy) == Type::BOTTOM);
 
   if (other_top_or_bottom) {
@@ -6399,7 +6439,7 @@ template <class T1, class T2> bool TypePtr::is_same_java_type_as_helper_for_arra
   const TypePtr* other_elem = other_ary->elem()->make_ptr();
   const TypePtr* this_elem = this_one->elem()->make_ptr();
   if (other_elem != nullptr && this_elem != nullptr) {
-    return this_one->as_reference_type(this_elem)->is_same_java_type_as(this_one->as_reference_type(other_elem));
+    return T1::as_reference_type(this_elem)->is_same_java_type_as(T1::as_reference_type(other_elem));
   }
   if (other_elem == nullptr && this_elem == nullptr) {
     return this_one->klass()->equals(other->klass());
@@ -6419,7 +6459,7 @@ template <class T1, class T2> bool TypePtr::maybe_java_subtype_of_helper_for_arr
   if (!this_one->is_loaded() || !other->is_loaded()) {
     return true;
   }
-  if (this_one->is_instance_type(other)) {
+  if (T1::is_instance_type(other)) {
     return other->klass()->equals(ciEnv::current()->Object_klass()) &&
            this_one->_interfaces->contains(other->_interfaces);
   }
@@ -6430,9 +6470,9 @@ template <class T1, class T2> bool TypePtr::maybe_java_subtype_of_helper_for_arr
     return true;
   }
 
-  assert(this_one->is_array_type(other), "");
+  assert(T1::is_array_type(other), "");
 
-  const T1* other_ary = this_one->as_array_type(other);
+  const T1* other_ary = T1::as_array_type(other);
   bool other_top_or_bottom = (other_ary->base_element_type(dummy) == Type::TOP || other_ary->base_element_type(dummy) == Type::BOTTOM);
   if (other_top_or_bottom) {
     return true;
@@ -6444,7 +6484,7 @@ template <class T1, class T2> bool TypePtr::maybe_java_subtype_of_helper_for_arr
   const TypePtr* this_elem = this_one->elem()->make_ptr();
   const TypePtr* other_elem = other_ary->elem()->make_ptr();
   if (other_elem != nullptr && this_elem != nullptr) {
-    return this_one->as_reference_type(this_elem)->maybe_java_subtype_of_helper(this_one->as_reference_type(other_elem), this_exact, other_exact);
+    return T1::as_reference_type(this_elem)->maybe_java_subtype_of_helper(T1::as_reference_type(other_elem), this_exact, other_exact);
   }
   if (other_elem == nullptr && this_elem == nullptr) {
     return this_one->klass()->is_subtype_of(other->klass());

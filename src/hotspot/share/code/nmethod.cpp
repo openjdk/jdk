@@ -2628,15 +2628,13 @@ void nmethod::post_delayed_compiled_method_load_events() {
 // new method for install_code() path
 // Transfer information from compilation to jvmti
 void nmethod::post_compiled_method_load_event(JvmtiThreadState* state) {
-#if INCLUDE_CDS
-  if (!ServiceThread::has_started()) {
+  if (CDSConfig::is_using_aot_linked_classes() && !ServiceThread::has_started()) {
     // With AOT-linked classes, we could compile wrappers for native methods before the
     // ServiceThread has been started, so we must delay the events to be posted later.
     assert(state == nullptr, "must be");
     add_delayed_compiled_method_load_event(this);
     return;
   }
-#endif
 
   // This is a bad time for a safepoint.  We don't want
   // this nmethod to get unloaded while we're queueing the event.
