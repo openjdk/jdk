@@ -59,9 +59,9 @@ public class AOTLinkedMethodHandles {
         "()V",
         "(LAOTLinkedMethodHandlesApp$Behaviour;)V",
         "(LAOTLinkedMethodHandlesApp$Behaviour;I)V",
+        "(LAOTLinkedMethodHandlesApp$Behaviour;I)J",
         "(LAOTLinkedMethodHandlesApp$Behaviour;Ljava/time/LocalDate;)V",
         "(LAOTLinkedMethodHandlesApp$Behaviour;ILjava/time/LocalDate;)V",
-        "(LAOTLinkedMethodHandlesApp$Behaviour;I)J",
         "(LAOTLinkedMethodHandlesApp$Behaviour;ILjava/time/LocalDate;)Ljava/time/LocalDate;"
     );
 
