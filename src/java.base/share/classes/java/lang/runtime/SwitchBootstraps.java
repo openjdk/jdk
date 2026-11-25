@@ -137,16 +137,13 @@ public final class SwitchBootstraps {
      * If the {@code target} is {@code null}, then the method of the call site
      * returns {@literal -1}.
      * <p>
-     * For matching, a primitive target is boxed, and a primitive {@code Class}
-     * label is interpreted as its corresponding wrapper class. No numeric
-     * conversion is performed when matching a {@code Class} label.
-     * <p>
      * If the {@code target} is not {@code null}, then the method of the call site
      * returns the index of the first element in the {@code labels} array starting from
      * the {@code restart} index matching one of the following conditions:
      * <ul>
-     *   <li>the element is of type {@code Class} that is assignable
-     *       from the target's class</li>
+     *   <li>the element is of type {@code Class} that is assignable from the target's class.
+     *   For this test, a label representing a primitive type is interpreted as the corresponding
+     *   wrapper class. No numeric conversion is performed when matching a {@code Class} label.</li>
      *   <li>the element is of type {@code String} and {@code equals} to the target</li>
      *   <li>the element is of type {@code Integer} and {@code ==} to the target after
      *       unboxing if necessary</li>
@@ -161,12 +158,31 @@ public final class SwitchBootstraps {
      * the length of the {@code labels} array (inclusive),
      * both  or an {@link IndexOutOfBoundsException} is thrown.
      *
+     * @apiNote As of JDK 28, exact numeric matching for primitive {@code Class}
+     *          labels has been removed. For a target of type {@code long},
+     *          {@code long.class} matches the boxed {@code Long}.
+     *          {@code int.class} no longer matches, even if the value can be converted exactly to
+     *          an {@code int}. This can change the returned index even when
+     *          preview features are disabled.
+     * {@snippet :
+     * var lookup = MethodHandles.lookup();
+     *
+     * var numeric = SwitchBootstraps.typeSwitch(
+     *         lookup, "typeSwitch",
+     *         MethodType.methodType(int.class, long.class, int.class),
+     *         int.class, long.class).dynamicInvoker();
+     *
+     * int index = (int) numeric.invokeExact(3L, 0); // JDK 23-27: 0; JDK 28: 1
+     * }
+     *
      * @param lookup the full-privilege lookup context of the caller
      * @param invocationName unused, {@code null} is permitted
      * @param invocationType The invocation type of the {@code CallSite} with two parameters,
      *                       a target type, an {@code int}, and {@code int} as a return type.
      * @param labels case labels as described above
-     * @return a {@code CallSite} returning the first matching element as described above
+     * @return a {@code CallSite} whose target returns the index of the first
+     *         matching label, the number of labels if none matches, or
+     *         {@code -1} if the target value is {@code null}
      *
      * @throws IllegalArgumentException if any element in the labels array is null
      * @throws IllegalArgumentException if the invocation type is not a method type of first parameter of a target type,
