@@ -10159,7 +10159,7 @@ instruct branch(label lbl)
 // ============================================================================
 // Compare and Branch Instructions
 
-// Patterns for short (< 12KiB) variants
+// Patterns for near conditional branches
 
 // Compare flags and branch near instructions.
 instruct cmpFlag_branch(cmpOpEqNe cmp, rFlagsReg cr, label lbl) %{
@@ -10544,9 +10544,11 @@ instruct cmpP_narrowOop_imm0_branch(cmpOpEqNe cmp, iRegN op1, immP_0 zero, label
   ins_short_branch(1);
 %}
 
-// Patterns for far (20KiB) variants
+// Patterns for far conditional branches
 
-instruct far_cmpFlag_branch(cmpOp cmp, rFlagsReg cr, label lbl) %{
+// FastLock/FastUnlock set cr (t1) to zero on success and nonzero on failure.
+// C2 tests this result only for equality or inequality with zero.
+instruct far_cmpFlag_branch(cmpOpEqNe cmp, rFlagsReg cr, label lbl) %{
   match(If cmp cr);
   effect(USE lbl);
 
