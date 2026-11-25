@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,18 +56,6 @@ public:
   PartialArrayTaskStats();
 
   // Trivially copied and destroyed.
-
-  // Number of arrays split into partial array tasks.
-  size_t split() const { return _split; }
-
-  // Number of partial array tasks pushed onto a queue.
-  size_t pushed() const { return _pushed; }
-
-  // Number of partial array tasks stolen from some other queue.
-  size_t stolen() const { return _stolen; }
-
-  // Number of partial array tasks processed.
-  size_t processed() const { return _processed; }
 
   void inc_split() { _split += 1; }
   void inc_pushed(size_t n) { _pushed += n; }

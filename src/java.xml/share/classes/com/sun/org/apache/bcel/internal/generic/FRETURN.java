@@ -24,9 +24,9 @@ package com.sun.org.apache.bcel.internal.generic;
 /**
  * FRETURN - Return float from method
  *
- * <PRE>
+ * <pre>
  * Stack: ..., value -&gt; &lt;empty&gt;
- * </PRE>
+ * </pre>
  */
 public class FRETURN extends ReturnInstruction {
 
@@ -39,9 +39,9 @@ public class FRETURN extends ReturnInstruction {
 
     /**
      * Call corresponding visitor method(s). The order is: Call visitor methods of implemented interfaces first, then call
-     * methods according to the class hierarchy in descending order, i.e., the most specific visitXXX() call comes last.
+     * methods according to the class hierarchy in descending order, that is, the most specific visitXXX() call comes last.
      *
-     * @param v Visitor object
+     * @param v Visitor object.
      */
     @Override
     public void accept(final Visitor v) {

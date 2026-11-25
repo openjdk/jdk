@@ -160,6 +160,8 @@
                 atomic_fetch_add_8_relaxed_impl,                        \
                 atomic_fetch_add_8_relaxed_impl)                        \
   do_arch_entry(aarch64, final, atomic_entry_points,                    \
+                atomic_xchg_1_impl, atomic_xchg_1_impl)                 \
+  do_arch_entry(aarch64, final, atomic_entry_points,                    \
                 atomic_xchg_4_impl, atomic_xchg_4_impl)                 \
   do_arch_entry(aarch64, final, atomic_entry_points,                    \
                 atomic_xchg_8_impl, atomic_xchg_8_impl)                 \

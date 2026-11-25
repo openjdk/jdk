@@ -998,6 +998,12 @@ static jlong
     renderFlags |= target;
 
     error = FT_Load_Glyph(scalerInfo->face, glyphCode, renderFlags);
+    /* If hinted rendering fails for the specific reason of a bad FDEF reference,
+     * retry without hinting.
+     */
+    if ((error == FT_Err_Invalid_Reference) && ((renderFlags & FT_LOAD_NO_HINTING) == 0)) {
+        error = FT_Load_Glyph(scalerInfo->face, glyphCode, renderFlags | FT_LOAD_NO_HINTING);
+    }
     if (error) {
         //do not destroy scaler yet.
         //this can be problem of particular context (e.g. with bad transform)

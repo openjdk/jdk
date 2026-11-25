@@ -1077,11 +1077,6 @@ int ConstantTable::calculate_table_base_offset() const {
   return 0;  // absolute addressing, no offset
 }
 
-bool MachConstantBaseNode::requires_postalloc_expand() const { return false; }
-void MachConstantBaseNode::postalloc_expand(GrowableArray <Node *> *nodes, PhaseRegAlloc *ra_) {
-  ShouldNotReachHere();
-}
-
 // Even with PC-relative TOC addressing, we still need this node.
 // Float loads/stores do not support PC-relative addresses.
 void MachConstantBaseNode::emit(C2_MacroAssembler* masm, PhaseRegAlloc* ra_) const {
@@ -1347,7 +1342,7 @@ uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *r
   const char   *mnemo = nullptr;
   unsigned long opc = 0;
 
-  if (bottom_type()->isa_vect() != nullptr && ideal_reg() == Op_VecX) {
+  if (bottom_type()->is_vect() && ideal_reg() == Op_VecX) {
     if (src_lo_rc == rc_stack && dst_lo_rc == rc_stack) {
       if (masm != nullptr) {
         __ z_mvc(Address(Z_SP, 0,  dst_offset), Address(Z_SP, 0, src_offset), 16);
@@ -1622,15 +1617,13 @@ source_hpp %{
 class CallStubImpl {
  public:
 
-  // call trampolines
-  // Size of call trampoline stub. For add'l comments, see size_java_to_interp().
-  static uint size_call_trampoline() {
+  // Size of call stub.
+  static uint size_call_stub() {
     return 0; // no call trampolines on this platform
   }
 
-  // call trampolines
-  // Number of relocations needed by a call trampoline stub.
-  static uint reloc_call_trampoline() {
+  // Number of relocations needed by a call stub.
+  static uint reloc_call_stub() {
     return 0; // No call trampolines on this platform.
   }
 };
@@ -4980,7 +4973,7 @@ instruct decodeN_NN(iRegP dst, iRegN src, flagsReg cr) %{
   match(Set dst (DecodeN src));
   effect(KILL cr);
   predicate((n->bottom_type()->make_ptr()->ptr() == TypePtr::NotNull ||
-             n->bottom_type()->is_oopptr()->ptr() == TypePtr::Constant) &&
+             n->bottom_type()->as_oopptr()->ptr() == TypePtr::Constant) &&
             (CompressedOops::base()== nullptr || !ExpandLoadingBaseDecode_NN));
   ins_cost(MEMORY_REF_COST+2 * DEFAULT_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
@@ -5047,7 +5040,7 @@ instruct decodeN_Ex(iRegP dst, iRegN src, flagsReg cr) %{
 instruct decodeN_NN_Ex(iRegP dst, iRegN src, flagsReg cr) %{
   match(Set dst (DecodeN src));
   predicate((n->bottom_type()->make_ptr()->ptr() == TypePtr::NotNull ||
-             n->bottom_type()->is_oopptr()->ptr() == TypePtr::Constant) &&
+             n->bottom_type()->as_oopptr()->ptr() == TypePtr::Constant) &&
             CompressedOops::base() != nullptr && ExpandLoadingBaseDecode_NN);
   ins_cost(MEMORY_REF_COST+2 * DEFAULT_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
@@ -9938,38 +9931,54 @@ instruct cmpb_RegN_immN_Far(cmpOpT boolnode, iRegN src1, immN8 src2, label labl,
 // both forms beat the trinary form of long-compare and both are very useful
 // on platforms which have few registers.
 
+// Convert condition code into -1,0,1, where
+// -1 means less
+//  0 means equal
+//  1 means greater.
+
 // Manifest a CmpL3 result in an integer register. Very painful.
 // This is the test to avoid.
 instruct cmpL3_reg_reg(iRegI dst, iRegL src1, iRegL src2, flagsReg cr) %{
   match(Set dst (CmpL3 src1 src2));
   effect(KILL cr);
-  ins_cost(DEFAULT_COST * 5 + BRANCH_COST);
-  size(24);
+  ins_cost(DEFAULT_COST * 4);
+  size(20);
   format %{ "CmpL3 $dst,$src1,$src2" %}
   ins_encode %{
-    Label done;
-    // compare registers
     __ z_cgr($src1$$Register, $src2$$Register);
-    // Convert condition code into -1,0,1, where
-    // -1 means less
-    //  0 means equal
-    //  1 means greater.
-    if (VM_Version::has_LoadStoreConditional()) {
-      Register one       = Z_R0_scratch;
-      Register minus_one = Z_R1_scratch;
-      __ z_lghi(minus_one, -1);
-      __ z_lghi(one, 1);
-      __ z_lghi( $dst$$Register, 0);
-      __ z_locgr($dst$$Register, one,       Assembler::bcondHigh);
-      __ z_locgr($dst$$Register, minus_one, Assembler::bcondLow);
-    } else {
-      __ clear_reg($dst$$Register, true, false);
-      __ z_bre(done);
-      __ z_lhi($dst$$Register, 1);
-      __ z_brh(done);
-      __ z_lhi($dst$$Register, -1);
-    }
-    __ bind(done);
+    __ load_const_optimized($dst$$Register, 1);
+    __ load_on_condition_imm_32($dst$$Register, 0, Assembler::bcondEqual);
+    __ load_on_condition_imm_32($dst$$Register, -1, Assembler::bcondLow);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct cmpU3_reg_reg(iRegI dst, iRegI src1, iRegI src2, flagsReg cr)%{
+  match(Set dst (CmpU3 src1 src2));
+  effect(KILL cr);
+  ins_cost(DEFAULT_COST * 4);
+  size(18);
+  format %{ "cmpU3 $dst,$src1,$src2" %}
+  ins_encode %{
+    __ z_clr($src1$$Register, $src2$$Register);
+    __ load_const_optimized($dst$$Register, 1);
+    __ load_on_condition_imm_32($dst$$Register, 0, Assembler::bcondEqual);
+    __ load_on_condition_imm_32($dst$$Register, -1, Assembler::bcondLow);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct cmpUL3_reg_reg(iRegI dst, iRegL src1, iRegL src2, flagsReg cr)%{
+  match(Set dst (CmpUL3 src1 src2));
+  effect(KILL cr);
+  ins_cost(DEFAULT_COST * 4);
+  size(20);
+  format %{ "cmpUL3 $dst,$src1,$src2" %}
+  ins_encode %{
+    __ z_clgr($src1$$Register, $src2$$Register);
+    __ load_const_optimized($dst$$Register, 1);
+    __ load_on_condition_imm_32($dst$$Register, 0, Assembler::bcondEqual);
+    __ load_on_condition_imm_32($dst$$Register, -1, Assembler::bcondLow);
   %}
   ins_pipe(pipe_class_dummy);
 %}
@@ -10505,7 +10514,7 @@ instruct indexOf_imm1_U(iRegP haystack, iRegI haycnt, immP needle, immI_1 needle
   format %{ "String IndexOf UL [0..$haycnt]($haystack), [0]($needle) -> $result" %}
   ins_encode %{
     immPOper *needleOper = (immPOper *)$needle;
-    const TypeOopPtr *t = needleOper->type()->isa_oopptr();
+    const TypeOopPtr* t = needleOper->type()->as_oopptr();
     ciTypeArray* needle_values = t->const_oop()->as_type_array();  // Pointer to live char *
     jchar chr;
 #ifdef VM_LITTLE_ENDIAN
@@ -10530,7 +10539,7 @@ instruct indexOf_imm1_L(iRegP haystack, iRegI haycnt, immP needle, immI_1 needle
   format %{ "String IndexOf L [0..$haycnt]($haystack), [0]($needle) -> $result" %}
   ins_encode %{
     immPOper *needleOper = (immPOper *)$needle;
-    const TypeOopPtr *t = needleOper->type()->isa_oopptr();
+    const TypeOopPtr* t = needleOper->type()->as_oopptr();
     ciTypeArray* needle_values = t->const_oop()->as_type_array();  // Pointer to live char *
     jchar chr = (jchar)needle_values->element_value(0).as_byte();
     __ string_indexof_char($result$$Register,
@@ -10549,7 +10558,7 @@ instruct indexOf_imm1_UL(iRegP haystack, iRegI haycnt, immP needle, immI_1 needl
   format %{ "String IndexOf UL [0..$haycnt]($haystack), [0]($needle) -> $result" %}
   ins_encode %{
     immPOper *needleOper = (immPOper *)$needle;
-    const TypeOopPtr *t = needleOper->type()->isa_oopptr();
+    const TypeOopPtr* t = needleOper->type()->as_oopptr();
     ciTypeArray* needle_values = t->const_oop()->as_type_array();  // Pointer to live char *
     jchar chr = (jchar)needle_values->element_value(0).as_byte();
     __ string_indexof_char($result$$Register,

@@ -58,7 +58,6 @@ import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.net.SocketAddress;
 import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousCloseException;
@@ -69,7 +68,8 @@ import java.nio.channels.Pipe;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.nio.channels.WritableByteChannel;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
 import java.util.concurrent.locks.LockSupport;
 
 import jdk.test.lib.thread.VThreadRunner;
@@ -114,15 +114,18 @@ class BlockingChannelOps {
                 SocketChannel sc1 = connection.channel1();
                 SocketChannel sc2 = connection.channel2();
 
-                // write to sc1 when current thread blocks in sc2.read
+                // write to sc1 when current thread parks
                 ByteBuffer bb1 = ByteBuffer.wrap("XXX".getBytes("UTF-8"));
-                runAfterParkedAsync(() -> sc1.write(bb1));
-
-                // read from sc2 should block
-                ByteBuffer bb2 = ByteBuffer.allocate(10);
-                int n = sc2.read(bb2);
-                assertTrue(n > 0);
-                assertTrue(bb2.get(0) == 'X');
+                Future<?> writer = runAfterParkedAsync(sc2, () -> sc1.write(bb1));
+                try {
+                    // read from sc2 should block
+                    ByteBuffer bb2 = ByteBuffer.allocate(10);
+                    int n = sc2.read(bb2);
+                    assertTrue(n > 0);
+                    assertTrue(bb2.get(0) == 'X');
+                } finally {
+                    writer.get();
+                }
             }
         });
     }
@@ -137,20 +140,20 @@ class BlockingChannelOps {
                 SocketChannel sc1 = connection.channel1();
                 SocketChannel sc2 = connection.channel2();
 
-                // read from sc2 to EOF when current thread blocks in sc1.write
-                Thread reader = runAfterParkedAsync(() -> readToEOF(sc2));
-
-                // write to sc1 should block
-                ByteBuffer bb = ByteBuffer.allocate(100*1024);
-                for (int i=0; i<1000; i++) {
-                    int n = sc1.write(bb);
-                    assertTrue(n > 0);
-                    bb.clear();
+                // read from sc2 to EOF when current thread parks
+                var reader = runAfterParkedAsync(sc1, () -> readToEOF(sc2));
+                try {
+                    // write to sc1 should block
+                    ByteBuffer bb = ByteBuffer.allocate(100 * 1024);
+                    for (int i = 0; i < 1000; i++) {
+                        int n = sc1.write(bb);
+                        assertTrue(n > 0);
+                        bb.clear();
+                    }
+                } finally {
+                    sc1.close();    // task will read EOF
+                    reader.get();
                 }
-                sc1.close();
-
-                // wait for reader to finish
-                reader.join();
             }
         });
     }
@@ -163,11 +166,15 @@ class BlockingChannelOps {
         VThreadRunner.run(() -> {
             try (var connection = new Connection()) {
                 SocketChannel sc = connection.channel1();
-                runAfterParkedAsync(sc::close);
+                Future<?> closer = runAfterParkedAsync(sc::close);
                 try {
                     int n = sc.read(ByteBuffer.allocate(100));
                     fail("read returned " + n);
-                } catch (AsynchronousCloseException expected) { }
+                } catch (AsynchronousCloseException _) {
+                    // expected
+                } finally {
+                    closer.get();
+                }
             }
         });
     }
@@ -180,10 +187,14 @@ class BlockingChannelOps {
         VThreadRunner.run(() -> {
             try (var connection = new Connection()) {
                 SocketChannel sc = connection.channel1();
-                runAfterParkedAsync(sc::shutdownInput);
-                int n = sc.read(ByteBuffer.allocate(100));
-                assertEquals(-1, n);
-                assertTrue(sc.isOpen());
+                Future<?> shutdownInput = runAfterParkedAsync(sc::shutdownInput);
+                try {
+                    int n = sc.read(ByteBuffer.allocate(100));
+                    assertEquals(-1, n);
+                    assertTrue(sc.isOpen());
+                } finally {
+                    shutdownInput.get();
+                }
             }
         });
     }
@@ -197,15 +208,16 @@ class BlockingChannelOps {
             try (var connection = new Connection()) {
                 SocketChannel sc = connection.channel1();
 
-                // interrupt current thread when it blocks in read
+                // interrupt current thread when it parks
                 Thread thisThread = Thread.currentThread();
-                runAfterParkedAsync(thisThread::interrupt);
-
+                Future<?> interrupter = runAfterParkedAsync(thisThread::interrupt);
                 try {
                     int n = sc.read(ByteBuffer.allocate(100));
                     fail("read returned " + n);
-                } catch (ClosedByInterruptException expected) {
+                } catch (ClosedByInterruptException _) {
                     assertTrue(Thread.interrupted());
+                } finally {
+                    interrupter.get();
                 }
             }
         });
@@ -222,29 +234,29 @@ class BlockingChannelOps {
                 try (var connection = new Connection()) {
                     SocketChannel sc = connection.channel1();
 
-                    // close sc when current thread blocks in write
-                    runAfterParkedAsync(sc::close, true);
-
-                    // write until channel is closed
+                    // close sc when current thread parks
+                    Future<?> closer = runAfterParkedAsync(sc, sc::close);
                     try {
+                        // write until channel is closed
                         ByteBuffer bb = ByteBuffer.allocate(100*1024);
                         for (;;) {
                             int n = sc.write(bb);
                             assertTrue(n > 0);
                             bb.clear();
                         }
-                    } catch (AsynchronousCloseException expected) {
+                    } catch (AsynchronousCloseException _) {
                         // closed when blocked in write
                         done = true;
                     } catch (ClosedChannelException e) {
                         // closed but not blocked in write, need to retry test
                         System.err.format("%s, need to retry!%n", e);
+                    } finally {
+                        closer.get();
                     }
                 }
             }
         });
     }
-
 
     /**
      * SocketChannel shutdownOutput while virtual thread blocked in write.
@@ -255,8 +267,8 @@ class BlockingChannelOps {
             try (var connection = new Connection()) {
                 SocketChannel sc = connection.channel1();
 
-                // shutdown output when current thread blocks in write
-                runAfterParkedAsync(sc::shutdownOutput);
+                // shutdown output when current thread parks
+                Future<?> shutdownOutput = runAfterParkedAsync(sc::shutdownOutput);
                 try {
                     ByteBuffer bb = ByteBuffer.allocate(100*1024);
                     for (;;) {
@@ -264,8 +276,10 @@ class BlockingChannelOps {
                         assertTrue(n > 0);
                         bb.clear();
                     }
-                } catch (ClosedChannelException e) {
+                } catch (ClosedChannelException _) {
                     // expected
+                } finally {
+                    shutdownOutput.get();
                 }
                 assertTrue(sc.isOpen());
             }
@@ -283,12 +297,11 @@ class BlockingChannelOps {
                 try (var connection = new Connection()) {
                     SocketChannel sc = connection.channel1();
 
-                    // interrupt current thread when it blocks in write
+                    // interrupt current thread when it parks on sc
                     Thread thisThread = Thread.currentThread();
-                    runAfterParkedAsync(thisThread::interrupt, true);
-
-                    // write until channel is closed
+                    Future<?> interrupter = runAfterParkedAsync(sc, thisThread::interrupt);
                     try {
+                        // write until channel is closed
                         ByteBuffer bb = ByteBuffer.allocate(100*1024);
                         for (;;) {
                             int n = sc.write(bb);
@@ -302,6 +315,8 @@ class BlockingChannelOps {
                     } catch (ClosedChannelException e) {
                         // closed but not blocked in write, need to retry test
                         System.err.format("%s, need to retry!%n", e);
+                    } finally {
+                        interrupter.get();
                     }
                 }
             }
@@ -319,17 +334,20 @@ class BlockingChannelOps {
                 SocketChannel sc1 = connection.channel1();
                 SocketChannel sc2 = connection.channel2();
 
-                // write to sc1 when currnet thread blocks reading from sc2
+                // write to sc1 when current thread parks on sc2
                 ByteBuffer bb = ByteBuffer.wrap("XXX".getBytes("UTF-8"));
-                runAfterParkedAsync(() -> sc1.write(bb));
-
-                // read from sc2 should block
-                byte[] array = new byte[100];
-                if (timeout > 0)
-                    sc2.socket().setSoTimeout(timeout);
-                int n = sc2.socket().getInputStream().read(array);
-                assertTrue(n > 0);
-                assertTrue(array[0] == 'X');
+                Future<?> writer = runAfterParkedAsync(sc2, () -> sc1.write(bb));
+                try {
+                    // read from sc2 should block
+                    byte[] array = new byte[100];
+                    if (timeout > 0)
+                        sc2.socket().setSoTimeout(timeout);
+                    int n = sc2.socket().getInputStream().read(array);
+                    assertTrue(n > 0);
+                    assertTrue(array[0] == 'X');
+                } finally {
+                    writer.get();
+                }
             }
         });
     }
@@ -361,19 +379,25 @@ class BlockingChannelOps {
                 ssc.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
                 var sc1 = SocketChannel.open();
 
-                // connect when current thread when it blocks in accept
-                runAfterParkedAsync(() -> sc1.connect(ssc.getLocalAddress()));
-
-                // accept should block
-                var sc2 = ssc.accept();
-                sc1.close();
-                sc2.close();
+                // connect when current thread blocks in ssc.accept
+                Future<?> connector = runAfterParkedAsync(ssc, () -> sc1.connect(ssc.getLocalAddress()));
+                try {
+                    // accept should block
+                    SocketChannel sc2 = ssc.accept();
+                    sc2.close();
+                } finally {
+                    try {
+                        connector.get();
+                    } finally {
+                        sc1.close();
+                    }
+                }
             }
         });
     }
 
     /**
-     * SeverSocketChannel close while virtual thread blocked in accept.
+     * ServerSocketChannel close while virtual thread blocked in accept.
      */
     @Test
     void testServerSocketChannelAcceptAsyncClose() throws Exception {
@@ -381,12 +405,16 @@ class BlockingChannelOps {
             try (var ssc = ServerSocketChannel.open()) {
                 InetAddress lh = InetAddress.getLoopbackAddress();
                 ssc.bind(new InetSocketAddress(lh, 0));
-                runAfterParkedAsync(ssc::close);
+                Future<?> closer = runAfterParkedAsync(ssc::close);
                 try {
                     SocketChannel sc = ssc.accept();
                     sc.close();
                     fail("connection accepted???");
-                } catch (AsynchronousCloseException expected) { }
+                } catch (AsynchronousCloseException _) {
+                    // expected
+                } finally {
+                    closer.get();
+                }
             }
         });
     }
@@ -401,16 +429,17 @@ class BlockingChannelOps {
                 InetAddress lh = InetAddress.getLoopbackAddress();
                 ssc.bind(new InetSocketAddress(lh, 0));
 
-                // interrupt current thread when it blocks in accept
+                // interrupt current thread when it parks
                 Thread thisThread = Thread.currentThread();
-                runAfterParkedAsync(thisThread::interrupt);
-
+                Future<?> interrupter = runAfterParkedAsync(thisThread::interrupt);
                 try {
                     SocketChannel sc = ssc.accept();
                     sc.close();
                     fail("connection accepted???");
-                } catch (ClosedByInterruptException expected) {
+                } catch (ClosedByInterruptException _) {
                     assertTrue(Thread.interrupted());
+                } finally {
+                    interrupter.get();
                 }
             }
         });
@@ -427,15 +456,21 @@ class BlockingChannelOps {
                 ssc.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
                 var sc = SocketChannel.open();
 
-                // interrupt current thread when it blocks in accept
-                runAfterParkedAsync(() -> sc.connect(ssc.getLocalAddress()));
-
-                // accept should block
-                if (timeout > 0)
-                    ssc.socket().setSoTimeout(timeout);
-                Socket s = ssc.socket().accept();
-                sc.close();
-                s.close();
+                // connect when current thread blocks in ssc.accept
+                Future<?> connector = runAfterParkedAsync(ssc, () -> sc.connect(ssc.getLocalAddress()));
+                try {
+                    // accept should block
+                    if (timeout > 0)
+                        ssc.socket().setSoTimeout(timeout);
+                    Socket s = ssc.socket().accept();
+                    s.close();
+                } finally {
+                    try {
+                        connector.get();
+                    } finally {
+                        sc.close();
+                    }
+                }
             }
         });
     }
@@ -477,14 +512,17 @@ class BlockingChannelOps {
                 InetAddress lh = InetAddress.getLoopbackAddress();
                 dc2.bind(new InetSocketAddress(lh, 0));
 
-                // send from dc1 when current thread blocked in dc2.receive
+                // send from dc1 when current thread blocks in dc2.receive
                 ByteBuffer bb1 = ByteBuffer.wrap("XXX".getBytes("UTF-8"));
-                runAfterParkedAsync(() -> dc1.send(bb1, dc2.getLocalAddress()));
-
-                // read from dc2 should block
-                ByteBuffer bb2 = ByteBuffer.allocate(10);
-                dc2.receive(bb2);
-                assertTrue(bb2.get(0) == 'X');
+                Future<?> sender = runAfterParkedAsync(dc2, () -> dc1.send(bb1, dc2.getLocalAddress()));
+                try {
+                    // read from dc2 should block
+                    ByteBuffer bb2 = ByteBuffer.allocate(10);
+                    dc2.receive(bb2);
+                    assertTrue(bb2.get(0) == 'X');
+                } finally {
+                    sender.get();
+                }
             }
         });
     }
@@ -498,11 +536,15 @@ class BlockingChannelOps {
             try (DatagramChannel dc = DatagramChannel.open()) {
                 InetAddress lh = InetAddress.getLoopbackAddress();
                 dc.bind(new InetSocketAddress(lh, 0));
-                runAfterParkedAsync(dc::close);
+                Future<?> closer = runAfterParkedAsync(dc::close);
                 try {
                     dc.receive(ByteBuffer.allocate(100));
                     fail("receive returned");
-                } catch (AsynchronousCloseException expected) { }
+                } catch (AsynchronousCloseException _) {
+                    // expected
+                } finally {
+                    closer.get();
+                }
             }
         });
     }
@@ -519,13 +561,14 @@ class BlockingChannelOps {
 
                 // interrupt current thread when it blocks in receive
                 Thread thisThread = Thread.currentThread();
-                runAfterParkedAsync(thisThread::interrupt);
-
+                Future<?> interrupter = runAfterParkedAsync(thisThread::interrupt);
                 try {
                     dc.receive(ByteBuffer.allocate(100));
                     fail("receive returned");
-                } catch (ClosedByInterruptException expected) {
+                } catch (ClosedByInterruptException _) {
                     assertTrue(Thread.interrupted());
+                } finally {
+                    interrupter.get();
                 }
             }
         });
@@ -546,15 +589,18 @@ class BlockingChannelOps {
 
                 // send from dc1 when current thread blocks in dc2 receive
                 ByteBuffer bb = ByteBuffer.wrap("XXX".getBytes("UTF-8"));
-                runAfterParkedAsync(() -> dc1.send(bb, dc2.getLocalAddress()));
-
-                // receive should block
-                byte[] array = new byte[100];
-                DatagramPacket p = new DatagramPacket(array, 0, array.length);
-                if (timeout > 0)
-                    dc2.socket().setSoTimeout(timeout);
-                dc2.socket().receive(p);
-                assertTrue(p.getLength() == 3 && array[0] == 'X');
+                Future<?> sender = runAfterParkedAsync(dc2, () -> dc1.send(bb, dc2.getLocalAddress()));
+                try {
+                    // receive should block
+                    byte[] array = new byte[100];
+                    DatagramPacket p = new DatagramPacket(array, 0, array.length);
+                    if (timeout > 0)
+                        dc2.socket().setSoTimeout(timeout);
+                    dc2.socket().receive(p);
+                    assertTrue(p.getLength() == 3 && array[0] == 'X');
+                } finally {
+                    sender.get();
+                }
             }
         });
     }
@@ -576,9 +622,12 @@ class BlockingChannelOps {
                     dc.socket().setSoTimeout(timeout);
 
                 // close channel/socket when current thread blocks in receive
-                runAfterParkedAsync(dc::close);
-
-                assertThrows(SocketException.class, () -> dc.socket().receive(p));
+                Future<?> closer = runAfterParkedAsync(dc::close);
+                try {
+                    assertThrows(SocketException.class, () -> dc.socket().receive(p));
+                } finally {
+                    closer.get();
+                }
             }
         });
     }
@@ -601,13 +650,14 @@ class BlockingChannelOps {
 
                 // interrupt current thread when it blocks in receive
                 Thread thisThread = Thread.currentThread();
-                runAfterParkedAsync(thisThread::interrupt);
-
+                Future<?> interrupter = runAfterParkedAsync(thisThread::interrupt);
                 try {
                     dc.socket().receive(p);
                     fail();
-                } catch (ClosedByInterruptException expected) {
+                } catch (ClosedByInterruptException _) {
                     assertTrue(Thread.interrupted());
+                } finally {
+                    interrupter.get();
                 }
             }
         });
@@ -649,13 +699,16 @@ class BlockingChannelOps {
 
                 // write from sink when current thread blocks reading from source
                 ByteBuffer bb1 = ByteBuffer.wrap("XXX".getBytes("UTF-8"));
-                runAfterParkedAsync(() -> sink.write(bb1));
-
-                // read should block
-                ByteBuffer bb2 = ByteBuffer.allocate(10);
-                int n = source.read(bb2);
-                assertTrue(n > 0);
-                assertTrue(bb2.get(0) == 'X');
+                Future<?> writer = runAfterParkedAsync(() -> sink.write(bb1));
+                try {
+                    // read should block
+                    ByteBuffer bb2 = ByteBuffer.allocate(10);
+                    int n = source.read(bb2);
+                    assertTrue(n > 0);
+                    assertTrue(bb2.get(0) == 'X');
+                } finally {
+                    writer.get();
+                }
             }
         });
     }
@@ -670,20 +723,21 @@ class BlockingChannelOps {
             try (Pipe.SinkChannel sink = p.sink();
                  Pipe.SourceChannel source = p.source()) {
 
-                // read from source to EOF when current thread blocking in write
-                Thread reader = runAfterParkedAsync(() -> readToEOF(source));
+                // read from source to EOF when current thread blocks in write
+                Future<?> reader = runAfterParkedAsync(() -> readToEOF(source));
+                try {
+                    // write to sink should block
+                    ByteBuffer bb = ByteBuffer.allocate(100 * 1024);
+                    for (int i = 0; i < 1000; i++) {
+                        int n = sink.write(bb);
+                        assertTrue(n > 0);
+                        bb.clear();
+                    }
 
-                // write to sink should block
-                ByteBuffer bb = ByteBuffer.allocate(100*1024);
-                for (int i=0; i<1000; i++) {
-                    int n = sink.write(bb);
-                    assertTrue(n > 0);
-                    bb.clear();
+                } finally {
+                    sink.close();    // task will read EOF
+                    reader.get();
                 }
-                sink.close();
-
-                // wait for reader to finish
-                reader.join();
             }
         });
     }
@@ -697,11 +751,15 @@ class BlockingChannelOps {
             Pipe p = Pipe.open();
             try (Pipe.SinkChannel sink = p.sink();
                  Pipe.SourceChannel source = p.source()) {
-                runAfterParkedAsync(source::close);
+                Future<?> closer = runAfterParkedAsync(source::close);
                 try {
                     int n = source.read(ByteBuffer.allocate(100));
                     fail("read returned " + n);
-                } catch (AsynchronousCloseException expected) { }
+                } catch (AsynchronousCloseException _) {
+                    // expected
+                } finally {
+                    closer.get();
+                }
             }
         });
     }
@@ -718,13 +776,14 @@ class BlockingChannelOps {
 
                 // interrupt current thread when it blocks reading from source
                 Thread thisThread = Thread.currentThread();
-                runAfterParkedAsync(thisThread::interrupt);
-
+                Future<?> interrupter = runAfterParkedAsync(thisThread::interrupt);
                 try {
                     int n = source.read(ByteBuffer.allocate(100));
                     fail("read returned " + n);
-                } catch (ClosedByInterruptException expected) {
+                } catch (ClosedByInterruptException _) {
                     assertTrue(Thread.interrupted());
+                } finally {
+                    interrupter.get();
                 }
             }
         });
@@ -743,10 +802,9 @@ class BlockingChannelOps {
                      Pipe.SourceChannel source = p.source()) {
 
                     // close sink when current thread blocks in write
-                    runAfterParkedAsync(sink::close, true);
-
-                    // write until channel is closed
+                    Future<?> closer = runAfterParkedAsync(sink::close);
                     try {
+                        // write until channel is closed
                         ByteBuffer bb = ByteBuffer.allocate(100*1024);
                         for (;;) {
                             int n = sink.write(bb);
@@ -759,6 +817,8 @@ class BlockingChannelOps {
                     } catch (ClosedChannelException e) {
                         // closed but not blocked in write, need to retry test
                         System.err.format("%s, need to retry!%n", e);
+                    } finally {
+                        closer.get();
                     }
                 }
             }
@@ -779,23 +839,24 @@ class BlockingChannelOps {
 
                     // interrupt current thread when it blocks in write
                     Thread thisThread = Thread.currentThread();
-                    runAfterParkedAsync(thisThread::interrupt, true);
-
-                    // write until channel is closed
+                    Future<?> interrupter = runAfterParkedAsync(thisThread::interrupt);
                     try {
+                        // write until channel is closed
                         ByteBuffer bb = ByteBuffer.allocate(100*1024);
                         for (;;) {
                             int n = sink.write(bb);
                             assertTrue(n > 0);
                             bb.clear();
                         }
-                    } catch (ClosedByInterruptException expected) {
+                    } catch (ClosedByInterruptException _) {
                         // closed when blocked in write
                         assertTrue(Thread.interrupted());
                         done = true;
                     } catch (ClosedChannelException e) {
                         // closed but not blocked in write, need to retry test
                         System.err.format("%s, need to retry!%n", e);
+                    } finally {
+                        interrupter.get();
                     }
                 }
             }
@@ -855,48 +916,45 @@ class BlockingChannelOps {
     }
 
     /**
-     * Runs the given task asynchronously after the current virtual thread parks.
-     * @param writing if the thread will block in write
-     * @return the thread started to run the task
+     * Runs the given task asynchronously after the current virtual thread parks with
+     * its parkBlocker set.
+     * @param parkBlocker non-null if the expected parkBlocker is known
+     * @param task the task to run when the thread parks
+     * @return future to wait for completion
      */
-    private static Thread runAfterParkedAsync(ThrowingRunnable task, boolean writing) {
+    private static Future<?> runAfterParkedAsync(Object parkBlocker, ThrowingRunnable task) {
         Thread target = Thread.currentThread();
         if (!target.isVirtual())
             throw new WrongThreadException();
-        return Thread.ofPlatform().daemon().start(() -> {
+        var future = new CompletableFuture<Void>();
+        Thread.ofPlatform().daemon().start(() -> {
             try {
-                // wait for target thread to park
-                while (!isWaiting(target)) {
-                    Thread.sleep(20);
-                }
-
-                // if the target thread is parked in write then we nudge it a few times
-                // to avoid wakeup with some bytes written
-                if (writing) {
-                    for (int i = 0; i < 3; i++) {
-                        LockSupport.unpark(target);
-                        while (!isWaiting(target)) {
-                            Thread.sleep(20);
-                        }
-                    }
+                // wait for target thread to park with its parkBlocker set
+                Object b;
+                while (!isParked(target)
+                        || (b = LockSupport.getBlocker(target)) == null
+                        || (parkBlocker != null && b != parkBlocker)) {
+                    Thread.sleep(10);
                 }
 
                 task.run();
-
-            } catch (Exception e) {
-                e.printStackTrace();
+                future.complete(null);
+            } catch (Throwable ex) {
+                ex.printStackTrace();
+                future.completeExceptionally(ex);
             }
         });
+        return future;
     }
 
-    private static Thread runAfterParkedAsync(ThrowingRunnable task) {
-        return runAfterParkedAsync(task, false);
+    private static Future<?> runAfterParkedAsync(ThrowingRunnable task) {
+        return runAfterParkedAsync(null, task);
     }
 
     /**
      * Return true if the given Thread is parked.
      */
-    private static boolean isWaiting(Thread target) {
+    private static boolean isParked(Thread target) {
         Thread.State state = target.getState();
         assertNotEquals(Thread.State.TERMINATED, state);
         return (state == Thread.State.WAITING || state == Thread.State.TIMED_WAITING);

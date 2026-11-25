@@ -654,10 +654,6 @@ public:
     : MemNode(c, mem, adr, at, val), _mo(mo) {
     init_class_id(Class_Store);
   }
-  StoreNode(Node *c, Node *mem, Node *adr, const TypePtr* at, Node *val, Node *oop_store, MemOrd mo)
-    : MemNode(c, mem, adr, at, val, oop_store), _mo(mo) {
-    init_class_id(Class_Store);
-  }
 
   inline bool is_unordered() const { return !is_release(); }
   inline bool is_release() const {
@@ -689,7 +685,8 @@ public:
   // point to a new object and may become externally visible.
   static StoreNode* make(PhaseGVN& gvn, Node* c, Node* mem, Node* adr,
                          const TypePtr* at, Node* val, BasicType bt,
-                         MemOrd mo, bool require_atomic_access = false);
+                         MemOrd mo, bool require_atomic_access = false,
+                         bool store_special = false);
 
   virtual uint hash() const;    // Check the type
 
@@ -782,19 +779,22 @@ public:
 class StoreLSpecialNode : public StoreNode {
 
 public:
-  StoreLSpecialNode(Node* c, Node* mem, Node* adr, const TypePtr* at, Node* val, Node* oop_off, MemOrd mo)
+  enum {
+    OopOffset = ValueIn + 1,
+    FirstOop,
+    SecondOop,
+  };
+
+  StoreLSpecialNode(Node* c, Node* mem, Node* adr, const TypePtr* at, Node* val, MemOrd mo)
     : StoreNode(c, mem, adr, at, val, mo) {
     set_mismatched_access();
-    if (oop_off != nullptr) {
-      add_req(oop_off);
-    }
   }
   virtual int Opcode() const;
   virtual BasicType value_basic_type() const { return T_LONG; }
 
   virtual uint match_edge(uint idx) const { return idx == MemNode::Address ||
                                                    idx == MemNode::ValueIn ||
-                                                   idx == MemNode::ValueIn + 1; }
+                                                   idx == StoreLSpecialNode::OopOffset; }
 };
 
 //------------------------------StoreFNode-------------------------------------
@@ -1163,7 +1163,7 @@ private:
 public:
   ClearArrayNode( Node *ctrl, Node *arymem, Node *word_cnt, Node *base, Node* val, bool is_large)
     : Node(ctrl, arymem, word_cnt, base, val), _is_large(is_large),
-      _requires_word_fill(val->bottom_type()->isa_long() && (!val->bottom_type()->is_long()->is_con() || val->bottom_type()->is_long()->get_con() != 0)) {
+      _requires_word_fill(val->bottom_type()->is_long() && (!val->bottom_type()->as_long()->is_con() || val->bottom_type()->as_long()->get_con() != 0)) {
     init_class_id(Class_ClearArray);
   }
   virtual int         Opcode() const;
