@@ -693,9 +693,10 @@ Node* PhaseCFG::select(
         short int_pressure = (short)_regalloc->_scratch_int_pressure.current_pressure();
         short float_pressure = (short)_regalloc->_scratch_float_pressure.current_pressure();
         uintptr_t packed = (uintptr_t)(uint16_t)int_pressure | ((uintptr_t)(uint16_t)float_pressure << 16);
-
+#ifdef _LP64
         short mask_pressure = (short)_regalloc->_scratch_mask_pressure.current_pressure();
         packed |= (uintptr_t)(uint16_t)mask_pressure << 32;
+#endif
         recalc_pressure_nodes[n->_idx] = (intptr_t)packed;
       }
 
@@ -715,6 +716,7 @@ Node* PhaseCFG::select(
             short float_pressure = (short)(recalc_pressure_nodes[n->_idx] >> 16);
             n_score = (float_pressure < 0) ? ((score + n_score) - float_pressure) : (float_pressure > 0) ? 1 : n_score;
           }
+#ifdef _LP64
           // when vector mask registers under pressure prefer one that end mask live ranges
           // over ones that define new masks
           if (_regalloc->_sched_mask_pressure.high_pressure_limit() > 0 &&
@@ -722,6 +724,7 @@ Node* PhaseCFG::select(
             short mask_pressure = (short)(recalc_pressure_nodes[n->_idx] >> 32);
             n_score = (mask_pressure < 0) ? ((score + n_score) - mask_pressure) : (mask_pressure > 0) ? 1 : n_score;
           }
+#endif
         } else {
           // make sure we choose these candidates
           score = 0;
