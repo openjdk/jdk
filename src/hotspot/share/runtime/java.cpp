@@ -23,7 +23,6 @@
  */
 
 #include "cds/aotMetaspace.hpp"
-#include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/classListWriter.hpp"
 #include "cds/dynamicArchive.hpp"
@@ -63,6 +62,7 @@
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
+#include "oops/trainingData.hpp"
 #include "prims/jvmtiAgentList.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/continuation.hpp"
@@ -448,13 +448,11 @@ void before_exit(JavaThread* thread, bool halt) {
 
   // Actual shutdown logic begins here.
 
-#if INCLUDE_CDS
   ClassListWriter::write_resolved_constants();
 
   if (CDSConfig::is_dumping_aot_configuration()) {
     AOTMetaspace::dump_static_archive(thread);
   }
-#endif
 
   // Hang forever on exit if we're reporting an error.
   if (ShowMessageBoxOnError && VMError::is_error_reported()) {
@@ -506,11 +504,7 @@ void before_exit(JavaThread* thread, bool halt) {
   // Note: we don't wait until it actually dies.
   os::terminate_signal_thread();
 
-  #if INCLUDE_CDS
-  if (AOTVerifyTrainingData) {
-    TrainingData::verify();
-  }
-  #endif
+  TrainingData::verify();
 
   print_statistics_before_exit();
 

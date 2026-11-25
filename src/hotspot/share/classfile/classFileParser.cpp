@@ -5766,8 +5766,6 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik,
     create_acmp_maps(ik, CHECK);
   }
 
-  ClassLoadingService::notify_class_loaded(ik, false /* not shared class */);
-
   if (!is_internal()) {
     ik->print_class_load_logging(_loader_data, module_entry, _stream);
     if (CDSConfig::is_dumping_archive()) {

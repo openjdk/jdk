@@ -406,6 +406,7 @@ jdk_svc = \
 jdk_foreign = \
     java/foreign \
     jdk/internal/reflect/CallerSensitive/CheckCSMs.java \
+    tools/sincechecker/modules/java.base/JavaBaseCheckSince.java \
     -java/foreign/TestMatrix.java
 
 jdk_vector = \
@@ -648,7 +649,8 @@ jdk_core_manual_no_input = \
     com/sun/net/httpserver/simpleserver/jwebserver/CommandLinePortNotSpecifiedTest.java \
     com/sun/net/httpserver/simpleserver/DocRootDirPermissionsWinTest.java \
     javax/xml/jaxp/datatype/8033980/GregorianCalAndDurSerDataUtil.java \
-    java/util/zip/ZipFile/CenSizeMaximum.java
+    java/util/zip/ZipFile/CenSizeMaximum.java \
+    java/lang/ProcessBuilder/ConcNativeForkTest/ConcNativeForkTest.java
 
 jdk_security_manual_no_input = \
     :jdk_security_infra \

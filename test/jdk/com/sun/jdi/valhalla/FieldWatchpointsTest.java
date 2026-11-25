@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,13 +121,13 @@ public class FieldWatchpointsTest extends TestScaffold {
             Field watchField = valueClass.fieldByName("v");
 
             WatchpointRequest request = eventRequestManager().createModificationWatchpointRequest(watchField);
-            testCases.add(new TestCase("modify", 1, request)); // instanceField ctor
+            testCases.add(new TestCase("modify", 0, request)); // no modify events during construction
 
             request = eventRequestManager().createAccessWatchpointRequest(watchField);
             testCases.add(new TestCase("access", 2, request)); // staticField, instanceField
 
             request = eventRequestManager().createModificationWatchpointRequest(instanceValueField);
-            testCases.add(new TestCase("modify flat", 1, request)); // instanceField ctor
+            testCases.add(new TestCase("modify flat", 0, request)); // no modify events during construction
 
             request = eventRequestManager().createAccessWatchpointRequest(instanceValueField);
             testCases.add(new TestCase("access flat", 1, request)); // println(targ.instanceField.v)

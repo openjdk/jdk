@@ -5,12 +5,12 @@
 #ifndef SPA_BUFFER_H
 #define SPA_BUFFER_H
 
+#include <spa/utils/defs.h>
+#include <spa/buffer/meta.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <spa/utils/defs.h>
-#include <spa/buffer/meta.h>
 
 #ifndef SPA_API_BUFFER
  #ifdef SPA_API_IMPL
@@ -116,6 +116,17 @@ SPA_API_BUFFER void *spa_buffer_find_meta_data(const struct spa_buffer *b, uint3
     if ((m = spa_buffer_find_meta(b, type)) && m->size >= size)
         return m->data;
     return NULL;
+}
+
+SPA_API_BUFFER bool spa_buffer_has_meta_features(const struct spa_buffer *b, uint32_t type, uint32_t features)
+{
+    uint32_t i;
+    for (i = 0; i < b->n_metas; i++) {
+        uint32_t t = b->metas[i].type;
+        if ((t >> 16) == type && (t & features) == features)
+            return true;
+    }
+    return false;
 }
 
 /**
