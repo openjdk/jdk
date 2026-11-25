@@ -117,7 +117,8 @@ public class TestCCMismatchNativeMethods {
         } catch (OutOfMemoryError oome) { // OOME triggered by ThrowOOMEAtC2iC1NativeEntryPoints expected here
             oom = true;
         }
-        if (oom != (WHITE_BOX.getIntVMFlag("ThrowOOMEAtC2iC1NativeEntryPoints").intValue() == 3)) {
+        boolean passFields = WHITE_BOX.getBooleanVMFlag("ValueTypePassFieldsAsArgs");
+        if (passFields && oom != (WHITE_BOX.getIntVMFlag("ThrowOOMEAtC2iC1NativeEntryPoints").intValue() == 3)) {
             throw new RuntimeException(oom ? "unexpected OOME" : "no OOME");
         }
     }
