@@ -478,10 +478,9 @@ public class TestFoldComparesFuzzer {
                         // Not yet folded at parsing, because lo != hi
                         // BoolNode::Ideal: x <u 1 or x <=u 0 -> x==0 (signed)
                         cmpIParse = "= 2"; cmpUParse = "= 0";
-                        // BoolNode::Ideal only converts CmpU, not CmpUL, to a signed equality.
-                        cmpIFinal = isLong ? "= 0" : "= 1";
-                        cmpUFinal = isLong ? "= 1" : "= 0";
-                        comment = "a) single element: unsigned compare, or signed equality for int";
+                        cmpIFinal = "= 1";
+                        cmpUFinal = "= 0";
+                        comment = "a) single element -> signed equality";
                     } else if (lo < hi && lo+1 == hi) {
                         // Not yet folded at parsing, because lo != hi
                         cmpIParse = "= 2"; cmpUParse = "= 0"; cmpIFinal = "= 0"; cmpUFinal = "= 0";
@@ -505,10 +504,9 @@ public class TestFoldComparesFuzzer {
                     } else if (lo < hi && lo+1 == hi) {
                         // BoolNode::Ideal: x <u 1 or x <=u 0 -> x==0 (signed)
                         cmpIParse = "= 2"; cmpUParse = "= 0";
-                        // BoolNode::Ideal only converts CmpU, not CmpUL, to a signed equality.
-                        cmpIFinal = isLong ? "= 0" : "= 1";
-                        cmpUFinal = isLong ? "= 1" : "= 0";
-                        comment = "b) single element: unsigned compare, or signed equality for int";
+                        cmpIFinal = "= 1";
+                        cmpUFinal = "= 0";
+                        comment = "b) single element -> signed equality";
                     } else if (lo < hi && lo+1 < hi) {
                         cmpIParse = "= 2"; cmpUParse = "= 0"; cmpIFinal = "= 0"; cmpUFinal = "= 1";
                         comment = "b) replace with CmpU (non-empty)";
@@ -527,10 +525,9 @@ public class TestFoldComparesFuzzer {
                     } else if (lo < hi && lo+1 == hi) {
                         // BoolNode::Ideal: x <u 1 or x <=u 0 -> x==0 (signed)
                         cmpIParse = "= 2"; cmpUParse = "= 0";
-                        // BoolNode::Ideal only converts CmpU, not CmpUL, to a signed equality.
-                        cmpIFinal = isLong ? "= 0" : "= 1";
-                        cmpUFinal = isLong ? "= 1" : "= 0";
-                        comment = "c) single element: unsigned compare, or signed equality for int";
+                        cmpIFinal = "= 1";
+                        cmpUFinal = "= 0";
+                        comment = "c) single element -> signed equality";
                     } else if (lo < hi && lo+1 < hi) {
                         cmpIParse = "= 2"; cmpUParse = "= 0"; cmpIFinal = "= 0"; cmpUFinal = "= 1";
                         comment = "c) replace with CmpU (non-empty)";
@@ -548,10 +545,11 @@ public class TestFoldComparesFuzzer {
                         cmpIParse = "< 2"; cmpUParse = "= 0"; cmpIFinal = "< 2"; cmpUFinal = "= 0";
                         comment = "d) one or both checks fold at parse time";
                     } else if (lo == hi) {
-                        // same CmpI at parse time
-                        // BoolNode::Ideal: x <u 1 or x <=u 0 -> x==0 (signed)
-                        cmpIParse = "= 1"; cmpUParse = "= 0"; cmpIFinal = "= 1"; cmpUFinal = "= 0";
-                        comment = "d) replace with CmpU (single element) -> CmpI eq";
+                        // Both checks share one signed comparison at parse time.
+                        cmpIParse = "= 1"; cmpUParse = "= 0";
+                        cmpIFinal = "= 1";
+                        cmpUFinal = "= 0";
+                        comment = "d) single element -> signed equality";
                     } else if (lo < hi) {
                         cmpIParse = "= 2"; cmpUParse = "= 0"; cmpIFinal = "= 0"; cmpUFinal = "= 1";
                         comment = "d) replace with CmpU (non-empty)";

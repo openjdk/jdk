@@ -50,9 +50,9 @@ public class TestStackedConcatsManyUTF16Overflow {
             }
             Asserts.assertEQ(s, z);
         } catch (OutOfMemoryError e) {
-          Asserts.assertTrue(e.getMessage().equals("Required array length 1073741824 + 1073741824 is too large"));
-          // Specifically, we should not get "`main' threw exception: java.lang.NegativeArraySizeException: -2147483648"
-          return;
+            Asserts.assertEquals("Required length exceeds implementation limit", e.getMessage());
+            // Specifically, we should not get "`main' threw exception: java.lang.NegativeArraySizeException: -2147483648"
+            return;
         }
         throw new RuntimeException("Unreachable.");
     }
