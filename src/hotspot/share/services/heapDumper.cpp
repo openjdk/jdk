@@ -2263,6 +2263,9 @@ public:
         next_id++;
       }
       uintptr_t new_value;
+      // HPROF parsers may check if a later object's ID lands inside the
+      // previous array. Skip past the array's byte size for next id, to
+      // prevent failed checks in HPROF parsers.
       if (skip_size > max_value - next_id) {
         new_value = max_value;
       } else {
