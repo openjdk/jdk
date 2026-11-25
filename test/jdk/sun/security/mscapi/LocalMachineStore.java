@@ -29,27 +29,41 @@
  * @library /test/lib
  * @modules java.base/sun.security.tools.keytool
  *          java.base/sun.security.x509
+ *          jdk.crypto.mscapi/sun.security.mscapi:open
  * @comment Run with administrative privileges because this test modifies
  *          the LOCALMACHINE store.
- * @run main/manual ${test.main.class}
+ * @run main/manual/othervm --enable-native-access=ALL-UNNAMED ${test.main.class}
  */
 
 import sun.security.tools.keytool.CertAndKeyGen;
 import sun.security.x509.X500Name;
 
+import java.lang.foreign.Arena;
+import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.Linker;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.StructLayout;
+import java.lang.foreign.SymbolLookup;
+import java.lang.invoke.MethodHandle;
+import java.lang.ref.Reference;
+import java.lang.reflect.Method;
 import java.security.KeyStore;
 import java.security.PrivateKey;
 import java.security.Signature;
 import java.security.cert.X509Certificate;
 import java.util.UUID;
 
+import static java.lang.foreign.MemoryLayout.PathElement.groupElement;
+import static java.lang.foreign.ValueLayout.ADDRESS;
+import static java.lang.foreign.ValueLayout.JAVA_INT;
+import static java.lang.foreign.ValueLayout.JAVA_LONG;
 import static jdk.test.lib.Asserts.assertEquals;
 import static jdk.test.lib.Asserts.assertFalse;
 import static jdk.test.lib.Asserts.assertTrue;
 
 public class LocalMachineStore {
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) throws Throwable {
         String alias = "jdk-8328184-" + UUID.randomUUID();
 
         testCertificates(alias);
@@ -94,7 +108,7 @@ public class LocalMachineStore {
         }
     }
 
-    private static void testPrivateKeys(String alias) throws Exception {
+    private static void testPrivateKeys(String alias) throws Throwable {
         KeyStore localMachine = load("LOCALMACHINE");
         KeyStore currentUser;
         try {
@@ -116,6 +130,7 @@ public class LocalMachineStore {
 
             // Use the private key reloaded from the store.
             PrivateKey storedKey = (PrivateKey) localMachine.getKey(alias, null);
+            assertMachineKey(storedKey);
             byte[] data = {1, 2, 3, 4};
 
             Signature signer = Signature.getInstance("SHA256withRSA");
@@ -141,6 +156,55 @@ public class LocalMachineStore {
             } finally {
                 load("LOCALMACHINE").deleteEntry(alias);
             }
+        }
+    }
+
+    private static void assertMachineKey(PrivateKey key) throws Throwable {
+        final int PP_KEYSET_TYPE = 27;
+        final int CRYPT_MACHINE_KEYSET = 0x20;
+
+        Class<?> cCKey = Class.forName("sun.security.mscapi.CKey");
+        Method mGetKey = cCKey.getDeclaredMethod("getHCryptKey");
+        Method mGetProvider = cCKey.getDeclaredMethod("getHCryptProvider");
+        mGetKey.setAccessible(true);
+        mGetProvider.setAccessible(true);
+
+        assertTrue((long) mGetKey.invoke(key) != 0, "Expected a CAPI key");
+
+        try (Arena arena = Arena.ofConfined()) {
+            long provider = (long) mGetProvider.invoke(key);
+
+            SymbolLookup advapi32 = SymbolLookup.libraryLookup("Advapi32.dll", arena);
+
+            // BOOL CryptGetProvParam(HCRYPTPROV hProv, DWORD dwParam, BYTE *pbData,
+            //                        DWORD *pdwDataLen, DWORD dwFlags);
+            MethodHandle mCryptgetProvParam = Linker.nativeLinker().downcallHandle(
+                    advapi32.find("CryptGetProvParam").orElseThrow(),
+                    FunctionDescriptor.of(JAVA_INT,
+                            JAVA_LONG, JAVA_INT, ADDRESS, ADDRESS, JAVA_INT),
+                    Linker.Option.captureCallState("GetLastError"));
+
+            StructLayout stateLayout = Linker.Option.captureStateLayout();
+            MemorySegment state = arena.allocate(stateLayout);
+            MemorySegment keysetType = arena.allocate(JAVA_INT);
+            MemorySegment size = arena.allocate(JAVA_INT);
+            size.set(JAVA_INT, 0, Integer.BYTES);
+
+            int result = (int) mCryptgetProvParam.invokeExact(
+                    state, provider, PP_KEYSET_TYPE, keysetType, size, 0);
+
+            if (result == 0) {
+                int lastError = state.get(
+                        JAVA_INT, stateLayout.byteOffset(groupElement("GetLastError")));
+                throw new AssertionError("CryptGetProvParam failed with error code: 0x"
+                        + Integer.toHexString(lastError));
+            }
+
+            assertTrue((keysetType.get(JAVA_INT, 0) & CRYPT_MACHINE_KEYSET) != 0,
+                    "Expected a machine key");
+        } finally {
+            // Keep the key alive until after the native call
+            Reference.reachabilityFence(key);
         }
     }
 
