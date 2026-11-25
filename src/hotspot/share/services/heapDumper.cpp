@@ -743,6 +743,38 @@ class DumperClassCacheTableEntry;
 class DumperFlatObject;
 class DumperFlatObjectList;
 
+class FlatObjectIdProvider {
+public:
+  virtual uintptr_t get_id(size_t skip_size) = 0;
+};
+
+class ClassLoaderLoadedClassesCounter : public KlassClosure {
+ public:
+  size_t _cnt;
+  ClassLoaderLoadedClassesCounter() : _cnt(0) {}
+
+  void do_klass(Klass* k) {
+    if (k->is_instance_klass() && InstanceKlass::cast(k)->is_loaded() && !k->is_hidden()) {
+      _cnt++;
+    }
+  }
+
+  uintx classes_count() { return _cnt; }
+};
+
+class ClassLoaderLoadedClassesDumper : public KlassClosure {
+ private:
+  AbstractDumpWriter* _writer;
+ public:
+  ClassLoaderLoadedClassesDumper(AbstractDumpWriter* writer) : _writer(writer) {}
+
+  void do_klass(Klass* k) {
+    if (k->is_instance_klass() && InstanceKlass::cast(k)->is_loaded() && !k->is_hidden()) {
+      _writer->write_classID(k);
+    }
+  }
+};
+
 // Support class with a collection of functions used when dumping the heap
 class DumperSupport : AllStatic {
  public:
@@ -779,7 +811,8 @@ class DumperSupport : AllStatic {
   static void dump_instance_field_descriptors(AbstractDumpWriter* writer, InstanceKlass* k);
   // creates HPROF_GC_INSTANCE_DUMP record for the given object, fills flat_fields
   static void dump_instance(AbstractDumpWriter* writer, uintptr_t id, oop o, int offset, InstanceKlass* ik,
-                            DumperClassCacheTable* class_cache, DumperFlatObjectList* flat_fields);
+                            DumperClassCacheTable* class_cache, DumperFlatObjectList* flat_fields,
+                            FlatObjectIdProvider* id_provider);
   // creates HPROF_GC_CLASS_DUMP record for the given instance class
   static void dump_instance_class(AbstractDumpWriter* writer, InstanceKlass* ik);
   // creates HPROF_GC_CLASS_DUMP record for a given array class
@@ -957,6 +990,11 @@ public:
         }
       }
 
+      // FIXME: Handle ClassLoader <classes>
+      if (java_lang_ClassLoader::is_subclass(ik)) {
+        entry->_instance_size += sizeof(address);
+      }
+
       if (_ptrs->number_of_entries() >= CACHE_TOP) {
         // We do not track the individual hit rates for table entries.
         // Purge the entire table, and let the cache catch up with new
@@ -1005,11 +1043,6 @@ public:
   ValueKlass* value_klass() const { return _value_klass; }
 };
 
-class FlatObjectIdProvider {
-public:
-  virtual uintptr_t get_id() = 0;
-};
-
 // Simple FIFO.
 class DumperFlatObjectList {
 private:
@@ -1033,7 +1066,7 @@ public:
   bool is_empty() const { return _head == nullptr; }
 
   uintptr_t push(int offset, ValueKlass* value_klass) {
-    uintptr_t id = _id_provider->get_id();
+    uintptr_t id = _id_provider->get_id(0);
     DumperFlatObject* obj = new DumperFlatObject(id, offset, value_klass);
     push(obj);
     return id;
@@ -1193,6 +1226,9 @@ u4 DumperSupport::instance_size(InstanceKlass* ik) {
       size += sig2size(fld.signature());
     }
   }
+  if (java_lang_ClassLoader::is_subclass(ik)) {
+      size += sizeof(address);
+  }
   return size;
 }
 
@@ -1317,6 +1353,11 @@ u2 DumperSupport::get_instance_fields_count(InstanceKlass* ik) {
     }
   }
 
+  if (ik == vmClasses::ClassLoader_klass()) {
+    // Add synthetic field <classes>.
+    field_count++;
+  }
+
   return field_count;
 }
 
@@ -1331,11 +1372,17 @@ void DumperSupport::dump_instance_field_descriptors(AbstractDumpWriter* writer, 
       writer->write_u1(sig2tag(sig));       // type
     }
   }
+
+  if (ik == vmClasses::ClassLoader_klass()) {
+    writer->write_symbolID(vmSymbols::classes_name());  // name
+    writer->write_u1(sig2tag(vmSymbols::object_array_signature())); // type
+  }
 }
 
 // creates HPROF_GC_INSTANCE_DUMP record for the given object
 void DumperSupport::dump_instance(AbstractDumpWriter* writer, uintptr_t id, oop o, int offset, InstanceKlass* ik,
-                                  DumperClassCacheTable* class_cache, DumperFlatObjectList* flat_fields) {
+                                  DumperClassCacheTable* class_cache, DumperFlatObjectList* flat_fields,
+                                  FlatObjectIdProvider* id_provider) {
   DumperClassCacheTableEntry* cache_entry = class_cache->lookup_or_create(ik);
 
   u4 is = cache_entry->instance_size();
@@ -1360,7 +1407,44 @@ void DumperSupport::dump_instance(AbstractDumpWriter* writer, uintptr_t id, oop 
 
   dump_instance_fields(writer, o, offset, cache_entry, flat_fields);
 
+  ClassLoaderData* cld = nullptr;
+  uintx classes_count = 0;
+  u4 length = 0;
+  uintptr_t array_id = 0;
+  if (java_lang_ClassLoader::is_subclass(ik)) {
+    // Write ClassLoader <classes> array.
+    cld = ClassLoaderData::class_loader_data_or_null(o);
+    if (cld != nullptr && cld->is_alive()) {
+      ClassLoaderLoadedClassesCounter classes_counter;
+      cld->classes_do(&classes_counter);
+      classes_count = classes_counter._cnt;
+
+      if (classes_count > 0) {
+        // sizeof(u1) + 2 * sizeof(u4) + sizeof(objectID) + sizeof(classID)
+        short header_size = 1 + 2 * 4 + 2 * sizeof(address);
+        length = checked_cast<u4>(header_size + classes_count * sizeof(address));
+        array_id = id_provider->get_id(length);
+      }
+    }
+    writer->write_objectID(array_id);
+  }
+
   writer->end_sub_record();
+
+  if (java_lang_ClassLoader::is_subclass(ik) && classes_count > 0) {
+    writer->start_sub_record(HPROF_GC_OBJ_ARRAY_DUMP, length);
+    writer->write_objectID(array_id);
+    writer->write_u4(STACK_TRACE_ID);
+    writer->write_u4(checked_cast<u4>(classes_count));
+
+    // array class ID
+    writer->write_classID(Universe::objectArrayKlass());
+
+    ClassLoaderLoadedClassesDumper classes_dumper(writer);
+    cld->classes_do(&classes_dumper);
+
+    writer->end_sub_record();
+  }
 }
 
 // creates HPROF_GC_CLASS_DUMP record for the given instance class
@@ -2152,27 +2236,32 @@ public:
                          DumperClassCacheTable* class_cache, DumperFlatObjectList* flat_objects);
 
   // FlatObjectIdProvider implementation
-  virtual uintptr_t get_id() override {
+  virtual uintptr_t get_id(size_t skip_size) override {
     // need to protect against overflow, so use instead of fetch_then_add
     const uintptr_t max_value = (uintptr_t)-1;
     uintptr_t old_value = AtomicAccess::load(&_id_counter);
     while (old_value != max_value) {
-      uintptr_t new_value = old_value + 1;
+      uintptr_t next_id = old_value + 1;
       // to avoid conflicts with oop addresses skip aligned values
-      if ((new_value & MinObjAlignmentInBytesMask) == 0) {
-        new_value++;
+      if ((next_id & MinObjAlignmentInBytesMask) == 0) {
+        next_id++;
+      }
+      uintptr_t new_value;
+      if (skip_size > max_value - next_id) {
+        new_value = max_value;
+      } else {
+        new_value = next_id + skip_size;
       }
       uintptr_t value = AtomicAccess::cmpxchg(&_id_counter, old_value, new_value);
       if (value == old_value) {
         // success
-        return new_value;
+        return next_id;
       }
       old_value = value;
     }
     // if we are here, maximum id value is reached
     return max_value;
   }
-
 };
 
 void FlatObjectDumper::dump_flat_objects(AbstractDumpWriter* writer, oop holder,
@@ -2180,7 +2269,7 @@ void FlatObjectDumper::dump_flat_objects(AbstractDumpWriter* writer, oop holder,
   // DumperSupport::dump_instance can add entries to flat_objects
   while (!flat_objects->is_empty()) {
     DumperFlatObject* obj = flat_objects->pop();
-    DumperSupport::dump_instance(writer, obj->object_id(), holder, obj->offset(), obj->value_klass(), class_cache, flat_objects);
+    DumperSupport::dump_instance(writer, obj->object_id(), holder, obj->offset(), obj->value_klass(), class_cache, flat_objects, this);
     delete obj;
   }
 }
@@ -2234,7 +2323,8 @@ void HeapObjectDumper::do_object(oop o) {
                                  cast_from_oop<uintptr_t>(o), // object_id is the address
                                  o, 0,                        // for heap instance holder is oop, offset is 0
                                  InstanceKlass::cast(o->klass()),
-                                 &_class_cache, &flat_fields);
+                                 &_class_cache, &flat_fields,
+                                 _flat_dumper);
 
     // if there are flattened fields, dump them
     if (!flat_fields.is_empty()) {
