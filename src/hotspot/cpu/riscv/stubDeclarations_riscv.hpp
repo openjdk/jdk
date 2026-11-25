@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2025, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,34 +23,38 @@
  *
  */
 
-#ifndef CPU_RISCV_STUBDECLARATIONS_HPP
-#define CPU_RISCV_STUBDECLARATIONS_HPP
+#ifndef CPU_RISCV_STUBDECLARATIONS_RISCV_HPP
+#define CPU_RISCV_STUBDECLARATIONS_RISCV_HPP
 
 #define STUBGEN_PREUNIVERSE_BLOBS_ARCH_DO(do_stub,                      \
                                           do_arch_blob,                 \
                                           do_arch_entry,                \
-                                          do_arch_entry_init)           \
+                                          do_arch_entry_init,           \
+                                          do_arch_entry_array)          \
   do_arch_blob(preuniverse, 0)                                          \
 
 
 #define STUBGEN_INITIAL_BLOBS_ARCH_DO(do_stub,                          \
                                       do_arch_blob,                     \
                                       do_arch_entry,                    \
-                                      do_arch_entry_init)               \
+                                      do_arch_entry_init,               \
+                                      do_arch_entry_array)              \
   do_arch_blob(initial, 10000)                                          \
 
 
 #define STUBGEN_CONTINUATION_BLOBS_ARCH_DO(do_stub,                     \
                                            do_arch_blob,                \
                                            do_arch_entry,               \
-                                           do_arch_entry_init)          \
+                                           do_arch_entry_init,          \
+                                           do_arch_entry_array)         \
   do_arch_blob(continuation, 2000)                                      \
 
 
 #define STUBGEN_COMPILER_BLOBS_ARCH_DO(do_stub,                         \
                                        do_arch_blob,                    \
                                        do_arch_entry,                   \
-                                       do_arch_entry_init)              \
+                                       do_arch_entry_init,              \
+                                       do_arch_entry_array)             \
   do_arch_blob(compiler, 45000)                                         \
   do_stub(compiler, compare_long_string_LL)                             \
   do_arch_entry(riscv, compiler, compare_long_string_LL,                \
@@ -81,7 +85,8 @@
 #define STUBGEN_FINAL_BLOBS_ARCH_DO(do_stub,                            \
                                     do_arch_blob,                       \
                                     do_arch_entry,                      \
-                                    do_arch_entry_init)                 \
+                                    do_arch_entry_init,                 \
+                                    do_arch_entry_array)                \
   do_arch_blob(final, 20000 ZGC_ONLY(+10000))                           \
   do_stub(final, copy_byte_f)                                           \
   do_arch_entry(riscv, final, copy_byte_f, copy_byte_f,                 \
@@ -94,4 +99,4 @@
                 zero_blocks)                                            \
 
 
-#endif // CPU_RISCV_STUBDECLARATIONS_HPP
+#endif // CPU_RISCV_STUBDECLARATIONS_RISCV_HPP

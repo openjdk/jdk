@@ -42,6 +42,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.util.CommandLineFormat;
 import jdk.jpackage.internal.util.CommandOutputControl;
+import jdk.jpackage.internal.util.CommandOutputControl.UnexpectedResultException;
 import jdk.jpackage.internal.util.CommandOutputControl.UnexpectedExitCodeException;
 import jdk.jpackage.internal.util.RetryExecutor;
 import jdk.jpackage.internal.util.function.ExceptionBox;
@@ -63,7 +64,25 @@ public final class Executor extends CommandArguments<Executor> {
     }
 
     public Executor() {
-        commandOutputControl.dumpStdout(TKit.state().out()).dumpStderr(TKit.state().err());
+        commandOutputControl = new CommandOutputControl()
+                .dumpStdout(TKit.state().out())
+                .dumpStderr(TKit.state().err());
+        removeEnvVars = new HashSet<>();
+        setEnvVars = new HashMap<>();
+    }
+
+    public Executor(Executor other) {
+        toolProvider = other.toolProvider;
+        executable = other.executable;
+        commandOutputControl = other.commandOutputControl.copy();
+        directory = other.directory;
+        removeEnvVars = new HashSet<>(other.removeEnvVars);
+        setEnvVars = new HashMap<>(other.setEnvVars);
+        winTmpDir = other.winTmpDir;
+    }
+
+    public Executor copy() {
+        return new Executor(this);
     }
 
     public Executor setExecutable(String v) {
@@ -353,7 +372,15 @@ public final class Executor extends CommandArguments<Executor> {
             int mainExpectedExitCode, int... otherExpectedExitCodes) {
         return new RetryExecutor<Result, UnexpectedExitCodeException>(UnexpectedExitCodeException.class).setExecutable(() -> {
             var result = executeWithoutExitCodeCheck();
-            result.base().expectExitCode(mainExpectedExitCode, otherExpectedExitCodes);
+            try {
+                result.base().expectExitCode(mainExpectedExitCode, otherExpectedExitCodes);
+            } catch (UnexpectedResultException ex) {
+                if (ex instanceof UnexpectedExitCodeException uecex) {
+                    throw uecex; // Pass to exception mapper
+                }
+                // Unreachable, because the result must always have the exit code, as the executor never runs commands with a timeout.
+                throw ExceptionBox.reachedUnreachable();
+            }
             return result;
         }).setExceptionMapper((UnexpectedExitCodeException ex) -> {
             createResult(ex.getResult()).assertExitCodeIs(mainExpectedExitCode, otherExpectedExitCodes);
@@ -537,9 +564,9 @@ public final class Executor extends CommandArguments<Executor> {
 
     private ToolProvider toolProvider;
     private Path executable;
-    private final CommandOutputControl commandOutputControl = new CommandOutputControl();
+    private final CommandOutputControl commandOutputControl;
     private Path directory;
-    private Set<String> removeEnvVars = new HashSet<>();
-    private Map<String, String> setEnvVars = new HashMap<>();
-    private String winTmpDir = null;
+    private final Set<String> removeEnvVars;
+    private final Map<String, String> setEnvVars;
+    private String winTmpDir;
 }

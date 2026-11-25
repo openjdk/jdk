@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,15 +22,16 @@
  */
 
 package javax.xml.parsers.ptests;
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.assertNotSame;
-import static org.testng.Assert.assertSame;
-import static org.testng.Assert.assertEquals;
+
+import org.junit.jupiter.api.Test;
 
 import javax.xml.parsers.SAXParserFactory;
 
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Class containing the test cases for SAXParserFactory API.
@@ -39,7 +40,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 8169778
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm javax.xml.parsers.ptests.SAXParserFactTest
+ * @run junit/othervm javax.xml.parsers.ptests.SAXParserFactTest
  */
 public class SAXParserFactTest {
 
@@ -55,16 +56,15 @@ public class SAXParserFactTest {
     /**
      * Test if newDefaultInstance() method returns an instance
      * of the expected factory.
-     * @throws Exception If any errors occur.
      */
     @Test
-    public void testDefaultInstance() throws Exception {
+    public void testDefaultInstance() {
         SAXParserFactory spf1 = SAXParserFactory.newDefaultInstance();
         SAXParserFactory spf2 = SAXParserFactory.newInstance();
         assertNotSame(spf1, spf2, "same instance returned:");
         assertSame(spf1.getClass(), spf2.getClass(),
-                  "unexpected class mismatch for newDefaultInstance():");
-        assertEquals(spf1.getClass().getName(), DEFAULT_IMPL_CLASS);
+                "unexpected class mismatch for newDefaultInstance():");
+        assertEquals(DEFAULT_IMPL_CLASS, spf1.getClass().getName());
     }
 
     /**

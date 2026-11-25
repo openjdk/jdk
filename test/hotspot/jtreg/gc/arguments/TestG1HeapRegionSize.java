@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@ package gc.arguments;
 
 /*
  * @test TestG1HeapRegionSize
- * @bug 8021879
+ * @bug 8021879 8311029
  * @requires vm.gc.G1 & vm.opt.G1HeapRegionSize == null
  * @summary Verify that the flag G1HeapRegionSize is updated properly
  * @modules java.base/jdk.internal.misc
@@ -78,6 +78,8 @@ public class TestG1HeapRegionSize {
     final int M = 1024 * 1024;
 
     checkG1HeapRegionSize(new String[] { "-Xmx64m"   /* default is 1m */        },  1*M, 0);
+    checkG1HeapRegionSize(new String[] { "-Xmx64m",  "-XX:G1HeapRegionSize=0"   },  1*M, 0);
+    checkG1HeapRegionSize(new String[] { "-Xmx64m",  "-XX:G1HeapRegionSize=16"  },    0, 1);
     checkG1HeapRegionSize(new String[] { "-Xmx64m",  "-XX:G1HeapRegionSize=2m"  },  2*M, 0);
     checkG1HeapRegionSize(new String[] { "-Xmx64m",  "-XX:G1HeapRegionSize=3m"  },  4*M, 0);
     checkG1HeapRegionSize(new String[] { "-Xmx256m", "-XX:G1HeapRegionSize=32m" }, 32*M, 0);

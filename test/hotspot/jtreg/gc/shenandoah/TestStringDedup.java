@@ -33,19 +33,14 @@
  * @modules java.base/java.lang:open
  *          java.management
  *
- * @run main/othervm -Xmx256m -Xlog:gc+stats -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseStringDeduplication
+ * @run main/othervm -Xmx256m -Xlog:stringdedup -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseStringDeduplication
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=passive
- *      -XX:+ShenandoahDegeneratedGC -DGCCount=1
- *      TestStringDedup
- *
- * @run main/othervm -Xmx256m -Xlog:gc+stats -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseStringDeduplication
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=passive
- *      -XX:-ShenandoahDegeneratedGC -DGCCount=1
+ *      -DGCCount=1
  *      TestStringDedup
  */
 
 /*
- * @test id=default
+ * @test id=satb
  * @summary Test Shenandoah string deduplication implementation
  * @key randomness
  * @requires vm.gc.Shenandoah
@@ -53,16 +48,16 @@
  * @modules java.base/java.lang:open
  *          java.management
  *
- * @run main/othervm -Xmx256m -Xlog:gc+stats -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseStringDeduplication
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive -XX:StringDeduplicationAgeThreshold=3
+ * @run main/othervm -Xmx256m -Xlog:stringdedup -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseStringDeduplication
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=satb -XX:ShenandoahGCHeuristics=aggressive
  *      TestStringDedup
  *
- * @run main/othervm -Xmx256m -Xlog:gc+stats -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseStringDeduplication
- *      -XX:+UseShenandoahGC -XX:StringDeduplicationAgeThreshold=3
+ * @run main/othervm -Xmx256m -Xlog:stringdedup -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseStringDeduplication
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=satb
  *      TestStringDedup
  *
- * @run main/othervm -Xmx256m -Xlog:gc+stats -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseStringDeduplication
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=compact -XX:StringDeduplicationAgeThreshold=3
+ * @run main/othervm -Xmx256m -Xlog:stringdedup -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseStringDeduplication
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=satb -XX:ShenandoahGCHeuristics=compact
  *      TestStringDedup
  */
 
@@ -75,8 +70,8 @@
  * @modules java.base/java.lang:open
  *          java.management
  *
- * @run main/othervm -Xmx256m -Xlog:gc+stats -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseStringDeduplication
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational -XX:StringDeduplicationAgeThreshold=3
+ * @run main/othervm -Xmx256m -Xlog:stringdedup -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseStringDeduplication
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
  *      TestStringDedup
  */
 

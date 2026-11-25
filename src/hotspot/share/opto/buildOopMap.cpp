@@ -213,7 +213,7 @@ OopMap *OopFlow::build_oop_map( Node *n, int max_reg, PhaseRegAlloc *regalloc, i
               memset(dup_check,0,OptoReg::stack0()) );
 
   OopMap *omap = new OopMap( framesize,  max_inarg_slot );
-  MachCallNode *mcall = n->is_MachCall() ? n->as_MachCall() : nullptr;
+  MachCallNode* mcall = n->isa_MachCall();
   JVMState* jvms = n->jvms();
 
   // For all registers do...
@@ -235,7 +235,7 @@ OopMap *OopFlow::build_oop_map( Node *n, int max_reg, PhaseRegAlloc *regalloc, i
     assert( def, "since live better have reaching def" );
 
     if (def->is_MachTemp()) {
-      assert(!def->bottom_type()->isa_oop_ptr(),
+      assert(!def->bottom_type()->is_oopptr(),
              "ADLC only assigns OOP types to MachTemp defs corresponding to xRegN operands");
       // Exclude MachTemp definitions even if they are typed as oops.
       continue;
@@ -243,7 +243,7 @@ OopMap *OopFlow::build_oop_map( Node *n, int max_reg, PhaseRegAlloc *regalloc, i
 
     // Classify the reaching def as oop, derived, callee-save, dead, or other
     const Type *t = def->bottom_type();
-    if( t->isa_oop_ptr() ) {    // Oop or derived?
+    if (t->is_oopptr()) {    // Oop or derived?
       assert( !OptoReg::is_valid(_callees[reg]), "oop can't be callee save" );
 #ifdef _LP64
       // 64-bit pointers record oop-ishness on 2 aligned adjacent registers.
@@ -264,12 +264,12 @@ OopMap *OopFlow::build_oop_map( Node *n, int max_reg, PhaseRegAlloc *regalloc, i
         regalloc->C->record_method_not_compilable(ss.as_string());
         continue;
       }
-      if( t->is_ptr()->_offset == 0 ) { // Not derived?
+      if (t->as_ptr()->offset() == 0) { // Not derived?
         if( mcall ) {
           // Outgoing argument GC mask responsibility belongs to the callee,
           // not the caller.  Inspect the inputs to the call, to see if
           // this live-range is one of them.
-          uint cnt = mcall->tf()->domain()->cnt();
+          uint cnt = mcall->tf()->domain_cc()->cnt();
           uint j;
           for( j = TypeFunc::Parms; j < cnt; j++)
             if( mcall->in(j) == def )
@@ -324,7 +324,7 @@ OopMap *OopFlow::build_oop_map( Node *n, int max_reg, PhaseRegAlloc *regalloc, i
         omap->set_derived_oop(r, b);
       }
 
-    } else if( t->isa_narrowoop() ) {
+    } else if (t->is_narrowoop()) {
       assert( !OptoReg::is_valid(_callees[reg]), "oop can't be callee save" );
       // Check for a legal reg name in the oopMap and bailout if it is not.
       if (!omap->legal_vm_reg_name(r)) {
@@ -339,7 +339,7 @@ OopMap *OopFlow::build_oop_map( Node *n, int max_reg, PhaseRegAlloc *regalloc, i
           // Outgoing argument GC mask responsibility belongs to the callee,
           // not the caller.  Inspect the inputs to the call, to see if
           // this live-range is one of them.
-        uint cnt = mcall->tf()->domain()->cnt();
+        uint cnt = mcall->tf()->domain_cc()->cnt();
         uint j;
         for( j = TypeFunc::Parms; j < cnt; j++)
           if( mcall->in(j) == def )
@@ -358,12 +358,12 @@ OopMap *OopFlow::build_oop_map( Node *n, int max_reg, PhaseRegAlloc *regalloc, i
     } else {
       // Other - some reaching non-oop value
 #ifdef ASSERT
-      if (t->isa_rawptr()) {
+      if (t->is_rawptr()) {
         ResourceMark rm;
-        Unique_Node_List worklist;
+        Unique_Node_List<const Node> worklist;
         worklist.push(def);
         for (uint i = 0; i < worklist.size(); i++) {
-          Node* m = worklist.at(i);
+          const Node* m = worklist.at(i);
           if (C->cfg()->_raw_oops.member(m)) {
             def->dump();
             m->dump();
@@ -376,6 +376,9 @@ OopMap *OopFlow::build_oop_map( Node *n, int max_reg, PhaseRegAlloc *regalloc, i
             if ((u->is_SpillCopy() && u->in(1) == m) || u->is_Phi()) {
               worklist.push(u);
             }
+          }
+          if (m->is_SpillCopy()) {
+            worklist.push(m->in(1));
           }
         }
       }
@@ -482,7 +485,7 @@ static void do_liveness(PhaseRegAlloc* regalloc, PhaseCFG* cfg, Block_List* work
         if( OptoReg::is_valid(first) ) clr_live_bit(tmp_live,first);
         if( OptoReg::is_valid(second) ) clr_live_bit(tmp_live,second);
 
-        MachNode *m = n->is_Mach() ? n->as_Mach() : nullptr;
+        MachNode* m = n->isa_Mach();
 
         // Check if m is potentially a CISC alternate instruction (i.e, possibly
         // synthesized by RegAlloc from a conventional instruction and a
@@ -516,7 +519,7 @@ static void do_liveness(PhaseRegAlloc* regalloc, PhaseCFG* cfg, Block_List* work
               // with these, but are presuming (with trepidation) that not any of
               // them are oops. This can be fixed by making get_base_and_disp()
               // look at a specific input instead of all inputs.
-              assert(!def->bottom_type()->isa_oop_ptr(), "expecting non-oop mem input");
+              assert(!def->bottom_type()->is_oopptr(), "expecting non-oop mem input");
             } else if (base != fp || offset == Type::OffsetBot) {
               // Do nothing: the fp operand is either not from a memory use
               // (base == nullptr) OR the fp is used in a non-memory context

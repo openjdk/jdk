@@ -142,7 +142,8 @@ import jdk.internal.util.DecimalDigits;
  * @param <D> the ChronoLocalDate of this date-time
  * @since 1.8
  */
-abstract class ChronoLocalDateImpl<D extends ChronoLocalDate>
+// See doc/value-class-preview.md for an overview of value class generation
+abstract /*value*/ class ChronoLocalDateImpl<D extends ChronoLocalDate>
         implements ChronoLocalDate, Temporal, TemporalAdjuster, Serializable {
 
     /**

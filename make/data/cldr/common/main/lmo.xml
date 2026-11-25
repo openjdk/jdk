@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2025 Unicode, Inc.
+<!-- Copyright © 1991-2026 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -72,14 +72,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dayPeriodWidth>
 					</dayPeriodContext>
 				</dayPeriods>
-				<dateTimeFormats>
-					<availableFormats>
-						<dateFormatItem id="yMMMd" draft="contributed">d MMM y</dateFormatItem>
-					</availableFormats>
-				</dateTimeFormats>
 			</calendar>
 		</calendars>
 		<timeZoneNames>
+			<zone type="Etc/UTC">
+				<long>
+					<standard>Temp Universàl Coordinàa</standard>
+				</long>
+			</zone>
 			<metazone type="GMT">
 				<long>
 					<standard draft="contributed">Temp Medi de Greenwich</standard>

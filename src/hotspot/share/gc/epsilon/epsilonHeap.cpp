@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, 2022, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -34,7 +34,6 @@
 #include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
-#include "runtime/atomicAccess.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/ostream.hpp"
 
@@ -75,6 +74,10 @@ jint EpsilonHeap::initialize() {
 void EpsilonHeap::initialize_serviceability() {
   _pool = new EpsilonMemoryPool(this);
   _memory_manager.add_pool(_pool);
+}
+
+void EpsilonHeap::post_initialize() {
+  CollectedHeap::post_initialize();
   _monitoring_support->mark_ready();
 }
 

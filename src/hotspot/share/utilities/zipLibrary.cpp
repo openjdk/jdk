@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,12 @@
 
 #include "jvm_io.h"
 #include "runtime/arguments.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/semaphore.inline.hpp"
 #include "runtime/thread.inline.hpp"
+#include "utilities/deferredStatic.hpp"
 #include "utilities/zipLibrary.hpp"
 
  // Entry points in zip.dll for loading zip/jar file entries
@@ -50,10 +52,10 @@ static ZIP_GZip_InitParams_t ZIP_GZip_InitParams = nullptr;
 static ZIP_GZip_Fully_t ZIP_GZip_Fully = nullptr;
 
 static void* _zip_handle = nullptr;
-static bool _loaded = false;
+static Atomic<bool> _loaded{false};
 
 static inline bool is_loaded() {
-  return AtomicAccess::load_acquire(&_loaded);
+  return _loaded.load_acquire();
 }
 
 static inline bool not_loaded() {
@@ -111,7 +113,7 @@ static void load_zip_library(bool vm_exit_on_failure) {
   }
 
   store_function_pointers(&path[0], vm_exit_on_failure);
-  AtomicAccess::release_store(&_loaded, true);
+  _loaded.release_store(true);
   assert(is_loaded(), "invariant");
 }
 
@@ -121,7 +123,14 @@ static void load_zip_library(bool vm_exit_on_failure) {
 //
 class ZipLibraryLoaderLock : public StackObj {
  private:
-  static Semaphore _lock;
+  static DeferredStatic<Semaphore> _lock;
+  friend class ZipLibrary;
+  // Called from Threads::create_vm() via initialize_loader_lock
+  static void initialize() {
+    int sem_count = 1;
+    _lock.initialize(sem_count);
+  }
+
   JavaThread* _jt;
  public:
    ZipLibraryLoaderLock() : _jt(nullptr) {
@@ -133,17 +142,21 @@ class ZipLibraryLoaderLock : public StackObj {
         ThreadStateTransition::transition_from_vm(jt, _thread_in_native, false);
       }
     }
-    _lock.wait();
+    _lock->wait();
   }
   ~ZipLibraryLoaderLock() {
-    _lock.signal();
+    _lock->signal();
     if (_jt != nullptr) {
       ThreadStateTransition::transition_from_native(_jt, _thread_in_vm, false);
     }
   }
 };
 
-Semaphore ZipLibraryLoaderLock::_lock(1);
+DeferredStatic<Semaphore> ZipLibraryLoaderLock::_lock;
+
+void ZipLibrary::initialize_loader_lock() {
+  ZipLibraryLoaderLock::initialize();
+}
 
 static void initialize(bool vm_exit_on_failure = true) {
   if (is_loaded()) {

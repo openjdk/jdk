@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import jdk.test.lib.SA.SATestUtils;
  * @bug 8318682
  * @summary Test decoding debug info for all nmethods in the code cache
  * @requires vm.hasSA
+ * @requires vm.gc != "Z"
  * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @library /test/lib
  * @modules jdk.hotspot.agent/sun.jvm.hotspot
@@ -100,6 +101,8 @@ public class TestDebugInfoDecode {
         SATestUtils.addPrivilegesIfNeeded(processBuilder);
         OutputAnalyzer SAOutput = ProcessTools.executeProcess(processBuilder);
         SAOutput.shouldHaveExitValue(0);
+        // Detect NullPointerExceptions when scanning free blocks in the code heap
+        SAOutput.shouldNotContain("java.lang.NullPointerException");
         System.out.println(SAOutput.getOutput());
     }
 

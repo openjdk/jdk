@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package sun.lwawt;
 
+import java.lang.ref.WeakReference;
 import java.awt.AlphaComposite;
 import java.awt.Color;
 import java.awt.Component;
@@ -64,7 +65,6 @@ import javax.swing.JComponent;
 
 import sun.awt.AWTAccessor;
 import sun.awt.AWTAccessor.ComponentAccessor;
-import sun.awt.AppContext;
 import sun.awt.CGraphicsDevice;
 import sun.awt.DisplayChangedListener;
 import sun.awt.ExtendedKeyCodes;
@@ -139,6 +139,14 @@ public class LWWindowPeer
     private static LWWindowPeer grabbingWindow;
 
     private volatile boolean skipNextFocusChange;
+
+    /*
+     * Per-peer state for restoring Java focus to a simple Window after the
+     * native Frame or Dialog that took focus from it is hidden.
+     */
+    private final Object focusRestoreLock = new Object();
+    private WeakReference<LWWindowPeer> focusRestoreTarget;
+    private FocusRestoreRequest pendingFocusRestore;
 
     private static final Color nonOpaqueBackground = new Color(0, 0, 0, 0);
 
@@ -249,6 +257,7 @@ public class LWWindowPeer
 
     @Override
     protected void disposeImpl() {
+        registerFocusRestoreOnHide();
         deactivateDisplayListener();
         SurfaceData oldData = getSurfaceData();
         synchronized (surfaceDataLock){
@@ -277,6 +286,9 @@ public class LWWindowPeer
 
     @Override
     protected void setVisibleImpl(final boolean visible) {
+        if (!visible) {
+            registerFocusRestoreOnHide();
+        }
         updateFocusableWindowState();
         super.setVisibleImpl(visible);
         // TODO: update graphicsConfig, see 4868278
@@ -755,6 +767,12 @@ public class LWWindowPeer
     @Override
     public void notifyActivation(boolean activation, LWWindowPeer opposite) {
         Window oppositeWindow = (opposite == null)? null : opposite.getTarget();
+        if (activation) {
+            if (restoreFocusAfterHide()) {
+                return;
+            }
+            rememberFocusRestoreTarget();
+        }
         changeFocusedWindow(activation, oppositeWindow);
     }
 
@@ -1236,9 +1254,7 @@ public class LWWindowPeer
             return false;
         }
 
-        AppContext targetAppContext = AWTAccessor.getComponentAccessor().getAppContext(getTarget());
-        KeyboardFocusManager kfm = AWTAccessor.getKeyboardFocusManagerAccessor()
-                .getCurrentKeyboardFocusManager(targetAppContext);
+        KeyboardFocusManager kfm = KeyboardFocusManager.getCurrentKeyboardFocusManager();
         Window currentActive = kfm.getActiveWindow();
 
 
@@ -1362,7 +1378,7 @@ public class LWWindowPeer
             if (focusLog.isLoggable(PlatformLogger.Level.FINE)) {
                 focusLog.fine("ungrabbing on " + grabbingWindow);
             }
-            // ungrab a simple window if its owner looses activation.
+            // ungrab a simple window if its owner loses activation.
             grabbingWindow.ungrab();
         }
 
@@ -1409,6 +1425,93 @@ public class LWWindowPeer
                 blocker = blocker.blocker;
             }
             return blocker;
+        }
+    }
+
+    // Saves the currently focused simple Window as this native top-level's
+    // Java focus restore target when it becomes active.
+    private void rememberFocusRestoreTarget() {
+        Window focusedWindow = LWKeyboardFocusManagerPeer.getInstance()
+                .getCurrentFocusedWindow();
+        LWWindowPeer focusedPeer = focusedWindow == null ? null
+                : (LWWindowPeer) AWTAccessor.getComponentAccessor()
+                        .getPeer(focusedWindow);
+
+        if (focusedPeer == null || focusedPeer == this) {
+            return;
+        }
+        synchronized (focusRestoreLock) {
+            focusRestoreTarget = focusedPeer.isSimpleWindow()
+                    ? new WeakReference<>(focusedPeer) : null;
+        }
+    }
+
+    // Registers this peer's saved Java focus restore target for later restoration
+    // before this native top-level is hidden or disposed.
+    private void registerFocusRestoreOnHide() {
+        LWWindowPeer target;
+        synchronized (focusRestoreLock) {
+            KeyboardFocusManagerPeer kfmPeer =
+                    LWKeyboardFocusManagerPeer.getInstance();
+            if (kfmPeer.getCurrentFocusedWindow() != getTarget()) {
+                return;
+            }
+
+            target = focusRestoreTarget == null ? null
+                    : focusRestoreTarget.get();
+            focusRestoreTarget = null;
+        }
+
+        if (target == null) {
+            return;
+        }
+
+        LWWindowPeer owner = getOwnerFrameDialog(target);
+        if (owner != null && owner != this) {
+            owner.registerFocusRestore(this, target);
+        }
+    }
+
+    private void registerFocusRestore(LWWindowPeer source, LWWindowPeer target) {
+        synchronized (focusRestoreLock) {
+            pendingFocusRestore = new FocusRestoreRequest(source, target);
+        }
+    }
+
+    // Restores the pending Java focus target when its nearest owning Frame or Dialog
+    // becomes active after the source peer was hidden, including by disposal.
+    private boolean restoreFocusAfterHide() {
+        FocusRestoreRequest request;
+        synchronized (focusRestoreLock) {
+            request = pendingFocusRestore;
+            pendingFocusRestore = null;
+        }
+
+        if (request == null) {
+            return false;
+        }
+
+        LWWindowPeer source = request.source.get();
+        LWWindowPeer target = request.target.get();
+        if (source == null || target == null
+                || source.getTarget().isVisible()
+                || getOwnerFrameDialog(target) != this
+                || !target.focusAllowedFor()
+                || target.getBlocker() != null) {
+            return false;
+        }
+
+        target.changeFocusedWindow(true, source.getTarget());
+        return true;
+    }
+
+    private static final class FocusRestoreRequest {
+        final WeakReference<LWWindowPeer> source;
+        final WeakReference<LWWindowPeer> target;
+
+        FocusRestoreRequest(LWWindowPeer source, LWWindowPeer target) {
+            this.source = new WeakReference<>(source);
+            this.target = new WeakReference<>(target);
         }
     }
 

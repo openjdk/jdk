@@ -1,15 +1,42 @@
 #!/bin/bash
 
-javac -d . ../../../../../../make/jdk/src/classes/build/tools/spp/Spp.java
+#
+# Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
 
-SPP=build.tools.spp.Spp
+# Toggle Bash strict mode
+set -euo pipefail
+
+# Switch to the directory this script is located in
+cd "$(dirname "$0")"
+
+SPP="../../../../../../make/jdk/src/classes/build/tools/spp/Spp.java"
 
 # Generates variable handle tests for objects and all primitive types
 # This is likely to be a temporary testing approach as it may be more
 # desirable to generate code using ASM which will allow more flexibility
 # in the kinds of tests that are generated.
 
-for type in boolean byte short char int long float double String
+for type in boolean byte short char int long float double String Value NullRestrictedValue
 do
   Type="$(tr '[:lower:]' '[:upper:]' <<< ${type:0:1})${type:1}"
   args="-K$type -Dtype=$type -DType=$Type"
@@ -25,6 +52,20 @@ do
   case $type in
     boolean|byte|short|char|int|long)
       args="$args -KBitwise"
+      ;;
+  esac
+
+ # Object = objects of identity or value class
+ # Value = value class 
+  case $type in
+    String)
+      args="$args -KObject"
+      ;;
+    Value)
+      args="$args -KObject -KValue"
+      ;;
+    NullRestrictedValue)
+      args="$args -KObject -KValue -KNullRestricted"
       ;;
   esac
 
@@ -77,6 +118,15 @@ do
       value2=\"bar\"
       value3=\"baz\"
       ;;
+    Value)
+      value1="Value.getInstance(10)"
+      value2="Value.getInstance(20)"
+      value3="Value.getInstance(30)"
+      ;;
+    NullRestrictedValue)
+      value1="NullRestrictedValue.of((byte)20,(short)1854)"
+      value2="NullRestrictedValue.of((byte)-42,(short)1854)"
+      value3="NullRestrictedValue.of((byte)20,(short)-31083)"
   esac
 
   args="$args -Dvalue1=$value1 -Dvalue2=$value2 -Dvalue3=$value3 -Dwrong_primitive_type=$wrong_primitive_type"
@@ -171,5 +221,3 @@ do
   rm -f $out
   java $SPP -nel $args -iX-VarHandleTestByteArrayView.java.template -o$out
 done
-
-rm -fr build

@@ -36,9 +36,9 @@
  * @requires (os.family == "mac")
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.mock.*
+ * @build jdk.jpackage.test.stdmock.*
  * @compile/module=jdk.jpackage -Xlint:all -Werror
  *    jdk/jpackage/internal/MacDmgSystemEnvironmentTest.java
- *    ../../share/jdk.jpackage/jdk/jpackage/internal/MockUtils.java
  * @run junit jdk.jpackage/jdk.jpackage.internal.MacDmgSystemEnvironmentTest
  */
 
@@ -47,8 +47,27 @@
  * @requires (os.family == "mac")
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.mock.*
+ * @build jdk.jpackage.test.stdmock.*
  * @compile/module=jdk.jpackage -Xlint:all -Werror
  *    jdk/jpackage/internal/MacDmgPackagerTest.java
- *    ../../share/jdk.jpackage/jdk/jpackage/internal/MockUtils.java
  * @run junit jdk.jpackage/jdk.jpackage.internal.MacDmgPackagerTest
+ */
+
+/* @test
+ * @summary Test ActiveKeychainListTest
+ * @requires (os.family == "mac")
+ * @library /test/jdk/tools/jpackage/helpers
+ * @build jdk.jpackage.test.mock.*
+ * @build jdk.jpackage.test.stdmock.*
+ * @compile/module=jdk.jpackage -Xlint:all -Werror
+ *    jdk/jpackage/internal/ActiveKeychainListTest.java
+ * @run junit jdk.jpackage/jdk.jpackage.internal.ActiveKeychainListTest
+ */
+
+/* @test
+ * @summary Test MacApplicationBuilderTest
+ * @requires (os.family == "mac")
+ * @compile/module=jdk.jpackage -Xlint:all -Werror
+ *    jdk/jpackage/internal/MacApplicationBuilderTest.java
+ * @run junit jdk.jpackage/jdk.jpackage.internal.MacApplicationBuilderTest
  */

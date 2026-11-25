@@ -240,12 +240,12 @@ private:
 #define NEW_ARENA_ARRAY(arena, type, size) \
   (type*) (arena)->Amalloc((size) * sizeof(type))
 
-#define REALLOC_ARENA_ARRAY(arena, type, old, old_size, new_size)    \
-  (type*) (arena)->Arealloc((char*)(old), (old_size) * sizeof(type), \
-                            (new_size) * sizeof(type) )
+#define REALLOC_ARENA_ARRAY(arena, old, old_size, new_size)    \
+  (REALLOC_RETURN_TYPE(old)) (arena)->Arealloc((char*)(old), (old_size) * sizeof(*old), \
+                                               (new_size) * sizeof(*old) )
 
-#define FREE_ARENA_ARRAY(arena, type, old, size) \
-  (arena)->Afree((char*)(old), (size) * sizeof(type))
+#define FREE_ARENA_ARRAY(arena, obj, size) \
+  (arena)->Afree((char*)(obj), (size) * sizeof(*obj))
 
 #define NEW_ARENA_OBJ(arena, type) \
   NEW_ARENA_ARRAY(arena, type, 1)

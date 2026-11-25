@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -344,7 +344,7 @@ public class SynthProgressBarUI extends BasicProgressBarUI
 
             if (rotateText &&
                     progressBar.getOrientation() == JProgressBar.VERTICAL){
-                Graphics2D g2 = (Graphics2D)g;
+
                 // Calculate the position for the text.
                 Point textPos;
                 AffineTransform rotation;
@@ -367,8 +367,8 @@ public class SynthProgressBarUI extends BasicProgressBarUI
 
                 // Paint the text.
                 font = font.deriveFont(rotation);
-                g2.setFont(font);
-                g2.setColor(style.getColor(context, ColorType.TEXT_FOREGROUND));
+                g.setFont(font);
+                g.setColor(style.getColor(context, ColorType.TEXT_FOREGROUND));
                 style.getGraphicsUtils(context).paintText(context, g, title,
                                                      textPos.x, textPos.y, -1);
             } else {

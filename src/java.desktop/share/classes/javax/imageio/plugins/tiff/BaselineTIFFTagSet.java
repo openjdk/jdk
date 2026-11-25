@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -314,21 +314,21 @@ public final class BaselineTIFFTagSet extends TIFFTagSet {
     public static final int TAG_THRESHHOLDING = 263;
 
     /**
-     * A value to be used with the "Thresholding" tag.
+     * A value to be used with the "Threshholding" tag.
      *
      * @see #TAG_THRESHHOLDING
      */
     public static final int THRESHHOLDING_NONE = 1;
 
     /**
-     * A value to be used with the "Thresholding" tag.
+     * A value to be used with the "Threshholding" tag.
      *
      * @see #TAG_THRESHHOLDING
      */
     public static final int THRESHHOLDING_ORDERED_DITHER = 2;
 
     /**
-     * A value to be used with the "Thresholding" tag.
+     * A value to be used with the "Threshholding" tag.
      *
      * @see #TAG_THRESHHOLDING
      */

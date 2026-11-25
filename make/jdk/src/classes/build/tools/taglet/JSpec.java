@@ -25,13 +25,13 @@
 
 package build.tools.taglet;
 
+import java.net.URI;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.lang.reflect.Field;
 
 import javax.lang.model.element.Element;
 
@@ -141,6 +141,11 @@ public class JSpec implements Taglet  {
 
     @Override
     public String toString(List<? extends DocTree> tags, Element elem) {
+        throw new UnsupportedOperationException();
+    }
+
+    // @Override - requires JDK-8373922 in build JDK
+    public String toString(List<? extends DocTree> tags, Element elem, URI docRoot) {
 
         if (tags.isEmpty())
             return "";
@@ -177,7 +182,7 @@ public class JSpec implements Taglet  {
                 String preview = m.group("preview"); // null if no preview feature
                 String chapter = m.group("chapter");
                 String section = m.group("section");
-                String rootParent = currentPath().replaceAll("[^/]+", "..");
+                String rootParent = docRoot.resolve("..").toString();
 
                 String url = preview == null ?
                         String.format("%1$s/specs/%2$s/%2$s-%3$s.html#%2$s-%3$s%4$s",
@@ -228,23 +233,6 @@ public class JSpec implements Taglet  {
         }
 
         return sb.toString();
-    }
-
-    private static ThreadLocal<String> CURRENT_PATH = null;
-
-    private String currentPath() {
-        if (CURRENT_PATH == null) {
-            try {
-                Field f = Class.forName("jdk.javadoc.internal.doclets.formats.html.HtmlDocletWriter")
-                               .getField("CURRENT_PATH");
-                @SuppressWarnings("unchecked")
-                ThreadLocal<String> tl = (ThreadLocal<String>) f.get(null);
-                CURRENT_PATH = tl;
-            } catch (ReflectiveOperationException e) {
-                throw new RuntimeException("Cannot determine current path", e);
-            }
-        }
-        return CURRENT_PATH.get();
     }
 
     private String expand(List<? extends DocTree> trees) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,9 @@
 #include "runtime/vmOperations.hpp"
 #include "utilities/ostream.hpp"
 
+// Forward Declaration
+
+class JvmtiEnv;
 
 ///////////////////////////////////////////////////////////////
 //
@@ -46,7 +49,7 @@
 
 typedef void (Method::*method_action)(int _bci);
 
-class JvmtiBreakpoint : public CHeapObj<mtInternal> {
+class JvmtiBreakpoint : public CHeapObj<mtServiceability> {
 private:
   Method*               _method;
   int                   _bci;
@@ -74,7 +77,7 @@ public:
 // All changes to the array occur at a safepoint.
 //
 
-class JvmtiBreakpoints : public CHeapObj<mtInternal> {
+class JvmtiBreakpoints : public CHeapObj<mtServiceability> {
 private:
   GrowableArray<JvmtiBreakpoint*> _elements;
 
@@ -349,10 +352,10 @@ class JvmtiDeferredEvent {
  * and posts the events.  The Service_lock is required to be held
  * when operating on the queue.
  */
-class JvmtiDeferredEventQueue : public CHeapObj<mtInternal> {
+class JvmtiDeferredEventQueue : public CHeapObj<mtServiceability> {
   friend class JvmtiDeferredEvent;
  private:
-  class QueueNode : public CHeapObj<mtInternal> {
+  class QueueNode : public CHeapObj<mtServiceability> {
    private:
     JvmtiDeferredEvent _event;
     QueueNode* _next;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package sun.font;
 import java.awt.Font;
 import java.awt.FontFormatException;
 import java.awt.geom.Point2D;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.io.UnsupportedEncodingException;
@@ -215,8 +214,8 @@ public class TrueTypeFont extends FileFont {
             }
         } catch (Throwable t) {
             close();
-            if (t instanceof FontFormatException) {
-                throw (FontFormatException)t;
+            if (t instanceof FontFormatException ffe) {
+                throw ffe;
             } else {
                 throw new FontFormatException("Unexpected runtime exception.");
             }
@@ -247,8 +246,8 @@ public class TrueTypeFont extends FileFont {
                 fileSize = (int)disposerRecord.channel.size();
                 if (usePool) {
                     FontManager fm = FontManagerFactory.getInstance();
-                    if (fm instanceof SunFontManager) {
-                        ((SunFontManager) fm).addToPool(this);
+                    if (fm instanceof SunFontManager sfm) {
+                        sfm.addToPool(this);
                     }
                 }
             } catch (ClosedChannelException e) {
@@ -509,8 +508,8 @@ public class TrueTypeFont extends FileFont {
             if (FontUtilities.isLogging()) {
                 FontUtilities.logSevere(e.toString());
             }
-            if (e instanceof FontFormatException) {
-                throw (FontFormatException)e;
+            if (e instanceof FontFormatException ffe) {
+                throw ffe;
             } else {
                 throw new FontFormatException(e.toString());
             }

@@ -66,7 +66,7 @@ public class CaptureScanner extends TreeScanner {
     @Override
     public void visitIdent(JCTree.JCIdent tree) {
         Symbol sym = tree.sym;
-        if (sym.kind == VAR && sym.owner.kind == MTH) {
+        if (sym.kind == VAR && (sym.owner.kind == MTH || sym.owner.kind == VAR)) {
             Symbol.VarSymbol vsym = (Symbol.VarSymbol) sym;
             if (vsym.getConstValue() == null && !seenVars.contains(vsym)) {
                 addFreeVar(vsym);
@@ -83,7 +83,7 @@ public class CaptureScanner extends TreeScanner {
 
     @Override
     public void visitVarDef(JCTree.JCVariableDecl tree) {
-        if (tree.sym.owner.kind == MTH) {
+        if (tree.sym.owner.kind == MTH || tree.sym.owner.kind == VAR) {
             seenVars.add(tree.sym);
         }
         super.visitVarDef(tree);

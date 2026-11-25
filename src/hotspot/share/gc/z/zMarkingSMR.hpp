@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,8 @@
  * questions.
  */
 
-#ifndef SHARE_GC_Z_ZMARKSTACKALLOCATOR_HPP
-#define SHARE_GC_Z_ZMARKSTACKALLOCATOR_HPP
+#ifndef SHARE_GC_Z_ZMARKINGSMR_HPP
+#define SHARE_GC_Z_ZMARKINGSMR_HPP
 
 #include "gc/z/zArray.hpp"
 #include "gc/z/zValue.hpp"
@@ -50,4 +50,4 @@ public:
   ZMarkStackListNode* volatile* hazard_ptr();
 };
 
-#endif // SHARE_GC_Z_ZMARKSTACKALLOCATOR_HPP
+#endif // SHARE_GC_Z_ZMARKINGSMR_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2023, Institute of Software, Chinese Academy of Sciences.
  * All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -28,7 +28,15 @@
 
 package jdk.internal.foreign.abi.riscv64.linux;
 
+import java.lang.foreign.AddressLayout;
+import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.GroupLayout;
+import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
 import jdk.internal.foreign.Utils;
+import java.lang.foreign.*;
+
 import jdk.internal.foreign.abi.ABIDescriptor;
 import jdk.internal.foreign.abi.AbstractLinker.UpcallStubFactory;
 import jdk.internal.foreign.abi.Binding;
@@ -39,20 +47,15 @@ import jdk.internal.foreign.abi.LinkerOptions;
 import jdk.internal.foreign.abi.SharedUtils;
 import jdk.internal.foreign.abi.VMStorage;
 
-import java.lang.foreign.AddressLayout;
-import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.GroupLayout;
-import java.lang.foreign.MemoryLayout;
-import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static jdk.internal.foreign.abi.riscv64.linux.TypeClass.*;
 import static jdk.internal.foreign.abi.riscv64.RISCV64Architecture.Regs.*;
 import static jdk.internal.foreign.abi.riscv64.RISCV64Architecture.*;
-import static jdk.internal.foreign.abi.riscv64.linux.TypeClass.*;
 
 /**
  * For the RISCV64 C ABI specifically, this class uses CallingSequenceBuilder
@@ -275,7 +278,7 @@ public class LinuxRISCV64CallArranger {
             switch (argumentClass) {
                 case INTEGER -> {
                     VMStorage storage = storageCalculator.getStorage(StorageType.INTEGER);
-                    bindings.vmStore(storage, carrier);
+                    bindings.vmStore(storage, carrier, SharedUtils.isSigned(layout));
                 }
                 case FLOAT -> {
                     VMStorage storage = storageCalculator.getStorage(StorageType.FLOAT);

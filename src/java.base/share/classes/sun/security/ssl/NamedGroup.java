@@ -33,11 +33,12 @@ import java.security.spec.NamedParameterSpec;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.ArrayList;
 import java.util.Objects;
 import java.util.Set;
 import javax.crypto.KeyAgreement;
+import javax.crypto.KEM;
 import javax.crypto.spec.DHParameterSpec;
 import sun.security.ssl.ECDHKeyExchange.ECDHEPossession;
 import sun.security.util.CurveDB;
@@ -234,20 +235,17 @@ enum NamedGroup {
     X25519MLKEM768(0x11ec, "X25519MLKEM768",
             NamedGroupSpec.NAMED_GROUP_KEM,
             ProtocolVersion.PROTOCOLS_OF_13,
-            Hybrid.X25519_MLKEM768,
-            HybridProvider.PROVIDER),
+            Hybrid.X25519_MLKEM768),
 
     SECP256R1MLKEM768(0x11eb, "SecP256r1MLKEM768",
             NamedGroupSpec.NAMED_GROUP_KEM,
             ProtocolVersion.PROTOCOLS_OF_13,
-            Hybrid.SECP256R1_MLKEM768,
-            HybridProvider.PROVIDER),
+            Hybrid.SECP256R1_MLKEM768),
 
     SECP384R1MLKEM1024(0x11ed, "SecP384r1MLKEM1024",
             NamedGroupSpec.NAMED_GROUP_KEM,
             ProtocolVersion.PROTOCOLS_OF_13,
-            Hybrid.SECP384R1_MLKEM1024,
-            HybridProvider.PROVIDER),
+            Hybrid.SECP384R1_MLKEM1024),
 
     // Elliptic Curves (RFC 4492)
     //
@@ -269,8 +267,6 @@ enum NamedGroup {
     final AlgorithmParameterSpec keAlgParamSpec;
     final AlgorithmParameters keAlgParams;
     final boolean isAvailable;
-    final Provider defaultProvider;
-
     // performance optimization
     private static final Set<CryptoPrimitive> KEY_AGREEMENT_PRIMITIVE_SET =
         Collections.unmodifiableSet(EnumSet.of(CryptoPrimitive.KEY_AGREEMENT));
@@ -279,23 +275,12 @@ enum NamedGroup {
             NamedGroupSpec namedGroupSpec,
             ProtocolVersion[] supportedProtocols,
             AlgorithmParameterSpec keAlgParamSpec) {
-        this(id, name, namedGroupSpec, supportedProtocols, keAlgParamSpec,
-                null);
-    }
-
-    // Constructor used for all NamedGroup types
-    NamedGroup(int id, String name,
-            NamedGroupSpec namedGroupSpec,
-            ProtocolVersion[] supportedProtocols,
-            AlgorithmParameterSpec keAlgParamSpec,
-            Provider defaultProvider) {
         this.id = id;
         this.name = name;
         this.spec = namedGroupSpec;
         this.algorithm = namedGroupSpec.algorithm;
         this.supportedProtocols = supportedProtocols;
         this.keAlgParamSpec = keAlgParamSpec;
-        this.defaultProvider = defaultProvider;
 
         // Check if it is a supported named group.
         AlgorithmParameters algParams = null;
@@ -312,14 +297,13 @@ enum NamedGroup {
         // Check the specific algorithm parameters.
         if (mediator) {
             try {
-                // Skip AlgorithmParameters for KEMs (not supported)
-                // Check KEM's availability via KeyFactory
+                // Skip AlgorithmParameters for KEMs (not supported).
+                // A direct hybrid KEM must provide both KeyPairGenerator
+                // and KEM. It does not require a KeyFactory because TLS
+                // passes a RAW key_share directly to the KEM encapsulator.
                 if (namedGroupSpec == NamedGroupSpec.NAMED_GROUP_KEM) {
-                    if (defaultProvider == null) {
-                        KeyFactory.getInstance(name);
-                    } else {
-                        KeyFactory.getInstance(name, defaultProvider);
-                    }
+                    KeyPairGenerator.getInstance(name);
+                    KEM.getInstance(name);
                 } else {
                     // ECDHE or others: use AlgorithmParameters as before
                     algParams = AlgorithmParameters.getInstance(
@@ -330,10 +314,11 @@ enum NamedGroup {
                     | NoSuchAlgorithmException exp) {
                 if (namedGroupSpec != NamedGroupSpec.NAMED_GROUP_XDH) {
                     mediator = false;
-                    if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+                    if (SSLLogger.isOn() &&
+                            SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                         SSLLogger.warning(
-                            "No AlgorithmParameters or KeyFactory for " + name,
-                                exp);
+                                "No AlgorithmParameters, KeyPairGenerator, " +
+                                "or KEM for " + name, exp);
                     }
                 } else {
                     // Please remove the following code if the XDH/X25519/X448
@@ -352,7 +337,8 @@ enum NamedGroup {
                         // AlgorithmParameters.getInstance(name);
                     } catch (NoSuchAlgorithmException nsae) {
                         mediator = false;
-                        if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+                        if (SSLLogger.isOn() &&
+                                SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                             SSLLogger.warning(
                                 "No AlgorithmParameters for " + name, nsae);
                         }
@@ -363,10 +349,6 @@ enum NamedGroup {
 
         this.isAvailable = mediator;
         this.keAlgParams = mediator ? algParams : null;
-    }
-
-    Provider getProvider() {
-        return defaultProvider;
     }
 
     //
@@ -431,33 +413,8 @@ enum NamedGroup {
         return "UNDEFINED-NAMED-GROUP(" + id + ")";
     }
 
-    public static List<NamedGroup> namesOf(String[] namedGroups) {
-        if (namedGroups == null) {
-            return null;
-        }
-
-        if (namedGroups.length == 0) {
-            return List.of();
-        }
-
-        List<NamedGroup> ngs = new ArrayList<>(namedGroups.length);
-        for (String ss : namedGroups) {
-            NamedGroup ng = NamedGroup.nameOf(ss);
-            if (ng == null || !ng.isAvailable) {
-                if (SSLLogger.isOn() &&
-                        SSLLogger.isOn("ssl,handshake,verbose")) {
-                    SSLLogger.finest(
-                            "Ignore the named group (" + ss
-                                    + "), unsupported or unavailable");
-                }
-
-                continue;
-            }
-
-            ngs.add(ng);
-        }
-
-        return Collections.unmodifiableList(ngs);
+    static String[] namesOf(List<NamedGroup> groups) {
+        return groups.stream().map(ng -> ng.name).toArray(String[]::new);
     }
 
     // Is there any supported group permitted by the constraints?
@@ -878,9 +835,7 @@ enum NamedGroup {
                 // FFDHE (RFC 7919)
                 FFDHE_2048,
                 FFDHE_3072,
-                FFDHE_4096,
-                FFDHE_6144,
-                FFDHE_8192
+                FFDHE_4096
         };
 
         // Filter default groups names against default constraints.
@@ -912,10 +867,30 @@ enum NamedGroup {
                 namedGroups = customizedNames;
             } else {
                 if (defaultNames.length == 0) {
-                    SSLLogger.logWarning("ssl", "No default named groups");
+                    SSLLogger.logWarning(SSLLogger.Opt.SSL,
+                            "No default named groups");
                 }
                 namedGroups = defaultNames;
             }
+        }
+
+        // Returns all supported named groups for the specified protocols and
+        // cipher suites. Default named groups are returned first.
+        static List<NamedGroup> getSupportedGroups(List<ProtocolVersion> protocols,
+                List<CipherSuite> cipherSuites) {
+
+            LinkedHashSet<NamedGroup> supportedGroups = new LinkedHashSet<>();
+            supportedGroups.addAll(Arrays.asList(defaultGroups));
+            supportedGroups.addAll(Arrays.asList(NamedGroup.values()));
+
+            return supportedGroups.stream()
+                    .filter(ng -> ng.isAvailable(protocols))
+                    .filter(ng -> ng.isSupported(cipherSuites))
+                    .filter(ng -> SSLConfiguration.enableFFDHE ||
+                            ng.spec != NamedGroupSpec.NAMED_GROUP_FFDHE)
+                    .filter(ng -> ng.isPermitted(
+                            SSLAlgorithmConstraints.DEFAULT))
+                    .toList();
         }
 
         // Avoid the group lookup for default and customized groups.

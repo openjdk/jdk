@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -263,6 +263,7 @@ Form::DataType Form::is_load_from_memory(const char *opType) const {
   if( strcmp(opType,"LoadNKlass")==0 ) return Form::idealNKlass;
   if( strcmp(opType,"LoadL")==0 )  return Form::idealL;
   if( strcmp(opType,"LoadL_unaligned")==0 )  return Form::idealL;
+  if( strcmp(opType,"LoadLSpecial")==0)  return Form::idealL;
   if( strcmp(opType,"LoadP")==0 )  return Form::idealP;
   if( strcmp(opType,"LoadN")==0 )  return Form::idealN;
   if( strcmp(opType,"LoadRange")==0 )  return Form::idealI;
@@ -282,6 +283,7 @@ Form::DataType Form::is_store_to_memory(const char *opType) const {
   if( strcmp(opType,"StoreF")==0)  return Form::idealF;
   if( strcmp(opType,"StoreI")==0)  return Form::idealI;
   if( strcmp(opType,"StoreL")==0)  return Form::idealL;
+  if( strcmp(opType,"StoreLSpecial")==0)  return Form::idealL;
   if( strcmp(opType,"StoreP")==0)  return Form::idealP;
   if( strcmp(opType,"StoreN")==0)  return Form::idealN;
   if( strcmp(opType,"StoreNKlass")==0)  return Form::idealNKlass;

@@ -23,13 +23,13 @@
  */
 
 /*
- * @test id=default-rotation
+ * @test id=satb-rotation
  * @requires vm.gc.Shenandoah
  *
  * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+ShenandoahRegionSampling -XX:+ShenandoahRegionSampling
  *      -Xlog:gc+region=trace:region-snapshots-%p.log::filesize=100,filecount=3
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=adaptive
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=satb -XX:ShenandoahGCHeuristics=adaptive
  *      TestRegionSamplingLogging
  */
 
@@ -59,8 +59,10 @@ public class TestRegionSamplingLogging {
         }
 
         File directory = new File(".");
-        File[] files = directory.listFiles((dir, name) -> name.startsWith("region-snapshots") && name.endsWith(".log"));
+        File[] files = directory.listFiles((dir, name) -> name.startsWith("region-snapshots"));
         System.out.println(Arrays.toString(files));
+
+        // Expect one or more log files when region logging is enabled
         if (files == null || files.length == 0) {
             throw new IllegalStateException("Did not find expected snapshot log file.");
         }

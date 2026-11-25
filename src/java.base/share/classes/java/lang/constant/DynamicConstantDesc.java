@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -222,7 +222,7 @@ public abstract non-sealed class DynamicConstantDesc<T>
     }
 
     /**
-     * Returns a {@link MethodHandleDesc} describing the bootstrap method for
+     * Returns a {@link DirectMethodHandleDesc} describing the bootstrap method for
      * this constant.
      *
      * @return the bootstrap method

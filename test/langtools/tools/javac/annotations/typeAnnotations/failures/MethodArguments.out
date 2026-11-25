@@ -1,0 +1,8 @@
+MethodArguments.java:39:8: compiler.err.already.defined: kindname.method, five(java.lang.String), kindname.class, MethodArguments
+MethodArguments.java:45:8: compiler.err.already.defined: kindname.method, six(java.util.List<java.lang.String>), kindname.class, MethodArguments
+MethodArguments.java:15:6: compiler.err.non-static.cant.be.ref: kindname.method, one(java.lang.String)
+MethodArguments.java:23:6: compiler.err.ref.ambiguous: one, kindname.method, one(java.lang.String), p.B, kindname.method, one(java.lang.Integer), p.B
+MethodArguments.java:27:6: compiler.err.report.access: two(java.lang.String), private, p.B
+MethodArguments.java:29:6: compiler.err.report.access: three(java.lang.String), protected, p.B
+MethodArguments.java:33:6: compiler.err.not.def.public.cant.access: four(java.lang.String), p.B
+7 errors

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,8 @@
 
 /*
  * @test
- * @bug 8359412 8370922
+ * @bug 8359412 8370922 8369699
+ * @key randomness
  * @summary Demonstrate the use of Expressions from the Template Library.
  * @modules java.base/jdk.internal.misc
  * @modules jdk.incubator.vector
@@ -37,6 +38,8 @@ package template_framework.examples;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Set;
+import java.util.Random;
+import jdk.test.lib.Utils;
 
 import compiler.lib.compile_framework.*;
 import compiler.lib.template_framework.Template;
@@ -45,9 +48,12 @@ import static compiler.lib.template_framework.Template.scope;
 import static compiler.lib.template_framework.Template.let;
 import compiler.lib.template_framework.library.Expression;
 import compiler.lib.template_framework.library.Operations;
+import compiler.lib.template_framework.library.ShortCarriesFloat16Type;
 import compiler.lib.template_framework.library.TestFrameworkClass;
 
 public class TestExpressions {
+    private static final Random RANDOM = Utils.getRandomInstance();
+
     public static void main(String[] args) {
         // Create a new CompileFramework instance.
         CompileFramework comp = new CompileFramework();
@@ -83,6 +89,12 @@ public class TestExpressions {
             // precision results from some operators. We only compare the results if we know that the
             // result is deterministically the same.
             TemplateToken expressionToken = expression.asToken(expression.argumentTypes.stream().map(t -> t.con()).toList());
+            // Float16Vector lane()/reduceLanes() return a short carrier; box to Float16 so
+            // Verify.checkEQ canonicalizes NaN.
+            boolean float16CarrierResult = expression.returnType instanceof ShortCarriesFloat16Type;
+            List<Object> returnStmt = float16CarrierResult
+                ? List.of("return Float16.shortBitsToFloat16(", expressionToken, ");\n")
+                : List.of("return ", expressionToken, ";\n");
             return scope(
                 let("returnType", expression.returnType),
                 """
@@ -99,7 +111,7 @@ public class TestExpressions {
                 public static Object ${primitiveConTest}_compiled() {
                 try {
                 """,
-                    "return ", expressionToken, ";\n",
+                    returnStmt,
                     expression.info.exceptions.stream().map(exception ->
                         "} catch (" + exception + " e) { return e;\n"
                     ).toList(),
@@ -113,7 +125,7 @@ public class TestExpressions {
                 public static Object ${primitiveConTest}_reference() {
                 try {
                 """,
-                    "return ", expressionToken, ";\n",
+                    returnStmt,
                     expression.info.exceptions.stream().map(exception ->
                         "} catch (" + exception + " e) { return e;\n"
                     ).toList(),
@@ -126,7 +138,17 @@ public class TestExpressions {
             );
         });
 
+        // The scalar operations are very important and we would like to always test them all.
         for (Expression operation : Operations.SCALAR_NUMERIC_OPERATIONS) {
+            tests.add(withConstantsTemplate.asToken(operation));
+        }
+
+        // There are a LOT of instructions, especially a lot of vector instructions.
+        // A bit too many to run them all in an individual test.
+        // So let's just sample some at random.
+        for (int i = 0; i < 100; i++) {
+            int r = RANDOM.nextInt(Operations.ALL_OPERATIONS.size());
+            Expression operation = Operations.ALL_OPERATIONS.get(r);
             tests.add(withConstantsTemplate.asToken(operation));
         }
 
@@ -135,7 +157,7 @@ public class TestExpressions {
             // package and class name.
             "p.xyz", "InnerTest",
             // Set of imports.
-            Set.of("compiler.lib.verify.*", "jdk.incubator.vector.Float16"),
+            Set.of("compiler.lib.verify.*", "jdk.incubator.vector.*"),
             // classpath, so the Test VM has access to the compiled class files.
             comp.getEscapedClassPathOfCompiledClasses(),
             // The list of tests.

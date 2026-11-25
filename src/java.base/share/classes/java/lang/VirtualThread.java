@@ -26,7 +26,6 @@ package java.lang;
 
 import java.util.Locale;
 import java.util.Objects;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
@@ -68,7 +67,6 @@ final class VirtualThread extends BaseVirtualThread {
     private static final long STATE = U.objectFieldOffset(VirtualThread.class, "state");
     private static final long PARK_PERMIT = U.objectFieldOffset(VirtualThread.class, "parkPermit");
     private static final long CARRIER_THREAD = U.objectFieldOffset(VirtualThread.class, "carrierThread");
-    private static final long TERMINATION = U.objectFieldOffset(VirtualThread.class, "termination");
     private static final long ON_WAITING_LIST = U.objectFieldOffset(VirtualThread.class, "onWaitingList");
 
     // scheduler and continuation
@@ -154,9 +152,6 @@ final class VirtualThread extends BaseVirtualThread {
 
     private static final int TERMINATED = 99;  // final state
 
-    // can be suspended from scheduling when unmounted
-    private static final int SUSPENDED = 1 << 8;
-
     // parking permit made available by LockSupport.unpark
     private volatile boolean parkPermit;
 
@@ -187,8 +182,8 @@ final class VirtualThread extends BaseVirtualThread {
     // carrier thread when mounted, accessed by VM
     private volatile Thread carrierThread;
 
-    // termination object when joining, created lazily if needed
-    private volatile CountDownLatch termination;
+    // true to notifyAll after this virtual thread terminates
+    private volatile boolean notifyAllAfterTerminate;
 
     /**
      * Returns the default scheduler.
@@ -495,7 +490,7 @@ final class VirtualThread extends BaseVirtualThread {
     @ChangesCurrentThread
     @ReservedStackAccess
     private void mount() {
-        startTransition(/*is_mount*/true);
+        startTransition(/*mount*/true);
         // We assume following volatile accesses provide equivalent
         // of acquire ordering, otherwise we need U.loadFence() here.
 
@@ -540,7 +535,7 @@ final class VirtualThread extends BaseVirtualThread {
 
         // We assume previous volatile accesses provide equivalent
         // of release ordering, otherwise we need U.storeFence() here.
-        endTransition(/*is_mount*/false);
+        endTransition(/*mount*/false);
     }
 
     /**
@@ -549,11 +544,11 @@ final class VirtualThread extends BaseVirtualThread {
      */
     @Hidden
     private boolean yieldContinuation() {
-        startTransition(/*is_mount*/false);
+        startTransition(/*mount*/false);
         try {
             return Continuation.yield(VTHREAD_SCOPE);
         } finally {
-            endTransition(/*is_mount*/true);
+            endTransition(/*mount*/true);
         }
     }
 
@@ -680,11 +675,11 @@ final class VirtualThread extends BaseVirtualThread {
         assert carrierThread == null;
         setState(TERMINATED);
 
-        // notify anyone waiting for this virtual thread to terminate
-        CountDownLatch termination = this.termination;
-        if (termination != null) {
-            assert termination.getCount() == 1;
-            termination.countDown();
+        // notifyAll to wakeup any threads waiting for this thread to terminate
+        if (notifyAllAfterTerminate) {
+            synchronized (this) {
+                notifyAll();
+            }
         }
 
         // notify container
@@ -741,6 +736,13 @@ final class VirtualThread extends BaseVirtualThread {
     @Override
     public void run() {
         // do nothing
+    }
+
+    /**
+     * Invoked by Thread.join before a thread waits for this virtual thread to terminate.
+     */
+    void beforeJoin() {
+        notifyAllAfterTerminate = true;
     }
 
     /**
@@ -931,28 +933,19 @@ final class VirtualThread extends BaseVirtualThread {
      */
     private void waitTimeoutExpired(byte seqNo) {
         assert !Thread.currentThread().isVirtual();
-        for (;;) {
-            boolean unblocked = false;
-            synchronized (timedWaitLock()) {
-                if (seqNo != timedWaitSeqNo) {
-                    // this timeout task is for a past timed-wait
-                    return;
-                }
-                int s = state();
-                if (s == TIMED_WAIT) {
-                    unblocked = compareAndSetState(TIMED_WAIT, UNBLOCKED);
-                } else if (s != (TIMED_WAIT | SUSPENDED)) {
-                    // notified or interrupted, no longer waiting
-                    return;
-                }
-            }
-            if (unblocked) {
-                lazySubmitRunContinuation();
+
+        synchronized (timedWaitLock()) {
+            if (seqNo != timedWaitSeqNo) {
+                // this timeout task is for a past timed-wait
                 return;
             }
-            // need to retry when thread is suspended in time-wait
-            Thread.yield();
+            if (!compareAndSetState(TIMED_WAIT, UNBLOCKED)) {
+                // already notified (or interrupted)
+                return;
+            }
         }
+
+        lazySubmitRunContinuation();
     }
 
     /**
@@ -1009,36 +1002,6 @@ final class VirtualThread extends BaseVirtualThread {
                 setParkPermit(true);
             }
         }
-    }
-
-    /**
-     * Waits up to {@code nanos} nanoseconds for this virtual thread to terminate.
-     * A timeout of {@code 0} means to wait forever.
-     *
-     * @throws InterruptedException if interrupted while waiting
-     * @return true if the thread has terminated
-     */
-    boolean joinNanos(long nanos) throws InterruptedException {
-        if (state() == TERMINATED)
-            return true;
-
-        // ensure termination object exists, then re-check state
-        CountDownLatch termination = getTermination();
-        if (state() == TERMINATED)
-            return true;
-
-        // wait for virtual thread to terminate
-        if (nanos == 0) {
-            termination.await();
-        } else {
-            boolean terminated = termination.await(nanos, NANOSECONDS);
-            if (!terminated) {
-                // waiting time elapsed
-                return false;
-            }
-        }
-        assert state() == TERMINATED;
-        return true;
     }
 
     @Override
@@ -1120,8 +1083,7 @@ final class VirtualThread extends BaseVirtualThread {
 
     @Override
     Thread.State threadState() {
-        int s = state();
-        switch (s & ~SUSPENDED) {
+        switch (state()) {
             case NEW:
                 return Thread.State.NEW;
             case STARTED:
@@ -1190,85 +1152,6 @@ final class VirtualThread extends BaseVirtualThread {
     }
 
     @Override
-    StackTraceElement[] asyncGetStackTrace() {
-        StackTraceElement[] stackTrace;
-        do {
-            stackTrace = (carrierThread != null)
-                    ? super.asyncGetStackTrace()  // mounted
-                    : tryGetStackTrace();         // unmounted
-            if (stackTrace == null) {
-                Thread.yield();
-            }
-        } while (stackTrace == null);
-        return stackTrace;
-    }
-
-    /**
-     * Returns the stack trace for this virtual thread if it is unmounted.
-     * Returns null if the thread is mounted or in transition.
-     */
-    private StackTraceElement[] tryGetStackTrace() {
-        int initialState = state() & ~SUSPENDED;
-        switch (initialState) {
-            case NEW, STARTED, TERMINATED -> {
-                return new StackTraceElement[0];  // unmounted, empty stack
-            }
-            case RUNNING, PINNED, TIMED_PINNED -> {
-                return null;   // mounted
-            }
-            case PARKED, TIMED_PARKED, BLOCKED, WAIT, TIMED_WAIT -> {
-                // unmounted, not runnable
-            }
-            case UNPARKED, UNBLOCKED, YIELDED -> {
-                // unmounted, runnable
-            }
-            case PARKING, TIMED_PARKING, BLOCKING, YIELDING, WAITING, TIMED_WAITING -> {
-                return null;  // in transition
-            }
-            default -> throw new InternalError("" + initialState);
-        }
-
-        // thread is unmounted, prevent it from continuing
-        int suspendedState = initialState | SUSPENDED;
-        if (!compareAndSetState(initialState, suspendedState)) {
-            return null;
-        }
-
-        // get stack trace and restore state
-        StackTraceElement[] stack;
-        try {
-            stack = cont.getStackTrace();
-        } finally {
-            assert state == suspendedState;
-            setState(initialState);
-        }
-        boolean resubmit = switch (initialState) {
-            case UNPARKED, UNBLOCKED, YIELDED -> {
-                // resubmit as task may have run while suspended
-                yield true;
-            }
-            case PARKED, TIMED_PARKED -> {
-                // resubmit if unparked while suspended
-                yield parkPermit && compareAndSetState(initialState, UNPARKED);
-            }
-            case BLOCKED -> {
-                // resubmit if unblocked while suspended
-                yield blockPermit && compareAndSetState(BLOCKED, UNBLOCKED);
-            }
-            case WAIT, TIMED_WAIT -> {
-                // resubmit if notified or interrupted while waiting (Object.wait)
-                // waitTimeoutExpired will retry if the timed expired when suspended
-                yield (notified || interrupted) && compareAndSetState(initialState, UNBLOCKED);
-            }
-            default -> throw new InternalError();
-        };
-        if (resubmit) {
-            submitRunContinuation();
-        }
-        return stack;
-    }
-
-    @Override
     public String toString() {
         StringBuilder sb = new StringBuilder("VirtualThread[#");
         sb.append(threadId());
@@ -1329,20 +1212,6 @@ final class VirtualThread extends BaseVirtualThread {
     @Override
     public boolean equals(Object obj) {
         return obj == this;
-    }
-
-    /**
-     * Returns the termination object, creating it if needed.
-     */
-    private CountDownLatch getTermination() {
-        CountDownLatch termination = this.termination;
-        if (termination == null) {
-            termination = new CountDownLatch(1);
-            if (!U.compareAndSetReference(this, TERMINATION, null, termination)) {
-                termination = this.termination;
-            }
-        }
-        return termination;
     }
 
     /**
@@ -1438,11 +1307,11 @@ final class VirtualThread extends BaseVirtualThread {
 
     @IntrinsicCandidate
     @JvmtiMountTransition
-    private native void startTransition(boolean is_mount);
+    private native void startTransition(boolean mount);
 
     @IntrinsicCandidate
     @JvmtiMountTransition
-    private native void endTransition(boolean is_mount);
+    private native void endTransition(boolean mount);
 
     @IntrinsicCandidate
     private static native void notifyJvmtiDisableSuspend(boolean enter);

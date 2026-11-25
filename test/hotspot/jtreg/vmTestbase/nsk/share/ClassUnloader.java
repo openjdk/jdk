@@ -33,14 +33,15 @@ import java.util.*;
 import nsk.share.gc.gp.*;
 import nsk.share.test.ExecutionController;
 import nsk.share.test.Stresser;
-import jdk.test.whitebox.WhiteBox;
+import jdk.test.lib.Utils;
+import jdk.test.lib.classloader.ClassUnloadCommon;
 
 /**
  * The <code>ClassUnloader</code> class allows to force VM to unload class(es)
- * using WhiteBox.fullGC technique.
+ * using the full GC from ClassUnloadCommon.
  *
  * <p>The method <code>unloadClass()</code> is provided which calls
- * WhiteBox.fullGC to cleanup the heap. So, if all references to a class
+ * ClassUnloadCommon.triggerUnloading() to cleanup the heap. So, if all references to a class
  * and its loader are canceled, this may result in unloading the class.
  *
  * <p>ClassUnloader mainly intends to unload a class which was loaded
@@ -231,45 +232,43 @@ public class ClassUnloader {
      * Forces GC to unload previously loaded classes by cleaning all references
      * to class loader with its loaded classes.
      *
-     * @return  <i>true</i> if classes unloading has been detected
+     * @return  <i>true</i> if the class has been unloaded
              or <i>false</i> otherwise
      *
-     * @throws  Failure if exception other than OutOfMemoryError
-     *           is thrown while triggering full GC
-     *
-     * @see WhiteBox.getWhiteBox().fullGC()
+     * @see ClassUnloadCommon#triggerUnloading()
      */
-
-    public static final int MAX_UNLOAD_ATTEMPS = 10;
-
     public boolean unloadClass() {
+        releaseClassLoader();
+        ClassUnloadCommon.triggerUnloading();
+        return reportReclaimed(isClassLoaderReclaimed());
+    }
 
-        // free references to class and class loader to be able for collecting by GC
+    // free references to class and class loader to be able for collecting by GC
+    private void releaseClassLoader() {
         classObjects.removeAllElements();
         customClassLoader = null;
+    }
 
-        // force class unloading by triggering full GC
-        WhiteBox.getWhiteBox().fullGC();
-        int count = 0;
-        while (count++ < MAX_UNLOAD_ATTEMPS && !isClassLoaderReclaimed()) {
-            System.out.println("ClassUnloader: waiting for class loader reclaiming... " + count);
-            WhiteBox.getWhiteBox().fullGC();
-            try {
-                // small delay to give more changes to process objects
-                // inside VM like jvmti deferred queue
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-            }
-        }
-
-        // force GC to unload marked class loader and its classes
-        if (isClassLoaderReclaimed()) {
+    private static boolean reportReclaimed(boolean reclaimed) {
+        if (reclaimed) {
             System.out.println("ClassUnloader: class loader has been reclaimed.");
-            return true;
+        } else {
+            System.out.println("ClassUnloader: class loader is still reachable.");
         }
+        return reclaimed;
+    }
 
-        // class loader has not been reclaimed
-        System.out.println("ClassUnloader: class loader is still reachable.");
-        return false;
+    /**
+     * Forces GC to unload previously loaded classes by cleaning all references
+     * to class loader with its loaded classes and wait for class loader to be reclaimed.
+     *
+     * @param timeout max time to wait for class loader to be reclaimed in milliseconds
+     * @return  <i>true</i> if the class has been unloaded
+             or <i>false</i> otherwise
+     */
+    public boolean unloadClassAndWait(long timeout) {
+        releaseClassLoader();
+        return reportReclaimed(ClassUnloadCommon.triggerUnloadingUntil(this::isClassLoaderReclaimed,
+                                                                       Utils.adjustTimeout(timeout)));
     }
 }

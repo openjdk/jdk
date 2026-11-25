@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.common.TestUtil
  *        jdk.httpclient.test.lib.http2.Http2TestServer
- * @run testng/othervm/timeout=480 H3SimplePost
+ * @run junit/othervm/timeout=480 ${test.main.class}
  */
 // -Djdk.httpclient.HttpClient.log=requests,errors,quic
 // -Djdk.httpclient.quic.defaultMTU=64000
@@ -37,8 +37,6 @@
 
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
 import jdk.test.lib.net.SimpleSSLContext;
-import org.testng.Assert;
-import org.testng.annotations.Test;
 
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
@@ -60,6 +58,9 @@ import java.util.concurrent.TimeUnit;
 import static java.net.http.HttpClient.Version.HTTP_3;
 import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static java.net.http.HttpOption.H3_DISCOVERY;
+
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public class H3SimplePost implements HttpServerAdapters {
     static HttpTestServer httpsServer;
@@ -115,11 +116,11 @@ public class H3SimplePost implements HttpServerAdapters {
     }
 
     public static void main(String[] args) throws Exception {
-        test();
+        new H3SimplePost().test();
     }
 
     @Test
-    public static void test() throws Exception {
+    public void test() throws Exception {
         try {
             long prestart = System.nanoTime();
             initialize();
@@ -140,7 +141,7 @@ public class H3SimplePost implements HttpServerAdapters {
                     .build();
             long start = System.nanoTime();
             var resp = client.send(getRequest, BodyHandlers.ofByteArrayConsumer(b-> {}));
-            Assert.assertEquals(resp.statusCode(), 200);
+            Assertions.assertEquals(200, resp.statusCode());
             long elapsed = System.nanoTime() - start;
             System.out.println("First GET request took: " + elapsed + " nanos (" + TimeUnit.NANOSECONDS.toMillis(elapsed) + " ms)");
             final int max = 50;
@@ -155,7 +156,7 @@ public class H3SimplePost implements HttpServerAdapters {
             System.out.println("Next " + max + " POST requests took: " + elapsed2 + " nanos ("
                     + TimeUnit.NANOSECONDS.toMillis(elapsed2) + "ms for " + max + " requests): "
                     + elapsed2 / max + " nanos per request (" + TimeUnit.NANOSECONDS.toMillis(elapsed2) / max + " ms)");
-            list.forEach((cf) -> Assert.assertEquals(cf.join().statusCode(), 200));
+            list.forEach((cf) -> Assertions.assertEquals(200, cf.join().statusCode()));
         } catch (Throwable tt) {
             System.err.println("tt caught");
             tt.printStackTrace();

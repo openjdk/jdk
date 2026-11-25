@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -344,7 +344,7 @@ bool MemPointerParser::is_native_memory_base_candidate(Node* n) {
   if (n->Opcode() != Op_LoadL) { return false; }
   LoadNode* load = n->as_Load();
 
-  const TypeInstPtr* inst_ptr = load->adr_type()->isa_instptr();
+  const TypeInstPtr* inst_ptr = load->in_adr_type()->isa_instptr();
   if (inst_ptr == nullptr) { return false; }
 
   ciInstanceKlass* klass = inst_ptr->instance_klass();
@@ -396,7 +396,7 @@ bool MemPointerParser::is_safe_to_decompose_op(const int opc, const NoOverflowIn
       return false;
   }
 
-  const TypeAryPtr* ary_ptr_t = _mem->adr_type()->isa_aryptr();
+  const TypeAryPtr* ary_ptr_t = _mem->in_adr_type()->isa_aryptr();
   if (ary_ptr_t != nullptr) {
     // Array accesses that are not Unsafe always have a RangeCheck which ensures
     // that there is no int overflow. And without overflows, all decompositions

@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_SHENANDOAH_SHENANDOAHGENERATION_HPP
-#define SHARE_VM_GC_SHENANDOAH_SHENANDOAHGENERATION_HPP
+#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHGENERATION_HPP
+#define SHARE_GC_SHENANDOAH_SHENANDOAHGENERATION_HPP
 
 #include "gc/shenandoah/heuristics/shenandoahSpaceInfo.hpp"
 #include "gc/shenandoah/shenandoahAffiliation.hpp"
@@ -32,6 +32,7 @@
 #include "gc/shenandoah/shenandoahLock.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.hpp"
 #include "memory/allocation.hpp"
+#include "runtime/atomic.hpp"
 
 class ShenandoahCollectionSet;
 class ShenandoahHeap;
@@ -55,43 +56,30 @@ private:
   // Bytes reserved within this generation to hold evacuated objects from the collection set
   size_t _evacuation_reserve;
 
+  // Read by mutators, written by control thread. This records the id of the last gc cycle
+  // to collect this generation.
+  Atomic<size_t> _completed_gc_id;
+
 protected:
   ShenandoahFreeSet* _free_set;
   ShenandoahHeuristics* _heuristics;
 
 private:
-  // Compute evacuation budgets prior to choosing collection set.
-  void compute_evacuation_budgets(ShenandoahHeap* heap);
-
-  // Adjust evacuation budgets after choosing collection set.  The argument regions_to_xfer represents regions to be
-  // transfered to old based on decisions made in top_off_collection_set()
-  void adjust_evacuation_budgets(ShenandoahHeap* heap,
-                                 ShenandoahCollectionSet* collection_set, size_t regions_to_xfer);
-
-  // Preselect for possible inclusion into the collection set exactly the most
-  // garbage-dense regions, including those that satisfy criteria 1 & 2 below,
-  // and whose live bytes will fit within old_available budget:
-  // Criterion 1. region age >= tenuring threshold
-  // Criterion 2. region garbage percentage > old garbage threshold
-  //
-  // Identifies regions eligible for promotion in place,
-  // being those of at least tenuring_threshold age that have lower garbage
-  // density.
-  //
-  // Updates promotion_potential and pad_for_promote_in_place fields
-  // of the heap. Returns bytes of live object memory in the preselected
-  // regions, which are marked in the preselected_regions() indicator
-  // array of the heap's collection set, which should be initialized
-  // to false.
-  size_t select_aged_regions(size_t old_promotion_reserve);
-
   // Return available assuming that we can allocate no more than capacity bytes within this generation.
   size_t available(size_t capacity) const;
 
- public:
+public:
   ShenandoahGeneration(ShenandoahGenerationType type,
                        uint max_workers);
   ~ShenandoahGeneration();
+
+  void update_completed_gc_id(size_t gc_id) {
+    _completed_gc_id.store_relaxed(gc_id);
+  }
+
+  size_t completed_gc_id() const {
+    return _completed_gc_id.load_relaxed();
+  }
 
   inline bool is_young() const                 { return _type == YOUNG; }
   inline bool is_old() const                   { return _type == OLD; }
@@ -108,10 +96,10 @@ private:
   ShenandoahReferenceProcessor* ref_processor() { return _ref_processor; }
 
   virtual ShenandoahHeuristics* initialize_heuristics(ShenandoahMode* gc_mode);
+  virtual void post_initialize_heuristics();
 
   virtual void post_initialize(ShenandoahHeap* heap);
 
-  virtual size_t bytes_allocated_since_gc_start() const override = 0;
   virtual size_t used() const override = 0;
   virtual size_t used_regions() const = 0;
   virtual size_t used_regions_size() const = 0;
@@ -121,7 +109,6 @@ private:
   virtual size_t max_capacity() const override = 0;
 
   size_t available() const override;
-  size_t available_with_reserve() const;
 
   // Returns the memory available based on the _soft_ max heap capacity (soft_max_heap - used).
   // The soft max heap size may be adjusted lower than the max heap size to cause the trigger
@@ -135,11 +122,8 @@ private:
   template <bool FOR_CURRENT_CYCLE, bool FULL_GC = false>
   void reset_mark_bitmap();
 
-  // Used by concurrent and degenerated GC to reset remembered set.
+  // Used by concurrent GC to reset remembered set.
   void swap_card_tables();
-
-  // Update the read cards with the state of the write table (write table is not cleared).
-  void merge_write_table();
 
   // Called before init mark, expected to prepare regions for marking.
   virtual void prepare_gc();
@@ -161,15 +145,15 @@ private:
   //  been set aside to hold objects evacuated from the young-gen collection set.  Conservatively, this value
   //  equals the entire amount of live young-gen memory within the collection set, even though some of this memory
   //  will likely be promoted.
-  virtual void prepare_regions_and_collection_set(bool concurrent);
+  virtual void prepare_regions_and_collection_set();
 
   // Cancel marking (used by Full collect and when cancelling cycle).
   virtual void cancel_marking();
 
-  virtual bool contains(ShenandoahAffiliation affiliation) const = 0;
+  virtual bool contains(ShenandoahAffiliation affiliation) const override = 0;
 
   // Return true if this region is affiliated with this generation.
-  virtual bool contains(ShenandoahHeapRegion* region) const = 0;
+  virtual bool contains(ShenandoahHeapRegion* region) const override = 0;
 
   // Return true if this object is affiliated with this generation.
   virtual bool contains(oop obj) const = 0;
@@ -198,16 +182,12 @@ private:
 
   // Task queues
   ShenandoahObjToScanQueueSet* task_queues() const { return _task_queues; }
-  virtual void reserve_task_queues(uint workers);
   virtual ShenandoahObjToScanQueueSet* old_gen_task_queues() const;
 
   // Scan remembered set at start of concurrent young-gen marking.
   void scan_remembered_set(bool is_concurrent);
 
   virtual bool is_concurrent_mark_in_progress() = 0;
-  void confirm_heuristics_mode();
-
-  virtual void record_success_concurrent(bool abbreviated);
 };
 
-#endif // SHARE_VM_GC_SHENANDOAH_SHENANDOAHGENERATION_HPP
+#endif // SHARE_GC_SHENANDOAH_SHENANDOAHGENERATION_HPP

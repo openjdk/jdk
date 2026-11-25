@@ -33,11 +33,8 @@
 // Useful if the function or method is known to do something special or even 'dangerous', for
 // example causing desired signals/crashes.
 #ifdef UNDEFINED_BEHAVIOR_SANITIZER
-#if defined(__clang__)
+#if defined(__clang__) || defined(__GNUC__)
 #define ATTRIBUTE_NO_UBSAN __attribute__((no_sanitize("undefined","float-divide-by-zero")))
-#endif
-#if defined(__GNUC__) && !defined(__clang__)
-#define ATTRIBUTE_NO_UBSAN __attribute__((no_sanitize("undefined")))
 #endif
 #endif
 

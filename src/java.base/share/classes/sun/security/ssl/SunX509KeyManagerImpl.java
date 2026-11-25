@@ -129,8 +129,8 @@ final class SunX509KeyManagerImpl extends X509KeyManagerCertChecking {
             X509Credentials cred = new X509Credentials((PrivateKey) key,
                     (X509Certificate[]) certs);
             credentialsMap.put(alias, cred);
-            if (SSLLogger.isOn() && SSLLogger.isOn("keymanager")) {
-                SSLLogger.fine("found key for : " + alias, (Object[]) certs);
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.KEYMANAGER)) {
+                SSLLogger.fine("found key for : " + alias, (Object[])certs);
             }
         }
     }
@@ -315,7 +315,8 @@ final class SunX509KeyManagerImpl extends X509KeyManagerCertChecking {
         }
 
         if (results == null) {
-            if (SSLLogger.isOn() && SSLLogger.isOn("keymanager")) {
+            if (SSLLogger.isOn() &&
+                                SSLLogger.isOn(SSLLogger.Opt.KEYMANAGER)) {
                 SSLLogger.fine("KeyMgr: no matching key found");
             }
             return null;

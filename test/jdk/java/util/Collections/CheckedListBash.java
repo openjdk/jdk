@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug     4904067
+ * @bug     4904067 8336669
  * @summary Unit test for Collections.checkedList
  * @author  Josh Bloch
  * @key randomness
@@ -109,7 +109,7 @@ public class CheckedListBash {
 
         List s = newList();
         for (int i=0; i<listSize; i++)
-            s.add(new Integer(i));
+            s.add(i);
         if (s.size() != listSize)
             fail("Size of [0..n-1] != n");
 
@@ -147,13 +147,8 @@ public class CheckedListBash {
         itAll = all.listIterator();
         while (itAll.hasNext()) {
             Integer i = (Integer)itAll.next();
-            itAll.set(new Integer(i.intValue()));
+            itAll.set(i);
         }
-        itAll = all.listIterator();
-        it = s.iterator();
-        while (it.hasNext())
-            if (it.next()==itAll.next())
-                fail("Iterator.set failed to change value.");
         if (!all.equals(s))
             fail("Failed to reconstruct ints with ListIterator.");
 
@@ -181,7 +176,7 @@ public class CheckedListBash {
         if (ia != ib || !l.equals(Arrays.asList(ia)))
             fail("toArray(Object[]) is hosed (2)");
         ia = new Integer[listSize+1];
-        ia[listSize] = new Integer(69);
+        ia[listSize] = 69;
         ib = (Integer[]) l.toArray(ia);
         if (ia != ib || ia[listSize] != null
             || !l.equals(Arrays.asList(ia).subList(0, listSize)))

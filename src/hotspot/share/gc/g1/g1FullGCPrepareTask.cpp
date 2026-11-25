@@ -60,13 +60,13 @@ G1FullGCPrepareTask::G1FullGCPrepareTask(G1FullCollector* collector) :
 }
 
 void G1FullGCPrepareTask::set_has_free_compaction_targets() {
-  if (!_has_free_compaction_targets) {
-    _has_free_compaction_targets = true;
+  if (!has_free_compaction_targets()) {
+    _has_free_compaction_targets.store_relaxed(true);
   }
 }
 
 bool G1FullGCPrepareTask::has_free_compaction_targets() {
-  return _has_free_compaction_targets;
+  return _has_free_compaction_targets.load_relaxed();
 }
 
 void G1FullGCPrepareTask::work(uint worker_id) {

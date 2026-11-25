@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,10 +59,11 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
+import java.util.concurrent.RejectedExecutionHandler;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
@@ -110,7 +111,7 @@ class ServerImpl {
     static final long REQ_RSP_TIMER_SCHEDULE = ServerConfig.getReqRspTimerScheduleMillis();
     static final long MAX_REQ_TIME = getTimeMillis(ServerConfig.getMaxReqTime());
     static final long MAX_RSP_TIME = getTimeMillis(ServerConfig.getMaxRspTime());
-    static final boolean reqRspTimeoutEnabled = MAX_REQ_TIME != -1 || MAX_RSP_TIME != -1;
+    static final boolean HOST_VALIDATION_DISABLED = ServerConfig.isHostValidationDisabled();;
     // the maximum idle duration for a connection which is currently idle but has served
     // some request in the past
     static final long IDLE_INTERVAL = ServerConfig.getIdleIntervalMillis();
@@ -125,7 +126,7 @@ class ServerImpl {
                 : IDLE_INTERVAL;
     }
 
-    private Timer timer, timer1;
+    private final ScheduledExecutorService scheduler;
     private final Logger logger;
     private Thread dispatcherThread;
 
@@ -155,11 +156,15 @@ class ServerImpl {
         reqConnections = Collections.synchronizedSet(new HashSet<HttpConnection>());
         rspConnections = Collections.synchronizedSet(new HashSet<HttpConnection>());
         newlyAcceptedConnections = Collections.synchronizedSet(new HashSet<>());
-        timer = new Timer("idle-timeout-task", true);
-        timer.schedule(new IdleTimeoutTask(), IDLE_TIMER_TASK_SCHEDULE, IDLE_TIMER_TASK_SCHEDULE);
+        var reqRspTimeoutEnabled = MAX_REQ_TIME != -1 || MAX_RSP_TIME != -1;
+        scheduler = createScheduler(reqRspTimeoutEnabled ? 2 : 1, logger);
+        scheduler.scheduleWithFixedDelay(
+                new IdleTimeoutTask(),
+                IDLE_TIMER_TASK_SCHEDULE, IDLE_TIMER_TASK_SCHEDULE, TimeUnit.MILLISECONDS);
         if (reqRspTimeoutEnabled) {
-            timer1 = new Timer("req-rsp-timeout-task", true);
-            timer1.schedule(new ReqRspTimeoutTask(), REQ_RSP_TIMER_SCHEDULE, REQ_RSP_TIMER_SCHEDULE);
+            scheduler.scheduleWithFixedDelay(
+                    new ReqRspTimeoutTask(),
+                    REQ_RSP_TIMER_SCHEDULE, REQ_RSP_TIMER_SCHEDULE, TimeUnit.MILLISECONDS);
             logger.log(Level.DEBUG, "HttpServer request/response timeout task schedule ms: ",
                     REQ_RSP_TIMER_SCHEDULE);
             logger.log(Level.DEBUG, "MAX_REQ_TIME:  "+MAX_REQ_TIME);
@@ -167,6 +172,19 @@ class ServerImpl {
         }
         events = new ArrayList<>();
         logger.log(Level.DEBUG, "HttpServer created "+protocol+" "+ addr);
+    }
+
+    private static ScheduledExecutorService createScheduler(int threadCount, Logger logger) {
+        Thread.UncaughtExceptionHandler uncaughtExceptionHandler = (ignored, exception) ->
+                logger.log(Level.ERROR, "Scheduled task execution has failed", exception);
+        var threadFactory = Thread.ofPlatform()
+                .daemon()
+                .uncaughtExceptionHandler(uncaughtExceptionHandler)
+                .factory();
+        RejectedExecutionHandler rejectedExecutionHandler = (runnable, ignored) ->
+                logger.log(Level.ERROR, "Failed executing task: " + runnable);
+        return new ScheduledThreadPoolExecutor(
+                threadCount, threadFactory, rejectedExecutionHandler);
     }
 
     public void bind(InetSocketAddress addr, int backlog) throws IOException {
@@ -278,10 +296,7 @@ class ServerImpl {
             allConnections.clear();
             idleConnections.clear();
             newlyAcceptedConnections.clear();
-            timer.cancel();
-            if (reqRspTimeoutEnabled) {
-                timer1.cancel();
-            }
+            scheduler.shutdownNow();
             logger.log(Level.TRACE, "connections closed");
 
             if (dispatcherThread != null && dispatcherThread != Thread.currentThread()) {
@@ -419,7 +434,8 @@ class ServerImpl {
             // Stopping marking the state as finished if stop is requested,
             // termination is in progress and exchange count is 0
             if (r instanceof Event.StopRequested) {
-                logger.log(Level.TRACE, "Handling Stop Requested Event");
+                logger.log(Level.TRACE, "Handling {0} event",
+                        r.getClass().getSimpleName());
 
                 // checking if terminating is set to true
                 final boolean terminatingCopy = terminating;
@@ -437,10 +453,11 @@ class ServerImpl {
             HttpConnection c = t.getConnection();
 
             try {
-                if (r instanceof Event.WriteFinished) {
+                if (r instanceof Event.ExchangeFinished) {
 
-                    logger.log(Level.TRACE, "Write Finished");
-                    int exchanges = endExchange();
+                    logger.log(Level.TRACE, "Handling {0} event",
+                                r.getClass().getSimpleName());
+                    int exchanges = t.endExchange();
                     if (terminating && exchanges == 0 && reqConnections.isEmpty()) {
                         finishedLatch.countDown();
                     }
@@ -536,6 +553,8 @@ class ServerImpl {
                                 if (MAX_CONNECTIONS > 0 && allConnections.size() >= MAX_CONNECTIONS) {
                                     // we've hit max limit of current open connections, so we go
                                     // ahead and close this connection without processing it
+                                    logger.log(Level.DEBUG, "connection limit reached, " +
+                                            "closing accepted connection " + chan);
                                     try {
                                         chan.close();
                                     } catch (IOException ignore) {
@@ -766,18 +785,34 @@ class ServerImpl {
                             requestLine, "Bad request line");
                     return;
                 }
+
+                // Read the request URI
                 String uriStr = requestLine.substring(start, space);
+                // Reject ambiguous URIs
+                if (uriStr.startsWith("//")) {
+                    reject(Code.HTTP_BAD_REQUEST,
+                            requestLine, "Bad request URI");
+                    return;
+                }
                 URI uri;
                 try {
                     uri = new URI(uriStr);
                 } catch (URISyntaxException e3) {
                     reject(Code.HTTP_BAD_REQUEST,
-                            requestLine, "URISyntaxException thrown");
+                            requestLine, "Bad request URI");
                     return;
                 }
+
                 start = space+1;
                 String version = requestLine.substring(start);
-                Headers headers = req.headers();
+                Headers headers;
+                try {
+                    headers = req.headers();
+                } catch (ProtocolException pe) {
+                    reject(Code.HTTP_BAD_REQUEST, requestLine,
+                            "Failed to parse headers: " + pe.getMessage());
+                    return;
+                }
                 /* check key for illegal characters */
                 for (var k : headers.keySet()) {
                     if (!isValidName(k)) {
@@ -827,6 +862,25 @@ class ServerImpl {
                         requestCompleted(connection);
                     }
                 }
+                /* check if there's a single Host header */
+                if (!HOST_VALIDATION_DISABLED) {
+                    List<String> hostValueList = headers.get("Host");
+                    if (hostValueList == null || hostValueList.isEmpty()) {
+                        if (!version.equalsIgnoreCase("http/1.0")) {
+                            reject(400, requestLine, "Missing Host header");
+                            return;
+                        }
+                    } else if (hostValueList.size() > 1) {
+                        reject(400, requestLine, "Multiple Host headers");
+                        return;
+                    } else {
+                        String host = hostValueList.get(0);
+                        if (host.indexOf(',') != -1) {
+                            reject(400, requestLine, "Multiple Host header values");
+                            return;
+                        }
+                    }
+                }
                 ctx = contexts.findContext(protocol, uri.getPath());
                 if (ctx == null) {
                     reject(Code.HTTP_NOT_FOUND,
@@ -842,68 +896,77 @@ class ServerImpl {
                 tx = new ExchangeImpl(
                     method, uri, req, clen, connection
                 );
-                String chdr = headers.getFirst("Connection");
-                Headers rheaders = tx.getResponseHeaders();
+                try {
 
-                if (chdr != null && chdr.equalsIgnoreCase("close")) {
-                    tx.close = true;
-                }
-                if (version.equalsIgnoreCase("http/1.0")) {
-                    tx.http10 = true;
-                    if (chdr == null) {
+                    String chdr = headers.getFirst("Connection");
+                    Headers rheaders = tx.getResponseHeaders();
+
+                    if (chdr != null && chdr.equalsIgnoreCase("close")) {
                         tx.close = true;
-                        rheaders.set("Connection", "close");
-                    } else if (chdr.equalsIgnoreCase("keep-alive")) {
-                        rheaders.set("Connection", "keep-alive");
-                        int idleSeconds = (int) (ServerConfig.getIdleIntervalMillis() / 1000);
-                        String val = "timeout=" + idleSeconds;
-                        rheaders.set("Keep-Alive", val);
                     }
-                }
+                    if (version.equalsIgnoreCase("http/1.0")) {
+                        tx.http10 = true;
+                        if (chdr == null) {
+                            tx.close = true;
+                            rheaders.set("Connection", "close");
+                        } else if (chdr.equalsIgnoreCase("keep-alive")) {
+                            rheaders.set("Connection", "keep-alive");
+                            int idleSeconds = (int) (ServerConfig.getIdleIntervalMillis() / 1000);
+                            String val = "timeout=" + idleSeconds;
+                            rheaders.set("Keep-Alive", val);
+                        }
+                    }
 
-                if (newconnection) {
-                    connection.setParameters(
-                        rawin, rawout, chan, engine, sslStreams,
-                        sslContext, protocol, ctx, rawin
-                    );
-                }
-                /* check if client sent an Expect 100 Continue.
-                 * In that case, need to send an interim response.
-                 * In future API may be modified to allow app to
-                 * be involved in this process.
-                 */
-                String exp = headers.getFirst("Expect");
-                if (exp != null && exp.equalsIgnoreCase("100-continue")) {
-                    logReply(100, requestLine, null);
-                    sendReply(
-                        Code.HTTP_CONTINUE, false, null
-                    );
-                }
-                /* uf is the list of filters seen/set by the user.
-                 * sf is the list of filters established internally
-                 * and which are not visible to the user. uc and sc
-                 * are the corresponding Filter.Chains.
-                 * They are linked together by a LinkHandler
-                 * so that they can both be invoked in one call.
-                 */
-                final List<Filter> sf = ctx.getSystemFilters();
-                final List<Filter> uf = ctx.getFilters();
+                    if (newconnection) {
+                        connection.setParameters(
+                                rawin, rawout, chan, engine, sslStreams,
+                                sslContext, protocol, ctx, rawin
+                        );
+                    }
+                    /* check if client sent an Expect 100 Continue.
+                     * In that case, need to send an interim response.
+                     * In future API may be modified to allow app to
+                     * be involved in this process.
+                     */
+                    String exp = headers.getFirst("Expect");
+                    if (exp != null && exp.equalsIgnoreCase("100-continue")) {
+                        logReply(100, requestLine, null);
+                        sendReply(
+                                Code.HTTP_CONTINUE, false, null
+                        );
+                    }
+                    /* uf is the list of filters seen/set by the user.
+                     * sf is the list of filters established internally
+                     * and which are not visible to the user. uc and sc
+                     * are the corresponding Filter.Chains.
+                     * They are linked together by a LinkHandler
+                     * so that they can both be invoked in one call.
+                     */
+                    final List<Filter> sf = ctx.getSystemFilters();
+                    final List<Filter> uf = ctx.getFilters();
 
-                final Filter.Chain sc = new Filter.Chain(sf, ctx.getHandler());
-                final Filter.Chain uc = new Filter.Chain(uf, new LinkHandler(sc));
+                    final Filter.Chain sc = new Filter.Chain(sf, ctx.getHandler());
+                    final Filter.Chain uc = new Filter.Chain(uf, new LinkHandler(sc));
 
-                /* set up the two stream references */
-                tx.getRequestBody();
-                tx.getResponseBody();
-                if (https) {
-                    uc.doFilter(new HttpsExchangeImpl(tx));
-                } else {
-                    uc.doFilter(new HttpExchangeImpl(tx));
+                    /* set up the two stream references */
+                    tx.getRequestBody();
+                    tx.getResponseBody();
+                    if (https) {
+                        uc.doFilter(new HttpsExchangeImpl(tx));
+                    } else {
+                        uc.doFilter(new HttpExchangeImpl(tx));
+                    }
+                } catch (Throwable t) {
+                    // release the exchange.
+                    logger.log(Level.TRACE, "ServerImpl.Exchange", t);
+                    if (!tx.writefinished()) {
+                        closeConnection(connection);
+                    }
+                    tx.postExchangeFinished(false);
                 }
-
             } catch (Exception e) {
                 logger.log(Level.TRACE, "ServerImpl.Exchange", e);
-                if (tx == null || !tx.writefinished) {
+                if (tx == null || !tx.writefinished()) {
                     closeConnection(connection);
                 }
             } catch (Throwable t) {
@@ -1008,7 +1071,7 @@ class ServerImpl {
     }
 
     void requestStarted(HttpConnection c) {
-        c.reqStartedTime = System.currentTimeMillis();
+        c.reqStartedTime = monotonicMilliTicks();
         c.setState(State.REQUEST);
         reqConnections.add(c);
     }
@@ -1022,7 +1085,7 @@ class ServerImpl {
                 // instead set boolean and close outside the synchronized block
                 close = true;
             } else {
-                c.idleStartTime = System.currentTimeMillis();
+                c.idleStartTime = monotonicMilliTicks();
                 c.setState(State.IDLE);
                 idleConnections.add(c);
             }
@@ -1035,7 +1098,7 @@ class ServerImpl {
     }
 
     void markNewlyAccepted(HttpConnection c) {
-        c.idleStartTime = System.currentTimeMillis();
+        c.idleStartTime = monotonicMilliTicks();
         c.setState(State.NEWLY_ACCEPTED);
         newlyAcceptedConnections.add(c);
     }
@@ -1051,7 +1114,7 @@ class ServerImpl {
         State s = c.getState();
         assert s == State.REQUEST : "State is not REQUEST ("+s+")";
         reqConnections.remove(c);
-        c.rspStartedTime = System.currentTimeMillis();
+        c.rspStartedTime = monotonicMilliTicks();
         rspConnections.add(c);
         c.setState(State.RESPONSE);
     }
@@ -1066,10 +1129,22 @@ class ServerImpl {
 
     /**
      * Responsible for closing connections that have been idle.
-     * TimerTask run every CLOCK_TICK ms
      */
-    class IdleTimeoutTask extends TimerTask {
+    class IdleTimeoutTask implements Runnable {
+
+        @Override
         public void run() {
+            try {
+                run0();
+            } catch (Throwable throwable) {
+                var message = IdleTimeoutTask.class.getSimpleName() + " has failed";
+                logger.log(Level.ERROR, message, throwable);
+                // Rethrow to cancel the execution of the task
+                throw new RuntimeException(message, throwable);
+            }
+        }
+
+        private void run0() {
             closeConnections(idleConnections, IDLE_INTERVAL);
             // if any newly accepted connection has been idle (i.e. no byte has been sent on that
             // connection during the configured idle timeout period) then close it as well
@@ -1077,7 +1152,7 @@ class ServerImpl {
         }
 
         private void closeConnections(Set<HttpConnection> connections, long idleInterval) {
-            long currentTime = System.currentTimeMillis();
+            long currentTime = monotonicMilliTicks();
             ArrayList<HttpConnection> toClose = new ArrayList<>();
 
             connections.forEach(c -> {
@@ -1102,12 +1177,23 @@ class ServerImpl {
     /**
      * Responsible for closing connections which have timed out while in REQUEST or RESPONSE state
      */
-    class ReqRspTimeoutTask extends TimerTask {
+    class ReqRspTimeoutTask implements Runnable {
 
-        // runs every TIMER_MILLIS
+        @Override
         public void run() {
+            try {
+                run0();
+            } catch (Throwable throwable) {
+                var message = ReqRspTimeoutTask.class.getSimpleName() + " has failed";
+                logger.log(Level.ERROR, message, throwable);
+                // Rethrow to cancel the execution of the task
+                throw new RuntimeException(message, throwable);
+            }
+        }
+
+        private void run0() {
             ArrayList<HttpConnection> toClose = new ArrayList<>();
-            final long currentTime = System.currentTimeMillis();
+            final long currentTime = monotonicMilliTicks();
             synchronized (reqConnections) {
                 if (MAX_REQ_TIME != -1) {
                     for (HttpConnection c : reqConnections) {
@@ -1155,4 +1241,15 @@ class ServerImpl {
         // this handles potential numeric overflow that may have happened during conversion
         return milli > 0 ? milli : -1;
     }
+
+    /**
+     * A monotonic clock substitute of {@link System#currentTimeMillis()}, which
+     * uses wall clock, and hence, is unsuitable for elapsed time measurements.
+     */
+    private static long monotonicMilliTicks() {
+        return TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - START_INSTANT_NANOS);
+    }
+
+    private static final long START_INSTANT_NANOS = System.nanoTime();
+
 }

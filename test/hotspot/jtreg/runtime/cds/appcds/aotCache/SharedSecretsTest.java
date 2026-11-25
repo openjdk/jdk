@@ -46,7 +46,7 @@ public class SharedSecretsTest {
     public static void main(String[] args) throws Exception {
         Tester t = new Tester(mainClass);
         t.setCheckExitValue(false);
-        t.runAOTAssemblyWorkflow();
+        t.runAOTTrainingAndAssemblyWorkflow();
     }
 
     static class Tester extends CDSAppTester {

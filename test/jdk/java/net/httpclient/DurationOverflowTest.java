@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,7 @@ import static jdk.httpclient.test.lib.common.HttpServerAdapters.createClientBuil
  * @library /test/jdk/java/net/httpclient/lib
  *          /test/lib
  *
- * @run junit DurationOverflowTest
+ * @run junit ${test.main.class}
  */
 
 /*
@@ -81,19 +81,19 @@ import static jdk.httpclient.test.lib.common.HttpServerAdapters.createClientBuil
  *
  * @run junit/othervm
  *      -Djdk.httpclient.keepalive.timeout=9223372036854775807
- *      DurationOverflowTest
+ *      ${test.main.class}
  *
  * @comment `h3` infra is also enabled for this test since `j.h.k.timeout.h3`
  *          defaults to `j.h.k.timeout.h2`
  * @run junit/othervm
  *      -Djdk.httpclient.keepalive.timeout.h2=9223372036854775807
  *      -DallowedInfras=h2,h2s,h3
- *      DurationOverflowTest
+ *      ${test.main.class}
  *
  * @run junit/othervm
  *      -Djdk.httpclient.keepalive.timeout.h3=9223372036854775807
  *      -DallowedInfras=h3
- *      DurationOverflowTest
+ *      ${test.main.class}
  */
 
 public class DurationOverflowTest {

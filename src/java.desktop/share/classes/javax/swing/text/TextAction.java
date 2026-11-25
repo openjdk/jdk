@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,11 +107,11 @@ public abstract class TextAction extends AbstractAction {
         Hashtable<String, Action> h = new Hashtable<String, Action>();
         for (Action a : list1) {
             String value = (String)a.getValue(Action.NAME);
-            h.put((value!=null ? value:""), a);
+            h.put((value != null ? value : ""), a);
         }
         for (Action a : list2) {
             String value = (String)a.getValue(Action.NAME);
-            h.put((value!=null ? value:""), a);
+            h.put((value != null ? value : ""), a);
         }
         Action[] actions = new Action[h.size()];
         int index = 0;

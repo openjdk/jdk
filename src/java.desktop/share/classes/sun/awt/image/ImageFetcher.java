@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -217,6 +217,10 @@ class ImageFetcher extends Thread {
       * Recycles this ImageFetcher thread as an image animator thread.
       * Removes this ImageFetcher from the array of ImageFetchers, and
       * resets the thread name to "ImageAnimator".
+     * <p>
+     * <b>Note:</b> This method must be called only from
+     * an {@code ImageFetcher} thread.
+     * @see #stoppingAnimation()
       */
     static void startingAnimation() {
         final FetcherInfo info = FetcherInfo.getFetcherInfo();
@@ -236,6 +240,19 @@ class ImageFetcher extends Thread {
         }
         me.setPriority(ANIM_PRIORITY);
         me.setName("Image Animator");
+    }
+
+    /**
+     * Returns the current animator thread into the pool as
+     * an {@code ImageFetcher} if possible.
+     * <p>
+     * <b>Note:</b> This method must be called only from
+     * an {@code ImageFetcher} thread.
+     * @see #startingAnimation()
+     * @see #stoppingAnimation(Thread)
+     */
+    static void stoppingAnimation() {
+        stoppingAnimation(Thread.currentThread());
     }
 
     /**
@@ -314,10 +331,10 @@ class FetcherInfo {
     static final int MAX_NUM_FETCHERS = 4;
     static final FetcherInfo FETCHER_INFO = new FetcherInfo();
 
-    Thread[] fetchers;
+    final Thread[] fetchers;
     int numFetchers;
     int numWaiting;
-    Vector<ImageFetchable> waitList;
+    final Vector<ImageFetchable> waitList;
 
     private FetcherInfo() {
         fetchers = new Thread[MAX_NUM_FETCHERS];

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
  *          java.desktop/sun.java2d.pipe.hw
  * @compile -XDignore.symbol.file=true RSLAPITest.java
  * @run main/othervm RSLAPITest
- * @run main/othervm -Dsun.java2d.noddraw=true RSLAPITest
+ * @run main/othervm -Dsun.java2d.d3d=false RSLAPITest
  */
 
 import java.awt.Graphics;

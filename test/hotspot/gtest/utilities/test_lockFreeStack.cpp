@@ -300,5 +300,5 @@ TEST_VM(LockFreeStackTest, stress) {
   ASSERT_EQ(nelements, final_stack.length());
   while (final_stack.pop() != nullptr) {}
 
-  FREE_C_HEAP_ARRAY(Element, elements);
+  FREE_C_HEAP_ARRAY(elements);
 }

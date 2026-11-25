@@ -47,11 +47,11 @@ public class LocalVariableTable extends Attribute implements Iterable<LocalVaria
     /**
      * Constructs object from input stream.
      *
-     * @param nameIndex Index in constant pool
-     * @param length Content length in bytes
-     * @param input Input stream
-     * @param constantPool Array of constants
-     * @throws IOException if an I/O error occurs.
+     * @param nameIndex Index in constant pool.
+     * @param length Content length in bytes.
+     * @param input Input stream.
+     * @param constantPool Array of constants.
+     * @throws IOException Thrown if an I/O error occurs.
      */
     LocalVariableTable(final int nameIndex, final int length, final DataInput input, final ConstantPool constantPool) throws IOException {
         this(nameIndex, length, (LocalVariable[]) null, constantPool);
@@ -63,10 +63,12 @@ public class LocalVariableTable extends Attribute implements Iterable<LocalVaria
     }
 
     /**
-     * @param nameIndex Index in constant pool to 'LocalVariableTable'
-     * @param length Content length in bytes
-     * @param localVariableTable Table of local variables
-     * @param constantPool Array of constants
+     * Constructs a new LocalVariableTable.
+     *
+     * @param nameIndex Index in constant pool to 'LocalVariableTable'.
+     * @param length Content length in bytes.
+     * @param localVariableTable Table of local variables.
+     * @param constantPool Array of constants.
      */
     public LocalVariableTable(final int nameIndex, final int length, final LocalVariable[] localVariableTable, final ConstantPool constantPool) {
         super(Const.ATTR_LOCAL_VARIABLE_TABLE, nameIndex, length, constantPool);
@@ -88,7 +90,7 @@ public class LocalVariableTable extends Attribute implements Iterable<LocalVaria
      * Called by objects that are traversing the nodes of the tree implicitly defined by the contents of a Java class.
      * I.e., the hierarchy of methods, fields, attributes, etc. spawns a tree of objects.
      *
-     * @param v Visitor object
+     * @param v Visitor object.
      */
     @Override
     public void accept(final Visitor v) {
@@ -96,7 +98,7 @@ public class LocalVariableTable extends Attribute implements Iterable<LocalVaria
     }
 
     /**
-     * @return deep copy of this attribute
+     * @return deep copy of this attribute.
      */
     @Override
     public Attribute copy(final ConstantPool constantPool) {
@@ -108,28 +110,26 @@ public class LocalVariableTable extends Attribute implements Iterable<LocalVaria
     }
 
     /**
-     * Dump local variable table attribute to file stream in binary format.
+     * Dumps local variable table attribute to file stream in binary format.
      *
-     * @param file Output file stream
-     * @throws IOException if an I/O error occurs.
+     * @param file Output file stream.
+     * @throws IOException Thrown if an I/O error occurs.
      */
     @Override
     public final void dump(final DataOutputStream file) throws IOException {
         super.dump(file);
-        file.writeShort(localVariableTable.length);
+        file.writeShort(Args.requireU2(localVariableTable.length, "localVariableTable.length"));
         for (final LocalVariable variable : localVariableTable) {
             variable.dump(file);
         }
     }
 
     /**
+     * Gets the local variable for the given index.
      *
-     * @param index the variable slot
-     *
-     * @return the first LocalVariable that matches the slot or null if not found
-     *
-     * @deprecated since 5.2 because multiple variables can share the same slot, use getLocalVariable(int index, int pc)
-     *             instead.
+     * @param index The variable slot.
+     * @return The first LocalVariable that matches the slot or null if not found.
+     * @deprecated Since 5.2 because multiple variables can share the same slot, use getLocalVariable(int index, int pc) instead.
      */
     @java.lang.Deprecated
     public final LocalVariable getLocalVariable(final int index) {
@@ -142,18 +142,18 @@ public class LocalVariableTable extends Attribute implements Iterable<LocalVaria
     }
 
     /**
+     * Gets the local variable for the given index and program counter.
      *
-     * @param index the variable slot
-     * @param pc the current pc that this variable is alive
-     *
-     * @return the LocalVariable that matches or null if not found
+     * @param index The variable slot.
+     * @param pc The current pc that this variable is alive.
+     * @return The LocalVariable that matches or null if not found.
      */
     public final LocalVariable getLocalVariable(final int index, final int pc) {
         for (final LocalVariable variable : localVariableTable) {
             if (variable.getIndex() == index) {
                 final int startPc = variable.getStartPC();
                 final int endPc = startPc + variable.getLength();
-                if (pc >= startPc && pc <= endPc) {
+                if (pc >= startPc && pc < endPc) {
                     return variable;
                 }
             }
@@ -162,12 +162,19 @@ public class LocalVariableTable extends Attribute implements Iterable<LocalVaria
     }
 
     /**
+     * Gets the local variable table.
+     *
      * @return Array of local variables of method.
      */
     public final LocalVariable[] getLocalVariableTable() {
         return localVariableTable;
     }
 
+    /**
+     * Gets the table length.
+     *
+     * @return The table length.
+     */
     public final int getTableLength() {
         return localVariableTable.length;
     }
@@ -177,6 +184,11 @@ public class LocalVariableTable extends Attribute implements Iterable<LocalVaria
         return Stream.of(localVariableTable).iterator();
     }
 
+    /**
+     * Sets the local variable table.
+     *
+     * @param localVariableTable The local variable table to set.
+     */
     public final void setLocalVariableTable(final LocalVariable[] localVariableTable) {
         this.localVariableTable = localVariableTable != null ? localVariableTable : EMPTY_ARRAY;
     }

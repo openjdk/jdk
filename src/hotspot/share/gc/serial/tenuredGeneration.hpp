@@ -25,7 +25,6 @@
 #ifndef SHARE_GC_SERIAL_TENUREDGENERATION_HPP
 #define SHARE_GC_SERIAL_TENUREDGENERATION_HPP
 
-#include "gc/serial/cSpaceCounters.hpp"
 #include "gc/serial/generation.hpp"
 #include "gc/serial/serialBlockOffsetTable.hpp"
 #include "gc/shared/generationCounters.hpp"
@@ -34,6 +33,7 @@
 
 class CardTableRS;
 class ContiguousSpace;
+class HSpaceCounters;
 
 // TenuredGeneration models the heap containing old (promoted/tenured) objects
 // contained in a single contiguous space. This generation is covered by a card
@@ -68,7 +68,7 @@ class TenuredGeneration: public Generation {
   ContiguousSpace*    _the_space;       // Actual space holding objects
 
   GenerationCounters* _gen_counters;
-  CSpaceCounters*     _space_counters;
+  HSpaceCounters*     _space_counters;
 
   // Avg amount promoted; used for avoiding promotion undo
   // This class does not update deviations if the sample is zero.

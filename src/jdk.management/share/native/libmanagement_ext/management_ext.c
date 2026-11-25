@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,6 @@
 #include "jni_util.h"
 #include "jvm.h"
 #include "management_ext.h"
-
-#define ERR_MSG_SIZE 128
 
 const JmmInterface* jmm_interface_management_ext = NULL;
 static JavaVM* jvm = NULL;

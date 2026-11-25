@@ -1,4 +1,4 @@
-SerializableObjectMethods.java:59:35: compiler.note.lambda.deserialization.stat: SerializableObjectMethods$F, apply, (Ljava/lang/Object;)Ljava/lang/Object;, 5, java/lang/Object, hashCode, ()I
-SerializableObjectMethods.java:60:35: compiler.note.lambda.deserialization.stat: SerializableObjectMethods$F, apply, (Ljava/lang/Object;)Ljava/lang/Object;, 9, SerializableObjectMethods$I2, hashCode, ()I
+SerializableObjectMethods.java:59:35: compiler.note.lambda.deserialization.stat: SerializableObjectMethods$F, apply, (Ljava/lang/Object;)Ljava/lang/Object;, 5, java/lang/Object, hashCode, ()I, (LSerializableObjectMethods$I1;)Ljava/lang/Integer;
+SerializableObjectMethods.java:60:35: compiler.note.lambda.deserialization.stat: SerializableObjectMethods$F, apply, (Ljava/lang/Object;)Ljava/lang/Object;, 5, java/lang/Object, hashCode, ()I, (LSerializableObjectMethods$I2;)Ljava/lang/Integer;
 - compiler.note.unchecked.filename: SerializableObjectMethods.java
 - compiler.note.unchecked.recompile

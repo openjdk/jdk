@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -210,6 +210,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
         c.add(pnlSouth, BorderLayout.SOUTH);
 
         addWindowListener(new WindowAdapter() {
+            @Override
             public void windowClosing(WindowEvent event) {
                 dispose(CANCEL);
             }
@@ -274,6 +275,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
         c.add(pnlSouth, BorderLayout.SOUTH);
 
         addWindowListener(new WindowAdapter() {
+            @Override
             public void windowClosing(WindowEvent event) {
                 dispose(CANCEL);
             }
@@ -290,6 +292,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
      */
     private void handleEscKey(JButton btnCancel) {
         Action cancelKeyAction = new AbstractAction() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 dispose(CANCEL);
             }
@@ -351,6 +354,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
         super.dispose();
     }
 
+    @Override
     public void actionPerformed(ActionEvent e) {
         Object source = e.getSource();
         boolean approved = false;
@@ -754,6 +758,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
             return label;
         }
 
+        @Override
         @SuppressWarnings("deprecation")
         public void actionPerformed(ActionEvent e) {
             Object source = e.getSource();
@@ -798,6 +803,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
             }
         }
 
+        @Override
         public void itemStateChanged(ItemEvent e) {
             if (e.getStateChange() == ItemEvent.SELECTED) {
                 int index = cbName.getSelectedIndex();
@@ -844,10 +850,12 @@ public class ServiceDialog extends JDialog implements ActionListener {
             }
         }
 
+        @Override
         public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
             changedService = false;
         }
 
+        @Override
         public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {
             if (changedService) {
                 changedService = false;
@@ -855,6 +863,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
             }
         }
 
+        @Override
         public void popupMenuCanceled(PopupMenuEvent e) {
         }
 
@@ -1006,6 +1015,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
             addToGB(pnlBottom, this, gridbag, c);
         }
 
+        @Override
         public void actionPerformed(ActionEvent e) {
             Object source = e.getSource();
             SunPageSelection select = SunPageSelection.ALL;
@@ -1028,6 +1038,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
             }
         }
 
+        @Override
         public void focusLost(FocusEvent e) {
             Object source = e.getSource();
 
@@ -1036,6 +1047,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
             }
         }
 
+        @Override
         public void focusGained(FocusEvent e) {}
 
         private void setupRangeWidgets() {
@@ -1175,6 +1187,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
             addToGB(cbCollate, this, gridbag, c);
         }
 
+        @Override
         public void actionPerformed(ActionEvent e) {
             if (cbCollate.isSelected()) {
                 asCurrent.add(SheetCollate.COLLATED);
@@ -1183,6 +1196,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
             }
         }
 
+        @Override
         public void stateChanged(ChangeEvent e) {
             updateCollateCB();
 
@@ -1440,16 +1454,19 @@ public class ServiceDialog extends JDialog implements ActionListener {
 
         }
 
+        @Override
         public void actionPerformed(ActionEvent e) {
             Object source = e.getSource();
             updateMargins(source);
         }
 
+        @Override
         public void focusLost(FocusEvent e) {
             Object source = e.getSource();
             updateMargins(source);
         }
 
+        @Override
         public void focusGained(FocusEvent e) {}
 
         /* Get the numbers, use to create a MPA.
@@ -1905,6 +1922,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
             }
         }
 
+        @Override
         public void itemStateChanged(ItemEvent e) {
             Object source = e.getSource();
 
@@ -2128,6 +2146,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
             addToGB(rbRevLandscape, this, gridbag, c);
         }
 
+        @Override
         public void actionPerformed(ActionEvent e) {
             Object source = e.getSource();
 
@@ -2327,6 +2346,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
             addToGB(rbColor, this, gridbag, c);
         }
 
+        @Override
         public void actionPerformed(ActionEvent e) {
             Object source = e.getSource();
 
@@ -2421,6 +2441,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
             addToGB(rbHigh, this, gridbag, c);
         }
 
+        @Override
         public void actionPerformed(ActionEvent e) {
             Object source = e.getSource();
 
@@ -2531,6 +2552,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
             addToGB(rbDuplex, this, gridbag, c);
         }
 
+        @Override
         public void actionPerformed(ActionEvent e) {
             Object source = e.getSource();
 
@@ -2674,6 +2696,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
             addToGB(tfUserName, this, gridbag, c);
         }
 
+        @Override
         public void actionPerformed(ActionEvent e) {
             if (cbJobSheets.isSelected()) {
                 asCurrent.add(JobSheets.STANDARD);
@@ -2682,10 +2705,12 @@ public class ServiceDialog extends JDialog implements ActionListener {
             }
         }
 
+        @Override
         public void stateChanged(ChangeEvent e) {
             asCurrent.add(new JobPriority(snModel.getNumber().intValue()));
         }
 
+        @Override
         public void focusLost(FocusEvent e) {
             Object source = e.getSource();
 
@@ -2698,6 +2723,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
             }
         }
 
+        @Override
         public void focusGained(FocusEvent e) {}
 
         public void updateInfo() {
@@ -2808,6 +2834,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
             addToGB(cbOutput, this, gridbag, c);
         }
 
+        @Override
         public void itemStateChanged(ItemEvent e) {
 
             Object source = e.getSource();
@@ -2908,6 +2935,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
             return (rb == source);
         }
 
+        @Override
         public void setEnabled(boolean enabled) {
             rb.setEnabled(enabled);
             lbl.setEnabled(enabled);
@@ -2929,6 +2957,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
      */
     @SuppressWarnings("serial") // JDK implementation class
     private static class ValidatingFileChooser extends JFileChooser {
+        @Override
         public void approveSelection() {
             File selected = getSelectedFile();
             boolean exists = selected.exists();

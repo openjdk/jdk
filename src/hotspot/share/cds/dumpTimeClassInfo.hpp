@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,6 @@ class Symbol;
 class DumpTimeClassInfo: public CHeapObj<mtClass> {
   bool _excluded;
   bool _is_aot_tooling_class;
-  bool _is_early_klass;
   bool _has_checked_exclusion;
 
   class DTLoaderConstraint {
@@ -143,7 +142,6 @@ public:
     _clsfile_crc32 = -1;
     _excluded = false;
     _is_aot_tooling_class = false;
-    _is_early_klass = JvmtiExport::is_early_phase();
     _verifier_constraints = nullptr;
     _verifier_constraint_flags = nullptr;
     _loader_constraints = nullptr;
@@ -217,11 +215,6 @@ public:
 
   void set_is_aot_tooling_class() {
     _is_aot_tooling_class = true;
-  }
-
-  // Was this class loaded while JvmtiExport::is_early_phase()==true
-  bool is_early_klass() {
-    return _is_early_klass;
   }
 
   // simple accessors

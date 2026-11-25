@@ -93,7 +93,8 @@ final class SessionTicketExtension {
                 kt = Integer.parseInt(s) * 1000;  // change to ms
                 if (kt < 0 ||
                         kt > NewSessionTicket.MAX_TICKET_LIFETIME) {
-                    if (SSLLogger.isOn() && SSLLogger.isOn("ssl")) {
+                    if (SSLLogger.isOn() &&
+                            SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                         SSLLogger.warning("Invalid timeout for " +
                                 "jdk.tls.server.statelessKeyTimeout: " +
                                 kt + ".  Set to default value " +
@@ -103,7 +104,7 @@ final class SessionTicketExtension {
                 }
             } catch (NumberFormatException e) {
                 kt = TIMEOUT_DEFAULT;
-                if (SSLLogger.isOn() && SSLLogger.isOn("ssl")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                     SSLLogger.warning("Invalid timeout for " +
                             "jdk.tls.server.statelessKeyTimeout: " + s +
                             ".  Set to default value " + TIMEOUT_DEFAULT +
@@ -238,6 +239,7 @@ final class SessionTicketExtension {
 
                 ByteBuffer aad = ByteBuffer.allocate(Integer.BYTES + 1);
                 aad.putInt(key.num).put(compressed);
+                aad.flip();
                 c.updateAAD(aad);
 
                 encrypted = c.doFinal(data);
@@ -253,7 +255,8 @@ final class SessionTicketExtension {
                         Integer.BYTES + iv.length + 1, encrypted.length);
                 return result;
             } catch (Exception e) {
-                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() &&
+                        SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.fine("Encryption failed." + e);
                 }
                 return new byte[0];
@@ -279,6 +282,7 @@ final class SessionTicketExtension {
                 byte compressed = data.get();
                 ByteBuffer aad = ByteBuffer.allocate(Integer.BYTES + 1);
                 aad.putInt(keyID).put(compressed);
+                aad.flip();
                 c.updateAAD(aad);
 
                 // use getOutputSize to avoid a ShortBufferException
@@ -295,7 +299,8 @@ final class SessionTicketExtension {
 
                 return out;
             } catch (Exception e) {
-                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() &&
+                        SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.fine("Decryption failed." + e);
                 }
             }
@@ -310,7 +315,7 @@ final class SessionTicketExtension {
                 gos.write(input, 0, decompressedLen);
                 gos.finish();
 
-                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.fine("decompressed bytes: " + decompressedLen
                             + "; compressed bytes: " + baos.size());
                 }
@@ -329,7 +334,7 @@ final class SessionTicketExtension {
                     new ByteArrayInputStream(bytes))) {
                 byte[] out = gis.readAllBytes();
 
-                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.fine("compressed bytes: " + compressedLen
                             + "; decompressed bytes: " + out.length);
                 }
@@ -395,7 +400,8 @@ final class SessionTicketExtension {
             // If the context does not allow stateless tickets, exit
             if (!((SSLSessionContextImpl)chc.sslContext.
                     engineGetClientSessionContext()).statelessEnabled()) {
-                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() &&
+                        SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.fine("Stateless resumption not supported");
                 }
                 return null;
@@ -407,7 +413,8 @@ final class SessionTicketExtension {
             if (!chc.isResumption || chc.resumingSession == null
                     || chc.resumingSession.getPskIdentity() == null
                     || chc.resumingSession.getProtocolVersion().useTLS13PlusSpec()) {
-                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() &&
+                        SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.fine("Stateless resumption supported");
                 }
                 return new byte[0];
@@ -451,7 +458,8 @@ final class SessionTicketExtension {
             shc.statelessResumption = true;
 
             if (buffer.remaining() == 0) {
-                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() &&
+                        SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.fine("Client accepts session tickets.");
                 }
                 return;
@@ -463,11 +471,13 @@ final class SessionTicketExtension {
             if (b != null) {
                 shc.resumingSession = new SSLSessionImpl(shc, b);
                 shc.isResumption = true;
-                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() &&
+                        SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.fine("Valid stateless session ticket found");
                 }
             } else {
-                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() &&
+                        SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.fine("Invalid stateless session ticket found");
                 }
             }
@@ -547,7 +557,7 @@ final class SessionTicketExtension {
 
             // Disable stateless resumption if server doesn't send the extension.
             if (chc.statelessResumption) {
-                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.info(
                             "Server doesn't support stateless resumption");
                 }

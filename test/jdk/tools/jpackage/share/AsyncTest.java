@@ -113,7 +113,10 @@ public class AsyncTest {
         @Test
         @ParameterSupplier("ids")
         public void testNativeBundle(int id) throws Exception {
-            new PackageTest().addInitializer(AsyncTest::init).run(Action.CREATE_AND_UNPACK);
+            new PackageTest()
+                    .excludeTypes(PackageType.MAC_DMG) // See JDK-8384250
+                    .addInitializer(AsyncTest::init)
+                    .run(Action.CREATE_AND_UNPACK);
         }
 
         public static Collection<Object[]> ids() {

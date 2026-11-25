@@ -5,6 +5,9 @@
 #ifndef SPA_PARAM_PROFILER_TYPES_H
 #define SPA_PARAM_PROFILER_TYPES_H
 
+#include <spa/param/param-types.h>
+#include <spa/param/profiler.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -13,9 +16,6 @@ extern "C" {
  * \addtogroup spa_param
  * \{
  */
-
-#include <spa/param/param-types.h>
-#include <spa/param/profiler.h>
 
 #define SPA_TYPE_INFO_Profiler        SPA_TYPE_INFO_OBJECT_BASE "Profiler"
 #define SPA_TYPE_INFO_PROFILER_BASE    SPA_TYPE_INFO_Profiler ":"

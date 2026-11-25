@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package com.sun.media.sound;
 
 import java.io.BufferedInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.EOFException;
 import java.io.File;
@@ -229,6 +230,10 @@ final class SMFParser {
 
     private static final boolean DEBUG = false;
 
+    private static final int MAX_ALLOWED_ALLOC = 1024*1024; // Maximum allowed memory preallocation
+
+    private static final int TRACK_BUFFER_SIZE = 10*1024; // Read large tracks in 10 KB chunks
+
     int tracks;                       // number of tracks
     DataInputStream stream;   // the stream to read from
 
@@ -286,19 +291,45 @@ final class SMFParser {
             }
         }
         // now read track in a byte array
-        try {
-            trackData = new byte[trackLength];
-        } catch (final OutOfMemoryError oom) {
-            throw new IOException("Track length too big", oom);
-        }
-        try {
-            // $$fb 2003-08-20: fix for 4910986: MIDI file parser breaks up on http connection
-            stream.readFully(trackData);
-        } catch (EOFException eof) {
-            if (!STRICT_PARSER) {
-                return false;
+        if (trackLength <= MAX_ALLOWED_ALLOC) {
+            try {
+                trackData = new byte[trackLength];
+            } catch (final OutOfMemoryError oom) {
+                throw new IOException("Track length too big", oom);
             }
-            throw new EOFException("invalid MIDI file");
+            try {
+                // $$fb 2003-08-20: fix for 4910986: MIDI file parser breaks up on http connection
+                stream.readFully(trackData);
+            } catch (EOFException eof) {
+                if (!STRICT_PARSER) {
+                    return false;
+                }
+                throw new EOFException("invalid MIDI file");
+            }
+        } else {
+            try {
+                byte[] buffer = new byte[TRACK_BUFFER_SIZE];
+                ByteArrayOutputStream out = new ByteArrayOutputStream();
+                long bytesRead = 0;
+
+                while (bytesRead < trackLength) {
+                    int bytesToRead = (int) Math.min(buffer.length, trackLength - bytesRead);
+                    try {
+                        stream.readFully(buffer, 0, bytesToRead);
+                    } catch (EOFException eof) {
+                        if (!STRICT_PARSER) {
+                            return false;
+                        }
+                        throw new EOFException("invalid MIDI file");
+                    }
+
+                    out.write(buffer, 0, bytesToRead);
+                    bytesRead += bytesToRead;
+                }
+                trackData = out.toByteArray();
+            } catch (final OutOfMemoryError oom) {
+                throw new IOException("Track length too big", oom);
+            }
         }
         pos = 0;
         return true;

@@ -22,6 +22,7 @@
  *
  */
 
+#include "cds/aotCompressedPointers.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/dynamicArchive.hpp"
@@ -144,13 +145,11 @@ public:
     // If #2, then the symbol is dead (refcount==0)
     assert(value.is_permanent() || (value.refcount() == 1) || (value.refcount() == 0),
            "refcount %d", value.refcount());
-#if INCLUDE_CDS
     if (CDSConfig::is_dumping_static_archive()) {
       // We have allocated with AOTMetaspace::symbol_space_alloc(). No deallocation is needed.
       // Unreferenced Symbols will not be copied into the archive.
       return;
     }
-#endif
     if (value.refcount() == 1) {
       value.decrement_refcount();
       assert(value.refcount() == 0, "expected dead symbol");
@@ -690,7 +689,7 @@ void SymbolTable::copy_shared_symbol_table(GrowableArray<Symbol*>* symbols,
     assert(fixed_hash == hash_symbol((const char*)sym->bytes(), sym->utf8_length(), false),
            "must not rehash during dumping");
     sym->set_permanent();
-    writer->add(fixed_hash, builder->buffer_to_offset_u4((address)sym));
+    writer->add(fixed_hash, AOTCompressedPointers::encode_not_null(sym));
   }
 }
 

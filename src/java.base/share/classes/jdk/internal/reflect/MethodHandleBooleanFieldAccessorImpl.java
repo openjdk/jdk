@@ -62,7 +62,7 @@ class MethodHandleBooleanFieldAccessorImpl extends MethodHandleFieldAccessorImpl
             } else {
                 return (boolean) getter.invokeExact(obj);
             }
-        } catch (IllegalArgumentException|NullPointerException e) {
+        } catch (IllegalArgumentException|IllegalStateException|NullPointerException e) {
             throw e;
         } catch (ClassCastException e) {
             throw newGetIllegalArgumentException(obj);
@@ -131,7 +131,7 @@ class MethodHandleBooleanFieldAccessorImpl extends MethodHandleFieldAccessorImpl
             } else {
                 setter.invokeExact(obj, z);
             }
-        } catch (IllegalArgumentException|NullPointerException e) {
+        } catch (IllegalArgumentException|IllegalStateException|NullPointerException e) {
             throw e;
         } catch (ClassCastException e) {
             // receiver is of invalid type

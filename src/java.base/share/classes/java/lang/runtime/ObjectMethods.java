@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 
+import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.SharedSecrets;
+
 import static java.lang.classfile.ClassFile.ACC_STATIC;
 import static java.lang.constant.ConstantDescs.*;
 import static java.util.Objects.requireNonNull;
@@ -59,6 +62,8 @@ import static java.util.Objects.requireNonNull;
 public final class ObjectMethods {
 
     private ObjectMethods() { }
+
+    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 
     private static final int MAX_STRING_CONCAT_SLOTS = 20;
 
@@ -257,7 +262,11 @@ public final class ObjectMethods {
                 }
             });
 
-            var specializerLookup = lookup.defineHiddenClass(bytes, true, MethodHandles.Lookup.ClassOption.STRONG);
+            // Relinking after redefinition or retransformation can leave obsolete
+            // specializers behind. Allow them to unload independently of the loader.
+            var specializerLookup = JLA.hasBeenRedefined(lookup.lookupClass())
+                    ? lookup.defineHiddenClass(bytes, true)
+                    : lookup.defineHiddenClass(bytes, true, MethodHandles.Lookup.ClassOption.STRONG);
 
             for (int i = 0; i < size; i++) {
                 if (equalators[i] == null) {
@@ -333,7 +342,11 @@ public final class ObjectMethods {
                 }
             });
 
-            var specializerLookup = lookup.defineHiddenClass(bytes, true, MethodHandles.Lookup.ClassOption.STRONG);
+            // Relinking after redefinition or retransformation can leave obsolete
+            // specializers behind. Allow them to unload independently of the loader.
+            var specializerLookup = JLA.hasBeenRedefined(lookup.lookupClass())
+                    ? lookup.defineHiddenClass(bytes, true)
+                    : lookup.defineHiddenClass(bytes, true, MethodHandles.Lookup.ClassOption.STRONG);
 
             for (int i = 0; i < size; i++) {
                 if (hashers[i] == null) {
@@ -363,9 +376,9 @@ public final class ObjectMethods {
      * @return the method handle
      */
     private static MethodHandle makeToString(MethodHandles.Lookup lookup,
-                                            Class<?> receiverClass,
-                                            MethodHandle[] getters,
-                                            List<String> names) {
+                                             Class<?> receiverClass,
+                                             MethodHandle[] getters,
+                                             List<String> names) {
         assert getters.length == names.size();
         if (getters.length == 0) {
             // special case
@@ -479,12 +492,7 @@ public final class ObjectMethods {
      * {@link java.lang.Record#toString()}.
      *
      *
-     * @param lookup       Every bootstrap method is expected to have a {@code lookup}
-     *                     which usually represents a lookup context with the
-     *                     accessibility privileges of the caller. This is because
-     *                     {@code invokedynamic} call sites always provide a {@code lookup}
-     *                     to the corresponding bootstrap method, but this method just
-     *                     ignores the {@code lookup} parameter
+     * @param lookup       the full-privilege lookup context of the caller
      * @param methodName   the name of the method to generate, which must be one of
      *                     {@code "equals"}, {@code "hashCode"}, or {@code "toString"}
      * @param type         a {@link MethodType} corresponding the descriptor type
@@ -503,8 +511,6 @@ public final class ObjectMethods {
      *                     if invoked by a condy
      * @throws IllegalArgumentException if the bootstrap arguments are invalid
      *                                  or inconsistent
-     * @throws NullPointerException if any argument is {@code null} or if any element
-     *                              in the {@code getters} array is {@code null}
      * @throws Throwable if any exception is thrown during call site construction
      */
     public static Object bootstrap(MethodHandles.Lookup lookup, String methodName, TypeDescriptor type,
@@ -516,8 +522,11 @@ public final class ObjectMethods {
         requireNonNull(type);
         requireNonNull(recordClass);
         requireNonNull(names);
-        requireNonNull(getters);
-        Arrays.stream(getters).forEach(Objects::requireNonNull);
+        List<MethodHandle> getterList = List.of(getters); // deep null check
+
+        if (!lookup.hasFullPrivilegeAccess())
+            throw new IllegalArgumentException("Unprivileged lookup ".concat(lookup.toString()));
+
         MethodType methodType;
         if (type instanceof MethodType mt)
             methodType = mt;
@@ -526,7 +535,14 @@ public final class ObjectMethods {
             if (!MethodHandle.class.equals(type))
                 throw new IllegalArgumentException(type.toString());
         }
-        List<MethodHandle> getterList = List.of(getters);
+
+        for (MethodHandle getter : getterList) {
+            var getterType = getter.type();
+            if (getterType.parameterCount() != 1 || getterType.returnType() == void.class || getterType.parameterType(0) != recordClass) {
+                throw new IllegalArgumentException("Illegal getter type %s for recordClass %s".formatted(getterType, recordClass.getTypeName()));
+            }
+        }
+
         MethodHandle handle = switch (methodName) {
             case "equals"   -> {
                 if (methodType != null && !methodType.equals(MethodType.methodType(boolean.class, recordClass, Object.class)))
@@ -541,7 +557,7 @@ public final class ObjectMethods {
             case "toString" -> {
                 if (methodType != null && !methodType.equals(MethodType.methodType(String.class, recordClass)))
                     throw new IllegalArgumentException("Bad method type: " + methodType);
-                List<String> nameList = "".equals(names) ? List.of() : List.of(names.split(";"));
+                List<String> nameList = names.isEmpty() ? List.of() : List.of(names.split(";"));
                 if (nameList.size() != getterList.size())
                     throw new IllegalArgumentException("Name list and accessor list do not match");
                 yield makeToString(lookup, recordClass, getters, nameList);

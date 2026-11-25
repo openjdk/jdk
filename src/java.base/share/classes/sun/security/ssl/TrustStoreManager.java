@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Salesforce. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,7 +109,8 @@ final class TrustStoreManager {
             this.storeFile = storeFile;
             this.lastModified = lastModified;
 
-            if (SSLLogger.isOn() && SSLLogger.isOn("trustmanager")) {
+            if (SSLLogger.isOn() &&
+                    SSLLogger.isOn(SSLLogger.Opt.TRUSTMANAGER)) {
                 SSLLogger.fine(
                     "trustStore is: " + storeName + "\n" +
                     "trustStore type is: " + storeType + "\n" +
@@ -152,7 +154,7 @@ final class TrustStoreManager {
 
                     // Not break, the file is inaccessible.
                     if (SSLLogger.isOn() &&
-                            SSLLogger.isOn("trustmanager")) {
+                            SSLLogger.isOn(SSLLogger.Opt.TRUSTMANAGER)) {
                         SSLLogger.fine(
                                 "Inaccessible trust store: " +
                                 fileName);
@@ -267,13 +269,15 @@ final class TrustStoreManager {
                 }
 
                 // Reload a new key store.
-                if (SSLLogger.isOn() && SSLLogger.isOn("trustmanager")) {
+                if (SSLLogger.isOn() &&
+                        SSLLogger.isOn(SSLLogger.Opt.TRUSTMANAGER)) {
                     SSLLogger.fine("Reload the trust store");
                 }
 
                 ks = loadKeyStore(descriptor);
                 this.descriptor = descriptor;
                 this.ksRef = new WeakReference<>(ks);
+                this.csRef = new WeakReference<>(null);
             } finally {
                 tamLock.unlock();
             }
@@ -321,7 +325,8 @@ final class TrustStoreManager {
 
                 // Reload the trust store if needed.
                 if (ks == null) {
-                    if (SSLLogger.isOn() && SSLLogger.isOn("trustmanager")) {
+                    if (SSLLogger.isOn() &&
+                            SSLLogger.isOn(SSLLogger.Opt.TRUSTMANAGER)) {
                         SSLLogger.fine("Reload the trust store");
                     }
                     ks = loadKeyStore(descriptor);
@@ -329,12 +334,14 @@ final class TrustStoreManager {
                 }
 
                 // Reload trust certs from the key store.
-                if (SSLLogger.isOn() && SSLLogger.isOn("trustmanager")) {
+                if (SSLLogger.isOn() &&
+                        SSLLogger.isOn(SSLLogger.Opt.TRUSTMANAGER)) {
                     SSLLogger.fine("Reload trust certs");
                 }
 
                 certs = loadTrustedCerts(ks);
-                if (SSLLogger.isOn() && SSLLogger.isOn("trustmanager")) {
+                if (SSLLogger.isOn() &&
+                        SSLLogger.isOn(SSLLogger.Opt.TRUSTMANAGER)) {
                     SSLLogger.fine("Reloaded " + certs.size() + " trust certs");
                 }
 
@@ -355,7 +362,8 @@ final class TrustStoreManager {
                     descriptor.storeFile == null) {
 
                 // No file available, no KeyStore available.
-                if (SSLLogger.isOn() && SSLLogger.isOn("trustmanager")) {
+                if (SSLLogger.isOn() &&
+                        SSLLogger.isOn(SSLLogger.Opt.TRUSTMANAGER)) {
                     SSLLogger.fine("No available key store");
                 }
 
@@ -382,7 +390,8 @@ final class TrustStoreManager {
                     ks.load(bis, password);
                 } catch (FileNotFoundException fnfe) {
                     // No file available, no KeyStore available.
-                    if (SSLLogger.isOn() && SSLLogger.isOn("trustmanager")) {
+                    if (SSLLogger.isOn() &&
+                            SSLLogger.isOn(SSLLogger.Opt.TRUSTMANAGER)) {
                         SSLLogger.fine(
                             "Not available key store: " + descriptor.storeName);
                     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 4397357 6565620 6959267 7070436 7198195 8041791 8032446 8072600
- *      8221431
+ *      8221431 8372208
  * @summary Confirm special case mappings are handled correctly.
  * @library /lib/testlibrary/java/lang
  */
@@ -335,7 +335,7 @@ public class SpecialCasingTest {
 
         String[] tokens = str.split(" ");
         for (String token : tokens) {
-            sb.append((char) Integer.parseInt(token, 16));
+            sb.appendCodePoint(Integer.parseInt(token, 16));
         }
         return sb.toString();
     }

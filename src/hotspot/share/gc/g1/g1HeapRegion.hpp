@@ -41,7 +41,7 @@ class G1CardSet;
 class G1CardSetConfiguration;
 class G1CollectedHeap;
 class G1CMBitMap;
-class G1CSetCandidateGroup;
+class G1CardSetGroup;
 class G1Predictions;
 class G1HeapRegionRemSet;
 class G1HeapRegionSetBase;
@@ -52,9 +52,6 @@ class nmethod;
                 (_hr_)->hrm_index(), \
                 (_hr_)->get_short_type_str(), \
                 p2i((_hr_)->bottom()), p2i((_hr_)->top()), p2i((_hr_)->end())
-
-// sentinel value for hrm_index
-#define G1_NO_HRM_INDEX ((uint) -1)
 
 // A G1HeapRegion is the smallest piece of a G1CollectedHeap that
 // can be collected independently.
@@ -87,6 +84,13 @@ class G1HeapRegion : public CHeapObj<mtGC> {
   HeapWord* _pre_dummy_top;
 
 public:
+  // Valid region indexes range from 0 .. MaxNumRegions-1.
+  // We restrict to INT_MAX because we internally need the NoRegionIdx sentinel internally.
+  // For simplicity, limit to 2^31 regions which allow more than enough maximum heap size.
+  static const uint MaxNumRegions = 1u << 31;
+  // Sentinel value for an invalid region index.
+  static const uint InvalidRegionIdx = UINT_MAX;
+
   HeapWord* bottom() const         { return _bottom; }
   HeapWord* end() const            { return _end;    }
 
@@ -518,8 +522,8 @@ public:
   void install_surv_rate_group(G1SurvRateGroup* surv_rate_group);
   void uninstall_surv_rate_group();
 
-  void install_cset_group(G1CSetCandidateGroup* cset_group);
-  void uninstall_cset_group();
+  void install_card_set_group(G1CardSetGroup* card_set_group);
+  void uninstall_card_set_group();
 
   void record_surv_words_in_group(size_t words_survived);
 
@@ -528,7 +532,7 @@ public:
   inline static bool is_in_parsable_area(const void* const addr, const void* const pb);
 
   // Update the region state after a failed evacuation.
-  void handle_evacuation_failure(bool retain);
+  void handle_evacuation_failure();
 
   // Iterate over the objects overlapping the given memory region, applying cl
   // to all references in the region.  This is a helper for
@@ -567,41 +571,15 @@ public:
 // G1HeapRegionClosure is used for iterating over regions.
 // Terminates the iteration when the "do_heap_region" method returns "true".
 class G1HeapRegionClosure : public StackObj {
-  friend class G1HeapRegionManager;
-  friend class G1CollectionSet;
-  friend class G1CollectionSetCandidates;
-
-  bool _is_complete;
-  void set_incomplete() { _is_complete = false; }
-
 public:
-  G1HeapRegionClosure(): _is_complete(true) {}
-
   // Typically called on each region until it returns true.
   virtual bool do_heap_region(G1HeapRegion* r) = 0;
-
-  // True after iteration if the closure was applied to all heap regions
-  // and returned "false" in all cases.
-  bool is_complete() { return _is_complete; }
 };
 
 class G1HeapRegionIndexClosure : public StackObj {
-  friend class G1HeapRegionManager;
-  friend class G1CollectionSet;
-  friend class G1CollectionSetCandidates;
-
-  bool _is_complete;
-  void set_incomplete() { _is_complete = false; }
-
 public:
-  G1HeapRegionIndexClosure(): _is_complete(true) {}
-
   // Typically called on each region until it returns true.
   virtual bool do_heap_region_index(uint region_index) = 0;
-
-  // True after iteration if the closure was applied to all heap regions
-  // and returned "false" in all cases.
-  bool is_complete() { return _is_complete; }
 };
 
 #endif // SHARE_GC_G1_G1HEAPREGION_HPP

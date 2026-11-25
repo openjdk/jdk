@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * @bug 8151441
  * @summary Request body of incorrect (larger or smaller) sizes than that
  *          reported by the body publisher
- * @run main/othervm ShortRequestBody
+ * @run main/othervm ${test.main.class}
  */
 
 public class ShortRequestBody {

@@ -30,8 +30,12 @@
 #include "logging/logTag.hpp"
 #include "runtime/os.hpp"
 
-ShenandoahAggressiveHeuristics::ShenandoahAggressiveHeuristics(ShenandoahSpaceInfo* space_info) :
-  ShenandoahHeuristics(space_info) {
+void ShenandoahAggressiveHeuristics::configure() {
+  if (!UnlockDiagnosticVMOptions) {
+    vm_exit_during_initialization(err_msg(
+      "Heuristics \"Aggressive\" is diagnostic, and must be enabled via -XX:+UnlockDiagnosticVMOptions."));
+  }
+
   // Do not shortcut evacuation
   SHENANDOAH_ERGO_OVERRIDE_DEFAULT(ShenandoahImmediateThreshold, 100);
 
@@ -39,16 +43,20 @@ ShenandoahAggressiveHeuristics::ShenandoahAggressiveHeuristics(ShenandoahSpaceIn
   SHENANDOAH_ERGO_ENABLE_FLAG(ShenandoahEvacReserveOverflow);
 }
 
-size_t ShenandoahAggressiveHeuristics::choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
-                                                                             RegionData* data, size_t size,
-                                                                             size_t free) {
+ShenandoahAggressiveHeuristics::ShenandoahAggressiveHeuristics(ShenandoahSpaceInfo* space_info) :
+  ShenandoahHeuristics(space_info) {
+  configure();
+}
+
+void ShenandoahAggressiveHeuristics::choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
+                                                                           RegionData* data, size_t size,
+                                                                           size_t free) {
   for (size_t idx = 0; idx < size; idx++) {
     ShenandoahHeapRegion* r = data[idx].get_region();
     if (r->garbage() > 0) {
       cset->add_region(r);
     }
   }
-  return 0;
 }
 
 bool ShenandoahAggressiveHeuristics::should_start_gc() {
@@ -57,9 +65,3 @@ bool ShenandoahAggressiveHeuristics::should_start_gc() {
   return true;
 }
 
-bool ShenandoahAggressiveHeuristics::should_unload_classes() {
-  if (!can_unload_classes()) return false;
-  if (has_metaspace_oom()) return true;
-  // Randomly unload classes with 50% chance.
-  return (os::random() & 1) == 1;
-}

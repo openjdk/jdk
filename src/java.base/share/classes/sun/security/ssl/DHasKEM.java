@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,8 @@ import java.security.spec.NamedParameterSpec;
 import java.security.spec.XECPublicKeySpec;
 import java.util.Arrays;
 
+import static sun.security.util.SecurityConstants.PROVIDER_VER;
+
 /**
  * The DHasKEM class presents a KEM abstraction layer over traditional
  * DH-based key exchange, which can be used for either straight
@@ -60,6 +62,22 @@ import java.util.Arrays;
  * when hybrid implementations are required.
  */
 public class DHasKEM implements KEMSpi {
+    // This provider is used only by SunJSSE and is never installed in the
+    // system provider list. It exposes the internal DH-as-KEM adapter to
+    // Hybrid.KEMImpl through the public KEM API without exposing KEM.DH
+    // as a system provider service.
+    static final Provider PROVIDER = new ProviderImpl();
+
+    private static final class ProviderImpl extends Provider {
+        @java.io.Serial
+        private static final long serialVersionUID = 0L;
+
+        ProviderImpl() {
+            super("DHAsKEM", PROVIDER_VER,
+                    "Internal DH-as-KEM provider");
+            put("KEM.DH", DHasKEM.class.getName());
+        }
+    }
 
     @Override
     public EncapsulatorSpi engineNewEncapsulator(
@@ -101,7 +119,18 @@ public class DHasKEM implements KEMSpi {
                 return new KEM.Encapsulated(
                         sub(dh, from, to),
                         pkEm, null);
+
+            } catch (IllegalArgumentException e) {
+                // ECDH validation failure
+                // all-zero shared secret
+                throw e;
+            } catch (InvalidKeyException e) {
+                // Invalid peer public key
+                // Convert InvalidKeyException to an unchecked exception
+                throw new IllegalArgumentException("Invalid peer public key",
+                        e);
             } catch (Exception e) {
+                // Unexpected internal failure
                 throw new ProviderException("internal error", e);
             }
         }
@@ -126,6 +155,11 @@ public class DHasKEM implements KEMSpi {
                 PublicKey pkE = params.DeserializePublicKey(encapsulation);
                 SecretKey dh = params.DH(algorithm, skR, pkE);
                 return sub(dh, from, to);
+
+            } catch (IllegalArgumentException e) {
+                // ECDH validation failure
+                // all-zero shared secret
+                throw e;
             } catch (IOException | InvalidKeyException e) {
                 throw new DecapsulateException("Cannot decapsulate", e);
             } catch (Exception e) {
@@ -248,7 +282,30 @@ public class DHasKEM implements KEMSpi {
             KeyAgreement ka = KeyAgreement.getInstance(kaAlgorithm);
             ka.init(skE);
             ka.doPhase(pkR, true);
-            return ka.generateSecret(alg);
+            SecretKey secret = ka.generateSecret(alg);
+
+            // RFC 8446 section 7.4.2: checks for all-zero
+            // X25519/X448 shared secret.
+            if (this == X25519 || this == X448) {
+                byte[] s = secret.getEncoded();
+                try {
+                    byte data = 0;
+                    for (byte b : s) {
+                        data |= b;
+                    }
+                    if (data == 0) {
+                        // Trigger ILLEGAL_PARAMETER alert
+                        throw new IllegalArgumentException(
+                                "All-zero shared secret");
+                    }
+                } finally {
+                    // getEncoded() returns a temporary copy of the
+                    // shared secret.
+                    Arrays.fill(s, (byte) 0);
+                }
+            }
+
+            return secret;
         }
     }
 }

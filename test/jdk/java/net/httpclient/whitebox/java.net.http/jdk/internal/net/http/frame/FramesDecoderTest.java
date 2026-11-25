@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,15 +28,15 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
-import org.testng.Assert;
-import org.testng.annotations.Test;
 import static java.lang.System.out;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.testng.Assert.*;
+
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class FramesDecoderTest {
 
-    abstract class TestFrameProcessor implements FramesDecoder.FrameProcessor {
+    abstract static class TestFrameProcessor implements FramesDecoder.FrameProcessor {
         protected volatile int count;
         public int numberOfFramesDecoded() { return count; }
     }
@@ -69,17 +70,17 @@ public class FramesDecoderTest {
                 assertTrue(frame instanceof DataFrame);
                 DataFrame dataFrame = (DataFrame) frame;
                 List<ByteBuffer> list = dataFrame.getData();
-                assertEquals(list.size(), 1);
+                assertEquals(1, list.size());
                 ByteBuffer data = list.get(0);
                 byte[] bytes = new byte[data.remaining()];
                 data.get(bytes);
                 if (count == 0) {
-                    assertEquals(new String(bytes, UTF_8), "XXXX");
+                    assertEquals("XXXX", new String(bytes, UTF_8));
                     out.println("First data received:" + data);
-                    assertEquals(data.position(), data.limit());  // since bytes read
-                    assertEquals(data.limit(), data.capacity());
+                    assertEquals(data.limit(), data.position());  // since bytes read
+                    assertEquals(data.capacity(), data.limit());
                 } else {
-                    assertEquals(new String(bytes, UTF_8), "YYYY");
+                    assertEquals("YYYY", new String(bytes, UTF_8));
                     out.println("Second data received:" + data);
                 }
                 count++;
@@ -89,7 +90,7 @@ public class FramesDecoderTest {
 
         out.println("Sending " + combined + " to decoder: ");
         decoder.decode(combined);
-        Assert.assertEquals(testFrameProcessor.numberOfFramesDecoded(), 2);
+        assertEquals(2, testFrameProcessor.numberOfFramesDecoded());
     }
 
 
@@ -119,15 +120,15 @@ public class FramesDecoderTest {
                 assertTrue(frame instanceof DataFrame);
                 DataFrame dataFrame = (DataFrame) frame;
                 List<ByteBuffer> list = dataFrame.getData();
-                assertEquals(list.size(), 1);
+                assertEquals(1, list.size());
                 ByteBuffer data = list.get(0);
                 byte[] bytes = new byte[data.remaining()];
                 data.get(bytes);
-                assertEquals(new String(bytes, UTF_8), "XXXX");
+                assertEquals("XXXX", new String(bytes, UTF_8));
                 out.println("First data received:" + data);
-                assertEquals(data.position(), data.limit());  // since bytes read
+                assertEquals(data.limit(), data.position());  // since bytes read
                 //assertNotEquals(data.limit(), data.capacity());
-                assertEquals(data.capacity(), 1024 - 9 /*frame header*/);
+                assertEquals(1024 - 9 /*frame header*/, data.capacity());
                 count++;
             }
         };
@@ -135,6 +136,78 @@ public class FramesDecoderTest {
 
         out.println("Sending " + combined + " to decoder: ");
         decoder.decode(combined);
-        Assert.assertEquals(testFrameProcessor.numberOfFramesDecoded(), 1);
+        assertEquals(1, testFrameProcessor.numberOfFramesDecoded());
+    }
+
+    private static byte[] frame(int type, int streamId, byte[] payload) {
+        ByteBuffer buffer = ByteBuffer.allocate(Http2Frame.FRAME_HEADER_SIZE
+                + payload.length);
+        int len = payload.length;
+        buffer.put((byte) (len >> 16));
+        buffer.put((byte) (len >> 8));
+        buffer.put((byte) len);
+        buffer.put((byte) type);
+        buffer.put((byte) 0);
+        buffer.putInt(streamId);
+        buffer.put(payload);
+        return buffer.array();
+    }
+
+    private static final byte[] PING = frame(PingFrame.TYPE, 0, new byte[8]);
+
+    private static List<Http2Frame> decode(byte[][] frames) throws IOException {
+        int len = 0;
+        for (byte[] frame : frames) {
+            len += frame.length;
+        }
+        ByteBuffer input = ByteBuffer.allocate(len);
+        for (byte[] frame : frames) {
+            input.put(frame);
+        }
+        input.flip();
+        List<Http2Frame> decoded = new ArrayList<>();
+        new FramesDecoder(decoded::add).decode(input);
+        return decoded;
+    }
+
+    /**
+     * A PRIORITY frame with a length other than 5
+     */
+    @Test
+    public void decodeBadLengthPriorityFrame() throws Exception {
+        List<Http2Frame> frames = decode(new byte[][]{frame(PriorityFrame.TYPE, 3, new byte[4]), PING});
+        assertEquals(2, frames.size(), frames.toString());
+        MalformedFrame malformedFrame = assertInstanceOf(MalformedFrame.class, frames.get(0));
+        assertEquals(ErrorFrame.FRAME_SIZE_ERROR, malformedFrame.getErrorCode());
+        assertEquals(3, malformedFrame.streamid());
+        assertFalse(malformedFrame.isConnectionError());
+        assertInstanceOf(PingFrame.class, frames.get(1));
+    }
+
+    /**
+     * ALTSVC frames with non-ASCII origin or value.
+     */
+    @Test
+    public void decodeNonAsciiAltSvcFrame() throws Exception {
+        byte[] badOrigin = {0, 2, (byte) 0xC3, (byte) 0xA9, 'h', '2', '=', '"', ':', '1', '"'};
+        byte[] badValue = {0, 1, 'x', 'h', '2', '=', (byte) 0xC3, (byte) 0xA9};
+        List<Http2Frame> frames = decode(new byte[][]{frame(AltSvcFrame.TYPE, 0, badOrigin),
+                frame(AltSvcFrame.TYPE, 0, badValue), PING});
+        assertEquals(1, frames.size(), frames.toString());
+        assertInstanceOf(PingFrame.class, frames.get(0));
+    }
+
+    /**
+     * ALTSVC frames too small.
+     */
+    @Test
+    public void decodeTooSmallAltSvcFrame() throws Exception {
+        for (byte[] payload : List.of(new byte[] {0}, new byte[] {0, 10, 'a', 'b'})) {
+            List<Http2Frame> frames = decode(new byte[][]{frame(AltSvcFrame.TYPE, 0, payload)});
+            assertEquals(1, frames.size(), frames.toString());
+            MalformedFrame malformedFrame = assertInstanceOf(MalformedFrame.class, frames.get(0));
+            assertEquals(ErrorFrame.FRAME_SIZE_ERROR, malformedFrame.getErrorCode());
+            assertTrue(malformedFrame.isConnectionError());
+        }
     }
 }

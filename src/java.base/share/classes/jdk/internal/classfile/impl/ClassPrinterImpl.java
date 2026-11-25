@@ -939,6 +939,9 @@ public final class ClassPrinterImpl {
                 case PermittedSubclassesAttribute psa ->
                     nodes.add(list("permitted subclasses", "subclass", psa.permittedSubclasses().stream()
                             .map(e -> e.name().stringValue())));
+                case LoadableDescriptorsAttribute pa ->
+                    nodes.add(list("loadable descriptors", "descriptor", pa.loadableDescriptors().stream()
+                            .map(e -> e.stringValue())));
                 default -> {}
             }
             if (verbosity == Verbosity.TRACE_ALL) switch (attr) {

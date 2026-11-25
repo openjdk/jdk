@@ -468,7 +468,8 @@ struct hb_ot_shape_context_t
 /* Prepare */
 
 static void
-hb_set_unicode_props (hb_buffer_t *buffer)
+hb_set_unicode_props (hb_buffer_t *buffer,
+                      hb_mask_t    global_mask)
 {
   /* Implement enough of Unicode Graphemes here that shaping
    * in reverse-direction wouldn't break graphemes.  Namely,
@@ -482,6 +483,7 @@ hb_set_unicode_props (hb_buffer_t *buffer)
   hb_glyph_info_t *info = buffer->info;
   for (unsigned int i = 0; i < count; i++)
   {
+    info[i].mask = global_mask;
     _hb_glyph_info_set_unicode_props (&info[i], buffer);
 
     if (info[i].codepoint < 0x80)
@@ -519,6 +521,7 @@ hb_set_unicode_props (hb_buffer_t *buffer)
           _hb_unicode_is_emoji_Extended_Pictographic (info[i + 1].codepoint))
       {
         i++;
+        info[i].mask = global_mask;
         _hb_glyph_info_set_unicode_props (&info[i], buffer);
         _hb_glyph_info_set_continuation (&info[i], buffer);
       }
@@ -580,12 +583,8 @@ hb_form_clusters (hb_buffer_t *buffer)
   if (!(buffer->scratch_flags & HB_BUFFER_SCRATCH_FLAG_HAS_CONTINUATIONS))
     return;
 
-  if (HB_BUFFER_CLUSTER_LEVEL_IS_GRAPHEMES (buffer->cluster_level))
-    foreach_grapheme (buffer, start, end)
-      buffer->merge_clusters (start, end);
-  else
-    foreach_grapheme (buffer, start, end)
-      buffer->unsafe_to_break (start, end);
+  foreach_grapheme (buffer, start, end)
+    buffer->merge_grapheme_clusters (start, end);
 }
 
 static void
@@ -748,16 +747,6 @@ hb_ot_shape_setup_masks_fraction (const hb_ot_shape_context_t *c)
 }
 
 static inline void
-hb_ot_shape_initialize_masks (const hb_ot_shape_context_t *c)
-{
-  hb_ot_map_t *map = &c->plan->map;
-  hb_buffer_t *buffer = c->buffer;
-
-  hb_mask_t global_mask = map->get_global_mask ();
-  buffer->reset_masks (global_mask);
-}
-
-static inline void
 hb_ot_shape_setup_masks (const hb_ot_shape_context_t *c)
 {
   hb_ot_map_t *map = &c->plan->map;
@@ -916,22 +905,29 @@ hb_ot_substitute_plan (const hb_ot_shape_context_t *c)
 {
   hb_buffer_t *buffer = c->buffer;
 
-  hb_ot_layout_substitute_start (c->font, buffer);
-
-  if (c->plan->fallback_glyph_classes)
-    hb_synthesize_glyph_classes (c->buffer);
-
 #ifndef HB_NO_AAT_SHAPE
   if (unlikely (c->plan->apply_morx))
   {
+    hb_ot_layout_substitute_start (c->font, buffer);
+
+    if (c->plan->fallback_glyph_classes)
+      hb_synthesize_glyph_classes (buffer);
+
     hb_aat_layout_substitute (c->plan, c->font, c->buffer,
                               c->user_features, c->num_user_features);
-    c->buffer->update_digest ();
+    /* The buffer digest is only used by the OT lookup-apply loop;
+     * without GPOS ahead, nothing consumes it. */
+    if (c->plan->apply_gpos)
+      c->buffer->update_digest ();
   }
   else
 #endif
   {
-    c->buffer->update_digest ();
+    hb_ot_layout_substitute_start_with_digest (c->font, buffer);
+
+    if (c->plan->fallback_glyph_classes)
+      hb_synthesize_glyph_classes (buffer);
+
     c->plan->substitute (c->font, buffer);
   }
 }
@@ -977,8 +973,8 @@ hb_ot_substitute_post (const hb_ot_shape_context_t *c)
 static inline void
 adjust_mark_offsets (hb_glyph_position_t *pos)
 {
-  pos->x_offset -= pos->x_advance;
-  pos->y_offset -= pos->y_advance;
+  pos->x_offset = hb_saturate_sub (pos->x_offset, pos->x_advance);
+  pos->y_offset = hb_saturate_sub (pos->y_offset, pos->y_advance);
 }
 
 static inline void
@@ -1179,8 +1175,7 @@ hb_ot_shape_internal (hb_ot_shape_context_t *c)
 
   _hb_buffer_allocate_unicode_vars (c->buffer);
 
-  hb_ot_shape_initialize_masks (c);
-  hb_set_unicode_props (c->buffer);
+  hb_set_unicode_props (c->buffer, c->plan->map.get_global_mask ());
   hb_insert_dotted_circle (c->buffer, c->font);
 
   hb_form_clusters (c->buffer);
@@ -1331,5 +1326,21 @@ hb_ot_shape_glyphs_closure (hb_font_t          *font,
   hb_shape_plan_destroy (shape_plan);
 }
 
+
+/**
+ * hb_ot_shape_get_buffer_format_serial:
+ *
+ * Returns the serial number of the current internal buffer format.
+ * See #HB_OT_SHAPE_BUFFER_FORMAT_SERIAL for more information.
+ *
+ * Return value: The current buffer-format serial number.
+ *
+ * Since: 13.2.0
+ **/
+unsigned int
+hb_ot_shape_get_buffer_format_serial (void)
+{
+  return HB_OT_SHAPE_BUFFER_FORMAT_SERIAL;
+}
 
 #endif

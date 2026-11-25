@@ -30,9 +30,12 @@
  * @comment JDK-8231610 Relocate the CDS archive if it cannot be mapped to the requested address
  * @bug 8231610
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/cds/appcds/test-classes
- * @build Hello
+ * @enablePreview
+ * @modules java.base/jdk.internal.value
+ *          java.base/jdk.internal.vm.annotation
+ * @compile ../test-classes/HelloValueClassApp.java ../test-classes/HelloRelocation.java
  * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar hello.jar Hello
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar hello.jar HelloRelocation HelloValueClassApp HelloValueClassApp$Point HelloValueClassApp$Rectangle  HelloValueClassApp$ValueRecord
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. DynamicArchiveRelocationTest
  */
@@ -78,7 +81,7 @@ public class DynamicArchiveRelocationTest extends DynamicArchiveTestBase {
         System.out.println("============================================================");
 
         String appJar = ClassFileInstaller.getJarPath("hello.jar");
-        String mainClass = "Hello";
+        String mainClass = "HelloRelocation";
         String maybeRelocation = "-XX:ArchiveRelocationMode=0";
         String alwaysRelocation = "-XX:ArchiveRelocationMode=1";
         String dumpTopRelocArg  = dump_top_reloc  ? alwaysRelocation : maybeRelocation;
@@ -88,18 +91,19 @@ public class DynamicArchiveRelocationTest extends DynamicArchiveTestBase {
         String baseArchiveName = getNewArchiveName("base");
         String topArchiveName  = getNewArchiveName("top");
 
-        String runtimeMsg = "Try to map archive(s) at an alternative address";
+        String runtimeMsg = "ArchiveRelocationMode == 1: always map archive(s) at an alternative address";
         String unlockArg = "-XX:+UnlockDiagnosticVMOptions";
         String relocationModeMsg = "ArchiveRelocationMode: 0";
 
         // (1) Dump base archive (static)
 
-        TestCommon.dumpBaseArchive(baseArchiveName, unlockArg, logArg)
+        TestCommon.dumpBaseArchive(baseArchiveName, "--enable-preview", unlockArg, logArg)
           .shouldContain("Relocating archive from");
 
         // (2) Dump top archive (dynamic)
 
         dump2(baseArchiveName, topArchiveName,
+              "--enable-preview",
               unlockArg,
               dumpTopRelocArg,
               logArg,
@@ -113,6 +117,7 @@ public class DynamicArchiveRelocationTest extends DynamicArchiveTestBase {
                 });
 
         run2(baseArchiveName, topArchiveName,
+             "--enable-preview",
              unlockArg,
              runRelocArg,
              logArg,

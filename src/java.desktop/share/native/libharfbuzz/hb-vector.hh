@@ -62,7 +62,7 @@ struct hb_vector_t
             hb_requires (hb_is_iterable (Iterable))>
   explicit hb_vector_t (const Iterable &o) : hb_vector_t ()
   {
-    extend (o);
+    extend (o, true);
   }
   HB_ALWAYS_INLINE_VECTOR_ALLOCS
   hb_vector_t (const hb_vector_t &o) : hb_vector_t ()
@@ -117,12 +117,12 @@ struct hb_vector_t
   template <typename Iterable,
             hb_requires (hb_is_iterable (Iterable))>
   HB_ALWAYS_INLINE_VECTOR_ALLOCS
-  void extend (const Iterable &o)
+  void extend (const Iterable &o, bool exact=false)
   {
     auto iter = hb_iter (o);
     if (iter.is_random_access_iterator || iter.has_fast_len)
     {
-      if (unlikely (!alloc (hb_len (iter), true)))
+      if (unlikely (!alloc (length + hb_len (iter), exact)))
         return;
       unsigned count = hb_len (iter);
       for (unsigned i = 0; i < count; i++)
@@ -138,19 +138,24 @@ struct hb_vector_t
     }
   }
   HB_ALWAYS_INLINE_VECTOR_ALLOCS
-  void extend (array_t o)
+  void extend (array_t o, bool exact=false)
+  { extend (c_array_t (o), exact); }
+  HB_ALWAYS_INLINE_VECTOR_ALLOCS
+  void extend (c_array_t o, bool exact=false)
   {
-    alloc (length + o.length);
+    /* o may point into our own storage, eg. v.extend (v.as_array ()).
+     * alloc() may move that storage, so find o again afterwards. */
+    bool aliased = o.length && in_storage (*o.arrayZ);
+    unsigned offset = aliased ? o.arrayZ - arrayZ : 0;
+    alloc (length + o.length, exact);
     if (unlikely (in_error ())) return;
+    if (unlikely (aliased))
+      o = {arrayZ + offset, o.length};
     copy_array (o);
   }
   HB_ALWAYS_INLINE_VECTOR_ALLOCS
-  void extend (c_array_t o)
-  {
-    alloc (length + o.length);
-    if (unlikely (in_error ())) return;
-    copy_array (o);
-  }
+  void extend (const hb_vector_t &o, bool exact=false)
+  { extend (o.as_array (), exact); }
 
   public:
   int allocated = 0; /* < 0 means allocation failed. */
@@ -182,8 +187,44 @@ struct hb_vector_t
   {
     if (unlikely (in_error ()))
       reset_error ();
-    resize (0);
+    clear ();
     return *this;
+  }
+
+  HB_ALWAYS_INLINE_VECTOR_ALLOCS
+  hb_vector_t &reset_if_error ()
+  {
+    if (unlikely (in_error ()))
+      reset ();
+    return *this;
+  }
+
+  /* Transfer ownership of the backing storage to caller.
+   * Returns nullptr if storage is not owned by this vector. */
+  Type *
+  steal (unsigned *len = nullptr, int *allocated_out = nullptr)
+  {
+    if (!is_owned ())
+      return nullptr;
+    if (len)
+      *len = length;
+    if (allocated_out)
+      *allocated_out = allocated;
+    Type *p = arrayZ;
+    init ();
+    return p;
+  }
+
+  /* Adopt a previously detached owned buffer. */
+  void
+  recycle_buffer (Type *buffer,
+                  unsigned len,
+                  int allocated_len)
+  {
+    fini ();
+    arrayZ = buffer;
+    length = len;
+    allocated = allocated_len;
   }
 
   friend void swap (hb_vector_t& a, hb_vector_t& b) noexcept
@@ -195,6 +236,8 @@ struct hb_vector_t
 
   hb_vector_t& operator = (const hb_vector_t &o)
   {
+    if (this == &o) return *this;
+
     reset ();
     alloc_exact (o.length);
     if (unlikely (in_error ())) return *this;
@@ -236,7 +279,7 @@ struct hb_vector_t
   const Type& tail () const { return (*this)[length - 1]; }
 
   explicit operator bool () const { return length; }
-  unsigned get_size () const { return length * item_size; }
+  size_t get_size () const { return hb_unsigned_mul_saturate (length, item_size); }
 
   /* Sink interface. */
   template <typename T>
@@ -280,13 +323,34 @@ struct hb_vector_t
   HB_ALWAYS_INLINE_VECTOR_ALLOCS
   Type *push (Args&&... args)
   {
-    if (unlikely ((int) length >= allocated && !alloc (length + 1)))
-      // If push failed to allocate then don't copy v, since this may cause
-      // the created copy to leak memory since we won't have stored a
-      // reference to it.
-      return std::addressof (Crap (Type));
+    if (unlikely ((int) length >= allocated))
+    {
+      if (unlikely (in_error ()))
+        return std::addressof (Crap (Type));
+
+      /* An argument may live in our own storage, eg. v.push (v[i]).
+       * alloc() frees that storage, so copy it out first. */
+      if (unlikely (in_storage (args...)))
+      {
+        Type copy (std::forward<Args> (args)...);
+        if (unlikely (!alloc (length + 1)))
+          return std::addressof (Crap (Type));
+        return push_has_room (std::move (copy));
+      }
+      if (unlikely (!alloc (length + 1)))
+        // If push failed to allocate then don't copy v, since this may cause
+        // the created copy to leak memory since we won't have stored a
+        // reference to it.
+        return std::addressof (Crap (Type));
+    }
 
     return push_has_room (std::forward<Args> (args)...);
+  }
+  template <typename... Args>
+  HB_ALWAYS_INLINE_VECTOR_ALLOCS
+  bool push_or_fail (Args&&... args)
+  {
+    return push (std::forward<Args> (args)...) != std::addressof (Crap (Type));
   }
   template <typename... Args>
   HB_ALWAYS_INLINE_VECTOR_ALLOCS
@@ -295,6 +359,16 @@ struct hb_vector_t
     /* Emplace. */
     Type *p = std::addressof (arrayZ[length++]);
     return new (p) Type (std::forward<Args> (args)...);
+  }
+
+  bool in_storage () const { return false; }
+  template <typename T, typename... Ts>
+  bool in_storage (const T &v, const Ts &...vs) const
+  {
+    uintptr_t p = (uintptr_t) std::addressof (v);
+    return (arrayZ &&
+            (uintptr_t) arrayZ <= p && p < (uintptr_t) (arrayZ + length)) ||
+           in_storage (vs...);
   }
 
   bool is_owned () const
@@ -543,7 +617,7 @@ struct hb_vector_t
   HB_ALWAYS_INLINE_VECTOR_ALLOCS
   void clear ()
   {
-    resize (0);
+    shrink_vector (0);
   }
 
   template <typename allocator_t>
@@ -593,7 +667,9 @@ struct hb_vector_t
   HB_ALWAYS_INLINE_VECTOR_ALLOCS
   bool resize_full (int size_, bool initialize, bool exact)
   {
-    unsigned int size = size_ < 0 ? 0u : (unsigned int) size_;
+    if (unlikely (size_ < 0))
+      return false;
+    unsigned int size = (unsigned int) size_;
     if (!alloc (size, exact))
       return false;
 
@@ -671,8 +747,11 @@ struct hb_vector_t
 
 
   /* Sorting API. */
-  void qsort (int (*cmp)(const void*, const void*) = Type::cmp)
-  { as_array ().qsort (cmp); }
+  template <typename Compar>
+  void qsort (Compar compar)
+  { as_array ().qsort (compar); }
+  void qsort ()
+  { as_array ().qsort (); }
 
   /* Unsorted search API. */
   template <typename T>

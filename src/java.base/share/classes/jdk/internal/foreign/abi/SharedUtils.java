@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,11 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package jdk.internal.foreign.abi;
 
 import jdk.internal.access.JavaLangInvokeAccess;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.foreign.BufferStack;
 import jdk.internal.foreign.CABI;
 import jdk.internal.foreign.abi.AbstractLinker.UpcallStubFactory;
 import jdk.internal.foreign.abi.aarch64.linux.LinuxAArch64Linker;
@@ -390,15 +390,33 @@ public final class SharedUtils {
                 : chunkOffset;
     }
 
-    private static final int LINKER_STACK_SIZE = Integer.getInteger("jdk.internal.foreign.LINKER_STACK_SIZE", 256);
-    private static final BufferStack LINKER_STACK = BufferStack.of(LINKER_STACK_SIZE, 1);
-
-    @ForceInline
-    public static Arena newBoundedArena(long size) {
-        return LINKER_STACK.pushFrame(size, 8);
+    public static boolean isSigned(MemoryLayout layout) {
+        return layout instanceof OfIntegral integral && integral.isSigned();
     }
 
-    public static Arena newEmptyArena() {
+    @ForceInline
+    static Arena newBoundedArena(long size) {
+        return BoundedArena.of(size);
+    }
+
+    private record BoundedArena(Arena delegate, SegmentAllocator allocator) implements Arena {
+        @ForceInline  @Override
+        public MemorySegment allocate(long byteSize, long byteAlignment) { return allocator.allocate(byteSize, byteAlignment); }
+        @ForceInline @Override
+        public Scope scope() { return delegate.scope(); }
+        @ForceInline @Override
+        public void close() { delegate.close(); }
+
+        @ForceInline
+        static Arena of(long size) {
+            final Arena arena = Arena.ofConfined();
+            final SegmentAllocator allocator = SegmentAllocator.slicingAllocator(arena.allocate(size));
+            return new BoundedArena(arena, allocator);
+        }
+
+    }
+
+    static Arena newEmptyArena() {
         return new Arena() {
             final Arena arena = Arena.ofConfined();
 
@@ -487,11 +505,12 @@ public final class SharedUtils {
         }
     }
 
-    public static Map<String, MemoryLayout> canonicalLayouts(ValueLayout longLayout, ValueLayout sizetLayout, ValueLayout wchartLayout) {
+    public static Map<String, MemoryLayout> canonicalLayouts(ValueLayout.OfIntegral longLayout, ValueLayout sizetLayout,
+                                                             ValueLayout charLayout, ValueLayout wchartLayout) {
         return Map.ofEntries(
                 // specified canonical layouts
                 Map.entry("bool", ValueLayout.JAVA_BOOLEAN),
-                Map.entry("char", ValueLayout.JAVA_BYTE),
+                Map.entry("char", charLayout),
                 Map.entry("short", ValueLayout.JAVA_SHORT),
                 Map.entry("int", ValueLayout.JAVA_INT),
                 Map.entry("float", ValueLayout.JAVA_FLOAT),
@@ -501,11 +520,20 @@ public final class SharedUtils {
                 Map.entry("void*", ValueLayout.ADDRESS),
                 Map.entry("size_t", sizetLayout),
                 Map.entry("wchar_t", wchartLayout),
-                // unspecified size-dependent layouts
+                Map.entry("unsigned char", ValueLayout.JAVA_BYTE.withSignedness(false)),
+                Map.entry("unsigned short", ValueLayout.JAVA_SHORT.withSignedness(false)),
+                Map.entry("unsigned int", ValueLayout.JAVA_INT.withSignedness(false)),
+                Map.entry("unsigned long", longLayout.withSignedness(false)),
+                Map.entry("unsigned long long", ValueLayout.JAVA_LONG.withSignedness(false)),
+                // size/sign-dependent layouts
                 Map.entry("int8_t", ValueLayout.JAVA_BYTE),
                 Map.entry("int16_t", ValueLayout.JAVA_SHORT),
                 Map.entry("int32_t", ValueLayout.JAVA_INT),
                 Map.entry("int64_t", ValueLayout.JAVA_LONG),
+                Map.entry("uint8_t", ValueLayout.JAVA_BYTE.withSignedness(false)),
+                Map.entry("uint16_t", ValueLayout.JAVA_SHORT.withSignedness(false)),
+                Map.entry("uint32_t", ValueLayout.JAVA_INT.withSignedness(false)),
+                Map.entry("uint64_t", ValueLayout.JAVA_LONG.withSignedness(false)),
                 // unspecified JNI layouts
                 Map.entry("jboolean", ValueLayout.JAVA_BOOLEAN),
                 Map.entry("jchar", ValueLayout.JAVA_CHAR),

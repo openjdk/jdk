@@ -5,6 +5,11 @@
 #ifndef SPA_PARAM_BUFFERS_TYPES_H
 #define SPA_PARAM_BUFFERS_TYPES_H
 
+#include <spa/param/param-types.h>
+#include <spa/node/type-info.h>
+
+#include <spa/param/buffers.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -13,11 +18,6 @@ extern "C" {
  * \addtogroup spa_param
  * \{
  */
-
-#include <spa/param/param-types.h>
-#include <spa/node/type-info.h>
-
-#include <spa/param/buffers.h>
 
 #define SPA_TYPE_INFO_PARAM_Meta        SPA_TYPE_INFO_PARAM_BASE "Meta"
 #define SPA_TYPE_INFO_PARAM_META_BASE        SPA_TYPE_INFO_PARAM_Meta ":"

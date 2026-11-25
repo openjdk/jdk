@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,21 +23,21 @@
 
 package datatype;
 
-import java.util.Calendar;
-import java.util.GregorianCalendar;
+import org.junit.jupiter.api.Test;
 
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
 
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /*
  * @test
  * @bug 7042647
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm datatype.Bug7042647Test
+ * @run junit/othervm datatype.Bug7042647Test
  * @summary Test getFirstDayOfWeek is correct after converting XMLGregorianCalendar to a GregorianCalendar.
  */
 public class Bug7042647Test {
@@ -49,11 +49,7 @@ public class Bug7042647Test {
         int firstDayOfWeek = calendar.getFirstDayOfWeek();
         Calendar defaultCalendar = Calendar.getInstance();
         int defaultFirstDayOfWeek = defaultCalendar.getFirstDayOfWeek();
-        if (firstDayOfWeek != defaultFirstDayOfWeek) {
-            Assert.fail("Failed firstDayOfWeek=" + firstDayOfWeek + " != defaultFirstDayOfWeek=" + defaultFirstDayOfWeek);
-        } else {
-            System.out.println("Success firstDayOfWeek=" + firstDayOfWeek + " == defaultFirstDayOfWeek=" + defaultFirstDayOfWeek);
-        }
+        assertEquals(defaultFirstDayOfWeek, firstDayOfWeek);
     }
 
 }

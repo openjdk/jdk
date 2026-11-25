@@ -59,7 +59,7 @@ StringDedup::Stat StringDedup::_total_stat{};
 // Configuration for predicates used to decide whether to deduplicate.
 // The initial values are suitable for deduplication being disabled.
 const Klass* StringDedup::_string_klass_or_null = nullptr; // No klass will match.
-static_assert(markWord::max_age < UINT_MAX, "assumption");
+static_assert(markWord::max_age < UINT_MAX);
 uint StringDedup::_enabled_age_threshold = UINT_MAX;       // Age never equals max.
 uint StringDedup::_enabled_age_limit = 0;                  // Age is never less than zero.
 
@@ -182,7 +182,7 @@ void StringDedup::Requests::flush() {
       assert(_storage_for_requests != nullptr, "invariant");
       _storage_for_requests->storage()->release(_buffer, _index);
     }
-    FREE_C_HEAP_ARRAY(oop*, _buffer);
+    FREE_C_HEAP_ARRAY(_buffer);
     _buffer = nullptr;
   }
   if (_storage_for_requests != nullptr) {

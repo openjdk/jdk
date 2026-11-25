@@ -172,7 +172,7 @@ final class SSLEngineInputRecord extends InputRecord implements SSLRecord {
             return null;
         }
 
-        if (SSLLogger.isOn() && SSLLogger.isOn("packet")) {
+        if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.RECORD_PACKET)) {
             SSLLogger.fine("Raw read", packet);
         }
 
@@ -209,7 +209,7 @@ final class SSLEngineInputRecord extends InputRecord implements SSLRecord {
         byte minorVersion = packet.get();                  // pos: 2
         int contentLen = Record.getInt16(packet);          // pos: 3, 4
 
-        if (SSLLogger.isOn() && SSLLogger.isOn("record")) {
+        if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.RECORD)) {
             SSLLogger.fine(
                     "READ: " +
                     ProtocolVersion.nameOf(majorVersion, minorVersion) +
@@ -388,7 +388,7 @@ final class SSLEngineInputRecord extends InputRecord implements SSLRecord {
                  * error message, one that's treated as fatal by
                  * clients (Otherwise we'll hang.)
                  */
-                if (SSLLogger.isOn() && SSLLogger.isOn("record")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.RECORD)) {
                    SSLLogger.fine(
                             "Requested to negotiate unsupported SSLv2!");
                 }
@@ -410,7 +410,8 @@ final class SSLEngineInputRecord extends InputRecord implements SSLRecord {
 
             ByteBuffer converted = convertToClientHello(packet);
 
-            if (SSLLogger.isOn() && SSLLogger.isOn("packet")) {
+            if (SSLLogger.isOn() &&
+                    SSLLogger.isOn(SSLLogger.Opt.RECORD_PACKET)) {
                 SSLLogger.fine(
                         "[Converted] ClientHello", converted);
             }

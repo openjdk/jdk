@@ -156,6 +156,8 @@ void BarrierSetNMethod::set_guard_value(nmethod* nm, int value, int bit_mask) {
     return;
   }
 
+  assert(nm->is_osr_method() || !nm->method()->has_scalarized_args(), "unsupported");
+
   NativeNMethodBarrier* barrier = get_nmethod_barrier(nm);
   barrier->release_set_guard_value(value, bit_mask);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -250,8 +250,8 @@ public enum VectorShape {
     private static VectorShape computePreferredShape() {
         int prefBitSize = Integer.MAX_VALUE;
         for (LaneType type : LaneType.values()) {
-            Class<?> etype = type.elementType;
-            prefBitSize = Math.min(prefBitSize, getMaxVectorBitSize(etype));
+            Class<?> ctype = type.carrierType;
+            prefBitSize = Math.min(prefBitSize, getMaxVectorBitSize(ctype));
         }
         // If these assertions fail, we must reconsider our API portability assumptions.
         assert(prefBitSize >= Double.SIZE && prefBitSize < Integer.MAX_VALUE / Long.SIZE);
@@ -264,16 +264,16 @@ public enum VectorShape {
     /**
      * Returns the maximum vector bit size for a given element type.
      *
-     * @param etype the element type.
+     * @param ctype the carrier type.
      * @return the maximum vector bit.
      */
      /*package-private*/
-    static int getMaxVectorBitSize(Class<?> etype) {
+    static int getMaxVectorBitSize(Class<?> ctype) {
         // VectorSupport.getMaxLaneCount may return -1 if C2 is not enabled,
         // or a value smaller than the S_64_BIT.vectorBitSize / elementSizeInBits if MaxVectorSize < 16
         // If so default to S_64_BIT
-        int maxLaneCount = VectorSupport.getMaxLaneCount(etype);
-        int elementSizeInBits = LaneType.of(etype).elementSize;
+        int maxLaneCount = VectorSupport.getMaxLaneCount(ctype);
+        int elementSizeInBits = LaneType.of(ctype).elementSize;
         return Math.max(maxLaneCount * elementSizeInBits, S_64_BIT.vectorBitSize);
     }
 

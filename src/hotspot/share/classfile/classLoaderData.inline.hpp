@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,6 +83,25 @@ inline ClassLoaderData* ClassLoaderData::class_loader_data(oop loader) {
   ClassLoaderData* loader_data = class_loader_data_or_null(loader);
   assert(loader_data != nullptr, "Must be");
   return loader_data;
+}
+
+inline bool ClassLoaderData::try_claim(int claim) {
+  for (;;) {
+    int old_claim = AtomicAccess::load(&_claim);
+    if ((old_claim & claim) == claim) {
+      return false;
+    }
+    int new_claim = old_claim | claim;
+    if (AtomicAccess::cmpxchg(&_claim, old_claim, new_claim) == old_claim) {
+      return true;
+    }
+  }
+}
+
+inline void ClassLoaderData::oops_do(OopClosure* f, int claim_value, bool should_clear_modified_or_humongous_oops) {
+  if (claim_value == _claim_none || try_claim(claim_value)) {
+    oops_do_slow(f, should_clear_modified_or_humongous_oops);
+  }
 }
 
 #endif // SHARE_CLASSFILE_CLASSLOADERDATA_INLINE_HPP

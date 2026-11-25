@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_COMPILER_CODECACHE_INLINE_HPP
-#define SHARE_VM_COMPILER_CODECACHE_INLINE_HPP
+#ifndef SHARE_CODE_CODECACHE_INLINE_HPP
+#define SHARE_CODE_CODECACHE_INLINE_HPP
 
 #include "code/codeCache.hpp"
 
@@ -59,4 +59,4 @@ inline int CodeCache::find_oopmap_slot_fast(void* pc) {
   return -1;
 }
 
-#endif // SHARE_VM_COMPILER_CODECACHE_INLINE_HPP
+#endif // SHARE_CODE_CODECACHE_INLINE_HPP

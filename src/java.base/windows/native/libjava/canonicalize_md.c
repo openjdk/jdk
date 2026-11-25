@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -167,10 +167,19 @@ WCHAR* getFinalPath(WCHAR* path, WCHAR* finalPath, DWORD size)
 
     if (h != INVALID_HANDLE_VALUE) {
         DWORD len = GetFinalPathNameByHandleW(h, finalPath, size, 0);
-        if (len >= size) {
-            if ((finalPath = (WCHAR*)malloc(len * sizeof(WCHAR))) == NULL)
+        if (len != 0 && len >= size) {
+            DWORD pathBufferSize = len;
+            finalPath = (WCHAR*)malloc((size_t)pathBufferSize * sizeof(WCHAR));
+            if (finalPath == NULL) {
+                CloseHandle(h);
                 return NULL;
-            len = GetFinalPathNameByHandleW(h, finalPath, len, 0);
+            }
+            len = GetFinalPathNameByHandleW(h, finalPath, pathBufferSize, 0);
+            if (len == 0 || len >= pathBufferSize) {
+                CloseHandle(h);
+                free(finalPath);
+                return NULL;
+            }
         }
         CloseHandle(h);
         if (len != 0) {
@@ -181,12 +190,13 @@ WCHAR* getFinalPath(WCHAR* path, WCHAR* finalPath, DWORD size)
                 int isUnc = (finalPath[4] == L'U' &&
                              finalPath[5] == L'N' &&
                              finalPath[6] == L'C');
+                // keep leading double backslashes in case of UNC
+                const int startIdx = (isUnc) ? 1 : 0;
                 int prefixLen = (isUnc) ? 7 : 4;
                 // the amount to copy includes terminator
                 int amountToCopy = len - prefixLen + 1;
-                wmemmove(finalPath, finalPath + prefixLen, amountToCopy);
+                wmemmove(finalPath + startIdx, finalPath + prefixLen, amountToCopy);
             }
-
             return finalPath;
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@
  * @library ..
  */
 
-import java.awt.AWTException;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Container;
@@ -38,6 +37,7 @@ import java.awt.KeyboardFocusManager;
 import java.awt.Point;
 import java.awt.Robot;
 import java.awt.event.InputEvent;
+import java.beans.PropertyVetoException;
 import javax.swing.DefaultCellEditor;
 import javax.swing.JComboBox;
 import javax.swing.JDesktopPane;
@@ -67,46 +67,60 @@ public class Test6505027 {
         SwingTest.start(Test6505027.class);
     }
 
-    private final JTable table = new JTable(new DefaultTableModel(COLUMNS, 2));
+    private static JTable table;
 
     public Test6505027(JFrame main) {
+        table = new JTable(new DefaultTableModel(COLUMNS, 2));
         Container container = main;
         if (INTERNAL) {
             JInternalFrame frame = new JInternalFrame();
             frame.setBounds(OFFSET, OFFSET, WIDTH, HEIGHT);
-            frame.setVisible(true);
 
             JDesktopPane desktop = new JDesktopPane();
             desktop.add(frame, new Integer(1));
+            frame.setVisible(true);
 
             container.add(desktop);
+            try {
+                frame.setSelected(true);
+            } catch (PropertyVetoException ex) {
+                throw new RuntimeException("could not select internal frame", ex);
+            }
             container = frame;
         }
         if (TERMINATE) {
-            this.table.putClientProperty(KEY, Boolean.TRUE);
+            table.putClientProperty(KEY, Boolean.TRUE);
         }
-        TableColumn column = this.table.getColumn(COLUMNS[1]);
+        TableColumn column = table.getColumn(COLUMNS[1]);
         column.setCellEditor(new DefaultCellEditor(new JComboBox(ITEMS)));
 
         container.add(BorderLayout.NORTH, new JTextField());
-        container.add(BorderLayout.CENTER, new JScrollPane(this.table));
+        container.add(BorderLayout.CENTER, new JScrollPane(table));
     }
 
-    public void press() throws AWTException {
-        Point point = this.table.getCellRect(1, 1, false).getLocation();
-        SwingUtilities.convertPointToScreen(point, this.table);
+    public static void press() throws Exception {
+        Point point = new Point();
+
+        SwingUtilities.invokeAndWait(() -> {
+            point.setLocation(table.getCellRect(1, 1, false).getLocation());
+            SwingUtilities.convertPointToScreen(point, table);
+        });
 
         Robot robot = new Robot();
         robot.setAutoDelay(50);
         robot.mouseMove(point.x + 1, point.y + 1);
-        robot.mousePress(InputEvent.BUTTON1_MASK);
-        robot.mouseRelease(InputEvent.BUTTON1_MASK);
+        robot.waitForIdle();
+        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+        robot.waitForIdle();
+        robot.delay(500);
     }
 
     public static void validate() {
         Component component = KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner();
-        if (!component.getClass().equals(JComboBox.class)) {
-            throw new Error("unexpected focus owner: " + component);
+        System.out.println("Component " + component);
+        if (!(component instanceof JComboBox)) {
+            throw new RuntimeException("unexpected focus owner: " + component);
         }
     }
 }

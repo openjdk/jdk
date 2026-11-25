@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ package javax.swing;
 import java.util.concurrent.*;
 import java.util.concurrent.locks.*;
 import java.util.concurrent.atomic.AtomicLong;
-import sun.awt.AppContext;
+import sun.awt.util.ThreadGroupUtils;
 
 /**
  * Internal class to manage all Timers using one thread.
@@ -40,8 +40,7 @@ import sun.awt.AppContext;
  */
 class TimerQueue implements Runnable
 {
-    private static final Object sharedInstanceKey =
-        new StringBuffer("TimerQueue.sharedInstanceKey");
+    private static volatile TimerQueue sharedInstance;
 
     private final DelayQueue<DelayedTimer> queue;
     private volatile boolean running;
@@ -69,14 +68,10 @@ class TimerQueue implements Runnable
 
     public static TimerQueue sharedInstance() {
         synchronized (classLock) {
-            TimerQueue sharedInst = (TimerQueue)
-                                    SwingUtilities.appContextGet(
-                                                        sharedInstanceKey);
-            if (sharedInst == null) {
-                sharedInst = new TimerQueue();
-                SwingUtilities.appContextPut(sharedInstanceKey, sharedInst);
+            if (sharedInstance == null) {
+                sharedInstance = new TimerQueue();
             }
-            return sharedInst;
+            return sharedInstance;
         }
     }
 
@@ -88,9 +83,10 @@ class TimerQueue implements Runnable
                 return;
             }
             try {
-                final ThreadGroup threadGroup = AppContext.getAppContext().getThreadGroup();
+                final ThreadGroup threadGroup = ThreadGroupUtils.getRootThreadGroup();
                 String name = "TimerQueue";
                 Thread timerThread = new Thread(threadGroup, this, name, 0, false);
+                timerThread.setContextClassLoader(null);
                 timerThread.setDaemon(true);
                 timerThread.setPriority(Thread.NORM_PRIORITY);
                 timerThread.start();
@@ -183,11 +179,6 @@ class TimerQueue implements Runnable
                         timer.getLock().unlock();
                     }
                 } catch (InterruptedException ie) {
-                    // Shouldn't ignore InterruptedExceptions here, so AppContext
-                    // is disposed gracefully, see 6799345 for details
-                    if (AppContext.getAppContext().isDisposed()) {
-                        break;
-                    }
                 }
             }
         } finally {

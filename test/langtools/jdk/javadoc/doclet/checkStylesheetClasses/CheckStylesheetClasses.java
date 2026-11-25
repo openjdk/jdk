@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @bug 8267574
+ * @bug 8267574 8378228
  * @summary check stylesheet names against HtmlStyle
  * @modules jdk.javadoc/jdk.javadoc.internal.html
  *          jdk.javadoc/jdk.javadoc.internal.doclets.formats.html.markup
@@ -136,12 +136,11 @@ public class CheckStylesheetClasses {
         // for doc-comment authors; maybe worthy of inclusion in HtmlStyle, just to be documented
         removeAll(styleSheetNames, "borderless", "plain", "striped");
 
-        // used in search.js and search-page.js; may be worth documenting in HtmlStyle
-        removeAll(styleSheetNames, "result-highlight", "result-item", "anchor-link", "expanded",
-                "page-search-header", "result-table", "ui-autocomplete", "ui-autocomplete-category",
-                "ui-state-active", "ui-menu", "ui-menu-item-wrapper", "ui-static-link",
-                "search-result-desc", "search-result-label", "search-result-link", "selected",
-                "sort-asc", "sort-desc", "two-column-search-results", "visible");
+        // used in search.js; may be worth documenting in HtmlStyle
+        removeAll(styleSheetNames, "result-highlight", "anchor-link", "expanded", "overlay",
+                "page-search-header", "result-table", "search-result-desc", "search-result-label",
+                "search-result-link", "selected", "sort-asc", "sort-desc", "two-column-search-results",
+                "visible");
 
         // very JDK specific
         styleSheetNames.remove("module-graph");

@@ -61,7 +61,7 @@ public class HandshakeOutStream extends ByteArrayOutputStream {
             if (!outputRecord.isClosed()) {
                 outputRecord.encodeHandshake(buf, 0, count);
             } else {
-                if (SSLLogger.isOn() && SSLLogger.isOn("ssl")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                     SSLLogger.warning("outbound has closed, ignore outbound " +
                         "handshake messages", ByteBuffer.wrap(buf, 0, count));
                 }

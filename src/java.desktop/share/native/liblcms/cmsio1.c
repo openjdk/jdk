@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2024 Marti Maria Saguer
+//  Copyright (c) 1998-2026 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -1012,7 +1012,13 @@ const cmsMLU* GetInfo(cmsHPROFILE hProfile, cmsInfoType Info)
     switch (Info) {
 
     case cmsInfoDescription:
-        sig = cmsSigProfileDescriptionTag;
+        /**
+        * Add for MacOS, which uses propiertary tags for description
+        */
+        if (cmsIsTag(hProfile, cmsSigProfileDescriptionMLTag))
+            sig = cmsSigProfileDescriptionMLTag;
+        else
+            sig = cmsSigProfileDescriptionTag;
         break;
 
     case cmsInfoManufacturer:

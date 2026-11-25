@@ -46,9 +46,13 @@ __extension__ ({ \
 
 /* ========================================================================== */
 
-#if defined(__has_attribute) && __has_attribute(__cleanup__)
-
+#ifdef __has_attribute
+#if __has_attribute(__cleanup__)
 #define spa_cleanup(func) __attribute__((__cleanup__(func)))
+#endif
+#endif
+
+#ifdef spa_cleanup
 
 #define SPA_DEFINE_AUTO_CLEANUP(name, type, ...) \
 typedef __typeof__(type) _spa_auto_cleanup_type_ ## name; \

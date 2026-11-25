@@ -27,6 +27,8 @@ import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.IRNode;
 import compiler.lib.ir_framework.TestFramework;
 import compiler.lib.ir_framework.shared.*;
+import compiler.lib.ir_framework.test.network.MessageTag;
+import compiler.lib.ir_framework.test.network.TestVmSocket;
 import jdk.test.lib.Platform;
 import jdk.test.whitebox.WhiteBox;
 
@@ -45,9 +47,9 @@ import java.util.function.Function;
  * termination of the Test VM. IR rule indices start at 1.
  */
 public class ApplicableIRRulesPrinter {
-    public static final String START = "##### ApplicableIRRules - used by TestFramework #####";
-    public static final String END = "----- END -----";
-    public static final int NO_RULE_APPLIED = -1;
+    private static final boolean IGNORE_SKIP_IR = Boolean.parseBoolean(System.getProperty("IgnoreSkipIR", "false"));
+
+    public static final String NO_RULES = "<no IR rules>";
 
     private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
     private static final List<Function<String, Object>> LONG_GETTERS = Arrays.asList(
@@ -99,6 +101,7 @@ public class ApplicableIRRulesPrinter {
         // Intel AVX
         "avx",
         "avx2",
+        "gfni",
         "avx512",
         "avx512bw",
         "avx512dq",
@@ -110,6 +113,8 @@ public class ApplicableIRRulesPrinter {
         "avx512_vbmi2",
         "avx10_2",
         "bmi2",
+        // Intel APX
+        "apx_f",
         // AArch64
         "sha3",
         "asimd",
@@ -120,58 +125,57 @@ public class ApplicableIRRulesPrinter {
         "asimdhp",
         // RISCV64
         "rvv",
+        "zbb",
         "zbkb",
         "zfh",
         "zvbb",
         "zvfh",
-        "zvkn"
+        "zvkn",
+        // PPC64
+        "darn",
+        "brw"
     ));
-
-    public ApplicableIRRulesPrinter() {
-        output.append(START).append(System.lineSeparator());
-        output.append("<method>,{comma separated applied @IR rule ids}").append(System.lineSeparator());
-    }
 
     /**
      * Emits "<method>,{ids}" where {ids} is either:
      * - indices of all @IR rules that should be applied, separated by a comma
      * - "-1" if no @IR rule should not be applied
      */
-    public void emitApplicableIRRules(Method m, boolean skipped) {
+    public void emitApplicableIRRules(Method m) {
         method = m;
         int i = 0;
         ArrayList<Integer> validRules = new ArrayList<>();
         IR[] irAnnos = m.getAnnotationsByType(IR.class);
-        if (!skipped) {
-            for (IR irAnno : irAnnos) {
-                ruleIndex = i + 1;
-                try {
-                    if (shouldApplyIrRule(irAnno, m.getName(), ruleIndex, irAnnos.length)) {
-                        validRules.add(ruleIndex);
-                    }
-                } catch (TestFormatException e) {
-                    // Catch logged failure and continue to check other IR annotations.
+        for (IR irAnno : irAnnos) {
+            ruleIndex = i + 1;
+            try {
+                if (shouldApplyIrRule(irAnno, m.getName(), ruleIndex, irAnnos.length)) {
+                    validRules.add(ruleIndex);
                 }
-                i++;
+            } catch (TestFormatException e) {
+                // Catch logged failure and continue to check other IR annotations.
             }
+            i++;
         }
-        if (irAnnos.length != 0) {
-            output.append(m.getName());
-            if (validRules.isEmpty()) {
-                output.append("," + NO_RULE_APPLIED);
-            } else {
-                for (i = 0; i < validRules.size(); i++) {
-                    output.append(",").append(validRules.get(i));
-                }
-            }
-            output.append(System.lineSeparator());
+
+        if (irAnnos.length == 0 || validRules.isEmpty()) {
+            return;
         }
+        output.append(m.getName());
+        for (i = 0; i < validRules.size(); i++) {
+            output.append(",").append(validRules.get(i));
+        }
+        output.append(System.lineSeparator());
     }
 
     private void printDisableReason(String method, String reason, String[] apply, int ruleIndex, int ruleMax) {
-        TestFrameworkSocket.write("Disabling IR matching for rule " + ruleIndex + " of " + ruleMax + " in " +
-                                  method + ": " + reason + ": " + String.join(", ", apply),
-                                  "[ApplicableIRRules]", true);
+        reason = reason + ": " + String.join(", ", apply);
+        printDisableReason(method, reason, ruleIndex, ruleMax);
+    }
+
+    private void printDisableReason(String method, String reason, int ruleIndex, int ruleMax) {
+        TestVmSocket.send("Disabling IR matching for rule " + ruleIndex + " of " + ruleMax + " in " + method + ": " +
+                          reason);
     }
 
     private boolean shouldApplyIrRule(IR irAnno, String m, int ruleIndex, int ruleMax) {
@@ -199,14 +203,14 @@ public class ApplicableIRRulesPrinter {
         } else if (irAnno.applyIf().length != 0 && !hasAllRequiredFlags(irAnno.applyIf(), "applyIf")) {
             printDisableReason(m, "Flag constraint not met (applyIf)", irAnno.applyIf(), ruleIndex, ruleMax);
             return false;
-        } else if (irAnno.applyIfNot().length != 0 && !hasNoRequiredFlags(irAnno.applyIfNot(), "applyIfNot")) {
-            printDisableReason(m, "Flag constraint not met (applyIfNot)", irAnno.applyIfNot(), ruleIndex, ruleMax);
-            return false;
         } else if (irAnno.applyIfAnd().length != 0 && !hasAllRequiredFlags(irAnno.applyIfAnd(), "applyIfAnd")) {
             printDisableReason(m, "Not all flag constraints are met (applyIfAnd)", irAnno.applyIfAnd(), ruleIndex, ruleMax);
             return false;
         } else if (irAnno.applyIfOr().length != 0 && hasNoRequiredFlags(irAnno.applyIfOr(), "applyIfOr")) {
             printDisableReason(m, "None of the flag constraints met (applyIfOr)", irAnno.applyIfOr(), ruleIndex, ruleMax);
+            return false;
+        } else if (shouldSkipIRRule(irAnno)) {
+            printDisableReason(m, "Defined @IR(skip = true, ...)", ruleIndex, ruleMax);
             return false;
         } else {
             // All preconditions satisfied: apply rule.
@@ -223,12 +227,12 @@ public class ApplicableIRRulesPrinter {
         if (irAnno.applyIfAnd().length != 0) {
             flagConstraints++;
             TestFormat.checkNoThrow(irAnno.applyIfAnd().length > 2,
-                                    "Use applyIf or applyIfNot or at least 2 conditions for applyIfAnd" + failAt());
+                                    "Use applyIf or at least 2 conditions for applyIfAnd" + failAt());
         }
         if (irAnno.applyIfOr().length != 0) {
             flagConstraints++;
             TestFormat.checkNoThrow(irAnno.applyIfOr().length > 2,
-                                    "Use applyIf or applyIfNot or at least 2 conditions for applyIfOr" + failAt());
+                                    "Use applyIf or at least 2 conditions for applyIfOr" + failAt());
         }
         if (irAnno.applyIf().length != 0) {
             flagConstraints++;
@@ -265,11 +269,6 @@ public class ApplicableIRRulesPrinter {
             TestFormat.checkNoThrow(irAnno.applyIfCPUFeatureOr().length % 2 == 0,
                                     "applyIfCPUFeatureOr expects more than one CPU feature pair" + failAt());
         }
-        if (irAnno.applyIfNot().length != 0) {
-            flagConstraints++;
-            TestFormat.checkNoThrow(irAnno.applyIfNot().length <= 2,
-                                    "Use applyIfAnd or applyIfOr or only 1 condition for applyIfNot" + failAt());
-        }
         TestFormat.checkNoThrow(flagConstraints <= 1, "Can only specify one flag constraint" + failAt());
         TestFormat.checkNoThrow(platformConstraints <= 1, "Can only specify one platform constraint" + failAt());
         TestFormat.checkNoThrow(cpuFeatureConstraints <= 1, "Can only specify one CPU feature constraint" + failAt());
@@ -284,7 +283,7 @@ public class ApplicableIRRulesPrinter {
                 IRNode.checkIRNodeSupported(s);
             }
         } catch (CheckedTestFrameworkException e) {
-            TestFrameworkSocket.write("Skip Rule " + ruleIndex + ": " + e.getMessage(), TestFrameworkSocket.DEFAULT_REGEX_TAG, true);
+            TestVmSocket.send("Skip Rule " + ruleIndex + ": " + e.getMessage());
             return true;
         }
         return false;
@@ -452,16 +451,21 @@ public class ApplicableIRRulesPrinter {
         return returnValue;
     }
 
+    @SuppressWarnings("preview")
     private boolean check(String flag, String value) {
         if (flag.isEmpty()) {
             TestFormat.failNoThrow("Provided empty flag" + failAt());
             return false;
         }
+        Object actualFlagValue = WHITE_BOX.getStringVMFlag(flag);
+        if (actualFlagValue != null) {
+            return value.equals(actualFlagValue);
+        }
         if (value.isEmpty()) {
             TestFormat.failNoThrow("Provided empty value for flag " + flag + failAt());
             return false;
         }
-        Object actualFlagValue = WHITE_BOX.getBooleanVMFlag(flag);
+        actualFlagValue = WHITE_BOX.getBooleanVMFlag(flag);
         if (actualFlagValue != null) {
             return checkBooleanFlag(flag, value, (Boolean) actualFlagValue);
         }
@@ -473,9 +477,8 @@ public class ApplicableIRRulesPrinter {
         if (actualFlagValue != null) {
             return checkFlag(Double::parseDouble, "floating point", flag, value, (Double) actualFlagValue);
         }
-        actualFlagValue = WHITE_BOX.getStringVMFlag(flag);
-        if (actualFlagValue != null) {
-            return value.equals(actualFlagValue);
+        if (flag.equals("enable-valhalla")) {
+            return checkBooleanFlag(flag, value, Integer.class.isValue());
         }
 
         // This could be improved if the Whitebox offers a "isVMFlag" function. For now, just check if we can actually set
@@ -520,10 +523,15 @@ public class ApplicableIRRulesPrinter {
         return " in @IR rule " + ruleIndex + " at " + method;
     }
 
+    private boolean shouldSkipIRRule(IR irAnno) {
+        return irAnno.skip() && !IGNORE_SKIP_IR;
+    }
+
     public void emit() {
-        output.append(END);
-        TestFrameworkSocket.write(output.toString(), "ApplicableIRRules");
+        if (output.isEmpty()) {
+            output.append(NO_RULES).append(System.lineSeparator());
+        }
+        output.append(MessageTag.END_MARKER);
+        TestVmSocket.sendMultiLine(MessageTag.APPLICABLE_IR_RULES, output.toString());
     }
 }
-
-

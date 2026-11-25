@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@ import java.lang.annotation.Repeatable;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -65,7 +64,6 @@ import jdk.internal.module.Modules;
 public final class TypeLibrary {
     private static boolean implicitFieldTypes;
     private static final Map<Long, Type> types = LinkedHashMap.newLinkedHashMap(350);
-    private static volatile boolean initialized;
     static final ValueDescriptor DURATION_FIELD = createDurationField();
     static final ValueDescriptor THREAD_FIELD = createThreadField();
     static final ValueDescriptor STACK_TRACE_FIELD = createStackTraceField();
@@ -78,34 +76,26 @@ public final class TypeLibrary {
     private static ValueDescriptor createStartTimeField() {
         var annos = createStandardAnnotations("Start Time", null);
         annos.add(new jdk.jfr.AnnotationElement(Timestamp.class, Timestamp.TICKS));
-        return PrivateAccess.getInstance().newValueDescriptor(ImplicitFields.START_TIME, Type.LONG, annos, 0, false,
-                ImplicitFields.START_TIME);
+        return PrivateAccess.getInstance().newValueDescriptor(ImplicitFields.START_TIME, Type.LONG, annos, 0, false);
     }
 
     private static ValueDescriptor createStackTraceField() {
         var annos = createStandardAnnotations("Stack Trace", "Stack Trace starting from the method the event was committed in");
-        return PrivateAccess.getInstance().newValueDescriptor(ImplicitFields.STACK_TRACE, Type.STACK_TRACE, annos, 0, true,
-                ImplicitFields.STACK_TRACE);
+        return PrivateAccess.getInstance().newValueDescriptor(ImplicitFields.STACK_TRACE, Type.STACK_TRACE, annos, 0, true);
     }
 
     private static ValueDescriptor createThreadField() {
         var annos = createStandardAnnotations("Event Thread", "Thread in which event was committed in");
-        return PrivateAccess.getInstance().newValueDescriptor(ImplicitFields.EVENT_THREAD, Type.THREAD, annos, 0, true,
-                ImplicitFields.EVENT_THREAD);
+        return PrivateAccess.getInstance().newValueDescriptor(ImplicitFields.EVENT_THREAD, Type.THREAD, annos, 0, true);
     }
 
     private static ValueDescriptor createDurationField() {
         var annos = createStandardAnnotations("Duration", null);
         annos.add(new jdk.jfr.AnnotationElement(Timespan.class, Timespan.TICKS));
-        return PrivateAccess.getInstance().newValueDescriptor(ImplicitFields.DURATION, Type.LONG, annos, 0, false, ImplicitFields.DURATION);
+        return PrivateAccess.getInstance().newValueDescriptor(ImplicitFields.DURATION, Type.LONG, annos, 0, false);
     }
 
     public static synchronized void initialize() {
-        // The usual case is that TypeLibrary is initialized only once by the MetadataRepository singleton.
-        // However, this check is needed to ensure some tools (ie. GraalVM Native Image) do not perform the initialization routine twice.
-        if (initialized) {
-            return;
-        }
         List<Type> jvmTypes;
         try {
             jvmTypes = MetadataLoader.createTypes();
@@ -114,7 +104,6 @@ public final class TypeLibrary {
             throw new Error("JFR: Could not read metadata");
         }
         visitReachable(jvmTypes, t -> !types.containsKey(t.getId()), t -> types.put(t.getId(), t));
-        initialized = true;
         if (Logger.shouldLog(LogTag.JFR_SYSTEM_METADATA, LogLevel.INFO)) {
             Stream<Type> s = types.values().stream().sorted((x, y) -> Long.compare(x.getId(), y.getId()));
             s.forEach(t -> t.log("Added", LogTag.JFR_SYSTEM_METADATA, LogLevel.INFO));
@@ -385,9 +374,8 @@ public final class TypeLibrary {
         Class<?> fieldType = field.getType();
         boolean constantPool = Thread.class == fieldType || fieldType == Class.class;
         Type type = createType(fieldType);
-        String fieldName = field.getName();
         Name name = field.getAnnotation(Name.class);
-        String useName = fieldName;
+        String useName = field.getName();
         if (name != null) {
             useName = Utils.validJavaIdentifier(name.value(), useName);
         }
@@ -398,7 +386,7 @@ public final class TypeLibrary {
                 ans.add(ae);
             }
         }
-        return PrivateAccess.getInstance().newValueDescriptor(useName, type, ans, 0, constantPool, fieldName);
+        return PrivateAccess.getInstance().newValueDescriptor(useName, type, ans, 0, constantPool);
     }
 
     private static List<Annotation> resolveRepeatedAnnotations(Annotation[] annotations) {

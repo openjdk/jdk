@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,10 +32,10 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.lang.System.Logger;
 import java.lang.System.Logger.Level;
-import java.text.*;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 import com.sun.net.httpserver.*;
 import static com.sun.net.httpserver.HttpExchange.RSPBODY_EMPTY;
@@ -46,7 +46,7 @@ class ExchangeImpl {
     Headers reqHdrs, rspHdrs;
     Request req;
     String method;
-    boolean writefinished;
+    private boolean writefinished;
     URI uri;
     HttpConnection connection;
     long reqContentLen;
@@ -87,6 +87,19 @@ class ExchangeImpl {
     HttpPrincipal principal;
     ServerImpl server;
 
+    // Used to control that ServerImpl::endExchange is called
+    // exactly once for this exchange. ServerImpl::endExchange decrements
+    // the refcount that was incremented by calling ServerImpl::startExchange
+    // in this ExchangeImpl constructor.
+    private final AtomicBoolean ended = new AtomicBoolean();
+
+    // Used to ensure that the Event.ExchangeFinished is posted only
+    // once for this exchange. The Event.ExchangeFinished is what will
+    // eventually cause the ServerImpl::finishedLatch to be triggered,
+    // once the number of active exchanges reaches 0 and ServerImpl::stop
+    // has been requested.
+    private final AtomicBoolean finished = new AtomicBoolean();
+
     ExchangeImpl(
         String m, URI u, Request req, long len, HttpConnection connection
     ) throws IOException {
@@ -105,6 +118,55 @@ class ExchangeImpl {
         this.ris = req.inputStream();
         server = getServerImpl();
         server.startExchange();
+    }
+
+    /**
+     * When true, writefinished indicates that all bytes expected
+     * by the client have been written to the response body
+     * outputstream, and that the response body outputstream has
+     * been closed. When all bytes have also been pulled from
+     * the request body input stream, this makes it possible to
+     * reuse the connection for the next request.
+     */
+    synchronized boolean writefinished() {
+        return writefinished;
+    }
+
+    /**
+     * Calls ServerImpl::endExchange if not already called for this
+     * exchange. ServerImpl::endExchange must be called exactly once
+     * per exchange, and this method ensures that it is not called
+     * more than once for this exchange.
+     * @return the new (or current) value of the exchange count.
+     */
+    int endExchange() {
+        // only call server.endExchange(); once per exchange
+        if (ended.compareAndSet(false, true)) {
+            return server.endExchange();
+        }
+        return server.getExchangeCount();
+    }
+
+    /**
+     * Posts the ExchangeFinished event if not already posted.
+     * If `writefinished` is true, marks the exchange as {@link
+     * #writefinished()} so that the connection can be reused.
+     * @param writefinished whether all bytes expected by the
+     *                      client have been writen out to the
+     *                      response body output stream.
+     */
+    void postExchangeFinished(boolean writefinished) {
+        // only post ExchangeFinished once per exchange
+        if (finished.compareAndSet(false, true)) {
+            if (writefinished) {
+                synchronized (this) {
+                    assert this.writefinished == false;
+                    this.writefinished = true;
+                }
+            }
+            Event e = new Event.ExchangeFinished(this);
+            getHttpContext().getServerImpl().addEvent(e);
+        }
     }
 
     public Headers getRequestHeaders() {
@@ -140,7 +202,7 @@ class ExchangeImpl {
         /* close the underlying connection if,
          * a) the streams not set up yet, no response can be sent, or
          * b) if the wrapper output stream is not set up, or
-         * c) if the close of the input/outpu stream fails
+         * c) if the close of the input/output stream fails
          */
         try {
             if (uis_orig == null || uos == null) {
@@ -157,6 +219,8 @@ class ExchangeImpl {
             uos.close();
         } catch (IOException e) {
             connection.close();
+        } finally {
+            postExchangeFinished(false);
         }
     }
 

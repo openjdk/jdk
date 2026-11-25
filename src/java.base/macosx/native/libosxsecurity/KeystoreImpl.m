@@ -64,24 +64,9 @@ errOut:
 
 static jlong getModDateFromItem(JNIEnv *env, SecKeychainItemRef inItem)
 {
-    OSStatus status;
-    SecKeychainAttribute itemAttrs[] = { { kSecModDateItemAttr, 0, NULL } };
-    SecKeychainAttributeList attrList = { sizeof(itemAttrs) / sizeof(itemAttrs[0]), itemAttrs };
-    jlong returnValue = 0;
-
-    status = SecKeychainItemCopyContent(inItem, NULL, &attrList, NULL, NULL);
-
-    if(status) {
-        // This is almost always missing, so don't dump an error.
-        // cssmPerror("getModDateFromItem: SecKeychainItemCopyContent", status);
-        goto errOut;
-    }
-
-    memcpy(&returnValue, itemAttrs[0].data, itemAttrs[0].length);
-
-errOut:
-    SecKeychainItemFreeContent(&attrList, NULL);
-    return returnValue;
+    // SecKeychainItemCopyContent on kSecModDateItemAttr fails
+    // with errSecNoSuchAttr: The attribute does not exist.
+    return 0;
 }
 
 static void setLabelForItem(NSString *inLabel, SecKeychainItemRef inItem)
@@ -292,7 +277,10 @@ static void addIdentitiesToKeystore(JNIEnv *env, jobject keyStore, jmethodID jm_
         if (searchResult == noErr) {
             // Get the cert from the identity, then generate a chain.
             SecCertificateRef certificate;
-            SecIdentityCopyCertificate(theIdentity, &certificate);
+            OSStatus res = SecIdentityCopyCertificate(theIdentity, &certificate);
+            if (res != errSecSuccess) {
+                goto errOut;
+            }
 
             // *** Should do something with this error...
             err = completeCertChain(theIdentity, NULL, TRUE, &certChain);
@@ -302,18 +290,21 @@ static void addIdentitiesToKeystore(JNIEnv *env, jobject keyStore, jmethodID jm_
             // Make a java array of certificate data from the chain.
             jclass byteArrayClass = (*env)->FindClass(env, "[B");
             if (byteArrayClass == NULL) {
+                CFRelease(certificate);
                 goto errOut;
             }
             jobjectArray javaCertArray = (*env)->NewObjectArray(env, certCount, byteArrayClass, NULL);
             // Cleanup first then check for a NULL return code
             (*env)->DeleteLocalRef(env, byteArrayClass);
             if (javaCertArray == NULL) {
+                CFRelease(certificate);
                 goto errOut;
             }
 
             // And, make an array of the certificate refs.
             jlongArray certRefArray = (*env)->NewLongArray(env, certCount);
             if (certRefArray == NULL) {
+                CFRelease(certificate);
                 goto errOut;
             }
 
@@ -322,10 +313,12 @@ static void addIdentitiesToKeystore(JNIEnv *env, jobject keyStore, jmethodID jm_
             for (i = 0; i < certCount; i++) {
                 CSSM_DATA currCertData;
 
-                if (i == 0)
+                if (i == 0) {
                     currCertRef = certificate;
-                else
+                } else {
                     currCertRef = (SecCertificateRef)CFArrayGetValueAtIndex(certChain, i);
+                    CFRetain(currCertRef);
+                }
 
                 bzero(&currCertData, sizeof(CSSM_DATA));
                 err = SecCertificateGetData(currCertRef, &currCertData);
@@ -342,10 +335,14 @@ static void addIdentitiesToKeystore(JNIEnv *env, jobject keyStore, jmethodID jm_
             // Get the private key.  When needed we'll export the data from it later.
             SecKeyRef privateKeyRef;
             err = SecIdentityCopyPrivateKey(theIdentity, &privateKeyRef);
+            if (err != errSecSuccess) {
+                goto errOut;
+            }
 
             // Find the label.  It's a 'blob', but we interpret as characters.
             jstring alias = getLabelFromItem(env, (SecKeychainItemRef)certificate);
             if (alias == NULL) {
+                CFRelease(privateKeyRef);
                 goto errOut;
             }
 
@@ -765,26 +762,11 @@ JNIEXPORT jlong JNICALL Java_apple_security_KeychainStore__1addItemToKeychain
 
     NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init]; \
     @try {
-        jsize dataSize = (*env)->GetArrayLength(env, rawDataObj);
-        jbyte *rawData = (*env)->GetByteArrayElements(env, rawDataObj, NULL);
-        if (rawData == NULL) {
-            goto errOut;
-        }
-
-        CFDataRef cfDataToImport = CFDataCreate(kCFAllocatorDefault, (UInt8 *)rawData, dataSize);
-        CFArrayRef createdItems = NULL;
-
-        SecKeychainRef defaultKeychain = NULL;
-        SecKeychainCopyDefault(&defaultKeychain);
-
-        SecExternalFormat dataFormat = (isCertificate == JNI_TRUE ? kSecFormatX509Cert : kSecFormatWrappedPKCS8);
-
         // Convert the password obj into a CFStringRef that the keychain importer can use for encryption.
-        SecKeyImportExportParameters paramBlock;
         CFStringRef passwordStrRef = NULL;
-
         jsize passwordLen = 0;
         jchar *passwordChars = NULL;
+        jbyte *rawData = NULL;
 
         if (passwordObj) {
             passwordLen = (*env)->GetArrayLength(env, passwordObj);
@@ -802,6 +784,24 @@ JNIEXPORT jlong JNICALL Java_apple_security_KeychainStore__1addItemToKeychain
             }
         }
 
+        jsize dataSize = (*env)->GetArrayLength(env, rawDataObj);
+        rawData = (*env)->GetByteArrayElements(env, rawDataObj, NULL);
+        if (rawData == NULL) {
+            goto errOut;
+        }
+
+        CFDataRef cfDataToImport = CFDataCreate(kCFAllocatorDefault, (UInt8 *)rawData, dataSize);
+        CFArrayRef createdItems = NULL;
+        if (cfDataToImport == NULL) {
+            goto errOut;
+        }
+
+        SecKeychainRef defaultKeychain = NULL;
+        SecKeychainCopyDefault(&defaultKeychain);
+
+        SecExternalFormat dataFormat = (isCertificate == JNI_TRUE ? kSecFormatX509Cert : kSecFormatWrappedPKCS8);
+        SecKeyImportExportParameters paramBlock;
+
         paramBlock.version = SEC_KEY_IMPORT_EXPORT_PARAMS_VERSION;
         // Note that setting the flags field **requires** you to pass in a password of some kind.  The keychain will not prompt you.
         paramBlock.flags = 0;
@@ -814,9 +814,7 @@ JNIEXPORT jlong JNICALL Java_apple_security_KeychainStore__1addItemToKeychain
 
         err = SecKeychainItemImport(cfDataToImport, NULL, &dataFormat, NULL,
                                     0, &paramBlock, defaultKeychain, &createdItems);
-        if (cfDataToImport != NULL) {
-            CFRelease(cfDataToImport);
-        }
+        CFRelease(cfDataToImport);
 
         if (err == noErr) {
             SecKeychainItemRef anItem = (SecKeychainItemRef)CFArrayGetValueAtIndex(createdItems, 0);

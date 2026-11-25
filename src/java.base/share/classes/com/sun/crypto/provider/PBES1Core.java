@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,38 @@ final class PBES1Core {
     private final MessageDigest md;
     private final String algo;
     private byte[] salt = null;
-    private int iCount = 10;
+    // RFC 8018 and NIST SP 800-132 sec 5.2 recommend 1000 as the minimum
+    private int iCount = PKCS12PBECipherCore.DEFAULT_COUNT;
+
+    // utility method for checking weak salts of PBEWithMD5AndTripleDES cipher
+    private static boolean isWeak(byte[] s) {
+        // consider salts weak if it met both of the following conditions:
+        // 1) s[0...3] == s[4...7]
+        // 2) s[0] == s[3] && s[1] == s[2]
+        if (Arrays.equals(s, 0, 4, s, 4, 8)) {
+            return (s[0] == s[3]) && (s[1] == s[2]);
+        }
+        return false;
+    }
+
+    // utility method for generating 8-byte salts
+    private static byte[] generateSalt(String algo, SecureRandom sr) {
+        byte[] salt = new byte[8];
+        sr.nextBytes(salt);
+        // check and re-generate for DESede if necessary
+        if (algo.equals("DESede")) {
+            // prevent an infinite-loop in case of a rigged SecureRandom
+            int numAttempts = 50;
+            while (isWeak(salt)) {
+                sr.nextBytes(salt);
+                if (numAttempts-- < 0) {
+                    throw new ProviderException(
+                            "Unable to find salts after 50 attempts");
+                }
+            }
+        }
+        return salt;
+    }
 
     /**
      * Creates an instance of PBE Cipher using the specified CipherSpi
@@ -163,8 +194,7 @@ final class PBES1Core {
     AlgorithmParameters getParameters() {
         AlgorithmParameters params;
         if (salt == null) {
-            salt = new byte[8];
-            SunJCE.getRandom().nextBytes(salt);
+            salt = generateSalt(algo, SunJCE.getRandom());
         }
         PBEParameterSpec pbeSpec = new PBEParameterSpec(salt, iCount);
         try {
@@ -227,8 +257,7 @@ final class PBES1Core {
 
             if (params == null) {
                 // create random salt and use default iteration count
-                salt = new byte[8];
-                random.nextBytes(salt);
+                salt = generateSalt(algo, random);
             } else {
                 if (!(params instanceof PBEParameterSpec)) {
                     throw new InvalidAlgorithmParameterException
@@ -240,6 +269,15 @@ final class PBES1Core {
                     throw new InvalidAlgorithmParameterException
                             ("Salt must be 8 bytes long");
                 }
+                // for DESede, reject weak salts for encryption
+                if (algo.equals("DESede") &&
+                        (opmode == Cipher.ENCRYPT_MODE ||
+                        opmode == Cipher.WRAP_MODE) &&
+                        isWeak(salt)) {
+                    throw new InvalidAlgorithmParameterException(
+                        "Weak salts cannot be used for encryption");
+                }
+
                 iCount = ((PBEParameterSpec) params).getIterationCount();
                 if (iCount <= 0) {
                     throw new InvalidAlgorithmParameterException

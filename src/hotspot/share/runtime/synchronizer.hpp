@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -125,13 +125,9 @@ public:
 public:
   static const char* inflate_cause_name(const InflateCause cause);
 
-  static ObjectMonitor* read_monitor(markWord mark);
-  static ObjectMonitor* read_monitor(Thread* current, oop obj);
-  static ObjectMonitor* read_monitor(Thread* current, oop obj, markWord mark);
+  static ObjectMonitor* read_monitor(oop obj);
 
-  // Returns the identity hash value for an oop
-  // NOTE: It may cause monitor inflation
-  static intptr_t FastHashCode(Thread* current, oop obj);
+  static intptr_t get_next_hash(Thread* current, oop obj);
 
   // java.lang.Thread support
   static bool current_thread_holds_lock(JavaThread* current, Handle h_obj);
@@ -209,11 +205,11 @@ public:
 
   static void handle_sync_on_value_based_class(Handle obj, JavaThread* locking_thread);
 
-  static ObjectMonitor* get_or_insert_monitor_from_table(oop object, JavaThread* current, bool* inserted);
+  static ObjectMonitor* get_or_insert_monitor_from_table(oop object, bool* inserted);
   static ObjectMonitor* get_or_insert_monitor(oop object, JavaThread* current, ObjectSynchronizer::InflateCause cause);
 
-  static ObjectMonitor* add_monitor(JavaThread* current, ObjectMonitor* monitor, oop obj);
-  static bool remove_monitor(Thread* current, ObjectMonitor* monitor, oop obj);
+  static ObjectMonitor* add_monitor(ObjectMonitor* monitor, oop obj);
+  static void remove_monitor(ObjectMonitor* monitor, oop obj);
 
   static void deflate_mark_word(oop object);
 
@@ -234,14 +230,13 @@ public:
   static bool fast_lock_spin_enter(oop obj, LockStack& lock_stack, JavaThread* current, bool observed_deflation);
 
  public:
-  static ObjectMonitor* inflate_into_object_header(oop object, ObjectSynchronizer::InflateCause cause, JavaThread* locking_thread, Thread* current);
   static ObjectMonitor* inflate_locked_or_imse(oop object, ObjectSynchronizer::InflateCause cause, TRAPS);
   static ObjectMonitor* inflate_fast_locked_object(oop object, ObjectSynchronizer::InflateCause cause, JavaThread* locking_thread, JavaThread* current);
   static ObjectMonitor* inflate_and_enter(oop object, BasicLock* lock, ObjectSynchronizer::InflateCause cause, JavaThread* locking_thread, JavaThread* current);
 
-  static void deflate_monitor(Thread* current, oop obj, ObjectMonitor* monitor);
+  static void deflate_monitor(oop obj, ObjectMonitor* monitor);
 
-  static ObjectMonitor* get_monitor_from_table(Thread* current, oop obj);
+  static ObjectMonitor* get_monitor_from_table(oop obj);
 
   static bool contains_monitor(Thread* current, ObjectMonitor* monitor);
 

@@ -32,9 +32,10 @@
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
+#include "utilities/macros.hpp"
 
-class ArchiveMappedHeapInfo;
-class ArchiveStreamedHeapInfo;
+class AOTMappedHeapInfo;
+class AOTStreamedHeapInfo;
 class CompileTrainingData;
 class DumpRegion;
 class FileMapInfo;
@@ -74,7 +75,8 @@ public:
   // FakeOop and subtypes
   class FakeOop;
   class   FakeMirror;
-  class   FakeObjArray;
+  class   FakeRefArray;
+  class   FakeFlatArray;
   class   FakeString;
   class   FakeTypeArray;
 
@@ -114,6 +116,8 @@ public:
 #endif
 
 private:
+  template <typename FUNC> static void log_metaspace_obj_details(FUNC func);
+
   class RequestedMetadataAddr;
   class RuntimeGatherArchivedMetaspaceObjs;
 
@@ -127,7 +131,12 @@ private:
   static void runtime_log(FileMapInfo* mapinfo, GrowableArrayCHeap<ArchivedObjInfo, mtClass>* objs);
   static void runtime_log_metaspace_regions(FileMapInfo* mapinfo, GrowableArrayCHeap<ArchivedObjInfo, mtClass>* objs);
   static void dumptime_log_metaspace_region(const char* name, DumpRegion* region,
-                                            const ArchiveBuilder::SourceObjList* src_objs);
+                                            const ArchiveBuilder::SourceObjList* rw_objs,
+                                            const ArchiveBuilder::SourceObjList* ro_objs);
+  static void collect_metaspace_objs(GrowableArrayCHeap<ArchivedObjInfo, mtClass>* objs,
+                                     address region_base, address region_top ,
+                                     const ArchiveBuilder::SourceObjList* src_objs);
+  static int compare_by_address(ArchivedObjInfo* a, ArchivedObjInfo* b);
 
   // Common code for dumptime/runtime
   static void log_file_header(FileMapInfo* mapinfo);
@@ -141,8 +150,6 @@ private:
   static void log_constant_pool_cache(ConstantPoolCache* cpc, address requested_addr,
                                       const char* type_name, int bytes, Thread* current);
   static void log_const_method(ConstMethod* cm, address requested_addr, const char* type_name, int bytes, Thread* current);
-  static void log_method_counters(MethodCounters* mc, address requested_addr, const char* type_name, int bytes,
-  Thread* current);
   static void log_method_data(MethodData* md, address requested_addr, const char* type_name, int bytes,
   Thread* current);
   static void log_klass(Klass* k, address requested_addr, const char* type_name, int bytes, Thread* current);
@@ -154,11 +161,11 @@ private:
   static void log_klass_training_data(KlassTrainingData* ktd, address requested_addr, const char* type_name, int bytes, Thread* current);
   static void log_method_training_data(MethodTrainingData* mtd, address requested_addr, const char* type_name, int bytes, Thread* current);
   static void log_compile_training_data(CompileTrainingData* ctd, address requested_addr, const char* type_name, int bytes, Thread* current);
-
+  static void log_ac_region();
 
 #if INCLUDE_CDS_JAVA_HEAP
-  static void dumptime_log_mapped_heap_region(ArchiveMappedHeapInfo* mapped_heap_info);
-  static void dumptime_log_streamed_heap_region(ArchiveStreamedHeapInfo* streamed_heap_info);
+  static void dumptime_log_mapped_heap_region(AOTMappedHeapInfo* mapped_heap_info);
+  static void dumptime_log_streamed_heap_region(AOTStreamedHeapInfo* streamed_heap_info);
   static void runtime_log_heap_region(FileMapInfo* mapinfo);
 
   static void print_oop_info_cr(outputStream* st, FakeOop fake_oop, bool print_location = true);
@@ -170,10 +177,10 @@ private:
 
 public:
   static void ergo_initialize();
-  static bool is_logging_at_bootstrap() { return _is_logging_at_bootstrap; }
+  static bool is_logging_at_bootstrap() { return CDS_ONLY(_is_logging_at_bootstrap) NOT_CDS(false); }
 
   static void dumptime_log(ArchiveBuilder* builder, FileMapInfo* mapinfo,
-                           ArchiveMappedHeapInfo* mapped_heap_info, ArchiveStreamedHeapInfo* streamed_heap_info,
+                           AOTMappedHeapInfo* mapped_heap_info, AOTStreamedHeapInfo* streamed_heap_info,
                            char* bitmap, size_t bitmap_size_in_bytes);
   static void runtime_log(FileMapInfo* static_mapinfo, FileMapInfo* dynamic_mapinfo);
 };

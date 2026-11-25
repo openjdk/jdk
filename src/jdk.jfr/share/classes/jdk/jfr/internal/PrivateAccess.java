@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,15 +74,13 @@ public abstract class PrivateAccess {
 
     public abstract AnnotationElement newAnnotation(Type annotationType, List<Object> values, boolean boot);
 
-    public abstract ValueDescriptor newValueDescriptor(String name, Type fieldType, List<AnnotationElement> annotations, int dimension, boolean constantPool, String fieldName);
+    public abstract ValueDescriptor newValueDescriptor(String name, Type fieldType, List<AnnotationElement> annotations, int dimension, boolean constantPool);
 
     public abstract PlatformRecording getPlatformRecording(Recording r);
 
     public abstract PlatformEventType getPlatformEventType(EventType eventType);
 
     public abstract boolean isConstantPool(ValueDescriptor v);
-
-    public abstract String getFieldName(ValueDescriptor v);
 
     public abstract ValueDescriptor newValueDescriptor(Class<?> type, String name);
 
@@ -95,6 +93,8 @@ public abstract class PrivateAccess {
     public abstract boolean isUnsigned(ValueDescriptor v);
 
     public abstract PlatformRecorder getPlatformRecorder();
+
+    public abstract Recording newRecording(Boolean register);
 
     public abstract EventSettings newEventSettings(EventSettingsModifier esm);
 

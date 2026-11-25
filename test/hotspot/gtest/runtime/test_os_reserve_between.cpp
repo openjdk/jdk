@@ -335,6 +335,8 @@ TEST_VM(os, attempt_reserve_memory_randomization_cornercases) {
 
 // Test that, regardless where the hole is in the [min, max) range, if we probe nonrandomly, we will fill that hole
 // as long as the range size is smaller than the number of probe attempts
+// On AIX, the allocation granularity is too large and not well suited for 'small' holes, so we avoid the test
+#if !defined(_AIX)
 TEST_VM(os, attempt_reserve_memory_between_small_range_fill_hole) {
   const size_t ps = os::vm_page_size();
   const size_t ag = allocation_granularity();
@@ -348,3 +350,4 @@ TEST_VM(os, attempt_reserve_memory_between_small_range_fill_hole) {
     }
   }
 }
+#endif

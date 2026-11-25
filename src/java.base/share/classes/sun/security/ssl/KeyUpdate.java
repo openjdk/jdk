@@ -191,7 +191,7 @@ final class KeyUpdate {
             // The consuming happens in client side only.
             PostHandshakeContext hc = (PostHandshakeContext)context;
             KeyUpdateMessage km = new KeyUpdateMessage(hc, message);
-            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                 SSLLogger.fine(
                         "Consuming KeyUpdate post-handshake message", km);
             }
@@ -235,7 +235,7 @@ final class KeyUpdate {
 
                 rc.baseSecret = nplus1;
                 hc.conContext.inputRecord.changeReadCiphers(rc);
-                if (SSLLogger.isOn() && SSLLogger.isOn("ssl")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                     SSLLogger.fine("KeyUpdate: read key updated");
                 }
             } catch (GeneralSecurityException gse) {
@@ -276,7 +276,7 @@ final class KeyUpdate {
                 return null;
             }
             KeyUpdateMessage km = (KeyUpdateMessage)message;
-            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                 SSLLogger.fine(
                         "Produced KeyUpdate post-handshake message", km);
             }
@@ -328,7 +328,7 @@ final class KeyUpdate {
             // changeWriteCiphers() implementation.
             wc.baseSecret = nplus1;
             hc.conContext.outputRecord.changeWriteCiphers(wc, km.status.id);
-            if (SSLLogger.isOn() && SSLLogger.isOn("ssl")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                 SSLLogger.fine("KeyUpdate: write key updated");
             }
 

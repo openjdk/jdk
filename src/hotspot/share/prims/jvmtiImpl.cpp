@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/javaThread.hpp"
-#include "runtime/jniHandles.hpp"
+#include "runtime/jniHandles.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/serviceThread.hpp"
 #include "runtime/signature.hpp"
@@ -261,6 +261,13 @@ int JvmtiBreakpoints::set(JvmtiBreakpoint& bp) {
 
   // Ensure that bp._method is not deallocated before VM_ChangeBreakpoints::doit().
   methodHandle mh(Thread::current(), bp.method());
+
+  // Build MethodCounters on the calling JavaThread so the breakpoint count can't be dropped
+  // later in the VM operation.
+  if (mh->get_method_counters(Thread::current()) == nullptr) {
+    return JVMTI_ERROR_OUT_OF_MEMORY;
+  }
+
   VM_ChangeBreakpoints set_breakpoint(VM_ChangeBreakpoints::SET_BREAKPOINT, &bp);
   VMThread::execute(&set_breakpoint);
   return JVMTI_ERROR_NONE;
@@ -379,7 +386,7 @@ bool VM_BaseGetOrSetLocal::check_slot_type_lvt(javaVFrame* jvf) {
   if (!method->has_localvariable_table()) {
     // Just to check index boundaries.
     jint extra_slot = (_type == T_LONG || _type == T_DOUBLE) ? 1 : 0;
-    if (_index < 0 || _index + extra_slot >= method->max_locals()) {
+    if (_index < 0 || _index >= method->max_locals() - extra_slot) {
       _result = JVMTI_ERROR_INVALID_SLOT;
       return false;
     }
@@ -451,7 +458,7 @@ bool VM_BaseGetOrSetLocal::check_slot_type_no_lvt(javaVFrame* jvf) {
   Method* method = jvf->method();
   jint extra_slot = (_type == T_LONG || _type == T_DOUBLE) ? 1 : 0;
 
-  if (_index < 0 || _index + extra_slot >= method->max_locals()) {
+  if (_index < 0 || _index >= method->max_locals() - extra_slot) {
     _result = JVMTI_ERROR_INVALID_SLOT;
     return false;
   }
@@ -610,6 +617,14 @@ void VM_BaseGetOrSetLocal::doit() {
           // Wrap the oop to be returned in a local JNI handle since
           // oops_do() no longer applies after doit() is finished.
           oop obj = locals->obj_at(_index)();
+
+          if (Arguments::is_valhalla_enabled()) {
+            bool is_ctor = _jvf->method()->is_object_constructor();
+            if (is_ctor && _index == 0 && _jvf->method()->method_holder()->has_strict_instance_fields_in_hierarchy()) {
+              _result = JVMTI_ERROR_OPAQUE_FRAME; // can't expose THIS object in Ctor frame with strict-init instance fields
+              return;
+            }
+          }
           _value.l = JNIHandles::make_local(_calling_thread, obj);
           break;
         }
@@ -781,7 +796,7 @@ JvmtiDeferredEvent JvmtiDeferredEvent::dynamic_code_generated_event(
   // the event poster will keep it around after we enqueue the
   // deferred event and return. strdup() failure is handled in
   // the post() routine below.
-  event._event_data.dynamic_code_generated.name = os::strdup(name);
+  event._event_data.dynamic_code_generated.name = os::strdup(name, mtServiceability);
   event._event_data.dynamic_code_generated.code_begin = code_begin;
   event._event_data.dynamic_code_generated.code_end = code_end;
   return event;
@@ -793,7 +808,7 @@ JvmtiDeferredEvent JvmtiDeferredEvent::class_unload_event(const char* name) {
   // the event poster will keep it around after we enqueue the
   // deferred event and return. strdup() failure is handled in
   // the post() routine below.
-  event._event_data.class_unload.name = os::strdup(name);
+  event._event_data.class_unload.name = os::strdup(name, mtServiceability);
   return event;
 }
 

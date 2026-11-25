@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,6 @@ public:
   SubTypeCheckNode(Compile* C, Node* obj_or_subklass, Node* superklass, ciMethod* method, int bci)
     : CmpNode(obj_or_subklass, superklass), _method(method), _bci(bci) {
     init_class_id(Class_SubTypeCheck);
-    init_flags(Flag_is_macro);
     C->add_macro_node(this);
   }
 
@@ -48,7 +47,6 @@ public:
 
   virtual int Opcode() const;
   const Type* bottom_type() const { return TypeInt::CC; }
-  bool depends_only_on_test() const { return false; }
 
   ciMethod* method() const { return _method; }
   int bci() const { return _bci; }
@@ -71,6 +69,8 @@ private:
   static bool is_oop(PhaseGVN* phase, Node* n);
 
   Node* load_klass(PhaseGVN* phase) const;
+
+  virtual bool depends_only_on_test_impl() const { return false; }
 #endif // ASSERT
 };
 

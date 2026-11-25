@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -210,9 +210,25 @@ final class JSONWriter extends EventPrintWriter {
     }
 
     private void printEscaped(String text) {
-        for (int i = 0; i < text.length(); i++) {
-            printEscaped(text.charAt(i));
+        int i = 0;
+        while (i < text.length()) {
+            int codePoint = text.codePointAt(i);
+            printCodePoint(codePoint);
+            i += Character.charCount(codePoint);
         }
+    }
+
+    private void printCodePoint(int codePoint) {
+        if (isHighSurrogate(codePoint) || isLowSurrogate(codePoint)) {  // Unpaired surrogates
+            printEscaped(EventPrintWriter.UTF8_REPLACEMENT);
+            return;
+        }
+        if (codePoint > 0xFFFF) {
+            printEscaped(Character.highSurrogate(codePoint));
+            printEscaped(Character.lowSurrogate(codePoint));
+            return;
+        }
+        printEscaped((char)codePoint);
     }
 
     private void printEscaped(char c) {
@@ -256,4 +272,13 @@ final class JSONWriter extends EventPrintWriter {
         }
         print(c);
     }
+
+    private static boolean isHighSurrogate(int cp) {
+        return Character.MIN_HIGH_SURROGATE <= cp && cp <= Character.MAX_HIGH_SURROGATE;
+    }
+
+    private static boolean isLowSurrogate(int cp) {
+        return Character.MIN_LOW_SURROGATE <= cp && cp <= Character.MAX_LOW_SURROGATE;
+    }
+
 }

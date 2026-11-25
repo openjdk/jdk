@@ -32,14 +32,8 @@
  * @modules java.base/java.lang:open
  *          java.management
  *
- * @run main/othervm -Xmx1g -Xlog:gc+stats -Xlog:gc -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseStringDeduplication
+ * @run main/othervm -Xmx1g -Xlog:stringdedup -Xlog:gc -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseStringDeduplication
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=passive
- *      -XX:+ShenandoahDegeneratedGC
- *      TestStringDedupStress
- *
- * @run main/othervm -Xmx1g -Xlog:gc+stats -Xlog:gc -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseStringDeduplication
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=passive
- *      -XX:-ShenandoahDegeneratedGC
  *      TestStringDedupStress
  */
 
@@ -52,15 +46,14 @@
  * @modules java.base/java.lang:open
  *          java.management
  *
- * @run main/othervm -Xmx1g -Xlog:gc+stats -Xlog:gc -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseStringDeduplication
+ * @run main/othervm -Xmx1g -Xlog:stringdedup -Xlog:gc -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseStringDeduplication
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
- *      -XX:+ShenandoahDegeneratedGC
  *      -DtargetStrings=3000000
  *      TestStringDedupStress
  */
 
 /*
- * @test id=default
+ * @test id=satb
  * @summary Test Shenandoah string deduplication implementation
  * @key randomness
  * @requires vm.gc.Shenandoah
@@ -68,24 +61,24 @@
  * @modules java.base/java.lang:open
  *          java.management
  *
- * @run main/othervm -Xmx1g -Xlog:gc+stats -Xlog:gc -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseStringDeduplication
- *      -XX:+UseShenandoahGC
+ * @run main/othervm -Xmx1g -Xlog:stringdedup -Xlog:gc -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseStringDeduplication
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=satb
  *      -DtargetStrings=3000000
  *      TestStringDedupStress
  *
- * @run main/othervm -Xmx1g -Xlog:gc+stats -Xlog:gc -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseStringDeduplication
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive
+ * @run main/othervm -Xmx1g -Xlog:stringdedup -Xlog:gc -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseStringDeduplication
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=satb -XX:ShenandoahGCHeuristics=aggressive
  *      -DtargetStrings=2000000
  *      TestStringDedupStress
  *
- * @run main/othervm -Xmx1g -Xlog:gc+stats -Xlog:gc -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseStringDeduplication
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive
+ * @run main/othervm -Xmx1g -Xlog:stringdedup -Xlog:gc -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseStringDeduplication
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=satb -XX:ShenandoahGCHeuristics=aggressive
  *      -XX:+ShenandoahOOMDuringEvacALot
  *      -DtargetStrings=2000000
  *      TestStringDedupStress
  *
- * @run main/othervm -Xmx1g -Xlog:gc+stats -Xlog:gc -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseStringDeduplication
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=compact
+ * @run main/othervm -Xmx1g -Xlog:stringdedup -Xlog:gc -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseStringDeduplication
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=satb -XX:ShenandoahGCHeuristics=compact
  *      TestStringDedupStress
  */
 

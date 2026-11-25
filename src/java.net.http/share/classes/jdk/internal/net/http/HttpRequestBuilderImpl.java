@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,7 +145,7 @@ public class HttpRequestBuilderImpl implements HttpRequest.Builder {
     @Override
     public HttpRequestBuilderImpl headers(String... params) {
         requireNonNull(params);
-        if (params.length == 0 || params.length % 2 != 0) {
+        if (params.length % 2 != 0) {
             throw newIAE("wrong number, %d, of parameters", params.length);
         }
         for (int i = 0; i < params.length; i += 2) {
@@ -284,17 +284,6 @@ public class HttpRequestBuilderImpl implements HttpRequest.Builder {
             options.put(option, option.type().cast(val.get()));
         }
         return Map.copyOf(options);
-    }
-
-    public static Map<HttpOption<?>, Object> copySupportedOptions(Map<HttpOption<?>, Object> options) {
-        Objects.requireNonNull(options, "option");
-        Map<HttpOption<?>, Object> result = new HashMap<>();
-        for (HttpOption<?> option : supportedOptions) {
-            var val =  options.get(option);
-            if (val == null) continue;
-            result.put(option, option.type().cast(val));
-        }
-        return Map.copyOf(result);
     }
 
 }

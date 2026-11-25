@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 IBM Corporation. All rights reserved.
+ * Copyright (c) 2025, 2026, IBM Corporation. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
  *          - fails gracefully for invalid value
  *          - succeeds for valid value
  * @library /test/lib
+ * @requires vm.flagless
  * @run driver CodeCacheSegmentSizeTest
  */
 

@@ -4,7 +4,7 @@
     }
 
     static $type$ strict[[TEST]]($type$ a) {
-        return ($type$)(Strict[[TEST_OP]]);
+        return ($type$)(strict_[[TEST_OP]]);
     }
 
     @Test(dataProvider = "$type$UnaryOpProvider")

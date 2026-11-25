@@ -41,6 +41,7 @@ public:
   f(StringHashentry) \
   f(StringBucket) \
   f(CppVTables) \
+  f(Gap) \
   f(Other)
 
 #define DUMPED_TYPE_DECLARE(name) name ## Type,
@@ -111,12 +112,19 @@ public:
     _bytes [which][t] += byte_size;
   }
 
+  void record_gap(int byte_size) {
+    _counts[RW][GapType] += 1;
+    _bytes [RW][GapType] += byte_size;
+  }
+
   void record_other_type(int byte_size, bool read_only) {
     int which = (read_only) ? RO : RW;
+    _counts[which][OtherType] += 1;
     _bytes [which][OtherType] += byte_size;
   }
 
   void record_cpp_vtables(int byte_size) {
+    _counts[RW][CppVTablesType] += 1;
     _bytes[RW][CppVTablesType] += byte_size;
   }
 
@@ -145,9 +153,6 @@ public:
   }
 
   void print_stats(int ro_all, int rw_all);
-
-  DEBUG_ONLY(void verify(int expected_byte_size, bool read_only) const);
-
 };
 
 #endif // SHARE_CDS_DUMPALLOCSTATS_HPP

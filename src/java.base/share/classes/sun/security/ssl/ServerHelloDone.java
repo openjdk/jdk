@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,7 +93,7 @@ final class ServerHelloDone {
             ServerHandshakeContext shc = (ServerHandshakeContext)context;
 
             ServerHelloDoneMessage shdm = new ServerHelloDoneMessage(shc);
-            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                 SSLLogger.fine(
                         "Produced ServerHelloDone handshake message", shdm);
             }
@@ -133,6 +133,15 @@ final class ServerHelloDone {
             // The consuming happens in client side only.
             ClientHandshakeContext chc = (ClientHandshakeContext)context;
 
+            // Check for an unprocessed server Certificate message. If
+            // that handshake consumer is still present then that expected
+            // message was not sent.
+            if (chc.handshakeConsumers.containsKey(
+                    SSLHandshake.CERTIFICATE.id)) {
+                throw chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
+                        "Unexpected ServerHelloDone handshake message.");
+            }
+
             SSLConsumer certStatCons = chc.handshakeConsumers.remove(
                     SSLHandshake.CERTIFICATE_STATUS.id);
             if (certStatCons != null) {
@@ -147,7 +156,7 @@ final class ServerHelloDone {
 
             ServerHelloDoneMessage shdm =
                     new ServerHelloDoneMessage(chc, message);
-            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                 SSLLogger.fine(
                         "Consuming ServerHelloDone handshake message", shdm);
             }

@@ -27,9 +27,9 @@ import java.io.File;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
+import jdk.test.lib.StringArrayUtils;
 import jdk.test.lib.cds.CDSAppTester.RunMode;
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.StringArrayUtils;
 
 /*
  * A simpler way to use CDSAppTester. Example:
@@ -95,6 +95,12 @@ public class SimpleCDSAppTester {
 
     public SimpleCDSAppTester addVmArgs(String... args) {
         vmArgs = StringArrayUtils.concat(vmArgs, args);
+        return this;
+    }
+
+    // Replace VM args with new list
+    public SimpleCDSAppTester setVmArgs(String... args) {
+        vmArgs = args;
         return this;
     }
 
@@ -207,8 +213,48 @@ public class SimpleCDSAppTester {
         return this;
     }
 
+    public SimpleCDSAppTester runAOTTraining() throws Exception {
+        tester.runAOTTraining();
+        return this;
+    }
+
+    // Ensure Training has already run
+    public SimpleCDSAppTester runAOTAssembly() throws Exception {
+        tester.runAOTAssembly();
+        return this;
+    }
+
+    public SimpleCDSAppTester runAOTTrainingAndAssemblyWorkflow() throws Exception {
+        tester.runAOTTrainingAndAssemblyWorkflow();
+        return this;
+    }
+
+    public SimpleCDSAppTester productionRun() throws Exception {
+        tester.productionRun();
+        return this;
+    }
+
     public SimpleCDSAppTester run(String args[])  throws Exception {
         tester.run(args);
+        return this;
+    }
+
+    public SimpleCDSAppTester rerunProduction(String... extraVmArgs) throws Exception {
+        tester.productionRun(extraVmArgs);
+        return this;
+    }
+
+    public SimpleCDSAppTester rerunProduction(String[] extraVmArgs, String... extraAppArgs) throws Exception {
+        tester.productionRun(extraVmArgs, extraAppArgs);
+        return this;
+    }
+
+    public String aotCacheFile() {
+        return tester.aotCacheFile();
+    }
+
+    public SimpleCDSAppTester setCheckExitValue(boolean b) {
+        tester.setCheckExitValue(b);
         return this;
     }
 }

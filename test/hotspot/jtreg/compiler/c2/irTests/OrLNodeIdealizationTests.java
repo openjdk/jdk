@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ import compiler.lib.ir_framework.*;
 
 /*
  * @test
- * @bug 8322077 8353359
+ * @bug 8322077 8353359 8373730
  * @summary Test that Ideal transformations of OrLNode* are being performed as expected.
  * @library /test/lib /
  * @run driver compiler.c2.irTests.OrLNodeIdealizationTests
@@ -38,7 +38,7 @@ public class OrLNodeIdealizationTests {
         TestFramework.run();
     }
 
-    @Run(test = { "test1", "test2", "test3" })
+    @Run(test = { "test1", "test2", "test3", "test4", "test5", "test6", "test7", "test8", "test9" })
     public void runMethod() {
         long a = RunInfo.getRandom().nextLong();
         long b = RunInfo.getRandom().nextLong();
@@ -57,6 +57,12 @@ public class OrLNodeIdealizationTests {
         Asserts.assertEQ((~a) | (~b), test1(a, b));
         Asserts.assertEQ((a | 3) | 6, test2(a));
         Asserts.assertEQ((a | 3) | a, test3(a));
+        Asserts.assertEQ(a | (b | a), test4(a, b));
+        Asserts.assertEQ((a | b) | a, test5(a, b));
+        Asserts.assertEQ((a | 0L) | a, test6(a));
+        Asserts.assertEQ(a | (a | 0L), test7(a));
+        Asserts.assertEQ(a | b, test8(a, b));
+        Asserts.assertEQ(a | b, test9(a, b));
     }
 
     // Checks (~a) | (~b) => ~(a & b)
@@ -81,5 +87,53 @@ public class OrLNodeIdealizationTests {
     @IR(counts = { IRNode.OR, "1"})
     public long test3(long a) {
         return (a | 3) | a;
+    }
+
+    // Checks a | (b | a) => a | b
+    @Test
+    @IR(counts = { IRNode.OR, "1" })
+    public long test4(long a, long b) {
+        return a | (b | a);
+    }
+
+    // Checks (a | b) | a => a | b
+    @Test
+    @IR(counts = { IRNode.OR, "1" })
+    public long test5(long a, long b) {
+        return (a | b) | a;
+    }
+
+    // Checks (a | 0) | a => a | a => a
+    @Test
+    @IR(failOn = { IRNode.OR })
+    public long test6(long a) {
+        return (a | 0L) | a;
+    }
+
+    // Checks a | (a | 0) => a | a => a
+    @Test
+    @IR(failOn = { IRNode.OR })
+    public long test7(long a) {
+        return a | (a | 0L);
+    }
+
+    // The outer OR must be revisited when a * i becomes a, even if the inner OR remains.
+    // Declare b first so this replacement does not also cause the inner OR to swap its inputs.
+    @Test
+    @IR(counts = { IRNode.OR, "1" }, phase = CompilePhase.BEFORE_MACRO_EXPANSION)
+    public long test8(long b, long a) {
+        int i;
+        for (i = -10; i < 1; i++) {
+        }
+        return a | (b | (a * i));
+    }
+
+    @Test
+    @IR(counts = { IRNode.OR, "1" }, phase = CompilePhase.BEFORE_MACRO_EXPANSION)
+    public long test9(long b, long a) {
+        int i;
+        for (i = -10; i < 1; i++) {
+        }
+        return ((a * i) | b) | a;
     }
 }

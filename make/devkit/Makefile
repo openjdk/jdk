@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@
 #
 # make TARGETS="aarch64-linux-gnu" BASE_OS=Fedora
 # or
-# make TARGETS="arm-linux-gnueabihf ppc64le-linux-gnu" BASE_OS=Fedora BASE_OS_VERSION=17
+# make TARGETS="aarch64-linux-gnu ppc64le-linux-gnu" BASE_OS=Fedora BASE_OS_VERSION=41
 #
 # to build several devkits for a specific OS version at once.
 # You can find the final results under ../../build/devkit/result/<host>-to-<target>
@@ -50,7 +50,7 @@
 # makefile again for cross compilation. Ex:
 #
 # PATH=$PWD/../../build/devkit/result/x86_64-linux-gnu-to-x86_64-linux-gnu/bin:$PATH \
-#    make TARGETS="arm-linux-gnueabihf ppc64le-linux-gnu" BASE_OS=Fedora
+#    make TARGETS="aarch64-linux-gnu ppc64le-linux-gnu" BASE_OS=Fedora
 #
 # This is the makefile which iterates over all host and target platforms.
 #
@@ -79,10 +79,10 @@ TARGET_PLATFORMS := $(PLATFORMS)
 $(info HOST_PLATFORMS $(HOST_PLATFORMS))
 $(info TARGET_PLATFORMS $(TARGET_PLATFORMS))
 
-all compile : $(PLATFORMS)
+all compile: $(PLATFORMS)
 
 ifeq ($(SKIP_ME), )
-  $(foreach p,$(filter-out $(ME),$(PLATFORMS)),$(eval $(p) : $$(ME)))
+  $(foreach p,$(filter-out $(ME),$(PLATFORMS)),$(eval $(p): $$(ME)))
 endif
 
 OUTPUT_ROOT = $(abspath ../../build/devkit)
@@ -90,38 +90,39 @@ RESULT = $(OUTPUT_ROOT)/result
 
 SUBMAKEVARS = HOST=$@ BUILD=$(ME) RESULT=$(RESULT) OUTPUT_ROOT=$(OUTPUT_ROOT)
 
-$(HOST_PLATFORMS) :
+$(HOST_PLATFORMS):
 	@echo 'Building compilers for $@'
 	@echo 'Targets: $(TARGET_PLATFORMS)'
 	for p in $(filter $@, $(TARGET_PLATFORMS)) $(filter-out $@, $(TARGET_PLATFORMS)); do \
-	  $(MAKE) -f Tools.gmk download-rpms $(SUBMAKEVARS) \
+	  $(MAKE) -f Sysroot.gmk sysroot $(SUBMAKEVARS) \
               TARGET=$$p PREFIX=$(RESULT)/$@-to-$$p && \
 	  $(MAKE) -f Tools.gmk all $(SUBMAKEVARS) \
               TARGET=$$p PREFIX=$(RESULT)/$@-to-$$p && \
 	  $(MAKE) -f Tools.gmk ccache $(SUBMAKEVARS) \
-              TARGET=$@ PREFIX=$(RESULT)/$@-to-$$p || exit 1 ; \
+              TARGET=$@ PREFIX=$(RESULT)/$@-to-$$p || exit 1; \
 	done
-	@echo 'All done"'
+	@echo 'All done'
 
 TODAY := $(shell date +%Y%m%d)
 
 define Mktar
   $(1)-to-$(2)_tar = $$(RESULT)/sdk-$(1)-to-$(2)-$$(TODAY).tar.gz
-  $$($(1)-to-$(2)_tar) : PLATFORM = $(1)-to-$(2)
+  $$($(1)-to-$(2)_tar): PLATFORM = $(1)-to-$(2)
   TARFILES += $$($(1)-to-$(2)_tar)
 endef
 
 $(foreach p,$(HOST_PLATFORMS),$(foreach t,$(TARGET_PLATFORMS),$(eval $(call Mktar,$(p),$(t)))))
 
-tars : all $(TARFILES)
-onlytars : $(TARFILES)
-%.tar.gz :
+tars: all $(TARFILES)
+onlytars: $(TARFILES)
+
+%.tar.gz:
 	$(MAKE) -r -f Tars.gmk SRC_DIR=$(RESULT)/$(PLATFORM) TAR_FILE=$@
 
-clean :
+clean:
 	rm -rf $(addprefix ../../build/devkit/, result $(HOST_PLATFORMS))
+
 dist-clean: clean
 	rm -rf $(addprefix ../../build/devkit/, src download)
 
-FORCE :
-.PHONY : all compile tars $(HOST_PLATFORMS) clean dist-clean
+.PHONY: all compile tars $(HOST_PLATFORMS) clean dist-clean

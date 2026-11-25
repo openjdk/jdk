@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,14 @@
 
 /*
  * @test
- * @bug 8329817 8334432 8339076 8341260 8362207
+ * @bug 8329817 8334432 8339076 8341260 8362207 8394644
  * @modules jdk.incubator.vector
  * @summary Basic tests of Float16 arithmetic and similar operations
  */
 
 import jdk.incubator.vector.Float16;
 import static jdk.incubator.vector.Float16.*;
+import java.math.BigDecimal;
 import java.util.HashSet;
 import java.util.List;
 
@@ -38,6 +39,8 @@ public class BasicFloat16ArithTests {
     private static float NaNf = Float.NaN;
 
     private static final float MAX_VAL_FP16 = 0x1.ffcp15f;
+    private static final float MIN_NRM_FP16 = 0x1.0p-14f;
+    private static final float MIN_VAL_FP16 = 0x1.0p-24f;
 
     public static void main(String... args) {
         checkBitWise();
@@ -145,9 +148,9 @@ public class BasicFloat16ArithTests {
         checkInt(PRECISION,     11, "Float16.PRECISION");
         checkInt(SIZE,          16, "Float16.SIZE");
 
-        checkFloat16(MIN_VALUE,  0x1.0p-24f, "Float16.MIN_VALUE");
-        checkFloat16(MIN_NORMAL, 0x1.0p-14f, "Float16.MIN_NORMAL");
-        checkFloat16(MAX_VALUE,  65504.0f,  "Float16.MAX_VALUE");
+        checkFloat16(MIN_VALUE,  MIN_VAL_FP16, "Float16.MIN_VALUE");
+        checkFloat16(MIN_NORMAL, MIN_NRM_FP16, "Float16.MIN_NORMAL");
+        checkFloat16(MAX_VALUE,  65504.0f,     "Float16.MAX_VALUE");
 
         checkFloat16(POSITIVE_INFINITY,   InfinityF,  "+infinity");
         checkFloat16(NEGATIVE_INFINITY,  -InfinityF,  "-infinity");
@@ -389,12 +392,12 @@ public class BasicFloat16ArithTests {
             { NaNf,      MAX_EXPONENT + 1},
 
             // Subnormal and almost subnormal values
-            {-0.0f,       MIN_EXPONENT - 1},
-            {+0.0f,       MIN_EXPONENT - 1},
-            { 0x1.0p-24f, MIN_EXPONENT - 1}, // Float16.MIN_VALUE
-            {-0x1.0p-24f, MIN_EXPONENT - 1}, // Float16.MIN_VALUE
-            { 0x1.0p-14f, MIN_EXPONENT},     // Float16.MIN_NORMAL
-            {-0x1.0p-14f, MIN_EXPONENT},     // Float16.MIN_NORMAL
+            {-0.0f,         MIN_EXPONENT - 1},
+            {+0.0f,         MIN_EXPONENT - 1},
+            { MIN_VAL_FP16, MIN_EXPONENT - 1},
+            {-MIN_VAL_FP16, MIN_EXPONENT - 1},
+            { MIN_NRM_FP16, MIN_EXPONENT},
+            {-MIN_NRM_FP16, MIN_EXPONENT},
 
             // Normal values
             { 1.0f,       0},
@@ -424,17 +427,17 @@ public class BasicFloat16ArithTests {
             { NaNf,      NaNf},
 
             // Zeros, subnormals, and MIN_VALUE all have MIN_VALUE as an ulp.
-            {-0.0f,       0x1.0p-24f},
-            {+0.0f,       0x1.0p-24f},
-            { 0x1.0p-24f, 0x1.0p-24f},
-            {-0x1.0p-24f, 0x1.0p-24f},
-            { 0x1.0p-14f, 0x1.0p-24f},
-            {-0x1.0p-14f, 0x1.0p-24f},
+            {-0.0f,         MIN_VAL_FP16},
+            {+0.0f,         MIN_VAL_FP16},
+            { MIN_VAL_FP16, MIN_VAL_FP16},
+            {-MIN_VAL_FP16, MIN_VAL_FP16},
+            { MIN_NRM_FP16, MIN_VAL_FP16},
+            {-MIN_NRM_FP16, MIN_VAL_FP16},
 
-            // ulp is 10 bits away
-            {0x1.0p0f,       0x0.004p0f}, // 1.0f
-            {0x1.0p1f,       0x0.004p1f}, // 2.0f
-            {0x1.0p2f,       0x0.004p2f}, // 4.0f
+            // ulp is (PRECISION - 1) = 10 bits away
+            {0x1.0p0f,       0x1.0p-10f}, // 1.0f
+            {0x1.0p1f,       0x1.0p-9f},  // 2.0f
+            {0x1.0p2f,       0x1.0p-8f},  // 4.0f
 
             {MAX_VAL_FP16*0.5f, 0x0.004p14f},
             {MAX_VAL_FP16,      0x0.004p15f},
@@ -507,12 +510,12 @@ public class BasicFloat16ArithTests {
     }
 
     private static void checkValueOfLong() {
-        checkFloat16(valueOf(-65_521),  Float.NEGATIVE_INFINITY, "-infinity");
-        checkFloat16(valueOf(-65_520),  Float.NEGATIVE_INFINITY, "-infinity");
-        checkFloat16(valueOf(-65_519), -MAX_VALUE.floatValue(), "-MAX_VALUE");
-        checkFloat16(valueOf(65_519),   MAX_VALUE.floatValue(), "MAX_VALUE");
-        checkFloat16(valueOf(65_520),   Float.POSITIVE_INFINITY, "+infinity");
-        checkFloat16(valueOf(65_521),   Float.POSITIVE_INFINITY, "+infinity");
+        checkFloat16(valueOf(-65_521),  Float.NEGATIVE_INFINITY, "-65_521");
+        checkFloat16(valueOf(-65_520),  Float.NEGATIVE_INFINITY, "-65_520");
+        checkFloat16(valueOf(-65_519), -MAX_VALUE.floatValue(),  "-65_519");
+        checkFloat16(valueOf( 65_519),  MAX_VALUE.floatValue(),   "65_519");
+        checkFloat16(valueOf( 65_520),  Float.POSITIVE_INFINITY,  "65_520");
+        checkFloat16(valueOf( 65_521),  Float.POSITIVE_INFINITY,  "65_521");
     }
 
     private static void checkValueOfString() {
@@ -527,6 +530,16 @@ public class BasicFloat16ArithTests {
             new String2Float16Case( "0.0",  0.0f),
             new String2Float16Case("+0.0",  0.0f),
             new String2Float16Case("-0.0", -0.0f),
+
+            // Subnormal range
+            new String2Float16Case( "0x1.00000000000001p-25", MIN_VAL_FP16),
+
+            new String2Float16Case( "2.9802322387695313e-8",  MIN_VAL_FP16),
+            new String2Float16Case("-2.9802322387695313e-8", -MIN_VAL_FP16),
+
+            new String2Float16Case( "8.9406967163085937e-8",  MIN_VAL_FP16),
+
+            new String2Float16Case( "6.1005353927612304e-5",  0x0.ffcp-14f), // Float16 max subnormal
 
             // Decimal signed integers are accepted as input; hex
             // signed integers are not, see negative test cases below.
@@ -615,6 +628,31 @@ public class BasicFloat16ArithTests {
             } catch (NumberFormatException nfe) {
                 ; // Expected
             }
+        }
+
+        // Test half-way rounding cases
+        for(int i = 0; i <= Short.MAX_VALUE; i++ ) {
+            boolean isEven = ((i & 0x1) == 0);
+            Float16 f16 = Float16.shortBitsToFloat16((short)i);
+
+            if (!isFinite(f16))
+                continue;
+
+            Float16 ulp = ulp(f16);
+            float halfWay = f16.floatValue() + ulp.floatValue() * 0.5f;
+
+            Float16 result    = Float16.valueOf((new BigDecimal( halfWay)).toString());
+            Float16 resultNeg = Float16.valueOf((new BigDecimal(-halfWay)).toString());
+
+            // Under the round to nearest even rounding policy, the
+            // half-way case should round down to the starting value
+            // if the starting value is even; otherwise, it should round up.
+            float expected = (isEven ?
+                              f16.floatValue() :
+                              add(f16, ulp).floatValue());
+
+            checkFloat16(result,     expected, "Half-way case");
+            checkFloat16(resultNeg, -expected, "Half-way case");
         }
 
         return;
@@ -792,7 +830,7 @@ public class BasicFloat16ArithTests {
                 // threshold; subtracting a non-zero finite value will
                 // result in MAX_VALUE, adding zero or a positive
                 // value will overflow.
-                {0x1.2p10f, 0x1.c7p5f, -0x1.0p-14f,
+                {0x1.2p10f, 0x1.c7p5f, -MIN_NRM_FP16,
                  MAX_VAL_FP16},
 
                 {0x1.2p10f, 0x1.c7p5f, -0.0f,
@@ -801,7 +839,7 @@ public class BasicFloat16ArithTests {
                 {0x1.2p10f, 0x1.c7p5f, +0.0f,
                  InfinityF},
 
-                {0x1.2p10f, 0x1.c7p5f, +0x1.0p-14f,
+                {0x1.2p10f, 0x1.c7p5f, +MIN_NRM_FP16,
                  InfinityF},
 
                 {0x1.2p10f, 0x1.c7p5f, InfinityF,

@@ -1764,15 +1764,16 @@ void CCombinedSegTable::GetEUDCFileName(LPWSTR lpszFileName, int cchFileName)
     if (m_fEUDCSubKeyExist == FALSE)
         return;
 
-    // get filename of typeface-specific TureType EUDC font
+    // get filename of typeface-specific TrueType EUDC font
     LPSTR lpszSubKey = GetCodePageSubkey();
     if (lpszSubKey == NULL) {
         m_fEUDCSubKeyExist = FALSE;
         return; // can not get codepage information
     }
+    DASSERT(strlen((LPCSTR)lpszSubKey) > 0);
     HKEY hRootKey = HKEY_CURRENT_USER;
     HKEY hKey;
-    LONG lRet = ::RegOpenKeyExA(hRootKey, lpszSubKey, 0, KEY_ALL_ACCESS, &hKey);
+    LONG lRet = ::RegOpenKeyExA(hRootKey, lpszSubKey, 0, KEY_READ, &hKey);
     if (lRet != ERROR_SUCCESS) {
         m_fEUDCSubKeyExist = FALSE;
         return; // no EUDC font
@@ -1802,10 +1803,13 @@ void CCombinedSegTable::GetEUDCFileName(LPWSTR lpszFileName, int cchFileName)
 
     BOOL fUseDefault = FALSE;
     if (lStatus != ERROR_SUCCESS){ // try System default EUDC font
-        if (m_fTTEUDCFileExist == FALSE)
+        if (m_fTTEUDCFileExist == FALSE) {
+            RegCloseKey(hKey);
             return;
+        }
         if (wcslen(m_szDefaultEUDCFile) > 0) {
             StringCchCopy(lpszFileName, cchFileName, m_szDefaultEUDCFile);
+            RegCloseKey(hKey);
             return;
         }
         char szDefault[] = "SystemDefaultEUDCFont";
@@ -1816,6 +1820,7 @@ void CCombinedSegTable::GetEUDCFileName(LPWSTR lpszFileName, int cchFileName)
             m_fTTEUDCFileExist = FALSE;
             // This font is associated with no EUDC font
             // and there is no system default EUDC font
+            RegCloseKey(hKey);
             return;
         }
     }
@@ -1824,6 +1829,7 @@ void CCombinedSegTable::GetEUDCFileName(LPWSTR lpszFileName, int cchFileName)
         // This font is associated with no EUDC font
         // and the system default EUDC font is not TrueType
         m_fTTEUDCFileExist = FALSE;
+        RegCloseKey(hKey);
         return;
     }
 
@@ -1832,6 +1838,7 @@ void CCombinedSegTable::GetEUDCFileName(LPWSTR lpszFileName, int cchFileName)
         (LPCSTR)szFileName, -1, lpszFileName, cchFileName) != 0);
     if (fUseDefault)
         StringCchCopy(m_szDefaultEUDCFile, _MAX_PATH, lpszFileName);
+    RegCloseKey(hKey);
 }
 
 void CCombinedSegTable::Create(LPCWSTR name)

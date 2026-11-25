@@ -108,7 +108,7 @@ final class ChangeCipherSpec {
                     ") and protocol version (" + hc.negotiatedProtocol + ")");
             }
 
-            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                 SSLLogger.fine("Produced ChangeCipherSpec message");
             }
 
@@ -142,7 +142,7 @@ final class ChangeCipherSpec {
                 throw tc.fatal(Alert.UNEXPECTED_MESSAGE,
                         "Malformed or unexpected ChangeCipherSpec message");
             }
-            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                 SSLLogger.fine("Consuming ChangeCipherSpec message");
             }
 
@@ -237,7 +237,7 @@ final class ChangeCipherSpec {
                 throw tc.fatal(Alert.UNEXPECTED_MESSAGE,
                         "Malformed or unexpected ChangeCipherSpec message");
             }
-            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                 SSLLogger.fine("Consuming ChangeCipherSpec message");
             }
 

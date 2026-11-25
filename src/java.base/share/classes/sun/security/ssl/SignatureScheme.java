@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.security.*;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.ECParameterSpec;
 import java.security.spec.MGF1ParameterSpec;
+import java.security.spec.NamedParameterSpec;
 import java.security.spec.PSSParameterSpec;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.ArrayList;
@@ -44,6 +45,19 @@ import sun.security.util.KeyUtil;
 import sun.security.util.SignatureUtil;
 
 enum SignatureScheme {
+    // ML_DSA algorithms
+    MLDSA65                 (0x0905, "mldsa65", "ML-DSA-65",
+                                    "ML-DSA",
+                                    ProtocolVersion.PROTOCOLS_OF_13),
+
+    MLDSA87                 (0x0906, "mldsa87", "ML-DSA-87",
+                                    "ML-DSA",
+                                    ProtocolVersion.PROTOCOLS_OF_13),
+
+    MLDSA44                 (0x0904, "mldsa44", "ML-DSA-44",
+                                    "ML-DSA",
+                                    ProtocolVersion.PROTOCOLS_OF_13),
+
     // ECDSA algorithms
     ECDSA_SECP256R1_SHA256  (0x0403, "ecdsa_secp256r1_sha256",
                                     "SHA256withECDSA",
@@ -204,7 +218,8 @@ enum SignatureScheme {
                     NoSuchAlgorithmException | RuntimeException exp) {
                 // Signature.getParameters() may throw RuntimeException.
                 mediator = false;
-                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() &&
+                        SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.warning(
                         "RSASSA-PSS signature with " + hash +
                         " is not supported by the underlying providers", exp);
@@ -297,7 +312,8 @@ enum SignatureScheme {
                     Signature.getInstance(algorithm);
                 } catch (Exception e) {
                     mediator = false;
-                    if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+                    if (SSLLogger.isOn() &&
+                            SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                         SSLLogger.warning(
                             "Signature algorithm, " + algorithm +
                             ", is not supported by the underlying providers");
@@ -424,7 +440,7 @@ enum SignatureScheme {
                 if (ss != null) {
                     schemesToCheck.add(ss);
                 } else {
-                    SSLLogger.logWarning("ssl,handshake", "Unavailable "
+                    SSLLogger.logWarning(SSLLogger.Opt.HANDSHAKE, "Unavailable "
                             + "configured signature scheme: " + name);
                 }
             }
@@ -433,7 +449,7 @@ enum SignatureScheme {
         for (SignatureScheme ss: schemesToCheck) {
             if (!ss.isAvailable) {
                 if (SSLLogger.isOn() &&
-                        SSLLogger.isOn("ssl,handshake,verbose")) {
+                        SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE_VERBOSE)) {
                     SSLLogger.finest(
                         "Ignore unsupported signature scheme: " + ss.name);
                 }
@@ -452,12 +468,12 @@ enum SignatureScheme {
                 if (ss.isPermitted(constraints, scopes)) {
                     supported.add(ss);
                 } else if (SSLLogger.isOn() &&
-                        SSLLogger.isOn("ssl,handshake,verbose")) {
+                        SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE_VERBOSE)) {
                     SSLLogger.finest(
                         "Ignore disabled signature scheme: " + ss.name);
                 }
             } else if (SSLLogger.isOn() &&
-                    SSLLogger.isOn("ssl,handshake,verbose")) {
+                    SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE_VERBOSE)) {
                 SSLLogger.finest(
                     "Ignore inactive signature scheme: " + ss.name);
             }
@@ -476,7 +492,8 @@ enum SignatureScheme {
         for (int ssid : algorithmIds) {
             SignatureScheme ss = SignatureScheme.valueOf(ssid);
             if (ss == null) {
-                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() &&
+                        SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.warning(
                             "Unsupported signature scheme: " +
                             SignatureScheme.nameOf(ssid));
@@ -486,7 +503,8 @@ enum SignatureScheme {
                     && ss.isAllowed(constraints, protocolVersion, scopes)) {
                 supported.add(ss);
             } else {
-                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() &&
+                        SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.warning(
                             "Unsupported signature scheme: " + ss.name);
                 }
@@ -533,12 +551,27 @@ enum SignatureScheme {
             if (keySize >= ss.minimalKeySize &&
                     keyAlgorithm.equalsIgnoreCase(ss.keyAlgorithm) &&
                     ss.isAllowed(constraints, version, HANDSHAKE_SCOPE)) {
+                if (signingKey.getParams() instanceof NamedParameterSpec nps
+                        && !ss.algorithm.equalsIgnoreCase(nps.getName())) {
+                    if (SSLLogger.isOn() &&
+                            SSLLogger.isOn(
+                                    SSLLogger.Opt.HANDSHAKE_VERBOSE)) {
+                        SSLLogger.finest(
+                                "Ignore the signature algorithm (" + ss +
+                                        "), unsupported named parameter: " +
+                                        nps.getName());
+                    }
+                    continue;
+                }
+
                 if ((ss.namedGroup != null) && (ss.namedGroup.spec ==
                         NamedGroupSpec.NAMED_GROUP_ECDHE)) {
                     ECParameterSpec params =
                             x509Possession.getECParameterSpec();
-                    if (params != null &&
-                            ss.namedGroup == NamedGroup.valueOf(params)) {
+                    // RFC 8446 Section 4.2.3: TLS 1.2 signature scheme curve
+                    // doesn't have to match the signing curve.
+                    if (params != null && (!version.useTLS13PlusSpec()
+                            || ss.namedGroup == NamedGroup.valueOf(params))) {
                         Signature signer = ss.getSigner(signingKey);
                         if (signer != null) {
                             return new SimpleImmutableEntry<>(ss, signer);
@@ -546,7 +579,7 @@ enum SignatureScheme {
                     }
 
                     if (SSLLogger.isOn() &&
-                            SSLLogger.isOn("ssl,handshake,verbose")) {
+                            SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE_VERBOSE)) {
                         SSLLogger.finest(
                             "Ignore the signature algorithm (" + ss +
                             "), unsupported EC parameter spec: " + params);
@@ -575,7 +608,7 @@ enum SignatureScheme {
                     }
 
                     if (SSLLogger.isOn() &&
-                            SSLLogger.isOn("ssl,handshake,verbose")) {
+                            SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE_VERBOSE)) {
                         SSLLogger.finest(
                             "Ignore the legacy signature algorithm (" + ss +
                             "), unsupported EC parameter spec: " + params);
@@ -636,6 +669,12 @@ enum SignatureScheme {
             return null;
         }
 
+        if (publicKey.getParams() instanceof NamedParameterSpec nps
+                && !algorithm.equalsIgnoreCase(nps.getName())) {
+                throw new InvalidKeyException("Unsupported named parameter: " +
+                        nps.getName());
+        }
+
         Signature verifier = Signature.getInstance(algorithm);
         SignatureUtil.initVerifyWithParam(verifier, publicKey,
                 (signAlgParams != null ? signAlgParams.parameterSpec : null));
@@ -661,7 +700,7 @@ enum SignatureScheme {
         } catch (NoSuchAlgorithmException | InvalidKeyException |
                 InvalidAlgorithmParameterException nsae) {
             if (SSLLogger.isOn() &&
-                    SSLLogger.isOn("ssl,handshake,verbose")) {
+                    SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE_VERBOSE)) {
                 SSLLogger.finest(
                     "Ignore unsupported signature algorithm (" +
                     this.name + ")", nsae);

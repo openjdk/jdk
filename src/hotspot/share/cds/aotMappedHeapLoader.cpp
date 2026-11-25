@@ -23,14 +23,14 @@
  */
 
 #include "cds/aotLogging.hpp"
+#include "cds/aotMappedHeap.hpp"
 #include "cds/aotMappedHeapLoader.inline.hpp"
 #include "cds/aotMappedHeapWriter.hpp"
 #include "cds/aotMetaspace.hpp"
+#include "cds/aotModules.hpp"
 #include "cds/cdsConfig.hpp"
-#include "cds/heapShared.inline.hpp"
-#include "classfile/classLoaderDataShared.hpp"
+#include "cds/filemap.hpp"
 #include "classfile/stringTable.hpp"
-#include "classfile/systemDictionaryShared.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "logging/log.hpp"
 #include "logging/logMessage.hpp"
@@ -100,7 +100,7 @@ void AOTMappedHeapLoader::init_narrow_oop_decoding(address base, int shift) {
 }
 
 void AOTMappedHeapLoader::fixup_region() {
-  FileMapInfo* mapinfo = FileMapInfo::current_info();
+  FileMapInfo* mapinfo = FileMapInfo::static_input_archive();
   if (is_mapped()) {
     fixup_mapped_heap_region(mapinfo);
   } else if (_loading_failed) {
@@ -184,7 +184,7 @@ void AOTMappedHeapLoader::patch_compressed_embedded_pointers(BitMapView bm,
 
   // Optimization: if dumptime shift is the same as runtime shift, we can perform a
   // quick conversion from "dumptime narrowOop" -> "runtime narrowOop".
-  narrowOop* patching_start = (narrowOop*)region.start() + FileMapInfo::current_info()->mapped_heap()->oopmap_start_pos();
+  narrowOop* patching_start = (narrowOop*)region.start() + FileMapInfo::static_input_archive()->mapped_heap()->oopmap_start_pos();
   if (_narrow_oop_shift == CompressedOops::shift()) {
     uint32_t quick_delta = (uint32_t)rt_encoded_bottom - (uint32_t)dt_encoded_bottom;
     log_info(aot)("heap data relocation quick delta = 0x%x", quick_delta);
@@ -210,7 +210,7 @@ void AOTMappedHeapLoader::patch_embedded_pointers(FileMapInfo* info,
   if (UseCompressedOops) {
     patch_compressed_embedded_pointers(bm, info, region);
   } else {
-    PatchUncompressedEmbeddedPointers patcher((oop*)region.start() + FileMapInfo::current_info()->mapped_heap()->oopmap_start_pos());
+    PatchUncompressedEmbeddedPointers patcher((oop*)region.start() + FileMapInfo::static_input_archive()->mapped_heap()->oopmap_start_pos());
     bm.iterate(&patcher);
   }
 }
@@ -221,7 +221,7 @@ void AOTMappedHeapLoader::patch_embedded_pointers(FileMapInfo* info,
 // the heap object may be loaded at a different address at run time. This structure is used
 // to translate the dump time addresses for all objects in FileMapInfo::space_at(region_index)
 // to their runtime addresses.
-struct LoadedArchiveHeapRegion {
+struct AOTMappedHeapRegion {
   int       _region_index;   // index for FileMapInfo::space_at(index)
   size_t    _region_size;    // number of bytes in this region
   uintptr_t _dumptime_base;  // The dump-time (decoded) address of the first object in this region
@@ -232,7 +232,7 @@ struct LoadedArchiveHeapRegion {
   }
 };
 
-void AOTMappedHeapLoader::init_loaded_heap_relocation(LoadedArchiveHeapRegion* loaded_region) {
+void AOTMappedHeapLoader::init_loaded_heap_relocation(AOTMappedHeapRegion* loaded_region) {
   _dumptime_base = loaded_region->_dumptime_base;
   _dumptime_top = loaded_region->top();
   _runtime_offset = loaded_region->_runtime_offset;
@@ -249,7 +249,7 @@ class AOTMappedHeapLoader::PatchLoadedRegionPointers: public BitMapClosure {
   uintptr_t _top;
 
  public:
-  PatchLoadedRegionPointers(narrowOop* start, LoadedArchiveHeapRegion* loaded_region)
+  PatchLoadedRegionPointers(narrowOop* start, AOTMappedHeapRegion* loaded_region)
     : _start(start),
       _offset(loaded_region->_runtime_offset),
       _base(loaded_region->_dumptime_base),
@@ -270,7 +270,7 @@ class AOTMappedHeapLoader::PatchLoadedRegionPointers: public BitMapClosure {
   }
 };
 
-bool AOTMappedHeapLoader::init_loaded_region(FileMapInfo* mapinfo, LoadedArchiveHeapRegion* loaded_region,
+bool AOTMappedHeapLoader::init_loaded_region(FileMapInfo* mapinfo, AOTMappedHeapRegion* loaded_region,
                                              MemRegion& archive_space) {
   size_t total_bytes = 0;
   FileMapRegion* r = mapinfo->region_at(AOTMetaspace::hp);
@@ -301,7 +301,7 @@ bool AOTMappedHeapLoader::init_loaded_region(FileMapInfo* mapinfo, LoadedArchive
   return true;
 }
 
-bool AOTMappedHeapLoader::load_heap_region_impl(FileMapInfo* mapinfo, LoadedArchiveHeapRegion* loaded_region,
+bool AOTMappedHeapLoader::load_heap_region_impl(FileMapInfo* mapinfo, AOTMappedHeapRegion* loaded_region,
                                                 uintptr_t load_address) {
   uintptr_t bitmap_base = (uintptr_t)mapinfo->map_bitmap_region();
   if (bitmap_base == 0) {
@@ -327,10 +327,10 @@ bool AOTMappedHeapLoader::load_heap_region_impl(FileMapInfo* mapinfo, LoadedArch
   BitMapView bm((BitMap::bm_word_t*)oopmap, r->oopmap_size_in_bits());
 
   if (UseCompressedOops) {
-    PatchLoadedRegionPointers patcher((narrowOop*)load_address + FileMapInfo::current_info()->mapped_heap()->oopmap_start_pos(), loaded_region);
+    PatchLoadedRegionPointers patcher((narrowOop*)load_address + FileMapInfo::static_input_archive()->mapped_heap()->oopmap_start_pos(), loaded_region);
     bm.iterate(&patcher);
   } else {
-    PatchUncompressedEmbeddedPointers patcher((oop*)load_address + FileMapInfo::current_info()->mapped_heap()->oopmap_start_pos(), loaded_region->_runtime_offset);
+    PatchUncompressedEmbeddedPointers patcher((oop*)load_address + FileMapInfo::static_input_archive()->mapped_heap()->oopmap_start_pos(), loaded_region->_runtime_offset);
     bm.iterate(&patcher);
   }
   return true;
@@ -340,7 +340,7 @@ bool AOTMappedHeapLoader::load_heap_region(FileMapInfo* mapinfo) {
   assert(can_load(), "loaded heap for must be supported");
   init_narrow_oop_decoding(mapinfo->narrow_oop_base(), mapinfo->narrow_oop_shift());
 
-  LoadedArchiveHeapRegion loaded_region;
+  AOTMappedHeapRegion loaded_region;
   memset(&loaded_region, 0, sizeof(loaded_region));
 
   MemRegion archive_space;
@@ -359,14 +359,14 @@ bool AOTMappedHeapLoader::load_heap_region(FileMapInfo* mapinfo) {
   return true;
 }
 
-objArrayOop AOTMappedHeapLoader::root_segment(int segment_idx) {
+refArrayOop AOTMappedHeapLoader::root_segment(int segment_idx) {
   if (!CDSConfig::is_using_archive()) {
     assert(CDSConfig::is_dumping_heap() && Thread::current() == (Thread*)VMThread::vm_thread(), "sanity");
   }
 
-  objArrayOop segment = (objArrayOop)_root_segments->at(segment_idx).resolve();
+  oop segment = _root_segments->at(segment_idx).resolve();
   assert(segment != nullptr, "should have been initialized");
-  return segment;
+  return oop_cast<refArrayOop>(segment);
 }
 
 void AOTMappedHeapLoader::get_segment_indexes(int idx, int& seg_idx, int& int_idx) {
@@ -385,7 +385,7 @@ void AOTMappedHeapLoader::get_segment_indexes(int idx, int& seg_idx, int& int_id
          "sanity: %d index maps to %d segment and %d internal", idx, seg_idx, int_idx);
 }
 
-void AOTMappedHeapLoader::add_root_segment(objArrayOop segment_oop) {
+void AOTMappedHeapLoader::add_root_segment(refArrayOop segment_oop) {
   assert(segment_oop != nullptr, "must be");
   assert(is_in_use(), "must be");
   if (_root_segments == nullptr) {
@@ -402,7 +402,7 @@ oop AOTMappedHeapLoader::get_root(int index) {
   assert(!_root_segments->is_empty(), "must have loaded shared heap");
   int seg_idx, int_idx;
   get_segment_indexes(index, seg_idx, int_idx);
-  objArrayOop result = objArrayOop(root_segment(seg_idx));
+  refArrayOop result = root_segment(seg_idx);
   return result->obj_at(int_idx);
 }
 
@@ -455,16 +455,15 @@ void AOTMappedHeapLoader::finish_initialization(FileMapInfo* info) {
 
     // The heap roots are stored in one or more segments that are laid out consecutively.
     // The size of each segment (except for the last one) is max_size_in_{elems,bytes}.
-    HeapRootSegments segments = FileMapInfo::current_info()->mapped_heap()->root_segments();
+    HeapRootSegments segments = FileMapInfo::static_input_archive()->mapped_heap()->root_segments();
     init_root_segment_sizes(segments.max_size_in_elems());
     intptr_t first_segment_addr = bottom + segments.base_offset();
     for (size_t c = 0; c < segments.count(); c++) {
       oop segment_oop = cast_to_oop(first_segment_addr + (c * segments.max_size_in_bytes()));
-      assert(segment_oop->is_objArray(), "Must be");
-      add_root_segment((objArrayOop)segment_oop);
+      add_root_segment(oop_cast<refArrayOop>(segment_oop));
     }
 
-    if (CDSConfig::is_dumping_final_static_archive()) {
+    if (CDSConfig::is_dumping_with_input_archive()) {
       StringTable::move_shared_strings_into_runtime_table();
     }
   }
@@ -528,11 +527,11 @@ void AOTMappedHeapLoader::patch_native_pointers() {
     return;
   }
 
-  FileMapRegion* r = FileMapInfo::current_info()->region_at(AOTMetaspace::hp);
+  FileMapRegion* r = FileMapInfo::static_input_archive()->region_at(AOTMetaspace::hp);
   if (r->mapped_base() != nullptr && r->has_ptrmap()) {
     log_info(aot, heap)("Patching native pointers in heap region");
-    BitMapView bm = FileMapInfo::current_info()->ptrmap_view(AOTMetaspace::hp);
-    PatchNativePointers patcher((Metadata**)r->mapped_base() + FileMapInfo::current_info()->mapped_heap()->ptrmap_start_pos());
+    BitMapView bm = FileMapInfo::static_input_archive()->ptrmap_view(AOTMetaspace::hp);
+    PatchNativePointers patcher((Metadata**)r->mapped_base() + FileMapInfo::static_input_archive()->mapped_heap()->ptrmap_start_pos());
     bm.iterate(&patcher);
   }
 }
@@ -578,6 +577,7 @@ address AOTMappedHeapLoader::heap_region_requested_address(FileMapInfo* info) {
   }
 }
 
+#if INCLUDE_G1GC
 bool AOTMappedHeapLoader::map_heap_region(FileMapInfo* info) {
   if (map_heap_region_impl(info)) {
 #ifdef ASSERT
@@ -693,6 +693,8 @@ bool AOTMappedHeapLoader::map_heap_region_impl(FileMapInfo* info) {
   return true;
 }
 
+#endif // INCLUDE_G1GC
+
 narrowOop AOTMappedHeapLoader::encoded_heap_region_dumptime_address(FileMapInfo* info) {
   assert(CDSConfig::is_using_archive(), "runtime only");
   assert(UseCompressedOops, "sanity");
@@ -715,6 +717,7 @@ void AOTMappedHeapLoader::patch_heap_embedded_pointers(FileMapInfo* info) {
       r->oopmap_size_in_bits());
 }
 
+#if INCLUDE_G1GC
 void AOTMappedHeapLoader::fixup_mapped_heap_region(FileMapInfo* info) {
   if (is_mapped()) {
     assert(!_mapped_heap_memregion.is_empty(), "sanity");
@@ -731,42 +734,25 @@ void AOTMappedHeapLoader::fixup_mapped_heap_region(FileMapInfo* info) {
 void AOTMappedHeapLoader::dealloc_heap_region(FileMapInfo* info) {
   G1CollectedHeap::heap()->dealloc_archive_regions(_mapped_heap_memregion);
 }
+#endif // INCLUDE_G1GC
 
 AOTMapLogger::OopDataIterator* AOTMappedHeapLoader::oop_iterator(FileMapInfo* info, address buffer_start, address buffer_end) {
-  class MappedLoaderOopIterator : public AOTMapLogger::OopDataIterator {
-  private:
-    address _current;
-    address _next;
-
-    address _buffer_start;
-    address _buffer_end;
-    uint64_t _buffer_start_narrow_oop;
-    intptr_t _buffer_to_requested_delta;
-    int _requested_shift;
-
-    size_t _num_root_segments;
-    size_t _num_obj_arrays_logged;
-
+  class MappedLoaderOopIterator : public AOTMappedHeapOopIterator {
   public:
     MappedLoaderOopIterator(address buffer_start,
                             address buffer_end,
-                            uint64_t buffer_start_narrow_oop,
-                            intptr_t buffer_to_requested_delta,
+                            address requested_base,
+                            address requested_start,
                             int requested_shift,
-                            size_t num_root_segments)
-      : _current(nullptr),
-        _next(buffer_start),
-        _buffer_start(buffer_start),
-        _buffer_end(buffer_end),
-        _buffer_start_narrow_oop(buffer_start_narrow_oop),
-        _buffer_to_requested_delta(buffer_to_requested_delta),
-        _requested_shift(requested_shift),
-        _num_root_segments(num_root_segments),
-        _num_obj_arrays_logged(0) {
-    }
+                            size_t num_root_segments) :
+      AOTMappedHeapOopIterator(buffer_start,
+                               buffer_end,
+                               requested_base,
+                               requested_start,
+                               requested_shift,
+                               num_root_segments) {}
 
-
-    AOTMapLogger::OopData capture(address buffered_addr) {
+    AOTMapLogger::OopData capture(address buffered_addr) override {
       oopDesc* raw_oop = (oopDesc*)buffered_addr;
       size_t size = raw_oop->size();
       address requested_addr = buffered_addr + _buffer_to_requested_delta;
@@ -784,62 +770,17 @@ AOTMapLogger::OopDataIterator* AOTMappedHeapLoader::oop_iterator(FileMapInfo* in
                size,
                false };
     }
-
-    bool has_next() override {
-      return _next < _buffer_end;
-    }
-
-    AOTMapLogger::OopData next() override {
-      _current = _next;
-      AOTMapLogger::OopData result = capture(_current);
-      if (result._klass->is_objArray_klass()) {
-        result._is_root_segment = _num_obj_arrays_logged++ < _num_root_segments;
-      }
-      _next = _current + result._size * BytesPerWord;
-      return result;
-    }
-
-    AOTMapLogger::OopData obj_at(narrowOop* addr) override {
-      uint64_t n = (uint64_t)(*addr);
-      if (n == 0) {
-        return null_data();
-      } else {
-        precond(n >= _buffer_start_narrow_oop);
-        address buffer_addr = _buffer_start + ((n - _buffer_start_narrow_oop) << _requested_shift);
-        return capture(buffer_addr);
-      }
-    }
-
-    AOTMapLogger::OopData obj_at(oop* addr) override {
-      address requested_value = cast_from_oop<address>(*addr);
-      if (requested_value == nullptr) {
-        return null_data();
-      } else {
-        address buffer_addr = requested_value - _buffer_to_requested_delta;
-        return capture(buffer_addr);
-      }
-    }
-
-    GrowableArrayCHeap<AOTMapLogger::OopData, mtClass>* roots() override {
-      return new GrowableArrayCHeap<AOTMapLogger::OopData, mtClass>();
-    }
   };
 
   FileMapRegion* r = info->region_at(AOTMetaspace::hp);
   address requested_base = UseCompressedOops ? (address)info->narrow_oop_base() : heap_region_requested_address(info);
-  address requested_start = requested_base + r->mapping_offset();
+  address requested_start = ArchiveUtils::offset_from_requested_base(requested_base, r->mapping_offset());
   int requested_shift = info->narrow_oop_shift();
-  intptr_t buffer_to_requested_delta = requested_start - buffer_start;
-  uint64_t buffer_start_narrow_oop = 0xdeadbeed;
-  if (UseCompressedOops) {
-    buffer_start_narrow_oop = (uint64_t)(pointer_delta(requested_start, requested_base, 1)) >> requested_shift;
-    assert(buffer_start_narrow_oop < 0xffffffff, "sanity");
-  }
 
   return new MappedLoaderOopIterator(buffer_start,
                                      buffer_end,
-                                     buffer_start_narrow_oop,
-                                     buffer_to_requested_delta,
+                                     requested_base,
+                                     requested_start,
                                      requested_shift,
                                      info->mapped_heap()->root_segments().count());
 }

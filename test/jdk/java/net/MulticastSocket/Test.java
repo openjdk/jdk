@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,7 +141,7 @@ public class Test {
         doTest("224.80.80.80");
 
         // If IPv6 is enabled perform multicast tests with various scopes
-        if (nc.hasTestableIPv6Address()) {
+        if (nc.ip6MulticastInterfaces().findAny().isPresent()) {
             doTest("ff01::a");
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,7 +97,7 @@ TEST_VM(arrayOopDesc, base_offset) {
       EXPECT_EQ(arrayOopDesc::base_offset_in_bytes(T_OBJECT), 16);
       EXPECT_EQ(arrayOopDesc::base_offset_in_bytes(T_ARRAY),  16);
     }
-  } else if (UseCompressedClassPointers) {
+  } else {
     EXPECT_EQ(arrayOopDesc::base_offset_in_bytes(T_BOOLEAN), 16);
     EXPECT_EQ(arrayOopDesc::base_offset_in_bytes(T_BYTE),    16);
     EXPECT_EQ(arrayOopDesc::base_offset_in_bytes(T_SHORT),   16);
@@ -108,22 +108,6 @@ TEST_VM(arrayOopDesc, base_offset) {
     EXPECT_EQ(arrayOopDesc::base_offset_in_bytes(T_DOUBLE),  16);
     EXPECT_EQ(arrayOopDesc::base_offset_in_bytes(T_OBJECT),  16);
     EXPECT_EQ(arrayOopDesc::base_offset_in_bytes(T_ARRAY),   16);
-  } else {
-    EXPECT_EQ(arrayOopDesc::base_offset_in_bytes(T_BOOLEAN), 20);
-    EXPECT_EQ(arrayOopDesc::base_offset_in_bytes(T_BYTE),    20);
-    EXPECT_EQ(arrayOopDesc::base_offset_in_bytes(T_SHORT),   20);
-    EXPECT_EQ(arrayOopDesc::base_offset_in_bytes(T_CHAR),    20);
-    EXPECT_EQ(arrayOopDesc::base_offset_in_bytes(T_INT),     20);
-    EXPECT_EQ(arrayOopDesc::base_offset_in_bytes(T_FLOAT),   20);
-    EXPECT_EQ(arrayOopDesc::base_offset_in_bytes(T_LONG),    24);
-    EXPECT_EQ(arrayOopDesc::base_offset_in_bytes(T_DOUBLE),  24);
-    if (UseCompressedOops) {
-      EXPECT_EQ(arrayOopDesc::base_offset_in_bytes(T_OBJECT), 20);
-      EXPECT_EQ(arrayOopDesc::base_offset_in_bytes(T_ARRAY),  20);
-    } else {
-      EXPECT_EQ(arrayOopDesc::base_offset_in_bytes(T_OBJECT), 24);
-      EXPECT_EQ(arrayOopDesc::base_offset_in_bytes(T_ARRAY),  24);
-    }
   }
 #else
   EXPECT_EQ(arrayOopDesc::base_offset_in_bytes(T_BOOLEAN), 12);

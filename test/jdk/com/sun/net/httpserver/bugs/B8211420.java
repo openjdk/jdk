@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,15 +21,6 @@
  * questions.
  */
 
-/**
- * @test
- * @bug 8211420
- * @library /test/lib
- * @run main/othervm B8211420
- * @run main/othervm -Djava.net.preferIPv6Addresses=true B8211420
- * @summary
- */
-
 import com.sun.net.httpserver.*;
 
 import java.util.*;
@@ -41,14 +32,29 @@ import java.net.*;
 import jdk.test.lib.net.URIBuilder;
 import static com.sun.net.httpserver.HttpExchange.RSPBODY_EMPTY;
 
+/*
+ * @test
+ * @bug 8211420
+ * @library /test/lib
+ * @comment We use othervm because this test configures logging handlers
+ *          for the system wide "com.sun.net.httpserver" logger
+ * @run main/othervm ${test.main.class}
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true ${test.main.class}
+ * @summary
+ */
 public class B8211420 {
 
-    public static void main(String[] args) throws Exception {
-        Logger logger = Logger.getLogger("com.sun.net.httpserver");
-        ConsoleHandler c = new ConsoleHandler();
+    private static final Logger logger = Logger.getLogger("com.sun.net.httpserver");
+
+    private static void setupLogging() {
+        final ConsoleHandler c = new ConsoleHandler();
         c.setLevel(Level.WARNING);
         logger.addHandler(c);
         logger.setLevel(Level.WARNING);
+    }
+
+    public static void main(String[] args) throws Exception {
+        setupLogging(); // merely for debugging
         Handler handler = new Handler();
         InetAddress loopback = InetAddress.getLoopbackAddress();
         InetSocketAddress addr = new InetSocketAddress(loopback, 0);

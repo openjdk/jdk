@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,7 +102,9 @@ abstract class MessageToken_v2 extends Krb5Token {
     private static final int TOKEN_ID_POS = 0;
     private static final int TOKEN_FLAG_POS = 2;
     private static final int TOKEN_EC_POS = 4;
-    private static final int TOKEN_RRC_POS = 6;
+
+    // Accessed by CipherHelper to normalize RRC
+    public static final int TOKEN_RRC_POS = 6;
 
     /**
      * The size of the random confounder used in a WrapToken.
@@ -235,7 +237,14 @@ abstract class MessageToken_v2 extends Krb5Token {
             }
 
             if (tokenId == Krb5Token.WRAP_ID_v2) {
-                rotate();
+                // According to RFC 4121, we should rotate by RRC. However, Windows
+                // rotates by RRC + EC in DCE-style tokens, and MIT krb5 follows it.
+                // (https://github.com/krb5/krb5/blob/07818f1/src/lib/gssapi/krb5/k5sealv3iov.c#L119)
+                // Non-DCE-style tokens observed from Windows shows EC = 0, and normal
+                // MIT krb5 build hardcoded EC = 0 for non-DCE-style tokens.
+                // (https://github.com/krb5/krb5/blob/07818f1/src/lib/gssapi/krb5/k5sealv3.c#L130),
+                // In this case, adding EC does not change the effective rotation.
+                rotate(prop.getPrivacy() ? (rrc + ec) : rrc);
             }
 
             if (tokenId == Krb5Token.MIC_ID_v2 ||
@@ -374,13 +383,13 @@ abstract class MessageToken_v2 extends Krb5Token {
      * Our implementation does not do any rotates when sending, only
      * when receiving, we rotate left as per the RRC count, to revert it.
      */
-    private void rotate() {
-        if (rrc % tokenDataLen != 0) {
-           rrc = rrc % tokenDataLen;
+    private void rotate(int rotateNum) {
+        rotateNum = rotateNum % tokenDataLen;
+        if (rotateNum != 0) {
            byte[] newBytes = new byte[tokenDataLen];
 
-           System.arraycopy(tokenData, rrc, newBytes, 0, tokenDataLen-rrc);
-           System.arraycopy(tokenData, 0, newBytes, tokenDataLen-rrc, rrc);
+           System.arraycopy(tokenData, rotateNum, newBytes, 0, tokenDataLen-rotateNum);
+           System.arraycopy(tokenData, 0, newBytes, tokenDataLen-rotateNum, rotateNum);
 
            tokenData = newBytes;
         }
@@ -488,6 +497,15 @@ abstract class MessageToken_v2 extends Krb5Token {
 
     protected final byte[] getTokenHeader() {
         return (tokenHeader.getBytes());
+    }
+
+    /**
+     * Returns the EC value for the message token.
+     * @return the EC value
+     * @see CipherHelper#decryptData(WrapToken_v2, byte[], int, int, byte[], int, int)
+     */
+    public final int getEc() {
+        return ec;
     }
 
     // ******************************************* //

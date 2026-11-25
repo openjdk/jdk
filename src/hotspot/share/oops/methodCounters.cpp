@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,14 +87,6 @@ void MethodCounters::metaspace_pointers_do(MetaspaceClosure* it) {
   it->push(&_method_training_data);
 }
 
-#if INCLUDE_CDS
-void MethodCounters::remove_unshareable_info() {
-}
-void MethodCounters::restore_unshareable_info(TRAPS) {
-  _method_training_data = method_training_data_sentinel();
-}
-#endif // INCLUDE_CDS
-
 void MethodCounters::print_on(outputStream* st) const {
   assert(is_methodCounters(), "should be method counters");
   st->print("method counters");
@@ -110,9 +102,9 @@ void MethodCounters::print_data_on(outputStream* st) const {
   st->print_cr("  - invoke_mask: %d",        _invoke_mask);
   st->print_cr("  - backedge_mask: %d",      _backedge_mask);
   st->print_cr("  - prev_event_count: %d",   _prev_event_count);
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
   st->print_cr("  - interpreter_throwout_count: %u", _interpreter_throwout_count);
-#endif
+#endif // COMPILER2
 #if INCLUDE_JVMTI
   st->print_cr("  - number_of_breakpoints: %u", _number_of_breakpoints);
 #endif

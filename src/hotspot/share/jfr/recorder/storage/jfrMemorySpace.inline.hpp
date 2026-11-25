@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -641,9 +641,13 @@ inline bool ReinitializeAllReleaseRetiredOp<Mspace, FromList>::process(typename 
 template <typename Node>
 inline void assert_migration_state(const Node* old, const Node* new_node, size_t used, size_t requested) {
   assert(old != nullptr, "invariant");
-  assert(new_node != nullptr, "invariant");
+  assert(old->acquired_by_self(), "invariant");
+  assert(!old->retired(), "invariant");
   assert(old->pos() >= old->start(), "invariant");
   assert(old->pos() + used <= old->end(), "invariant");
+  assert(new_node != nullptr, "invariant");
+  assert(new_node->acquired_by_self(), "invariant");
+  assert(!new_node->retired(), "invariant");
   assert(new_node->free_size() >= (used + requested), "invariant");
 }
 #endif // ASSERT

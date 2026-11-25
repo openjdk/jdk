@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -301,7 +301,7 @@ JVM_Interrupt(JNIEnv *env, jobject thread);
 JNIEXPORT jboolean JNICALL
 JVM_HoldsLock(JNIEnv *env, jclass threadClass, jobject obj);
 
-JNIEXPORT jobject JNICALL
+JNIEXPORT jobjectArray JNICALL
 JVM_GetStackTrace(JNIEnv *env, jobject thread);
 
 JNIEXPORT jobject JNICALL
@@ -1084,6 +1084,30 @@ JVM_InitAgentProperties(JNIEnv *env, jobject agent_props);
 
 JNIEXPORT jstring JNICALL
 JVM_GetTemporaryDirectory(JNIEnv *env);
+
+JNIEXPORT jarray JNICALL
+JVM_CopyOfSpecialArray(JNIEnv *env, jarray orig, jint from, jint to);
+
+JNIEXPORT jarray JNICALL
+JVM_NewNullRestrictedNonAtomicArray(JNIEnv *env, jclass elmClass, jint len, jobject initVal);
+
+JNIEXPORT jarray JNICALL
+JVM_NewNullRestrictedAtomicArray(JNIEnv *env, jclass elmClass, jint len, jobject initVal);
+
+JNIEXPORT jarray JNICALL
+JVM_NewNullableAtomicArray(JNIEnv *env, jclass elmClass, jint len);
+
+JNIEXPORT jarray JNICALL
+JVM_NewReferenceArray(JNIEnv *env, jclass elmClass, jint len);
+
+JNIEXPORT jboolean JNICALL
+JVM_IsFlatArray(JNIEnv *env, jarray array);
+
+JNIEXPORT jboolean JNICALL
+JVM_IsNullRestrictedArray(JNIEnv *env, jarray array);
+
+JNIEXPORT jboolean JNICALL
+JVM_IsAtomicArray(JNIEnv *env, jarray array);
 
 /* Generics reflection support.
  *

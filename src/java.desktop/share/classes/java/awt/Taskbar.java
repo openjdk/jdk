@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -184,6 +184,8 @@ public class Taskbar {
         }
     }
 
+    private static volatile Taskbar taskbar;
+
     /**
      * Returns the {@code Taskbar} instance of the current
      * taskbar context.  On some platforms the Taskbar API may not be
@@ -205,12 +207,8 @@ public class Taskbar {
                                                     "supported on the current platform");
         }
 
-        sun.awt.AppContext context = sun.awt.AppContext.getAppContext();
-        Taskbar taskbar = (Taskbar)context.get(Taskbar.class);
-
         if (taskbar == null) {
             taskbar = new Taskbar();
-            context.put(Taskbar.class, taskbar);
         }
 
         return taskbar;

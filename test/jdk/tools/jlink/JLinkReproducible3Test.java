@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  */
 
 import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.util.FileUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -40,6 +41,7 @@ import java.util.Optional;
  *          jdk.unsupported
  *          jdk.charsets
  * @library /test/lib
+ * @build jdk.test.lib.util.FileUtils
  * @run main JLinkReproducible3Test
  */
 public class JLinkReproducible3Test {
@@ -48,38 +50,36 @@ public class JLinkReproducible3Test {
         Path image1 = Paths.get("./image1");
         Path image2 = Paths.get("./image2");
 
-        Path copyJdk1Dir = Path.of("./copy-jdk1-tmpdir");
-        Files.createDirectory(copyJdk1Dir);
-
-        Path copyJdk2Dir = Path.of("./copy-jdk2-tmpdir");
-        Files.createDirectory(copyJdk2Dir);
-
         Path jdkTestDir = Path.of(
                 Optional.of(
                         System.getProperty("test.jdk"))
                         .orElseThrow(() -> new RuntimeException("Couldn't load JDK Test Dir"))
         );
 
-        copyJDK(jdkTestDir, copyJdk1Dir);
-        copyJDK(jdkTestDir, copyJdk2Dir);
-
-        Path copiedJlink1 = Optional.of(
-                Paths.get(copyJdk1Dir.toString(), "bin", "jlink"))
-                .orElseThrow(() -> new RuntimeException("Unable to load copied jlink")
-                );
-
-        Path copiedJlink2 = Optional.of(
-                Paths.get(copyJdk2Dir.toString(), "bin", "jlink"))
-                .orElseThrow(() -> new RuntimeException("Unable to load copied jlink")
-                );
-
-        runCopiedJlink(copiedJlink1.toString(), "--add-modules", "java.base,jdk.management,jdk.unsupported,jdk.charsets", "--output", image1.toString());
-        runCopiedJlink(copiedJlink2.toString(), "--add-modules", "java.base,jdk.management,jdk.unsupported,jdk.charsets", "--output", image2.toString());
+        // Link each image from its own copy of the JDK placed at a distinct
+        // location. Copy, link, then delete the copy before creating the next
+        // one so that at most one JDK copy exists on disk at a time.
+        linkFromCopy(jdkTestDir, Path.of("./copy-jdk1-tmpdir"), image1);
+        linkFromCopy(jdkTestDir, Path.of("./copy-jdk2-tmpdir"), image2);
 
         long mismatch = Files.mismatch(image1.resolve("lib").resolve("modules"), image2.resolve("lib").resolve("modules"));
         if (mismatch != -1L) {
             throw new RuntimeException("jlink producing inconsistent result in modules. Mismatch in modules file occurred at byte position " + mismatch);
         }
+    }
+
+    private static void linkFromCopy(Path jdkTestDir, Path copyJdkDir, Path image) throws Exception {
+        Files.createDirectory(copyJdkDir);
+        copyJDK(jdkTestDir, copyJdkDir);
+
+        Path copiedJlink = Paths.get(copyJdkDir.toString(), "bin", "jlink");
+        runCopiedJlink(copiedJlink.toString(), "--add-modules",
+                "java.base,jdk.management,jdk.unsupported,jdk.charsets",
+                "--output", image.toString());
+
+        // The copied JDK was only needed to run jlink; free the disk space
+        // before creating the next copy.
+        FileUtils.deleteFileTreeWithRetry(copyJdkDir);
     }
 
     private static void runCopiedJlink(String... args) throws Exception {

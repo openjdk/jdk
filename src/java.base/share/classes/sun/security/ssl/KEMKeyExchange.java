@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ import java.security.spec.NamedParameterSpec;
 import javax.crypto.SecretKey;
 
 import sun.security.ssl.NamedGroup.NamedGroupSpec;
+import sun.security.util.KeyUtil;
 import sun.security.x509.X509Key;
 
 /**
@@ -120,10 +121,7 @@ final class KEMKeyExchange {
                 // For KEM: This receiver side (client) generates a key pair.
                 algName = ((NamedParameterSpec)namedGroup.keAlgParamSpec).
                         getName();
-                Provider provider = namedGroup.getProvider();
-                KeyPairGenerator kpg = (provider != null) ?
-                        KeyPairGenerator.getInstance(algName, provider) :
-                        KeyPairGenerator.getInstance(algName);
+                KeyPairGenerator kpg = KeyPairGenerator.getInstance(algName);
 
                 kpg.initialize(namedGroup.keAlgParamSpec, random);
                 KeyPair kp = kpg.generateKeyPair();
@@ -140,10 +138,20 @@ final class KEMKeyExchange {
         public byte[] encode() {
             if (publicKey instanceof X509Key xk) {
                 return xk.getKeyAsBytes();
-            } else if (publicKey instanceof Hybrid.PublicKeyImpl hk) {
-                return hk.getEncoded();
+            } else {
+                String format = publicKey.getFormat();
+                if ("RAW".equalsIgnoreCase(format)) {
+                    return publicKey.getEncoded();
+                } else if ("X.509".equalsIgnoreCase(format)) {
+                    try {
+                        return KeyUtil.x509ToRaw(publicKey.getEncoded());
+                    } catch (IOException e) {
+                        throw new ProviderException("Invalid X.509 format");
+                    }
+                } else {
+                    throw new ProviderException("Unknown format " + format);
+                }
             }
-            throw new ProviderException("Unsupported key type: " + publicKey);
         }
 
         // Package-private
@@ -207,7 +215,7 @@ final class KEMKeyExchange {
                                 ng.equals(kcred.namedGroup)) {
                             String name = ((NamedParameterSpec)
                                     ng.keAlgParamSpec).getName();
-                            return new KAKeyDerivation(name, ng, context,
+                            return new KAKeyDerivation(name, context,
                                     kposs.getPrivateKey(), null,
                                     kcred.getKeyShare());
                         }

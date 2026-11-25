@@ -1,0 +1,39 @@
+/* Javac reports an error when a value class declares a method overriding
+ * Object::finalize. The VM must still handle such class files correctly, so
+ * this class is supplied as jasm. It corresponds to the following source:
+ *
+ * abstract value class MyAbstractVal {
+ *     static volatile boolean finalizerWasCalled = false;
+ *     int i = 0;
+ *
+ *     @SuppressWarnings("deprecation")
+ *     protected void finalize() {
+ *         finalizerWasCalled = true;
+ *     }
+ * }
+ */
+abstract class MyAbstractVal version 72:65535 {
+    static volatile Field finalizerWasCalled:Z;
+    final strict Field i:I = 0;
+
+    Method "<init>":"()V" stack 2 locals 1 {
+        aload_0;
+        iconst_0;
+        putfield Field i:I;
+        aload_0;
+        invokespecial Method java/lang/Object."<init>":"()V";
+        return;
+    }
+
+    protected Method finalize:"()V" stack 1 locals 1 {
+        iconst_1;
+        putstatic Field finalizerWasCalled:Z;
+        return;
+    }
+
+    static Method "<clinit>":"()V" stack 1 locals 0 {
+        iconst_0;
+        putstatic Field finalizerWasCalled:Z;
+        return;
+    }
+}

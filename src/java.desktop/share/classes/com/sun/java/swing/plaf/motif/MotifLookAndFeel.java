@@ -537,6 +537,10 @@ public class MotifLookAndFeel extends BasicLookAndFeel
 
         @SuppressWarnings("deprecation")
         final int metaMask = KeyEvent.META_MASK;
+        Object commonInputMap = new UIDefaults.LazyInputMap(new Object[] {
+                "SPACE", "pressed",
+                "released SPACE", "released"
+        });
         Object[] defaults = {
 
             "Desktop.background", table.get("desktop"),
@@ -593,20 +597,13 @@ public class MotifLookAndFeel extends BasicLookAndFeel
             "Button.foreground", table.get("controlText"),
             "Button.select", table.get("controlLightShadow"),
             "Button.font", dialogPlain12,
-            "Button.focusInputMap", new UIDefaults.LazyInputMap(new Object[] {
-                          "SPACE", "pressed",
-                 "released SPACE", "released"
-              }),
+            "Button.focusInputMap", commonInputMap,
 
             "CheckBox.textIconGap", 8,
             "CheckBox.margin", new InsetsUIResource(4, 2, 4, 2),
             "CheckBox.icon", checkBoxIcon,
             "CheckBox.focus", table.get("activeCaptionBorder"),
-            "CheckBox.focusInputMap",
-               new UIDefaults.LazyInputMap(new Object[] {
-                            "SPACE", "pressed",
-                   "released SPACE", "released"
-                 }),
+            "CheckBox.focusInputMap", commonInputMap,
 
             "RadioButton.margin", new InsetsUIResource(4, 2, 4, 2),
             "RadioButton.textIconGap", 8,
@@ -615,22 +612,14 @@ public class MotifLookAndFeel extends BasicLookAndFeel
             "RadioButton.icon", radioButtonIcon,
             "RadioButton.focus", table.get("activeCaptionBorder"),
             "RadioButton.icon", radioButtonIcon,
-            "RadioButton.focusInputMap",
-               new UIDefaults.LazyInputMap(new Object[] {
-                          "SPACE", "pressed",
-                 "released SPACE", "released"
-              }),
+            "RadioButton.focusInputMap", commonInputMap,
 
             "ToggleButton.border", toggleButtonBorder,
             "ToggleButton.background", table.get("control"),
             "ToggleButton.foreground", table.get("controlText"),
             "ToggleButton.focus", table.get("controlText"),
             "ToggleButton.select", table.get("controlLightShadow"),
-            "ToggleButton.focusInputMap",
-              new UIDefaults.LazyInputMap(new Object[] {
-                            "SPACE", "pressed",
-                   "released SPACE", "released"
-                }),
+            "ToggleButton.focusInputMap", commonInputMap,
 
             // Menus
             "Menu.border", menuMarginBorder,

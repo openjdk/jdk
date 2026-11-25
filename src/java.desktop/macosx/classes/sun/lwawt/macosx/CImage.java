@@ -83,7 +83,6 @@ public final class CImage extends CFRetainedResource {
     }
 
     public static final class Creator {
-        CTrayIcon.IconObserver observer;
 
         Creator() { }
 
@@ -131,23 +130,37 @@ public final class CImage extends CFRetainedResource {
             return createImageUsingNativeSize(nativeCreateNSImageFromImageName(name));
         }
 
-        private static int[] imageToArray(Image image, boolean prepareImage, CTrayIcon.IconObserver observer) {
+        private static boolean waitUntilImageLoaded(Image image) {
+            if (image instanceof BufferedImage) {
+                return true;
+            }
+
+            final MediaTracker mt = new MediaTracker(new Label());
+            final int id = 0;
+            mt.addImage(image, id);
+
+            try {
+                mt.waitForID(id);
+            } catch (InterruptedException e) {
+                return false;
+            }
+
+            if (mt.isErrorID(id)) {
+                return false;
+            }
+
+            if (image.getWidth(null) < 0 || image.getHeight(null) < 0) {
+                return false;
+            }
+
+            return true;
+        }
+
+        private static BufferedImage getAsBufferedImage(Image image, boolean prepareImage, CTrayIcon.IconObserver observer) {
             if (image == null) return null;
 
-            if (prepareImage && !(image instanceof BufferedImage)) {
-                final MediaTracker mt = new MediaTracker(new Label());
-                final int id = 0;
-                mt.addImage(image, id);
-
-                try {
-                    mt.waitForID(id);
-                } catch (InterruptedException e) {
-                    return null;
-                }
-
-                if (mt.isErrorID(id)) {
-                    return null;
-                }
+            if (prepareImage && !waitUntilImageLoaded(image)) {
+                return null;
             }
 
             int w = image.getWidth(null);
@@ -163,17 +176,42 @@ public final class CImage extends CFRetainedResource {
             g2.drawImage(image, 0, 0, observer);
             g2.dispose();
 
-            return ((DataBufferInt)bimg.getRaster().getDataBuffer()).getData();
+            return bimg;
         }
 
-        public byte[] getPlatformImageBytes(final Image image) {
-            int[] buffer = imageToArray(image, false, null);
+        public Image getOpaqueImage(Image image) {
+            if (image instanceof BufferedImage bufferedImage) {
+                if (!bufferedImage.getColorModel().hasAlpha()) {
+                    return bufferedImage;
+                }
+            }
 
-            if (buffer == null) {
+            if (!waitUntilImageLoaded(image)) {
                 return null;
             }
 
-            return nativeGetPlatformImageBytes(buffer, image.getWidth(null), image.getHeight(null));
+            int w = image.getWidth(null);
+            int h = image.getHeight(null);
+
+            BufferedImage bimg = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
+            Graphics2D g2 = bimg.createGraphics();
+            g2.setColor(Color.WHITE);
+            g2.fillRect(0, 0, w, h);
+            g2.drawImage(image, 0, 0, null);
+            g2.dispose();
+
+            return bimg;
+        }
+
+        public byte[] getPlatformImageBytes(final Image image) {
+            BufferedImage bimg = getAsBufferedImage(image, false, null);
+
+            if (bimg == null) {
+                return null;
+            }
+            int[] buffer = ((DataBufferInt)bimg.getRaster().getDataBuffer()).getData();
+
+            return nativeGetPlatformImageBytes(buffer, bimg.getWidth(), bimg.getHeight());
         }
 
         /**
@@ -205,11 +243,13 @@ public final class CImage extends CFRetainedResource {
                 return createFromImages(resolutionVariants, prepareImage);
             }
 
-            int[] buffer = imageToArray(image, prepareImage, observer);
-            if (buffer == null) {
+            BufferedImage bimg = getAsBufferedImage(image, prepareImage, observer);
+
+            if (bimg == null) {
                 return null;
             }
-            return new CImage(nativeCreateNSImageFromArray(buffer, image.getWidth(null), image.getHeight(null)));
+            int[] buffer = ((DataBufferInt)bimg.getRaster().getDataBuffer()).getData();
+            return new CImage(nativeCreateNSImageFromArray(buffer, bimg.getWidth(), bimg.getHeight()));
         }
 
         public CImage createFromImages(final List<Image> images) {
@@ -230,13 +270,14 @@ public final class CImage extends CFRetainedResource {
             num = 0;
 
             for (final Image img : images) {
-                buffers[num] = imageToArray(img, prepareImage, null);
-                if (buffers[num] == null) {
+                BufferedImage bimg = getAsBufferedImage(img, prepareImage, null);
+                if (bimg == null) {
                     // Unable to process the image
                     continue;
                 }
-                w[num] = img.getWidth(null);
-                h[num] = img.getHeight(null);
+                buffers[num] = ((DataBufferInt)bimg.getRaster().getDataBuffer()).getData();
+                w[num] = bimg.getWidth();
+                h[num] = bimg.getHeight();
                 num++;
             }
 
