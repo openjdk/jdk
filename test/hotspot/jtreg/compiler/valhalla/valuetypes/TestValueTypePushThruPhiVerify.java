@@ -25,8 +25,8 @@ import java.util.Optional;
 
 /*
  * @test
- * @bug 8394981 	
- * @summary [Valhalla] C2: assert(after.size() + vts_to_skip == _nodes_from_phi.size()) failed 
+ * @bug 8394981
+ * @summary [Valhalla] C2: assert(after.size() + vts_to_skip == _nodes_from_phi.size()) failed
  * @enablePreview
  * @run main/othervm -Xbatch -XX:+UnlockExperimentalVMOptions -XX:PerMethodTrapLimit=0
  *                   -XX:PerMethodSpecTrapLimit=0 -XX:+StressIGVN -XX:+StressIncrementalInlining
@@ -49,4 +49,3 @@ public class TestValueTypePushThruPhiVerify {
         }
     }
 }
-
