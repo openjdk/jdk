@@ -653,6 +653,11 @@ method name getInstance descriptor (Ljava/lang/String;)Ljava/security/Signature;
 method name getInstance descriptor (Ljava/lang/String;Ljava/lang/String;)Ljava/security/Signature; thrownTypes java/security/NoSuchAlgorithmException,java/security/NoSuchProviderException flags 9 runtimeAnnotations @Ljdk/internal/reflect/CallerSensitive;
 method name getInstance descriptor (Ljava/lang/String;Ljava/security/Provider;)Ljava/security/Signature; thrownTypes java/security/NoSuchAlgorithmException flags 9 runtimeAnnotations @Ljdk/internal/reflect/CallerSensitive;
 
+class name java/security/cert/X509Certificate
+method name checkValidity descriptor (Ljava/time/Instant;)V thrownTypes java/security/cert/CertificateExpiredException,java/security/cert/CertificateNotYetValidException flags 1
+method name getNotBeforeInstant descriptor ()Ljava/time/Instant; flags 1
+method name getNotAfterInstant descriptor ()Ljava/time/Instant; flags 1
+
 class name java/util/Objects
 method name hasIdentity descriptor (Ljava/lang/Object;)Z flags 9 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;VALUE_OBJECTS;,reflective=Ztrue)
 method name requireIdentity descriptor (Ljava/lang/Object;)Ljava/lang/Object; flags 9 signature <T:Ljava/lang/Object;>(TT;)TT; classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;VALUE_OBJECTS;,reflective=Ztrue) runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
