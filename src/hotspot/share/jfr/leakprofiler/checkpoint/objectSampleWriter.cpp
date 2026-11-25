@@ -661,7 +661,7 @@ void ObjectSampleWriter::add_logical_reference_chain(const StoredEdge* edge,
   const oop owner = edge->reference_owner();
   if (owner->is_flatArray()) {
     const flatArrayOop array = static_cast<flatArrayOop>(owner);
-    const traceid value_id = ++EdgeStore::_edge_id_counter;
+    const traceid value_id = EdgeStore::allocate_id();
     add_logical_value(value_id, logical_ids.at(logical_index++), array->klass()->element_klass());
     add_logical_reference(value_id, parent_id, 0, get_array_info_id(*edge, value_id));
     parent_id = value_id;
@@ -670,7 +670,7 @@ void ObjectSampleWriter::add_logical_reference_chain(const StoredEdge* edge,
   for (int i = 0; i < fields.length() - 1; ++i) {
     const EdgeField& field = fields.at(i);
     assert(field._value_klass != nullptr, "invariant");
-    const traceid value_id = ++EdgeStore::_edge_id_counter;
+    const traceid value_id = EdgeStore::allocate_id();
     add_logical_value(value_id, logical_ids.at(logical_index++), field._value_klass);
     add_logical_reference(value_id, parent_id, get_field_info_id(field), 0);
     parent_id = value_id;
