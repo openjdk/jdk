@@ -1056,6 +1056,15 @@ void AOTHeap::scan_java_mirror(oop orig_mirror) {
   }
 }
 
+// During store phase of AOT assembly, embedded method appendices generated for VarHandles and MethodHandles method calls,
+// which are supposed to be represented by index in heap roots array, are being looked up using AOTHeap::get_root_index.
+// Absence of them in heap roots table, even while being archived, results in a failure to store any AOT compiled code
+// containing the code fragment (JDK-8398128)
+//
+// This method ensures their presence in heap roots table by walking classes method entries, and, for each one
+// containing an appendix, looks up their appendix in resolved references array produced by
+// prepare_resolved_references_for_archiving. Looking up oop from result of that method ensures only
+// oops it deemed archivable can ever become heap roots
 void AOTHeap::append_appendix_roots(InstanceKlass *orig_ik, refArrayOop rr) {
   Array<ResolvedMethodEntry> *method_entries = orig_ik->constants()->cache()->resolved_method_entries();
   if (method_entries != nullptr) {
