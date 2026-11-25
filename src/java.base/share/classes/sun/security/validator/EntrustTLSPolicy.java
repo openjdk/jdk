@@ -40,12 +40,6 @@ final class EntrustTLSPolicy {
 
     // SHA-256 certificate fingerprints of distrusted roots
     private static final Set<String> FINGERPRINTS = Set.of(
-        // cacerts alias: entrustevca
-        // DN: CN=Entrust Root Certification Authority,
-        //     OU=(c) 2006 Entrust, Inc.,
-        //     OU=www.entrust.net/CPS is incorporated by reference,
-        //     O=Entrust, Inc., C=US
-        "73C176434F1BC6D5ADF45B0E76E727287C8DE57616C1E6E6141A2B2CBC7D8E4C",
         // cacerts alias: entrustrootcaec1
         // DN: CN=Entrust Root Certification Authority - EC1,
         //     OU=(c) 2012 Entrust, Inc. - for authorized use only,
