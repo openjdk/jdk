@@ -1157,6 +1157,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="d0" type="fwidth">пуна ширина</type>
 			<type key="d0" type="hwidth">пола ширине</type>
 			<type key="d0" type="npinyin" draft="contributed">Нумеричка</type>
+			<type key="hc" type="c12">12-сатни систем</type>
+			<type key="hc" type="c24">24-сатни систем</type>
 			<type key="hc" type="h11">12-сатни систем (0–11)</type>
 			<type key="hc" type="h12">12-сатни систем (1–12)</type>
 			<type key="hc" type="h23">24-сатни систем (0–23)</type>
@@ -1668,6 +1670,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yw" count="other">'седмица' w 'година' Y</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="mixed" draft="provisional">{0} – {1}</intervalFormatRange>
+							<intervalFormatRange type="non-numeric" draft="provisional">{0}–{1}</intervalFormatRange>
+							<intervalFormatRange type="numeric" draft="provisional">{0}–{1}</intervalFormatRange>
+						</intervalFormatRanges>
 						<intervalFormatItem id="h">
 							<greatestDifference id="a">hh a – hh a</greatestDifference>
 							<greatestDifference id="h">hh–hh a</greatestDifference>
@@ -1884,238 +1891,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<calendar type="japanese">
 				<eras>
 					<eraAbbr>
-						<era type="0">Таика (645–650)</era>
-						<era type="1">Хакучи (650–671)</era>
-						<era type="2">Хакухо (672–686)</era>
-						<era type="3">Шучо (686–701)</era>
-						<era type="4">Таихо (701–704)</era>
-						<era type="5">Кеиун (704–708)</era>
-						<era type="6">Вадо (708–715)</era>
-						<era type="7">Реики (715–717)</era>
-						<era type="8">Јоро (717–724)</era>
-						<era type="9">Јинки (724–729)</era>
-						<era type="10">Темпио (729–749)</era>
-						<era type="11">Темпио-кампо (749-749)</era>
-						<era type="12">Темпио-шохо (749-757)</era>
-						<era type="13">Темпио-хођи (757-765)</era>
-						<era type="14">Темпо-ђинго (765-767)</era>
-						<era type="15">Ђинго-кеиун (767-770)</era>
-						<era type="16">Хоки (770–780)</era>
-						<era type="17">Тен-о (781-782)</era>
-						<era type="18">Енрјаку (782–806)</era>
-						<era type="19">Даидо (806–810)</era>
-						<era type="20">Конин (810–824)</era>
-						<era type="21">Тенчо (824–834)</era>
-						<era type="22">Шова (834–848)</era>
-						<era type="23">Кајо (848–851)</era>
-						<era type="24">Нињу (851–854)</era>
-						<era type="25">Саико (854–857)</era>
-						<era type="26">Тенан (857–859)</era>
-						<era type="27">Јоган (859–877)</era>
-						<era type="28">Генкеи (877–885)</era>
-						<era type="29">Ниња (885–889)</era>
-						<era type="30">Кампјо (889–898)</era>
-						<era type="31">Шотаи (898–901)</era>
-						<era type="32">Енђи (901–923)</era>
-						<era type="33">Енчо (923–931)</era>
-						<era type="34">Шохеи (931–938)</era>
-						<era type="35">Тенгјо (938–947)</era>
-						<era type="36">Тенриаку (947–957)</era>
-						<era type="37">Тентоку (957–961)</era>
-						<era type="38">Ова (961–964)</era>
-						<era type="39">Кохо (964–968)</era>
-						<era type="40">Ана (968–970)</era>
-						<era type="41">Тенроку (970–973)</era>
-						<era type="42">Тен-ен (973-976)</era>
-						<era type="43">Јоген (976–978)</era>
-						<era type="44">Тенген (978–983)</era>
-						<era type="45">Еикан (983–985)</era>
-						<era type="46">Кана (985–987)</era>
-						<era type="47">Еи-ен (987-989)</era>
-						<era type="48">Еисо (989–990)</era>
-						<era type="49">Шорјаку (990–995)</era>
-						<era type="50">Чотоку (995–999)</era>
-						<era type="51">Чохо (999–1004)</era>
-						<era type="52">Канко (1004–1012)</era>
-						<era type="53">Чова (1012–1017)</era>
-						<era type="54">Канин (1017–1021)</era>
-						<era type="55">Ђиан (1021–1024)</era>
-						<era type="56">Мању (1024–1028)</era>
-						<era type="57">Чоген (1028–1037)</era>
-						<era type="58">Чорјаку (1037–1040)</era>
-						<era type="59">Чокју (1040–1044)</era>
-						<era type="60">Кантоку (1044–1046)</era>
-						<era type="61">Еишо (1046–1053)</era>
-						<era type="62">Тенђи (1053–1058)</era>
-						<era type="63">Кохеи (1058–1065)</era>
-						<era type="64">Ђирјаку (1065–1069)</era>
-						<era type="65">Енкју (1069–1074)</era>
-						<era type="66">Шохо (1074–1077)</era>
-						<era type="67">Шорјаку (1077–1081)</era>
-						<era type="68">Еишо (1081–1084)</era>
-						<era type="69">Отоку (1084–1087)</era>
-						<era type="70">Канђи (1087–1094)</era>
-						<era type="71">Кахо (1094–1096)</era>
-						<era type="72">Еичо (1096–1097)</era>
-						<era type="73">Шотоку (1097–1099)</era>
-						<era type="74">Кова (1099–1104)</era>
-						<era type="75">Чођи (1104–1106)</era>
-						<era type="76">Кашо (1106–1108)</era>
-						<era type="77">Тенин (1108–1110)</era>
-						<era type="78">Тен-еи (1110-1113)</era>
-						<era type="79">Еикју (1113–1118)</era>
-						<era type="80">Ђен-еи (1118-1120)</era>
-						<era type="81">Хоан (1120–1124)</era>
-						<era type="82">Тенђи (1124–1126)</era>
-						<era type="83">Даиђи (1126–1131)</era>
-						<era type="84">Теншо (1131–1132)</era>
-						<era type="85">Чошао (1132–1135)</era>
-						<era type="86">Хоен (1135–1141)</era>
-						<era type="87">Еиђи (1141–1142)</era>
-						<era type="88">Кођи (1142–1144)</era>
-						<era type="89">Тењо (1144–1145)</era>
-						<era type="90">Кјуан (1145–1151)</era>
-						<era type="91">Нинпеи (1151–1154)</era>
-						<era type="92">Кјују (1154–1156)</era>
-						<era type="93">Хоген (1156–1159)</era>
-						<era type="94">Хеиђи (1159–1160)</era>
-						<era type="95">Еирјаку (1160–1161)</era>
-						<era type="96">Охо (1161–1163)</era>
-						<era type="97">Чокан (1163–1165)</era>
-						<era type="98">Еиман (1165–1166)</era>
-						<era type="99">Нин-ан (1166-1169)</era>
-						<era type="100">Као (1169–1171)</era>
-						<era type="101">Шоан (1171–1175)</era>
-						<era type="102">Анген (1175–1177)</era>
-						<era type="103">Ђишо (1177–1181)</era>
-						<era type="104">Јова (1181–1182)</era>
-						<era type="105">Ђуеи (1182–1184)</era>
-						<era type="106">Генрјуку (1184–1185)</era>
-						<era type="107">Бунђи (1185–1190)</era>
-						<era type="108">Кенкју (1190–1199)</era>
-						<era type="109">Шођи (1199–1201)</era>
-						<era type="110">Кенин (1201–1204)</era>
-						<era type="111">Генкју (1204–1206)</era>
-						<era type="112">Кен-еи (1206-1207)</era>
-						<era type="113">Шоген (1207–1211)</era>
-						<era type="114">Кенрјаку (1211–1213)</era>
-						<era type="115">Кенпо (1213–1219)</era>
-						<era type="116">Шокју (1219–1222)</era>
-						<era type="117">Ђу (1222–1224)</era>
-						<era type="118">Ђенин (1224–1225)</era>
-						<era type="119">Кароку (1225–1227)</era>
-						<era type="120">Антеи (1227–1229)</era>
-						<era type="121">Канки (1229–1232)</era>
-						<era type="122">Ђоеи (1232–1233)</era>
-						<era type="123">Темпуку (1233–1234)</era>
-						<era type="124">Бунрјаку (1234–1235)</era>
-						<era type="125">Катеи (1235–1238)</era>
-						<era type="126">Рјакунин (1238–1239)</era>
-						<era type="127">Ен-о (1239-1240)</era>
-						<era type="128">Нињи (1240–1243)</era>
-						<era type="129">Канген (1243–1247)</era>
-						<era type="130">Хођи (1247–1249)</era>
-						<era type="131">Кенчо (1249–1256)</era>
-						<era type="132">Коген (1256–1257)</era>
-						<era type="133">Шока (1257–1259)</era>
-						<era type="134">Шоген (1259–1260)</era>
-						<era type="135">Бун-о (1260-1261)</era>
-						<era type="136">Кочо (1261–1264)</era>
-						<era type="137">Бун-еи (1264-1275)</era>
-						<era type="138">Кенђи (1275–1278)</era>
-						<era type="139">Коан (1278–1288)</era>
-						<era type="140">Шу (1288–1293)</era>
-						<era type="141">Еинин (1293–1299)</era>
-						<era type="142">Шоан (1299–1302)</era>
-						<era type="143">Кенген (1302–1303)</era>
-						<era type="144">Каген (1303–1306)</era>
-						<era type="145">Токуђи (1306–1308)</era>
-						<era type="146">Енкеи (1308–1311)</era>
-						<era type="147">Очо (1311–1312)</era>
-						<era type="148">Шова (1312–1317)</era>
-						<era type="149">Бунпо (1317–1319)</era>
-						<era type="150">Ђено (1319–1321)</era>
-						<era type="151">Ђенкјо (1321–1324)</era>
-						<era type="152">Шочу (1324–1326)</era>
-						<era type="153">Кареки (1326–1329)</era>
-						<era type="154">Гентоку (1329–1331)</era>
-						<era type="155">Генко (1331–1334)</era>
-						<era type="156">Кему (1334–1336)</era>
-						<era type="157">Енген (1336–1340)</era>
-						<era type="158">Кококу (1340–1346)</era>
-						<era type="159">Шохеи (1346–1370)</era>
-						<era type="160">Кентоку (1370–1372)</era>
-						<era type="161">Бучу (1372–1375)</era>
-						<era type="162">Тењу (1375–1379)</era>
-						<era type="163">Корјаку (1379–1381)</era>
-						<era type="164">Кова (1381–1384)</era>
-						<era type="165">Генчу (1384–1392)</era>
-						<era type="166">Меитоку (1384–1387)</era>
-						<era type="167">Какеи (1387–1389)</era>
-						<era type="168">Ку (1389–1390)</era>
-						<era type="169">Меитоку (1390–1394)</era>
-						<era type="170">Оеи (1394–1428)</era>
-						<era type="171">Шочо (1428–1429)</era>
-						<era type="172">Еикјо (1429–1441)</era>
-						<era type="173">Какитсу (1441–1444)</era>
-						<era type="174">Бун-ан (1444-1449)</era>
-						<era type="175">Хотоку (1449–1452)</era>
-						<era type="176">Кјотоку (1452–1455)</era>
-						<era type="177">Кошо (1455–1457)</era>
-						<era type="178">Чороку (1457–1460)</era>
-						<era type="179">Каншо (1460–1466)</era>
-						<era type="180">Буншо (1466–1467)</era>
-						<era type="181">Онин (1467–1469)</era>
-						<era type="182">Бунмеи (1469–1487)</era>
-						<era type="183">Чокјо (1487–1489)</era>
-						<era type="184">Ентоку (1489–1492)</era>
-						<era type="185">Меио (1492–1501)</era>
-						<era type="186">Бунки (1501–1504)</era>
-						<era type="187">Еишо (1504–1521)</era>
-						<era type="188">Таиеи (1521–1528)</era>
-						<era type="189">Кјороку (1528–1532)</era>
-						<era type="190">Тенмон (1532–1555)</era>
-						<era type="191">Кођи (1555–1558)</era>
-						<era type="192">Еироку (1558–1570)</era>
-						<era type="193">Генки (1570–1573)</era>
-						<era type="194">Теншо (1573–1592)</era>
-						<era type="195">Бунроку (1592–1596)</era>
-						<era type="196">Кеичо (1596–1615)</era>
-						<era type="197">Генва (1615–1624)</era>
-						<era type="198">Кан-еи (1624-1644)</era>
-						<era type="199">Шохо (1644–1648)</era>
-						<era type="200">Кеиан (1648–1652)</era>
-						<era type="201">Шу (1652–1655)</era>
-						<era type="202">Меирјаку (1655–1658)</era>
-						<era type="203">Мањи (1658–1661)</era>
-						<era type="204">Канбун (1661–1673)</era>
-						<era type="205">Енпо (1673–1681)</era>
-						<era type="206">Тенва (1681–1684)</era>
-						<era type="207">Јокјо (1684–1688)</era>
-						<era type="208">Генроку (1688–1704)</era>
-						<era type="209">Хоеи (1704–1711)</era>
-						<era type="210">Шотоку (1711–1716)</era>
-						<era type="211">Кјохо (1716–1736)</era>
-						<era type="212">Генбун (1736–1741)</era>
-						<era type="213">Канпо (1741–1744)</era>
-						<era type="214">Енкјо (1744–1748)</era>
-						<era type="215">Кан-ен (1748-1751)</era>
-						<era type="216">Хорјаку (1751–1764)</era>
-						<era type="217">Меива (1764–1772)</era>
-						<era type="218">Ан-еи (1772-1781)</era>
-						<era type="219">Тенмеи (1781–1789)</era>
-						<era type="220">Кансеи (1789–1801)</era>
-						<era type="221">Кјова (1801–1804)</era>
-						<era type="222">Бунка (1804–1818)</era>
-						<era type="223">Бунсеи (1818–1830)</era>
-						<era type="224">Тенпо (1830–1844)</era>
-						<era type="225">Кока (1844–1848)</era>
-						<era type="226">Каеи (1848–1854)</era>
-						<era type="227">Ансеи (1854–1860)</era>
-						<era type="228">Ман-ен (1860-1861)</era>
-						<era type="229">Бункју (1861–1864)</era>
-						<era type="230">Генђи (1864–1865)</era>
-						<era type="231">Кеико (1865–1868)</era>
 						<era type="232">Меиђи</era>
 						<era type="233">Таишо</era>
 						<era type="234">Шова</era>
@@ -3000,9 +2775,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Либревил</exemplarCity>
 			</zone>
 			<zone type="Europe/London">
-				<long>
-					<daylight>Британско љетње вријеме</daylight>
-				</long>
 				<exemplarCity>Лондон</exemplarCity>
 			</zone>
 			<zone type="America/Grenada">
@@ -3093,9 +2865,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Џајапура</exemplarCity>
 			</zone>
 			<zone type="Europe/Dublin">
-				<long>
-					<daylight>Ирско стандардно вријеме</daylight>
-				</long>
 				<exemplarCity>Даблин</exemplarCity>
 			</zone>
 			<zone type="Asia/Jerusalem">
@@ -3824,13 +3593,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Аљаска љетње вријеме</daylight>
 				</long>
 			</metazone>
-			<metazone type="Almaty">
-				<long>
-					<generic>Алмати време</generic>
-					<standard>Алмати стандардно време</standard>
-					<daylight>Алмати летње рачунање времена</daylight>
-				</long>
-			</metazone>
 			<metazone type="Amazon">
 				<long>
 					<generic>Амазон вријеме</generic>
@@ -3878,20 +3640,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Апија вријеме</generic>
 					<standard>Апија стандардно вријеме</standard>
 					<daylight>Апија љетње рачунање времена</daylight>
-				</long>
-			</metazone>
-			<metazone type="Aqtau">
-				<long>
-					<generic>Акватау време</generic>
-					<standard>Акватау стандардно време</standard>
-					<daylight>Акватау летње рачунање времена</daylight>
-				</long>
-			</metazone>
-			<metazone type="Aqtobe">
-				<long>
-					<generic>Акутобе време</generic>
-					<standard>Акутобе стандардно време</standard>
-					<daylight>Акутобе летње рачунање времена</daylight>
 				</long>
 			</metazone>
 			<metazone type="Arabian">
@@ -3993,6 +3741,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Бразилија вријеме</generic>
 					<standard>Бразилија стандардно вријеме</standard>
 					<daylight>Бразилија љетње рачунање времена</daylight>
+				</long>
+			</metazone>
+			<metazone type="British">
+				<long>
+					<daylight>Британско љетње вријеме</daylight>
 				</long>
 			</metazone>
 			<metazone type="Brunei">
@@ -4182,11 +3935,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Западни Гренланд љетње рачунање времена</daylight>
 				</long>
 			</metazone>
-			<metazone type="Guam">
-				<long>
-					<standard>Гуам стандардно време</standard>
-				</long>
-			</metazone>
 			<metazone type="Gulf">
 				<long>
 					<standard>Заливско вријеме</standard>
@@ -4260,6 +4008,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Иран љетње рачунање времена</daylight>
 				</long>
 			</metazone>
+			<metazone type="Irish">
+				<long>
+					<daylight>Ирско стандардно вријеме</daylight>
+				</long>
+			</metazone>
 			<metazone type="Irkutsk">
 				<long>
 					<generic>Иркуцк вријеме</generic>
@@ -4327,11 +4080,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>Киргистан вријеме</standard>
 				</long>
 			</metazone>
-			<metazone type="Lanka">
-				<long>
-					<standard>Шри Ланка време</standard>
-				</long>
-			</metazone>
 			<metazone type="Line_Islands">
 				<long>
 					<standard>Лине Острва вријеме</standard>
@@ -4342,13 +4090,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Лорд Хов вријеме</generic>
 					<standard>Лорд Хов стандардно вријеме</standard>
 					<daylight>Лорд Хов љетње рачунање времена</daylight>
-				</long>
-			</metazone>
-			<metazone type="Macau">
-				<long>
-					<generic>Макао време</generic>
-					<standard>Макао стандардно време</standard>
-					<daylight>Макао летње рачунање вемена</daylight>
 				</long>
 			</metazone>
 			<metazone type="Magadan">
@@ -4466,11 +4207,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Фернандо де Нороња љетње рачунање времена</daylight>
 				</long>
 			</metazone>
-			<metazone type="North_Mariana">
-				<long>
-					<standard>Северна Маријанска Острва време</standard>
-				</long>
-			</metazone>
 			<metazone type="Novosibirsk">
 				<long>
 					<generic>Новосибирско вријеме</generic>
@@ -4550,13 +4286,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>Пјонгјанг вријеме</standard>
 				</long>
 			</metazone>
-			<metazone type="Qyzylorda">
-				<long>
-					<generic>Кизилорда време</generic>
-					<standard>Кизилорда стандардно време</standard>
-					<daylight>Кизилорда летње рачунање времена</daylight>
-				</long>
-			</metazone>
 			<metazone type="Reunion">
 				<long>
 					<standard>Реинион вријеме</standard>
@@ -4583,9 +4312,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Samoa">
 				<long>
-					<generic>Самоа вријеме</generic>
 					<standard>Самоа стандардно вријеме</standard>
-					<daylight>Самоа љетње рачунање времена</daylight>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">
@@ -4796,28 +4523,40 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<decimalFormatLength type="short">
 				<decimalFormat>
 					<pattern type="1000" count="one">0</pattern>
+					<pattern type="1000" count="few">0</pattern>
 					<pattern type="1000" count="other">0</pattern>
 					<pattern type="10000" count="one">00 хиљ</pattern>
+					<pattern type="10000" count="few">00 хиљ</pattern>
 					<pattern type="10000" count="other">00 хиљ</pattern>
 					<pattern type="100000" count="one">000 хиљ</pattern>
+					<pattern type="100000" count="few">000 хиљ</pattern>
 					<pattern type="100000" count="other">000 хиљ</pattern>
 					<pattern type="1000000" count="one">0 мил</pattern>
+					<pattern type="1000000" count="few">0 мил</pattern>
 					<pattern type="1000000" count="other">0 мил</pattern>
 					<pattern type="10000000" count="one">00 мил</pattern>
+					<pattern type="10000000" count="few">00 мил</pattern>
 					<pattern type="10000000" count="other">00 мил</pattern>
 					<pattern type="100000000" count="one">000 мил</pattern>
+					<pattern type="100000000" count="few">000 мил</pattern>
 					<pattern type="100000000" count="other">000 мил</pattern>
 					<pattern type="1000000000" count="one">0 млрд</pattern>
+					<pattern type="1000000000" count="few">0 млрд</pattern>
 					<pattern type="1000000000" count="other">0 млрд</pattern>
 					<pattern type="10000000000" count="one">00 млрд</pattern>
+					<pattern type="10000000000" count="few">00 млрд</pattern>
 					<pattern type="10000000000" count="other">00 млрд</pattern>
 					<pattern type="100000000000" count="one">000 млрд</pattern>
+					<pattern type="100000000000" count="few">000 млрд</pattern>
 					<pattern type="100000000000" count="other">000 млрд</pattern>
 					<pattern type="1000000000000" count="one">0 бил</pattern>
+					<pattern type="1000000000000" count="few">0 бил</pattern>
 					<pattern type="1000000000000" count="other">0 бил</pattern>
 					<pattern type="10000000000000" count="one">00 бил</pattern>
+					<pattern type="10000000000000" count="few">00 бил</pattern>
 					<pattern type="10000000000000" count="other">00 бил</pattern>
 					<pattern type="100000000000000" count="one">000 бил</pattern>
+					<pattern type="100000000000000" count="few">000 бил</pattern>
 					<pattern type="100000000000000" count="other">000 бил</pattern>
 				</decimalFormat>
 			</decimalFormatLength>
@@ -5261,11 +5000,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="one">кинески јуан (острвски)</displayName>
 				<displayName count="few">кинеска јуана (острвска)</displayName>
 				<displayName count="other">кинеских јуана (острвских)</displayName>
-			</currency>
-			<currency type="CNX">
-				<displayName count="one" draft="provisional">долар кинеске народне банке</displayName>
-				<displayName count="few" draft="provisional">долара кинеске народне банке</displayName>
-				<displayName count="other" draft="provisional">долара кинеске народне банке</displayName>
 			</currency>
 			<currency type="CNY">
 				<displayName>Кинески јуан</displayName>

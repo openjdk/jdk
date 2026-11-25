@@ -5,17 +5,18 @@
 #ifndef SPA_UTILS_STRING_H
 #define SPA_UTILS_STRING_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <stdarg.h>
 #include <stdbool.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <locale.h>
+#include <sys/types.h>
 
 #include <spa/utils/defs.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifndef SPA_API_STRING
  #ifdef SPA_API_IMPL

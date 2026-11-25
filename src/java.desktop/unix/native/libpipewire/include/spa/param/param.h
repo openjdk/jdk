@@ -5,6 +5,8 @@
 #ifndef SPA_PARAM_H
 #define SPA_PARAM_H
 
+#include <spa/utils/defs.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -17,8 +19,6 @@ extern "C" {
  * \addtogroup spa_param
  * \{
  */
-
-#include <spa/utils/defs.h>
 
 /** different parameter types that can be queried */
 enum spa_param_type {
@@ -40,6 +40,11 @@ enum spa_param_type {
     SPA_PARAM_Latency,        /**< latency reporting, a SPA_TYPE_OBJECT_ParamLatency */
     SPA_PARAM_ProcessLatency,    /**< processing latency, a SPA_TYPE_OBJECT_ParamProcessLatency */
     SPA_PARAM_Tag,            /**< tag reporting, a SPA_TYPE_OBJECT_ParamTag. Since 0.3.79 */
+    SPA_PARAM_PeerEnumFormat,    /**< peer formats, a SPA_TYPE_OBJECT_PeerParam with
+                      *  SPA_TYPE_OBJECT_Format. Since 1.5.0 */
+    SPA_PARAM_Capability,        /**< capability info, a SPA_TYPE_OBJECT_ParamDict, Since 1.5.84 */
+    SPA_PARAM_PeerCapability,    /**< peer capabilities, a SPA_TYPE_OBJECT_PeerParam with
+                      *  SPA_TYPE_OBJECT_ParamDict, since 1.5.84 */
 };
 
 /** information about a parameter */

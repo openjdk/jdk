@@ -402,7 +402,8 @@ public class TypeAnnotations {
 
             if (sym.getKind() == ElementKind.METHOD) {
                 sym.type.asMethodType().restype = type;
-            } else if (sym.getKind() == ElementKind.PARAMETER && currentLambda == null) {
+            } else if (sym.getKind() == ElementKind.PARAMETER && currentLambda == null &&
+                       !(contextTree instanceof JCCatch c && c.param.sym == sym)) {
                 sym.type = type;
                 if (sym.getQualifiedName().equals(names._this)) {
                     sym.owner.type.asMethodType().recvtype = type;
@@ -448,9 +449,9 @@ public class TypeAnnotations {
                 // to allow output in Gen.normalizeDefs.
                 ClassSymbol cs = (ClassSymbol) sym.owner.owner;
                 if ((ownerFlags & Flags.STATIC) != 0) {
-                    cs.appendClassInitTypeAttributes(typeAnnotations);
+                    cs.appendUniqueClassInitTypeAttributes(typeAnnotations);
                 } else {
-                    cs.appendInitTypeAttributes(typeAnnotations);
+                    cs.appendUniqueInitTypeAttributes(typeAnnotations);
                 }
             } else {
                 sym.owner.appendUniqueTypeAttributes(typeAnnotations);
@@ -967,7 +968,13 @@ public class TypeAnnotations {
                     if (v.getKind() != ElementKind.FIELD) {
                         appendTypeAnnotationsToOwner(v, v.getRawTypeAttributes());
                     }
-                    switch (v.getKind()) {
+                    ElementKind vKind = v.getKind();
+                    if (vKind == ElementKind.PARAMETER && contextTree instanceof JCCatch c && c.param.sym == v) {
+                        vKind = ElementKind.EXCEPTION_PARAMETER;
+                    } else if (vKind == ElementKind.LOCAL_VARIABLE && contextTree instanceof JCTry t && t.resources.contains(frame)) {
+                        vKind = ElementKind.RESOURCE_VARIABLE;
+                    }
+                    switch (vKind) {
                         case BINDING_VARIABLE:
                         case LOCAL_VARIABLE:
                             return TypeAnnotationPosition
@@ -1313,8 +1320,9 @@ public class TypeAnnotations {
             }
 
             scan(tree.mods);
-            scan(tree.vartype);
-            if (!sigOnly) {
+            if (sigOnly) {
+                scan(tree.vartype);
+            } else {
                 scan(tree.init);
             }
 

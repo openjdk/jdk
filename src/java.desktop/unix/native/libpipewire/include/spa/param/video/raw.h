@@ -5,6 +5,11 @@
 #ifndef SPA_VIDEO_RAW_H
 #define SPA_VIDEO_RAW_H
 
+#include <spa/param/format.h>
+#include <spa/param/video/chroma.h>
+#include <spa/param/video/color.h>
+#include <spa/param/video/multiview.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -13,11 +18,6 @@ extern "C" {
  * \addtogroup spa_param
  * \{
  */
-
-#include <spa/param/format.h>
-#include <spa/param/video/chroma.h>
-#include <spa/param/video/color.h>
-#include <spa/param/video/multiview.h>
 
 #define SPA_VIDEO_MAX_PLANES 4
 #define SPA_VIDEO_MAX_COMPONENTS 4

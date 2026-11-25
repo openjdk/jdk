@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,6 +129,12 @@ heap_reference_callback(jvmtiHeapReferenceKind reference_kind,
                         jint length,
                         void* user_data) {
   Callback_Data* data = (Callback_Data*)user_data;
+
+  // FollowReferences should not report a class loader's references to loaded classes originated from flattened value objects.
+  if (reference_kind == JVMTI_HEAP_REFERENCE_OTHER &&
+      (referrer_class_tag == TAG_VALUE_CLASS || referrer_class_tag == TAG_VALUE2_CLASS)) {
+    fatal("FollowReferences reported a class loader reference from a value object");
+  }
 
   jlong tag = class_tag;
   if (tag == 0 && *tag_ptr != 0 && *tag_ptr <= MAX_TAG) {

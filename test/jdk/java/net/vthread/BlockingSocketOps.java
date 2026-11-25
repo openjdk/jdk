@@ -65,6 +65,9 @@ import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
+import java.util.concurrent.locks.LockSupport;
 
 import jdk.test.lib.thread.VThreadRunner;
 import org.junit.jupiter.api.Test;
@@ -108,18 +111,21 @@ class BlockingSocketOps {
                 Socket s1 = connection.socket1();
                 Socket s2 = connection.socket2();
 
-                // delayed write from sc1
+                // write to s1 when current thread parks
                 byte[] ba1 = "XXX".getBytes("UTF-8");
-                runAfterParkedAsync(() -> s1.getOutputStream().write(ba1));
-
-                // read from sc2 should block
-                if (timeout > 0) {
-                    s2.setSoTimeout(timeout);
+                Future<?> writer = runAfterParkedAsync(() -> s1.getOutputStream().write(ba1));
+                try {
+                    // read from s2 should block
+                    if (timeout > 0) {
+                        s2.setSoTimeout(timeout);
+                    }
+                    byte[] ba2 = new byte[10];
+                    int n = s2.getInputStream().read(ba2);
+                    assertTrue(n > 0);
+                    assertTrue(ba2[0] == 'X');
+                } finally {
+                    writer.get();
                 }
-                byte[] ba2 = new byte[10];
-                int n = s2.getInputStream().read(ba2);
-                assertTrue(n > 0);
-                assertTrue(ba2[0] == 'X');
             }
         });
     }
@@ -134,21 +140,21 @@ class BlockingSocketOps {
                 Socket s1 = connection.socket1();
                 Socket s2 = connection.socket2();
 
-                // delayed read from s2 to EOF
+                // reads s2 to EOF when current thread parks
                 InputStream in = s2.getInputStream();
-                Thread reader = runAfterParkedAsync(() ->
+                Future<?> reader = runAfterParkedAsync(() ->
                         in.transferTo(OutputStream.nullOutputStream()));
-
-                // write should block
-                byte[] ba = new byte[100*1024];
-                try (OutputStream out = s1.getOutputStream()) {
-                    for (int i = 0; i < 1000; i++) {
-                        out.write(ba);
+                try {
+                    // write should block
+                    byte[] ba = new byte[100 * 1024];
+                    try (OutputStream out = s1.getOutputStream()) {
+                        for (int i = 0; i < 1000; i++) {
+                            out.write(ba);
+                        }
                     }
+                } finally {
+                    reader.get();
                 }
-
-                // wait for reader to finish
-                reader.join();
             }
         });
     }
@@ -163,12 +169,15 @@ class BlockingSocketOps {
                 Socket s1 = connection.socket1();
                 Socket s2 = connection.socket2();
 
-                // delayed close of s2
-                runAfterParkedAsync(s2::close);
-
-                // read from s1 should block, then read -1
-                int n = s1.getInputStream().read();
-                assertTrue(n == -1);
+                // close s2 when current thread parks
+                Future<?> closer = runAfterParkedAsync(s2::close);
+                try {
+                    // read from s1 should block, then read -1
+                    int n = s1.getInputStream().read();
+                    assertTrue(n == -1);
+                } finally {
+                    closer.get();
+                }
             }
         });
     }
@@ -183,16 +192,17 @@ class BlockingSocketOps {
                 Socket s1 = connection.socket1();
                 Socket s2 = connection.socket2();
 
-                // delayed abrupt close of s2
+                // close s2 when current thread parks
                 s2.setSoLinger(true, 0);
-                runAfterParkedAsync(s2::close);
-
-                // read from s1 should block, then throw
+                Future<?> closer = runAfterParkedAsync(s2::close);
                 try {
+                    // read from s1 should block, then throw
                     int n = s1.getInputStream().read();
                     fail("read " + n);
                 } catch (IOException ioe) {
                     // expected
+                } finally {
+                    closer.get();
                 }
             }
         });
@@ -208,18 +218,21 @@ class BlockingSocketOps {
             try (var connection = new Connection()) {
                 Socket s = connection.socket1();
 
-                // delayed close of s
-                runAfterParkedAsync(s::close);
-
-                // read from s should block, then throw
-                if (timeout > 0) {
-                    s.setSoTimeout(timeout);
-                }
+                // close s when current thread parks
+                Future<?> closer = runAfterParkedAsync(s::close);
                 try {
-                    int n = s.getInputStream().read();
-                    fail("read " + n);
-                } catch (SocketException expected) {
-                    log(expected);
+                    // read from s should block, then throw
+                    if (timeout > 0) {
+                        s.setSoTimeout(timeout);
+                    }
+                    try {
+                        int n = s.getInputStream().read();
+                        fail("read " + n);
+                    } catch (SocketException expected) {
+                        log(expected);
+                    }
+                } finally {
+                    closer.get();
                 }
             }
         });
@@ -235,17 +248,20 @@ class BlockingSocketOps {
             try (var connection = new Connection()) {
                 Socket s = connection.socket1();
 
-                // delayed shutdown of input stream
+                // shutdown input when current thread parks
                 InputStream in = s.getInputStream();
-                runAfterParkedAsync(s::shutdownInput);
-
-                // read should return -1
-                if (timeout > 0) {
-                    s.setSoTimeout(timeout);
+                Future<?> shutdownInput = runAfterParkedAsync(s::shutdownInput);
+                try {
+                    // read should return -1
+                    if (timeout > 0) {
+                        s.setSoTimeout(timeout);
+                    }
+                    assertEquals(-1, in.read());
+                    assertEquals(0, in.available());
+                    assertFalse(s.isClosed());
+                } finally {
+                    shutdownInput.get();
                 }
-                assertEquals(-1, in.read());
-                assertEquals(0, in.available());
-                assertFalse(s.isClosed());
             }
         });
     }
@@ -260,22 +276,24 @@ class BlockingSocketOps {
             try (var connection = new Connection()) {
                 Socket s = connection.socket1();
 
-
-                // delayed interrupt of current thread
+                // interrupt current thread when it parks
                 Thread thisThread = Thread.currentThread();
-                runAfterParkedAsync(thisThread::interrupt);
-
-                // read from s should block, then throw
-                if (timeout > 0) {
-                    s.setSoTimeout(timeout);
-                }
+                Future<?> interrupter = runAfterParkedAsync(thisThread::interrupt);
                 try {
-                    int n = s.getInputStream().read();
-                    fail("read " + n);
-                } catch (SocketException expected) {
-                    log(expected);
-                    assertTrue(Thread.interrupted());
-                    assertTrue(s.isClosed());
+                    // read from s should block, then throw
+                    if (timeout > 0) {
+                        s.setSoTimeout(timeout);
+                    }
+                    try {
+                        int n = s.getInputStream().read();
+                        fail("read " + n);
+                    } catch (SocketException expected) {
+                        log(expected);
+                        assertTrue(Thread.interrupted());
+                        assertTrue(s.isClosed());
+                    }
+                } finally {
+                    interrupter.get();
                 }
             }
         });
@@ -290,11 +308,10 @@ class BlockingSocketOps {
             try (var connection = new Connection()) {
                 Socket s = connection.socket1();
 
-                // delayed close of s
-                runAfterParkedAsync(s::close);
-
-                // write to s should block, then throw
+                // close s when current thread parks
+                Future<?> closer = runAfterParkedAsync(s::close);
                 try {
+                    // write to s should block, then throw
                     byte[] ba = new byte[100*1024];
                     OutputStream out = s.getOutputStream();
                     for (;;) {
@@ -302,6 +319,8 @@ class BlockingSocketOps {
                     }
                 } catch (SocketException expected) {
                     log(expected);
+                } finally {
+                    closer.get();
                 }
             }
         });
@@ -316,18 +335,21 @@ class BlockingSocketOps {
             try (var connection = new Connection()) {
                 Socket s = connection.socket1();
 
-                // delayed shutdown of output stream
+                // shutdown output when current thread parks
                 OutputStream out = s.getOutputStream();
-                runAfterParkedAsync(s::shutdownOutput);
-
-                // write to s should block, then throw
+                Future<?> shutdownOutput = runAfterParkedAsync(s::shutdownOutput);
                 try {
-                    byte[] ba = new byte[100*1024];
-                    for (;;) {
-                        out.write(ba);
+                    // write to s should block, then throw
+                    try {
+                        byte[] ba = new byte[100 * 1024];
+                        for (; ; ) {
+                            out.write(ba);
+                        }
+                    } catch (SocketException expected) {
+                        log(expected);
                     }
-                } catch (SocketException expected) {
-                    log(expected);
+                } finally {
+                    shutdownOutput.get();
                 }
                 assertFalse(s.isClosed());
             }
@@ -343,21 +365,24 @@ class BlockingSocketOps {
             try (var connection = new Connection()) {
                 Socket s = connection.socket1();
 
-                // delayed interrupt of current thread
+                // interrupt current thread when it parks
                 Thread thisThread = Thread.currentThread();
-                runAfterParkedAsync(thisThread::interrupt);
-
-                // write to s should block, then throw
+                Future<?> interrupter = runAfterParkedAsync(thisThread::interrupt);
                 try {
-                    byte[] ba = new byte[100*1024];
-                    OutputStream out = s.getOutputStream();
-                    for (;;) {
-                        out.write(ba);
+                    // write to s should block, then throw
+                    try {
+                        byte[] ba = new byte[100 * 1024];
+                        OutputStream out = s.getOutputStream();
+                        for (; ; ) {
+                            out.write(ba);
+                        }
+                    } catch (SocketException expected) {
+                        log(expected);
+                        assertTrue(Thread.interrupted());
+                        assertTrue(s.isClosed());
                     }
-                } catch (SocketException expected) {
-                    log(expected);
-                    assertTrue(Thread.interrupted());
-                    assertTrue(s.isClosed());
+                } finally {
+                    interrupter.get();
                 }
             }
         });
@@ -373,25 +398,28 @@ class BlockingSocketOps {
                 Socket s1 = connection.socket1();
                 Socket s2 = connection.socket2();
 
-                // urgent data should be received
-                runAfterParkedAsync(() -> s2.sendUrgentData('X'));
-
-                // read should block, then read the OOB byte
-                s1.setOOBInline(true);
-                byte[] ba = new byte[10];
-                int n = s1.getInputStream().read(ba);
-                assertTrue(n == 1);
-                assertTrue(ba[0] == 'X');
-
-                // urgent data should not be received
-                s1.setOOBInline(false);
-                s1.setSoTimeout(500);
-                s2.sendUrgentData('X');
+                // send urgent data when current thread parks
+                Future<?> sender = runAfterParkedAsync(() -> s2.sendUrgentData('X'));
                 try {
-                    s1.getInputStream().read(ba);
-                    fail();
-                } catch (SocketTimeoutException expected) {
-                    log(expected);
+                    // read should block, then read the OOB byte
+                    s1.setOOBInline(true);
+                    byte[] ba = new byte[10];
+                    int n = s1.getInputStream().read(ba);
+                    assertTrue(n == 1);
+                    assertTrue(ba[0] == 'X');
+
+                    // urgent data should not be received
+                    s1.setOOBInline(false);
+                    s1.setSoTimeout(500);
+                    s2.sendUrgentData('X');
+                    try {
+                        s1.getInputStream().read(ba);
+                        fail();
+                    } catch (SocketTimeoutException expected) {
+                        log(expected);
+                    }
+                } finally {
+                    sender.get();
                 }
             }
         });
@@ -429,18 +457,24 @@ class BlockingSocketOps {
                 InetAddress loopback = InetAddress.getLoopbackAddress();
                 listener.bind(new InetSocketAddress(loopback, 0));
 
-                // schedule connect
+                // connect socket when current thread parks
                 var socket1 = new Socket();
                 SocketAddress remote = listener.getLocalSocketAddress();
-                runAfterParkedAsync(() -> socket1.connect(remote));
-
-                // accept should block
-                if (timeout > 0) {
-                    listener.setSoTimeout(timeout);
+                Future<?> connector = runAfterParkedAsync(() -> socket1.connect(remote));
+                try {
+                    // accept should block
+                    if (timeout > 0) {
+                        listener.setSoTimeout(timeout);
+                    }
+                    Socket socket2 = listener.accept();
+                    socket2.close();
+                } finally {
+                    try {
+                        connector.get();
+                    } finally {
+                        socket1.close();
+                    }
                 }
-                var socket2 = listener.accept();
-                socket1.close();
-                socket2.close();
             }
         });
     }
@@ -456,18 +490,21 @@ class BlockingSocketOps {
                 InetAddress loopback = InetAddress.getLoopbackAddress();
                 listener.bind(new InetSocketAddress(loopback, 0));
 
-                // delayed close of listener
-                runAfterParkedAsync(listener::close);
-
-                // accept should block, then throw
-                if (timeout > 0) {
-                    listener.setSoTimeout(timeout);
-                }
+                // close listener when current thread parks
+                Future<?> closer = runAfterParkedAsync(listener::close);
                 try {
-                    listener.accept().close();
-                    fail("connection accepted???");
-                } catch (SocketException expected) {
-                    log(expected);
+                    // accept should block, then throw
+                    if (timeout > 0) {
+                        listener.setSoTimeout(timeout);
+                    }
+                    try {
+                        listener.accept().close();
+                        fail("connection accepted???");
+                    } catch (SocketException expected) {
+                        log(expected);
+                    }
+                } finally {
+                    closer.get();
                 }
             }
         });
@@ -484,21 +521,25 @@ class BlockingSocketOps {
                 InetAddress loopback = InetAddress.getLoopbackAddress();
                 listener.bind(new InetSocketAddress(loopback, 0));
 
-                // delayed interrupt of current thread
+                // interrupt current thread when it parks
                 Thread thisThread = Thread.currentThread();
-                runAfterParkedAsync(thisThread::interrupt);
-
-                // accept should block, then throw
-                if (timeout > 0) {
-                    listener.setSoTimeout(timeout);
-                }
+                Future<?> interrupter = runAfterParkedAsync(thisThread::interrupt);
                 try {
-                    listener.accept().close();
-                    fail("connection accepted???");
-                } catch (SocketException expected) {
-                    log(expected);
-                    assertTrue(Thread.interrupted());
-                    assertTrue(listener.isClosed());
+
+                    // accept should block, then throw
+                    if (timeout > 0) {
+                        listener.setSoTimeout(timeout);
+                    }
+                    try {
+                        listener.accept().close();
+                        fail("connection accepted???");
+                    } catch (SocketException expected) {
+                        log(expected);
+                        assertTrue(Thread.interrupted());
+                        assertTrue(listener.isClosed());
+                    }
+                } finally {
+                    interrupter.get();
                 }
             }
         });
@@ -547,21 +588,24 @@ class BlockingSocketOps {
                 s1.bind(new InetSocketAddress(lh, 0));
                 s2.bind(new InetSocketAddress(lh, 0));
 
-                // delayed send
+                // send datagram when current thread parks
                 byte[] bytes = "XXX".getBytes("UTF-8");
                 DatagramPacket p1 = new DatagramPacket(bytes, bytes.length);
                 p1.setSocketAddress(s2.getLocalSocketAddress());
-                runAfterParkedAsync(() -> s1.send(p1));
-
-                // receive should block
-                if (timeout > 0) {
-                    s2.setSoTimeout(timeout);
+                Future<?> sender = runAfterParkedAsync(() -> s1.send(p1));
+                try {
+                    // receive should block
+                    if (timeout > 0) {
+                        s2.setSoTimeout(timeout);
+                    }
+                    byte[] ba = new byte[100];
+                    DatagramPacket p2 = new DatagramPacket(ba, ba.length);
+                    s2.receive(p2);
+                    assertEquals(s1.getLocalSocketAddress(), p2.getSocketAddress());
+                    assertTrue(ba[0] == 'X');
+                } finally {
+                    sender.get();
                 }
-                byte[] ba = new byte[100];
-                DatagramPacket p2 = new DatagramPacket(ba, ba.length);
-                s2.receive(p2);
-                assertEquals(s1.getLocalSocketAddress(), p2.getSocketAddress());
-                assertTrue(ba[0] == 'X');
             }
         });
     }
@@ -599,20 +643,23 @@ class BlockingSocketOps {
                 InetAddress lh = InetAddress.getLoopbackAddress();
                 s.bind(new InetSocketAddress(lh, 0));
 
-                // delayed close of s
-                runAfterParkedAsync(s::close);
-
-                // receive should block, then throw
-                if (timeout > 0) {
-                    s.setSoTimeout(timeout);
-                }
+                // close s when current thread parks
+                Future<?> closer = runAfterParkedAsync(s::close);
                 try {
-                    byte[] ba = new byte[100];
-                    DatagramPacket p = new DatagramPacket(ba, ba.length);
-                    s.receive(p);
-                    fail();
-                } catch (SocketException expected) {
-                    log(expected);
+                    // receive should block, then throw
+                    if (timeout > 0) {
+                        s.setSoTimeout(timeout);
+                    }
+                    try {
+                        byte[] ba = new byte[100];
+                        DatagramPacket p = new DatagramPacket(ba, ba.length);
+                        s.receive(p);
+                        fail();
+                    } catch (SocketException expected) {
+                        log(expected);
+                    }
+                } finally {
+                    closer.get();
                 }
             }
         });
@@ -629,23 +676,26 @@ class BlockingSocketOps {
                 InetAddress lh = InetAddress.getLoopbackAddress();
                 s.bind(new InetSocketAddress(lh, 0));
 
-                // delayed interrupt of current thread
+                // interrupt current thread when it parks
                 Thread thisThread = Thread.currentThread();
-                runAfterParkedAsync(thisThread::interrupt);
-
-                // receive should block, then throw
-                if (timeout > 0) {
-                    s.setSoTimeout(timeout);
-                }
+                Future<?> interrupter = runAfterParkedAsync(thisThread::interrupt);
                 try {
-                    byte[] ba = new byte[100];
-                    DatagramPacket p = new DatagramPacket(ba, ba.length);
-                    s.receive(p);
-                    fail();
-                } catch (SocketException expected) {
-                    log(expected);
-                    assertTrue(Thread.interrupted());
-                    assertTrue(s.isClosed());
+                    // receive should block, then throw
+                    if (timeout > 0) {
+                        s.setSoTimeout(timeout);
+                    }
+                    try {
+                        byte[] ba = new byte[100];
+                        DatagramPacket p = new DatagramPacket(ba, ba.length);
+                        s.receive(p);
+                        fail();
+                    } catch (SocketException expected) {
+                        log(expected);
+                        assertTrue(Thread.interrupted());
+                        assertTrue(s.isClosed());
+                    }
+                } finally {
+                    interrupter.get();
                 }
             }
         });
@@ -694,27 +744,39 @@ class BlockingSocketOps {
     }
 
     /**
-     * Runs the given task asynchronously after the current virtual thread has parked.
-     * @return the thread started to run the task
+     * Runs the given task asynchronously after the current virtual thread parks
+     * with its parkBlocker set.
+     * @return future to wait for completion
      */
-    static Thread runAfterParkedAsync(ThrowingRunnable task) {
+    private static Future<?> runAfterParkedAsync(ThrowingRunnable task) {
         Thread target = Thread.currentThread();
         if (!target.isVirtual())
             throw new WrongThreadException();
-        return Thread.ofPlatform().daemon().start(() -> {
+        var future = new CompletableFuture<Void>();
+        Thread.ofPlatform().daemon().start(() -> {
             try {
-                Thread.State state = target.getState();
-                while (state != Thread.State.WAITING
-                        && state != Thread.State.TIMED_WAITING) {
-                    Thread.sleep(20);
-                    state = target.getState();
+                // wait for target thread to park with its parkBlocker set
+                while (!isParked(target) || LockSupport.getBlocker(target) == null) {
+                    Thread.sleep(10);
                 }
-                Thread.sleep(20);  // give a bit more time to release carrier
+
                 task.run();
-            } catch (Exception e) {
-                e.printStackTrace();
+                future.complete(null);
+            } catch (Throwable ex) {
+                ex.printStackTrace();
+                future.completeExceptionally(ex);
             }
         });
+        return future;
+    }
+
+    /**
+     * Return true if the given Thread is parked.
+     */
+    private static boolean isParked(Thread target) {
+        Thread.State state = target.getState();
+        assertNotEquals(Thread.State.TERMINATED, state);
+        return (state == Thread.State.WAITING || state == Thread.State.TIMED_WAITING);
     }
 
     /**

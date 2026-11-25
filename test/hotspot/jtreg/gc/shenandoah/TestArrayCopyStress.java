@@ -27,12 +27,12 @@ import java.util.Random;
 import jdk.test.lib.Utils;
 
 /*
- * @test id=default
+ * @test id=satb
  * @key randomness
  * @requires vm.gc.Shenandoah
  * @library /test/lib
  *
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:TieredStopAtLevel=0 -Xmx16m TestArrayCopyStress
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=satb -XX:TieredStopAtLevel=0 -Xmx16m TestArrayCopyStress
  */
 
 /*

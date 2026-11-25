@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 package nsk.jdwp.StackFrame.PopFrames;
 
 import java.io.*;
+import java.util.Arrays;
 
 import nsk.share.*;
 import nsk.share.jpda.*;
@@ -67,7 +68,12 @@ public class popframes001 {
 
     // field and method names
     static final String TESTED_METHOD_NAME = "testedMethod";
+    static final String STOP_METHOD_NAME = "stop";
     static final int BREAKPOINT_LINE_NUMBER = popframes001a.BREAKPOINT_LINE_NUMBER;
+    static final int STOP_LINE_NUMBER = popframes001a.STOP_LINE_NUMBER;
+
+    // with -popCaller the breakpoint is in stop() and the pop names its caller
+    boolean popCaller = false;
 
     // usual scaffold objects
     ArgumentHandler argumentHandler = null;
@@ -112,6 +118,12 @@ public class popframes001 {
      * Perform test execution.
      */
     public int runIt(String argv[], PrintStream out) {
+
+        // -popCaller is ours, not an ArgumentHandler option
+        popCaller = Arrays.asList(argv).contains("-popCaller");
+        if (popCaller) {
+            argv = Arrays.stream(argv).filter(arg -> !arg.equals("-popCaller")).toArray(String[]::new);
+        }
 
         // make log for debugger messages
         argumentHandler = new ArgumentHandler(argv);
@@ -232,13 +244,21 @@ public class popframes001 {
         log.display("  ... got methodID: " + testedMethodID);
         log.display("");
 
+        // query debuggee for the methodID of the breakpoint method
+        String breakpointMethodName = popCaller ? STOP_METHOD_NAME : TESTED_METHOD_NAME;
+        int breakpointLineNumber = popCaller ? STOP_LINE_NUMBER : BREAKPOINT_LINE_NUMBER;
+        log.display("Getting breakpoint methodID by name: " + breakpointMethodName);
+        long breakpointMethodID = debugee.getMethodID(testedClassID, breakpointMethodName, true);
+        log.display("  ... got methodID: " + breakpointMethodID);
+        log.display("");
+
         // make BREAKPOINT event request
         log.display("Creating breakpoint requests at: "
-                    + TESTED_METHOD_NAME + ":" +  BREAKPOINT_LINE_NUMBER);
+                    + breakpointMethodName + ":" +  breakpointLineNumber);
         breakpointRequestID =
                 debugee.requestBreakpointEvent(JDWP.TypeTag.CLASS,
-                                                testedClassID, testedMethodID,
-                                                BREAKPOINT_LINE_NUMBER,
+                                                testedClassID, breakpointMethodID,
+                                                breakpointLineNumber,
                                                 JDWP.SuspendPolicy.ALL);
         log.display("  ... got breakpoint requestID: " + breakpointRequestID);
 
@@ -253,9 +273,10 @@ public class popframes001 {
         testedThreadID = waitForBreakpointEvent(breakpointRequestID, "first");
         log.display("  ... breakpoint reached with threadID: " + testedThreadID);
 
-        // query debuggee for top frameID
-        log.display("Getting top frameID for threadID: " + testedThreadID);
-        testedFrameID = queryTopFrameID(testedThreadID);
+        // query debuggee for the frameID of the tested method
+        int frameIndex = popCaller ? 1 : 0;
+        log.display("Getting frameID at index " + frameIndex + " for threadID: " + testedThreadID);
+        testedFrameID = queryFrameID(testedThreadID, frameIndex);
         log.display("  ... got frameID: " + testedFrameID);
         log.display("");
 
@@ -347,14 +368,15 @@ public class popframes001 {
     }
 
     /**
-     * Query debuggee for top frameID value for given threadID.
+     * Query debuggee for frameID value at the given index for given threadID
+     * and check that it is a frame of the tested method.
      */
-    long queryTopFrameID(long threadID) {
-        String error = "Error occured while getting top frameID for threadID: " + threadID;
+    long queryFrameID(long threadID, int index) {
+        String error = "Error occured while getting frameID at index " + index + " for threadID: " + threadID;
 
         CommandPacket command = new CommandPacket(JDWP.Command.ThreadReference.Frames);
         command.addObjectID(threadID);
-        command.addInt(0);        // top frame index
+        command.addInt(index);    // frame index
         command.addInt(1);        // number of frames
 
         ReplyPacket reply = debugee.receiveReplyFor(command, "ThreadReference.Frames");
@@ -368,6 +390,12 @@ public class popframes001 {
                 throw new Failure(error);
             }
             long frameID = reply.getFrameID();
+            JDWP.Location location = reply.getLocation();
+            if (location.getMethodID() != testedMethodID) {
+                log.complain("Wrong methodID of the frame at index " + index + ": " + location.getMethodID()
+                            + " (expected: " + testedMethodID + ")");
+                throw new Failure(error);
+            }
             return frameID;
         } catch (BoundException e) {
             log.complain("Unable to extract data from reply packet:\n\t"

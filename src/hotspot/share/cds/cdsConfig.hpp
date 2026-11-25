@@ -35,8 +35,8 @@ class InstanceKlass;
 class CDSConfig : public AllStatic {
 #if INCLUDE_CDS
   static bool _is_dumping_static_archive;
-  static bool _is_dumping_preimage_static_archive;
-  static bool _is_dumping_final_static_archive;
+  static bool _is_dumping_aot_configuration;
+  static bool _is_dumping_aot_cache;
   static bool _is_dumping_dynamic_archive;
   static bool _is_dumping_full_module_graph;
   static bool _is_using_full_module_graph;
@@ -53,6 +53,7 @@ class CDSConfig : public AllStatic {
   static bool  _old_cds_flags_used;
   static bool  _new_aot_flags_used;
   static bool  _disable_heap_dumping;
+  static bool  _using_alternate_system_loader;
 
   // preserve CompileThresholdScaling for A2 compilation
   static double _aot_compile_threshold_scaling;
@@ -97,13 +98,14 @@ public:
   static void set_old_cds_flags_used()                       { CDS_ONLY(_old_cds_flags_used = true); }
   static bool old_cds_flags_used()                           { return CDS_ONLY(_old_cds_flags_used) NOT_CDS(false); }
   static bool new_aot_flags_used()                           { return CDS_ONLY(_new_aot_flags_used) NOT_CDS(false); }
+  static bool using_alternate_system_loader()                { return CDS_ONLY(_using_alternate_system_loader) NOT_CDS(false); }
   static void check_internal_module_property(const char* key, const char* value) NOT_CDS_RETURN;
   static void check_incompatible_property(const char* key, const char* value) NOT_CDS_RETURN;
   static bool has_unsupported_runtime_module_options() NOT_CDS_RETURN_(false);
   static bool check_vm_args_consistency(bool patch_mod_javabase, bool mode_flag_cmd_line) NOT_CDS_RETURN_(true);
   static const char* type_of_archive_being_loaded();
   static const char* type_of_archive_being_written();
-  static void prepare_for_dumping();
+  static void prepare_for_dumping() NOT_CDS_RETURN;
 
   static bool is_at_aot_safepoint()                          { return CDS_ONLY(_is_at_aot_safepoint) NOT_CDS(false); }
   static void set_is_at_aot_safepoint(bool value)            { CDS_ONLY(_is_at_aot_safepoint = value); }
@@ -130,9 +132,6 @@ public:
   //
   // The first 3 types are also referred to as "static archives". At any time, a JVM can load
   // at most one static archive, and at most one dynamic archive.
-  //
-  // Note: [2] is also known as the "preimage static archive". [3] is also known as the "final static archive".
-  // These are outdated terminology and will be removed in the future.
 
   // archive(s) in general
   static bool is_dumping_archive()                           { return is_dumping_static_archive() || is_dumping_dynamic_archive(); }
@@ -146,18 +145,14 @@ public:
   static void enable_dumping_static_archive()                { CDS_ONLY(_is_dumping_static_archive = true); }
 
   static bool is_dumping_classic_static_archive()            NOT_CDS_RETURN_(false);
-  static bool is_dumping_preimage_static_archive()           NOT_CDS_RETURN_(false);
-  static bool is_dumping_final_static_archive()              NOT_CDS_RETURN_(false);
+  static bool is_dumping_aot_configuration()                 NOT_CDS_RETURN_(false);
+  static bool is_dumping_aot_cache()                         NOT_CDS_RETURN_(false);
 
   // Is the current JVM loading classes from an input archive and dumping into an output archive.
-  static bool is_dumping_with_input_archive() { return is_dumping_aot_cache() || is_redumping_aot_configuration(); }
-
-  // New names:
-  static bool is_dumping_aot_configuration() { return is_dumping_preimage_static_archive(); }
-  static bool is_dumping_aot_cache()         { return is_dumping_final_static_archive(); }
+  static bool is_dumping_with_input_archive()                { return is_dumping_aot_cache() || is_redumping_aot_configuration(); }
 
   // Iterative training
-  static bool is_redumping_aot_configuration() { return is_dumping_aot_configuration() && is_using_archive(); }
+  static bool is_redumping_aot_configuration()               { return is_dumping_aot_configuration() && is_using_archive(); }
 
   // dynamic_archive
   static bool is_dumping_dynamic_archive()                   { return CDS_ONLY(_is_dumping_dynamic_archive) NOT_CDS(false); }
