@@ -147,8 +147,7 @@ public class SwitchBootstrapsTest {
                 assertEquals(-1, (int) referenceTarget.invoke((Object) null, 0));
             }
         }
-        assertThrows(IllegalArgumentException.class, () ->
-                SwitchBootstraps.typeSwitch(MethodHandles.lookup(), "", referenceType, void.class));
+        testType(new Object(), 0, 1, void.class);
     }
 
     @Test

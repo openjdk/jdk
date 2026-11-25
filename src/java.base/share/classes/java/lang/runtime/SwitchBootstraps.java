@@ -173,7 +173,6 @@ public final class SwitchBootstraps {
      *                                  second parameter of type {@code int} and with {@code int} as its return type
      * @throws IllegalArgumentException if {@code labels} contains an element that is not of type {@code String},
      *                                  {@code Integer}, {@code Class} or {@code EnumDesc}
-     * @throws IllegalArgumentException if a {@code Class} label represents {@code void}
      * @jvms 4.4.6 The CONSTANT_NameAndType_info Structure
      * @jvms 4.4.10 The CONSTANT_Dynamic_info and CONSTANT_InvokeDynamic_info Structures
      */
@@ -213,9 +212,6 @@ public final class SwitchBootstraps {
     private static void verifyLabel(Object label) {
         if (label == null) {
             throw new IllegalArgumentException("null label found");
-        }
-        if (label == void.class) {
-            throw new IllegalArgumentException("void class label found");
         }
         Class<?> labelClass = label.getClass();
         if (labelClass != Class.class &&
