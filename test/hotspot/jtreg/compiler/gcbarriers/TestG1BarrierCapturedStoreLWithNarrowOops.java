@@ -171,14 +171,14 @@ public class TestG1BarrierCapturedStoreLWithNarrowOops {
     // No barrier needed. Store could be captured.
     @Test
     @IR(applyIf = {"UseCompressedOops", "false"},
-        failOn = {G1_STORE_L_SPECIAL})
+        failOn = {G1_STORE_L_WITH_NARROW_OOPS})
     @IR(applyIfAnd = {"UseCompressedOops", "true", "ReduceInitialCardMarks", "true"},
-        counts = {G1_STORE_L_SPECIAL, "2"},  // Should be 1 with store capturing
-        failOn = {G1_STORE_L_SPECIAL_WITH_BARRIER_FLAG, ANY})
+        counts = {G1_STORE_L_WITH_NARROW_OOPS, "2"},  // Should be 1 with store capturing
+        failOn = {G1_STORE_L_WITH_NARROW_OOPS_WITH_BARRIER_FLAG, ANY})
     @IR(applyIfAnd = {"UseCompressedOops", "true", "ReduceInitialCardMarks", "false"},
-        counts = {G1_STORE_L_SPECIAL, "2",   // Should be 1 with store capturing
-                  G1_STORE_L_SPECIAL_WITH_BARRIER_FLAG, ANY, "1",  // 1 with post only, one without barriers
-                  G1_STORE_L_SPECIAL_WITH_BARRIER_FLAG, POST_ONLY, "1"})
+        counts = {G1_STORE_L_WITH_NARROW_OOPS, "2",   // Should be 1 with store capturing
+                  G1_STORE_L_WITH_NARROW_OOPS_WITH_BARRIER_FLAG, ANY, "1",  // 1 with post only, one without barriers
+                  G1_STORE_L_WITH_NARROW_OOPS_WITH_BARRIER_FLAG, POST_ONLY, "1"})
     static Holder test1(Integer i, MyValue v) {
         Holder t = new Holder();
         t.i = i;
@@ -198,9 +198,9 @@ public class TestG1BarrierCapturedStoreLWithNarrowOops {
     // Pre- and post-barrier needed.
     @Test
     @IR(applyIf = {"UseCompressedOops", "false"},
-        failOn = {G1_STORE_L_SPECIAL})
+        failOn = {G1_STORE_L_WITH_NARROW_OOPS})
     @IR(applyIf = {"UseCompressedOops", "true"},
-        counts = {G1_STORE_L_SPECIAL_WITH_BARRIER_FLAG, PRE_AND_POST, "1"})
+        counts = {G1_STORE_L_WITH_NARROW_OOPS_WITH_BARRIER_FLAG, PRE_AND_POST, "1"})
     static Holder test1_no_capture(Holder t, Integer i, MyValue v) {
         t.i = i;
         t.v = v;
@@ -220,14 +220,14 @@ public class TestG1BarrierCapturedStoreLWithNarrowOops {
     // Similar to test1, but v is also freshly allocated, hence not-null.
     @Test
     @IR(applyIf = {"UseCompressedOops", "false"},
-        failOn = {G1_STORE_L_SPECIAL})
+        failOn = {G1_STORE_L_WITH_NARROW_OOPS})
     @IR(applyIfAnd = {"UseCompressedOops", "true", "ReduceInitialCardMarks", "true"},
-        counts = {G1_STORE_L_SPECIAL, "2"},  // Should be 1 with store capturing
-        failOn = {G1_STORE_L_SPECIAL_WITH_BARRIER_FLAG, ANY})
+        counts = {G1_STORE_L_WITH_NARROW_OOPS, "2"},  // Should be 1 with store capturing
+        failOn = {G1_STORE_L_WITH_NARROW_OOPS_WITH_BARRIER_FLAG, ANY})
     @IR(applyIfAnd = {"UseCompressedOops", "true", "ReduceInitialCardMarks", "false"},
-        counts = {G1_STORE_L_SPECIAL, "2",   // Should be 1 with store capturing
-                  G1_STORE_L_SPECIAL_WITH_BARRIER_FLAG, ANY, "1",  // 1 with post not null only, one without barriers
-                  G1_STORE_L_SPECIAL_WITH_BARRIER_FLAG, POST_NOT_NULL_ONLY, "1"})
+        counts = {G1_STORE_L_WITH_NARROW_OOPS, "2",   // Should be 1 with store capturing
+                  G1_STORE_L_WITH_NARROW_OOPS_WITH_BARRIER_FLAG, ANY, "1",  // 1 with post not null only, one without barriers
+                  G1_STORE_L_WITH_NARROW_OOPS_WITH_BARRIER_FLAG, POST_NOT_NULL_ONLY, "1"})
     static Holder test2(Integer i) {
         MyValue v = new MyValue(new Object());
         Holder t = new Holder();
@@ -246,10 +246,10 @@ public class TestG1BarrierCapturedStoreLWithNarrowOops {
     // Similar to test1, but v is known to be null.
     @Test
     @IR(applyIf = {"UseCompressedOops", "false"},
-        failOn = {G1_STORE_L_SPECIAL})
+        failOn = {G1_STORE_L_WITH_NARROW_OOPS})
     @IR(applyIf = {"UseCompressedOops", "true"},
-        counts = {G1_STORE_L_SPECIAL, "2"},  // Should be 1 with store capturing
-        failOn = {G1_STORE_L_SPECIAL_WITH_BARRIER_FLAG, ANY})
+        counts = {G1_STORE_L_WITH_NARROW_OOPS, "2"},  // Should be 1 with store capturing
+        failOn = {G1_STORE_L_WITH_NARROW_OOPS_WITH_BARRIER_FLAG, ANY})
     static Holder test3(Integer i) {
         Holder t = new Holder();
         t.i = i;
@@ -267,9 +267,9 @@ public class TestG1BarrierCapturedStoreLWithNarrowOops {
     // Similar to test2, v is still not-null at assignment point, but it is already allocated
     @Test
     @IR(applyIf = {"UseCompressedOops", "false"},
-        failOn = {G1_STORE_L_SPECIAL})
+        failOn = {G1_STORE_L_WITH_NARROW_OOPS})
     @IR(applyIf = {"UseCompressedOops", "true"},
-        counts = {G1_STORE_L_SPECIAL_TWO_OOPS_WITH_BARRIER_FLAG, PRE_AND_POST, "1"})
+        counts = {G1_STORE_L_WITH_TWO_NARROW_OOPS_WITH_BARRIER_FLAG, PRE_AND_POST, "1"})
     static HolderWithTwoOops test4(HolderWithTwoOops h, MyValueWithTwoOops v) {
         var _ = v.v1;  // Force v != null
         h.v = v;
@@ -289,9 +289,9 @@ public class TestG1BarrierCapturedStoreLWithNarrowOops {
     // We can use a not-null post-barrier.
     @Test
     @IR(applyIf = {"UseCompressedOops", "false"},
-        failOn = {G1_STORE_L_SPECIAL})
+        failOn = {G1_STORE_L_WITH_NARROW_OOPS})
     @IR(applyIf = {"UseCompressedOops", "true"},
-        counts = {G1_STORE_L_SPECIAL_TWO_OOPS_WITH_BARRIER_FLAG, PRE_AND_POST_NOT_NULL, "1"})
+        counts = {G1_STORE_L_WITH_TWO_NARROW_OOPS_WITH_BARRIER_FLAG, PRE_AND_POST_NOT_NULL, "1"})
     static HolderWithTwoOops test5(HolderWithTwoOops h) {
         MyValueWithTwoOops v = new MyValueWithTwoOops(new Object(), new Object());
         h.v = v;
@@ -311,9 +311,9 @@ public class TestG1BarrierCapturedStoreLWithNarrowOops {
     // We cannot use a not-null post-barrier.
     @Test
     @IR(applyIf = {"UseCompressedOops", "false"},
-        failOn = {G1_STORE_L_SPECIAL})
+        failOn = {G1_STORE_L_WITH_NARROW_OOPS})
     @IR(applyIf = {"UseCompressedOops", "true"},
-        counts = {G1_STORE_L_SPECIAL_TWO_OOPS_WITH_BARRIER_FLAG, PRE_AND_POST, "1"})
+        counts = {G1_STORE_L_WITH_TWO_NARROW_OOPS_WITH_BARRIER_FLAG, PRE_AND_POST, "1"})
     static HolderWithTwoOops test6(HolderWithTwoOops h) {
         MyValueWithTwoOops v = new MyValueWithTwoOops(new Object(), null);
         h.v = v;
@@ -333,9 +333,9 @@ public class TestG1BarrierCapturedStoreLWithNarrowOops {
     // We cannot use a not-null post-barrier.
     @Test
     @IR(applyIf = {"UseCompressedOops", "false"},
-        failOn = {G1_STORE_L_SPECIAL})
+        failOn = {G1_STORE_L_WITH_NARROW_OOPS})
     @IR(applyIf = {"UseCompressedOops", "true"},
-        counts = {G1_STORE_L_SPECIAL_TWO_OOPS_WITH_BARRIER_FLAG, PRE_AND_POST, "1"})
+        counts = {G1_STORE_L_WITH_TWO_NARROW_OOPS_WITH_BARRIER_FLAG, PRE_AND_POST, "1"})
     static HolderWithTwoOops test7(HolderWithTwoOops h) {
         MyValueWithTwoOops v = new MyValueWithTwoOops(null, new Object());
         h.v = v;
@@ -355,9 +355,9 @@ public class TestG1BarrierCapturedStoreLWithNarrowOops {
     // Not post barrier is needed.
     @Test
     @IR(applyIf = {"UseCompressedOops", "false"},
-        failOn = {G1_STORE_L_SPECIAL})
+        failOn = {G1_STORE_L_WITH_NARROW_OOPS})
     @IR(applyIf = {"UseCompressedOops", "true"},
-        counts = {G1_STORE_L_SPECIAL_TWO_OOPS_WITH_BARRIER_FLAG, PRE_ONLY, "1"})
+        counts = {G1_STORE_L_WITH_TWO_NARROW_OOPS_WITH_BARRIER_FLAG, PRE_ONLY, "1"})
     static HolderWithTwoOops test8(HolderWithTwoOops h) {
         MyValueWithTwoOops v = new MyValueWithTwoOops(null, null);
         h.v = v;
@@ -376,9 +376,9 @@ public class TestG1BarrierCapturedStoreLWithNarrowOops {
     // Assign a single not-null oop at offset 0 with a StoreLWithNarrowOops. Not-null post-barrier does the trick.
     @Test
     @IR(applyIf = {"UseCompressedOops", "false"},
-        failOn = {G1_STORE_L_SPECIAL})
+        failOn = {G1_STORE_L_WITH_NARROW_OOPS})
     @IR(applyIf = {"UseCompressedOops", "true"},
-        counts = {G1_STORE_L_SPECIAL_ONE_OOP_0_WITH_BARRIER_FLAG, PRE_AND_POST_NOT_NULL, "1"})
+        counts = {G1_STORE_L_WITH_ONE_NARROW_OOP_0_WITH_BARRIER_FLAG, PRE_AND_POST_NOT_NULL, "1"})
     static HolderWithOopsFirst test9_non_null(HolderWithOopsFirst h) {
         MyValueOopFirst v = new MyValueOopFirst(42, new Object());
         h.v = v;
@@ -397,9 +397,9 @@ public class TestG1BarrierCapturedStoreLWithNarrowOops {
     // Assign a single null at offset 0 with a StoreLWithNarrowOops. No post-barrier needed.
     @Test
     @IR(applyIf = {"UseCompressedOops", "false"},
-        failOn = {G1_STORE_L_SPECIAL})
+        failOn = {G1_STORE_L_WITH_NARROW_OOPS})
     @IR(applyIf = {"UseCompressedOops", "true"},
-        counts = {G1_STORE_L_SPECIAL_ONE_OOP_0_WITH_BARRIER_FLAG, PRE_AND_POST, "1"})
+        counts = {G1_STORE_L_WITH_ONE_NARROW_OOP_0_WITH_BARRIER_FLAG, PRE_AND_POST, "1"})
     static HolderWithOopsFirst test9_maybe_null(HolderWithOopsFirst h, Object o) {
         MyValueOopFirst v = new MyValueOopFirst(42, o);
         h.v = v;
@@ -426,9 +426,9 @@ public class TestG1BarrierCapturedStoreLWithNarrowOops {
     // Same as test9_non_null, but oop is at offset 4.
     @Test
     @IR(applyIf = {"UseCompressedOops", "false"},
-        failOn = {G1_STORE_L_SPECIAL})
+        failOn = {G1_STORE_L_WITH_NARROW_OOPS})
     @IR(applyIf = {"UseCompressedOops", "true"},
-        counts = {G1_STORE_L_SPECIAL_ONE_OOP_4_WITH_BARRIER_FLAG, PRE_AND_POST_NOT_NULL, "1"})
+        counts = {G1_STORE_L_WITH_ONE_NARROW_OOP_4_WITH_BARRIER_FLAG, PRE_AND_POST_NOT_NULL, "1"})
     static HolderWithOopsSecond test10_non_null(HolderWithOopsSecond h) {
         MyValueOopSecond v = new MyValueOopSecond(42, new Object());
         h.v = v;
@@ -447,9 +447,9 @@ public class TestG1BarrierCapturedStoreLWithNarrowOops {
     // Same as test9_maybe_null, but null is at offset 4.
     @Test
     @IR(applyIf = {"UseCompressedOops", "false"},
-        failOn = {G1_STORE_L_SPECIAL})
+        failOn = {G1_STORE_L_WITH_NARROW_OOPS})
     @IR(applyIf = {"UseCompressedOops", "true"},
-        counts = {G1_STORE_L_SPECIAL_ONE_OOP_4_WITH_BARRIER_FLAG, PRE_AND_POST, "1"})
+        counts = {G1_STORE_L_WITH_ONE_NARROW_OOP_4_WITH_BARRIER_FLAG, PRE_AND_POST, "1"})
     static HolderWithOopsSecond test10_maybe_null(HolderWithOopsSecond h, Object o) {
         MyValueOopSecond v = new MyValueOopSecond(42, o);
         h.v = v;
@@ -476,13 +476,13 @@ public class TestG1BarrierCapturedStoreLWithNarrowOops {
     // Assign two oops in a single StoreLWithNarrowOops, just after initialization
     @Test
     @IR(applyIf = {"UseCompressedOops", "false"},
-        failOn = {G1_STORE_L_SPECIAL})
+        failOn = {G1_STORE_L_WITH_NARROW_OOPS})
     @IR(applyIfAnd = {"UseCompressedOops", "true", "ReduceInitialCardMarks", "true"},
-        counts = {G1_STORE_L_SPECIAL, "1"},
-        failOn = {G1_STORE_L_SPECIAL_WITH_BARRIER_FLAG, ANY})
+        counts = {G1_STORE_L_WITH_NARROW_OOPS, "1"},
+        failOn = {G1_STORE_L_WITH_NARROW_OOPS_WITH_BARRIER_FLAG, ANY})
     @IR(applyIfAnd = {"UseCompressedOops", "true", "ReduceInitialCardMarks", "false"},
-        counts = {G1_STORE_L_SPECIAL, "1",
-                  G1_STORE_L_SPECIAL_WITH_BARRIER_FLAG, POST_ONLY, "1"})
+        counts = {G1_STORE_L_WITH_NARROW_OOPS, "1",
+                  G1_STORE_L_WITH_NARROW_OOPS_WITH_BARRIER_FLAG, POST_ONLY, "1"})
     static HolderWithTwoOops test11(MyValueWithTwoOops v) {
         var _ = v.v1;  // Force v != null
         HolderWithTwoOops h = new HolderWithTwoOops(v);
@@ -499,13 +499,13 @@ public class TestG1BarrierCapturedStoreLWithNarrowOops {
     // Variation of test11: instead of getting the value object containing the two oops, we create it here.
     @Test
     @IR(applyIf = {"UseCompressedOops", "false"},
-        failOn = {G1_STORE_L_SPECIAL})
+        failOn = {G1_STORE_L_WITH_NARROW_OOPS})
     @IR(applyIfAnd = {"UseCompressedOops", "true", "ReduceInitialCardMarks", "true"},
-        counts = {G1_STORE_L_SPECIAL, "1"},
-        failOn = {G1_STORE_L_SPECIAL_WITH_BARRIER_FLAG, ANY})
+        counts = {G1_STORE_L_WITH_NARROW_OOPS, "1"},
+        failOn = {G1_STORE_L_WITH_NARROW_OOPS_WITH_BARRIER_FLAG, ANY})
     @IR(applyIfAnd = {"UseCompressedOops", "true", "ReduceInitialCardMarks", "false"},
-        counts = {G1_STORE_L_SPECIAL, "1",
-                  G1_STORE_L_SPECIAL_WITH_BARRIER_FLAG, POST_ONLY, "1"})
+        counts = {G1_STORE_L_WITH_NARROW_OOPS, "1",
+                  G1_STORE_L_WITH_NARROW_OOPS_WITH_BARRIER_FLAG, POST_ONLY, "1"})
     static HolderWithTwoOops test12(Object first, Object second) {
         HolderWithTwoOops h = new HolderWithTwoOops(new MyValueWithTwoOops(first, second));
         return h;

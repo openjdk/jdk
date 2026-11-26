@@ -99,12 +99,12 @@ instruct g1StoreP(memory mem, any_RegP src, rRegP tmp1, rRegP tmp2, rRegP tmp3, 
   ins_pipe(ialu_mem_reg);
 %}
 
-instruct g1StoreLWithNarrowOopsOneOopOff0(memory mem, rRegL src, immI_0 off, rRegP tmp1, rRegP tmp2, rRegP tmp3, rFlagsReg cr)
+instruct g1StoreLWithOneNarrowOopOff0(memory mem, rRegL src, immI_0 off, rRegP tmp1, rRegP tmp2, rRegP tmp3, rFlagsReg cr)
 %{
   predicate(UseG1GC);
   match(Set mem (StoreLWithNarrowOops mem (Binary src off)));
   effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, KILL cr);
-  format %{ "movq    $mem, $src\t# g1StoreLWithNarrowOopsOneOopOff0" %}
+  format %{ "movq    $mem, $src\t# g1StoreLWithOneNarrowOopOff0" %}
   ins_encode %{
     __ lea($tmp1$$Register, $mem$$Address);
     write_barrier_pre(masm, this,
@@ -132,12 +132,12 @@ instruct g1StoreLWithNarrowOopsOneOopOff0(memory mem, rRegL src, immI_0 off, rRe
   ins_pipe(ialu_mem_reg);
 %}
 
-instruct g1StoreLWithNarrowOopsOneOopOff4(memory mem, rRegL src, immI_4 off, rRegP tmp1, rRegP tmp2, rRegP tmp3, rFlagsReg cr)
+instruct g1StoreLWithOneNarrowOopOff4(memory mem, rRegL src, immI_4 off, rRegP tmp1, rRegP tmp2, rRegP tmp3, rFlagsReg cr)
 %{
   predicate(UseG1GC);
   match(Set mem (StoreLWithNarrowOops mem (Binary src off)));
   effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, KILL cr);
-  format %{ "movq    $mem, $src\t# g1StoreLWithNarrowOopsOneOopOff4" %}
+  format %{ "movq    $mem, $src\t# g1StoreLWithOneNarrowOopOff4" %}
   ins_encode %{
     Address dst = $mem$$Address;
     // Adjust address to point to narrow oop if we need any barrier. Otherwise, no need to touch tmp1 at all.
@@ -172,12 +172,12 @@ instruct g1StoreLWithNarrowOopsOneOopOff4(memory mem, rRegL src, immI_4 off, rRe
   ins_pipe(ialu_mem_reg);
 %}
 
-instruct g1StoreLWithNarrowOopsTwoOops(memory mem, rRegL src, rRegP tmp1, rRegP tmp2, rRegP tmp3, rFlagsReg cr)
+instruct g1StoreLWithTwoNarrowOops(memory mem, rRegL src, rRegP tmp1, rRegP tmp2, rRegP tmp3, rFlagsReg cr)
 %{
   predicate(UseG1GC);
   match(Set mem (StoreLWithNarrowOops mem src));
   effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, KILL cr);
-  format %{ "movq    $mem, $src\t# g1StoreLWithNarrowOopsTwoOops" %}
+  format %{ "movq    $mem, $src\t# g1StoreLWithTwoNarrowOops" %}
   ins_encode %{
     __ lea($tmp1$$Register, $mem$$Address);
     if ((barrier_data() & G1C2BarrierPre) == 0 && (barrier_data() & G1C2BarrierPost) == 0) {
