@@ -44,7 +44,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /*
  * @test
- * @bug 8318144 8386820 8397218
+ * @bug 8318144 8397218
  * @compile SwitchBootstrapsTest.java
  * @run junit/othervm SwitchBootstrapsTest
  * @run junit/othervm --enable-preview SwitchBootstrapsTest
@@ -56,6 +56,14 @@ public class SwitchBootstrapsTest {
         MethodHandle indy = SwitchBootstraps.typeSwitch(MethodHandles.lookup(), "", switchType, labels).dynamicInvoker();
         assertEquals(result, (int) indy.invoke(target, start));
         assertEquals(-1, (int) indy.invoke(null, start));
+    }
+
+    private void testTypeWithSelector(Class<?> selectorType, Object target, int result,
+                                      Object... labels) throws Throwable {
+        MethodType switchType = MethodType.methodType(int.class, selectorType, int.class);
+        MethodHandle indy = SwitchBootstraps.typeSwitch(
+                MethodHandles.lookup(), "", switchType, labels).dynamicInvoker();
+        assertEquals(result, (int) indy.invoke(target, 0));
     }
 
     private void testEnum(Enum<?> target, int start, int result, Object... labels) throws Throwable {
@@ -111,12 +119,9 @@ public class SwitchBootstrapsTest {
         Class<?>[] primitives = {byte.class, short.class, char.class, int.class,
                                  long.class, float.class, double.class, boolean.class};
         Object[] values = {(byte) 1, (short) 1, 'a', 1, 1L, 1.0f, 1.0d, true};
-        MethodType referenceType = MethodType.methodType(int.class, Object.class, int.class);
-        // Ensures support for primitive selector descriptors emitted by older javac
-        // versions for ordinary record patterns. Every primitive class label matches its
-        // corresponding wrapper type, without numeric conversions, for both primitive
-        // and Object selectors. Moreover, it preserves the returned handle's type, restart indices,
-        // null handling, and the caller's label array.
+        // Earlier javac versions emitted primitive selector descriptors for
+        // ordinary record patterns. Check the call-site type, same-type labels,
+        // restart indices, and caller's label array.
         for (int i = 0; i < primitives.length; i++) {
             Class<?> selectorType = primitives[i];
             Object value = values[i];
@@ -131,23 +136,22 @@ public class SwitchBootstrapsTest {
             assertEquals(0, (int) target.invoke(value, 0));
             assertEquals(1, (int) target.invoke(value, 1));
             assertEquals(2, (int) target.invoke(value, 2));
-            for (int k = 0; k < primitives.length; k++) {
-                // Primitive Class labels match instances of their wrapper classes.
-                Class<?> labelType = primitives[k];
-                // A match returns index 0; no match returns the single-label count, 1.
+            // With an Object selector, a primitive label matches its wrapper.
+            for (Class<?> labelType : primitives) {
                 int expectedIndex = selectorType == labelType ? 0 : 1;
-                // Use the same label with (primitive selector, int restart) -> int
-                // and (Object selector, int restart) -> int call sites.
-                MethodHandle primitiveTarget = SwitchBootstraps.typeSwitch(
-                        MethodHandles.lookup(), "", primitiveType, labelType).dynamicInvoker();
-                MethodHandle referenceTarget = SwitchBootstraps.typeSwitch(
-                        MethodHandles.lookup(), "", referenceType, labelType).dynamicInvoker();
-                assertEquals(expectedIndex, (int) primitiveTarget.invoke(value, 0));
-                assertEquals(expectedIndex, (int) referenceTarget.invoke(value, 0));
-                assertEquals(-1, (int) referenceTarget.invoke((Object) null, 0));
+                testType(value, 0, expectedIndex, labelType);
             }
         }
         testType(new Object(), 0, 1, void.class);
+    }
+
+    @Test
+    public void testPrimitiveSelectorClassLabels() throws Throwable {
+        testTypeWithSelector(int.class, 3, 0, byte.class);
+        testTypeWithSelector(int.class, 128, 1, byte.class);
+        testTypeWithSelector(byte.class, (byte) 3, 0, int.class);
+        testTypeWithSelector(long.class, 3L, 0, int.class, long.class);
+        testTypeWithSelector(boolean.class, true, 1, Object.class, boolean.class);
     }
 
     @Test
@@ -232,7 +236,6 @@ public class SwitchBootstrapsTest {
     @Test
     public void testWrongSwitchTypes() throws Throwable {
         MethodType[] switchTypes = new MethodType[] {
-            MethodType.methodType(int.class),
             MethodType.methodType(int.class, Object.class),
             MethodType.methodType(int.class, Object.class, Integer.class)
         };

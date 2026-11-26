@@ -59,7 +59,10 @@ import static java.lang.constant.ConstantDescs.*;
 import static java.lang.invoke.MethodHandles.Lookup.ClassOption.NESTMATE;
 import static java.lang.invoke.MethodHandles.Lookup.ClassOption.STRONG;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import static java.util.Objects.requireNonNull;
+import static jdk.internal.constant.ConstantUtils.classDesc;
 import static jdk.internal.constant.ConstantUtils.referenceClassDesc;
 
 import sun.invoke.util.Wrapper;
@@ -141,9 +144,8 @@ public final class SwitchBootstraps {
      * returns the index of the first element in the {@code labels} array starting from
      * the {@code restart} index matching one of the following conditions:
      * <ul>
-     *   <li>the element is of type {@code Class} that is assignable from the target's class.
-     *   For this test, a label representing a primitive type is interpreted as the corresponding
-     *   wrapper class. No numeric conversion is performed when matching a {@code Class} label.</li>
+     *   <li>the element is of type {@code Class} that is assignable
+     *       from the target's class</li>
      *   <li>the element is of type {@code String} and {@code equals} to the target</li>
      *   <li>the element is of type {@code Integer} and {@code ==} to the target after
      *       unboxing if necessary</li>
@@ -157,23 +159,6 @@ public final class SwitchBootstraps {
      * The value of the {@code restart} index must be between {@code 0} (inclusive) and
      * the length of the {@code labels} array (inclusive),
      * both  or an {@link IndexOutOfBoundsException} is thrown.
-     *
-     * @apiNote As of JDK 28, exact numeric matching for primitive {@code Class}
-     *          labels has been removed. For a target of type {@code long},
-     *          {@code long.class} matches the boxed {@code Long}.
-     *          {@code int.class} no longer matches, even if the value can be converted exactly to
-     *          an {@code int}. This can change the returned index even when
-     *          preview features are disabled.
-     * {@snippet :
-     * var lookup = MethodHandles.lookup();
-     *
-     * var numeric = SwitchBootstraps.typeSwitch(
-     *         lookup, "typeSwitch",
-     *         MethodType.methodType(int.class, long.class, int.class),
-     *         int.class, long.class).dynamicInvoker();
-     *
-     * int index = (int) numeric.invokeExact(3L, 0); // JDK 23-27: 0; JDK 28: 1
-     * }
      *
      * @param lookup the full-privilege lookup context of the caller
      * @param invocationName unused, {@code null} is permitted
@@ -203,24 +188,17 @@ public final class SwitchBootstraps {
         if (!lookup.hasFullPrivilegeAccess())
             throw new IllegalArgumentException("Unprivileged lookup ".concat(lookup.toString()));
 
+        Class<?> selectorType = invocationType.parameterType(0);
         if (invocationType.parameterCount() != 2
             || (!invocationType.returnType().equals(int.class))
             || !invocationType.parameterType(1).equals(int.class))
             throw new IllegalArgumentException("Illegal invocation type " + invocationType);
 
-        // Older javac versions use primitive selectors and Class labels even
-        // for non-preview record patterns. Match their boxed types while keeping
-        // the dispatcher reference-based and avoiding numeric conversions.
-        labels = labels.clone();
-        for (int i = 0; i < labels.length; i++) {
-            Object label = labels[i];
+        for (Object label : labels) {
             verifyLabel(label);
-            if (label instanceof Class<?> c && c.isPrimitive()) {
-                labels[i] = Wrapper.asWrapperType(c);
-            }
         }
 
-        MethodHandle target = generateTypeSwitch(lookup, labels);
+        MethodHandle target = generateTypeSwitch(lookup, selectorType, labels);
         target = target.asType(invocationType);
         return new ConstantCallSite(target);
     }
@@ -341,7 +319,7 @@ public final class SwitchBootstraps {
                     Arrays.copyOf(labels, labels.length, EnumDesc[].class);
             target = MethodHandles.insertArguments(StaticHolders.MAPPED_ENUM_SWITCH, 2, lookup, enumClass, enumDescLabels, new MappedEnumCache());
         } else {
-            target = generateTypeSwitch(lookup, labels);
+            target = generateTypeSwitch(lookup, invocationType.parameterType(0), labels);
         }
         target = target.asType(invocationType);
 
@@ -380,7 +358,7 @@ public final class SwitchBootstraps {
 
                     if (generatedSwitch == null) {
                         generatedSwitch =
-                                generateTypeSwitch(lookup, labels)
+                                generateTypeSwitch(lookup, enumClass, labels)
                                         .asType(MethodType.methodType(int.class,
                                                                       Enum.class,
                                                                       int.class));
@@ -479,10 +457,14 @@ public final class SwitchBootstraps {
      * Check if the labelConstants can be converted statically to bytecode, or
      * whether we'll need to compute and pass in extra information at the call site.
      */
-    private static boolean needsExtraInfo(Object[] labelConstants) {
+    private static boolean needsExtraInfo(Class<?> selectorType, Object[] labelConstants) {
         for (int idx = labelConstants.length - 1; idx >= 0; idx--) {
             Object currentLabel = labelConstants[idx];
             if (currentLabel instanceof Class<?> classLabel) {
+                // No extra info needed for exact matches or primitives
+                if (unconditionalExactnessCheck(selectorType, classLabel) || classLabel.isPrimitive()) {
+                    continue;
+                }
                 // Hidden classes - or arrays thereof - can't be nominally
                 // represented. Passed in as arguments.
                 while (classLabel.isArray()) {
@@ -506,7 +488,7 @@ public final class SwitchBootstraps {
      *     ...
      * }
      */
-    private static Consumer<CodeBuilder> generateTypeSwitchSkeleton(Object[] labelConstants, List<EnumDesc<?>> enumDescs, List<Class<?>> extraClassLabels) {
+    private static Consumer<CodeBuilder> generateTypeSwitchSkeleton(Class<?> selectorType, Object[] labelConstants, List<EnumDesc<?>> enumDescs, List<Class<?>> extraClassLabels) {
         int SELECTOR_OBJ        = 0;
         int RESTART_IDX         = 1;
         int ENUM_CACHE          = 2;
@@ -566,26 +548,94 @@ public final class SwitchBootstraps {
                 Object caseLabel = caseLabels[idx];
                 cb.labelBinding(caseTargets[idx]);
                 if (caseLabel instanceof Class<?> classLabel) {
-                    Optional<ClassDesc> classLabelConstableOpt = classLabel.describeConstable();
-                    if (classLabelConstableOpt.isPresent()) {
-                        cb.aload(SELECTOR_OBJ)
-                          .instanceOf(classLabelConstableOpt.orElseThrow())
-                          .ifeq(next);
+                    if (isNotValidPair(selectorType, caseLabel)){
+                        cb.goto_(next);
+                        continue;
+                    }
+                    else if (unconditionalExactnessCheck(selectorType, classLabel)) {
+                        //nothing - unconditionally use this case
+                    } else if (classLabel.isPrimitive()) {
+                        if (!selectorType.isPrimitive() && !Wrapper.isWrapperNumericOrBooleanType(selectorType)) {
+                            // Object o = ...
+                            // o instanceof Wrapped(float)
+                            cb.aload(SELECTOR_OBJ)
+                              .instanceOf(Wrapper.forBasicType(classLabel).wrapperClassDescriptor())
+                              .ifeq(next);
+                        } else if (!unconditionalExactnessCheck(Wrapper.asPrimitiveType(selectorType), classLabel)) {
+                            // Integer i = ... or int i = ...
+                            // o instanceof float
+                            Label notNumber = cb.newLabel(); // this label may end up unbound
+                            cb.aload(SELECTOR_OBJ)
+                              .instanceOf(CD_Number);
+                            if (selectorType == long.class || selectorType == float.class || selectorType == double.class ||
+                                selectorType == Long.class || selectorType == Float.class || selectorType == Double.class) {
+                                cb.ifeq(next);
+                            } else {
+                                cb.ifeq(notNumber);
+                            }
+                            cb.aload(SELECTOR_OBJ)
+                              .checkcast(CD_Number);
+                            if (selectorType == long.class || selectorType == Long.class) {
+                                cb.invokevirtual(CD_Number,
+                                        "longValue",
+                                        MethodTypeDesc.of(CD_long));
+                            } else if (selectorType == float.class || selectorType == Float.class) {
+                                cb.invokevirtual(CD_Number,
+                                        "floatValue",
+                                        MethodTypeDesc.of(CD_float));
+                            } else if (selectorType == double.class || selectorType == Double.class) {
+                                cb.invokevirtual(CD_Number,
+                                        "doubleValue",
+                                        MethodTypeDesc.of(CD_double));
+                            } else {
+                                Label compare = cb.newLabel();
+                                cb.invokevirtual(CD_Number,
+                                        "intValue",
+                                        MethodTypeDesc.of(CD_int))
+                                  .goto_(compare)
+                                  .labelBinding(notNumber);
+                                stackMapFrames.add(StackMapFrameInfo.of(notNumber, locals, List.of()));
+                                cb.aload(SELECTOR_OBJ)
+                                  .instanceOf(CD_Character)
+                                  .ifeq(next)
+                                  .aload(SELECTOR_OBJ)
+                                  .checkcast(CD_Character)
+                                  .invokevirtual(CD_Character,
+                                        "charValue",
+                                        MethodTypeDesc.of(CD_char))
+                                  .labelBinding(compare);
+                                stackMapFrames.add(StackMapFrameInfo.of(compare, locals, List.of(StackMapFrameInfo.SimpleVerificationTypeInfo.INTEGER)));
+                            }
+
+                            TypePairs typePair = TypePairs.of(Wrapper.asPrimitiveType(selectorType), classLabel);
+                            String methodName = TypePairs.typePairToName.get(typePair);
+                            cb.invokestatic(ConstantUtils.referenceClassDesc(ExactConversionsSupport.class),
+                                    methodName,
+                                    MethodTypeDesc.of(CD_boolean, classDesc(typePair.from)))
+                              .ifeq(next);
+                        }
                     } else {
-                        cb.aload(EXTRA_CLASS_LABELS)
-                          .loadConstant(extraClassLabels.size())
-                          .invokeinterface(CD_List,
-                                "get",
-                                MethodTypeDesc.of(CD_Object,
-                                        CD_int))
-                          .checkcast(CD_Class)
-                          .aload(SELECTOR_OBJ)
-                          .invokevirtual(CD_Class,
-                                "isInstance",
-                                MethodTypeDesc.of(CD_boolean,
-                                        CD_Object))
-                          .ifeq(next);
-                        extraClassLabels.add(classLabel);
+                        Optional<ClassDesc> classLabelConstableOpt = classLabel.describeConstable();
+                        if (classLabelConstableOpt.isPresent()) {
+                            cb.aload(SELECTOR_OBJ)
+                              .instanceOf(classLabelConstableOpt.orElseThrow())
+                              .ifeq(next);
+                        } else {
+                            cb.aload(EXTRA_CLASS_LABELS)
+                              .loadConstant(extraClassLabels.size())
+                              .invokeinterface(CD_List,
+                                    "get",
+                                    MethodTypeDesc.of(CD_Object,
+                                            CD_int))
+                              .checkcast(CD_Class)
+                              .aload(SELECTOR_OBJ)
+                              .invokevirtual(CD_Class,
+                                    "isInstance",
+                                    MethodTypeDesc.of(CD_boolean,
+                                            CD_Object))
+                              .ifeq(next);
+                            extraClassLabels.add(classLabel);
+                        }
                     }
                 } else if (caseLabel instanceof EnumDesc<?> enumLabel) {
                     int enumIdx = enumDescs.size();
@@ -653,11 +703,16 @@ public final class SwitchBootstraps {
         };
     }
 
+    private static boolean isNotValidPair(Class<?> selectorType, Object caseLabel) {
+        return (selectorType == boolean.class && caseLabel != boolean.class && caseLabel != Boolean.class) ||
+               (selectorType != boolean.class && selectorType.isPrimitive() && (caseLabel == boolean.class || caseLabel == Boolean.class));
+    }
+
     /*
      * Construct the method handle that represents the method int typeSwitch(Object, int, BiPredicate, List)
      */
-    private static MethodHandle generateTypeSwitch(MethodHandles.Lookup caller, Object[] labelConstants) {
-        boolean addExtraInfo = needsExtraInfo(labelConstants);
+    private static MethodHandle generateTypeSwitch(MethodHandles.Lookup caller, Class<?> selectorType, Object[] labelConstants) {
+        boolean addExtraInfo = needsExtraInfo(selectorType, labelConstants);
         List<EnumDesc<?>> enumDescs = addExtraInfo ? new ArrayList<>() : null;
         List<Class<?>> extraClassLabels = addExtraInfo ? new ArrayList<>() : null;
 
@@ -667,7 +722,7 @@ public final class SwitchBootstraps {
                        .withMethodBody("typeSwitch",
                                        addExtraInfo ? MTD_TYPE_SWITCH_EXTRA : MTD_TYPE_SWITCH,
                                        ClassFile.ACC_FINAL | ClassFile.ACC_PUBLIC | ClassFile.ACC_STATIC,
-                                       generateTypeSwitchSkeleton(labelConstants, enumDescs, extraClassLabels));
+                                       generateTypeSwitchSkeleton(selectorType, labelConstants, enumDescs, extraClassLabels));
         });
 
         try {
@@ -695,5 +750,74 @@ public final class SwitchBootstraps {
             name = name.replace('/', '_');
         }
         return name + "$$TypeSwitch";
+    }
+
+    private static boolean unconditionalExactnessCheck(Class<?> selectorType, Class<?> targetType) {
+        Wrapper selectorWrapper = Wrapper.forBasicType(selectorType);
+        Wrapper targetWrapper   = Wrapper.forBasicType(targetType);
+        if (selectorType.isPrimitive() && targetType.equals(selectorWrapper.wrapperType())) {
+            return true;
+        }
+        else if (selectorType.equals(targetType) ||
+                (targetType.isPrimitive() && selectorType.isPrimitive() &&
+                    (selectorWrapper.isStrictSubRangeOf(targetWrapper) &&
+                            !((selectorType.equals(byte.class) && targetType.equals(char.class)) ||
+                              (selectorType.equals(int.class)  && targetType.equals(float.class)) ||
+                              (selectorType.equals(long.class) && (targetType.equals(double.class) || targetType.equals(float.class))))))) return true;
+        return false;
+    }
+
+    record TypePairs(Class<?> from, Class<?> to) {
+
+        private static final Map<TypePairs, String> typePairToName = initialize();
+
+        public static TypePairs of(Class<?> from,  Class<?> to) {
+            if (from == byte.class || from == short.class || from == char.class) {
+                from = int.class;
+            }
+            return new TypePairs(from, to);
+        }
+
+        public int hashCode() {
+            return 31 * from.hashCode() + to.hashCode();
+        }
+
+        public boolean equals(Object other) {
+            if (other instanceof TypePairs otherPair) {
+                return otherPair.from == from && otherPair.to == to;
+            }
+            return false;
+        }
+
+        public static Map<TypePairs, String> initialize() {
+            Map<TypePairs, String> typePairToName = new HashMap<>();
+            typePairToName.put(new TypePairs(byte.class,   char.class),   "isIntToCharExact");      // redirected
+            typePairToName.put(new TypePairs(short.class,  byte.class),   "isIntToByteExact");      // redirected
+            typePairToName.put(new TypePairs(short.class,  char.class),   "isIntToCharExact");      // redirected
+            typePairToName.put(new TypePairs(char.class,   byte.class),   "isIntToByteExact");      // redirected
+            typePairToName.put(new TypePairs(char.class,   short.class),  "isIntToShortExact");     // redirected
+            typePairToName.put(new TypePairs(int.class,    byte.class),   "isIntToByteExact");
+            typePairToName.put(new TypePairs(int.class,    short.class),  "isIntToShortExact");
+            typePairToName.put(new TypePairs(int.class,    char.class),   "isIntToCharExact");
+            typePairToName.put(new TypePairs(int.class,    float.class),  "isIntToFloatExact");
+            typePairToName.put(new TypePairs(long.class,   byte.class),   "isLongToByteExact");
+            typePairToName.put(new TypePairs(long.class,   short.class),  "isLongToShortExact");
+            typePairToName.put(new TypePairs(long.class,   char.class),   "isLongToCharExact");
+            typePairToName.put(new TypePairs(long.class,   int.class),    "isLongToIntExact");
+            typePairToName.put(new TypePairs(long.class,   float.class),  "isLongToFloatExact");
+            typePairToName.put(new TypePairs(long.class,   double.class), "isLongToDoubleExact");
+            typePairToName.put(new TypePairs(float.class,  byte.class),   "isFloatToByteExact");
+            typePairToName.put(new TypePairs(float.class,  short.class),  "isFloatToShortExact");
+            typePairToName.put(new TypePairs(float.class,  char.class),   "isFloatToCharExact");
+            typePairToName.put(new TypePairs(float.class,  int.class),    "isFloatToIntExact");
+            typePairToName.put(new TypePairs(float.class,  long.class),   "isFloatToLongExact");
+            typePairToName.put(new TypePairs(double.class, byte.class),   "isDoubleToByteExact");
+            typePairToName.put(new TypePairs(double.class, short.class),  "isDoubleToShortExact");
+            typePairToName.put(new TypePairs(double.class, char.class),   "isDoubleToCharExact");
+            typePairToName.put(new TypePairs(double.class, int.class),    "isDoubleToIntExact");
+            typePairToName.put(new TypePairs(double.class, long.class),   "isDoubleToLongExact");
+            typePairToName.put(new TypePairs(double.class, float.class),  "isDoubleToFloatExact");
+            return typePairToName;
+        }
     }
 }
