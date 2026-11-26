@@ -151,6 +151,16 @@ public class IRNode {
      * }
      */
 
+    public static final String AARCH64_BRANCH_CON = PREFIX + "AARCH64_BRANCH_CON" + POSTFIX;
+    static {
+        machOnlyNameRegex(AARCH64_BRANCH_CON, "branchCon");
+    }
+
+    public static final String AARCH64_BRANCH_CON_U = PREFIX + "AARCH64_BRANCH_CON_U" + POSTFIX;
+    static {
+        machOnlyNameRegex(AARCH64_BRANCH_CON_U, "branchConU");
+    }
+
     public static final String ABS_D = PREFIX + "ABS_D" + POSTFIX;
     static {
         beforeMatchingNameRegex(ABS_D, "AbsD");
@@ -627,6 +637,16 @@ public class IRNode {
     public static final String CMOVE_L = PREFIX + "CMOVE_L" + POSTFIX;
     static {
         beforeMatchingNameRegex(CMOVE_L, "CMoveL");
+    }
+
+    public static final String CMP_FAST_LOCK = PREFIX + "CMP_FAST_LOCK" + POSTFIX;
+    static {
+        machOnlyNameRegex(CMP_FAST_LOCK, "cmpFastLock");
+    }
+
+    public static final String CMP_FAST_UNLOCK = PREFIX + "CMP_FAST_UNLOCK" + POSTFIX;
+    static {
+        machOnlyNameRegex(CMP_FAST_UNLOCK, "cmpFastUnlock");
     }
 
     public static final String CMP_F = PREFIX + "CMP_F" + POSTFIX;
@@ -3130,6 +3150,12 @@ public class IRNode {
     public static final String VSTOREMASK_TRUECOUNT = PREFIX + "VSTOREMASK_TRUECOUNT" + POSTFIX;
     static {
         machOnlyNameRegex(VSTOREMASK_TRUECOUNT, "vstoremask_truecount_neon");
+    }
+
+    // Floating-point branches before branch shortening, including unordered EQ/NE and APX variants.
+    public static final String X86_JMP_CON_FP = PREFIX + "X86_JMP_CON_FP" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_JMP_CON_FP, "jmpConUCF(?:2|E)?");
     }
 
     public static final String X86_VMULUDQ_REG = PREFIX + "X86_VMULUDQ_REG" + POSTFIX;
