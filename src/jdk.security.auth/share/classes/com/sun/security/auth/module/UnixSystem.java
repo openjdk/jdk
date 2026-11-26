@@ -38,6 +38,7 @@ import java.lang.foreign.StructLayout;
 import java.lang.foreign.SymbolLookup;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodType;
 import java.lang.invoke.VarHandle;
 
 import static java.lang.foreign.MemoryLayout.PathElement.groupElement;
@@ -112,7 +113,11 @@ public class UnixSystem {
                     FunctionDescriptor.of(C_INT,
                             C_UINT32, C_POINTER, C_POINTER,
                             OperatingSystem.isAix() ? C_INT : C_SIZE_T,
-                            C_POINTER));
+                            C_POINTER)).asType(MethodType.methodType(
+                                int.class,
+                                int.class, MemorySegment.class, MemorySegment.class,
+                                int.class, // widened to long if needed
+                                MemorySegment.class));
 
     private static final GroupLayout ML_passwd = MemoryLayout.structLayout(
             C_POINTER.withName("pw_name"),
@@ -179,7 +184,7 @@ public class UnixSystem {
 
             // Do not call invokeExact because the type of buffer_size is not
             // always long in the underlying system.
-            int out = (int) MH_getpwuid_r.invoke(
+            int out = (int) MH_getpwuid_r.invokeExact(
                     tmpUid, pwd, buffer, GETPW_R_SIZE_MAX, result);
             if (out != 0) {
                 // If ERANGE (Result too large) is detected in a new platform,
