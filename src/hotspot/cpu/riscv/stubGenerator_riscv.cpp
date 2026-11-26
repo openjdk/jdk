@@ -1036,6 +1036,7 @@ class StubGenerator: public StubCodeGenerator {
   typedef void (MacroAssembler::*copy_insn)(Register Rd, const Address &adr, Register temp);
 
   void copy_memory_v(Register s, Register d, Register count, int step) {
+    assert(step != 0, "step must not be zero");
     const bool is_forward = step > 0;
     int granularity = g_uabs(step);
 
