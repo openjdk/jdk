@@ -1035,7 +1035,8 @@ class StubGenerator: public StubCodeGenerator {
 
   typedef void (MacroAssembler::*copy_insn)(Register Rd, const Address &adr, Register temp);
 
-  void copy_memory_v_forward(Register s, Register d, Register count, int step) {
+  void copy_memory_v(Register s, Register d, Register count, int step) {
+    const bool is_forward = step > 0;
     int granularity = g_uabs(step);
 
     const Register src = x30, dst = x31, vl = x14, cnt = x15;
@@ -1045,44 +1046,34 @@ class StubGenerator: public StubCodeGenerator {
     const int vector_length = static_cast<int>(VM_Version::initial_vector_length());
     const int lmul_multiplier = MAX2(128 / vector_length, 1);
     const Assembler::LMUL lmul = static_cast<Assembler::LMUL>(exact_log2(lmul_multiplier));
-    Label loop;
 
-    __ mv(dst, d);
-    __ mv(src, s);
-    __ mv(cnt, count);
+    if (is_forward) {
+      Label loop;
+      __ mv(dst, d);
+      __ mv(src, s);
+      __ mv(cnt, count);
 
-    __ bind(loop);
-    __ vsetvli(vl, cnt, sew, lmul);
-    __ vlex_v(v0, src, sew);
-    __ sub(cnt, cnt, vl);
-    __ shift_left_add(src, vl, src, sew, t0);
-    __ vsex_v(v0, dst, sew);
-    __ shift_left_add(dst, vl, dst, sew, t0);
-    __ bnez(cnt, loop);
-  }
+      __ bind(loop);
+      __ vsetvli(vl, cnt, sew, lmul);
+      __ vlex_v(v0, src, sew);
+      __ sub(cnt, cnt, vl);
+      __ shift_left_add(src, vl, src, sew, t0);
+      __ vsex_v(v0, dst, sew);
+      __ shift_left_add(dst, vl, dst, sew, t0);
+      __ bnez(cnt, loop);
+    } else {
+      Label loop;
+      __ mv(cnt, count);
 
-  void copy_memory_v_backward(Register s, Register d, Register count, int step) {
-    int granularity = g_uabs(step);
-
-    const Register src = x30, dst = x31, vl = x14, cnt = x15;
-    assert_different_registers(s, d, count, src, dst, cnt, vl, t0);
-    Assembler::SEW sew = Assembler::elembytes_to_sew(granularity);
-    // Use a 128-byte tuning target for vector group capacity, with a minimum LMUL of m1.
-    const int vector_length = static_cast<int>(VM_Version::initial_vector_length());
-    const int lmul_multiplier = MAX2(128 / vector_length, 1);
-    const Assembler::LMUL lmul = static_cast<Assembler::LMUL>(exact_log2(lmul_multiplier));
-    Label loop;
-
-    __ mv(cnt, count);
-
-    __ bind(loop);
-    __ vsetvli(vl, cnt, sew, lmul);
-    __ sub(cnt, cnt, vl);
-    __ shift_left_add(src, cnt, s, sew, t0);
-    __ vlex_v(v0, src, sew);
-    __ shift_left_add(dst, cnt, d, sew, t0);
-    __ vsex_v(v0, dst, sew);
-    __ bnez(cnt, loop);
+      __ bind(loop);
+      __ vsetvli(vl, cnt, sew, lmul);
+      __ sub(cnt, cnt, vl);
+      __ shift_left_add(src, cnt, s, sew, t0);
+      __ vlex_v(v0, src, sew);
+      __ shift_left_add(dst, cnt, d, sew, t0);
+      __ vsex_v(v0, dst, sew);
+      __ bnez(cnt, loop);
+    }
   }
 
   // All-singing all-dancing memory copy.
@@ -1095,11 +1086,7 @@ class StubGenerator: public StubCodeGenerator {
                    Register s, Register d, Register count, int step) {
     BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
     if (UseRVV && (!is_reference_type(type) || bs_asm->supports_rvv_arraycopy())) {
-      if (step > 0) {
-        return copy_memory_v_forward(s, d, count, step);
-      } else {
-        return copy_memory_v_backward(s, d, count, step);
-      }
+      return copy_memory_v(s, d, count, step);
     }
 
     bool is_backwards = step < 0;
