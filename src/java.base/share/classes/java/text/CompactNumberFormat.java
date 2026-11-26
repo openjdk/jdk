@@ -97,18 +97,26 @@ import java.util.stream.Collectors;
  * }
  *
  * <h2 id="formatting">Formatting</h2>
- * The default formatting behavior returns a formatted string with no fractional
- * digits, however users can use the {@link #setMinimumFractionDigits(int)}
- * method to include the fractional part.
- * The number {@code 1000.0} or {@code 1000} is formatted as {@code "1K"}
- * not {@code "1.00K"} (in the {@link java.util.Locale#US US locale}). For this
- * reason, the patterns provided for formatting contain only the minimum
- * integer digits, prefix and/or suffix, but no fractional part.
- * For example, patterns used are {@code {"", "", "", 0K, 00K, ...}}. If the pattern
- * selected for formatting a number is {@code "0"} (special pattern),
- * either explicit or defaulted, then the general number formatting provided by
- * {@link java.text.DecimalFormat DecimalFormat}
- * for the specified locale is used.
+ *
+ * {@code CompactNumberFormat} utilizes both compact number formatting and general number formatting. For example,
+ * using the following patterns {@code {"", "", "", "0K", ...}} with the {@link Locale#US US locale} and a
+ * minimum of 1 fractional digit, {@code 55.5} is formatted as "56" through general number formatting, and
+ * {@code 5500} is formatted as "5.5K" through compact number formatting.
+ *
+ * <h3>General Number Formatting</h3>
+ * Formatting that uses the special compact pattern "0", either explicitly or when the empty string compact pattern
+ * falls back to it, is referred to as general number formatting. This uses the formatting provided by {@link
+ * DecimalFormat} with the {@code decimalPattern} provided to the {@code CompactNumberFormat}. Such formatting
+ * never produces fractional digits, even if the underlying decimal pattern has been composed to use fractional digits.
+ * Changes to the {@code CompactNumberFormat}, such as calling {@link #setGroupingUsed(boolean)
+ * setGroupingUsed(true)}, will not change the behavior for general number formatting.
+ *
+ * <h3>Compact Number Formatting</h3>
+ * The default compact number formatting behavior does not produce fractional digits.
+ * This is why the compact patterns are expected to contain only the minimum
+ * integer digits, prefix and/or suffix, but no fractional part, such as {@code "00M"}.
+ * However, users can use {@link #setMinimumFractionDigits(int)} to support fractional digits
+ * for compact number formatting if needed.
  *
  * <h3>Rounding</h3>
  * {@code CompactNumberFormat} provides rounding modes defined in
@@ -220,7 +228,7 @@ import java.util.stream.Collectors;
  * </pre></blockquote>
  *
  * @spec https://www.unicode.org/reports/tr35
- *      Unicode Locale Data Markup Language (LDML)
+ *      Unicode Common Locale Data {@literal &} Rules (CLDR)
  * @see NumberFormat.Style
  * @see NumberFormat
  * @see DecimalFormat
@@ -466,7 +474,7 @@ public final class CompactNumberFormat extends NumberFormat {
      *        or if the given {@code pluralRules} contains an invalid syntax
      *
      * @spec https://www.unicode.org/reports/tr35
-     *      Unicode Locale Data Markup Language (LDML)
+     *      Unicode Common Locale Data {@literal &} Rules (CLDR)
      * @see DecimalFormat#DecimalFormat(java.lang.String, DecimalFormatSymbols)
      * @see DecimalFormatSymbols
      * @since 14
@@ -1300,7 +1308,7 @@ public final class CompactNumberFormat extends NumberFormat {
     }
 
     // Patterns for plurals syntax validation
-    private static final String EXPR = "([niftvwe])\\s*(([/%])\\s*(\\d+))*+";
+    private static final String EXPR = "([niftvwec])\\s*(([/%])\\s*(\\d+))*+";
     private static final String RELATION = "(!?=)";
     private static final String VALUE_RANGE = "((\\d+)\\.\\.(\\d+)|\\d+)";
     private static final String CONDITION = EXPR + "\\s*" +
@@ -2604,7 +2612,7 @@ public final class CompactNumberFormat extends NumberFormat {
                 .allMatch(r -> relationCheck(r, input)));
     }
 
-    private static final String NAMED_EXPR = "(?<op>[niftvwe])\\s*((?<div>[/%])\\s*(?<val>\\d+))*";
+    private static final String NAMED_EXPR = "(?<op>[niftvwec])\\s*((?<div>[/%])\\s*(?<val>\\d+))*";
     private static final String NAMED_RELATION = "(?<rel>!?=)";
     private static final String NAMED_VALUE_RANGE = "(?<start>\\d+)\\.\\.(?<end>\\d+)|(?<value>\\d+)";
     private static final Pattern EXPR_PATTERN = Pattern.compile(NAMED_EXPR);

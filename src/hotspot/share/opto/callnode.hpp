@@ -392,7 +392,7 @@ public:
   void verify_input(const JVMState* jvms, uint idx) const {
     assert(verify_jvms(jvms), "jvms must match");
     Node* n = in(idx);
-    assert((!n->bottom_type()->isa_long() && !n->bottom_type()->isa_double()) ||
+    assert((!n->bottom_type()->is_long() && !n->bottom_type()->is_double()) ||
            in(idx + 1)->is_top(), "2nd half of long/double");
   }
 
@@ -841,7 +841,7 @@ public:
     const TypeTuple* r = tf()->range_sig();
     return (!tf()->returns_value_type_as_fields() &&
             r->cnt() > TypeFunc::Parms &&
-            r->field_at(TypeFunc::Parms)->isa_ptr());
+            r->field_at(TypeFunc::Parms)->is_ptr());
   }
 
   // Collect all the interesting edges from a call for use in
@@ -936,8 +936,8 @@ public:
         method != nullptr &&
         method->is_method_handle_intrinsic() &&
         r->cnt() > TypeFunc::Parms &&
-        r->field_at(TypeFunc::Parms)->isa_oopptr() &&
-        r->field_at(TypeFunc::Parms)->is_oopptr()->can_be_value_type()) {
+        r->field_at(TypeFunc::Parms)->is_oopptr() &&
+        r->field_at(TypeFunc::Parms)->as_oopptr()->can_be_value_type()) {
       // Make sure this call is processed by PhaseMacroExpand::expand_mh_intrinsic_return
       C->add_macro_node(this);
     }
@@ -959,6 +959,13 @@ public:
 
   bool is_unboxing_method() const {
     return Compile::current()->eliminate_boxing() && (method() != nullptr) && method()->is_unboxing_method();
+  }
+
+  // Boxing and unboxing calls may not have a safepoint on the fast path.
+  // Since the macro flag is cleared before matching, it has no effect on PcDesc emission.
+  virtual bool guaranteed_safepoint() {
+    assert(!Compile::current()->post_macro_expand_phase() || !is_macro(), "not expanded");
+    return !(is_boxing_or_unboxing_call() && is_macro());
   }
 
   // Late inlining modifies the JVMState, so we need to deep clone it
@@ -1277,8 +1284,7 @@ public:
   // Return null if no allocation is recognized.
   static AllocateArrayNode* Ideal_array_allocation(Node* ptr) {
     AllocateNode* allo = Ideal_allocation(ptr);
-    return (allo == nullptr || !allo->is_AllocateArray())
-           ? nullptr : allo->as_AllocateArray();
+    return isa<AllocateArrayNode>(allo);
   }
 };
 

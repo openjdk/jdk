@@ -67,7 +67,6 @@ class EdgeStore : public CHeapObj<mtTracing> {
             size_t>
   friend class HashTableHost;
   friend class EventEmitter;
-  friend class ObjectSampleWriter;
   friend class ObjectSampleCheckpoint;
  private:
   static traceid _edge_id_counter;
@@ -105,6 +104,7 @@ class EdgeStore : public CHeapObj<mtTracing> {
   bool is_empty() const;
   traceid get_id(const Edge* edge) const;
   void put_chain(const Edge* chain, size_t length);
+  static traceid allocate_id();
 };
 
 #endif // SHARE_JFR_LEAKPROFILER_CHAINS_EDGESTORE_HPP

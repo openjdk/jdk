@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2023 IBM Corp. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -40,7 +40,8 @@ import java.util.Map;
 public final class LinuxS390Linker extends AbstractLinker {
 
     private static final Map<String, MemoryLayout> CANONICAL_LAYOUTS =
-            SharedUtils.canonicalLayouts(ValueLayout.JAVA_LONG, ValueLayout.JAVA_LONG, ValueLayout.JAVA_INT);
+            SharedUtils.canonicalLayouts(ValueLayout.JAVA_LONG, ULONG,
+                    UBYTE, ValueLayout.JAVA_INT);
 
     public static LinuxS390Linker getInstance() {
         final class Holder {
@@ -52,6 +53,13 @@ public final class LinuxS390Linker extends AbstractLinker {
 
     private LinuxS390Linker() {
         // Ensure there is only one instance
+    }
+
+    @Override
+    protected ValueLayout maybeEraseSign(ValueLayout valueLayout) {
+        return valueLayout.byteSize() < 8 // smaller than long
+                ? valueLayout // keep, if any
+                : super.maybeEraseSign(valueLayout);
     }
 
     @Override

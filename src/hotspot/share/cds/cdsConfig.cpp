@@ -61,6 +61,7 @@ bool CDSConfig::_has_temp_aot_config_file = false;
 bool CDSConfig::_old_cds_flags_used = false;
 bool CDSConfig::_new_aot_flags_used = false;
 bool CDSConfig::_disable_heap_dumping = false;
+bool CDSConfig::_using_alternate_system_loader = false;
 bool CDSConfig::_is_at_aot_safepoint = false;
 
 const char* CDSConfig::_default_archive_path = nullptr;
@@ -108,6 +109,11 @@ void CDSConfig::ergo_initialize() {
   }
 
   AOTMapLogger::ergo_initialize();
+
+  if (using_alternate_system_loader() && (is_dumping_aot_configuration() || is_dumping_aot_cache())) {
+    log_warning(aot)("AOT optimizations are curtailed because -Djava.system.class.loader=%s is specified",
+        Arguments::get_property("java.system.class.loader"));
+  }
 
   setup_compiler_args();
 
@@ -335,6 +341,10 @@ void CDSConfig::check_incompatible_property(const char* key, const char* value) 
     "jdk.module.validation"
   };
 
+  if (strcmp(key, "java.system.class.loader") == 0) {
+    _using_alternate_system_loader = true;
+  }
+
   for (const char* property : incompatible_properties) {
     if (strcmp(key, property) == 0) {
       stop_dumping_full_module_graph();
@@ -509,7 +519,7 @@ void CDSConfig::check_aotmode_off() {
 
 void CDSConfig::check_aotmode_auto_or_on() {
   if (AOTMode != nullptr && strcmp(AOTMode, "on") == 0) {
-    warning("Option -XX:AOTMode-on was deprecated in version 28 and will likely be "
+    warning("Option -XX:AOTMode=on was deprecated in version 28 and will likely be "
             "removed in a future release. Use option -XX:AOTMode=required instead.");
   }
 
@@ -789,6 +799,11 @@ void CDSConfig::setup_compiler_args() {
 
   if (is_dumping_aot_configuration()) {
     // --- AOT training
+    if (using_alternate_system_loader()) {
+      FLAG_SET_ERGO(AOTRecordTraining, false);
+      FLAG_SET_ERGO(AOTReplayTraining, false);
+    }
+
     if (!AOTClassLinking) { // Note: is_dumping_aot_linked_classes() is false in training run.
       disable_profile_and_compiled_code();
       return;
@@ -798,11 +813,13 @@ void CDSConfig::setup_compiler_args() {
     if (is_using_archive()) {
       // Re-training
       FLAG_SET_ERGO_IF_DEFAULT(AOTReplayTraining, true);
+      FLAG_SET_ERGO(UseAOTCacheCpuFeaturesOnly, true);
       if (AOTReplayTraining) {
         AOTCodeCache::enable_caching();
       }
     } else {
       FLAG_SET_ERGO(AOTReplayTraining, false);
+      FLAG_SET_ERGO(UseAOTCacheCpuFeaturesOnly, false);
       AOTCodeCache::disable_caching();
     }
     disable_dumping_aot_code(); // No AOT code generation during training run
@@ -815,6 +832,7 @@ void CDSConfig::setup_compiler_args() {
 
     FLAG_SET_ERGO(AOTRecordTraining, false);
     FLAG_SET_ERGO_IF_DEFAULT(AOTReplayTraining, true);
+    FLAG_SET_ERGO(UseAOTCacheCpuFeaturesOnly, false);
     // Generate AOT code only when training data enabled
     if (AOTReplayTraining) {
       AOTCodeCache::enable_caching();
@@ -830,6 +848,11 @@ void CDSConfig::setup_compiler_args() {
     } else {
       AOTCodeCache::disable_caching();
     }
+    if (AOTCodeCache::is_caching_enabled()) {
+      FLAG_SET_ERGO_IF_DEFAULT(UseAOTCacheCpuFeaturesOnly, true);
+    } else {
+      FLAG_SET_ERGO(UseAOTCacheCpuFeaturesOnly, false);
+    }
   } else {
     disable_profile_and_compiled_code();
   }
@@ -839,6 +862,7 @@ void CDSConfig::setup_compiler_args() {
 void CDSConfig::disable_profile_and_compiled_code() {
   FLAG_SET_ERGO(AOTReplayTraining, false);
   FLAG_SET_ERGO(AOTRecordTraining, false);
+  FLAG_SET_ERGO(UseAOTCacheCpuFeaturesOnly, false);
   disable_dumping_aot_code();
   AOTCodeCache::disable_caching();
 }

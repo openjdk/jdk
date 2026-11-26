@@ -54,8 +54,7 @@
 //------------------------------is_loop_exit-----------------------------------
 // Given an IfNode, return the loop-exiting projection or null if both
 // arms remain in the loop.
-Node *IdealLoopTree::is_loop_exit(Node *iff) const {
-  assert(iff->is_If(), "not an If: %s", iff->Name());
+Node* IdealLoopTree::is_loop_exit(const IfNode* iff) const {
   assert(is_member(_phase->get_loop(iff)), "not related");
 
   if (iff->outcnt() != 2) {
@@ -84,8 +83,8 @@ IfFalseNode* IdealLoopTree::unique_loop_exit_proj_or_null() {
     assert(_phase->is_dominator(head(), tail()), "sanity");
     for (Node* ctrl = tail(); ctrl != head(); ctrl = ctrl->in(0)) {
       assert(is_member(_phase->get_loop(ctrl)), "sanity");
-      if (ctrl->is_If()) {
-        if (!is_loop_exit(ctrl->as_If())) {
+      if (IfNode* iff = ctrl->isa_If(); iff != nullptr) {
+        if (!is_loop_exit(iff)) {
           continue; // local branch
         } else if (ctrl != loop_end) {
           return nullptr; // multiple loop exits
@@ -178,8 +177,8 @@ void IdealLoopTree::compute_trip_count(PhaseIdealLoop* phase, BasicType loop_bt)
   Node* limit_n = cl->limit();
   if (init_n != nullptr && limit_n != nullptr) {
     jlong stride_con = cl->stride_con();
-    const TypeInteger* init_type = phase->_igvn.type(init_n)->is_integer(loop_bt);
-    const TypeInteger* limit_type = phase->_igvn.type(limit_n)->is_integer(loop_bt);
+    const TypeInteger* init_type = phase->_igvn.type(init_n)->as_integer(loop_bt);
+    const TypeInteger* limit_type = phase->_igvn.type(limit_n)->as_integer(loop_bt);
 
     // compute trip count
     // It used to be computed as:
@@ -215,8 +214,8 @@ void IdealLoopTree::compute_trip_count(PhaseIdealLoop* phase, BasicType loop_bt)
 #ifdef ASSERT
     if (loop_bt == T_INT) {
       // Use longs to avoid integer overflow.
-      jlong init_con = (stride_con > 0) ? init_type->is_int()->_lo : init_type->is_int()->_hi;
-      jlong limit_con = (stride_con > 0) ? limit_type->is_int()->_hi : limit_type->is_int()->_lo;
+      jlong init_con = (stride_con > 0) ? init_type->as_int()->_lo : init_type->as_int()->_hi;
+      jlong limit_con = (stride_con > 0) ? limit_type->as_int()->_hi : limit_type->as_int()->_lo;
       int stride_m = stride_con - (stride_con > 0 ? 1 : -1);
       jlong trip_count = (limit_con - init_con + stride_m) / stride_con;
       // The loop body is always executed at least once even if init >= limit (for stride_con > 0) or
@@ -247,7 +246,7 @@ float IdealLoopTree::compute_profile_trip_cnt_helper(Node* n) {
     IfNode *iff = n->as_If();
     if (iff->_fcnt != COUNT_UNKNOWN && iff->_prob != PROB_UNKNOWN) {
       Node *exit = is_loop_exit(iff);
-      if (exit) {
+      if (exit != nullptr) {
         float exit_prob = iff->_prob;
         if (exit->Opcode() == Op_IfFalse) {
           exit_prob = 1.0 - exit_prob;
@@ -288,22 +287,22 @@ void IdealLoopTree::compute_profile_trip_cnt(PhaseIdealLoop *phase) {
   float trip_cnt = (float)max_jint; // default is big
 
   Node* back = head->in(LoopNode::LoopBackControl);
+  IfNode* back_if = nullptr;
   while (back != head) {
-    if ((back->Opcode() == Op_IfTrue || back->Opcode() == Op_IfFalse) &&
-        back->in(0) &&
-        back->in(0)->is_If() &&
-        back->in(0)->as_If()->_fcnt != COUNT_UNKNOWN &&
-        back->in(0)->as_If()->_prob != PROB_UNKNOWN &&
-        (back->Opcode() == Op_IfTrue ? 1-back->in(0)->as_If()->_prob : back->in(0)->as_If()->_prob) > PROB_MIN) {
-      break;
+    if (back->Opcode() == Op_IfTrue || back->Opcode() == Op_IfFalse) {
+      back_if = Node::isa<IfNode>(back->in(0));
+      if (back_if != nullptr &&
+          back_if->_fcnt != COUNT_UNKNOWN &&
+          back_if->_prob != PROB_UNKNOWN &&
+          (back->Opcode() == Op_IfTrue ? 1 - back_if->_prob : back_if->_prob) > PROB_MIN) {
+        break;
+      }
     }
     back = phase->idom(back);
   }
   if (back != head) {
-    assert((back->Opcode() == Op_IfTrue || back->Opcode() == Op_IfFalse) &&
-           back->in(0), "if-projection exists");
-    IfNode* back_if = back->in(0)->as_If();
-    float loop_back_cnt = back_if->_fcnt * (back->Opcode() == Op_IfTrue ? back_if->_prob : (1 - back_if->_prob));
+    assert(back_if != nullptr, "if-projection exists");
+    float loop_back_cnt = back_if->_fcnt * (back->Opcode() == Op_IfTrue ? back_if->_prob : 1 - back_if->_prob);
 
     // Now compute a loop exit count
     float loop_exit_cnt = 0.0f;
@@ -445,7 +444,7 @@ Node* IdealLoopTree::reassociate_add_sub_cmp(Node* n1, int inv1_idx, int inv2_id
     neg_inv2 = !neg_inv2;
   }
 
-  bool is_int = n2->bottom_type()->isa_int() != nullptr;
+  bool is_int = n2->bottom_type()->is_int();
   Node* inv1_c = phase->get_ctrl(inv1);
   Node* n_inv1;
   if (neg_inv1) {
@@ -640,7 +639,7 @@ uint IdealLoopTree::estimate_peeling(PhaseIdealLoop *phase) {
              test->Opcode() == Op_ParsePredicate,
              "Check this code when new subtype is added");
       // Condition is not a member of this loop?
-      if (!is_member(phase->get_loop(ctrl)) && is_loop_exit(test)) {
+      if (!is_member(phase->get_loop(ctrl)) && is_loop_exit(test->as_If())) {
         return estimate;    // Found reason to peel!
       }
     }
@@ -1283,7 +1282,7 @@ bool IdealLoopTree::policy_unroll(PhaseIdealLoop *phase) {
     Node* phi = cl->phi();
     if (phi != nullptr) {
       assert(phi->is_Phi() && phi->in(0) == _head, "Counted loop should have iv phi.");
-      const TypeInt* iv_type = phase->_igvn.type(phi)->is_int();
+      const TypeInt* iv_type = phase->_igvn.type(phi)->as_int();
       int next_stride = stride_con * 2; // stride after this unroll
       if (next_stride > 0) {
         if (iv_type->_lo > max_jint - next_stride || // overflow
@@ -1301,7 +1300,7 @@ bool IdealLoopTree::policy_unroll(PhaseIdealLoop *phase) {
 
   // After unroll limit will be adjusted: new_limit = limit-stride.
   // Bailout if adjustment overflow.
-  const TypeInt* limit_type = phase->_igvn.type(limit_n)->is_int();
+  const TypeInt* limit_type = phase->_igvn.type(limit_n)->as_int();
   if ((stride_con > 0 && ((min_jint + stride_con) > limit_type->_hi)) ||
       (stride_con < 0 && ((max_jint + stride_con) < limit_type->_lo)))
     return false;  // overflow
@@ -1338,7 +1337,7 @@ bool IdealLoopTree::policy_unroll(PhaseIdealLoop *phase) {
       case Op_VectorCastF2X:
       case Op_PopCountVI:
       case Op_PopCountVL: {
-        const TypeVect* vt = n->bottom_type()->is_vect();
+        const TypeVect* vt = n->bottom_type()->as_vect();
         body_size += Matcher::vector_op_pre_select_sz_estimate(n->Opcode(), vt->element_basic_type(), vt->length());
       } break;
       case Op_StrComp:
@@ -1521,7 +1520,7 @@ bool IdealLoopTree::policy_range_check(PhaseIdealLoop* phase, bool provisional, 
       // Found a test like 'trip+off vs limit'. Test is an IfNode, has two (2)
       // projections. If BOTH are in the loop we need loop unswitching instead
       // of iteration splitting.
-      if (is_loop_exit(iff)) {
+      if (is_loop_exit(iff->as_If())) {
         // Found valid reason to split iterations (if there is room).
         // NOTE: Usually a gross overestimate.
         // Long range checks cause the loop to be transformed in a loop nest which only causes a fixed number of nodes
@@ -1620,12 +1619,12 @@ void PhaseIdealLoop::cast_incr_before_loop(Node* incr, Node* ctrl, CountedLoopNo
 void PhaseIdealLoop::ensure_zero_trip_guard_proj(Node* node, bool is_main_loop) {
   assert(node->is_IfProj(), "must be the zero trip guard If node");
   Node* zer_bol = node->in(0)->in(1);
-  assert(zer_bol != nullptr && zer_bol->is_Bool(), "must be Bool");
+  assert(Node::is<BoolNode>(zer_bol), "must be Bool");
   Node* zer_cmp = zer_bol->in(1);
-  assert(zer_cmp != nullptr && zer_cmp->Opcode() == Op_CmpI, "must be CmpI");
+  assert(Node::is_exact<Op_CmpI>(zer_cmp), "must be CmpI");
   // For the main loop, the opaque node is the second input to zer_cmp, for the post loop it's the first input node
   Node* zer_opaq = zer_cmp->in(is_main_loop ? 2 : 1);
-  assert(zer_opaq != nullptr && zer_opaq->Opcode() == Op_OpaqueZeroTripGuard, "must be OpaqueZeroTripGuard");
+  assert(Node::is_exact<Op_OpaqueZeroTripGuard>(zer_opaq), "must be OpaqueZeroTripGuard");
 }
 #endif
 
@@ -1906,7 +1905,7 @@ void PhaseIdealLoop::insert_vector_post_loop(IdealLoopTree* loop, Node_List<Node
 }
 
 Node* PhaseIdealLoop::find_last_store_in_outer_loop(Node* store, const IdealLoopTree* outer_loop) {
-  assert(store != nullptr && store->is_Store(), "starting point should be a store node");
+  assert(Node::is<StoreNode>(store), "starting point should be a store node");
   // Follow the memory uses until we get out of the loop.
   // Store nodes in the outer loop body were moved by PhaseIdealLoop::try_move_store_after_loop.
   // Because of the conditions in try_move_store_after_loop (no other usage in the loop body
@@ -2296,7 +2295,7 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree* loop, Node_List<Node>& old_new, bo
     assert(opaq != nullptr && opaq->in(1) == limit, "sanity");
 
     // Verify that policy_unroll result is still valid.
-    const TypeInt* limit_type = _igvn.type(limit)->is_int();
+    const TypeInt* limit_type = _igvn.type(limit)->as_int();
     assert((stride_con > 0 && ((min_jint + stride_con) <= limit_type->_hi)) ||
            (stride_con < 0 && ((max_jint + stride_con) >= limit_type->_lo)),
            "sanity");
@@ -2542,8 +2541,8 @@ Node* PhaseIdealLoop::adjust_limit(bool is_positive_stride, Node* scale, Node* o
 // holds true in the main-loop. Stride, scale, offset and limit are all loop
 // invariant. Further, stride and scale are constants (offset and limit often are).
 void PhaseIdealLoop::add_constraint(jlong stride_con, jlong scale_con, Node* offset, Node* low_limit, Node* upper_limit, Node* pre_ctrl, Node** pre_limit, Node** main_limit) {
-  assert(_igvn.type(offset)->isa_long() != nullptr && _igvn.type(low_limit)->isa_long() != nullptr &&
-         _igvn.type(upper_limit)->isa_long() != nullptr, "arguments should be long values");
+  assert(_igvn.type(offset)->is_long() && _igvn.type(low_limit)->is_long() &&
+         _igvn.type(upper_limit)->is_long(), "arguments should be long values");
 
   // For a positive stride, we need to reduce the main-loop limit and
   // increase the pre-loop limit. This is reversed for a negative stride.
@@ -2623,11 +2622,11 @@ void PhaseIdealLoop::add_constraint(jlong stride_con, jlong scale_con, Node* off
 // See grammar specification in PhaseIdealLoop::is_scaled_iv_plus_offset().
 bool PhaseIdealLoop::is_iv(Node* exp, Node* iv, BasicType bt) {
   exp = exp->uncast();
-  if (exp == iv && iv->bottom_type()->isa_integer(bt)) {
+  if (exp == iv && iv->bottom_type()->is_integer(bt)) {
     return true;
   }
 
-  if (bt == T_LONG && iv->bottom_type()->isa_int() && exp->Opcode() == Op_ConvI2L && exp->in(1)->uncast() == iv) {
+  if (bt == T_LONG && iv->bottom_type()->is_int() && exp->Opcode() == Op_ConvI2L && exp->in(1)->uncast() == iv) {
     return true;
   }
   return false;
@@ -2660,7 +2659,7 @@ bool PhaseIdealLoop::is_scaled_iv(Node* exp, Node* iv, BasicType bt, jlong* p_sc
     }
     return true;
   }
-  if (bt == T_LONG && iv->bottom_type()->isa_int() && exp->Opcode() == Op_ConvI2L) {
+  if (bt == T_LONG && iv->bottom_type()->is_int() && exp->Opcode() == Op_ConvI2L) {
     // Risk for short scaling: avoid long range-check transformations, because
     // the current implementation (transform_long_range_checks) does not protect
     // against overflow.
@@ -3192,13 +3191,13 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree* loop) {
 
   // Check loop body for tests of trip-counter plus loop-invariant vs loop-variant.
   for (uint i = 0; i < loop->_body.size(); i++) {
-    Node *iff = loop->_body[i];
-    if (iff->Opcode() == Op_If ||
-        iff->Opcode() == Op_RangeCheck) { // Test?
+    if (IfNode* iff = Node::isa<IfNode>(loop->_body[i]);
+        iff != nullptr &&
+        (iff->Opcode() == Op_If || iff->Opcode() == Op_RangeCheck)) { // Test?
       // Test is an IfNode, has 2 projections.  If BOTH are in the loop
       // we need loop unswitching instead of iteration splitting.
-      Node *exit = loop->is_loop_exit(iff);
-      if (!exit) continue;
+      Node* exit = loop->is_loop_exit(iff);
+      if (exit == nullptr) continue;
       int flip = (exit->Opcode() == Op_IfTrue) ? 1 : 0;
 
       // Get boolean condition to test
@@ -3382,8 +3381,7 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree* loop) {
       Node* kill_con = intcon(1-flip);
       _igvn.replace_input_of(iff, 1, kill_con);
       // Find surviving projection
-      assert(iff->is_If(), "");
-      ProjNode* dp = ((IfNode*)iff)->proj_out(1-flip);
+      ProjNode* dp = iff->proj_out(1-flip);
       // Find loads off the surviving projection; remove their control edge
       for (DUIterator_Fast imax, i = dp->fast_outs(imax); i < imax; i++) {
         Node* cd = dp->fast_out(i); // Control-dependent node
@@ -3437,7 +3435,7 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree* loop) {
     _igvn.replace_input_of(main_bol, 1, main_cmp);
   }
   assert(main_limit == cl->limit() || get_ctrl(main_limit) == new_limit_ctrl, "wrong control for added limit");
-  const TypeInt* orig_limit_t = _igvn.type(orig_limit)->is_int();
+  const TypeInt* orig_limit_t = _igvn.type(orig_limit)->as_int();
   bool upward = cl->stride_con() > 0;
   // The new loop limit is <= (for an upward loop) >= (for a downward loop) than the orig limit.
   // The expression that computes the new limit may be too complicated and the computed type of the new limit
@@ -3677,8 +3675,8 @@ bool IdealLoopTree::do_remove_empty_loop(PhaseIdealLoop *phase) {
   bool needs_guard = !cl->is_main_loop() && !cl->is_post_loop();
   if (needs_guard) {
     // Skip guard if values not overlap.
-    const TypeInt* init_t = phase->_igvn.type(cl->init_trip())->is_int();
-    const TypeInt* limit_t = phase->_igvn.type(cl->limit())->is_int();
+    const TypeInt* init_t = phase->_igvn.type(cl->init_trip())->as_int();
+    const TypeInt* limit_t = phase->_igvn.type(cl->limit())->as_int();
     int  stride_con = cl->stride_con();
     if (stride_con > 0) {
       needs_guard = (init_t->_hi >= limit_t->_lo);
@@ -4188,7 +4186,7 @@ bool PhaseIdealLoop::match_fill_loop(IdealLoopTree* lpt, Node*& store, Node*& st
       Node* value = n->in(MemNode::ValueIn);
       if (!lpt->is_invariant(value)) {
         msg  = "variant store value";
-      } else if (!_igvn.type(n->in(MemNode::Address))->isa_aryptr()) {
+      } else if (!_igvn.type(n->in(MemNode::Address))->is_aryptr()) {
         msg = "not array address";
       }
       store = n;
@@ -4237,7 +4235,7 @@ bool PhaseIdealLoop::match_fill_loop(IdealLoopTree* lpt, Node*& store, Node*& st
 
   // Make sure there is an appropriate fill routine
   BasicType t = msg == nullptr ?
-    store->out_adr_type()->isa_aryptr()->elem()->array_element_basic_type() : T_VOID;
+    store->out_adr_type()->as_aryptr()->elem()->array_element_basic_type() : T_VOID;
   const char* fill_name;
   if (msg == nullptr &&
       StubRoutines::select_fill_function(t, false, fill_name) == nullptr) {
@@ -4484,7 +4482,7 @@ bool PhaseIdealLoop::intrinsify_fill(IdealLoopTree* lpt) {
 #endif
   }
 
-  BasicType t = store->out_adr_type()->isa_aryptr()->elem()->array_element_basic_type();
+  BasicType t = store->out_adr_type()->as_aryptr()->elem()->array_element_basic_type();
   bool aligned = false;
   if (offset != nullptr && head->init_trip()->is_Con()) {
     int element_size = type2aelembytes(t);

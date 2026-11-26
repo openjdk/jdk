@@ -250,11 +250,13 @@ public:
     return _class_locations->length();
   }
 
+  static void init_boot_classpath() NOT_CDS_RETURN;
+
   const AOTClassLocation* class_location_at(int index) const;
   int get_module_shared_path_index(Symbol* location) const;
 
   // Functions used only during dumptime
-  static void dumptime_init(JavaThread* current);
+  static void dumptime_init(JavaThread* current) NOT_CDS_RETURN;
 
   static void dumptime_set_has_app_classes() {
     _dumptime_instance->_has_app_classes = true;
@@ -282,6 +284,7 @@ public:
   template <typename FUNC> static void dumptime_iterate(FUNC func) {
     _dumptime_instance->dumptime_iterate_helper(func);
   }
+  static int dumptime_get_class_location_index(const char* path, bool is_named_module);
 
   AOTClassLocationConfig* write_to_archive() const;
 

@@ -5,6 +5,8 @@
 #ifndef SPA_VIDEO_MJPG_H
 #define SPA_VIDEO_MJPG_H
 
+#include <spa/param/format.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -13,8 +15,6 @@ extern "C" {
  * \addtogroup spa_param
  * \{
  */
-
-#include <spa/param/format.h>
 
 struct spa_video_info_mjpg {
     struct spa_rectangle size;

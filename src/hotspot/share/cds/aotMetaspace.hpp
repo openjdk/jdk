@@ -43,6 +43,14 @@ class StaticArchiveBuilder;
 
 template<class E> class Array;
 
+// These enum values correspond to the possible values of ArchiveRelocationMode option.
+// Do not change them, or else it will break functionality of ArchiveRelocationMode option.
+enum ArchiveRelocationModeValue {
+  REQUESTED_ADDR_FALLBACK_OS_ADDR = 0,
+  OS_ADDR_ONLY = 1,
+  REQUESTED_ADDR_ONLY = 2
+};
+
 enum MapArchiveResult {
   MAP_ARCHIVE_SUCCESS,
   MAP_ARCHIVE_MMAP_FAILURE,
@@ -94,8 +102,9 @@ public:
   static void initialize_runtime_shared_and_meta_spaces() NOT_CDS_RETURN;
   static void post_initialize(TRAPS) NOT_CDS_RETURN;
   static void get_aot_code_region_size() NOT_CDS_RETURN;
+  static char* get_archived_cpu_features() NOT_CDS_RETURN_(nullptr);
 
-  static void print_on(outputStream* st);
+  static void print_on(outputStream* st) NOT_CDS_RETURN;
 
   static void set_static_archive_validation_failed() {
     _static_archive_validation_failed = true;

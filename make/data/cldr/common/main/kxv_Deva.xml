@@ -434,6 +434,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="collation" type="phonebook">फॉन्-वॉहि सॉर्ट लेँ</type>
 			<type key="collation" type="search">सामानि-उद्देस्य पारिनॉ</type>
 			<type key="collation" type="standard">मानांकॉ सॉर्ट लेँ</type>
+			<type key="hc" type="c12">१२ गॉन्ता ति पॉद्दॉति</type>
+			<type key="hc" type="c24">२४ गॉन्ता ति पॉद्दॉति</type>
 			<type key="hc" type="h11">१२ गॉन्ता ति पॉद्दॉति (0–११)</type>
 			<type key="hc" type="h12">१२ गॉन्ता ति पॉद्दॉति (१–१२)</type>
 			<type key="hc" type="h23">२४ गॉन्ता ति पॉद्दॉति (0–२३)</type>
@@ -867,6 +869,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yw" count="other">Y ताँ वारा w</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="mixed" draft="provisional">{0} – {1}</intervalFormatRange>
+							<intervalFormatRange type="non-numeric" draft="provisional">{0}–{1}</intervalFormatRange>
+							<intervalFormatRange type="numeric" draft="provisional">{0}–{1}</intervalFormatRange>
+						</intervalFormatRanges>
 						<intervalFormatItem id="Bh">
 							<greatestDifference id="B">B h – B h</greatestDifference>
 							<greatestDifference id="h">B h–h</greatestDifference>
@@ -2971,9 +2978,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Samoa">
 				<long>
-					<generic>समोआ बेला</generic>
 					<standard>समोआ मानांकॉ बेला</standard>
-					<daylight>समोआ डेलाइट बेला</daylight>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">

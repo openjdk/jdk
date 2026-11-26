@@ -59,7 +59,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Hant" draft="unconfirmed">tradiciōnalin</script>
 			<script type="Hant" alt="stand-alone" draft="unconfirmed">tradiciōnalin han</script>
 			<script type="Jpan" draft="unconfirmed">japāniskas</script>
-			<script type="Latn" draft="unconfirmed">lātiniskan</script>
+			<script type="Latn" draft="contributed">lātiniskan</script>
 			<script type="Zxxx" draft="unconfirmed">nienpeisātan</script>
 			<script type="Zzzz" draft="contributed">niwaīstan skriptan</script>
 		</scripts>
@@ -463,6 +463,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yQQQQ" draft="unconfirmed">y 'm'. QQQQ</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="mixed" draft="provisional">{0}–{1}</intervalFormatRange>
+							<intervalFormatRange type="non-numeric" draft="provisional">{0}–{1}</intervalFormatRange>
+							<intervalFormatRange type="numeric" draft="provisional">{0}–{1}</intervalFormatRange>
+						</intervalFormatRanges>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d" draft="unconfirmed">d.–d.</greatestDifference>
 						</intervalFormatItem>

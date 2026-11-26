@@ -102,6 +102,7 @@ public class LShiftLNodeIdealizationTests {
         assertResult(max, max);
     }
 
+    @DontCompile
     private void assertResult(long a, long b) {
         otherInput = b;
         Asserts.assertEQ(((a >> 4) & b) << 4, testLShiftOfAndOfRShiftSameCon(a));

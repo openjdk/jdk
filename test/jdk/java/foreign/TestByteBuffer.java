@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @modules java.base/sun.nio.ch java.base/jdk.internal.foreign
+ * @modules java.base/sun.nio.ch java.base/jdk.internal.foreign java.base/jdk.internal.util
  * @run junit/othervm/timeout=600 --enable-native-access=ALL-UNNAMED TestByteBuffer
  */
 
@@ -67,6 +67,7 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
+import jdk.internal.util.ArraysSupport;
 import sun.nio.ch.DirectBuffer;
 
 import static java.lang.foreign.ValueLayout.*;
@@ -530,11 +531,19 @@ public class TestByteBuffer {
     }
 
     @Test
-    public void testTooBigForByteBuffer() {
-        MemorySegment segment = MemorySegment.NULL.reinterpret(Integer.MAX_VALUE + 10L);
-        assertThrows(IllegalStateException.class, () -> {
-            segment.asByteBuffer();
-        });
+    public void testMaxSizeByteBuffer() {
+        for (int size : new int[] { ArraysSupport.SOFT_MAX_ARRAY_LENGTH - 7, ArraysSupport.SOFT_MAX_ARRAY_LENGTH }) {
+            ByteBuffer buffer = MemorySegment.NULL.reinterpret(size).asByteBuffer();
+            assertEquals(size, buffer.capacity());
+            assertEquals(size, buffer.limit());
+        }
+    }
+
+    @Test
+    public void testOverMaxSizeByteBuffer() {
+        MemorySegment segment = MemorySegment.NULL.reinterpret(Integer.MAX_VALUE + 1L);
+        var x = assertThrows(UnsupportedOperationException.class, segment::asByteBuffer);
+        assertEquals("Segment is too large to wrap as ByteBuffer. Size: " + segment.byteSize(), x.getMessage());
     }
 
     @Test

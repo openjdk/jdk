@@ -28,6 +28,8 @@
 #include "gc/shared/gcArguments.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "gc/shared/workerPolicy.hpp"
+#include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
+#include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "gc/shenandoah/shenandoahArguments.hpp"
 #include "gc/shenandoah/shenandoahCardTable.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
@@ -58,6 +60,10 @@ void ShenandoahArguments::initialize() {
 
   FLAG_SET_DEFAULT(ShenandoahVerifyOptoBarriers,     false);
 #endif
+
+  ShenandoahModeFlag::initialize();
+  ShenandoahHeuristicsFlag::initialize();
+
   if (UseLargePages) {
     size_t large_page_size = os::large_page_size();
     if ((align_up(MaxHeapSize, large_page_size) / large_page_size) < ShenandoahHeapRegion::MIN_NUM_REGIONS) {
@@ -160,27 +166,9 @@ void ShenandoahArguments::initialize() {
     FLAG_SET_DEFAULT(ShenandoahUncommit, false);
   }
 
-  // TLAB sizing policy makes resizing decisions before each GC cycle. It averages
-  // historical data, assigning more recent data the weight according to TLABAllocationWeight.
-  // Current default is good for generational collectors that run frequent young GCs.
-  // With Shenandoah, GC cycles are much less frequent, so we need sizing policy
-  // to converge faster over smaller number of resizing decisions.
-  if (strcmp(ShenandoahGCMode, "generational") && FLAG_IS_DEFAULT(TLABAllocationWeight)) {
-    FLAG_SET_DEFAULT(TLABAllocationWeight, 90);
-  }
-  // In generational mode, let TLABAllocationWeight keeps its default value of 35.
-
   if (GCCardSizeInBytes < ShenandoahMinCardSizeInBytes) {
     vm_exit_during_initialization(
       err_msg("GCCardSizeInBytes ( %u ) must be >= %u\n", GCCardSizeInBytes, ShenandoahMinCardSizeInBytes));
-  }
-
-  // Gen shen does not support any ShenandoahGCHeuristics value except for the default "adaptive"
-  if ((strcmp(ShenandoahGCMode, "generational") == 0)
-      && strcmp(ShenandoahGCHeuristics, "adaptive") != 0) {
-    log_warning(gc)("Ignoring -XX:ShenandoahGCHeuristics input: %s, because generational shenandoah only"
-      " supports adaptive heuristics", ShenandoahGCHeuristics);
-    FLAG_SET_ERGO(ShenandoahGCHeuristics, "adaptive");
   }
 
   if (ShenandoahMomentaryAllocRateSampleWindow > ShenandoahRecentAllocRateSampleWindow
@@ -192,17 +180,6 @@ void ShenandoahArguments::initialize() {
         ShenandoahMomentaryAllocRateSampleWindow, ShenandoahRecentAllocRateSampleWindow,
         ShenandoahAllocRateSampleWindow));
   }
-
-#ifdef _LP64
-  if (Arguments::is_valhalla_enabled()) {
-    // Flat atomic payloads may contain embedded oops. Current Valhalla code does not handle
-    // it well, missing the GC barriers. As the temporary kludge, disable compressed oops:
-    // this would make flat atomic payloads contain at most one oop, which would be treated
-    // as the single oop field.
-    log_warning(gc)("Shenandoah disables compressed oops to avoid breaking with Valhalla");
-    FLAG_SET_ERGO(UseCompressedOops, false);
-  }
-#endif
 
   FullGCForwarding::initialize_flags(MaxHeapSize);
 }
@@ -242,7 +219,7 @@ void ShenandoahArguments::initialize_heap_flags_and_sizes() {
 }
 
 CollectedHeap* ShenandoahArguments::create_heap() {
-  if (strcmp(ShenandoahGCMode, "generational") != 0) {
+  if (ShenandoahModeFlag::value() != ShenandoahModeFlag::Mode::GENERATIONAL) {
     // Not generational
     return new ShenandoahHeap();
   } else {

@@ -218,11 +218,11 @@ public:
   bool is_loaded()    const { return _loaded; }
   void set_loaded()         { _loaded = true; }
 
-  bool is_verified()  const;
+  bool is_verified()  const NOT_CDS_RETURN_(false);
   void set_verified();
 
   // Use atomic access to _not_entrant field.
-  bool not_entrant() const;
+  bool not_entrant() const NOT_CDS_RETURN_(false);
   void set_not_entrant();
   bool try_set_not_entrant();
 
@@ -578,16 +578,17 @@ public:
 #define AOTCODECACHE_DECLARE_FUN(type, name, func) type _saved_ ## name;
 
 enum class DataKind: int {
-  No_Data   = -1,
-  Null      = 0,
-  Klass     = 1,
-  Method    = 2,
-  String    = 3,
-  MH_Oop    = 4,
-  Primitive = 5, // primitive Class object
-  SysLoader = 6, // java_system_loader
-  PlaLoader = 7, // java_platform_loader
-  MethodCnts= 8
+  No_Data    = -1,
+  Null       = 0,
+  Klass      = 1,
+  ArrayKlass = 2,
+  Method     = 3,
+  String     = 4,
+  MH_Oop     = 5,
+  Primitive  = 6, // primitive Class object
+  SysLoader  = 7, // java_system_loader
+  PlaLoader  = 8, // java_platform_loader
+  MethodCnts = 9
 };
 
 struct AOTCodeEntryStats;
@@ -689,6 +690,10 @@ protected:
     bool _avoidUnalignedAccesses;
 #endif
 
+#if defined(RISCV64) && defined(COMPILER2)
+    bool _alignVector;
+#endif
+
 #ifdef COMPILER2
     bool _reduceInitialCardMarks;
     uint _c2_ea_state;
@@ -716,10 +721,9 @@ protected:
     };
     uint   _version;         // AOT code version (should match when reading code cache)
     uint   _cache_size;      // cache size in bytes
-    uint   _cpu_features_size;
-    uint   _cpu_features_offset;   // offset in the cache where cpu features are stored
     uint   _preload_entries_count; // entries for pre-loading code
     uint   _preload_entries_offset;
+    uint   _preload_table_offset;  // offset of table for looking up an preload entry
     uint   _entries_count;   // number of recorded entries
     uint   _entries_offset;  // offset of AOTCodeEntry array describing entries
     uint   _search_table_offset; // offset of table for looking up an AOTCodeEntry
@@ -741,8 +745,8 @@ protected:
 
   public:
     void init(uint cache_size,
-              uint cpu_features_size,     uint cpu_features_offset,
               uint preload_entries_count, uint preload_entries_offset,
+              uint preload_table_offset,
               uint entries_count,         uint entries_offset,
               uint search_table_offset,
               uint strings_count,         uint strings_offset,
@@ -752,10 +756,9 @@ protected:
               uint extrs2_length,         uint final_extrs_length) {
       _version                = AOT_CODE_VERSION;
       _cache_size             = cache_size;
-      _cpu_features_size      = cpu_features_size;
-      _cpu_features_offset    = cpu_features_offset;
       _preload_entries_count  = preload_entries_count;
       _preload_entries_offset = preload_entries_offset;
+      _preload_table_offset   = preload_table_offset;
       _entries_count          = entries_count;
       _entries_offset         = entries_offset;
       _search_table_offset    = search_table_offset;
@@ -773,10 +776,9 @@ protected:
     }
 
     uint cache_size()     const { return _cache_size; }
-    uint cpu_features_size()   const { return _cpu_features_size; }
-    uint cpu_features_offset() const { return _cpu_features_offset; }
     uint preload_entries_count()  const { return _preload_entries_count; }
     uint preload_entries_offset() const { return _preload_entries_offset; }
+    uint preload_table_offset()   const { return _preload_table_offset; }
     uint entries_count()  const { return _entries_count; }
     uint entries_offset() const { return _entries_offset; }
     uint strings_count()  const { return _strings_count; }
@@ -844,8 +846,6 @@ private:
   // @0: Header (all the fixed fields that size and place objects in the ac region.
   // See AOTCodeCache::Header::verify for a detailed walk through what follows.
   //
-  // @cpu_features_offset: uchar[cpu_features_size]  same layout as VM_Version
-  //
   // @preload_entries_offset: AOTCodeEntry[preload_entries_count] "preload" AP4 code
   // Sorted by compile_id (from the training run).
   // Queued for load at startup, in that order (see preload_aot_code).
@@ -854,6 +854,9 @@ private:
   // @(preload_entries[0]._offset):  nmethod preimage for preload entry #0
   // @(preload_entries[1]._offset):  nmethod preimage for preload entry #1
   // ...
+  //
+  // @preload_table_offset: uint[preload_entries_count] index, sorted by id.
+  // The id matches AOTCodeEntry::_id. The index point into the preload entries array.
   //
   // @entries_offset: AOTCodeEntry[entries_count] other code (A1/A2/A4/stub/adapter)
   // Main (non-preload) code array, presented in dump order (arbitrary).
@@ -882,6 +885,7 @@ private:
   uint*         _search_entries; // sorted by ID table [id, index] @search_table_offset
   AOTCodeEntry* _store_entries;  // Used when writing cache
   uint          _store_entries_cnt; // total entries count
+  uint          _store_nmethod_cnt; // total nmethod count
 
   // These guys can stash data to help log messages in the APH.  Move to the writer obj?
   uint _compile_id;
@@ -961,9 +965,9 @@ public:
   bool verify_nmethod_entry(AOTCodeEntry* entry, uint id, uint low_bound, uint high_bound);
   AOTCodeEntry* find_entry(AOTCodeEntry::Kind kind, uint id, uint comp_level = 0);
   AOTCodeEntry* search_entry(AOTCodeEntry::Kind kind, uint id, uint comp_level);
+  AOTCodeEntry* find_preload_entry(uint method_id);
   void invalidate_entry(AOTCodeEntry* entry);
 
-  char* store_cpu_features(char* buffer, uint buffer_size);
   static uint get_jvmti_state();
 
   bool finish_write();
@@ -971,6 +975,7 @@ public:
   void log_stats_on_exit(AOTCodeEntryStats& stats);
 
   bool write_klass(Klass* klass);
+  bool write_array_klass(ArrayKlass* klass);
   bool write_method(Method* method);
   bool write_fingerprint(Method* method);
 
@@ -1039,11 +1044,11 @@ public:
   // publish all entries for a code blob in code cache address table
   static void publish_stub_addresses(CodeBlob &code_blob, BlobId id, AOTStubData *stub_data) NOT_CDS_RETURN;
 
-  static uint store_entries_cnt() {
-    if (is_on_for_dump()) {
-      return cache()->_store_entries_cnt;
+  static uint store_nmethod_cnt() {
+    if (is_on()) {
+      return cache()->_store_nmethod_cnt;
     }
-    return -1;
+    return 0;
   }
 
 // Static access
@@ -1188,7 +1193,8 @@ private:
   const char* _failure;  // Failed to lookup for info (skip only this code load)
   void set_lookup_failed(const char* failure) { _failure = failure; }
 
-  Klass* read_klass(JavaThread* thread);
+  Klass* read_klass();
+  Klass* read_array_klass(JavaThread* thread);
   Method* read_method();
   bool verify_fingerprint(Method* method);
 

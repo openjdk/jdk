@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,10 +98,21 @@ public abstract class KEMBench extends CryptoBase {
         }
     }
 
-    private static Provider getInternalJce() {
+    private static Provider getSunJCE() {
+        Provider provider = Security.getProvider("SunJCE");
+        if (provider == null) {
+            throw new RuntimeException("SunJCE provider not found");
+        }
+
+        return provider;
+    }
+
+    private static Provider getInternalDHAsKEM() {
         try {
-            Class<?> dhClazz = Class.forName("sun.security.ssl.HybridProvider");
-            return (Provider) dhClazz.getField("PROVIDER").get(null);
+            Class<?> dhClass = Class.forName("sun.security.ssl.DHasKEM");
+            var provider = dhClass.getDeclaredField("PROVIDER");
+            provider.setAccessible(true);
+            return (Provider) provider.get(null);
         } catch (ReflectiveOperationException exc) {
             throw new RuntimeException(exc);
         }
@@ -140,7 +151,7 @@ public abstract class KEMBench extends CryptoBase {
         @Setup
         public void init() {
             try {
-                prov = getInternalJce();
+                prov = getInternalDHAsKEM();
                 super.setup();
             } catch (GeneralSecurityException gse) {
                 throw new RuntimeException(gse);
@@ -160,7 +171,7 @@ public abstract class KEMBench extends CryptoBase {
         @Setup
         public void init() {
             try {
-                prov = getInternalJce();
+                prov = getSunJCE();
                 super.setup();
             } catch (GeneralSecurityException gse) {
                 throw new RuntimeException(gse);

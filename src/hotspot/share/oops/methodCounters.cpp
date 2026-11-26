@@ -23,7 +23,6 @@
  */
 
 #include "cds/cdsConfig.hpp"
-#include "code/aotCodeCache.hpp"
 #include "compiler/compiler_globals.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "memory/metaspaceClosure.hpp"
@@ -41,9 +40,6 @@ MethodCounters::MethodCounters(const methodHandle& mh) :
   _highest_comp_level(0),
   _highest_osr_comp_level(0)
 {
-#if INCLUDE_CDS
-  set_aot_preload_code_entry(nullptr);
-#endif
   set_interpreter_throwout_count(0);
   JVMTI_ONLY(clear_number_of_breakpoints());
   invocation_counter()->init();
@@ -77,12 +73,6 @@ MethodCounters* MethodCounters::allocate_with_exception(const methodHandle& mh, 
 void MethodCounters::clear_counters() {
   invocation_counter()->reset();
   backedge_counter()->reset();
-#if INCLUDE_CDS
-  if (aot_preload_code_entry() != nullptr) {
-    AOTCodeCache::invalidate(aot_preload_code_entry());
-    set_aot_preload_code_entry(nullptr);
-  }
-#endif
   set_interpreter_throwout_count(0);
   set_prev_time(0);
   set_prev_event_count(0);
@@ -91,33 +81,11 @@ void MethodCounters::clear_counters() {
   set_highest_osr_comp_level(0);
 }
 
-#if INCLUDE_CDS
-void MethodCounters::deallocate_contents(ClassLoaderData* loader_data) {
-  if (aot_preload_code_entry() != nullptr) {
-    AOTCodeCache::invalidate(aot_preload_code_entry());
-    set_aot_preload_code_entry(nullptr);
-  }
-}
-#endif
-
 void MethodCounters::metaspace_pointers_do(MetaspaceClosure* it) {
   log_trace(aot, training)("Iter(MethodCounters): %p", this);
   it->push(&_method);
   it->push(&_method_training_data);
 }
-
-#if INCLUDE_CDS
-void MethodCounters::set_aot_preload_code_entry(AOTCodeEntry* entry) {
-  precond(entry == nullptr || entry->for_preload());
-  _aot_preload_code_entry = entry;
-}
-
-void MethodCounters::remove_unshareable_info() {
-}
-void MethodCounters::restore_unshareable_info(TRAPS) {
-  _method_training_data = method_training_data_sentinel();
-}
-#endif // INCLUDE_CDS
 
 void MethodCounters::print_on(outputStream* st) const {
   assert(is_methodCounters(), "should be method counters");
