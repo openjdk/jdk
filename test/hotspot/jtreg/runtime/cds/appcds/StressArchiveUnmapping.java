@@ -27,6 +27,7 @@
  * @test
  * @summary Test AOT archive unmapping with diagnostic flag AOTStressArchiveUnmapping
  * @bug 8397369
+ * @requires vm.cds
  * @library /test/lib
  * @build StressArchiveUnmapping
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar StressArchiveUnmappingApp
