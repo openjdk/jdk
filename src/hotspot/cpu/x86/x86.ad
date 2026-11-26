@@ -5575,7 +5575,7 @@ operand rFlagsReg()
 %{
   constraint(ALLOC_IN_RC(int_flags));
   match(RegFlags);
-  predicate(!is_fp_compare(n);
+  predicate(!is_fp_compare(n));
 
   format %{ "RFLAGS" %}
   interface(REG_INTER);
@@ -5586,7 +5586,7 @@ operand rFlagsRegU()
 %{
   constraint(ALLOC_IN_RC(int_flags));
   match(RegFlags);
-  predicate(is_fp_compare(n);
+  predicate(is_fp_compare(n));
 
   format %{ "RFLAGS_U" %}
   interface(REG_INTER);
