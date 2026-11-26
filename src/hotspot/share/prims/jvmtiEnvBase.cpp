@@ -916,7 +916,7 @@ JvmtiEnvBase::count_locked_objects(JavaThread *java_thread, Handle hobj) {
   RegisterMap  reg_map(java_thread,
                        RegisterMap::UpdateMap::include,
                        RegisterMap::ProcessFrames::include,
-                       RegisterMap::WalkContinuation::skip);
+                       RegisterMap::WalkContinuation::include);
 
   for (javaVFrame *jvf = java_thread->last_java_vframe(&reg_map); jvf != nullptr;
        jvf = jvf->java_sender()) {
@@ -1007,7 +1007,7 @@ JvmtiEnvBase::get_owned_monitors(JavaThread *calling_thread, JavaThread* java_th
     RegisterMap  reg_map(java_thread,
                          RegisterMap::UpdateMap::include,
                          RegisterMap::ProcessFrames::include,
-                         RegisterMap::WalkContinuation::skip);
+                         RegisterMap::WalkContinuation::include);
 
     int depth = 0;
     for (javaVFrame *jvf = get_cthread_last_java_vframe(java_thread, &reg_map);
@@ -1233,7 +1233,7 @@ JvmtiEnvBase::get_stack_trace(JavaThread *java_thread,
     RegisterMap reg_map(java_thread,
                         RegisterMap::UpdateMap::include,
                         RegisterMap::ProcessFrames::skip,
-                        RegisterMap::WalkContinuation::skip);
+                        RegisterMap::WalkContinuation::include);
     ResourceMark rm(current_thread);
     javaVFrame *jvf = get_cthread_last_java_vframe(java_thread, &reg_map);
 
@@ -1274,7 +1274,7 @@ JvmtiEnvBase::get_frame_count(JavaThread* jt, jint *count_ptr) {
     RegisterMap reg_map(jt,
                         RegisterMap::UpdateMap::include,
                         RegisterMap::ProcessFrames::include,
-                        RegisterMap::WalkContinuation::skip);
+                        RegisterMap::WalkContinuation::include);
     javaVFrame *jvf = get_cthread_last_java_vframe(jt, &reg_map);
 
     *count_ptr = get_frame_count(jvf);
@@ -1406,7 +1406,12 @@ JvmtiEnvBase::is_cthread_with_continuation(JavaThread* jt) {
   if (jt->has_last_Java_frame()) {
     cont_entry = jt->vthread_continuation();
   }
-  return cont_entry != nullptr && is_cthread_with_mounted_vthread(jt);
+  if (cont_entry == nullptr) {
+    return false;
+  }
+  // During a mount or unmount transition, jvmti_vthread() is the carrier thread
+  // while the virtual thread's frames are still, or already, on the stack.
+  return is_cthread_with_mounted_vthread(jt) || jt->is_in_vthread_transition();
 }
 
 // Check if VirtualThread or BoundVirtualThread is suspended.
