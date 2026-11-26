@@ -3722,7 +3722,9 @@ Metadata* AOTCodeReader::read_metadata(JavaThread* thread) {
   } else if (kind == DataKind::No_Data) {
     m = (Metadata*)Universe::non_oop_word();
   } else if (kind == DataKind::Klass) {
-    m = (Metadata*)read_klass(thread);
+    m = (Metadata*)read_klass();
+  } else if (kind == DataKind::ArrayKlass) {
+    m = (Metadata*)read_array_klass(thread);
   } else if (kind == DataKind::Method) {
     m = (Metadata*)read_method();
   } else if (kind == DataKind::MethodCnts) {
@@ -3861,69 +3863,120 @@ Method* AOTCodeReader::read_method() {
 }
 
 bool AOTCodeCache::write_klass(Klass* klass) {
-  uint array_dim = 0;
-  uint array_desc = ArrayProperties::Invalid().value();
-  bool can_write = true;
-  if (klass->is_objArray_klass()) {
-    // We must check klass and its bottom_klass.
-    can_write = AOTCacheAccess::can_generate_aot_code(klass);
-    ObjArrayKlass* oak = ObjArrayKlass::cast(klass);
-    array_dim = oak->dimension();
-    // Preserve property of object array
-    if (klass->is_flatArray_klass()) {
-      array_desc = ArrayDescription::flat(oak->properties(), FlatArrayKlass::cast(klass)->layout_kind()).value();
-    } else if (klass->is_refArray_klass()) {
-      array_desc = ArrayDescription::reference(oak->properties()).value();
-    }
-    klass = oak->bottom_klass(); // overwrites klass
-  }
-  uint init_state = 0;
-  if (klass->is_instance_klass()) {
-    // A few classes are initialized in the assembly phase before code generation.
-    // When run in production, the code will assume they are initialized, again.
-    InstanceKlass* ik = InstanceKlass::cast(klass);
-    init_state = (ik->is_initialized() ? 1 : 0);
-    can_write &= AOTCacheAccess::can_generate_aot_code_for(ik);
-  } else {
-    assert(klass->is_typeArray_klass(), "must be");
-    can_write &= AOTCacheAccess::can_generate_aot_code(klass);
+  if (klass->is_array_klass()) {
+    return write_array_klass(ArrayKlass::cast(klass));
   }
   ResourceMark rm;
-  uint state = (array_dim << 1) | (init_state & 1);
-  if (can_write) {
+  InstanceKlass* ik = InstanceKlass::cast(klass);
+  if (AOTCacheAccess::can_generate_aot_code_for(ik)) {
     DataKind kind = DataKind::Klass;
     if (!write_kind(kind)) {
-      return false;
-    }
-    // Record state of instance klass initialization and array dimensions.
-    if (!write_int(state)) {
-      return false;
-    }
-    // Record array's properties
-    if (!write_int(array_desc)) {
       return false;
     }
     narrowPtr klass_narrow_ptr = AOTCacheAccess::to_narrow_ptr(klass);
     if (!write_int((int)checked_cast<u4>(klass_narrow_ptr))) {
       return false;
     }
-    log_debug(aot, codecache, metadata)("%d (A%d): Registered klass: %s%s%s @ 0x%08x",
+    log_debug(aot, codecache, metadata)("%d (A%d): Registered klass: %s%s @ 0x%08x",
               compile_id(), comp_level(), klass->external_name(),
-              (!klass->is_instance_klass() ? "" : (init_state == 1 ? " (initialized)" : " (not-initialized)")),
-              (array_dim > 0 ? " (object array)" : ""), cast_to_u4(klass_narrow_ptr));
+              (!klass->is_instance_klass() ? "" : (InstanceKlass::cast(klass)->is_initialized() ?
+                                                  " (initialized)" : " (not-initialized)")),
+              cast_to_u4(klass_narrow_ptr));
     return true;
   }
-  log_debug(aot, codecache, metadata)("%d (A%d): Klass is not registered: %s%s%s",
+  log_debug(aot, codecache, metadata)("%d (A%d): Klass is not registered: %s%s",
             compile_id(), comp_level(), klass->external_name(),
-            (!klass->is_instance_klass() ? "" : (init_state == 1 ? " (initialized)" : " (not-initialized)")),
-            (array_dim > 0 ? " (object array)" : ""));
+            (!klass->is_instance_klass() ? "" : (InstanceKlass::cast(klass)->is_initialized() ?
+                                                " (initialized)" : " (not-initialized)")));
   set_lookup_failed();
   return false;
 }
 
-Klass* AOTCodeReader::read_klass(JavaThread* thread) {
-  uint state;
-  if (!read_int((int*)&state)) {
+Klass* AOTCodeReader::read_klass() {
+  narrowPtr klass_narrow_ptr;
+  if (!read_int((int*)&klass_narrow_ptr)) {
+    return nullptr;
+  }
+  Klass* k = AOTCacheAccess::narrow_ptr_to_klass(klass_narrow_ptr);
+  if (k == nullptr || !AOTMetaspace::in_aot_cache((address)k) || !k->is_klass()) {
+    // Something changed in CDS
+    set_lookup_failed("Klass is not in AOT cache");
+    log_debug(aot, codecache, metadata)("%d (A%d): Lookup failed klass: " INTPTR_FORMAT " is not in AOT cache",
+              compile_id(), comp_level(), p2i((address)k));
+    return nullptr;
+  }
+  ResourceMark rm;
+  if (!k->is_instance_klass() || !InstanceKlass::cast(k)->is_loaded()) {
+    set_lookup_failed("Klass is not loaded");
+    log_debug(aot, codecache, metadata)("%d (A%d): Lookup failed for klass %s: not loaded",
+              compile_id(), comp_level(), k->external_name());
+    return nullptr;
+  }
+  log_debug(aot, codecache, metadata)("%d (A%d): Found klass %s",
+              compile_id(), comp_level(), k->external_name());
+  return k;
+}
+
+bool AOTCodeCache::write_array_klass(ArrayKlass* klass) {
+  uint array_dim = klass->dimension();
+  uint array_desc = ArrayProperties::Invalid().value();
+  Klass* bottom = klass;
+  if (klass->is_objArray_klass()) {
+    // We must check klass and its bottom_klass.
+    ObjArrayKlass* oak = ObjArrayKlass::cast(klass);
+    bottom = oak->bottom_klass();
+    // Preserve property of object array
+    if (klass->is_flatArray_klass()) {
+      array_desc = ArrayDescription::flat(oak->properties(), FlatArrayKlass::cast(klass)->layout_kind()).value();
+    } else if (klass->is_refArray_klass()) {
+      array_desc = ArrayDescription::reference(oak->properties()).value();
+    }
+  }
+  bool can_write = AOTCacheAccess::can_generate_aot_code(klass);
+  if (bottom->is_instance_klass()) {
+    InstanceKlass* ik = InstanceKlass::cast(bottom);
+    can_write &= AOTCacheAccess::can_generate_aot_code_for(ik);
+  } else {
+    assert(bottom->is_typeArray_klass(), "must be");
+    can_write &= AOTCacheAccess::can_generate_aot_code(bottom);
+  }
+  ResourceMark rm;
+  if (can_write) {
+    DataKind kind = DataKind::ArrayKlass;
+    if (!write_kind(kind)) {
+      return false;
+    }
+    // Record array dimensions.
+    if (!write_int(array_dim)) {
+      return false;
+    }
+    // Record array's properties
+    if (!write_int(array_desc)) {
+      return false;
+    }
+    narrowPtr klass_narrow_ptr = AOTCacheAccess::to_narrow_ptr(bottom);
+    if (!write_int((int)checked_cast<u4>(klass_narrow_ptr))) {
+      return false;
+    }
+    log_debug(aot, codecache, metadata)("%d (A%d): Registered klass: %s%s%s @ 0x%08x",
+              compile_id(), comp_level(), klass->external_name(),
+              (!bottom->is_instance_klass() ? "" : (InstanceKlass::cast(bottom)->is_initialized() ?
+                                                    " (initialized)" : " (not-initialized)")),
+              (array_dim > 0 ? " (array)" : ""), cast_to_u4(klass_narrow_ptr));
+    return true;
+  }
+  log_debug(aot, codecache, metadata)("%d (A%d): Klass is not registered: %s%s%s",
+            compile_id(), comp_level(), klass->external_name(),
+            (!bottom->is_instance_klass() ? "" : (InstanceKlass::cast(bottom)->is_initialized() ?
+                                                  " (initialized)" : " (not-initialized)")),
+            (array_dim > 0 ? " (array)" : ""));
+  set_lookup_failed();
+  return false;
+}
+
+Klass* AOTCodeReader::read_array_klass(JavaThread* thread) {
+  uint array_dim;
+  if (!read_int((int*)&array_dim)) {
     return nullptr;
   }
   uint array_desc;
@@ -3934,17 +3987,14 @@ Klass* AOTCodeReader::read_klass(JavaThread* thread) {
   if (!read_int((int*)&klass_narrow_ptr)) {
     return nullptr;
   }
-  uint init_state = (state  & 1);
-  uint array_dim  = (state >> 1);
   Klass* k = AOTCacheAccess::narrow_ptr_to_klass(klass_narrow_ptr);
-  if (k == nullptr || !AOTMetaspace::in_aot_cache((address)k)) {
+  if (k == nullptr || !AOTMetaspace::in_aot_cache((address)k) || !k->is_klass()) {
     // Something changed in CDS
     set_lookup_failed("Klass is not in AOT cache");
     log_debug(aot, codecache, metadata)("%d (A%d): Lookup failed klass: " INTPTR_FORMAT " is not in AOT cache",
               compile_id(), comp_level(), p2i((address)k));
     return nullptr;
   }
-  assert(k->is_klass(), "sanity");
   ResourceMark rm;
   if (k->is_instance_klass() && !InstanceKlass::cast(k)->is_loaded()) {
     set_lookup_failed("Klass is not loaded");
@@ -3952,48 +4002,38 @@ Klass* AOTCodeReader::read_klass(JavaThread* thread) {
               compile_id(), comp_level(), k->external_name());
     return nullptr;
   }
-  // If the klass was seen to be initialized during AOT cache assembly,
-  // it must also be initialized here, in the production run, when this nmethod loads.
-  // Exception:  "preload" code (AP4) can handle uninitialized classes.
-  // There is no exception for A1, A2 code or A4 code.
-  //
-  // Note: This init-state check is of minor importance compared to the clinit deps
-  // list/counter on this nmethod's CompileTrainingData, which has already determined
-  // the nmethod's readiness to load.  (For many more details, see comments near
-  // CompileTrainingData::_init_deps_left.)  This check is superficially similar,
-  // but it checks a relatively small number of classes, which may or may not be
-  // necessary to the nmethod's compiled code.  Think of it as an extra sanity check.
-  // But it is an approximate check, and may fail spuriously, discarding good AOT code.
-  // After JDK-8380476 FIXME:  Maybe get rid of this approximate check; replace with
-  // a more accurate and efficient check based on dependencies.hpp (new DepType).
-  // (Also, the metadata for arrays should have its own DataKind::ArrayKlass.)
-  if (k->is_instance_klass() && !InstanceKlass::cast(k)->is_initialized() && (init_state == 1) && !_entry->for_preload()) {
-    set_lookup_failed("Klass is not initialized");
-    log_debug(aot, codecache, metadata)("%d (A%d): Lookup failed for klass %s: not initialized",
+  if (!k->is_instance_klass() && !k->is_typeArray_klass()) {
+    set_lookup_failed("Klass is not instance or array");
+    log_debug(aot, codecache, metadata)("%d (A%d): Lookup failed for klass %s: not instance or array",
               compile_id(), comp_level(), k->external_name());
     return nullptr;
   }
-  if (array_dim > 0) {
-    assert(k->is_instance_klass() || k->is_typeArray_klass(), "sanity check");
-    Klass* ak = k->array_klass_or_null(array_dim);
-    if (ak != nullptr && array_desc != ArrayProperties::Invalid().value()) {
-      ArrayDescription adesc = ArrayDescription::from_value(array_desc);
-      ak = ObjArrayKlass::cast(ak)->klass_from_description(adesc, thread);
-    }
-    if (ak == nullptr) {
-      set_lookup_failed("Lookup failed for array klass");
-      log_debug(aot, codecache, metadata)("%d (A%d): Lookup failed for %d-dimensions array klass %s",
+  if (array_dim < 1 || array_dim > 255) {
+    set_lookup_failed("Lookup failed for array klass");
+    log_debug(aot, codecache, metadata)("%d (A%d): Lookup failed for array klass %s: wrong dimension %u",
+              compile_id(), comp_level(), k->external_name(), array_dim);
+    return nullptr;
+  }
+  Klass* ak = k->array_klass_or_null(array_dim);
+  if (ak != nullptr && array_desc != ArrayProperties::Invalid().value()) {
+    if (!ak->is_objArray_klass()) {
+      set_lookup_failed("Lookup failed for object array klass");
+      log_debug(aot, codecache, metadata)("%d (A%d): Lookup failed for %d-dimensions array klass %s: not object array",
                 compile_id(), comp_level(), array_dim, k->external_name());
       return nullptr;
     }
-    log_debug(aot, codecache, metadata)("%d (A%d): Found %d-dimensions array klass %s",
-              compile_id(), comp_level(), array_dim, k->external_name());
-    return ak;
-  } else {
-    log_debug(aot, codecache, metadata)("%d (A%d): Found klass %s",
-              compile_id(), comp_level(), k->external_name());
-    return k;
+    ArrayDescription adesc = ArrayDescription::from_value(array_desc);
+    ak = ObjArrayKlass::cast(ak)->klass_from_description(adesc, thread);
   }
+  if (ak == nullptr) {
+    set_lookup_failed("Lookup failed for array klass");
+    log_debug(aot, codecache, metadata)("%d (A%d): Lookup failed for %d-dimensions array klass %s",
+              compile_id(), comp_level(), array_dim, k->external_name());
+    return nullptr;
+  }
+  log_debug(aot, codecache, metadata)("%d (A%d): Found %d-dimensions array klass %s",
+            compile_id(), comp_level(), array_dim, k->external_name());
+  return ak;
 }
 
 bool AOTCodeCache::write_oop(jobject& jo) {
@@ -4111,8 +4151,9 @@ oop AOTCodeReader::read_oop(JavaThread* thread) {
     return nullptr;
   } else if (kind == DataKind::No_Data) {
     return cast_to_oop(Universe::non_oop_word());
-  } else if (kind == DataKind::Klass) {
-    Klass* k = read_klass(thread);
+  } else if (kind == DataKind::Klass || kind == DataKind::ArrayKlass) {
+    Klass* k = (kind == DataKind::Klass) ? read_klass() :
+                                           read_array_klass(thread);
     if (k == nullptr) {
       return nullptr;
     }

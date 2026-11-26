@@ -982,7 +982,7 @@ Java_sun_font_FontConfigManager_getFontConfig
         jarray fcFontArr = NULL;
         FcCharSet *unionCharset = NULL;
         FcCharSet *prevUnionCharset = NULL;
-        int expectedWeight, expectedSlant, skippedVarFont;
+        int expectedWeight, expectedSlant, skippedVarFont, skipVarFonts;
 
         fcCompFontObj = (*env)->GetObjectArrayElement(env, fcCompFontArray, i);
         fcNameStr =
@@ -1072,6 +1072,7 @@ Java_sun_font_FontConfigManager_getFontConfig
         (*FcPatternGetInteger)(pattern, FC_WEIGHT, 0, &expectedWeight);
         (*FcPatternGetInteger)(pattern, FC_SLANT, 0, &expectedSlant);
         skippedVarFont = 0;
+        skipVarFonts = 1;
         for (j=0; j<nfonts; j++) {
             FcPattern *fontPattern = fontset->fonts[j];
             FcChar8 *fontformat;
@@ -1080,7 +1081,7 @@ Java_sun_font_FontConfigManager_getFontConfig
             int weight, slant;
 
             fontformat = NULL;
-            if (fontCount == 0) {
+            if (skipVarFonts && (fontCount == 0) && (j < (nfonts / 2))) {
                 // Query to see if it is a variable font.  0x8000000 is used as the
                 // font index to tell fontconfig you want the variable font info.
                 // NULL is returned from FcFreeTypeQuery if it is not a variable font.
@@ -1111,6 +1112,12 @@ Java_sun_font_FontConfigManager_getFontConfig
                 && (strcmp((char*)fontformat, "CFF") != 0)
 #endif
              ) {
+                /* If we reach the end without finding non-variable fonts, reset */
+                if ((skipVarFonts == 1) && (fontCount == 0) && (j == (nfonts - 1))) {
+                    skipVarFonts = 0;
+                    skippedVarFont = 0;
+                    j = -1;
+                }
                 continue;
             }
 

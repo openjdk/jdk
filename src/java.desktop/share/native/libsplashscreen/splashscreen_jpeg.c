@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -172,9 +172,11 @@ SplashDecodeJpeg(Splash * splash, struct jpeg_decompress_struct *cinfo)
 
     splash->loopCount = 1;
     splash->frames[0].delay = 0;
-    splash->frames[0].bitmapBits = malloc(stride * splash->height);
+    splash->frames[0].bitmapBits = malloc((size_t) stride * splash->height);
     if (splash->frames[0].bitmapBits == NULL) {
         free(splash->frames);
+        splash->frames = NULL;
+        splash->frameCount = 0;
         return 0;
     }
 
@@ -185,6 +187,8 @@ SplashDecodeJpeg(Splash * splash, struct jpeg_decompress_struct *cinfo)
     if (buffer == NULL) {
         free(splash->frames[0].bitmapBits);
         free(splash->frames);
+        splash->frames = NULL;
+        splash->frameCount = 0;
         return 0;
     }
 

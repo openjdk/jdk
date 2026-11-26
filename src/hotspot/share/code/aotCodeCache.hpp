@@ -578,16 +578,17 @@ public:
 #define AOTCODECACHE_DECLARE_FUN(type, name, func) type _saved_ ## name;
 
 enum class DataKind: int {
-  No_Data   = -1,
-  Null      = 0,
-  Klass     = 1,
-  Method    = 2,
-  String    = 3,
-  MH_Oop    = 4,
-  Primitive = 5, // primitive Class object
-  SysLoader = 6, // java_system_loader
-  PlaLoader = 7, // java_platform_loader
-  MethodCnts= 8
+  No_Data    = -1,
+  Null       = 0,
+  Klass      = 1,
+  ArrayKlass = 2,
+  Method     = 3,
+  String     = 4,
+  MH_Oop     = 5,
+  Primitive  = 6, // primitive Class object
+  SysLoader  = 7, // java_system_loader
+  PlaLoader  = 8, // java_platform_loader
+  MethodCnts = 9
 };
 
 struct AOTCodeEntryStats;
@@ -974,6 +975,7 @@ public:
   void log_stats_on_exit(AOTCodeEntryStats& stats);
 
   bool write_klass(Klass* klass);
+  bool write_array_klass(ArrayKlass* klass);
   bool write_method(Method* method);
   bool write_fingerprint(Method* method);
 
@@ -1191,7 +1193,8 @@ private:
   const char* _failure;  // Failed to lookup for info (skip only this code load)
   void set_lookup_failed(const char* failure) { _failure = failure; }
 
-  Klass* read_klass(JavaThread* thread);
+  Klass* read_klass();
+  Klass* read_array_klass(JavaThread* thread);
   Method* read_method();
   bool verify_fingerprint(Method* method);
 
