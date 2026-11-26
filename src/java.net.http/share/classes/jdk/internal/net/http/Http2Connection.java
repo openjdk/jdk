@@ -967,13 +967,6 @@ class Http2Connection implements Closeable {
         if (streamid == 0) {
             handleConnectionFrame(frame);
         } else {
-            if (frame instanceof SettingsFrame) {
-                // The stream identifier for a SETTINGS frame MUST be zero
-                protocolError(ErrorFrame.PROTOCOL_ERROR,
-                        "The stream identifier for a SETTINGS frame MUST be zero");
-                return;
-            }
-
             if (frame instanceof PushPromiseFrame && !serverPushEnabled()) {
                 String protocolError = "received a PUSH_PROMISE when SETTINGS_ENABLE_PUSH is 0";
                 protocolError(ErrorFrame.PROTOCOL_ERROR, protocolError);
@@ -991,8 +984,6 @@ class Http2Connection implements Closeable {
             }
             PushContinuationState pcs = pushContinuationState;
             if (stream == null && pcs == null) {
-                // Should never receive a frame with unknown stream id
-
                 if (frame instanceof HeaderFrame hf) {
                     String protocolError = checkMaxOrphanedHeadersExceeded(hf);
                     if (protocolError != null) {
@@ -1028,9 +1019,6 @@ class Http2Connection implements Closeable {
                         } else {
                             resetStream(streamid, ResetFrame.PROTOCOL_ERROR);
                         }
-                    } else if (streamid >= nextstreamid) {
-                        // otherwise the stream has already been reset/closed
-                        resetStream(streamid, ResetFrame.PROTOCOL_ERROR);
                     }
                 }
                 return;
