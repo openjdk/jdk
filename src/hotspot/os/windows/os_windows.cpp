@@ -2711,8 +2711,9 @@ static bool grow_windows_stack_to(address target) {
 
 [[noreturn]]
 static void report_fatal_stack_overflow(JavaThread* thread,
-    struct _EXCEPTION_POINTERS* exceptionInfo, address pc,
-    const char* message, bool disable_red_zone) {
+                                        struct _EXCEPTION_POINTERS* exceptionInfo,
+                                        address pc, const char* message,
+                                        bool disable_red_zone) {
   if (disable_red_zone) {
     thread->stack_overflow_state()->disable_stack_red_zone();
   }
@@ -2724,7 +2725,8 @@ static void report_fatal_stack_overflow(JavaThread* thread,
 }
 
 static LONG handle_stack_overflow_in_yellow_zone(JavaThread* thread,
-    struct _EXCEPTION_POINTERS* exceptionInfo, address pc) {
+                                                 struct _EXCEPTION_POINTERS* exceptionInfo,
+                                                 address pc) {
   StackOverflow* overflow_state = thread->stack_overflow_state();
 
   // A disabled yellow or reserved zone means a previous stack overflow is still
@@ -2747,18 +2749,12 @@ static LONG handle_stack_overflow_in_yellow_zone(JavaThread* thread,
     return Handle_Exception(exceptionInfo, continuation);
   }
 
-  // The yellow zone is for catching stack overflows in Java code.  If a VM or
-  // native execution reaches the yellow zone, we let the execution continue.
-  // If it continues using the stack until it reaches the red zone, then HotSpot
-  // should receive an access violation exception from access to the red page.
-  if (state == _thread_in_vm || state == _thread_in_native) {
-    return EXCEPTION_CONTINUE_EXECUTION;
-  }
-
-  // The thread is in an unexpected state, so terminate out of abundant caution.
-  report_fatal_stack_overflow(thread, exceptionInfo, pc,
-                              "An unrecoverable stack overflow has occurred.",
-                              /* disable red zone */ true);
+  // The yellow zone is for catching stack overflows in Java code.  If any other
+  // thread state (e.g. VM or native execution or blocked) reaches the yellow
+  // zone, we let the execution continue. If it continues using the stack until
+  // it reaches the red zone, then HotSpot should receive an access violation
+  // exception from access to the red page.
+  return EXCEPTION_CONTINUE_EXECUTION;
 }
 
 //-----------------------------------------------------------------------------
@@ -2811,7 +2807,7 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
     // Handle potential stack overflows up front.
     if (exception_code == EXCEPTION_STACK_OVERFLOW) {
       // After reporting a stack overflow exception, Windows makes the terminal
-      // growth guard page, the stack guaratee pages, and the bottom page both
+      // growth guard page, the stack guarantee pages, and the bottom page both
       // readable and writable, effectively unguarding HotSpot's Red zone.  We
       // re-guard it to be able to catch runaway stack accesses.
       if (!os::guard_memory((char*)thread->stack_end(),
@@ -2828,7 +2824,7 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
 
       if (overflow_state->in_stack_red_zone(addr)) {
         report_fatal_stack_overflow(thread, exceptionInfo, pc,
-                                    "An unrecoverable stack overflow has occurred.",
+                                    "An irrecoverable stack overflow has occurred.",
                                     /* disable red zone */ true);
       }
 

@@ -22,14 +22,25 @@
  */
 
 /*
- * @test
+ * @test id=in_java
  * @bug 8394484
  * @summary Verifies that on Windows, HotSpot's access-violation recovery for
  *          an in-Java stack fault advances TEB.StackLimit to cover the newly
  *          committed stack memory.
  * @requires os.family == "windows"
  * @library /test/lib
- * @run main/othervm/native --enable-native-access=ALL-UNNAMED -Xss1m TestWindowsStackLimit
+ * @run main/othervm/native --enable-native-access=ALL-UNNAMED -Xss1m TestWindowsStackLimit inJava
+ */
+
+/*
+ * @test id=in_native
+ * @bug 8339569
+ * @summary Verifies that on Windows, HotSpot's access-violation recovery for
+ *          an in-native stack fault advances TEB.StackLimit to cover the newly
+ *          committed stack memory.
+ * @requires os.family == "windows"
+ * @library /test/lib
+ * @run main/othervm/native --enable-native-access=ALL-UNNAMED -Xss1m TestWindowsStackLimit inNative
  */
 
 import java.lang.foreign.FunctionDescriptor;
@@ -40,19 +51,29 @@ import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 
 public class TestWindowsStackLimit {
+    private static MethodHandle getHandle(String mode, Linker linker,
+                                          MemorySegment segment,
+                                          FunctionDescriptor desc) {
+        return switch (mode) {
+            case "inJava" ->
+                linker.downcallHandle(segment, desc, Linker.Option.critical(false));
+
+            case "inNative" ->
+                linker.downcallHandle(segment, desc);
+
+            default ->
+                throw new IllegalArgumentException(mode);
+        };
+    }
+
     public static void main(String[] args) throws Throwable {
         System.loadLibrary("StackLimit");
         SymbolLookup lookup = SymbolLookup.loaderLookup();
         MemorySegment segment = lookup.find("checkStackLimit").orElseThrow();
-
-        // `Linker.Option.critical()` keeps the calling thread's state as
-        // `_thread_in_Java` for the whole native call, which is a prerequisite
-        // for the code that commits memory pages in `topLevelExceptionFilter()`
-        Linker.Option option = Linker.Option.critical(/* heap access */ false);
         FunctionDescriptor desc = FunctionDescriptor.of(ValueLayout.JAVA_INT);
 
         Linker linker = Linker.nativeLinker();
-        MethodHandle check = linker.downcallHandle(segment, desc, option);
+        MethodHandle check = getHandle(args[0], linker, segment, desc);
         if ((int) check.invokeExact() != 0) {
             throw new RuntimeException("TEB.StackLimit was not advanced");
         }
