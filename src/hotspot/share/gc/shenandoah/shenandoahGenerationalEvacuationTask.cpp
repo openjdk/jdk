@@ -63,7 +63,9 @@ ShenandoahGenerationalEvacuationTask::ShenandoahGenerationalEvacuationTask(Shena
 }
 
 void ShenandoahGenerationalEvacuationTask::work(uint worker_id) {
-  ShenandoahPhaseTimings::Phase phase = _only_promote_regions ? ShenandoahPhaseTimings::complete_abbreviated_promote_in_place : ShenandoahPhaseTimings::conc_evac;
+  ShenandoahPhaseTimings::Phase phase = _only_promote_regions ?
+    ShenandoahPhaseTimings::complete_abbreviated_promote_in_place :
+    ShenandoahPhaseTimings::conc_evac;
   ShenandoahWorkerTimingsTracker timer(phase, ShenandoahPhaseTimings::Work, worker_id, true);
   ShenandoahConcurrentWorkerSession worker_session(worker_id);
   SuspendibleThreadSetJoiner stsj;
