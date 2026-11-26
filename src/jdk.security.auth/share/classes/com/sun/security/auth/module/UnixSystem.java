@@ -180,11 +180,10 @@ public class UnixSystem {
             var pwd = scope.allocate(ML_passwd);
             var result = scope.allocate(C_POINTER);
             var buffer = scope.allocate(GETPW_R_SIZE_MAX);
+
             var tmpUid = (int) MH_getuid.invokeExact();
 
-            // Do not call invokeExact because the type of buffer_size is not
-            // always long in the underlying system.
-            int out = (int) MH_getpwuid_r.invokeExact(
+            var out = (int) MH_getpwuid_r.invokeExact(
                     tmpUid, pwd, buffer, GETPW_R_SIZE_MAX, result);
             if (out != 0) {
                 // If ERANGE (Result too large) is detected in a new platform,
