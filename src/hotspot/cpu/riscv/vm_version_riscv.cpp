@@ -286,7 +286,7 @@ void VM_Version::common_initialize() {
   if (UseZalasr && !UseZtso) {
     _atomic_access_mode = AtomicAccessMode::RVWMO_ZALASR;
   } else if (UseZtso) {
-    _atomic_access_mode = AtomicAccessMode::ZTSO;
+    _atomic_access_mode = AtomicAccessMode::RVTSO;
   } else {
     _atomic_access_mode = AtomicAccessMode::RVWMO;
   }

@@ -1176,6 +1176,11 @@ void LIRGenerator::do_NewObjectArray(NewObjectArray* x) {
   // and therefore provide the state before the parameters have been consumed
   CodeEmitInfo* patching_info = nullptr;
   ciKlass* obj = ciObjArrayKlass::make(x->klass());
+
+  if (x->klass()->is_loaded() && !obj->is_loaded()) {
+    BAILOUT("encountered unloaded ciobjarrayklass due to out of memory error");
+  }
+
   if (!x->klass()->is_loaded() || !obj->is_loaded() || PatchALot) {
     patching_info =  state_for(x, x->state_before());
   }
@@ -1197,9 +1202,6 @@ void LIRGenerator::do_NewObjectArray(NewObjectArray* x) {
   bool is_null_free = obj->is_loaded() && obj->as_array_klass()->is_elem_null_free();
 
   CodeStub* slow_path = new NewObjectArrayStub(klass_reg, len, reg, info, is_null_free);
-  if (x->klass()->is_loaded() && !obj->is_loaded()) {
-    BAILOUT("encountered unloaded ciobjarrayklass due to out of memory error");
-  }
 
   klass2reg_with_patching(klass_reg, obj, patching_info);
   bool always_slow_path = is_null_free || is_flat;

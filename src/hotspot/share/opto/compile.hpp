@@ -339,6 +339,7 @@ class Compile : public Phase {
   uint             _node_count_inlining_cutoff; // Number of nodes in the graph above which inlining is denied
 
   bool                  _post_loop_opts_phase;  // Loop opts are finished.
+  bool               _post_macro_expand_phase;  // Macro expansion is finished.
   bool                  _merge_stores_phase;    // Phase for merging stores, after post loop opts phase.
   bool                  _allow_macro_nodes;     // True if we allow creation of macro nodes.
 
@@ -615,7 +616,7 @@ public:
   bool              do_superword() const        { return _options._do_superword; }
   bool              do_stringopts() const       { return _options._do_stringopts; }
 
-  bool              is_aot_compile()      const { return _options._aot_compile; }
+  bool              is_aot_compile()      const { return CDS_ONLY(_options._aot_compile) NOT_CDS(false); }
   bool              do_clinit_barriers()  const { return _options._for_aot_preload; }
   bool              for_aot_preload()     const { return _options._for_aot_preload; }
 
@@ -827,6 +828,9 @@ public:
   bool       post_loop_opts_phase() { return _post_loop_opts_phase;  }
   void   set_post_loop_opts_phase() { _post_loop_opts_phase = true;  }
   void reset_post_loop_opts_phase() { _post_loop_opts_phase = false; }
+
+  bool       post_macro_expand_phase() { return _post_macro_expand_phase;  }
+  void   set_post_macro_expand_phase() { _post_macro_expand_phase = true;  }
 
 #ifdef ASSERT
   bool       phase_verify_ideal_loop() const { return _phase_verify_ideal_loop; }

@@ -477,7 +477,7 @@ struct AtomicAccess::PlatformOrderedLoad<byte_size, X_ACQUIRE>
         // the result back to T discards the extra bits, so both signed and
         // unsigned T end up with the value the caller expects.
         return (T)zalasr_load_acquire<byte_size>((const void*)p);
-      case VM_Version::AtomicAccessMode::ZTSO:
+      case VM_Version::AtomicAccessMode::RVTSO:
         __atomic_load(const_cast<T*>(p), &data, __ATOMIC_RELAXED);
         compiler_barrier();
         break;
@@ -505,7 +505,7 @@ struct AtomicAccess::PlatformOrderedStore<byte_size, RELEASE_X>
         // widening v here is value-preserving for both signed and unsigned T.
         zalasr_store_release<byte_size>((void*)p, (uint64_t)v);
         break;
-      case VM_Version::AtomicAccessMode::ZTSO:
+      case VM_Version::AtomicAccessMode::RVTSO:
         compiler_barrier();
         __atomic_store(const_cast<T*>(p), &v, __ATOMIC_RELAXED);
         break;

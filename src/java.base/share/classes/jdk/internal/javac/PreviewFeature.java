@@ -74,7 +74,7 @@ public @interface PreviewFeature {
         @JEP(number=401, title="Value Classes and Objects", status = "Preview")
         VALUE_OBJECTS,
         STRUCTURED_CONCURRENCY,
-        @JEP(number = 531, title = "Lazy Constants", status = "Third Preview")
+        @JEP(number = 547, title = "Lazy Constants", status = "Fourth Preview")
         LAZY_CONSTANTS,
         /**
          * Indicates a preview API exists to allow access to the environment

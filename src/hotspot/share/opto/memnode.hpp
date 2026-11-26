@@ -298,7 +298,7 @@ public:
                     const TypePtr* at, const Type* rt, BasicType bt,
                     MemOrd mo, ControlDependency control_dependency = DependsOnlyOnTest,
                     bool require_atomic_access = false, bool unaligned = false, bool mismatched = false, bool unsafe = false,
-                    uint8_t barrier_data = 0);
+                    uint8_t barrier_data = 0, bool special = false);
 
   virtual uint hash()   const;  // Check the type
 
@@ -507,6 +507,24 @@ public:
   LoadL_unalignedNode(Node *c, Node *mem, Node *adr, const TypePtr* at, MemOrd mo, ControlDependency control_dependency = DependsOnlyOnTest)
     : LoadLNode(c, mem, adr, at, TypeLong::LONG, mo, control_dependency) {}
   virtual int Opcode() const;
+};
+
+//------------------------------LoadLSpecialNode--------------------------------------
+// Special LoadL for flat loads that emits GC barriers for field in backend.
+class LoadLSpecialNode : public LoadNode {
+public:
+  LoadLSpecialNode(Node *c, Node *mem, Node *adr, const TypePtr* at,
+                   MemOrd mo, ControlDependency control_dependency = DependsOnlyOnTest)
+    : LoadNode(c, mem, adr, at, TypeLong::LONG, mo, control_dependency) {
+    set_mismatched_access();
+  }
+  virtual int Opcode() const;
+  virtual BasicType value_basic_type() const { return T_LONG; }
+
+  virtual int store_Opcode() const { return Op_StoreLSpecial; }
+
+  virtual uint match_edge(uint idx) const { return idx == MemNode::Address ||
+                                                   idx == MemNode::ValueIn; }
 };
 
 //------------------------------LoadFNode--------------------------------------

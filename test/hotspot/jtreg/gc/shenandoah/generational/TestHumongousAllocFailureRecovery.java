@@ -29,11 +29,11 @@
  * @requires vm.gc.Shenandoah
  * @library /test/lib
  * @run main/othervm
- *      -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC
- *      -XX:ShenandoahGCMode=generational -XX:ShenandoahGCHeuristics=passive
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
+ *      -XX:+UnlockDiagnosticVMOptions -XX:ShenandoahGCHeuristics=passive
  *      -Xmx128m -Xms128m
- *      -XX:ShenandoahRegionSize=1m -XX:+AlwaysPreTouch
- *      -XX:ConcGCThreads=1 -XX:ParallelGCThreads=1
+ *      -XX:+UnlockExperimentalVMOptions -XX:ShenandoahRegionSize=1m
+ *      -XX:+AlwaysPreTouch -XX:ConcGCThreads=1 -XX:ParallelGCThreads=1
  *      TestHumongousAllocFailureRecovery
  */
 
