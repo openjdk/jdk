@@ -490,8 +490,12 @@ class SocketChannelImpl
     public int read(ByteBuffer buf) throws IOException {
         if (jfrTracing && SocketReadEvent.enabled()) {
             long start = SocketReadEvent.timestamp();
-            int nbytes = implRead(buf);
-            SocketReadEvent.offer(start, nbytes, remoteAddress(), 0);
+            int nbytes = 0;
+            try {
+                nbytes = implRead(buf);
+            } finally {
+                SocketReadEvent.offer(start, nbytes, remoteAddress(), 0);
+            }
             return nbytes;
         }
         return implRead(buf);
@@ -504,8 +508,12 @@ class SocketChannelImpl
     {
         if (jfrTracing && SocketReadEvent.enabled()) {
             long start = SocketReadEvent.timestamp();
-            long nbytes = implRead(dsts, offset, length);
-            SocketReadEvent.offer(start, nbytes, remoteAddress(), 0);
+            long nbytes = 0;
+            try {
+                nbytes = implRead(dsts, offset, length);
+            } finally {
+                SocketReadEvent.offer(start, nbytes, remoteAddress(), 0);
+            }
             return nbytes;
         }
         return implRead(dsts, offset, length);
@@ -615,8 +623,12 @@ class SocketChannelImpl
     public int write(ByteBuffer buf) throws IOException {
         if (jfrTracing && SocketWriteEvent.enabled()) {
             long start = SocketWriteEvent.timestamp();
-            int nbytes = implWrite(buf);
-            SocketWriteEvent.offer(start, nbytes, remoteAddress());
+            int nbytes = 0;
+            try {
+                nbytes = implWrite(buf);
+            } finally {
+                SocketWriteEvent.offer(start, nbytes, remoteAddress());
+            }
             return nbytes;
         }
         return implWrite(buf);
@@ -628,8 +640,12 @@ class SocketChannelImpl
     {
         if (jfrTracing && SocketWriteEvent.enabled()) {
             long start = SocketWriteEvent.timestamp();
-            long nbytes = implWrite(srcs, offset, length);
-            SocketWriteEvent.offer(start, nbytes, remoteAddress());
+            long nbytes = 0;
+            try {
+                nbytes = implWrite(srcs, offset, length);
+            } finally {
+                SocketWriteEvent.offer(start, nbytes, remoteAddress());
+            }
             return nbytes;
         }
         return implWrite(srcs, offset, length);
