@@ -4816,6 +4816,7 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
     break;
   }
 
+  // Ensure Cmp nodes aren't pinned. They benefit from being freely clonable during matching.
   assert(!n->is_Cmp() || n->in(0) == nullptr, "pinned Cmp node: %s", n->Name());
 }
 
