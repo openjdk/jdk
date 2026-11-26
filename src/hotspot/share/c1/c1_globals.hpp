@@ -215,10 +215,10 @@
   develop(bool, CountLinearScan, false,                                     \
           "collect statistic counters during LinearScan")                   \
                                                                             \
-  product_pd(bool, C1UseNonAtomicFlatFieldStoreRuntime,                     \
+  product_pd(bool, C1UseNonAtomicFlatFieldStoreRuntime, DIAGNOSTIC,        \
           "Allow runtime calls for nullable non-atomic flat field stores")  \
                                                                             \
-  product(bool, C1UseNonAtomicFlatFieldStoreRuntimeALot, false,             \
+  product(bool, C1UseNonAtomicFlatFieldStoreRuntimeALot, false, DIAGNOSTIC, \
           "Use the runtime for nullable non-atomic flat field stores even " \
           "when a null-reset value is available")                           \
                                                                             \

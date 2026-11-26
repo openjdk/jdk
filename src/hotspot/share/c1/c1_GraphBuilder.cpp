@@ -29,7 +29,7 @@
 #include "c1/c1_Instruction.hpp"
 #include "c1/c1_InstructionPrinter.hpp"
 #include "c1/c1_ValueType.hpp"
-#include "c1_globals_aarch64.hpp"
+#include "c1_globals.hpp"
 #include "ci/ciCallSite.hpp"
 #include "ci/ciField.hpp"
 #include "ci/ciFlatArrayKlass.hpp"
