@@ -125,7 +125,7 @@ instruct load_N_Volatile_shenandoah(iRegNNoSp dst, indirect mem, rFlagsReg cr)
 
 instruct loadLSpecial_shenandoah(iRegLNoSp dst, immI off, indirect mem, iRegPNoSp tmp, rFlagsReg cr)
 %{
-  match(Set dst (LoadLSpecial mem off));
+  match(Set dst (LoadLWithNarrowOops mem off));
   predicate(UseShenandoahGC);
   effect(TEMP_DEF dst, TEMP tmp, KILL cr);
   // The main load is a candidate to implement implicit null checks.

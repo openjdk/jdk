@@ -1152,7 +1152,7 @@ Node* LoadNode::make(PhaseGVN& gvn, Node* ctl, Node* mem, Node* adr, const TypeP
   case T_ADDRESS: load = new LoadPNode (ctl, mem, adr, adr_type, rt->as_ptr(),  mo, control_dependency); break;
   case T_LONG: {
     if (special) {
-      load = new LoadLSpecialNode(ctl, mem, adr, adr_type, mo, control_dependency);
+      load = new LoadLWithNarrowOopsNode(ctl, mem, adr, adr_type, mo, control_dependency);
     } else {
       load = new LoadLNode (ctl, mem, adr, adr_type, rt->as_long(), mo, control_dependency, require_atomic_access);
     }
@@ -1895,9 +1895,9 @@ bool LoadNode::can_split_through_phi_base(PhaseGVN* phase) {
 // Split instance or boxed field load through Phi.
 Node* LoadNode::split_through_phi(PhaseGVN* phase, bool ignore_missing_instance_id) {
   if (req() > 3) {
-    assert(Opcode() == Op_LoadLSpecial ||
+    assert(Opcode() == Op_LoadLWithNarrowOops ||
            (is_LoadVector() && Opcode() != Op_LoadVector), "load has too many inputs");
-    // LoadVector subclasses such as LoadVectorMasked and LoadLSpecial
+    // LoadVector subclasses such as LoadVectorMasked and LoadLWithNarrowOops
     // have extra inputs that the logic below doesn't take into account
     return nullptr;
   }

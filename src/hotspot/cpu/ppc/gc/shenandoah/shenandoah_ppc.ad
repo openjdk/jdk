@@ -134,7 +134,7 @@ instruct loadP_acq_shenandoah(iRegPdst dst, memoryAlg4 mem, iRegPdstNoScratch tm
 %}
 
 instruct loadLSpecial_shenandoah(iRegLdst dst, indirect mem, immI off, iRegPdstNoScratch tmp1, iRegPdstNoScratch tmp2, iRegPdstNoScratch tmp3, flagsRegCR0 cr0) %{
-  match(Set dst (LoadLSpecial mem off));
+  match(Set dst (LoadLWithNarrowOops mem off));
   effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2, TEMP tmp3, KILL cr0);
   predicate(UseShenandoahGC);
   // The main load is a candidate to implement implicit null checks.

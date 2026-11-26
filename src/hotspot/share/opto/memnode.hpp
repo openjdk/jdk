@@ -509,11 +509,11 @@ public:
   virtual int Opcode() const;
 };
 
-//------------------------------LoadLSpecialNode--------------------------------------
+//------------------------------LoadLWithNarrowOopsNode--------------------------------------
 // Special LoadL for flat loads that emits GC barriers for field in backend.
-class LoadLSpecialNode : public LoadNode {
+class LoadLWithNarrowOopsNode : public LoadNode {
 public:
-  LoadLSpecialNode(Node *c, Node *mem, Node *adr, const TypePtr* at,
+  LoadLWithNarrowOopsNode(Node *c, Node *mem, Node *adr, const TypePtr* at,
                    MemOrd mo, ControlDependency control_dependency = DependsOnlyOnTest)
     : LoadNode(c, mem, adr, at, TypeLong::LONG, mo, control_dependency) {
     set_mismatched_access();

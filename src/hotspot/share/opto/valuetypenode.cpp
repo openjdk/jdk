@@ -2200,7 +2200,7 @@ void LoadFlatNode::expand_atomic(PhaseIterGVN& igvn) const {
                                   _decorators | C2_MISMATCHED | C2_CONTROL_DEPENDENT_LOAD | C2_UNKNOWN_CONTROL_LOAD | (needs_special ? C2_SPECIAL_ACCESS : 0),
                                   kit.control());
   if (needs_special) {
-    assert(load->Opcode() == Op_LoadLSpecial, "must be special");
+    assert(load->Opcode() == Op_LoadLWithNarrowOops, "must be special");
     Node* oop_offset_node = (oop_off_2 == -1) ? igvn.intcon(oop_off_1) : igvn.intcon(-1);
     load->add_req(oop_offset_node);
   }
