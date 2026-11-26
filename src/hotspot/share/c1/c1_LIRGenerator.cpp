@@ -436,7 +436,6 @@ LateControlFlowDiamond::LateControlFlowDiamond(LateControlFlowDiamond::Block& pa
   // This is where LIR generation will resume for the parent diamond.
   parent.set_block(_continuation);
 
-
   // LIR generation is still in origin. Before switching we need to emit the branching condition.
   branching_condition(_taken, _not_taken);
 
@@ -496,7 +495,7 @@ LateControlFlowDiamond::Block::~Block() {
 LateControlFlowDiamond::~LateControlFlowDiamond() {
   assert(_gen->block() == nullptr, "expected LIR generation to be ready for next block");
 
-  // For brevity, we emit empty blocks here. However, we only tolerate one empty block.
+  // For brevity, we emit blocks that were left empty here. However, we only tolerate one empty block.
   if (_taken->lir() == nullptr && _not_taken->lir() != nullptr) {
     LateControlFlowDiamond::TakenBlock empty(*this);
   } else if (_not_taken->lir() == nullptr && _taken->lir() != nullptr) {
@@ -505,6 +504,7 @@ LateControlFlowDiamond::~LateControlFlowDiamond() {
     assert(_taken->lir() != nullptr && _not_taken->lir() != nullptr, "must not emit two empty late blocks");
   }
 
+  // Continue with normal LIR generation in the continuation block.
   _gen->block_do_prolog(_continuation);
   _gen->set_block(_continuation);
 }
