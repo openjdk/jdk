@@ -147,7 +147,7 @@ class KQueueSelectorImpl extends SelectorImpl {
         int numEntries = KQueue.poll(kqfd, pollArrayAddress, MAX_KEVENTS, 0);
         if (block) {
             while (numEntries == 0 && !Thread.currentThread().isInterrupted()) {
-                Poller.pollSelector(kqfd, 0);
+                Poller.pollSelector(this, kqfd, 0);
                 numEntries = KQueue.poll(kqfd, pollArrayAddress, MAX_KEVENTS, 0);
             }
         }
@@ -167,7 +167,7 @@ class KQueueSelectorImpl extends SelectorImpl {
                 // timeout
                 break;
             }
-            Poller.pollSelector(kqfd, remainingNanos);
+            Poller.pollSelector(this, kqfd, remainingNanos);
             numEntries = KQueue.poll(kqfd, pollArrayAddress, MAX_KEVENTS, 0);
         }
         return numEntries;
