@@ -1122,7 +1122,7 @@ bool LoadNode::is_immutable_value(Node* adr) {
 //----------------------------LoadNode::make-----------------------------------
 // Polymorphic factory method:
 Node* LoadNode::make(PhaseGVN& gvn, Node* ctl, Node* mem, Node* adr, const TypePtr* adr_type, const Type* rt, BasicType bt, MemOrd mo,
-                     ControlDependency control_dependency, bool require_atomic_access, bool unaligned, bool mismatched, bool unsafe, uint8_t barrier_data, bool special) {
+                     ControlDependency control_dependency, bool require_atomic_access, bool unaligned, bool mismatched, bool unsafe, uint8_t barrier_data, bool has_embedded_oops) {
   Compile* C = gvn.C;
   assert(adr->is_top() || C->get_alias_index(gvn.type(adr)->as_ptr(), true) == C->get_alias_index(adr_type, true), "adr and adr_type must agree");
 
@@ -1138,7 +1138,7 @@ Node* LoadNode::make(PhaseGVN& gvn, Node* ctl, Node* mem, Node* adr, const TypeP
           // oop will be recorded in oop map if load crosses safepoint
           rt->is_oopptr() || is_immutable_value(adr),
           "raw memory operations should have control edge");
-  assert(!special || bt == T_LONG, "Special loads are T_LONG");
+  assert(!has_embedded_oops || bt == T_LONG, "Loads with embedded oops are T_LONG");
 
   LoadNode* load = nullptr;
   switch (bt) {
@@ -1151,7 +1151,7 @@ Node* LoadNode::make(PhaseGVN& gvn, Node* ctl, Node* mem, Node* adr, const TypeP
   case T_DOUBLE:  load = new LoadDNode (ctl, mem, adr, adr_type, rt,            mo, control_dependency, require_atomic_access); break;
   case T_ADDRESS: load = new LoadPNode (ctl, mem, adr, adr_type, rt->as_ptr(),  mo, control_dependency); break;
   case T_LONG: {
-    if (special) {
+    if (has_embedded_oops) {
       load = new LoadLWithNarrowOopsNode(ctl, mem, adr, adr_type, mo, control_dependency);
     } else {
       load = new LoadLNode (ctl, mem, adr, adr_type, rt->as_long(), mo, control_dependency, require_atomic_access);
@@ -3109,7 +3109,7 @@ Node* LoadRangeNode::Identity(PhaseGVN* phase) {
 //=============================================================================
 //---------------------------StoreNode::make-----------------------------------
 // Polymorphic factory method:
-StoreNode* StoreNode::make(PhaseGVN& gvn, Node* ctl, Node* mem, Node* adr, const TypePtr* adr_type, Node* val, BasicType bt, MemOrd mo, bool require_atomic_access, bool store_special) {
+StoreNode* StoreNode::make(PhaseGVN& gvn, Node* ctl, Node* mem, Node* adr, const TypePtr* adr_type, Node* val, BasicType bt, MemOrd mo, bool require_atomic_access, bool has_embedded_oops) {
   assert((mo == unordered || mo == release), "unexpected");
   Compile* C = gvn.C;
   assert(adr_type == nullptr || adr->is_top() || C->get_alias_index(gvn.type(adr)->as_ptr()) == C->get_alias_index(adr_type), "adr and adr_type must agree");
@@ -3123,7 +3123,7 @@ StoreNode* StoreNode::make(PhaseGVN& gvn, Node* ctl, Node* mem, Node* adr, const
   case T_CHAR:
   case T_SHORT:   return new StoreCNode(ctl, mem, adr, adr_type, val, mo);
   case T_LONG: {
-    if (store_special) {
+    if (has_embedded_oops) {
       return new StoreLWithNarrowOopsNode(ctl, mem, adr, adr_type, val, mo);
     }
     return new StoreLNode(ctl, mem, adr, adr_type, val, mo, require_atomic_access);

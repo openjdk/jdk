@@ -298,7 +298,7 @@ public:
                     const TypePtr* at, const Type* rt, BasicType bt,
                     MemOrd mo, ControlDependency control_dependency = DependsOnlyOnTest,
                     bool require_atomic_access = false, bool unaligned = false, bool mismatched = false, bool unsafe = false,
-                    uint8_t barrier_data = 0, bool special = false);
+                    uint8_t barrier_data = 0, bool has_embedded_oops = false);
 
   virtual uint hash()   const;  // Check the type
 
@@ -514,7 +514,7 @@ public:
 class LoadLWithNarrowOopsNode : public LoadNode {
 public:
   LoadLWithNarrowOopsNode(Node *c, Node *mem, Node *adr, const TypePtr* at,
-                   MemOrd mo, ControlDependency control_dependency = DependsOnlyOnTest)
+                          MemOrd mo, ControlDependency control_dependency = DependsOnlyOnTest)
     : LoadNode(c, mem, adr, at, TypeLong::LONG, mo, control_dependency) {
     set_mismatched_access();
   }
@@ -704,7 +704,7 @@ public:
   static StoreNode* make(PhaseGVN& gvn, Node* c, Node* mem, Node* adr,
                          const TypePtr* at, Node* val, BasicType bt,
                          MemOrd mo, bool require_atomic_access = false,
-                         bool store_special = false);
+                         bool has_embedded_oops = false);
 
   virtual uint hash() const;    // Check the type
 
