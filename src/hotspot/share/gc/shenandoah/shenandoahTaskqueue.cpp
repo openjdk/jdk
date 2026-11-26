@@ -217,7 +217,7 @@ bool ShenandoahTaskTerminator::offer_termination(bool cancellable) {
       return true;
     }
     if (cancellable && _heap->cancelled_gc()) {
-      // Requested termination
+      // Requested cancellation.
       return true;
     }
     if (!_queues->is_shared_empty()) {

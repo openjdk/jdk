@@ -154,7 +154,9 @@ void ShenandoahMark::mark_loop_work(T* cl, ShenandoahLiveData* live_data, uint w
     if (work > 0) {
       // Share some of our work if there are possible active workers that are running dry.
       for (size_t i = queues->shared_count(); i < active_workers - 1; i++) {
-        q->share_work();
+        if (!q->share_work()) {
+          break;
+        }
       }
     }
 

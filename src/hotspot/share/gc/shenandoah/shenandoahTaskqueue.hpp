@@ -327,7 +327,7 @@ public:
 
   bool is_empty();
 
-  void share_work();
+  bool share_work();
 };
 
 class ShenandoahTaskQueueSet : public CHeapObj<mtGC> {

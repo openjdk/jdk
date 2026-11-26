@@ -53,13 +53,15 @@ bool ShenandoahTaskQueue::pop(ShenandoahTask& task) {
   return false;
 }
 
-inline void ShenandoahTaskQueue::share_work() {
+inline bool ShenandoahTaskQueue::share_work() {
   if (_stack->is_sliceable()) {
     auto top_stack = _qs->pick_free();
     _stack->slice_top(top_stack);
     _qs->mark_shared(_stack);
     _stack = top_stack;
+    return true;
   }
+  return false;
 }
 
 inline ShenandoahTaskQueueStack* ShenandoahTaskQueueSegment::pick(Atomic<uint64_t>* bm) {
