@@ -430,7 +430,6 @@ Java_sun_awt_windows_WPrinterJob_showDocProperties(JNIEnv *env,
                 LPTSTR lpdevnames = (LPTSTR)devnames;
                 // No need to call _tcsdup as we won't unlock until we are done.
                 LPTSTR printerName = lpdevnames+devnames->wDeviceOffset;
-                LPTSTR portName = lpdevnames+devnames->wOutputOffset;
 
                 HANDLE hPrinter;
                 if (::OpenPrinter(printerName, &hPrinter, NULL) == TRUE) {
@@ -523,7 +522,6 @@ Java_sun_awt_windows_WPageDialogPeer__1show(JNIEnv *env, jobject peer)
     DASSERT(self != NULL);
 
     AwtComponent *awtParent = (parent != NULL) ? (AwtComponent *)JNI_GET_PDATA(parent) : NULL;
-    HWND hwndOwner = awtParent ? awtParent->GetHWnd() : NULL;
 
     PAGESETUPDLG setup;
     memset(&setup, 0, sizeof(setup));
@@ -1674,7 +1672,7 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_WPrinterJob_deviceStartPage
                       ::GlobalUnlock(hDevNames);
                     }
                   } // sync
-                  HDC res = ::ResetDC(printDC, devmode);
+                  ::ResetDC(printDC, devmode);
                   RESTORE_CONTROLWORD
                 }  // if (dmPaperSize == 0)
                 // if DocumentProperties() fail
@@ -2752,13 +2750,13 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_WPrinterJob_textOut
         env->ReleaseFloatArrayElements(positions, glyphPos, JNI_ABORT);
     }
 
-    BOOL drawn = ::ExtTextOut((HDC)printDC,
-                    posX, posY,     // starting position for the text
-                    flags,          // glyphCodes?, y advances?
-                    NULL,           // optional clipping-opaquing rectangle
-                    wText,          // the Unicode text to draw
-                    static_cast<UINT>(strLen),
-                    advances);      // intercharacter advances or NULL
+    ::ExtTextOut((HDC)printDC,
+                 posX, posY,     // starting position for the text
+                 flags,          // glyphCodes?, y advances?
+                 NULL,           // optional clipping-opaquing rectangle
+                 wText,          // the Unicode text to draw
+                 static_cast<UINT>(strLen),
+                 advances);      // intercharacter advances or NULL
 
     if (xadvances != NULL) {
         free(xadvances);
@@ -3355,8 +3353,6 @@ static void pageFormatToSetup(JNIEnv *env, jobject job,
      */
     jint orient = getPageFormatOrientation(env, page);
     if (orient < 0) return;
-    int gdiOrientation = (orient == PAGEFORMAT_PORTRAIT) ?
-        DMORIENT_PORTRAIT : DMORIENT_LANDSCAPE;
     setOrientationInDevMode(setup->hDevMode, orient == PAGEFORMAT_PORTRAIT);
 
     int units = (setup->Flags & PSD_INTHOUSANDTHSOFINCHES)
@@ -3839,12 +3835,6 @@ void setCapabilities(JNIEnv *env, jobject self, HDC printDC) {
     jint pageHgt = GetDeviceCaps(printDC, PHYSICALHEIGHT);
     err = setIntField(env, self, PAGEH_STR, pageHgt);
     if (err) return;
-
-    // x scaling factor of printer
-    jint xsf = GetDeviceCaps(printDC, SCALINGFACTORX);
-
-    // x scaling factor of printer
-    jint ysf = GetDeviceCaps(printDC, SCALINGFACTORY);
 
     if (getOrientationFromDevMode(env, self) == DMORIENT_LANDSCAPE) {
         // because we do our own rotation, we should force
