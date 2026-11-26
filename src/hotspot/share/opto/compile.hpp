@@ -339,6 +339,7 @@ class Compile : public Phase {
   uint             _node_count_inlining_cutoff; // Number of nodes in the graph above which inlining is denied
 
   bool                  _post_loop_opts_phase;  // Loop opts are finished.
+  bool               _post_macro_expand_phase;  // Macro expansion is finished.
   bool                  _merge_stores_phase;    // Phase for merging stores, after post loop opts phase.
   bool                  _allow_macro_nodes;     // True if we allow creation of macro nodes.
 
@@ -827,6 +828,9 @@ public:
   bool       post_loop_opts_phase() { return _post_loop_opts_phase;  }
   void   set_post_loop_opts_phase() { _post_loop_opts_phase = true;  }
   void reset_post_loop_opts_phase() { _post_loop_opts_phase = false; }
+
+  bool       post_macro_expand_phase() { return _post_macro_expand_phase;  }
+  void   set_post_macro_expand_phase() { _post_macro_expand_phase = true;  }
 
 #ifdef ASSERT
   bool       phase_verify_ideal_loop() const { return _phase_verify_ideal_loop; }
