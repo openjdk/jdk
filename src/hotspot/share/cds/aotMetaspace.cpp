@@ -1616,9 +1616,7 @@ void AOTMetaspace::initialize_runtime_shared_and_meta_spaces() {
     }
     FLAG_SET_ERGO(AOTReplayTraining, false);
     FLAG_SET_ERGO(AOTCompileEagerly, false);
-    if (!CDSConfig::is_redumping_aot_configuration()) {
-      AOTCodeCache::disable_caching();
-    }
+    AOTCodeCache::disable_caching();
     // The base archive cannot be mapped. We cannot dump the dynamic shared archive.
     AutoCreateSharedArchive = false;
     CDSConfig::disable_dumping_dynamic_archive();

@@ -156,29 +156,23 @@ public class TestAOTCacheFlagsCleanup {
         @Override
         public void checkExecution(OutputAnalyzer out, RunMode runMode) throws Exception {
             if (isAOTRetraining()) {
-                // If the base archive is invalidated, but the JVM continues to run iterative training run
-                // (because +AOTIgnoreIncompatibleCacheInTraining is specified), not all flags are cleared.
-                if (runMode == RunMode.TRAINING) {
+                if (runMode == RunMode.TRAINING || runMode == RunMode.PRODUCTION) {
                     out.shouldMatch("AOTReplayTraining\\s+= false");
                     out.shouldMatch("AutoCreateSharedArchive\\s+= false");
-                    out.shouldMatch("AOTRecordTraining\\s+= true");
-                    out.shouldMatch("AOTCompileEagerly\\s+= false");
-                    out.shouldMatch("AOTCodeCaching\\s+= true");
-                    out.shouldMatch("AOTStubCaching\\s+= true");
-                    out.shouldMatch("AOTAdapterCaching\\s+= true");
-                    // When AOTCache header validation fails, UseAOTCacheCpuFeaturesOnly is set to false
-                    out.shouldMatch("UseAOTCacheCpuFeaturesOnly\\s+= false");
-                }
-                if (runMode == RunMode.PRODUCTION) {
-                    out.shouldMatch("AOTReplayTraining\\s+= false");
-                    out.shouldMatch("AutoCreateSharedArchive\\s+= false");
-                    out.shouldMatch("AOTRecordTraining\\s+= false");
                     out.shouldMatch("AOTCompileEagerly\\s+= false");
                     out.shouldMatch("AOTCodeCaching\\s+= false");
                     out.shouldMatch("AOTStubCaching\\s+= false");
                     out.shouldMatch("AOTAdapterCaching\\s+= false");
                     // When AOTCache header validation fails, UseAOTCacheCpuFeaturesOnly is set to false
                     out.shouldMatch("UseAOTCacheCpuFeaturesOnly\\s+= false");
+
+                    // If the base archive is invalidated, but the JVM continues to run iterative training run
+                    // (because +AOTIgnoreIncompatibleCacheInTraining is specified), AOTRecordTraining should not be cleared.
+                    if (runMode == RunMode.TRAINING) {
+                        out.shouldMatch("AOTRecordTraining\\s+= true");
+                    } else {
+                        out.shouldMatch("AOTRecordTraining\\s+= false");
+                    }
                 }
             }
         }
