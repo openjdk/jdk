@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,6 +97,7 @@ public class Helpers {
         JDKToolLauncher jar = JDKToolLauncher.create("javac")
                 .addToolArg("-d")
                 .addToolArg(root.toAbsolutePath().toString())
+                .addToolArg("-g:none")
                 .addToolArg("-cp")
                 .addToolArg(System.getProperty("java.class.path") + File.pathSeparator + root.toAbsolutePath())
                 .addToolArg(sourceFile.toAbsolutePath().toString());
@@ -123,13 +124,39 @@ public class Helpers {
      * @param fieldCount  count of long fields
      * @return class text
      */
-    public static String generate(String className, String superClass, String constructor, long fieldCount) {
+    public static String generate(String className, String superClass, String constructor, int fieldCount) {
+        return generate(className, superClass, constructor, fieldCount, 0);
+    }
 
+    /**
+     * Generates class with specified name, which extends specified class, with specified constructor, specified
+     * count of long fields and specified count of long static fields.
+     * Generated class will looks like this:
+     * public class ClassName extends SuperClass {
+     * ClassName() {super();}
+     * long f0;
+     * ...
+     * long fNNN;
+     * static long s0;
+     * ...
+     * static long sMMM;
+     * <p>
+     * }
+     *
+     * @param className        class name
+     * @param superClass       super class. if null - no extends clause
+     * @param constructor      constructor. if null - no constructor
+     * @param fieldCount       count of long fields
+     * @param staticFieldCount count of static long field
+     * @return class text
+     */
+    public static String generate(String className, String superClass, String constructor, int fieldCount, int staticFieldCount) {
         return new StringBuilder()
                 .append(String.format("public class %s%s {\n", className, superClass == null ? ""
                         : " extends " + superClass))
                 .append(constructor == null ? "" : constructor)
                 .append(fieldsGenerator(fieldCount))
+                .append(staticsGenerator(staticFieldCount))
                 .append("}\n")
                 .toString();
     }
@@ -145,8 +172,8 @@ public class Helpers {
      * @param fieldCount count of long fields
      * @return generated fields
      */
-    private static String fieldsGenerator(long fieldCount) {
-        StringBuilder fieldsBuilder = new StringBuilder();
+    private static String fieldsGenerator(int fieldCount) {
+        StringBuilder fieldsBuilder = new StringBuilder("");
 
         for (int i = 0; i < fieldCount; ++i) {
             fieldsBuilder.append(String.format("long f%d;\n", i));
@@ -155,6 +182,26 @@ public class Helpers {
         return fieldsBuilder.toString();
     }
 
+    /**
+     * Generates specified amount of static long fields
+     * Result string will looks like this:
+     * <p>
+     * static long s0;
+     * ...
+     * static long sMMM;
+     *
+     * @param staticFieldCount count of static long fields
+     * @return generated fields
+     */
+    private static String staticsGenerator(int staticFieldCount) {
+        StringBuilder staticsBuilder = new StringBuilder("");
+
+        for (int i = 0; i < staticFieldCount; ++i) {
+            staticsBuilder.append(String.format("static long s%d;\n", i));
+        }
+
+        return staticsBuilder.toString();
+    }
 
     /**
      * Changes string from enum notation to class notation - i.e. "VERY_SMALL_CAT" to "VerySmallCat"

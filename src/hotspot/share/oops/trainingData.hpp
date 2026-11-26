@@ -339,7 +339,7 @@ private:
 
   static void initialize() NOT_CDS_RETURN;
 
-  static void verify();
+  static void verify() NOT_CDS_RETURN;
 
   // Widget for recording dependencies, as an N-to-M graph relation,
   // possibly cyclic.
@@ -381,14 +381,11 @@ private:
         return _deps->at(i);
       } else ShouldNotReachHere();
     }
-    void at_put(int i, E dep) const {
+    void at_put(int i, E dep) {
       TrainingDataLocker::assert_locked_or_snapshotted();
       assert(i >= 0 && i < length(), "oob");
-      if (_deps_dyn != nullptr) {
-        return _deps_dyn->at_put(i, dep);
-      } else if (_deps != nullptr) {
-        return _deps->at_put(i, dep);
-      } else ShouldNotReachHere();
+      copy_on_write_if_necessary();
+      _deps_dyn->at_put(i, dep);
     }
     bool append_if_missing(E dep) {
       TrainingDataLocker::assert_can_add();
@@ -489,7 +486,7 @@ private:
     return nullptr;
   }
 
-  static void cleanup_after_redefinition();
+  static void cleanup_after_redefinition() NOT_CDS_RETURN;
 };
 
 // Training data that is associated with an InstanceKlass

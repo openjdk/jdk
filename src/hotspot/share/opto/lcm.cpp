@@ -212,6 +212,7 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
     case Op_LoadRange:
     case Op_LoadD_unaligned:
     case Op_LoadL_unaligned:
+    case Op_LoadLSpecial:
       assert(mach->in(2) == val, "should be address");
       break;
     case Op_StoreB:

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,7 +87,7 @@ public class Sender {
                 bb.order(ByteOrder.BIG_ENDIAN);
                 bb.putInt(1).putLong(1);
                 bb.flip();
-                InetAddress address = InetAddress.getLocalHost();
+                InetAddress address = InetAddress.getLoopbackAddress();
                 InetSocketAddress isa = new InetSocketAddress(address, port);
                 if (Platform.isOSX()) {
                     // avoid binding on wildcard on macOS
@@ -109,7 +109,7 @@ public class Sender {
         Server() throws IOException {
             // avoid binding to wildcard address on macOS
             InetSocketAddress lo = Platform.isOSX()
-                    ? new InetSocketAddress(InetAddress.getLocalHost(), 0)
+                    ? new InetSocketAddress(InetAddress.getLoopbackAddress(), 0)
                     : new InetSocketAddress(0);
             dc = DatagramChannel.open().bind(lo);
         }

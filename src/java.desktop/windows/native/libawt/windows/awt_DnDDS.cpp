@@ -1006,8 +1006,7 @@ HRESULT AwtDragSource::GetDataHere(FORMATETC __RPC_FAR *pFormatEtc,
         }
 
         ULONG act;
-        HRESULT res = pmedium->pstm->Write((const void *)bBytes, (ULONG)nBytes,
-                                           &act);
+        pmedium->pstm->Write((const void *)bBytes, (ULONG)nBytes, &act);
 
         env->ReleaseByteArrayElements(bytes, bBytes, JNI_ABORT);
 

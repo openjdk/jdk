@@ -1,4 +1,5 @@
 /* Copyright (c) 2021, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2026, IBM Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +25,26 @@
 #ifndef CPU_AARCH64_ATOMIC_AARCH64_HPP
 #define CPU_AARCH64_ATOMIC_AARCH64_HPP
 
+#ifdef __cplusplus
+
+#define DEFAULT_ATOMIC_OP(OPNAME, SIZE, MEMORDER)                        \
+  extern "C" aarch64_atomic_stub_t aarch64_atomic_ ## OPNAME ## _ ## SIZE ## MEMORDER ## _impl;
+
+typedef uint64_t (*aarch64_atomic_stub_t)(volatile void *ptr, uint64_t arg1, uint64_t arg2);
+
+#define ATOMIC_OPS_START                        \
+  extern address aarch64_atomic_ops[], lse_aarch64_atomic_ops[];
+#define ATOMIC_OPS_END                          \
+  extern address aarch64_atomic_ops_end[], lse_aarch64_atomic_ops_end[];
+
+#elif defined(__ASSEMBLER__)
+
+#else
+
+#error One of these must be defined
+
+#endif
+
 // Atomic stub implementation.
 // Default implementations are in atomic_linux_aarch64.S
 //
@@ -32,25 +53,33 @@
 // x1: arg1
 // x2: arg2 (optional)
 // x3, x8, x9: scratch
-typedef uint64_t (*aarch64_atomic_stub_t)(volatile void *ptr, uint64_t arg1, uint64_t arg2);
+
+// DEFAULT_ATOMIC_OP(name, bytesize, memory_order)
+// memory_order is blank (i.e. conservative), _acquire, _release, _acq_rel, _seq_cst
 
 // Pointers to stubs
-extern aarch64_atomic_stub_t aarch64_atomic_fetch_add_4_impl;
-extern aarch64_atomic_stub_t aarch64_atomic_fetch_add_8_impl;
-extern aarch64_atomic_stub_t aarch64_atomic_fetch_add_4_relaxed_impl;
-extern aarch64_atomic_stub_t aarch64_atomic_fetch_add_8_relaxed_impl;
-extern aarch64_atomic_stub_t aarch64_atomic_xchg_1_impl;
-extern aarch64_atomic_stub_t aarch64_atomic_xchg_4_impl;
-extern aarch64_atomic_stub_t aarch64_atomic_xchg_8_impl;
-extern aarch64_atomic_stub_t aarch64_atomic_cmpxchg_1_impl;
-extern aarch64_atomic_stub_t aarch64_atomic_cmpxchg_4_impl;
-extern aarch64_atomic_stub_t aarch64_atomic_cmpxchg_8_impl;
-extern aarch64_atomic_stub_t aarch64_atomic_cmpxchg_1_relaxed_impl;
-extern aarch64_atomic_stub_t aarch64_atomic_cmpxchg_4_relaxed_impl;
-extern aarch64_atomic_stub_t aarch64_atomic_cmpxchg_8_relaxed_impl;
-extern aarch64_atomic_stub_t aarch64_atomic_cmpxchg_4_release_impl;
-extern aarch64_atomic_stub_t aarch64_atomic_cmpxchg_8_release_impl;
-extern aarch64_atomic_stub_t aarch64_atomic_cmpxchg_4_seq_cst_impl;
-extern aarch64_atomic_stub_t aarch64_atomic_cmpxchg_8_seq_cst_impl;
+
+#define DO_ATOMIC_STUBS                         \
+DEFAULT_ATOMIC_OP(fetch_add, 4, )               \
+DEFAULT_ATOMIC_OP(fetch_add, 8, )               \
+DEFAULT_ATOMIC_OP(fetch_add, 4, _relaxed)       \
+DEFAULT_ATOMIC_OP(fetch_add, 8, _relaxed)       \
+DEFAULT_ATOMIC_OP(xchg, 1, )                    \
+DEFAULT_ATOMIC_OP(xchg, 4, )                    \
+DEFAULT_ATOMIC_OP(xchg, 8, )                    \
+DEFAULT_ATOMIC_OP(cmpxchg, 1, )                 \
+DEFAULT_ATOMIC_OP(cmpxchg, 4, )                 \
+DEFAULT_ATOMIC_OP(cmpxchg, 8, )                 \
+DEFAULT_ATOMIC_OP(cmpxchg, 1, _relaxed)         \
+DEFAULT_ATOMIC_OP(cmpxchg, 4, _relaxed)         \
+DEFAULT_ATOMIC_OP(cmpxchg, 8, _relaxed)         \
+DEFAULT_ATOMIC_OP(cmpxchg, 4, _release)         \
+DEFAULT_ATOMIC_OP(cmpxchg, 8, _release)         \
+DEFAULT_ATOMIC_OP(cmpxchg, 4, _seq_cst)         \
+DEFAULT_ATOMIC_OP(cmpxchg, 8, _seq_cst)
+
+ATOMIC_OPS_START
+DO_ATOMIC_STUBS
+ATOMIC_OPS_END
 
 #endif // CPU_AARCH64_ATOMIC_AARCH64_HPP

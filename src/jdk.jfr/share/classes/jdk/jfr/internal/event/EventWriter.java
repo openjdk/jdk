@@ -153,7 +153,7 @@ public final class EventWriter {
     private void putStringValue(String s) {
         int length = s.length();
         long size = 1L + 5L + 3L * length;
-        if (size > Integer.MAX_VALUE) {
+        if (usedSize() + size > MAX_EVENT_SIZE) {
             valid = false;
             return;
         }
@@ -216,7 +216,13 @@ public final class EventWriter {
             return false;
         }
         if (currentPosition + requestedSize > maxPosition) {
-            flush(usedSize(), requestedSize);
+            int used = usedSize();
+            // Do not provision a larger buffer for a request beyond the event-size limit.
+            if ((long) used + requestedSize > MAX_EVENT_SIZE) {
+                valid = false;
+                return false;
+            }
+            flush(used, requestedSize);
             // retry
             if (!valid) {
                 return false;

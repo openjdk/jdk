@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@ package jdk.jfr.event.io;
 import static jdk.test.lib.Asserts.assertEquals;
 import static jdk.test.lib.Asserts.assertTrue;
 
+import java.net.SocketException;
+import java.nio.channels.ClosedChannelException;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -34,6 +36,7 @@ import java.util.stream.Collectors;
 import jdk.jfr.event.io.IOEvent.EventType;
 
 import jdk.jfr.consumer.RecordedEvent;
+import jdk.test.lib.Asserts;
 import jdk.test.lib.jfr.Events;
 
 
@@ -119,6 +122,14 @@ public class IOHelper {
                 return false;
         }
         return true;
+    }
+
+    public static void assertClosedChannelException(Asserts.TestMethod runnable, String method) {
+        Asserts.assertThrows(ClosedChannelException.class, runnable, "Missing ClosedChannelException for " + method);
+    }
+
+    public static void assertSocketException(Asserts.TestMethod runnable, String method) {
+        Asserts.assertThrows(SocketException.class, runnable, "Missing SocketException for " + method);
     }
 
     private static void logEvents(List<IOEvent> actualEvents, List<IOEvent> expectedEvents) {

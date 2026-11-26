@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,7 @@ import java.awt.event.InputEvent;
 import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.InputStream;
+import java.util.concurrent.TimeUnit;
 
 public class InterJVMGetDropSuccessTest {
 
@@ -160,6 +161,7 @@ final class Util implements AWTEventListener {
     public static final int CODE_FAILURE = 0x1;
 
     public static final int FRAME_ACTIVATION_TIMEOUT = 1000;
+    public static final int DROP_COMPLETION_TIMEOUT = 5000;
 
     static final Object SYNC_LOCK = new Object();
 
@@ -207,10 +209,25 @@ class Child {
             return dropSuccess;
         }
 
-        public void dragDropEnd(DragSourceDropEvent dsde) {
-            finished = true;
-            dropSuccess = dsde.getDropSuccess();
+        public void awaitDropFinished() throws InterruptedException {
             synchronized (Util.SYNC_LOCK) {
+                long deadline = System.nanoTime()
+                        + TimeUnit.MILLISECONDS.toNanos(Util.DROP_COMPLETION_TIMEOUT);
+                while (!finished) {
+                    long remaining = deadline - System.nanoTime();
+                    if (remaining <= 0) {
+                        throw new RuntimeException("Drop not finished within "
+                                + Util.DROP_COMPLETION_TIMEOUT + " ms");
+                    }
+                    TimeUnit.NANOSECONDS.timedWait(Util.SYNC_LOCK, remaining);
+                }
+            }
+        }
+
+        public void dragDropEnd(DragSourceDropEvent dsde) {
+            synchronized (Util.SYNC_LOCK) {
+                finished = true;
+                dropSuccess = dsde.getDropSuccess();
                 Util.SYNC_LOCK.notifyAll();
             }
         }
@@ -271,7 +288,7 @@ class Child {
 
             synchronized (Util.SYNC_LOCK) {
                 robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-                Util.SYNC_LOCK.wait(Util.FRAME_ACTIVATION_TIMEOUT);
+                dragSourceListener.awaitDropFinished();
             }
 
             EventQueue.invokeAndWait(() -> {
@@ -296,7 +313,7 @@ class Child {
 
             synchronized (Util.SYNC_LOCK) {
                 robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-                Util.SYNC_LOCK.wait(Util.FRAME_ACTIVATION_TIMEOUT);
+                dragSourceListener.awaitDropFinished();
             }
 
             EventQueue.invokeAndWait(() -> {

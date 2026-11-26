@@ -3690,7 +3690,8 @@ static jint JNI_CreateJavaVM_inner(JavaVM **vm, void **penv, void *args) {
   }
 
   /**
-   * Certain errors during initialization are recoverable and do not
+   * Historical note:
+   * Certain errors during initialization were recoverable and did not
    * prevent this method from being called again at a later time
    * (perhaps with different arguments).  However, at a certain
    * point during initialization if an error occurs we cannot allow
@@ -3698,6 +3699,10 @@ static jint JNI_CreateJavaVM_inner(JavaVM **vm, void **penv, void *args) {
    * situations, the 'canTryAgain' flag is set to false, which atomically
    * sets safe_to_recreate_vm to 1, such that any new call to
    * JNI_CreateJavaVM will immediately fail using the above logic.
+   *
+   * In practice the ability to recover and reinitialize has not existed
+   * for a very long time. See Threads::create_vm for the still supported
+   * case.
    */
   bool can_try_again = true;
 

@@ -28,6 +28,7 @@
  * @library /test/lib
  * @requires os.family == "linux"
  * @requires !jdk.static
+ * @requires vm.flagless
  * @compile DoOverflow.java
  * @run main/native TestStackGuardPagesNative
  */

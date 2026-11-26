@@ -90,7 +90,6 @@ class WorkerThreads;
 typedef OverflowTaskQueue<ScannerTask, mtGC>           G1ScannerTasksQueue;
 typedef GenericTaskQueueSet<G1ScannerTasksQueue, mtGC> G1ScannerTasksQueueSet;
 
-typedef int RegionIdx_t;   // needs to hold [ 0..max_num_regions() )
 typedef int CardIdx_t;     // needs to hold [ 0..CardsPerRegion )
 
 // The G1 STW is alive closure.
@@ -629,6 +628,8 @@ public:
 
   // Register the given region to be part of the collection set.
   inline void register_humongous_candidate_region_with_region_attr(uint index);
+
+  inline void register_humongous_non_candidate_region_with_region_attr(uint index);
 
   void set_humongous_metadata(G1HeapRegion* first_hr,
                               uint num_regions,

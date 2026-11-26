@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,8 +37,6 @@
  */
 
 package java.text;
-
-import java.lang.Character;
 
 /**
  * Utility class for normalizing and merging patterns for collation.
@@ -245,8 +243,11 @@ class PatternEntry {
                 case ' ': break; // skip whitespace TODO use Character
                 case '/': inChars = false; break;
                 case '\'':
+                    if (++i >= pattern.length()) {
+                        throw new ParseException("Unterminated quote", i - 1);
+                    }
                     inQuote = true;
-                    ch = pattern.charAt(++i);
+                    ch = pattern.charAt(i);
                     if (newChars.length() == 0) newChars.append(ch);
                     else if (inChars) newChars.append(ch);
                     else newExtension.append(ch);
@@ -271,6 +272,9 @@ class PatternEntry {
                     break;
                 }
                 i++;
+            }
+            if (inQuote) {
+                throw new ParseException("Unterminated quote", i);
             }
             if (newStrength == UNSET)
                 return null;

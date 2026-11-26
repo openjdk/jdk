@@ -5,12 +5,12 @@
 #ifndef SPA_AUDIO_MP3_TYPES_H
 #define SPA_AUDIO_MP3_TYPES_H
 
+#include <spa/utils/type.h>
+#include <spa/param/audio/mp3.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <spa/utils/type.h>
-#include <spa/param/audio/mp3.h>
 
 /**
  * \addtogroup spa_param

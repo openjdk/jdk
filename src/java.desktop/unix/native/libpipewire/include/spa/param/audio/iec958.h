@@ -31,7 +31,7 @@ enum spa_audio_iec958_codec {
 };
 
 struct spa_audio_info_iec958 {
-    enum spa_audio_iec958_codec codec;    /*< format, one of the DSP formats in enum spa_audio_format_dsp */
+    enum spa_audio_iec958_codec codec;    /*< codec, one of the values in enum spa_audio_iec958_codec */
     uint32_t flags;                /*< extra flags */
     uint32_t rate;                /*< sample rate */
 };
