@@ -4815,6 +4815,8 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
     assert(nop != Op_ProfileBoolean, "should be eliminated during IGVN");
     break;
   }
+
+  assert(!n->is_Cmp() || n->in(0) == nullptr, "pinned Cmp node: %s", n->Name());
 }
 
 //------------------------------final_graph_reshaping_walk---------------------
