@@ -81,13 +81,13 @@ class Copy : AllStatic {
   // HeapWords
 
   static void copy16_atomic(const void* from, void* to) {
-#if defined(AMD64) && defined(LINUX)
+#if defined(AMD64) && defined(LINUX) && !defined(ZERO)
     assert_params_ok(from, to, 16);
     assert(VM_Version::supports_fast_16byte_atomic_access(), "not supported");
     pd_copy16_atomic(to, from);
-#else // AMD64 && LINUX
+#else // AMD64 && LINUX && !ZERO
     ShouldNotReachHere();
-#endif // AMD64 && LINUX
+#endif // AMD64 && LINUX && !ZERO
   }
 
   // Word-aligned words,    conjoint, not atomic on each word
