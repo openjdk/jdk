@@ -3456,20 +3456,17 @@ int MacroAssembler::patch_oop(address insn_addr, address o) {
 
 int MacroAssembler::patch_metadata(address insn_addr, address metadata) {
   // Metadata is either a narrow klass (32 bits, materialized by set_narrow_klass()
-  // with li32) or a full 48-bit pointer (materialized by mov_metadata() with movptr).
+  // with li32) or a full-width pointer (materialized by mov_metadata() with movptr).
   if (MacroAssembler::is_li32_at(insn_addr)) {
     // Move narrow klass
     Metadata* value = reinterpret_cast<Metadata*>(metadata);
     assert(value != nullptr && value->is_klass(), "narrow metadata must be a klass");
     narrowKlass nk = CompressedKlassPointers::encode(static_cast<Klass*>(value));
     return patch_imm_in_li32(insn_addr, static_cast<int32_t>(nk));
-  } else if (MacroAssembler::is_movptr1_at(insn_addr) ||
-             MacroAssembler::is_movptr2_at(insn_addr)) {
-    // Move wide metadata
-    return pd_patch_instruction_size(insn_addr, metadata);
   }
-  ShouldNotReachHere();
-  return -1;
+  // Move wide metadata
+  assert(MacroAssembler::is_movptr_at(insn_addr), "must be a movptr");
+  return patch_addr_in_movptr(insn_addr, metadata);
 }
 
 void MacroAssembler::reinit_heapbase() {
