@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import sun.jvm.hotspot.types.*;
 import sun.jvm.hotspot.utilities.Observable;
 import sun.jvm.hotspot.utilities.Observer;
 
-// Array is an abstract superclass for TypeArray and ObjArray
+// Array is an abstract superclass for TypeArray, ObjArray, and FlatArray
 
 public class Array extends Oop {
   static {
@@ -61,6 +61,9 @@ public class Array extends Oop {
   // aligned 0 mod 8.  The arrayOop itself must be aligned at least this
   // strongly.
   private static boolean elementTypeShouldBeAligned(BasicType type) {
+    if (type == BasicType.T_FLAT_ELEMENT) {
+      return true;
+    }
     if (VM.getVM().isLP64()) {
       if (type == BasicType.T_OBJECT || type == BasicType.T_ARRAY) {
         return !VM.getVM().isCompressedOopsEnabled();
@@ -83,10 +86,8 @@ public class Array extends Oop {
     }
     if (VM.getVM().isCompactObjectHeadersEnabled()) {
       lengthOffsetInBytes = Oop.getHeaderSize();
-    } else if (VM.getVM().isCompressedKlassPointersEnabled()) {
-      lengthOffsetInBytes = typeSize - VM.getVM().getIntSize();
     } else {
-      lengthOffsetInBytes = typeSize;
+      lengthOffsetInBytes = typeSize - VM.getVM().getIntSize();
     }
     return lengthOffsetInBytes;
   }
@@ -119,6 +120,7 @@ public class Array extends Oop {
   }
 
   public boolean isArray()             { return true; }
+  public boolean isFlatArray()         { return false; }
 
   public void iterateFields(OopVisitor visitor, boolean doVMFields) {
     super.iterateFields(visitor, doVMFields);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8350582 8340312 8369995 8044609 8372004
+ * @bug 8350582 8340312 8369995 8044609 8372004 8371333
  * @library /test/lib /javax/net/ssl/templates
  * @summary Correct the parsing of the ssl value in javax.net.debug
  * @run junit DebugPropertyValuesTest
@@ -60,8 +60,8 @@ public class DebugPropertyValuesTest extends SSLSocketTemplate {
                         "supported_versions"));
         debugMessages.put("handshake-expand",
                 List.of("\"logger\".*: \"javax.net.ssl\",",
-                        "\"specifics\"   : \\[",
-                        "\"message\".*: \"Produced ClientHello handshake message"));
+                    "\"specifics\"   : \\[",
+                    "\"message\".*: \"Produced ClientHello handshake message"));
         debugMessages.put("keymanager", List.of("Choosing key:"));
         debugMessages.put("packet", List.of("Raw write"));
         debugMessages.put("plaintext",
@@ -73,11 +73,13 @@ public class DebugPropertyValuesTest extends SSLSocketTemplate {
         debugMessages.put("session", List.of("Session initialized:"));
         debugMessages.put("ssl", List.of("jdk.tls.keyLimits:"));
         debugMessages.put("sslctx",
-                List.of("trigger seeding of SecureRandom"));
+                List.of("trigger seeding of SecureRandom",
+                        // Available list should finish with this style
+                        "TLS_EMPTY_RENEGOTIATION_INFO_SCSV]",
+                        "Ignore disabled cipher suites for protocols: " +
+                                "\\[TLSv1.3, TLSv1.2\\]"));
         debugMessages.put("trustmanager",
                 List.of("adding as trusted certificates"));
-        debugMessages.put("verbose",
-                List.of("Ignore unsupported cipher suite:"));
         debugMessages.put("help",
                 List.of("print this help message and exit",
                         "verbose handshake message printing"));
@@ -110,17 +112,16 @@ public class DebugPropertyValuesTest extends SSLSocketTemplate {
                 Arguments.of(List.of("-Djavax.net.debug=all"),
                         List.of("handshake", "keymanager", "packet",
                                 "plaintext", "record", "session", "ssl",
-                                "sslctx", "trustmanager", "verbose")),
+                                "sslctx", "trustmanager")),
                 // ssl should print most details except verbose details
                 Arguments.of(List.of("-Djavax.net.debug=ssl"),
                         List.of("handshake", "keymanager",
                                 "record", "session", "ssl",
-                                "sslctx", "trustmanager", "verbose")),
+                                "sslctx", "trustmanager")),
                 // allow expand option for more verbose output
                 Arguments.of(
                         List.of("-Djavax.net.debug=ssl,handshake,expand"),
-                        List.of("handshake", "handshake-expand",
-                                "ssl", "verbose")),
+                        List.of("handshake", "handshake-expand", "ssl")),
                 // filtering on record option, with expand
                 Arguments.of(List.of("-Djavax.net.debug=ssl:record,expand"),
                         List.of("record", "record-expand", "ssl")),
@@ -142,12 +143,12 @@ public class DebugPropertyValuesTest extends SSLSocketTemplate {
                 Arguments.of(List.of("-Djavax.net.debug=ssl,typo"),
                         List.of("handshake", "keymanager",
                                 "record", "session", "ssl",
-                                "sslctx", "trustmanager", "verbose")),
+                                "sslctx", "trustmanager")),
                 // ssltypo contains "ssl". Treat like "ssl"
                 Arguments.of(List.of("-Djavax.net.debug=ssltypo"),
                         List.of("handshake", "keymanager",
                                 "record", "session", "ssl",
-                                "sslctx", "trustmanager", "verbose")),
+                                "sslctx", "trustmanager")),
                 // plaintext is valid for record option
                 Arguments.of(List.of("-Djavax.net.debug=ssl:record:plaintext"),
                         List.of("plaintext", "record", "ssl")),
@@ -168,7 +169,7 @@ public class DebugPropertyValuesTest extends SSLSocketTemplate {
                         List.of("handshake", "javax.net.debug.logger",
                                 "keymanager", "packet", "plaintext",
                                 "record", "session", "ssl",
-                                "sslctx", "trustmanager", "verbose"))
+                                "sslctx", "trustmanager"))
         );
     }
 

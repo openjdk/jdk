@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,12 +36,12 @@ import javax.naming.event.NamingListener;
 import javax.naming.ldap.UnsolicitedNotificationEvent;
 import javax.naming.ldap.UnsolicitedNotificationListener;
 
+import jdk.internal.misc.InnocuousThread;
+
 /**
  * Package private class used by EventSupport to dispatch events.
  * This class implements an event queue, and a dispatcher thread that
  * dequeues and dispatches events from the queue.
- *
- * Pieces stolen from sun.misc.Queue.
  *
  * @author      Bill Shannon (from javax.mail.event)
  * @author      Rosanna Lee (modified for JNDI-related events)
@@ -71,7 +71,7 @@ final class EventQueue implements Runnable {
 
     // package private
     EventQueue() {
-        qThread = new Thread(this);
+        qThread = InnocuousThread.newSystemThread("LDAP Event Dispatcher", this);
         qThread.setDaemon(true);  // not a user thread
         qThread.start();
     }
@@ -141,6 +141,7 @@ final class EventQueue implements Runnable {
     /**
      * Pull events off the queue and dispatch them.
      */
+    @Override
     public void run() {
         QueueElement qe;
 

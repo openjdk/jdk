@@ -22,6 +22,8 @@
  */
 
 import java.io.*;
+import java.util.HashMap;
+
 import jdk.jshell.tool.*;
 
 public class WXHealing {
@@ -31,6 +33,8 @@ public class WXHealing {
     public static void main(String[] args) throws Throwable {
         JavaShellToolBuilder
             .builder()
+            // we don't need system level history/storage for this test
+            .persistence(new HashMap<>())
             .in(new ByteArrayInputStream
                 ("""
                  void main() {

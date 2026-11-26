@@ -1,0 +1,3 @@
+#define width  8
+#define width  1
+k[] = {0xAB};

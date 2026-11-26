@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -134,7 +134,7 @@ public final class ZoneInfoFile {
         return zi;
     }
 
-    private static ZoneInfo getZoneInfo0(String zoneId) {
+    static ZoneInfo getZoneInfo0(String zoneId) {
         try {
             ZoneInfo zi = zones.get(zoneId);
             if (zi != null) {
@@ -312,8 +312,15 @@ public final class ZoneInfoFile {
     /////////////////////////Ser/////////////////////////////////
     public static ZoneInfo getZoneInfo(DataInput in, String zoneId) throws Exception {
         byte type = in.readByte();
-        // TBD: assert ZRULES:
+        if (type != (byte)1) {
+            throw new StreamCorruptedException(
+                    "Not a ZoneRules object: " + type);
+        }
         int stdSize = in.readInt();
+        if (stdSize < 0 || stdSize > 1024) {
+            throw new StreamCorruptedException(
+                    "Invalid standard transition count: " + stdSize);
+        }
         long[] stdTrans = new long[stdSize];
         for (int i = 0; i < stdSize; i++) {
             stdTrans[i] = readEpochSec(in);
@@ -323,6 +330,10 @@ public final class ZoneInfoFile {
             stdOffsets[i] = readOffset(in);
         }
         int savSize = in.readInt();
+        if (savSize < 0 || savSize > 1024) {
+            throw new StreamCorruptedException(
+                    "Invalid saving count: " + savSize);
+        }
         long[] savTrans = new long[savSize];
         for (int i = 0; i < savSize; i++) {
             savTrans[i] = readEpochSec(in);
@@ -332,6 +343,10 @@ public final class ZoneInfoFile {
             savOffsets[i] = readOffset(in);
         }
         int ruleSize = in.readByte();
+        if (ruleSize < 0 || ruleSize > 16) {
+            throw new StreamCorruptedException(
+                    "Invalid rule size: " + ruleSize);
+        }
         ZoneOffsetTransitionRule[] rules = new ZoneOffsetTransitionRule[ruleSize];
         for (int i = 0; i < ruleSize; i++) {
             rules[i] = new ZoneOffsetTransitionRule(in);

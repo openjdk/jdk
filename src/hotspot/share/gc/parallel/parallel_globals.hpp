@@ -31,6 +31,19 @@
                           product_pd,                                       \
                           range,                                            \
                           constraint)                                       \
+  product(uintx, NUMAChunkResizeWeight, 20,                                 \
+          "Percentage (0-100) used to weight the current sample when "      \
+          "computing exponentially decaying average for "                   \
+          "AdaptiveNUMAChunkSizing")                                        \
+          range(0, 100)                                                     \
+                                                                            \
+  product(size_t, NUMASpaceResizeRate, 1*G,                                 \
+          "Do not reallocate more than this amount per collection")         \
+          range(0, max_uintx)                                               \
+                                                                            \
+  product(bool, UseAdaptiveNUMAChunkSizing, true,                           \
+          "Enable adaptive chunk sizing for NUMA")                          \
+                                                                            \
   product(bool, UseMaximumCompactionOnSystemGC, true,                       \
           "Use maximum compaction in the Parallel Old garbage collector "   \
           "for a system GC")

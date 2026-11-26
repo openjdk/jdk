@@ -80,13 +80,10 @@ public class PrettyTest {
                         b = o instanceof R2(R(_), var t);
                     }
                     \n\
-                    class R {
-                        private final String s;
+                    record R(String s) {
                     }
                     \n\
-                    class R2 {
-                        private final R r;
-                        private final String s;
+                    record R2(R r, String s) {
                     }
                 }""";
         if (!expected.equals(pretty)) {

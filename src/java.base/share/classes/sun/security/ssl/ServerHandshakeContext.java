@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ class ServerHandshakeContext extends HandshakeContext {
     private static final long DEFAULT_STATUS_RESP_DELAY = 5000L;
     final long statusRespTimeout;
     boolean acceptCliHelloFragments = false;
-
+    boolean sentHRR = false;
 
     ServerHandshakeContext(SSLContextImpl sslContext,
             TransportContext conContext) throws IOException {

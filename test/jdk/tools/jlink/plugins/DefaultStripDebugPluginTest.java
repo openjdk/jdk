@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019, Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,6 +24,7 @@
 
 import java.util.Map;
 
+import jdk.tools.jlink.internal.Platform;
 import jdk.tools.jlink.internal.ResourcePoolManager;
 import jdk.tools.jlink.internal.plugins.DefaultStripDebugPlugin;
 import jdk.tools.jlink.internal.plugins.DefaultStripDebugPlugin.NativePluginFactory;
@@ -51,11 +53,22 @@ public class DefaultStripDebugPluginTest {
         DefaultStripDebugPlugin plugin = new DefaultStripDebugPlugin(javaPlugin,
                                                                      nativeFactory);
         ResourcePoolManager inManager = new ResourcePoolManager();
+        inManager.add(ResourcePoolEntry.create(MockStripPlugin.DEBUGINFO_PATH,
+                ResourcePoolEntry.Type.NATIVE_LIB, new byte[]{0, 1, 2, 3}));
+        inManager.add(ResourcePoolEntry.create(MockStripPlugin.DIZ_PATH,
+                ResourcePoolEntry.Type.NATIVE_LIB, new byte[]{0, 1, 2, 3}));
+        ResourcePoolManager outManager = new ResourcePoolManager();
         ResourcePool pool = plugin.transform(inManager.resourcePool(),
-                                             inManager.resourcePoolBuilder());
+                                             outManager.resourcePoolBuilder());
         if (!pool.findEntry(MockStripPlugin.JAVA_PATH).isPresent() ||
             !pool.findEntry(MockStripPlugin.NATIVE_PATH).isPresent()) {
             throw new AssertionError("Expected both native and java to get called");
+        }
+        if (pool.findEntry(MockStripPlugin.DEBUGINFO_PATH).isPresent()) {
+            throw new AssertionError(".debuginfo file should have been excluded");
+        }
+        if (pool.findEntry(MockStripPlugin.DIZ_PATH).isPresent()) {
+            throw new AssertionError(".diz file should have been excluded");
         }
     }
 
@@ -66,10 +79,21 @@ public class DefaultStripDebugPluginTest {
         DefaultStripDebugPlugin plugin = new DefaultStripDebugPlugin(javaPlugin,
                                                                      nativeFactory);
         ResourcePoolManager inManager = new ResourcePoolManager();
+        inManager.add(ResourcePoolEntry.create(MockStripPlugin.DEBUGINFO_PATH,
+                ResourcePoolEntry.Type.NATIVE_LIB, new byte[]{0, 1, 2, 3}));
+        inManager.add(ResourcePoolEntry.create(MockStripPlugin.DIZ_PATH,
+                ResourcePoolEntry.Type.NATIVE_LIB, new byte[]{0, 1, 2, 3}));
+        ResourcePoolManager outManager = new ResourcePoolManager();
         ResourcePool pool = plugin.transform(inManager.resourcePool(),
-                                             inManager.resourcePoolBuilder());
+                                             outManager.resourcePoolBuilder());
         if (!pool.findEntry(MockStripPlugin.JAVA_PATH).isPresent()) {
             throw new AssertionError("Expected java strip plugin to get called");
+        }
+        if (pool.findEntry(MockStripPlugin.DEBUGINFO_PATH).isPresent()) {
+            throw new AssertionError(".debuginfo file should have been excluded");
+        }
+        if (pool.findEntry(MockStripPlugin.DIZ_PATH).isPresent()) {
+            throw new AssertionError(".diz file should have been excluded");
         }
     }
 
@@ -84,11 +108,22 @@ public class DefaultStripDebugPluginTest {
         plugin.enableJavaStripPlugin(false);
 
         ResourcePoolManager inManager = new ResourcePoolManager();
+        inManager.add(ResourcePoolEntry.create(MockStripPlugin.DEBUGINFO_PATH,
+                ResourcePoolEntry.Type.NATIVE_LIB, new byte[]{0, 1, 2, 3}));
+        inManager.add(ResourcePoolEntry.create(MockStripPlugin.DIZ_PATH,
+                ResourcePoolEntry.Type.NATIVE_LIB, new byte[]{0, 1, 2, 3}));
+        ResourcePoolManager outManager = new ResourcePoolManager();
         ResourcePool pool = plugin.transform(inManager.resourcePool(),
-                                             inManager.resourcePoolBuilder());
+                                             outManager.resourcePoolBuilder());
         if (pool.findEntry(MockStripPlugin.JAVA_PATH).isPresent() ||
             !pool.findEntry(MockStripPlugin.NATIVE_PATH).isPresent()) {
             throw new AssertionError("Expected only native to get called");
+        }
+        if (pool.findEntry(MockStripPlugin.DEBUGINFO_PATH).isPresent()) {
+            throw new AssertionError(".debuginfo file should have been excluded");
+        }
+        if (pool.findEntry(MockStripPlugin.DIZ_PATH).isPresent()) {
+            throw new AssertionError(".diz file should have been excluded");
         }
     }
 
@@ -101,11 +136,22 @@ public class DefaultStripDebugPluginTest {
                                                                      nativeFactory);
         plugin.enableJavaStripPlugin(false);
         ResourcePoolManager inManager = new ResourcePoolManager();
+        inManager.add(ResourcePoolEntry.create(MockStripPlugin.DEBUGINFO_PATH,
+                ResourcePoolEntry.Type.NATIVE_LIB, new byte[]{0, 1, 2, 3}));
+        inManager.add(ResourcePoolEntry.create(MockStripPlugin.DIZ_PATH,
+                ResourcePoolEntry.Type.NATIVE_LIB, new byte[]{0, 1, 2, 3}));
+        ResourcePoolManager outManager = new ResourcePoolManager();
         ResourcePool pool = plugin.transform(inManager.resourcePool(),
-                                             inManager.resourcePoolBuilder());
+                                             outManager.resourcePoolBuilder());
         if (pool.findEntry(MockStripPlugin.JAVA_PATH).isPresent() ||
             pool.findEntry(MockStripPlugin.NATIVE_PATH).isPresent()) {
             throw new AssertionError("Expected both native and java not called");
+        }
+        if (pool.findEntry(MockStripPlugin.DEBUGINFO_PATH).isPresent()) {
+            throw new AssertionError(".debuginfo file should have been excluded");
+        }
+        if (pool.findEntry(MockStripPlugin.DIZ_PATH).isPresent()) {
+            throw new AssertionError(".diz file should have been excluded");
         }
     }
 
@@ -121,9 +167,24 @@ public class DefaultStripDebugPluginTest {
 
         private static final String NATIVE_PATH = "/foo/lib/test.so.debug";
         private static final String JAVA_PATH = "/foo/TestClass.class";
+        // Platform-appropriate debug file paths, matching the patterns chosen by
+        // DefaultStripDebugPlugin.debugFilePattern() for the runtime platform.
+        static final String DEBUGINFO_PATH = platformDebugPath();
+        static final String DIZ_PATH = "/foo/lib/libfoo.diz";
         private static final String STRIP_NATIVE_NAME = "strip-native-debug-symbols";
         private static final String OMIT_ARG = "exclude-debuginfo-files";
         private final boolean isNative;
+
+        private static String platformDebugPath() {
+            String platform = Platform.runtime().toString();
+            if (platform.startsWith("windows")) {
+                return "/foo/bin/libfoo.pdb";
+            } else if (platform.startsWith("macos")) {
+                return "/foo/lib/libfoo.dylib.dSYM/Contents/Resources/DWARF/libfoo.dylib";
+            } else {
+                return "/foo/lib/libfoo.so.debuginfo";
+            }
+        }
 
         MockStripPlugin(boolean isNative) {
             this.isNative = isNative;
@@ -153,8 +214,7 @@ public class DefaultStripDebugPluginTest {
                 resPath = NATIVE_PATH;
                 type = Type.NATIVE_LIB;
             }
-            ResourcePoolEntry entry = createMockEntry(resPath, type);
-            out.add(entry);
+            out.add(createMockEntry(resPath, type));
             return out.build();
         }
 

@@ -30,7 +30,7 @@
  *        jdk.test.lib.Asserts
  *        jdk.test.lib.Utils
  *        jdk.test.lib.net.SimpleSSLContext
- * @run junit/othervm -Djdk.httpclient.HttpClient.log=ssl,requests,responses,errors BasicTest
+ * @run junit/othervm -Djdk.httpclient.HttpClient.log=ssl,requests,responses,errors ${test.main.class}
  */
 
 import java.io.IOException;

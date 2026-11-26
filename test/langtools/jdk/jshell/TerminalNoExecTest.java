@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.concurrent.TimeUnit;
+import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import jdk.jfr.consumer.RecordingStream;
 import jdk.jshell.tool.JavaShellToolBuilder;
@@ -58,7 +58,9 @@ public class TerminalNoExecTest {
                     spawnedNewProcess.set(true);
                 });
                 rs.startAsync();
-                JavaShellToolBuilder.builder().run("--execution=local", "--no-startup");
+                JavaShellToolBuilder.builder()
+                                    .persistence(new HashMap<>())
+                                    .run("--execution=local", "--no-startup");
                 rs.stop();
             }
             if (spawnedNewProcess.get()) {

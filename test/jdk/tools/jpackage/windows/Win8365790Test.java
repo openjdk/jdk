@@ -23,6 +23,8 @@
 
 import static jdk.jpackage.test.HelloApp.configureAndExecute;
 
+import jdk.jpackage.test.WindowsHelper;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -108,7 +110,7 @@ public class Win8365790Test {
 
         var future = CompletableFuture.runAsync(() -> {
             TKit.withState(() -> {
-                configureAndExecute(0, Executor.of("powershell", "-NonInteractive", "-NoLogo", "-NoProfile", "-ExecutionPolicy", "Unrestricted")
+                configureAndExecute(0, Executor.of(WindowsHelper.PowerShellPath(), "-NonInteractive", "-NoLogo", "-NoProfile", "-ExecutionPolicy", "Unrestricted")
                         .addArgument("-File").addArgument(TEST_PS1)
                         .addArguments("-TimeoutSeconds", Long.toString(Duration.ofSeconds(5).getSeconds()))
                         .addArgument("-Executable").addArgument(cmd.appLauncherPath(launcherName))

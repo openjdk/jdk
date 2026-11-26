@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -131,6 +131,7 @@ public final class SimpleDoc implements Doc {
      *
      * @return doc flavor
      */
+    @Override
     public DocFlavor getDocFlavor() {
         return flavor;
     }
@@ -151,6 +152,7 @@ public final class SimpleDoc implements Doc {
      *         {@code null} to obtain all attribute values from the job's
      *         attribute set
      */
+    @Override
     public DocAttributeSet getAttributes() {
         return attributes;
     }
@@ -168,6 +170,7 @@ public final class SimpleDoc implements Doc {
      * @throws IOException if the representation class is a stream and there was
      *         an I/O error while constructing the stream
      */
+    @Override
     public Object getPrintData() throws IOException {
         return printData;
     }
@@ -193,6 +196,7 @@ public final class SimpleDoc implements Doc {
      *         meet the criteria stated above, {@code null} is returned.
      * @throws IOException if there was an I/O error while creating the reader
      */
+    @Override
     public Reader getReaderForText() throws IOException {
 
         if (printData instanceof Reader) {
@@ -235,6 +239,7 @@ public final class SimpleDoc implements Doc {
      * @throws IOException if there was an I/O error while creating the input
      *         stream
      */
+    @Override
     public InputStream getStreamForBytes() throws IOException {
 
         if (printData instanceof InputStream) {

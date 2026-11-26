@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,19 +25,22 @@
  * @test
  * @bug 8254692
  * @summary Basic test for java.nio.channels.spi.SelectorProvider.java default implementation
- * @run testng TestDefaultImplementation
+ * @run junit TestDefaultImplementation
  */
-
-import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.net.ProtocolFamily;
-import java.nio.channels.*;
+import java.nio.channels.DatagramChannel;
+import java.nio.channels.Pipe;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.AbstractSelector;
 import java.nio.channels.spi.SelectorProvider;
 
-import static org.testng.Assert.assertNull;
-import static org.testng.Assert.assertThrows;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class TestDefaultImplementation {
     static final Class<UnsupportedOperationException> UOE = UnsupportedOperationException.class;

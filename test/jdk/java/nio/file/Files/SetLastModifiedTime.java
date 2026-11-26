@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,19 +27,20 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.FileTime;
 
-import org.testng.annotations.Test;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @test
  * @bug 4313887 8062949 8191872
  * @library ..
- * @run testng SetLastModifiedTime
+ * @run junit SetLastModifiedTime
  * @summary Unit test for Files.setLastModifiedTime
  */
 
@@ -47,13 +48,13 @@ public class SetLastModifiedTime {
 
     static Path testDir;
 
-    @BeforeClass
-    void createTestDirectory() throws Exception {
+    @BeforeAll
+    static void createTestDirectory() throws Exception {
         testDir = TestUtil.createTemporaryDirectory();
     }
 
-    @AfterClass
-    void removeTestDirectory() throws Exception {
+    @AfterAll
+    static void removeTestDirectory() throws Exception {
         TestUtil.removeAll(testDir);
     }
 
@@ -65,12 +66,12 @@ public class SetLastModifiedTime {
         FileTime zero = FileTime.fromMillis(0L);
 
         Path result = Files.setLastModifiedTime(path, zero);
-        assertTrue(result == path);
-        assertEquals(Files.getLastModifiedTime(path), zero);
+        assertSame(path, result);
+        assertEquals(zero, Files.getLastModifiedTime(path));
 
         result = Files.setLastModifiedTime(path, now);
-        assertTrue(result == path);
-        assertEquals(Files.getLastModifiedTime(path), now);
+        assertSame(path, result);
+        assertEquals(now, Files.getLastModifiedTime(path));
     }
 
     @Test
@@ -100,20 +101,14 @@ public class SetLastModifiedTime {
         Path path = Paths.get("foo");
         FileTime zero = FileTime.fromMillis(0L);
 
-        try {
-            Files.setLastModifiedTime(null, zero);
-            assertTrue(false);
-        } catch (NullPointerException expected) { }
+        assertThrows(NullPointerException.class,
+                     () -> Files.setLastModifiedTime(null, zero));
 
-        try {
-            Files.setLastModifiedTime(path, null);
-            assertTrue(false);
-        } catch (NullPointerException expected) { }
+        assertThrows(NullPointerException.class,
+                     () -> Files.setLastModifiedTime(path, null));
 
-        try {
-            Files.setLastModifiedTime(null, null);
-            assertTrue(false);
-        } catch (NullPointerException expected) { }
+        assertThrows(NullPointerException.class,
+                     () -> Files.setLastModifiedTime(null, null));
     }
 
     @Test
@@ -127,7 +122,7 @@ public class SetLastModifiedTime {
         long nioTime = Files.getLastModifiedTime(path).toMillis();
         assertTrue(ioTime == timeMillis || ioTime == 1000*(timeMillis/1000),
             "File.lastModified() not in {time, 1000*(time/1000)}");
-        assertEquals(nioTime, ioTime,
+        assertEquals(ioTime, nioTime,
             "File.lastModified() != Files.getLastModifiedTime().toMillis()");
     }
 }

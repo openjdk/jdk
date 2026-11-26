@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -271,7 +271,7 @@ void JvmtiCodeBlobEvents::build_jvmti_addr_location_map(nmethod *nm,
   if (!mh->is_native()) {
     PcDesc *pcd;
     int pcds_in_method = pointer_delta_as_int(nm->scopes_pcs_end(), nm->scopes_pcs_begin());
-    map = NEW_C_HEAP_ARRAY(jvmtiAddrLocationMap, pcds_in_method, mtInternal);
+    map = NEW_C_HEAP_ARRAY(jvmtiAddrLocationMap, pcds_in_method, mtServiceability);
 
     address scopes_data = nm->scopes_data_begin();
     for( pcd = nm->scopes_pcs_begin(); pcd < nm->scopes_pcs_end(); ++pcd ) {

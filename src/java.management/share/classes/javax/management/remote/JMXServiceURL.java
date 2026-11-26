@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -291,7 +291,7 @@ public class JMXServiceURL implements Serializable {
                          String urlPath)
             throws MalformedURLException {
         if (protocol == null) {
-            throw new MalformedURLException("Misssing protocol name");
+            throw new MalformedURLException("Missing protocol name");
         }
         if (host == null) {
             InetAddress local;
@@ -647,8 +647,9 @@ public class JMXServiceURL implements Serializable {
     public String toString() {
         /* We don't bother synchronizing the access to toString.  At worst,
            n threads will independently compute and store the same value.  */
-        if (toString != null)
-            return toString;
+        String value = toString;
+        if (value != null)
+            return value;
         StringBuilder buf = new StringBuilder("service:jmx:");
         buf.append(getProtocol()).append("://");
         final String getHost = getHost();
@@ -660,8 +661,9 @@ public class JMXServiceURL implements Serializable {
         if (getPort != 0)
             buf.append(':').append(getPort);
         buf.append(getURLPath());
-        toString = buf.toString();
-        return toString;
+        value = buf.toString();
+        toString = value;
+        return value;
     }
 
     /**

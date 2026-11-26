@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,6 @@
 #define OS_CPU_LINUX_ARM_ATOMICACCESS_LINUX_ARM_HPP
 
 #include "memory/allStatic.hpp"
-#include "runtime/os.hpp"
-#include "runtime/vm_version.hpp"
 
 // Implementation of class AtomicAccess
 
@@ -79,7 +77,7 @@ public:
 template<>
 template<typename T>
 inline T AtomicAccess::PlatformLoad<8>::operator()(T const volatile* src) const {
-  STATIC_ASSERT(8 == sizeof(T));
+  static_assert(8 == sizeof(T));
   return PrimitiveConversions::cast<T>(
     (*ARMAtomicFuncs::_load_long_func)(reinterpret_cast<const volatile int64_t*>(src)));
 }
@@ -88,7 +86,7 @@ template<>
 template<typename T>
 inline void AtomicAccess::PlatformStore<8>::operator()(T volatile* dest,
                                                        T store_value) const {
-  STATIC_ASSERT(8 == sizeof(T));
+  static_assert(8 == sizeof(T));
   (*ARMAtomicFuncs::_store_long_func)(
     PrimitiveConversions::cast<int64_t>(store_value), reinterpret_cast<volatile int64_t*>(dest));
 }
@@ -113,8 +111,8 @@ template<>
 template<typename D, typename I>
 inline D AtomicAccess::PlatformAdd<4>::add_then_fetch(D volatile* dest, I add_value,
                                                       atomic_memory_order order) const {
-  STATIC_ASSERT(4 == sizeof(I));
-  STATIC_ASSERT(4 == sizeof(D));
+  static_assert(4 == sizeof(I));
+  static_assert(4 == sizeof(D));
   return add_using_helper<int32_t>(ARMAtomicFuncs::_add_func, dest, add_value);
 }
 
@@ -126,7 +124,7 @@ template<typename T>
 inline T AtomicAccess::PlatformXchg<4>::operator()(T volatile* dest,
                                                    T exchange_value,
                                                    atomic_memory_order order) const {
-  STATIC_ASSERT(4 == sizeof(T));
+  static_assert(4 == sizeof(T));
   return xchg_using_helper<int32_t>(ARMAtomicFuncs::_xchg_func, dest, exchange_value);
 }
 
@@ -166,7 +164,7 @@ inline T AtomicAccess::PlatformCmpxchg<4>::operator()(T volatile* dest,
                                                       T compare_value,
                                                       T exchange_value,
                                                       atomic_memory_order order) const {
-  STATIC_ASSERT(4 == sizeof(T));
+  static_assert(4 == sizeof(T));
   return cmpxchg_using_helper<int32_t>(reorder_cmpxchg_func, dest, compare_value, exchange_value);
 }
 
@@ -176,7 +174,7 @@ inline T AtomicAccess::PlatformCmpxchg<8>::operator()(T volatile* dest,
                                                       T compare_value,
                                                       T exchange_value,
                                                       atomic_memory_order order) const {
-  STATIC_ASSERT(8 == sizeof(T));
+  static_assert(8 == sizeof(T));
   return cmpxchg_using_helper<int64_t>(reorder_cmpxchg_long_func, dest, compare_value, exchange_value);
 }
 

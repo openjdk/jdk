@@ -49,7 +49,8 @@ import static jdk.incubator.vector.VectorOperators.*;
  * {@code int} values.
  */
 @SuppressWarnings("cast")  // warning: redundant cast
-public abstract class IntVector extends AbstractVector<Integer> {
+public abstract sealed class IntVector extends AbstractVector<Integer>
+         permits IntVector64, IntVector128, IntVector256, IntVector512, IntVectorMax {
 
     IntVector(int[] vec) {
         super(vec);
@@ -2004,6 +2005,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
                 m = compare(LT, (int) 0);
             }
             else {
+                int opc = opCode(op);
                 throw new AssertionError(op);
             }
             return maskType.cast(m);
@@ -2035,6 +2037,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
                 m = compare(LT, (int) 0, m);
             }
             else {
+                int opc = opCode(op);
                 throw new AssertionError(op);
             }
             return maskType.cast(m);
@@ -2296,15 +2299,20 @@ public abstract class IntVector extends AbstractVector<Integer> {
     /*package-private*/
     final
     @ForceInline
-    IntVector sliceTemplate(int origin, Vector<Integer> v1) {
+    <V extends Vector<Integer>>
+    IntVector sliceTemplate(int origin, V v1) {
         IntVector that = (IntVector) v1;
         that.check(this);
         Objects.checkIndex(origin, length() + 1);
-        IntVector iotaVector = (IntVector) iotaShuffle().toBitsVector();
-        IntVector filter = broadcast((int)(length() - origin));
-        VectorMask<Integer> blendMask = iotaVector.compare(VectorOperators.LT, filter);
-        AbstractShuffle<Integer> iota = iotaShuffle(origin, 1, true);
-        return that.rearrange(iota).blend(this.rearrange(iota), blendMask);
+        return (IntVector)VectorSupport.sliceOp(origin, getClass(), LANE_TYPE_ORDINAL, length(), this, that,
+            (index, vec1, vec2) ->  {
+                IntVector iotaVector = (IntVector) vec1.iotaShuffle().toBitsVector();
+                IntVector filter = vec1.broadcast((int)(vec1.length() - index));
+                VectorMask<Integer> blendMask = iotaVector.compare(VectorOperators.LT, filter);
+                AbstractShuffle<Integer> iota = vec1.iotaShuffle(index, 1, true);
+                return vec2.rearrange(iota).blend(vec1.rearrange(iota), blendMask);
+            }
+        );
     }
 
     /**
@@ -2331,11 +2339,16 @@ public abstract class IntVector extends AbstractVector<Integer> {
     @ForceInline
     IntVector sliceTemplate(int origin) {
         Objects.checkIndex(origin, length() + 1);
-        IntVector iotaVector = (IntVector) iotaShuffle().toBitsVector();
-        IntVector filter = broadcast((int)(length() - origin));
-        VectorMask<Integer> blendMask = iotaVector.compare(VectorOperators.LT, filter);
-        AbstractShuffle<Integer> iota = iotaShuffle(origin, 1, true);
-        return vspecies().zero().blend(this.rearrange(iota), blendMask);
+        IntVector that = (IntVector) vspecies().zero();
+        return (IntVector)VectorSupport.sliceOp(origin, getClass(), LANE_TYPE_ORDINAL, length(), this, that,
+            (index, vec1, vec2) ->  {
+                IntVector iotaVector = (IntVector) vec1.iotaShuffle().toBitsVector();
+                IntVector filter = vec1.broadcast((int)(vec1.length() - index));
+                VectorMask<Integer> blendMask = iotaVector.compare(VectorOperators.LT, filter);
+                AbstractShuffle<Integer> iota = vec1.iotaShuffle(index, 1, true);
+                return vec2.blend(vec1.rearrange(iota), blendMask);
+            }
+        );
     }
 
     /**
@@ -2353,6 +2366,9 @@ public abstract class IntVector extends AbstractVector<Integer> {
         IntVector that = (IntVector) w;
         that.check(this);
         Objects.checkIndex(origin, length() + 1);
+        if ((-2 & part) != 0) {
+            throw wrongPartForSlice(part);
+        }
         IntVector iotaVector = (IntVector) iotaShuffle().toBitsVector();
         IntVector filter = broadcast((int)origin);
         VectorMask<Integer> blendMask = iotaVector.compare((part == 0) ? VectorOperators.GE : VectorOperators.LT, filter);
@@ -3722,18 +3738,6 @@ public abstract class IntVector extends AbstractVector<Integer> {
                 .reinterpretAsInts();
         }
         return this;
-    }
-
-    @Override
-    @ForceInline
-    final
-    IntVector swapIfNeeded(AbstractSpecies<?> srcSpecies) {
-        int subLanesPerSrc = subLanesToSwap(srcSpecies);
-        if (subLanesPerSrc < 0) {
-            return this;
-        }
-        VectorShuffle<Integer> shuffle = normalizeSubLanesForSpecies(this.vspecies(), subLanesPerSrc);
-        return (IntVector) this.rearrange(shuffle);
     }
 
     static final int ARRAY_SHIFT =

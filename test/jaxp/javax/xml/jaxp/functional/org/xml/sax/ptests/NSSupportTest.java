@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,14 @@
  */
 package org.xml.sax.ptests;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNull;
+import org.junit.jupiter.api.Test;
+import org.xml.sax.helpers.NamespaceSupport;
 
 import java.util.Enumeration;
 
-import org.testng.annotations.Test;
-import org.xml.sax.helpers.NamespaceSupport;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
  * Unit test cases for NamespaceSupport API
@@ -36,7 +37,7 @@ import org.xml.sax.helpers.NamespaceSupport;
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm org.xml.sax.ptests.NSSupportTest
+ * @run junit/othervm org.xml.sax.ptests.NSSupportTest
  */
 public class NSSupportTest {
     /**
@@ -70,14 +71,14 @@ public class NSSupportTest {
         support.declarePrefix(EMPTY_PREFIX, W3_URI);
         support.declarePrefix(DC_PREFIX, PURL_URI);
 
-        Enumeration e = support.getDeclaredPrefixes();
+        Enumeration<String> e = support.getDeclaredPrefixes();
         int i = 0;
-        while(e.hasMoreElements()) {
-            prefixes[i++] = e.nextElement().toString();
+        while (e.hasMoreElements()) {
+            prefixes[i++] = e.nextElement();
         }
         support.popContext();
 
-        assertEquals(prefixes, new String[]{EMPTY_PREFIX, DC_PREFIX});
+        assertArrayEquals(new String[] { EMPTY_PREFIX, DC_PREFIX }, prefixes);
     }
 
     /**
@@ -92,7 +93,7 @@ public class NSSupportTest {
         support.declarePrefix(DC_PREFIX, PURL_URI);
         parts = support.processName("dc:title", parts, false);
         support.popContext();
-        assertEquals(parts, new String[]{PURL_URI, "title", "dc:title"});
+        assertArrayEquals(new String[] { PURL_URI, "title", "dc:title" }, parts);
     }
 
     /**
@@ -106,7 +107,7 @@ public class NSSupportTest {
         support.declarePrefix(EMPTY_PREFIX, W3_URI);
         parts = support.processName("a", parts, false);
         support.popContext();
-        assertEquals(parts, new String[]{W3_URI, "a", "a"});
+        assertArrayEquals(new String[] { W3_URI, "a", "a" }, parts);
     }
 
 
@@ -121,8 +122,8 @@ public class NSSupportTest {
         support.declarePrefix(EMPTY_PREFIX, W3_URI);
         support.declarePrefix(DC_PREFIX, PURL_URI);
 
-        assertEquals(support.getURI(EMPTY_PREFIX), W3_URI);
-        assertEquals(support.getURI(DC_PREFIX), PURL_URI);
+        assertEquals(W3_URI, support.getURI(EMPTY_PREFIX));
+        assertEquals(PURL_URI, support.getURI(DC_PREFIX));
         support.popContext();
         assertNull(support.getURI(EMPTY_PREFIX));
         assertNull(support.getURI(DC_PREFIX));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,27 +36,15 @@ JNIEXPORT jstring JNICALL
 Java_sun_nio_fs_RegistryFileTypeDetector_queryStringValue(JNIEnv* env, jclass this,
     jlong keyAddress, jlong nameAddress)
 {
-    LPCWSTR lpSubKey= (LPCWSTR)jlong_to_ptr(keyAddress);
+    LPCWSTR lpSubKey = (LPCWSTR)jlong_to_ptr(keyAddress);
     LPWSTR lpValueName = (LPWSTR)jlong_to_ptr(nameAddress);
-    LONG res;
-    HKEY hKey;
-    jstring result = NULL;
+    WCHAR data[255];
+    DWORD size = sizeof(data);
 
-    res = RegOpenKeyExW(HKEY_CLASSES_ROOT, lpSubKey, 0, KEY_READ, &hKey);
-    if (res == ERROR_SUCCESS) {
-        DWORD type;
-        BYTE data[255];
-        DWORD size = sizeof(data);
-
-        res = RegQueryValueExW(hKey, lpValueName, NULL, &type, (LPBYTE)&data, &size);
-        if (res == ERROR_SUCCESS) {
-            if (type == REG_SZ) {
-                jsize len = (jsize)wcslen((WCHAR*)data);
-                result = (*env)->NewString(env, (const jchar*)&data, len);
-            }
-        }
-
-        RegCloseKey(hKey);
+    if (RegGetValueW(HKEY_CLASSES_ROOT, lpSubKey, lpValueName,
+                     RRF_RT_REG_SZ, NULL, data, &size) == ERROR_SUCCESS) {
+        jsize len = (jsize)wcslen(data);
+        return (*env)->NewString(env, (const jchar*)data, len);
     }
-    return result;
+    return NULL;
 }

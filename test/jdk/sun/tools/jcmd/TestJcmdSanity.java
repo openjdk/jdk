@@ -33,7 +33,6 @@ import java.util.List;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.Platform;
-import jdk.test.lib.Utils;
 
 /*
  * @test
@@ -181,6 +180,11 @@ public class TestJcmdSanity {
           output.shouldNotContain(" handler modified!"); // e.g. Warning: SIGILL handler modified!
           output.shouldNotContain("*** Handler was modified!");
           output.shouldNotContain("*** Expected: "); // e.g. *** Expected: javaSignalHandler in ...
+        }
+
+        // Should find file descriptor counting on Mac and Linux
+        if (Platform.isLinux() || Platform.isOSX()) {
+            output.shouldMatch("Open File Descriptors: \\d+");
         }
     }
 }

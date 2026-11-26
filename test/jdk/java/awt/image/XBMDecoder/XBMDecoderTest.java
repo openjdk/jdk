@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8361748
+ * @bug 8361748 8377924
  * @summary Tests XBM image size limits and if XBMImageDecoder.produceImage()
  *          throws appropriate error when parsing invalid XBM image data.
  * @run main XBMDecoderTest
@@ -63,7 +63,9 @@ public class XBMDecoderTest {
                 boolean isErrEmpty = errContent.toString().isEmpty();
 
                 if (!isErrEmpty) {
-                    System.out.println("Expected ImageFormatException occurred.");
+                    if (!validCase) {
+                        System.out.println("Expected ImageFormatException occurred.");
+                    }
                     System.out.print(errContent);
                 }
                 if (validCase && !isErrEmpty) {
@@ -91,9 +93,7 @@ public class XBMDecoderTest {
         g.drawImage(img, 0, 0, null);
         g.dispose();
         int[] pixels = bi.getRGB(0, 0, w, h, null, 0, w);
-        if (Arrays.stream(pixels).allMatch(i -> i == 0)) {
-            return false;
-        }
-        return true;
+        return !Arrays.stream(pixels)
+                      .allMatch(i -> i == 0);
     }
 }

@@ -29,6 +29,7 @@ import java.io.*;
 import java.nio.*;
 import java.nio.charset.*;
 import java.util.Arrays;
+import java.util.Locale;
 
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.io.JdkConsoleImpl;
@@ -41,6 +42,22 @@ public class Password {
     /** Reads user password from given input stream. */
     public static char[] readPassword(InputStream in) throws IOException {
         return readPassword(in, false);
+    }
+
+    private static final boolean ALLOW_STDIN;
+    static {
+        var value = SecurityProperties.getOverridableProperty(
+                "jdk.security.password.allowSystemIn");
+        if (value != null) {
+            value = value.toLowerCase(Locale.ROOT);
+        }
+        ALLOW_STDIN = switch (value) {
+            case null -> true; // Default true now
+            case "true" -> true;
+            case "false" -> false;
+            default -> throw new IllegalArgumentException(
+                    "Invalid jdk.security.password.allowSystemIn value: " + value);
+        };
     }
 
     /** Reads user password from given input stream.
@@ -66,19 +83,23 @@ public class Password {
                     }
                     consoleBytes = ConsoleHolder.convertToBytes(consoleEntered);
                     in = new ByteArrayInputStream(consoleBytes);
-                } else if (in == System.in && VM.isBooted()
-                            && System.in.available() == 0) {
-                    // Warn if reading password from System.in but it's empty.
-                    // This may be running in an IDE Run Window or in JShell,
-                    // which acts like an interactive console and echoes the
-                    // entered password. In this case, print a warning that
-                    // the password might be echoed. If available() is not zero,
-                    // it's more likely the input comes from a pipe, such as
-                    // "echo password |" or "cat password_file |" where input
-                    // will be silently consumed without echoing to the screen.
-                    // Warn only if VM is booted and ResourcesMgr is available.
-                    System.err.print(ResourcesMgr.getString
-                            ("warning.input.may.be.visible.on.screen"));
+                } else if (in == System.in) {
+                    if (!ALLOW_STDIN) {
+                        throw new UnsupportedOperationException("Console not available." +
+                                " Reading passwords from standard input is disallowed.");
+                    } else if (VM.isBooted() && in.available() == 0) {
+                        // Warn if reading password from System.in but it's empty.
+                        // This may be running in an IDE Run Window or in JShell,
+                        // which acts like an interactive console and echoes the
+                        // entered password. In this case, print a warning that
+                        // the password might be echoed. If available() is not zero,
+                        // it's more likely the input comes from a pipe, such as
+                        // "echo password |" or "cat password_file |" where input
+                        // will be silently consumed without echoing to the screen.
+                        // Warn only if VM is booted and ResourcesMgr is available.
+                        System.err.print(ResourcesMgr.getString
+                                ("warning.input.may.be.visible.on.screen"));
+                    }
                 }
             }
 

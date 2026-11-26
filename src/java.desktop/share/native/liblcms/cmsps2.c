@@ -358,6 +358,32 @@ char* RemoveCR(const char* txt)
 
 }
 
+// Writes the body of a PostScript string literal, escaping the metacharacters
+// '\\', '(' and ')' and emitting non-printable / high-bit bytes as octal
+// triples per PLRM 3.3.4.1. The caller is responsible for the surrounding
+// '(' and ')' delimiters.
+static
+void EmitPSEscaped(cmsIOHANDLER* m, const char* txt)
+{
+    const unsigned char* p;
+
+    if (txt == NULL) return;
+
+    for (p = (const unsigned char*)txt; *p != 0; p++) {
+        unsigned char c = *p;
+
+        if (c == '\\' || c == '(' || c == ')') {
+            _cmsIOPrintf(m, "\\%c", c);
+        }
+        else if (c < 0x20 || c >= 0x7F) {
+            _cmsIOPrintf(m, "\\%03o", c);
+        }
+        else {
+            _cmsIOPrintf(m, "%c", c);
+        }
+    }
+}
+
 static
 void EmitHeader(cmsIOHANDLER* m, const char* Title, cmsHPROFILE hProfile)
 {
@@ -1048,7 +1074,10 @@ int WriteNamedColorCSA(cmsIOHANDLER* m, cmsHPROFILE hNamedColor, cmsUInt32Number
                 continue;
 
         cmsDoTransform(xform, In, &Lab, 1);
-        _cmsIOPrintf(m, "  (%s) [ %.3f %.3f %.3f ]\n", ColorName, Lab.L, Lab.a, Lab.b);
+
+        _cmsIOPrintf(m, "  (");
+        EmitPSEscaped(m, ColorName);
+        _cmsIOPrintf(m, ") [ %.3f %.3f %.3f ]\n", Lab.L, Lab.a, Lab.b);
     }
 
     _cmsIOPrintf(m, ">>\n");
@@ -1483,7 +1512,10 @@ int WriteNamedColorCRD(cmsIOHANDLER* m, cmsHPROFILE hNamedColor, cmsUInt32Number
 
         cmsDoTransform(xform, In, Out, 1);
         BuildColorantList(Colorant, nColorant, Out);
-        _cmsIOPrintf(m, "  (%s) [ %s ]\n", ColorName, Colorant);
+
+        _cmsIOPrintf(m, "  (");
+        EmitPSEscaped(m, ColorName);
+        _cmsIOPrintf(m, ") [ %s ]\n", Colorant);
     }
 
     _cmsIOPrintf(m, "   >>");

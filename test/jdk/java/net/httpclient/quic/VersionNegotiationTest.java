@@ -59,7 +59,7 @@ import org.junit.jupiter.api.Test;
  *        jdk.httpclient.test.lib.common.TestUtil
  *        jdk.httpclient.test.lib.quic.ClientConnection
  *        jdk.test.lib.net.SimpleSSLContext
- * @run junit/othervm -Djdk.internal.httpclient.debug=true VersionNegotiationTest
+ * @run junit/othervm -Djdk.internal.httpclient.debug=true ${test.main.class}
  */
 public class VersionNegotiationTest {
 
@@ -126,7 +126,7 @@ public class VersionNegotiationTest {
                 .availableVersions(new QuicVersion[]{version})
                 .sslContext(sslContext)
                 .build();
-        server.addHandler(new ExceptionThrowingHandler());
+        server.setHandler(new ExceptionThrowingHandler());
         server.start();
         System.out.println("Quic server with version " + version + " started at " + server.getAddress());
         return server;

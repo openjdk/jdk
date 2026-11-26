@@ -31,11 +31,14 @@ class ZIterator : AllStatic {
 private:
   static bool is_invisible_object(oop obj);
   static bool is_invisible_object_array(oop obj);
+  static bool is_invisible_object_array(oop obj, Klass* klass);
 
 public:
   // This iterator skips invisible roots
   template <typename OopClosureT>
   static void oop_iterate_safe(oop obj, OopClosureT* cl);
+  template <typename OopClosureT>
+  static void oop_iterate_safe(oop obj, Klass* klass, OopClosureT* cl);
 
   template <typename OopClosureT>
   static void oop_iterate(oop obj, OopClosureT* cl);
@@ -46,6 +49,8 @@ public:
   // This function skips invisible roots
   template <typename Function>
   static void basic_oop_iterate_safe(oop obj, Function function);
+  template <typename Function>
+  static void basic_oop_iterate_safe(oop obj, Klass* klass, Function function);
 
   template <typename Function>
   static void basic_oop_iterate(oop obj, Function function);

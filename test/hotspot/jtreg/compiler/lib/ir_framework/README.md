@@ -60,6 +60,11 @@ A custom run test gives full control over the invocation of the `@Test` annotate
 
 More information on checked tests with a precise definition can be found in the Javadocs of [Run](./Run.java). Concrete examples on how to specify a custom run test can be found in [CustomRunTestsExample](../../../testlibrary_tests/ir_framework/examples/CustomRunTestExample.java).
 
+#### Skipping a Test Completely When Encountering Problems
+When a test execution is failing due to a VM problem (crash, wrong execution etc.) without having an immediate fix, it is preferred to specify [@Skip](./Skip.java) at the `@Test`-method to disable the test over commenting the test out.
+
+Specifying `@Skip` allows the IR Framework to still execute the skipped test on command by using the property flag `-DIgnoreSkip=true`. This can be useful when trying to quickly verify if a disabled test is still failing or not.
+
 ### 2.2 IR Verification
 The main feature of this framework is to perform a simple but yet powerful regex-based C2 IR matching on the output of `-XX:+PrintIdeal`, `-XX:+PrintOptoAssembly` and/or on specific compile phases emitted by the compile command `-XX:CompileCommand=PrintIdealPhase` which supports the same set of compile phases as the Ideal Graph Visualizer (IGV).
 
@@ -118,8 +123,6 @@ The [@IR](./IR.java) annotation provides two kinds of checks:
 One might also want to restrict the application of certain `@IR` rules depending on the used flags in the Test VM. These could be flags defined by the user or by JTreg. In the latter case, the flags must be whitelisted in `JTREG_WHITELIST_FLAGS` in [TestFramework](./TestFramework.java) (i.e. have no unexpected impact on the IR except if the flag simulates a specific machine setup like `UseAVX={1,2,3}` etc.) to enable an IR verification by the framework. The `@IR` rules thus have an option to restrict their application:
 
 - `applyIf`: Only apply a rule if a flag has the specified value/range of values.
-- `applyIfNot`: Only apply a rule if a flag has **not** a specified value/range of values
-               (inverse of `applyIf`).
 - `applyIfAnd`: Only apply a rule if **all** flags have the specified value/range of values.
 - `applyIfOr`:  Only apply a rule if **at least one** flag has the specified value/range of values.
 
@@ -170,9 +173,9 @@ testFramework
 The framework provides various stress and debug flags. They should mainly be used as JTreg VM and/or Javaoptions (apart from `VerifyIR`). The following (property) flags are supported:
 
 - `-DVerifyIR=false`: Explicitly disable IR verification. This is useful, for example, if some scenarios use VM flags that let `@IR` annotation rules fail and the user does not want to provide separate IR rules or add flag preconditions to the already existing IR rules.
-- `-DTest=test1,test2`: Provide a list of `@Test` method names which should be executed.
-- `-DExclude=test3`: Provide a list of `@Test` method names which should be excluded from execution.
-- `-DScenarios=1,2`: Provide a list of scenario indexes to specify which scenarios should be executed.
+- `-DTest=test1,test2`: Provide a list of `@Test` method names which should be executed. Case-insensitive, plural is allowed (`-DTests`, `-Dtest`, `Dtests` are all fine).
+- `-DExclude=test3`: Provide a list of `@Test` method names which should be excluded from execution. Case-insensitive, plural is allowed.
+- `-DScenario=1,2`: Provide a list of scenario indexes to specify which scenarios should be executed. Case-insensitive, plural is allowed.
 - `-DWarmup=200`: Provide a new default value of the number of warm-up iterations (framework default is 2000). This might have an influence on the resulting IR and could lead to matching failures (the user can also set a fixed default warm-up value in a test with `testFrameworkObject.setDefaultWarmup(200)`).
 - `-DReportStdout=true`: Print the standard output of the Test VM.
 - `-DVerbose=true`: Enable more fine-grained logging (slows the execution down).
@@ -181,7 +184,7 @@ The framework provides various stress and debug flags. They should mainly be use
 - `-DPrintRuleMatchingTime=true`: Print the time of matching IR rules per method. Slows down the execution as the rules are warmed up before measurement.
 - `-DVerifyVM=true`: The framework runs the Test VM with additional verification flags (slows the execution down).
 - `-DExcludeRandom=true`: The framework randomly excludes some methods from compilation. IR verification is disabled completely with this flag.
-- `-DFlipC1C2=true`: The framework compiles all `@Test` annotated method with C1 if a C2 compilation would have been applied and vice versa. IR verification is disabled completely with this flag.
+- `-DFlipC1C2=true`: The framework compiles all `@Test` annotated methods with C1 if a C2 compilation would have been applied and vice versa. IR verification is disabled completely with this flag.
 - `-DShuffleTests=false`: Disables the random execution order of all tests (such a shuffling is always done by default).
 - `-DDumpReplay=true`: Add the `DumpReplay` directive to the Test VM.
 - `-DGCAfter=true`: Perform `System.gc()` after each test (slows the execution down).
@@ -189,6 +192,7 @@ The framework provides various stress and debug flags. They should mainly be use
 - `-DWaitForCompilationTimeout=20`: Change the default waiting time (default: 10s) for a compilation of a `@Test` annotated method with compilation level [WAIT\_FOR\_COMPILATION](./CompLevel.java).
 - `-DIgnoreCompilerControls=true`: Ignore all compiler controls applied in the framework. This includes any compiler control annotations (`@DontCompile`, `@DontInline`, `@ForceCompile`, `@ForceInline`, `@ForceCompileStaticInitializer`), the exclusion of `@Run` and `@Check` methods from compilation, and the directive to not inline `@Test` annotated methods.
 - `-DPreferCommandLineFlags=true`: Prefer flags set via the command line over flags specified by the tests.
+- `-DIgnoreSkip=true`: Additionally run all skipped tests (i.e. tests with a `@Skip` annotation).
 
 ## 3. Test Framework Execution
 This section gives an overview of how the framework is executing a JTreg test that calls the framework from within its `main()` method.

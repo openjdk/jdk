@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -65,7 +65,7 @@ void MemTracker::initialize() {
 
   // Memory tag is encoded into tracking header as a byte field,
   // make sure that we don't overflow it.
-  STATIC_ASSERT(mt_number_of_tags <= max_jubyte);
+  static_assert(mt_number_of_tags <= max_jubyte);
 
   if (level > NMT_off) {
     _baseline.initialize();
@@ -132,8 +132,11 @@ bool MemTracker::print_containing_region(const void* p, outputStream* out) {
 void MemTracker::report(bool summary_only, outputStream* output, size_t scale) {
  assert(output != nullptr, "No output stream");
   MemBaseline baseline;
-  baseline.baseline(summary_only);
-  if (summary_only) {
+  bool success = baseline.baseline(summary_only);
+  if (!success) {
+    MemReporterBase::report_detail_failure(output);
+  }
+  if (summary_only || !success) {
     MemSummaryReporter rpt(baseline, output, scale);
     rpt.report();
   } else {

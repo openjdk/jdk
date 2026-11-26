@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -188,10 +188,6 @@ public class JVMOptionsUtils {
             option.addPrepend("-XX:+UseNUMA");
         }
 
-        if (name.contains("JVMCI")) {
-            option.addPrepend("-XX:+EnableJVMCI");
-        }
-
         switch (name) {
             case "MinHeapFreeRatio":
                 option.addPrepend("-XX:MaxHeapFreeRatio=100");
@@ -218,9 +214,6 @@ public class JVMOptionsUtils {
                 option.addPrepend("-XX:+VerifyBeforeGC");
                 option.addPrepend("-XX:+VerifyAfterGC");
                 break;
-            case "NewSizeThreadIncrease":
-                option.addPrepend("-XX:+UseSerialGC");
-                break;
             case "SharedBaseAddress":
             case "SharedSymbolTableBucketSize":
                 option.addPrepend("-XX:+UnlockDiagnosticVMOptions");
@@ -229,12 +222,6 @@ public class JVMOptionsUtils {
                 break;
             case "TLABWasteIncrement":
                 option.addPrepend("-XX:+UseParallelGC");
-                break;
-            case "BootstrapJVMCI":
-            case "PrintBootstrap":
-            case "JVMCIThreads":
-            case "JVMCIHostThreads":
-                option.addPrepend("-XX:+UseJVMCICompiler");
                 break;
             default:
                 /* Do nothing */

@@ -87,7 +87,9 @@ import javax.tools.ToolProvider;
 
 import com.sun.source.tree.CaseTree;
 import com.sun.source.tree.DefaultCaseLabelTree;
+import com.sun.source.tree.IdentifierTree;
 import com.sun.source.tree.ModuleTree;
+import com.sun.source.tree.VarTypeTree;
 import com.sun.source.util.TreePathScanner;
 import com.sun.tools.javac.api.JavacTaskPool;
 import com.sun.tools.javac.api.JavacTaskPool.Worker;
@@ -1070,8 +1072,8 @@ public class JavacParserTest extends TestCase {
         VariableTree stmt2 = (VariableTree) method.getBody().getStatements().get(1);
         Tree v1Type = stmt1.getType();
         Tree v2Type = stmt2.getType();
-        assertEquals("Implicit type for v1 is not correct: ", Kind.PRIMITIVE_TYPE, v1Type.getKind());
-        assertEquals("Implicit type for v2 is not correct: ", Kind.PRIMITIVE_TYPE, v2Type.getKind());
+        assertEquals("Implicit type for v1 is not correct: ", Kind.VAR_TYPE, v1Type.getKind());
+        assertEquals("Implicit type for v2 is not correct: ", Kind.VAR_TYPE, v2Type.getKind());
     }
 
     @Test
@@ -3149,6 +3151,37 @@ public class JavacParserTest extends TestCase {
                      List.of("2:22:compiler.err.illegal.start.of.type",
                              "3:22:compiler.err.illegal.start.of.type"),
                      codes);
+    }
+
+    @Test
+    void testVarPositions() throws IOException {
+        String code = """
+                      public class Test {
+                          void t() {
+                              var v =
+                          }
+                      }
+                      """;
+        DiagnosticCollector<JavaFileObject> coll =
+                new DiagnosticCollector<>();
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, coll,
+                null,
+                null, Arrays.asList(new MyFileObject(code)));
+        Trees trees = Trees.instance(ct);
+        SourcePositions sp = trees.getSourcePositions();
+        CompilationUnitTree cut = ct.parse().iterator().next();
+        new TreeScanner<Void, Void>() {
+            @Override
+            public Void visitVarType(VarTypeTree node, Void p) {
+                long start = sp.getStartPosition(cut, node);
+                long end = sp.getEndPosition(cut, node);
+                String text = code.substring((int) start, (int) end);
+                assertEquals("var start pos",
+                             "var",
+                             text);
+                return null;
+            }
+        };
     }
 
     void run(String[] args) throws Exception {

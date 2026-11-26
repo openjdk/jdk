@@ -33,11 +33,15 @@ import jdk.test.lib.Utils;
 import jdk.test.lib.apps.LingeredApp;
 import jdk.test.lib.process.OutputAnalyzer;
 
+import jtreg.SkippedException;
+
 /**
  * @test
  * @key randomness
- * @bug 8208091 8374469 8377710
- * @requires (os.family == "linux" | os.family == "windows") & (vm.hasSA)
+ * @bug 8208091 8374469 8377710 8390621 8391637
+ * @requires vm.hasSA
+ * @requires vm.gc != "Z"
+ * @requires (os.family == "linux" | os.family == "windows")
  * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @library /test/lib
  * @run driver TestJhsdbJstackMixed
@@ -172,6 +176,17 @@ public class TestJhsdbJstackMixed {
     }
 
     public static void main(String... args) throws Exception {
+        if (Platform.isMusl()) {
+            if (!Platform.isX64()) {
+                throw new SkippedException("This platform is not supported.");
+            }
+
+            var libc = SATestUtils.getLibCPath();
+            if (SATestUtils.getDebugInfo(libc) == null) {
+                throw new SkippedException("libc debug info is not available.");
+            }
+        }
+
         SATestUtils.skipIfCannotAttach(); // throws SkippedException if attach not expected to work.
         LingeredApp app = null;
 

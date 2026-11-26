@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2023 Google LLC. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -79,6 +79,8 @@ private:
 
   static void inc_gc_total_cpu_time(jlong diff);
 
+  static PerfCounter* get_counter(CPUTimeGroups::CPUTimeType name);
+
 public:
   static void initialize() {
     assert(_instance == nullptr, "we can only allocate one CPUTimeCounters object");
@@ -91,7 +93,6 @@ public:
   }
 
   static void create_counter(CPUTimeGroups::CPUTimeType name);
-  static PerfCounter* get_counter(CPUTimeGroups::CPUTimeType name);
   static void update_counter(CPUTimeGroups::CPUTimeType name, jlong total);
 
   static void publish_gc_total_cpu_time();

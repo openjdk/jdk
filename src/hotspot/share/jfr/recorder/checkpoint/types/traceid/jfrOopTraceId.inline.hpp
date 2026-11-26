@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,17 @@ inline void JfrOopTraceId<T>::set_epoch(oop ref, u2 epoch) {
 template <typename T>
 inline void JfrOopTraceId<T>::set_epoch(oop ref) {
   set_epoch(ref, JfrTraceIdEpoch::epoch_generation());
+}
+
+template <typename T>
+inline bool JfrOopTraceId<T>::cas_epoch(oop ref) {
+  const int expected = epoch(ref);
+  const int current = current_epoch();
+  if (expected == current) {
+    return false;
+  }
+  int* const epoch_address = ref->field_addr<int>(T::epoch_offset());
+  return AtomicAccess::cmpxchg(epoch_address, expected, current) == expected;
 }
 
 template <typename T>

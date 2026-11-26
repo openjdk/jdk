@@ -90,7 +90,7 @@ class TemplateInterpreterGenerator: public AbstractInterpreterGenerator {
   // generate intrinsic method entries
   address generate_intrinsic_entry(AbstractInterpreter::MethodKind kind);
 
-  address generate_normal_entry(bool synchronized);
+  address generate_normal_entry(bool synchronized, bool object_init);
   address generate_native_entry(bool synchronized);
   address generate_abstract_entry(void);
   address generate_math_entry(AbstractInterpreter::MethodKind kind);

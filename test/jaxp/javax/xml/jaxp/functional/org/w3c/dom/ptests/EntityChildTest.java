@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,23 +22,22 @@
  */
 package org.w3c.dom.ptests;
 
-import static org.testng.Assert.assertEquals;
-import static org.w3c.dom.ptests.DOMTestUtil.XML_DIR;
-
-import java.io.File;
-
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import java.io.File;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.w3c.dom.ptests.DOMTestUtil.XML_DIR;
+
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm org.w3c.dom.ptests.EntityChildTest
+ * @run junit/othervm org.w3c.dom.ptests.EntityChildTest
  * @summary Test DOM Parser: parsing an xml file that contains external entities.
  */
 public class EntityChildTest {
@@ -54,7 +53,7 @@ public class EntityChildTest {
         Element root = document.getDocumentElement();
         NodeList n = root.getElementsByTagName("table");
         NodeList nl = n.item(0).getChildNodes();
-        assertEquals(n.getLength(), 1);
-        assertEquals(nl.getLength(), 3);
+        assertEquals(1, n.getLength());
+        assertEquals(3, nl.getLength());
     }
 }

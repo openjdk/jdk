@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,6 @@ class Rewriter: public StackObj {
   GrowableArray<int>  _cp_map;
   GrowableArray<int>  _reference_map; // maps from cp index to resolved_refs index (or -1)
   GrowableArray<int>  _resolved_references_map; // for strings, methodHandle, methodType
-  GrowableArray<int>  _invokedynamic_references_map; // for invokedynamic resolved refs
   GrowableArray<int>  _method_handle_invokers;
   int                 _resolved_reference_limit;
   int                 _invokedynamic_index;
@@ -68,7 +67,6 @@ class Rewriter: public StackObj {
 
     _method_handle_invokers.trunc_to(0);
     _resolved_references_map.trunc_to(0);
-    _invokedynamic_references_map.trunc_to(0);
     _resolved_reference_limit = -1;
   }
 
@@ -77,9 +75,6 @@ class Rewriter: public StackObj {
     // relative to walking the constant pool.
     _resolved_reference_limit = _resolved_references_map.length();
   }
-
-  int  cp_entry_to_cp_cache(int i) { assert(has_cp_cache(i), "oob"); return _cp_map.at(i); }
-  bool has_cp_cache(int i) { return (uint) i < (uint) _cp_map.length() && _cp_map.at(i) >= 0; }
 
   int add_map_entry(int cp_index, GrowableArray<int>* cp_map, GrowableArray<int>* cp_cache_map) {
     assert(cp_map->at(cp_index) == -1, "not twice on same cp_index");
@@ -104,13 +99,10 @@ class Rewriter: public StackObj {
   }
 
   // add a new entry to the resolved_references map (for invokedynamic and invokehandle only)
-  int add_invokedynamic_resolved_references_entry(int cp_index, int cache_index) {
+  int add_invokedynamic_resolved_references_entry(int cp_index) {
     assert(_resolved_reference_limit >= 0, "must add indy refs after first iteration");
     int ref_index = _resolved_references_map.append(cp_index);  // many-to-one
     assert(ref_index >= _resolved_reference_limit, "");
-    if (_pool->tag_at(cp_index).value() != JVM_CONSTANT_InvokeDynamic) {
-      _invokedynamic_references_map.at_put_grow(ref_index, cache_index, -1);
-    }
     return ref_index;
   }
 

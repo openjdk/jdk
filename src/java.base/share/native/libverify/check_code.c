@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -172,9 +172,7 @@ enum {
 #define UNKNOWN_RET_INSTRUCTION -1
 
 #undef MAX
-#undef MIN
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
-#define MIN(a, b) ((a) < (b) ? (a) : (b))
 
 #define BITS_PER_INT   (CHAR_BIT * sizeof(int)/sizeof(char))
 #define SET_BIT(flags, i)  (flags[(i)/BITS_PER_INT] |= \
@@ -447,14 +445,12 @@ static jclass object_fullinfo_to_classclass(context_type *, fullinfo_type);
 
 
 #define NEW(type, count) \
-        ((type *)CCalloc(context, (count)*(sizeof(type)), JNI_FALSE))
-#define ZNEW(type, count) \
-        ((type *)CCalloc(context, (count)*(sizeof(type)), JNI_TRUE))
+        ((type *)CCalloc(context, (count)*(sizeof(type))))
 
 static void CCinit(context_type *context);
 static void CCreinit(context_type *context);
 static void CCdestroy(context_type *context);
-static void *CCalloc(context_type *context, int size, jboolean zero);
+static void *CCalloc(context_type *context, int size);
 
 static fullinfo_type cp_index_to_class_fullinfo(context_type *, int, int);
 
@@ -2162,8 +2158,7 @@ pop_stack(context_type *context, unsigned int inumber, stack_info_type *new_stac
                         break;
                     if (   (GET_ITEM_TYPE(top_type) == ITEM_NewObject
                             || (GET_ITEM_TYPE(top_type) == ITEM_InitObject))
-                        && ((opcode == JVM_OPC_astore) || (opcode == JVM_OPC_aload)
-                            || (opcode == JVM_OPC_ifnull) || (opcode == JVM_OPC_ifnonnull)))
+                        && ((opcode == JVM_OPC_astore) || (opcode == JVM_OPC_aload)))
                         break;
                     /* The 2nd edition VM of the specification allows field
                      * initializations before the superclass initializer,
@@ -3567,10 +3562,8 @@ static void CCdestroy(context_type *context)
 }
 
 /* Allocate an object of the given size from the context's heap. */
-static void *
-CCalloc(context_type *context, int size, jboolean zero)
+static void* CCalloc(context_type *context, int size)
 {
-
     register char *p;
     /* Round CC to the size of a pointer */
     size = (size + (sizeof(void *) - 1)) & ~(sizeof(void *) - 1);
@@ -3606,8 +3599,6 @@ CCalloc(context_type *context, int size, jboolean zero)
     p = context->CCfree_ptr;
     context->CCfree_ptr += size;
     context->CCfree_size -= size;
-    if (zero)
-        memset(p, 0, size);
     return p;
 }
 
@@ -3706,7 +3697,7 @@ CCerror (context_type *context, char *format, ...)
 static void
 CCout_of_memory(context_type *context)
 {
-    int n = print_CCerror_info(context);
+    print_CCerror_info(context);
     context->err_code = CC_OutOfMemory;
     longjmp(context->jump_buffer, 1);
 }
@@ -3832,7 +3823,7 @@ signature_to_fieldtype(context_type *context,
             case JVM_SIGNATURE_CLASS: {
                 char buffer_space[256];
                 char *buffer = buffer_space;
-                char *finish = strchr(p, JVM_SIGNATURE_ENDCLASS);
+                const char* finish = strchr(p, JVM_SIGNATURE_ENDCLASS);
                 int length;
                 if (finish == NULL) {
                     /* Signature must have ';' after the class name.

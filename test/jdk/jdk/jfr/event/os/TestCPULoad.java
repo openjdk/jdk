@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,12 @@
 
 package jdk.jfr.event.os;
 
-import java.util.List;
+import java.time.Duration;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 
-import jdk.jfr.Recording;
 import jdk.jfr.consumer.RecordedEvent;
+import jdk.jfr.consumer.RecordingStream;
 import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.Events;
 
@@ -40,56 +42,18 @@ import jdk.test.lib.jfr.Events;
 public class TestCPULoad {
     private final static String EVENT_NAME = EventNames.CPULoad;
 
-    public static boolean isPrime(int num) {
-        if (num <= 1) return false;
-        for (int i = 2; i <= Math.sqrt(num); i++) {
-            if (num % i == 0) return false;
+    public static void main(String... args) throws Exception {
+        try (RecordingStream rs = new RecordingStream()) {
+            BlockingQueue<RecordedEvent> cpuEvent = new ArrayBlockingQueue<>(1);
+            rs.setReuse(false);
+            rs.enable(EVENT_NAME).withPeriod(Duration.ofMillis(100));
+            rs.onEvent(cpuEvent::offer);
+            rs.startAsync();
+            RecordedEvent event = cpuEvent.take();
+            System.out.println(event);
+            Events.assertField(event, "jvmUser").atLeast(0.0f).atMost(1.0f);
+            Events.assertField(event, "jvmSystem").atLeast(0.0f).atMost(1.0f);
+            Events.assertField(event, "machineTotal").atLeast(0.0f).atMost(1.0f);
         }
-        return true;
-    }
-
-    public static int burnCpuCycles(int limit) {
-        int primeCount = 0;
-        for (int i = 2; i < limit; i++) {
-            if (isPrime(i)) {
-                primeCount++;
-            }
-        }
-        return primeCount;
-    }
-
-    public static void main(String[] args) throws Throwable {
-        Recording recording = new Recording();
-        recording.enable(EVENT_NAME);
-        recording.start();
-        // burn some cycles to check increase of CPU related counters
-        int pn = burnCpuCycles(2500000);
-        recording.stop();
-        System.out.println("Found " + pn + " primes while burning cycles");
-
-        List<RecordedEvent> events = Events.fromRecording(recording);
-        if (events.isEmpty()) {
-            // CPU Load events are unreliable on Windows because
-            // the way processes are identified with perf. counters.
-            // See BUG 8010378.
-            // Workaround is to detect Windows and allow
-            // test to pass if events are missing.
-            if (isWindows()) {
-                return;
-            }
-            throw new AssertionError("Expected at least one event");
-        }
-        for (RecordedEvent event : events) {
-            System.out.println("Event: " + event);
-            for (String loadName : loadNames) {
-                Events.assertField(event, loadName).atLeast(0.0f).atMost(1.0f);
-            }
-        }
-    }
-
-    private static final String[] loadNames = {"jvmUser", "jvmSystem", "machineTotal"};
-
-    private static boolean isWindows() {
-        return System.getProperty("os.name").startsWith("Windows");
     }
 }

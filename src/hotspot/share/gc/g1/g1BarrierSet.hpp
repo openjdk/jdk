@@ -25,6 +25,7 @@
 #ifndef SHARE_GC_G1_G1BARRIERSET_HPP
 #define SHARE_GC_G1_G1BARRIERSET_HPP
 
+#include "gc/g1/g1HeapRegion.hpp"
 #include "gc/g1/g1SATBMarkQueueSet.hpp"
 #include "gc/shared/bufferNode.hpp"
 #include "gc/shared/cardTable.hpp"
@@ -94,8 +95,8 @@ class G1BarrierSet: public CardTableBarrierSet {
   static void enqueue_preloaded_if_weak(DecoratorSet decorators, oop value);
 
   template <class T> void write_ref_array_pre_work(T* dst, size_t count);
-  virtual void write_ref_array_pre(oop* dst, size_t count, bool dest_uninitialized);
-  virtual void write_ref_array_pre(narrowOop* dst, size_t count, bool dest_uninitialized);
+  virtual void write_ref_array_pre(oop* dst, size_t count);
+  virtual void write_ref_array_pre(narrowOop* dst, size_t count);
 
   template <DecoratorSet decorators, typename T>
   void write_ref_field_pre(T* field);
@@ -115,6 +116,8 @@ class G1BarrierSet: public CardTableBarrierSet {
   }
 
   virtual void print_on(outputStream* st) const;
+
+  virtual uint grain_shift() { return G1HeapRegion::LogOfHRGrainBytes; }
 
   // Callbacks for runtime accesses.
   template <DecoratorSet decorators, typename BarrierSetT = G1BarrierSet>

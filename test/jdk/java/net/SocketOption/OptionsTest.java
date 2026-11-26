@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
  * @test
  * @bug 8036979 8072384 8044773 8225214 8233296 8234083
  * @library /test/lib
- * @requires !vm.graal.enabled
  * @run main/othervm -Xcheck:jni OptionsTest
  * @run main/othervm -Xcheck:jni -Djava.net.preferIPv4Stack=true OptionsTest
  * @run main/othervm --limit-modules=java.base OptionsTest
@@ -51,6 +50,10 @@ public class OptionsTest {
             return new Test<T>(option, value);
         }
 
+        @Override
+        public String toString() {
+            return "Test SocketOption: " + option + " with value: " + value;
+        }
     }
 
     // The tests set the option using the new API, read back the set value
@@ -132,6 +135,7 @@ public class OptionsTest {
 
     static <T> void test(Socket s, Test<T> test) throws Exception {
         SocketOption<T> option = test.option;
+        System.out.println(s.getClass().getName() + " - " + test);
         s.setOption(option, test.value);
         T value1 = s.getOption(test.option);
         T value2 = (T) legacyGetOption(Socket.class, s, test.option);
@@ -140,6 +144,7 @@ public class OptionsTest {
 
     static <T> void test(ServerSocket ss, Test<T> test) throws Exception {
         SocketOption<T> option = test.option;
+        System.out.println(ss.getClass().getName() + " - " + test);
         ss.setOption(option, test.value);
         T value1 = ss.getOption(test.option);
         T value2 = (T) legacyGetOption(ServerSocket.class, ss, test.option);
@@ -148,6 +153,7 @@ public class OptionsTest {
 
     static <T> void test(DatagramSocket ds, Test<T> test) throws Exception {
         SocketOption<T> option = test.option;
+        System.out.println(ds.getClass().getName() + " - " + test);
         ds.setOption(option, test.value);
         T value1 = ds.getOption(test.option);
         T value2 = (T) legacyGetOption(ds.getClass(), ds, test.option);

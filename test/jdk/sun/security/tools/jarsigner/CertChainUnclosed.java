@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,21 +27,17 @@
  * @summary InputStream should be closed in sun.security.tools.jarsigner.Main
  * @modules java.base/sun.security.tools.keytool
  *          jdk.jartool/sun.security.tools.jarsigner
+ * @requires os.family == "windows"
+ * @library /test/lib/
  * @run main/othervm CertChainUnclosed
  */
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Locale;
 
 public class CertChainUnclosed {
 
     public static void main(String[] args) throws Exception {
-        String os = System.getProperty("os.name");
-        if (!os.toUpperCase(Locale.US).contains("WINDOWS")) {
-            System.out.println("Not Windows. Skip test.");
-            return;
-        }
 
         kt("-genkeypair -alias a -dname CN=A");
         kt("-exportcert -file a.crt -alias a");

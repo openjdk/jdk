@@ -223,6 +223,7 @@ public class PackagingPipelineTest {
                     .runtimeDirectory("runtime")
                     .appModsDirectory("lib")
                     .contentDirectory("lib")
+                    .resourcesDirectory("lib")
                     .desktopIntegrationDirectory("lib")
                     .create();
         } else {
@@ -617,7 +618,6 @@ public class PackagingPipelineTest {
                 "Acme",
                 "copyright",
                 List.of(),
-                List.of(),
                 appImageLayout,
                 runtimeBuilder,
                 List.of(),
@@ -668,7 +668,7 @@ public class PackagingPipelineTest {
     }
 
     private static BuildEnv dummyBuildEnv() {
-        return BuildEnv.create(Path.of("foo"), Optional.empty(), false, PackagingPipeline.class, RuntimeLayout.DEFAULT);
+        return BuildEnv.create(Path.of("foo"), Optional.empty(), PackagingPipeline.class, RuntimeLayout.DEFAULT);
     }
 
     private static PackagingPipeline.Builder buildPipeline() {
@@ -849,21 +849,15 @@ public class PackagingPipelineTest {
 
 
     private static final ApplicationLayout TEST_LAYOUT_1 = ApplicationLayout.build()
+            .setAll("")
             .launchersDirectory("launchers")
-            .appDirectory("")
             .runtimeDirectory("runtime")
-            .appModsDirectory("")
-            .contentDirectory("")
-            .desktopIntegrationDirectory("")
             .create();
 
     private static final ApplicationLayout TEST_LAYOUT_2 = ApplicationLayout.build()
+            .setAll("")
             .launchersDirectory("q/launchers")
-            .appDirectory("")
             .runtimeDirectory("qqq/runtime")
-            .appModsDirectory("")
-            .contentDirectory("")
-            .desktopIntegrationDirectory("")
             .create();
 
     private static final Path TEST_INSTALL_DIR = Path.of("Acme/My app");

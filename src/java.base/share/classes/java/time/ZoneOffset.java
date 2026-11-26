@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2025, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -87,9 +87,9 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReferenceArray;
+import java.util.function.Supplier;
 
 import jdk.internal.util.DecimalDigits;
-import jdk.internal.vm.annotation.Stable;
 
 /**
  * A time-zone offset from Greenwich/UTC, such as {@code +02:00}.
@@ -178,8 +178,13 @@ public final class ZoneOffset
     /**
      * The zone rules for an offset will always return this offset. Cache it for efficiency.
      */
-    @Stable
-    private transient ZoneRules rules;
+    private final transient LazyConstant<ZoneRules> rules =
+        LazyConstant.of(new Supplier<ZoneRules>() {
+            @Override
+            public ZoneRules get() {
+                return ZoneRules.of(ZoneOffset.this);
+            }
+        });
 
     //-----------------------------------------------------------------------
     /**
@@ -521,11 +526,7 @@ public final class ZoneOffset
      */
     @Override
     public ZoneRules getRules() {
-        ZoneRules rules = this.rules;
-        if (rules == null) {
-            rules = this.rules = ZoneRules.of(this);
-        }
-        return rules;
+        return rules.get();
     }
 
     @Override

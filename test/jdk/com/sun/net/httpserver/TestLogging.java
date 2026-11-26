@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,16 +21,6 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 6422914
- * @library /test/lib
- * @build jdk.test.lib.Utils
- *        jdk.test.lib.net.URIBuilder
- * @summary change httpserver exception printouts
- * @run main TestLogging
- * @run main/othervm -Djava.net.preferIPv6Addresses=true TestLogging
- */
 
 import com.sun.net.httpserver.*;
 
@@ -45,10 +35,31 @@ import jdk.test.lib.net.URIBuilder;
 
 import static jdk.test.lib.Utils.createTempFileOfSize;
 
+/*
+ * @test
+ * @bug 6422914
+ * @summary change httpserver exception printouts
+ * @library /test/lib
+ * @build jdk.test.lib.Utils
+ *        jdk.test.lib.net.URIBuilder
+ * @comment We use othervm because this test configures logging handlers
+ *          for the system wide "com.sun.net.httpserver" logger
+ * @run main/othervm ${test.main.class}
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true ${test.main.class}
+ */
 public class TestLogging extends Test {
 
     private static final String TEMP_FILE_PREFIX =
             HttpServer.class.getPackageName() + '-' + TestLogging.class.getSimpleName() + '-';
+
+    private static final Logger logger = Logger.getLogger("com.sun.net.httpserver");
+
+    private static void setupLogging() {
+        logger.setLevel(Level.ALL);
+        final Handler handler = new ConsoleHandler();
+        handler.setLevel(Level.ALL);
+        logger.addHandler(handler);
+    }
 
     public static void main (String[] args) throws Exception {
         HttpServer s1 = null;
@@ -56,16 +67,12 @@ public class TestLogging extends Test {
         Path filePath = createTempFileOfSize(TEMP_FILE_PREFIX, null, 0xBEEF);
         try {
             System.out.print ("Test9: ");
+            setupLogging();
             String root = filePath.getParent().toString();
             InetAddress loopback = InetAddress.getLoopbackAddress();
             InetSocketAddress addr = new InetSocketAddress(loopback, 0);
-            Logger logger = Logger.getLogger ("com.sun.net.httpserver");
-            logger.setLevel (Level.ALL);
-            Handler h1 = new ConsoleHandler ();
-            h1.setLevel (Level.ALL);
-            logger.addHandler (h1);
             s1 = HttpServer.create (addr, 0);
-            logger.info (root);
+            logger.info(root);
             HttpHandler h = new FileServerHandler (root);
             HttpContext c1 = s1.createContext ("/", h);
             executor = Executors.newCachedThreadPool();

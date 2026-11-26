@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ class Decompiler {
     private ByteCursor cursor;
     private ClassInfo ci;
 
-    public Decompiler(byte[] classData) {
+    public Decompiler(Byte[] classData) {
         cursor = new ByteCursor(classData);
 
         int magicNumber = cursor.readInt();
@@ -69,7 +69,7 @@ class Decompiler {
     }
 
     private void addDependency(MethodInfo m, String name) {
-        Dependency d = new Dependency(m.getName(), m.getDescriptor(), name);
+        Dependency d = new Dependency(m.name(), m.descriptor(), name);
         ci.addResolutionDep(d);
     }
 
@@ -81,9 +81,9 @@ class Decompiler {
     private void decodeMethodDependencies(MethodInfo[] methods, ConstantPoolEntry[] constantPool) {
         for (int i = 0; i < methods.length; i++) {
             MethodInfo m = methods[i];
-            final int stopCheck = m.getCodeStart() + m.getCodeLength();
+            final int stopCheck = m.codeStart() + m.codeLength();
 
-            int byteCodeIndex = m.getCodeStart();
+            int byteCodeIndex = m.codeStart();
             while (byteCodeIndex < stopCheck) {
                 int bc = cursor.readUnsignedByteAt(byteCodeIndex);
 
@@ -126,7 +126,7 @@ class Decompiler {
 
                     case Bytecode.LOOKUPSWITCH: {
                         byteCodeIndex++;
-                        int offset = byteCodeIndex - m.getCodeStart();
+                        int offset = byteCodeIndex - m.codeStart();
                         while (offset % 4 != 0) {
                             offset++;
                             byteCodeIndex++;
@@ -143,7 +143,7 @@ class Decompiler {
 
                     case Bytecode.TABLESWITCH: {
                         byteCodeIndex++;
-                        int offset = byteCodeIndex - m.getCodeStart();
+                        int offset = byteCodeIndex - m.codeStart();
                         while (offset % 4 != 0) {
                             offset++;
                             byteCodeIndex++;
@@ -175,7 +175,7 @@ class Decompiler {
             }
 
             if (byteCodeIndex - stopCheck > 1) {
-                String err = "bad finish for method " + m.getName() +
+                String err = "bad finish for method " + m.name() +
                              "End + "  + (byteCodeIndex - stopCheck);
                 throw new IllegalArgumentException(err);
             }
@@ -191,8 +191,8 @@ class Decompiler {
             String name = constantPool[cursor.readUnsignedShort()].getValue();
             String descriptor = constantPool[cursor.readUnsignedShort()].getValue();
 
-            int codeLength = 0;
-            int codeStart = 0;
+            Integer codeLength = 0;
+            Integer codeStart = 0;
 
             int numAttributes = cursor.readUnsignedShort(); // attributes count
             for (int j = 0; j < numAttributes; j++) {

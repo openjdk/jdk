@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,13 +21,13 @@
  * questions.
  */
 
+import static jdk.jpackage.test.JPackageCommand.RuntimeImageType.RUNTIME_TYPE_HELLO_APP;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import jdk.jpackage.test.Annotations.Test;
-import jdk.jpackage.test.Executor;
 import jdk.jpackage.test.JPackageCommand;
-import jdk.jpackage.test.JavaTool;
 import jdk.jpackage.test.TKit;
 
 /*
@@ -44,30 +44,9 @@ public class RuntimeImageTest {
 
     @Test
     public static void test() throws IOException {
-
-        JPackageCommand cmd = JPackageCommand.helloAppImage();
-
-        if (JPackageCommand.DEFAULT_RUNTIME_IMAGE == null) {
-            final Path workDir = TKit.createTempDirectory("runtime").resolve("data");
-            final Path jlinkOutputDir = workDir.resolve("temp.runtime");
-            Files.createDirectories(jlinkOutputDir.getParent());
-
-            new Executor()
-            .setToolProvider(JavaTool.JLINK)
-            .dumpOutput()
-            .addArguments(
-                    "--output", jlinkOutputDir.toString(),
-                    "--add-modules", "java.desktop",
-                    "--strip-debug",
-                    "--no-header-files",
-                    "--no-man-pages",
-                    "--strip-native-commands")
-            .execute();
-
-            cmd.setArgumentValue("--runtime-image", jlinkOutputDir.toString());
-        }
-
-        cmd.executeAndAssertHelloAppImageCreated();
+        JPackageCommand.helloAppImage()
+                .setArgumentValue("--runtime-image", JPackageCommand.createInputRuntimeImage(RUNTIME_TYPE_HELLO_APP))
+                .executeAndAssertHelloAppImageCreated();
     }
 
     @Test

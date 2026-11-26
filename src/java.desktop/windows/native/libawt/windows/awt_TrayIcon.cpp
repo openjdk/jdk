@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -185,35 +185,7 @@ AwtTrayIcon* AwtTrayIcon::Create(jobject self, jobject parent)
 
 void AwtTrayIcon::InitNID(UINT uID)
 {
-    // fix for 6271589: we MUST set the size of the structure to match
-    // the shell version, otherwise some errors may occur (like missing
-    // balloon messages on win2k)
-    DLLVERSIONINFO dllVersionInfo;
-    dllVersionInfo.cbSize = sizeof(DLLVERSIONINFO);
-    int shellVersion = 5; // WIN_2000
-    // MSDN: DllGetVersion should not be implicitly called, but rather
-    // loaded using GetProcAddress
-    HMODULE hShell = JDK_LoadSystemLibrary("Shell32.dll");
-    if (hShell != NULL) {
-        DLLGETVERSIONPROC proc = (DLLGETVERSIONPROC)GetProcAddress(hShell, "DllGetVersion");
-        if (proc != NULL) {
-            if (proc(&dllVersionInfo) == NOERROR) {
-                shellVersion = dllVersionInfo.dwMajorVersion;
-            }
-        }
-    }
-    FreeLibrary(hShell);
-    switch (shellVersion) {
-        case 5: // WIN_2000
-            m_nid.cbSize = (BYTE *)(&m_nid.guidItem) - (BYTE *)(&m_nid.cbSize);
-            break;
-        case 6: // WIN_XP
-            m_nid.cbSize = (BYTE *)(&m_nid.hBalloonIcon) - (BYTE *)(&m_nid.cbSize);
-            break;
-        default: // WIN_VISTA
-            m_nid.cbSize = sizeof(m_nid);
-            break;
-    }
+    m_nid.cbSize = sizeof(m_nid);
     m_nid.hWnd = AwtTrayIcon::sm_msgWindow;
     m_nid.uID = uID;
     m_nid.uFlags = NIF_ICON | NIF_MESSAGE | NIF_TIP;

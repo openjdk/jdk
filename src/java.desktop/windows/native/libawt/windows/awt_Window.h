@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@
 // property name tagging windows disabled by modality
 static LPCTSTR ModalBlockerProp = TEXT("SunAwtModalBlockerProp");
 static LPCTSTR ModalDialogPeerProp = TEXT("SunAwtModalDialogPeerProp");
-static LPCTSTR NativeDialogWndProcProp = TEXT("SunAwtNativeDialogWndProcProp");
 
 #ifndef WH_MOUSE_LL
 #define WH_MOUSE_LL 14

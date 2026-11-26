@@ -37,8 +37,8 @@ inline HeapWord* G1BlockOffsetTable::block_start_reaching_into_card(const void* 
   while (offset >= CardTable::card_size_in_words()) {
     // The excess of the offset from N_words indicates a power of Base
     // to go back by.
-    size_t n_cards_back = BOTConstants::entry_to_cards_back(offset);
-    entry -= n_cards_back;
+    size_t num_cards_back = BOTConstants::entry_to_cards_back(offset);
+    entry -= num_cards_back;
     offset = offset_array(entry);
   }
   assert(offset < CardTable::card_size_in_words(), "offset too large");
@@ -54,7 +54,7 @@ uint8_t G1BlockOffsetTable::offset_array(Atomic<uint8_t>* addr) const {
 inline Atomic<uint8_t>* G1BlockOffsetTable::entry_for_addr(const void* const p) const {
   assert(_reserved.contains(p),
          "out of bounds access to block offset table");
-  Atomic<uint8_t>* result = const_cast<Atomic<uint8_t>*>(&_offset_base[uintptr_t(p) >> CardTable::card_shift()]);
+  Atomic<uint8_t>* result = &_offset_base[uintptr_t(p) >> CardTable::card_shift()];
   return result;
 }
 

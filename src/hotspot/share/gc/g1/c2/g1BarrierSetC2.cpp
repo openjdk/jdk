@@ -68,7 +68,7 @@
  * has happened since the allocation.
  */
 bool G1BarrierSetC2::g1_can_remove_pre_barrier(GraphKit* kit,
-                                               PhaseValues* phase,
+                                               PhaseGVN* phase,
                                                Node* adr,
                                                BasicType bt,
                                                uint adr_idx) const {
@@ -212,7 +212,7 @@ Node* G1BarrierSetC2::load_at_resolved(C2Access& access, const Type* val_type) c
   return CardTableBarrierSetC2::load_at_resolved(access, val_type);
 }
 
-void G1BarrierSetC2::eliminate_gc_barrier(PhaseMacroExpand* macro, Node* node) const {
+void G1BarrierSetC2::eliminate_gc_barrier(PhaseIterGVN* igvn, Node* node) const {
   eliminate_gc_barrier_data(node);
 }
 
@@ -268,7 +268,7 @@ static void refine_barrier_by_new_val_type(const Node* n) {
 bool G1BarrierSetC2::expand_barriers(Compile* C, PhaseIterGVN& igvn) const {
   ResourceMark rm;
   VectorSet visited;
-  Node_List worklist;
+  Node_List<Node> worklist;
   worklist.push(C->root());
   while (worklist.size() > 0) {
     Node* n = worklist.pop();
@@ -503,7 +503,7 @@ int G1BarrierSetC2::get_store_barrier(C2Access& access) const {
   return barriers;
 }
 
-void G1BarrierSetC2::elide_dominated_barrier(MachNode* mach) const {
+void G1BarrierSetC2::elide_dominated_barrier(MachNode* mach, MachNode* dominator) const {
   uint8_t barrier_data = mach->barrier_data();
   barrier_data &= ~G1C2BarrierPre;
   if (CardTableBarrierSetC2::use_ReduceInitialCardMarks()) {
@@ -519,8 +519,8 @@ void G1BarrierSetC2::analyze_dominating_barriers() const {
 
   // Find allocations and memory accesses (stores and atomic operations), and
   // track them in lists.
-  Node_List accesses;
-  Node_List allocations;
+  Node_List<MachNode> accesses;
+  Node_List<Node> allocations;
   for (uint i = 0; i < cfg->number_of_blocks(); ++i) {
     const Block* const block = cfg->get_block(i);
     for (uint j = 0; j < block->number_of_nodes(); ++j) {
@@ -575,7 +575,7 @@ void G1BarrierSetC2::emit_stubs(CodeBuffer& cb) const {
     }
     stubs->at(i)->emit_code(masm);
   }
-  masm.flush();
+  // Code will be copied. No ICache sync required.
 }
 
 #ifndef PRODUCT

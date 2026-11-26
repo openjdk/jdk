@@ -428,7 +428,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
     }
 
     /**
-     * A {link QuicTimedEvent} used to interrupt the handshake
+     * A {@link QuicTimedEvent} used to interrupt the handshake
      * if no response to the first initial packet is received within
      * a reasonable delay (default is ~ 30s).
      * This avoids waiting more than 30s for ConnectionException
@@ -703,7 +703,9 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
             return;
         }
         if (debug.on()) {
-            debug.log("scheduleForDecryption: %d bytes", received);
+            debug.log("scheduleForDecryption: %s bytes [idbytes: %s(%s,%s)]",
+                    received, datagram.destConnId().getClass().getSimpleName(),
+                    datagram.destConnId().position(), datagram.destConnId().limit());
         }
         endpoint.buffer(received);
         incoming.add(datagram);
@@ -1120,12 +1122,16 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         }
 
         private long bumpMaxData() {
-            long newMaxData = processedData + desiredBufferSize;
+            var processedData = this.processedData;
+            long newMaxData = processedData >= MAX_VL_INTEGER - desiredBufferSize
+                    ? MAX_VL_INTEGER
+                    : processedData + desiredBufferSize;
             long maxData = this.maxData;
-            if (newMaxData - maxData < (desiredBufferSize / 5)) {
-                return 0;
-            }
-            while (maxData < newMaxData) {
+            while (maxData < newMaxData) {                                      // CAS-loop on `maxData`
+                if (newMaxData != MAX_VL_INTEGER &&                             // Do not skip the final clamp-to-max bump
+                        newMaxData - maxData < (desiredBufferSize / 5)) {       // Skip small ordinary bumps
+                    break;
+                }
                 if (MAX_RCV_DATA.compareAndSet(this, maxData, newMaxData))
                     return newMaxData;
                 maxData = this.maxData;
@@ -1134,7 +1140,12 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         }
 
         public boolean needSendMaxData() {
-             return maxData - processedData < desiredBufferSize/2;
+            long maxData = this.maxData;
+            // `maxData` is the value that was already sent to the peer.
+            // `bumpMaxData()` clamps `maxData` at `MAX_VL_INTEGER`.
+            // Once `maxData == MAX_VL_INTEGER`, there is no larger legal value to advertise.
+            return maxData < MAX_VL_INTEGER &&
+                    maxData - processedData < (desiredBufferSize / 2);
         }
 
         String logTag() { return logTag.get(); }
@@ -1756,6 +1767,10 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         return localConnIdManager;
     }
 
+    PeerConnIdManager peerConnectionIdManager() {
+        return peerConnIdManager;
+    }
+
     /**
      * {@return the local connection id}
      */
@@ -1847,6 +1862,10 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                                     header.destinationId().toHexString(),
                                     Utils.asHexString(destConnId));
                         }
+                        assert packetIndex > 1 :
+                                "first long packet CID does not match itself %s(%s,%s)"
+                                        .formatted(destConnId.getClass().getSimpleName(),
+                                                destConnId.position(), destConnId.limit());
                         return;
                     }
                     var peekedVersion = header.version();
@@ -1918,6 +1937,10 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                                             " wrong connection id (%s vs %s)",
                                     packetIndex, Utils.asHexString(cid), Utils.asHexString(destConnId));
                         }
+                        assert packetIndex > 1 : "first short packet CID does not match itself %s(%s,%s)"
+                                        .formatted(destConnId.getClass().getSimpleName(),
+                                                destConnId.position(), destConnId.limit());
+
                         return;
                     }
 
@@ -1933,6 +1956,9 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         } catch (Throwable t) {
             if (debug.on()) {
                 debug.log("Failed to process incoming packet", t);
+            }
+            if (t instanceof AssertionError) {
+                this.terminator.terminate(TerminationCause.forException(t));
             }
         }
     }

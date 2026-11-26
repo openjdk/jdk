@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,39 +27,42 @@
  * @summary Jar tools fails to generate manifest correctly when boundary condition hit
  * @modules jdk.jartool/sun.tools.jar
  * @compile -XDignore.symbol.file=true CreateManifest.java
- * @run main CreateManifest
+ * @run junit CreateManifest
  */
 
+import org.junit.jupiter.api.Test;
+
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.jar.*;
 
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
 public class CreateManifest {
 
-public static void main(String arg[]) throws Exception {
+    @Test
+    void boundaryTest() throws IOException {
+        String jarFileName = "test.jar";
+        String ManifestName = "MANIFEST.MF";
 
-    String jarFileName = "test.jar";
-    String ManifestName = "MANIFEST.MF";
+        // create the MANIFEST.MF file
+        Files.write(Paths.get(ManifestName), FILE_CONTENTS.getBytes());
 
-    // create the MANIFEST.MF file
-    Files.write(Paths.get(ManifestName), FILE_CONTENTS.getBytes());
+        String [] args = new String [] { "cvfm", jarFileName, ManifestName};
+        sun.tools.jar.Main jartool =
+                new sun.tools.jar.Main(System.out, System.err, "jar");
+        jartool.run(args);
 
-    String [] args = new String [] { "cvfm", jarFileName, ManifestName};
-    sun.tools.jar.Main jartool =
-            new sun.tools.jar.Main(System.out, System.err, "jar");
-    jartool.run(args);
-
-    try (JarFile jf = new JarFile(jarFileName)) {
-        Manifest m = jf.getManifest();
-        String result = m.getMainAttributes().getValue("Class-path");
-        if (result == null)
-            throw new RuntimeException("Failed to add Class-path attribute to manifest");
-    } finally {
-        Files.deleteIfExists(Paths.get(jarFileName));
-        Files.deleteIfExists(Paths.get(ManifestName));
+        try (JarFile jf = new JarFile(jarFileName)) {
+            Manifest m = jf.getManifest();
+            String result = m.getMainAttributes().getValue("Class-path");
+            assertNotNull(result, "Failed to add Class-path attribute to manifest");
+        } finally {
+            Files.deleteIfExists(Paths.get(jarFileName));
+            Files.deleteIfExists(Paths.get(ManifestName));
+        }
     }
-
-}
 
 private static final String FILE_CONTENTS =
  "Class-path: \n" +

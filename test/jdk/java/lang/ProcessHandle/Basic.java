@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,21 +21,22 @@
  * questions.
  */
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import org.testng.TestNG;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /*
  * @test
+ * @summary Basic tests for ProcessHandler
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          jdk.management
@@ -45,20 +46,18 @@ import org.testng.annotations.Test;
  *        jdk.test.lib.JDKToolLauncher
  *        jdk.test.lib.Platform
  *        jdk.test.lib.process.*
- * @run testng Basic
- * @summary Basic tests for ProcessHandler
- * @author Roger Riggs
+ * @run junit Basic
  */
 public class Basic {
     /**
      * Tests of ProcessHandle.current.
      */
     @Test
-    public static void test1() {
+    public void test1() {
         try {
             ProcessHandle self = ProcessHandle.current();
             ProcessHandle self1 = ProcessHandle.current();
-            assertEquals(self, self1); //, "get pid twice should be same %d: %d");
+            assertEquals(self1, self); //, "get pid twice should be same %d: %d");
         } finally {
             // Cleanup any left over processes
             ProcessHandle.current().children().forEach(ProcessHandle::destroy);
@@ -69,16 +68,16 @@ public class Basic {
      * Tests of ProcessHandle.get.
      */
     @Test
-    public static void test2() {
+    public void test2() {
         try {
             ProcessHandle self = ProcessHandle.current();
             long pid = self.pid();       // known native process id
             Optional<ProcessHandle> self1 = ProcessHandle.of(pid);
-            assertEquals(self1.get(), self,
+            assertEquals(self, self1.get(),
                     "ProcessHandle.of(x.pid()) should be equal pid() %d: %d");
 
             Optional<ProcessHandle> ph = ProcessHandle.of(pid);
-            assertEquals(pid, ph.get().pid());
+            assertEquals(ph.get().pid(), pid);
         } finally {
             // Cleanup any left over processes
             ProcessHandle.current().children().forEach(ProcessHandle::destroy);
@@ -86,7 +85,7 @@ public class Basic {
     }
 
     @Test
-    public static void test3() {
+    public void test3() {
         // Test can get parent of current
         ProcessHandle ph = ProcessHandle.current();
         try {
@@ -99,7 +98,7 @@ public class Basic {
     }
 
     @Test
-    public static void test4() {
+    public void test4() {
         try {
             Process p = new ProcessBuilder("sleep", "0").start();
             p.waitFor();
@@ -118,7 +117,7 @@ public class Basic {
     }
 
     @Test
-    public static void test5() {
+    public void test5() {
         // Always contains itself.
         ProcessHandle current = ProcessHandle.current();
         List<ProcessHandle> list = ProcessHandle.allProcesses().collect(Collectors.toList());
@@ -131,23 +130,17 @@ public class Basic {
         }
     }
 
-    @Test(expectedExceptions = IllegalStateException.class)
-    public static void test6() {
-        ProcessHandle.current().onExit();
+    @Test
+    public void test6() {
+        Assertions.assertThrows(IllegalStateException.class, () -> {
+            ProcessHandle.current().onExit();
+        });
     }
 
-    @Test(expectedExceptions = IllegalStateException.class)
-    public static void test7() {
-        ProcessHandle.current().destroyForcibly();
+    @Test
+    public void test7() {
+        Assertions.assertThrows(IllegalStateException.class, () -> {
+            ProcessHandle.current().destroyForcibly();
+        });
     }
-
-    // Main can be used to run the tests from the command line with only testng.jar.
-    @SuppressWarnings("raw_types")
-    public static void main(String[] args) {
-        Class<?>[] testclass = {TreeTest.class};
-        TestNG testng = new TestNG();
-        testng.setTestClasses(testclass);
-        testng.run();
-    }
-
 }

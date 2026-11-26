@@ -48,6 +48,7 @@ import java.util.regex.Pattern;
 import javax.tools.JavaFileManager;
 
 import com.sun.tools.javac.api.BasicJavacTask;
+import com.sun.tools.javac.code.Preview;
 import com.sun.tools.javac.file.CacheFSInfo;
 import com.sun.tools.javac.file.BaseFileManager;
 import com.sun.tools.javac.file.JavacFileManager;
@@ -298,6 +299,12 @@ public class Main {
             Target target = Target.instance(context);
             List<String> list = List.of(target.multiReleaseValue());
             fileManager.handleOption(Option.MULTIRELEASE.primaryName, list.iterator());
+        }
+
+        // pass preview mode to the file manager:
+        if (fileManager.isSupportedOption(Option.PREVIEWMODE.primaryName) == 1) {
+            Preview preview = Preview.instance(context);
+            fileManager.handleOption(Option.PREVIEWMODE.primaryName, List.of(String.valueOf(preview.isEnabled())).iterator());
         }
 
         // init JavaCompiler

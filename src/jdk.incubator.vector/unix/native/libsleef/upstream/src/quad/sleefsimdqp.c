@@ -1,4 +1,4 @@
-//   Copyright Naoki Shibata and contributors 2010 - 2024.
+//   Copyright Naoki Shibata and contributors 2010 - 2025.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
@@ -15,7 +15,7 @@
 #include "quaddef.h"
 #include "misc.h"
 
-#ifndef SLEEF_ENABLE_CUDA
+#ifndef ENABLE_CUDA
 extern const double Sleef_rempitabqp[];
 #endif
 
@@ -47,7 +47,7 @@ extern const double Sleef_rempitabqp[];
 #endif
 #endif
 
-#ifdef SLEEF_ENABLE_CUDA
+#ifdef ENABLE_CUDA
 #define CONFIG 3
 #include "helperpurec_scalar.h"
 #ifdef DORENAME
@@ -737,11 +737,9 @@ static INLINE CONST VECTOR_CC vdouble2 poly27dd(vdouble2 x, vdouble c26, double2
 
 //
 
-#ifndef SLEEF_ENABLE_CUDA
 typedef struct {
   double x, y, z;
 } double3;
-#endif
 
 static INLINE CONST VECTOR_CC vdouble3 cast_vd3_d3(double3 td) {
   return vd3setxyz_vd3_vd_vd_vd(vcast_vd_d(td.x), vcast_vd_d(td.y), vcast_vd_d(td.z));
@@ -975,6 +973,8 @@ static INLINE CONST VECTOR_CC vmask ilogb_vm_tdx(tdx t) {
 
 static INLINE CONST VECTOR_CC tdx add_tdx_tdx_tdx(tdx dd0, tdx dd1) { // finite numbers only
   vmask ed = vsub64_vm_vm_vm(tdxgete_vm_tdx(dd1), tdxgete_vm_tdx(dd0));
+  ed = vsel_vm_vo64_vm_vm(vandnot_vo_vo_vo(iszero_vo_tdx(dd1), iszero_vo_tdx(dd0)), vcast_vm_i64( 1000000), ed);
+  ed = vsel_vm_vo64_vm_vm(vandnot_vo_vo_vo(iszero_vo_tdx(dd0), iszero_vo_tdx(dd1)), vcast_vm_i64(-1000000), ed);
   vdouble t = vldexp3_vd_vd_vm(vcast_vd_d(1), ed);
 
   vdouble3 rd3 = scaleadd2_vd3_vd3_vd3_vd(tdxgetd3_vd3_tdx(dd0), tdxgetd3_vd3_tdx(dd1), t);
@@ -993,6 +993,8 @@ static INLINE CONST VECTOR_CC tdx add_tdx_tdx_tdx(tdx dd0, tdx dd1) { // finite 
 
 static INLINE CONST VECTOR_CC tdx sub_tdx_tdx_tdx(tdx dd0, tdx dd1) {
   vmask ed = vsub64_vm_vm_vm(tdxgete_vm_tdx(dd1), tdxgete_vm_tdx(dd0));
+  ed = vsel_vm_vo64_vm_vm(vandnot_vo_vo_vo(iszero_vo_tdx(dd1), iszero_vo_tdx(dd0)), vcast_vm_i64( 1000000), ed);
+  ed = vsel_vm_vo64_vm_vm(vandnot_vo_vo_vo(iszero_vo_tdx(dd0), iszero_vo_tdx(dd1)), vcast_vm_i64(-1000000), ed);
   vdouble t = vldexp3_vd_vd_vm(vcast_vd_d(1), ed);
 
   vdouble3 rd3 = scalesub2_vd3_vd3_vd3_vd(tdxgetd3_vd3_tdx(dd0), tdxgetd3_vd3_tdx(dd1), t);
@@ -2786,7 +2788,7 @@ EXPORT CONST VECTOR_CC vint xicmpneq(vargquad ax, vargquad ay) {
   vquad y = cast_vq_aq(ay), cy = cmpcnv_vq_vq(y);
   vopmask o = isnan_vo_vq(x);
   o = vandnot_vo_vo_vo(o, vnot_vo64_vo64(vand_vo_vo_vo(veq64_vo_vm_vm(vqgety_vm_vq(cy), vqgety_vm_vq(cx)), veq64_vo_vm_vm(vqgetx_vm_vq(cx), vqgetx_vm_vq(cy)))));
-  o = vcast_vo32_vo64(vandnot_vo_vo_vo(isnan_vo_vq(y), o));
+  o = vcast_vo32_vo64(vor_vo_vo_vo(vor_vo_vo_vo(isnan_vo_vq(x), isnan_vo_vq(y)), o));
   vint vi = vsel_vi_vo_vi_vi(o, vcast_vi_i(1), vcast_vi_i(0));
   return vi;
 }
@@ -3209,7 +3211,7 @@ EXPORT CONST VECTOR_CC vargquad xldexpq(vargquad aa, vint e) {
 
 #ifndef ENABLE_SVE
 
-#ifndef SLEEF_ENABLE_CUDA
+#ifndef ENABLE_CUDA
 #define EXPORT2 EXPORT
 #define CONST2 CONST
 #else
@@ -3554,7 +3556,7 @@ EXPORT vargquad Sleef_strtoq(const char *str, const char **endptr) {
 #define FLAG_UPPER    (1 << 5)
 
 static int snprintquad(char *buf, size_t bufsize, vargquad argvalue, int typespec, int width, int precision, int flags) {
-  if (width > bufsize) width = bufsize;
+  if (width > (int)bufsize) width = bufsize;
 
   vquad c128 = cast_vq_aq(argvalue);
 
@@ -3585,7 +3587,7 @@ static int snprintquad(char *buf, size_t bufsize, vargquad argvalue, int typespe
     flags &= ~FLAG_ZERO;
   } else {
     if (precision < 0) precision = 6;
-    if (precision > bufsize/2 - 10) precision = bufsize/2 - 10;
+    if (precision > (int)(bufsize/2 - 10)) precision = bufsize/2 - 10;
     if (typespec == 'g' && precision > 0) precision--;
 
     tdx rounder = mul_tdx_tdx_tdx(cast_tdx_d(0.5), exp10i(-precision));
@@ -3712,7 +3714,7 @@ static int snprintquad(char *buf, size_t bufsize, vargquad argvalue, int typespe
 }
 
 static int snprintquadhex(char *buf, size_t bufsize, vargquad argvalue, int width, int precision, int flags) {
-  if (width > bufsize) width = bufsize;
+  if (width > (int)bufsize) width = bufsize;
   char *bufend = buf + bufsize, *ptr = buf;
 
   vquad c128 = cast_vq_aq(argvalue);
@@ -3994,6 +3996,8 @@ static int xvprintf(size_t (*consumer)(const char *ptr, size_t size, void *arg),
       if (ret < 0) { errorflag = 1; break; }
       outlen += (*consumer)(xbuf, strlen(xbuf), arg);
     }
+
+    va_end(ap2);
 
     fmt++;
   }

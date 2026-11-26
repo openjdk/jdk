@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,6 @@ public class NoPreview {
     public static class T {}
 
     // Preview support feature without JEP should not be listed
-    @PreviewFeature(feature=Feature.LANGUAGE_MODEL)
+    @PreviewFeature(feature=Feature.PREVIEW_SUPPORT)
     public void supportMethod() {}
 }

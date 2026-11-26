@@ -25,22 +25,22 @@
 package jdk.incubator.vector;
 
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.ValueLayout;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.IntUnaryOperator;
 
+import jdk.internal.ValueBased;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.vector.VectorSupport;
 
-import static jdk.internal.vm.vector.VectorSupport.*;
-
 import static jdk.incubator.vector.VectorOperators.*;
+import static jdk.internal.vm.vector.VectorSupport.*;
 
 // -- This file was mechanically generated: Do not edit! -- //
 
 @SuppressWarnings("cast")  // warning: redundant cast
+@ValueBased
 final class ShortVector256 extends ShortVector {
     static final ShortSpecies VSPECIES =
         (ShortSpecies) ShortVector.SPECIES_256;
@@ -53,6 +53,8 @@ final class ShortVector256 extends ShortVector {
     static final int VSIZE = VSPECIES.vectorBitSize();
 
     static final int VLENGTH = VSPECIES.laneCount(); // used by the JVM
+
+    static final Class<Short> CTYPE = short.class; // carrier type used by the JVM
 
     static final Class<Short> ETYPE = short.class; // used by the JVM
 
@@ -91,6 +93,9 @@ final class ShortVector256 extends ShortVector {
     @ForceInline
     @Override
     public final Class<Short> elementType() { return short.class; }
+
+    @ForceInline
+    final Class<Short> carrierType() { return CTYPE; }
 
     @ForceInline
     @Override
@@ -366,7 +371,7 @@ final class ShortVector256 extends ShortVector {
     @Override
     @ForceInline
     public final ShortShuffle256 toShuffle() {
-        return (ShortShuffle256) toShuffle(vspecies(), false);
+        return (ShortShuffle256) toShuffle(VSPECIES, false);
     }
 
     // Specialized unary testing
@@ -593,10 +598,11 @@ final class ShortVector256 extends ShortVector {
     }
 
     // Mask
-
+    @ValueBased
     static final class ShortMask256 extends AbstractMask<Short> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
-        static final Class<Short> ETYPE = short.class; // used by the JVM
+
+        static final Class<Short> CTYPE = short.class; // used by the JVM
 
         ShortMask256(boolean[] bits) {
             this(bits, 0);
@@ -640,7 +646,7 @@ final class ShortVector256 extends ShortVector {
 
         @Override
         ShortMask256 uOp(MUnOp f) {
-            boolean[] res = new boolean[vspecies().laneCount()];
+            boolean[] res = new boolean[VSPECIES.laneCount()];
             boolean[] bits = getBits();
             for (int i = 0; i < res.length; i++) {
                 res[i] = f.apply(i, bits[i]);
@@ -650,7 +656,7 @@ final class ShortVector256 extends ShortVector {
 
         @Override
         ShortMask256 bOp(VectorMask<Short> m, MBinOp f) {
-            boolean[] res = new boolean[vspecies().laneCount()];
+            boolean[] res = new boolean[VSPECIES.laneCount()];
             boolean[] bits = getBits();
             boolean[] mbits = ((ShortMask256)m).getBits();
             for (int i = 0; i < res.length; i++) {
@@ -800,16 +806,16 @@ final class ShortVector256 extends ShortVector {
         @ForceInline
         public boolean anyTrue() {
             return VectorSupport.test(BT_ne, ShortMask256.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
-                                         this, vspecies().maskAll(true),
-                                         (m, __) -> anyTrueHelper(((ShortMask256)m).getBits()));
+                                         this, VSPECIES.maskAll(true),
+                                         (m, _) -> anyTrueHelper(((ShortMask256)m).getBits()));
         }
 
         @Override
         @ForceInline
         public boolean allTrue() {
             return VectorSupport.test(BT_overflow, ShortMask256.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
-                                         this, vspecies().maskAll(true),
-                                         (m, __) -> allTrueHelper(((ShortMask256)m).getBits()));
+                                         this, VSPECIES.maskAll(true),
+                                         (m, _) -> allTrueHelper(((ShortMask256)m).getBits()));
         }
 
         @ForceInline
@@ -817,7 +823,7 @@ final class ShortVector256 extends ShortVector {
         static ShortMask256 maskAll(boolean bit) {
             return VectorSupport.fromBitsCoerced(ShortMask256.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
                                                  (bit ? -1 : 0), MODE_BROADCAST, null,
-                                                 (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
+                                                 (v, _) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }
         private static final ShortMask256  TRUE_MASK = new ShortMask256(true);
         private static final ShortMask256 FALSE_MASK = new ShortMask256(false);
@@ -825,10 +831,11 @@ final class ShortVector256 extends ShortVector {
     }
 
     // Shuffle
-
+    @ValueBased
     static final class ShortShuffle256 extends AbstractShuffle<Short> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
-        static final Class<Short> ETYPE = short.class; // used by the JVM
+
+        static final Class<Short> CTYPE = short.class; // used by the JVM
 
         ShortShuffle256(short[] indices) {
             super(indices);
@@ -876,7 +883,7 @@ final class ShortVector256 extends ShortVector {
 
         @Override
         ShortVector256 toBitsVector0() {
-            return ((ShortVector256) vspecies().asIntegral().dummyVector()).vectorFactory(indices());
+            return ((ShortVector256) VSPECIES.asIntegral().dummyVector()).vectorFactory(indices());
         }
 
         @Override
@@ -915,7 +922,7 @@ final class ShortVector256 extends ShortVector {
         @ForceInline
         public final ShortMask256 laneIsValid() {
             return (ShortMask256) toBitsVector().compare(VectorOperators.GE, 0)
-                    .cast(vspecies());
+                    .cast(VSPECIES);
         }
 
         @ForceInline
@@ -923,7 +930,7 @@ final class ShortVector256 extends ShortVector {
         public final ShortShuffle256 rearrange(VectorShuffle<Short> shuffle) {
             ShortShuffle256 concreteShuffle = (ShortShuffle256) shuffle;
             return (ShortShuffle256) toBitsVector().rearrange(concreteShuffle)
-                    .toShuffle(vspecies(), false);
+                    .toShuffle(VSPECIES, false);
         }
 
         @ForceInline
@@ -936,7 +943,7 @@ final class ShortVector256 extends ShortVector {
                 v = (ShortVector256) v.blend(v.lanewise(VectorOperators.ADD, length()),
                             v.compare(VectorOperators.LT, 0));
             }
-            return (ShortShuffle256) v.toShuffle(vspecies(), false);
+            return (ShortShuffle256) v.toShuffle(VSPECIES, false);
         }
 
         private static short[] prepare(int[] indices, int offset) {

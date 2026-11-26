@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -430,10 +430,10 @@ public class Utilities {
     public static String expectedNegoAppProtocol(String[] serverAppProtocols,
             String[] clientAppProtocols) {
         if (serverAppProtocols != null && clientAppProtocols != null) {
-            for(String clientAppProtocol : clientAppProtocols) {
-                for(String serverAppProtocol : serverAppProtocols) {
-                    if (clientAppProtocol.equals(serverAppProtocol)) {
-                        return clientAppProtocol;
+            for(String serverAppProtocol : serverAppProtocols) {
+                for(String clientAppProtocol : clientAppProtocols) {
+                    if (serverAppProtocol.equals(clientAppProtocol)) {
+                        return serverAppProtocol;
                     }
                 }
             }

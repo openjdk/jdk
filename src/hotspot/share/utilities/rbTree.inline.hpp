@@ -1104,6 +1104,15 @@ bool RBTree<K, V, COMPARATOR, ALLOCATOR>::copy_into(RBTree& other) const {
 }
 
 template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
+inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::remove_at_cursor(const Cursor& node_cursor) {
+  precond(node_cursor.valid());
+  precond(node_cursor.found());
+  RBNode<K, V>* old_node = node_cursor.node();
+  BaseType::remove_at_cursor(node_cursor);
+  free_node(old_node);
+}
+
+template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
 inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::replace_at_cursor(RBNode<K, V>* new_node, const Cursor& node_cursor) {
   precond(new_node != nullptr);
   precond(node_cursor.valid());
@@ -1139,6 +1148,29 @@ inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::free_node(RBNode<K, V>* node) {
 }
 
 template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
+inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::update_key(const Cursor& node_cursor, const K& new_key) {
+  precond(node_cursor.valid());
+  precond(node_cursor.found());
+
+  RBNode<K, V>* node = node_cursor.node();
+  update_key(node, new_key);
+}
+
+template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
+inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::update_key(RBNode<K, V>* node, const K& new_key) {
+  precond(node != nullptr);
+  #ifdef ASSERT
+    const RBNode<K, V>* prev = node->prev();
+    const RBNode<K, V>* next = node->next();
+
+    if (prev != nullptr) assert(COMPARATOR::cmp(new_key, prev->key()) == RBTreeOrdering::GT, "updated key not GT previous node's key.");
+    if (next != nullptr) assert(COMPARATOR::cmp(new_key, next->key()) == RBTreeOrdering::LT, "updated key not LT next node's key.");
+  #endif // ASSERT
+
+  node->_key = new_key;
+}
+
+template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
 inline bool RBTree<K, V, COMPARATOR, ALLOCATOR>::upsert(const K& key, const V& val, const RBNode<K, V>* hint_node) {
   Cursor node_cursor = cursor(key, hint_node);
   RBNode<K, V>* node = node_cursor.node();
@@ -1170,7 +1202,7 @@ inline V* RBTree<K, V, COMPARATOR, ALLOCATOR>::find(const K& key) const {
 template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
 inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::remove(RBNode<K, V>* node) {
   Cursor node_cursor = cursor(node);
-  remove_at_cursor(node_cursor);
+  BaseType::remove_at_cursor(node_cursor);
   free_node(node);
 }
 
@@ -1181,7 +1213,7 @@ inline bool RBTree<K, V, COMPARATOR, ALLOCATOR>::remove(const K& key) {
     return false;
   }
   RBNode<K, V>* node = node_cursor.node();
-  remove_at_cursor(node_cursor);
+  BaseType::remove_at_cursor(node_cursor);
   free_node((RBNode<K, V>*)node);
   return true;
 }

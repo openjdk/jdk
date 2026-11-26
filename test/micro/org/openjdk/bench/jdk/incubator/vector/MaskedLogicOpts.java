@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,8 +55,9 @@ public class MaskedLogicOpts {
     int int512_arr_idx;
     int int256_arr_idx;
     int int128_arr_idx;
-    int long256_arr_idx;
     int long512_arr_idx;
+    int long256_arr_idx;
+    int long128_arr_idx;
 
     private Random r = new Random(1024);
 
@@ -65,8 +66,9 @@ public class MaskedLogicOpts {
         int512_arr_idx = -16;
         int256_arr_idx = -8;
         int128_arr_idx = -4;
-        long256_arr_idx = -4;
         long512_arr_idx = -8;
+        long256_arr_idx = -4;
+        long128_arr_idx = -2;
 
         mask_arr = new boolean[ARRAYLEN];
         i1 = new int[ARRAYLEN];
@@ -106,6 +108,7 @@ public class MaskedLogicOpts {
         int128_arr_idx = (((ARRAYLEN & ~3) - int128_arr_idx) <= 4)  ? 0 : int128_arr_idx + 4;
         long512_arr_idx = (((ARRAYLEN & ~7) - long512_arr_idx) <= 8) ? 0 : long512_arr_idx + 8;
         long256_arr_idx = (((ARRAYLEN & ~3) - long256_arr_idx) <= 4) ? 0 : long256_arr_idx + 4;
+        long128_arr_idx = (((ARRAYLEN & ~1) - long128_arr_idx) <= 2) ? 0 : long128_arr_idx + 2;
     }
 
     @CompilerControl(CompilerControl.Mode.INLINE)
@@ -278,6 +281,11 @@ public class MaskedLogicOpts {
         partiallyMaskedLogicOperationsLongKernel(LongVector.SPECIES_256, long256_arr_idx);
     }
 
+    @Benchmark
+    public void partiallyMaskedLogicOperationsLong128() {
+        partiallyMaskedLogicOperationsLongKernel(LongVector.SPECIES_128, long128_arr_idx);
+    }
+
     @CompilerControl(CompilerControl.Mode.INLINE)
     public void bitwiseBlendOperationLongKernel(VectorSpecies<Long> SPECIES, int index) {
         VectorMask<Long> lmask = VectorMask.fromArray(SPECIES, mask_arr, index);
@@ -304,5 +312,10 @@ public class MaskedLogicOpts {
     @Benchmark
     public void bitwiseBlendOperationLong256() {
         bitwiseBlendOperationLongKernel(LongVector.SPECIES_256, long256_arr_idx);
+    }
+
+    @Benchmark
+    public void bitwiseBlendOperationLong128() {
+        bitwiseBlendOperationLongKernel(LongVector.SPECIES_128, long128_arr_idx);
     }
 }

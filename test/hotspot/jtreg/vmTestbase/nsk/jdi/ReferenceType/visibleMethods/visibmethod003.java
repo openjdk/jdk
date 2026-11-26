@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,10 +36,11 @@ import java.io.*;
  * of the JDI interface <code>ReferenceType</code> of com.sun.jdi package
  */
 
-public class visibmethod003 extends Log {
+public class visibmethod003 {
     static java.io.PrintStream out_stream;
     static boolean verbose_mode = false;  // test argument -vbs or -verbose switches to true
                                           // - for more easy failure evaluation
+    static Log log;
 
     /** The main class names of the debugger & debugee applications. */
     private final static String
@@ -80,7 +81,7 @@ public class visibmethod003 extends Log {
     }
 
     private void print_log_on_verbose(String message) {
-        display(message);
+        log.display(message);
     }
 
     private static void print_log_without_verbose(String message) {
@@ -106,11 +107,9 @@ public class visibmethod003 extends Log {
         argv = argHandler.getArguments();
 
         String debugee_launch_command = debugeeName;
-        if (verbose_mode) {
-            logTo(out_stream);
-        }
+        log = new Log(out_stream, argHandler);
 
-        Binder binder = new Binder(argHandler,this);
+        Binder binder = new Binder(argHandler, log);
         Debugee debugee = binder.bindToDebugee(debugee_launch_command);
         IOPipe pipe = debugee.createIOPipe();
 

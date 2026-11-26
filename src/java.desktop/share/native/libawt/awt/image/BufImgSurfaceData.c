@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -342,7 +342,7 @@ static ColorData *BufImg_SetupICM(JNIEnv *env,
         jboolean allGray
             = (*env)->GetBooleanField(env, bisdo->icm, allGrayID);
         int *pRgb = (int *)
-            ((*env)->GetPrimitiveArrayCritical(env, bisdo->lutarray, NULL));
+            ((*env)->GetIntArrayElements(env, bisdo->lutarray, NULL));
 
         if (pRgb == NULL) {
             free(cData);
@@ -351,7 +351,7 @@ static ColorData *BufImg_SetupICM(JNIEnv *env,
 
         cData->img_clr_tbl = initCubemap(pRgb, bisdo->lutsize, 32);
         if (cData->img_clr_tbl == NULL) {
-            (*env)->ReleasePrimitiveArrayCritical(env, bisdo->lutarray, pRgb, JNI_ABORT);
+            (*env)->ReleaseIntArrayElements(env, bisdo->lutarray, pRgb, JNI_ABORT);
             free(cData);
             return (ColorData*)NULL;
         }
@@ -359,8 +359,7 @@ static ColorData *BufImg_SetupICM(JNIEnv *env,
         if (allGray == JNI_TRUE) {
             initInverseGrayLut(pRgb, bisdo->lutsize, cData);
         }
-        (*env)->ReleasePrimitiveArrayCritical(env, bisdo->lutarray, pRgb,
-                                              JNI_ABORT);
+        (*env)->ReleaseIntArrayElements(env, bisdo->lutarray, pRgb, JNI_ABORT);
 
         initDitherTables(cData);
 

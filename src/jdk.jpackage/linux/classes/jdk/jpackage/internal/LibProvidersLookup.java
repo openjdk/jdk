@@ -44,7 +44,7 @@ import java.util.stream.Stream;
  */
 public final class LibProvidersLookup {
     static boolean supported() {
-        return (new ToolValidator(TOOL_LDD).validate() == null);
+        return (new ToolValidator(TOOL_LDD).setCommandLine("--version").validate() == null);
     }
 
     LibProvidersLookup setPackageLookup(PackageLookup v) {
@@ -66,16 +66,17 @@ public final class LibProvidersLookup {
         // Get the list of unique package names.
         List<String> neededPackages = neededLibs.stream().map(libPath -> {
             try {
-                List<String> packageNames = packageLookup.apply(libPath).filter(
-                        Objects::nonNull).filter(Predicate.not(String::isBlank)).distinct().collect(
-                        Collectors.toList());
-                Log.verbose(String.format("%s is provided by %s", libPath, packageNames));
+                List<String> packageNames = packageLookup.apply(libPath)
+                        .filter(Objects::nonNull)
+                        .filter(Predicate.not(String::isBlank))
+                        .distinct()
+                        .toList();
+                Log.trace("%s is provided by %s", libPath, packageNames);
                 return packageNames;
             } catch (IOException ex) {
                 // Ignore and keep going
-                Log.verbose(ex);
-                List<String> packageNames = Collections.emptyList();
-                return packageNames;
+                Log.trace(ex, "Failed to get required packages for [%s]", libPath);
+                return List.<String>of();
             }
         }).flatMap(List::stream).sorted().distinct().toList();
 
@@ -83,10 +84,10 @@ public final class LibProvidersLookup {
     }
 
     private static List<Path> getNeededLibsForFile(Path path) throws IOException {
-        final var result = Executor.of(TOOL_LDD, path.toString()).saveOutput().execute();
+        final var result = Executor.of(TOOL_LDD, path.toString()).quiet().saveOutput().execute();
 
         if (result.getExitCode() != 0) {
-            // objdump failed. This is OK if the tool was applied to not a binary file
+            // ldd failed. This is OK if the tool was applied to not a binary file
             return Collections.emptyList();
         }
 
@@ -107,7 +108,7 @@ public final class LibProvidersLookup {
             try {
                 libs = getNeededLibsForFile(path);
             } catch (IOException ex) {
-                Log.verbose(ex);
+                Log.trace(ex, "Failed to get required libraries for [%s]", path);
                 libs = Collections.emptyList();
             }
             return libs;

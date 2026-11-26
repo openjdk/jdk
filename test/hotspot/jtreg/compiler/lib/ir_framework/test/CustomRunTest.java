@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,9 +61,9 @@ class CustomRunTest extends AbstractTest {
 
     @Override
     public String toString() {
-        String s = "Custom Run Test: @Run: " + runMethod.getName() + " - @Test";
+        String s = "@Run: " + runMethod.getName() + " -> @Test";
         if (tests.size() == 1) {
-            s += ": " + tests.get(0).getTestMethod().getName();
+            s += ": " + tests.getFirst().getTestMethod().getName();
         } else {
             s += "s: {" + tests.stream().map(t -> t.getTestMethod().getName())
                                .collect(Collectors.joining(",")) + "}";
@@ -105,7 +105,7 @@ class CustomRunTest extends AbstractTest {
     }
 
     private void compileSingleTest() {
-        DeclaredTest test = tests.get(0);
+        DeclaredTest test = tests.getFirst();
         if (shouldCompile(test)) {
             if (isWaitForCompilation(test)) {
                 waitForCompilation(test);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,37 +35,27 @@ import java.util.concurrent.TimeUnit;
 import jdk.test.lib.Platform;
 import jdk.test.lib.Utils;
 
-import org.testng.annotations.Test;
-import org.testng.Assert;
-import org.testng.TestNG;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /*
  * @test
+ * @summary Functions of Process.onExit and ProcessHandle.onExit
  * @bug 8333742
  * @requires vm.flagless
  * @library /test/lib
  * @modules jdk.management
  * @build jdk.test.lib.Utils
- * @run testng OnExitTest
- * @summary Functions of Process.onExit and ProcessHandle.onExit
- * @author Roger Riggs
+ * @run junit OnExitTest
  */
 
 public class OnExitTest extends ProcessUtil {
-
-    @SuppressWarnings("raw_types")
-    public static void main(String[] args) {
-        Class<?>[] testclass = { OnExitTest.class};
-        TestNG testng = new TestNG();
-        testng.setTestClasses(testclass);
-        testng.run();
-    }
 
     /**
      * Basic test of exitValue and onExit.
      */
     @Test
-    public static void test1() {
+    public void test1() {
         try {
             int[] exitValues = {0, 1, 10, 259};
             for (int value : exitValues) {
@@ -73,24 +63,24 @@ public class OnExitTest extends ProcessUtil {
                 if (value == 259 && !Platform.isWindows()) continue;
                 Process p = JavaChild.spawn("exit", Integer.toString(value));
                 CompletableFuture<Process> future = p.onExit();
-                future.thenAccept( (ph) -> {
+                future.thenAccept((ph) -> {
                     int actualExitValue = ph.exitValue();
                     printf(" javaChild done: %s, exitStatus: %d%n",
                             ph, actualExitValue);
-                    Assert.assertEquals(actualExitValue, value, "actualExitValue incorrect");
-                    Assert.assertEquals(ph, p, "Different Process passed to thenAccept");
+                    Assertions.assertEquals(value, actualExitValue, "actualExitValue incorrect");
+                    Assertions.assertEquals(p, ph, "Different Process passed to thenAccept");
                 });
 
                 Process h = future.get();
-                Assert.assertEquals(h, p);
-                Assert.assertEquals(p.exitValue(), value);
-                Assert.assertFalse(p.isAlive(), "Process should not be alive");
-                Assert.assertEquals(p.waitFor(), value);
-                Assert.assertTrue(p.waitFor(1, TimeUnit.MILLISECONDS),
+                Assertions.assertEquals(p, h);
+                Assertions.assertEquals(value, p.exitValue());
+                Assertions.assertFalse(p.isAlive(), "Process should not be alive");
+                Assertions.assertEquals(value, p.waitFor());
+                Assertions.assertTrue(p.waitFor(1, TimeUnit.MILLISECONDS),
                         "waitFor should return true");
             }
         } catch (IOException | InterruptedException | ExecutionException ex) {
-            Assert.fail(ex.getMessage(), ex);
+            Assertions.fail(ex.getMessage(), ex);
         } finally {
             destroyProcessTree(ProcessHandle.current());
         }
@@ -101,7 +91,7 @@ public class OnExitTest extends ProcessUtil {
      * Spawn 1 child to spawn 3 children each with 2 children.
      */
     @Test
-    public static void test2() {
+    public void test2() {
 
         // Please note (JDK-8284282):
         //
@@ -176,7 +166,7 @@ public class OnExitTest extends ProcessUtil {
             // Check that each of the spawned processes is included in the children
             List<ProcessHandle> remaining = new ArrayList<>(children);
             processes.forEach((p, parent) -> {
-                Assert.assertTrue(remaining.remove(p), "spawned process should have been in children");
+                Assertions.assertTrue(remaining.remove(p), "spawned process should have been in children");
             });
 
             // Remove Win32 system spawned conhost.exe processes
@@ -204,7 +194,7 @@ public class OnExitTest extends ProcessUtil {
             // Verify that all 9 exit handlers were called with the correct ProcessHandle
             processes.forEach((p, parent) -> {
                 ProcessHandle value = completions.get(p).getNow(null);
-                Assert.assertEquals(p, value, "onExit.get value expected: " + p
+                Assertions.assertEquals(value, p, "onExit.get value expected: " + p
                         + ", actual: " + value
                         + ": " + p.info());
             });
@@ -212,9 +202,9 @@ public class OnExitTest extends ProcessUtil {
             // Show the status of the original children
             children.forEach(p -> printProcess(p, "after onExit:"));
 
-            Assert.assertEquals(proc.isAlive(), false, "destroyed process is alive:: %s%n" + proc);
+            Assertions.assertFalse(proc.isAlive(), "destroyed process is alive:: %s%n" + proc);
         } catch (IOException | InterruptedException ex) {
-            Assert.fail(ex.getMessage());
+            Assertions.fail(ex.getMessage(), ex);
         } finally {
             if (procHandle != null) {
                 destroyProcessTree(procHandle);
@@ -231,7 +221,7 @@ public class OnExitTest extends ProcessUtil {
      * Check that (B) does not complete until (A) has exited.
      */
     @Test
-    public static void peerOnExitTest() {
+    public void peerOnExitTest() {
         String line = null;
         ArrayBlockingQueue<String> alines = new ArrayBlockingQueue<>(100);
         ArrayBlockingQueue<String> blines = new ArrayBlockingQueue<>(100);
@@ -265,9 +255,9 @@ public class OnExitTest extends ProcessUtil {
                 try {
                     line = blines.poll(5L, TimeUnit.SECONDS);
                 } catch (InterruptedException ie) {
-                    Assert.fail("interrupted", ie);
+                    Assertions.fail("interrupted", ie);
                 }
-                Assert.assertNull(line, "waitpid didn't wait");
+                Assertions.assertNull(line, "waitpid didn't wait");
 
                 A.toHandle().onExit().thenAccept(p -> {
                     System.out.printf(" A.toHandle().onExit().A info: %s, now: %s%n",
@@ -296,16 +286,16 @@ public class OnExitTest extends ProcessUtil {
                     split = getSplitLine(blines);
                 } while (!"waitpid".equals(split[1]));
 
-                Assert.assertEquals(split[2], "false",  "Process A should not be alive");
+                Assertions.assertEquals("false", split[2],  "Process A should not be alive");
 
                 B.sendAction("exit", 0L);
             } catch (IOException ioe) {
-                Assert.fail("unable to start JavaChild B", ioe);
+                Assertions.fail("unable to start JavaChild B", ioe);
             } finally {
                 B.destroyForcibly();
             }
         } catch (IOException ioe2) {
-            Assert.fail("unable to start JavaChild A", ioe2);
+            Assertions.fail("unable to start JavaChild A", ioe2);
         } finally {
             A.destroyForcibly();
         }
@@ -328,7 +318,7 @@ public class OnExitTest extends ProcessUtil {
             }
             return split;
         } catch (InterruptedException ie) {
-            Assert.fail("interrupted", ie);
+            Assertions.fail("interrupted", ie);
             return null;
         }
     }

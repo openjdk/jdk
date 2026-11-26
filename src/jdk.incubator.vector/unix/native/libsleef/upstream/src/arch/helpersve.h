@@ -22,9 +22,9 @@
 
 #if CONFIG == 1 || CONFIG == 2
 // Vector length agnostic
-#define VECTLENSP (svcntw())
+#define VECTLENSP ((int)svcntw())
 //@#define VECTLENSP (svcntw())
-#define VECTLENDP (svcntd())
+#define VECTLENDP ((int)svcntd())
 //@#define VECTLENDP (svcntd())
 #define ISANAME "AArch64 SVE"
 #define ptrue svptrue_b8()

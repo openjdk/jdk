@@ -47,7 +47,7 @@ record LinuxPackageArch(String value) {
     }
 
     private static Result<String> deb() {
-        var exec = Executor.of("dpkg", "--print-architecture").saveOutput(true);
+        var exec = Executor.of("dpkg", "--print-architecture").quiet().saveOutput(true);
         return Result.of(exec::executeExpectSuccess, IOException.class)
                 .flatMap(LinuxPackageArch::getStdoutFirstLine);
     }

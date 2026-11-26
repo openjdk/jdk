@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@ import javax.naming.CommunicationException;
 import javax.naming.Context;
 import javax.naming.directory.InitialDirContext;
 
+import static jdk.test.lib.Utils.adjustTimeout;
+
 /*
  * @test
  * @bug 8200151
@@ -34,9 +36,9 @@ import javax.naming.directory.InitialDirContext;
  *          dead DNS server or a flakey router.
  *          On AIX, no ICMP Destination Unreachable is received, so skip test.
  * @requires os.family != "aix"
- * @library ../lib/
+ * @library ../lib/ /test/lib
  * @modules java.base/sun.security.util
- * @run main/othervm -Djdk.net.usePlainDatagramSocketImpl=false PortUnreachable
+ * @run main PortUnreachable
  */
 
 public class PortUnreachable extends DNSTestBase {
@@ -44,11 +46,12 @@ public class PortUnreachable extends DNSTestBase {
     // Port 25 is the SMTP port, used here to simulate a dead DNS server.
     private static final int PORT = 25;
 
-    // Threshold in ms for elapsed time of request failed. Normally, it should
-    // be very quick, but consider to different platform and test machine
-    // performance, here we define 3000 ms as threshold which acceptable for
-    // this test.
-    private static final int THRESHOLD = 3000;
+    // Max elapsed time (ms) for a request that fails via ICMP Port Unreachable.
+    // Base is 1000 ms, scaled by adjustTimeout() for slow platforms/machines.
+    // Capped at 9s to stay well below the full DNS exponential backoff cycle
+    // (1 + 2 + 4 + 8 = 15s), ensuring the test verifies a quick fail rather
+    // than waiting through all retries.
+    private static final long THRESHOLD = Math.min(adjustTimeout(1000), 9000);
 
     private long startTime;
 

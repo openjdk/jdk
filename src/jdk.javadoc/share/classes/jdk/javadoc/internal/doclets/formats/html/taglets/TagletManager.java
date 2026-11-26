@@ -303,7 +303,7 @@ public class TagletManager {
         // remove + put in both branches below move the tag to the back of the map's ordering
         Taglet tag = allTaglets.remove(tagName);
         if (tag == null || header != null) {
-            allTaglets.put(tagName, new SimpleTaglet(config, tagName, header, locations));
+            allTaglets.put(tagName, SimpleTaglet.createCustomTaglet(config, tagName, header, locations));
             if (Utils.toLowerCase(locations).indexOf('x') == -1) {
                 checkTagName(tagName);
             }

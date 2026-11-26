@@ -29,8 +29,10 @@ import static jdk.jpackage.internal.WinPackagingPipeline.APPLICATION_LAYOUT;
 import static jdk.jpackage.internal.cli.StandardBundlingOperation.CREATE_WIN_APP_IMAGE;
 import static jdk.jpackage.internal.cli.StandardBundlingOperation.CREATE_WIN_EXE;
 import static jdk.jpackage.internal.cli.StandardBundlingOperation.CREATE_WIN_MSI;
+import static jdk.jpackage.internal.util.MemoizingSupplier.runOnce;
 
 import jdk.jpackage.internal.cli.Options;
+import jdk.jpackage.internal.summary.StandardProperty;
 
 public class WinBundlingEnvironment extends DefaultBundlingEnvironment {
 
@@ -46,27 +48,26 @@ public class WinBundlingEnvironment extends DefaultBundlingEnvironment {
 
     private static void createMsiPackage(Options options, WinSystemEnvironment sysEnv) {
 
+        addWixSummary(options, sysEnv);
+
         createNativePackage(options,
                 WinFromOptions.createWinMsiPackage(options),
                 buildEnv()::create,
                 WinPackagingPipeline.build(),
                 (env, pkg, outputDir) -> {
-
-                    traceWixToolset(sysEnv);
-
                     return new WinMsiPackager(env, pkg, outputDir, sysEnv);
                 });
     }
 
     private static void createExePackage(Options options, WinSystemEnvironment sysEnv) {
 
+        addWixSummary(options, sysEnv);
+
         createNativePackage(options,
                 WinFromOptions.createWinExePackage(options),
                 buildEnv()::create,
                 WinPackagingPipeline.build(),
                 (env, pkg, outputDir) -> {
-
-                    traceWixToolset(sysEnv);
 
                     final var msiOutputDir = env.buildRoot().resolve("msi");
 
@@ -89,14 +90,7 @@ public class WinBundlingEnvironment extends DefaultBundlingEnvironment {
         return new BuildEnvFromOptions().predefinedAppImageLayout(APPLICATION_LAYOUT);
     }
 
-    private static void traceWixToolset(WinSystemEnvironment sysEnv) {
-        final var wixToolset = sysEnv.wixToolset();
-
-        for (var tool : wixToolset.getType().getTools()) {
-            Log.verbose(I18N.format("message.tool-version",
-                    wixToolset.getToolPath(tool).getFileName(),
-                    wixToolset.getVersion()));
-        }
+    private static void addWixSummary(Options options, WinSystemEnvironment sysEnv) {
+        OptionUtils.summary(options).put(StandardProperty.WIN_WIX_VERSION, sysEnv.wixToolset().getVersion());
     }
-
 }

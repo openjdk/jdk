@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.g
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ import compiler.lib.generators.*;
 
 /*
  * @test
- * @bug 8350177 8362171 8369881
+ * @bug 8350177 8362171 8369881 8342095 8380988 8394230 8394456
  * @summary Ensure that truncation of subword vectors produces correct results
  * @library /test/lib /
  * @run driver compiler.vectorization.TestSubwordTruncation
@@ -70,10 +70,31 @@ public class TestSubwordTruncation {
         return new Object[] { arr };
     }
 
+    @Setup
+    static Object[] setupIntArray() {
+        int[] arr = new int[SIZE];
+        for (int i = 0; i < SIZE; i++) {
+            arr[i] = G.next().intValue();
+        }
+
+        return new Object[] { arr };
+    }
+
+    @Setup
+    static Object[] setupLongArray() {
+        long[] arr = new long[SIZE];
+        for (int i = 0; i < SIZE; i++) {
+            arr[i] = G.next().longValue();
+        }
+
+        return new Object[] { arr };
+    }
+
     // Shorts
 
     @Test
-    @IR(counts = { IRNode.STORE_VECTOR, "=0" })
+    @IR(counts = { IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE + "min(max_int, max_short)", "> 0" },
+        applyIfCPUFeatureOr = { "avx2", "true", "asimd", "true", "zvbb", "true" })
     @Arguments(setup = "setupShortArray")
     public Object[] testShortLeadingZeros(short[] in) {
         short[] res = new short[SIZE];
@@ -98,7 +119,8 @@ public class TestSubwordTruncation {
     }
 
     @Test
-    @IR(counts = { IRNode.STORE_VECTOR, "=0" })
+    @IR(counts = { IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE + "min(max_int, max_short)", "> 0" },
+        applyIfCPUFeatureOr = { "avx2", "true", "asimd", "true", "zvbb", "true" })
     @Arguments(setup = "setupShortArray")
     public Object[] testShortTrailingZeros(short[] in) {
         short[] res = new short[SIZE];
@@ -123,7 +145,8 @@ public class TestSubwordTruncation {
     }
 
     @Test
-    @IR(counts = { IRNode.STORE_VECTOR, "=0" })
+    @IR(counts = { IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE + "min(max_int, max_short)", "> 0" },
+        applyIfCPUFeatureOr = { "avx2", "true", "asimd", "true", "zvbb", "true" })
     @Arguments(setup = "setupShortArray")
     public Object[] testShortReverse(short[] in) {
         short[] res = new short[SIZE];
@@ -148,7 +171,8 @@ public class TestSubwordTruncation {
     }
 
     @Test
-    @IR(counts = { IRNode.STORE_VECTOR, "=0" })
+    @IR(counts = { IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE + "min(max_int, max_short)", "> 0" },
+        applyIfCPUFeatureOr = { "avx2", "true", "asimd", "true", "zvbb", "true" })
     @Arguments(setup = "setupShortArray")
     public Object[] testShortBitCount(short[] in) {
         short[] res = new short[SIZE];
@@ -277,7 +301,8 @@ public class TestSubwordTruncation {
     // Bytes
 
     @Test
-    @IR(counts = { IRNode.STORE_VECTOR, "=0" })
+    @IR(counts = { IRNode.LOAD_VECTOR_B, IRNode.VECTOR_SIZE + "min(max_int, max_byte)", "> 0" },
+        applyIfCPUFeatureOr = { "avx2", "true", "asimd", "true", "zvbb", "true" })
     @Arguments(setup = "setupByteArray")
     public Object[] testByteLeadingZeros(byte[] in) {
         byte[] res = new byte[SIZE];
@@ -302,7 +327,8 @@ public class TestSubwordTruncation {
     }
 
     @Test
-    @IR(counts = { IRNode.STORE_VECTOR, "=0" })
+    @IR(counts = { IRNode.LOAD_VECTOR_B, IRNode.VECTOR_SIZE + "min(max_int, max_byte)", "> 0" },
+        applyIfCPUFeatureOr = { "avx2", "true", "asimd", "true", "zvbb", "true" })
     @Arguments(setup = "setupByteArray")
     public Object[] testByteTrailingZeros(byte[] in) {
         byte[] res = new byte[SIZE];
@@ -327,7 +353,8 @@ public class TestSubwordTruncation {
     }
 
     @Test
-    @IR(counts = { IRNode.STORE_VECTOR, "=0" })
+    @IR(counts = { IRNode.LOAD_VECTOR_B, IRNode.VECTOR_SIZE + "min(max_int, max_byte)", "> 0" },
+        applyIfCPUFeatureOr = { "avx2", "true", "asimd", "true", "zvbb", "true" })
     @Arguments(setup = "setupByteArray")
     public Object[] testByteReverse(byte[] in) {
         byte[] res = new byte[SIZE];
@@ -403,7 +430,8 @@ public class TestSubwordTruncation {
 
 
     @Test
-    @IR(counts = { IRNode.STORE_VECTOR, "=0" })
+    @IR(counts = { IRNode.LOAD_VECTOR_B, IRNode.VECTOR_SIZE + "min(max_int, max_byte)", "> 0" },
+        applyIfCPUFeatureOr = { "avx2", "true", "asimd", "true", "zvbb", "true" })
     @Arguments(setup = "setupByteArray")
     public Object[] testByteBitCount(byte[] in) {
         byte[] res = new byte[SIZE];
@@ -437,6 +465,50 @@ public class TestSubwordTruncation {
             for (int j = 1; j < 204; j++) {
                 shortField %= intField | 1;
             }
+        }
+    }
+
+    @Test
+    @IR(counts = { IRNode.UMOD_I, ">0" })
+    @Arguments(setup = "setupByteArray")
+    public Object[] testUMod(final byte[] in) {
+        int n = G.next().intValue();
+        for (int i = 1; i < SIZE; i++) {
+            in[i] = (byte) Integer.remainderUnsigned(n, i);
+        }
+
+        return new Object[] { Integer.valueOf(n), in };
+    }
+
+    @Check(test = "testUMod")
+    public void checkTestUMod(Object[] vals) {
+        int n = (Integer) vals[0];
+        byte[] res = (byte[]) vals[1];
+        for (int i = 1; i < SIZE; i++) {
+            byte val = (byte) Integer.remainderUnsigned(n, i);
+            Asserts.assertEQ(res[i], val);
+        }
+    }
+
+    @Test
+    @IR(counts = { IRNode.UDIV_I, ">0" })
+    @Arguments(setup = "setupByteArray")
+    public Object[] testUDiv(final byte[] in) {
+        int n = G.next().intValue();
+        for (int i = 1; i < SIZE; i++) {
+            in[i] = (byte) Integer.divideUnsigned(n, i);
+        }
+
+        return new Object[] { Integer.valueOf(n), in };
+    }
+
+    @Check(test = "testUDiv")
+    public void checkTestUDiv(Object[] vals) {
+        int n = (Integer) vals[0];
+        byte[] res = (byte[]) vals[1];
+        for (int i = 1; i < SIZE; i++) {
+            byte val = (byte) Integer.divideUnsigned(n, i);
+            Asserts.assertEQ(res[i], val);
         }
     }
 
@@ -503,6 +575,101 @@ public class TestSubwordTruncation {
         } while (++j < 191);
 
         return new Object[] { bytes };
+    }
+
+    @Test
+    @IR(counts = { IRNode.POPCOUNT_L, ">0" })
+    @Arguments(setup = "setupLongArray")
+    public Object[] testPopCountL(long[] in) {
+        byte[] res = new byte[SIZE];
+
+        for (int i = 0; i < SIZE; i++) {
+            res[i] = (byte) Long.bitCount(in[i]);
+        }
+
+        return new Object[] { res };
+    }
+
+    @Test
+    @IR(counts = { IRNode.COUNT_LEADING_ZEROS_L, ">0" })
+    @Arguments(setup = "setupLongArray")
+    public Object[] testCountLeadingZerosL(long[] in) {
+        byte[] res = new byte[SIZE];
+
+        for (int i = 0; i < SIZE; i++) {
+            res[i] = (byte) Long.numberOfLeadingZeros(in[i]);
+        }
+
+        return new Object[] { res };
+    }
+
+    @Test
+    @IR(counts = { IRNode.COUNT_TRAILING_ZEROS_L, ">0" })
+    @Arguments(setup = "setupLongArray")
+    public Object[] testCountTrailingZerosL(long[] in) {
+        byte[] res = new byte[SIZE];
+
+        for (int i = 0; i < SIZE; i++) {
+            res[i] = (byte) Long.numberOfTrailingZeros(in[i]);
+        }
+
+        return new Object[] { res };
+    }
+
+    @Test
+    @IR(counts = { IRNode.COMPRESS_BITS, ">0" }, applyIfPlatform = {"x64", "true"}, applyIf = { "UseParallelBitInstructions", "true" })
+    @IR(counts = { IRNode.COMPRESS_BITS, ">0" }, applyIfCPUFeature = { "svebitperm", "true" })
+    @Arguments(setup = "setupIntArray")
+    public Object[] testCompressBitsI(int[] in) {
+        byte[] res = new byte[SIZE];
+
+        for (int i = 0; i < SIZE; i++) {
+            res[i] = (byte) Integer.compress(in[i], in[i]);
+        }
+
+        return new Object[] { res };
+    }
+
+    @Test
+    @IR(counts = { IRNode.EXPAND_BITS, ">0" }, applyIfPlatform = {"x64", "true"}, applyIf = { "UseParallelBitInstructions", "true" })
+    @IR(counts = { IRNode.EXPAND_BITS, ">0" }, applyIfCPUFeature = { "svebitperm", "true" })
+    @Arguments(setup = "setupIntArray")
+    public Object[] testExpandBitsI(int[] in) {
+        byte[] res = new byte[SIZE];
+
+        for (int i = 0; i < SIZE; i++) {
+            res[i] = (byte) Integer.expand(in[i], in[i]);
+        }
+
+        return new Object[] { res };
+    }
+
+    @Test
+    @IR(counts = { IRNode.COMPRESS_BITS, ">0" }, applyIfPlatform = {"x64", "true"}, applyIf = { "UseParallelBitInstructions", "true" })
+    @IR(counts = { IRNode.COMPRESS_BITS, ">0" }, applyIfCPUFeature = { "svebitperm", "true" })
+    @Arguments(setup = "setupLongArray")
+    public Object[] testCompressBitsL(long[] in) {
+        byte[] res = new byte[SIZE];
+
+        for (int i = 0; i < SIZE; i++) {
+            res[i] = (byte) Long.compress(in[i], in[i]);
+        }
+
+        return new Object[] { res };
+    }
+
+    @Test
+    @IR(counts = { IRNode.EXPAND_BITS, ">0" }, applyIfPlatform = {"x64", "true"}, applyIf = { "UseParallelBitInstructions", "true" })
+    @IR(counts = { IRNode.EXPAND_BITS, ">0" }, applyIfCPUFeature = { "svebitperm", "true" })
+    @Arguments(setup = "setupLongArray")
+    public Object[] testExpandBitsL(long[] in) {
+        byte[] res = new byte[SIZE];
+
+        for (int i = 0; i < SIZE; i++) {
+            res[i] = (byte) Long.expand(in[i], in[i]);
+        }
+
+        return new Object[] { res };
     }
 
     public static void main(String[] args) {

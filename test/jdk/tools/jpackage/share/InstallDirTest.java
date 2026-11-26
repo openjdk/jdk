@@ -29,6 +29,7 @@ import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.ParameterSupplier;
 import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.JPackageCommand.MessageCategory;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.PackageType;
@@ -102,10 +103,8 @@ public class InstallDirTest {
         .forTypes(PackageType.LINUX)
         .addInitializer(cmd -> {
             cmd.addArguments("--install-dir", installDir);
-            cmd.saveConsoleOutput(true);
-        })
-        .addBundleVerifier((cmd, result) -> {
-            cmd.validateErr(JPackageCommand.makeError("error.invalid-install-dir"));
+            cmd.validateErr(JPackageCommand.makeError("error.invalid-install-dir", installDir));
+            cmd.enableMessageCategories(MessageCategory.ERRORS);
         })
         .run();
     }

@@ -58,3 +58,7 @@ function assertionPredicateInfo(dump_spec) {
 }
 editProperty(matches("name", "If|RangeCheck"), ["dump_spec"], "extra_label",
              function(dump_spec) { return assertionPredicateInfo(dump_spec[0]);});
+
+// Show allocation class in allocation nodes.
+editProperty(hasProperty("allocation_class"), ["allocation_class"], "extra_label",
+             function(allocation_class) { return allocation_class[0]; });

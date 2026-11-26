@@ -78,7 +78,7 @@ class MethodHandleIntegerFieldAccessorImpl extends MethodHandleFieldAccessorImpl
             } else {
                 return (int) getter.invokeExact(obj);
             }
-        } catch (IllegalArgumentException|NullPointerException e) {
+        } catch (IllegalArgumentException|IllegalStateException|NullPointerException e) {
             throw e;
         } catch (ClassCastException e) {
             throw newGetIllegalArgumentException(obj);
@@ -165,7 +165,7 @@ class MethodHandleIntegerFieldAccessorImpl extends MethodHandleFieldAccessorImpl
             } else {
                 setter.invokeExact(obj, i);
             }
-        } catch (IllegalArgumentException|NullPointerException e) {
+        } catch (IllegalArgumentException|IllegalStateException|NullPointerException e) {
             throw e;
         } catch (ClassCastException e) {
             // receiver is of invalid type

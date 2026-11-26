@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,8 +109,10 @@ void Rewriter::make_constant_pool_cache(TRAPS) {
   assert(_field_entry_index == _initialized_field_entries.length(), "Field entry size mismatch");
   assert(_method_entry_index == _initialized_method_entries.length(), "Method entry size mismatch");
   ConstantPoolCache* cache =
-      ConstantPoolCache::allocate(loader_data, _invokedynamic_references_map,
-                                  _initialized_indy_entries, _initialized_field_entries, _initialized_method_entries,
+      ConstantPoolCache::allocate(loader_data,
+                                  _initialized_indy_entries,
+                                  _initialized_field_entries,
+                                  _initialized_method_entries,
                                   CHECK);
 
   // initialize object cache in constant pool
@@ -255,14 +257,14 @@ void Rewriter::maybe_rewrite_invokehandle(address opc, int cp_index, int cache_i
             MethodHandles::is_signature_polymorphic_name(vmClasses::MethodHandle_klass(),
                                                          _pool->uncached_name_ref_at(cp_index))) {
           // we may need a resolved_refs entry for the appendix
-          int resolved_index = add_invokedynamic_resolved_references_entry(cp_index, cache_index);
+          int resolved_index = add_invokedynamic_resolved_references_entry(cp_index);
           _initialized_method_entries.at(cache_index).set_resolved_references_index((u2)resolved_index);
           status = +1;
         } else if (_pool->uncached_klass_ref_at_noresolve(cp_index) == vmSymbols::java_lang_invoke_VarHandle() &&
                    MethodHandles::is_signature_polymorphic_name(vmClasses::VarHandle_klass(),
                                                                 _pool->uncached_name_ref_at(cp_index))) {
           // we may need a resolved_refs entry for the appendix
-          int resolved_index = add_invokedynamic_resolved_references_entry(cp_index, cache_index);
+          int resolved_index = add_invokedynamic_resolved_references_entry(cp_index);
           _initialized_method_entries.at(cache_index).set_resolved_references_index((u2)resolved_index);
           status = +1;
         } else {
@@ -294,7 +296,7 @@ void Rewriter::rewrite_invokedynamic(address bcp, int offset, bool reverse) {
   assert(p[-1] == Bytecodes::_invokedynamic, "not invokedynamic bytecode");
   if (!reverse) {
     int cp_index = Bytes::get_Java_u2(p);
-    int resolved_index = add_invokedynamic_resolved_references_entry(cp_index, -1); // Indy no longer has a CPCE
+    int resolved_index = add_invokedynamic_resolved_references_entry(cp_index); // Indy no longer has a CPCE
     // Replace the trailing four bytes with an index to the array of
     // indy resolution information in the CPC. There is one entry for
     // each bytecode, even if they make the same call. In other words,
@@ -454,11 +456,11 @@ void Rewriter::scan_method(Thread* thread, Method* method, bool reverse, bool* i
             if (klass->find_field(field_name, field_sig, &fd) != nullptr) {
               if (fd.access_flags().is_final()) {
                 if (fd.access_flags().is_static()) {
-                  if (!method->is_static_initializer()) {
+                  if (!method->is_class_initializer()) {
                     fd.set_has_initialized_final_update(true);
                   }
                 } else {
-                  if (!method->is_object_initializer()) {
+                  if (!method->is_object_constructor()) {
                     fd.set_has_initialized_final_update(true);
                   }
                 }
@@ -584,7 +586,6 @@ Rewriter::Rewriter(InstanceKlass* klass, const constantPoolHandle& cpool, Array<
     _cp_map(cpool->length()),
     _reference_map(cpool->length()),
     _resolved_references_map(cpool->length() / 2),
-    _invokedynamic_references_map(cpool->length() / 2),
     _method_handle_invokers(cpool->length()),
     _invokedynamic_index(0),
     _field_entry_index(0),

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,14 @@
  * questions.
  */
 
+// -- This file was mechanically generated: Do not edit! -- //
+
 /*
  * @test
  * @run junit/othervm -Diters=10   -Xint                                                   VarHandleTestAccessDouble
  *
- * @comment Set CompileThresholdScaling to 0.1 so that the warmup loop sets to 2000 iterations
- *          to hit compilation thresholds
+ * @comment Set CompileThresholdScaling to 0.1 so that the warmup loop set to 2000 iterations
+ *          hits compilation thresholds
  *
  * @run junit/othervm -Diters=2000 -XX:CompileThresholdScaling=0.1 -XX:TieredStopAtLevel=1 VarHandleTestAccessDouble
  * @run junit/othervm -Diters=2000 -XX:CompileThresholdScaling=0.1                         VarHandleTestAccessDouble
@@ -50,17 +52,17 @@ import org.junit.jupiter.params.provider.MethodSource;
 public class VarHandleTestAccessDouble extends VarHandleBaseTest {
     static final double static_final_v = 1.0d;
 
-    static double static_v;
+    static double static_v = 1.0d;
 
-    final double final_v = 1.0d;
+    final double final_v;
 
     double v;
 
     static final double static_final_v2 = 1.0d;
 
-    static double static_v2;
+    static double static_v2 = 1.0d;
 
-    final double final_v2 = 1.0d;
+    final double final_v2;
 
     double v2;
 
@@ -74,6 +76,13 @@ public class VarHandleTestAccessDouble extends VarHandleBaseTest {
 
     VarHandle vhArray;
 
+    public VarHandleTestAccessDouble() {
+        final_v = 1.0d;
+        v = 1.0d;
+        final_v2 = 1.0d;
+        v2 = 1.0d;
+        super();
+    }
 
     VarHandle[] allocate(boolean same) {
         List<VarHandle> vhs = new ArrayList<>();
@@ -308,7 +317,7 @@ public class VarHandleTestAccessDouble extends VarHandleBaseTest {
         // Lazy
         {
             double x = (double) vh.getAcquire(recv);
-            assertEquals(1.0d, x, "getRelease double value");
+            assertEquals(1.0d, x, "getAcquire double value");
         }
 
         // Opaque
@@ -392,7 +401,7 @@ public class VarHandleTestAccessDouble extends VarHandleBaseTest {
         // Lazy
         {
             double x = (double) vh.getAcquire();
-            assertEquals(1.0d, x, "getRelease double value");
+            assertEquals(1.0d, x, "getAcquire double value");
         }
 
         // Opaque
@@ -671,7 +680,7 @@ public class VarHandleTestAccessDouble extends VarHandleBaseTest {
             vh.set(recv, 1.0d);
 
             double o = (double) vh.getAndAddRelease(recv, 2.0d);
-            assertEquals(1.0d, o, "getAndAddReleasedouble");
+            assertEquals(1.0d, o, "getAndAddRelease double");
             double x = (double) vh.get(recv);
             assertEquals((double)(1.0d + 2.0d), x, "getAndAddRelease double value");
         }
@@ -931,7 +940,7 @@ public class VarHandleTestAccessDouble extends VarHandleBaseTest {
             vh.set(1.0d);
 
             double o = (double) vh.getAndAddRelease(2.0d);
-            assertEquals(1.0d, o, "getAndAddReleasedouble");
+            assertEquals(1.0d, o, "getAndAddRelease double");
             double x = (double) vh.get();
             assertEquals((double)(1.0d + 2.0d), x, "getAndAddRelease double value");
         }
@@ -1194,7 +1203,7 @@ public class VarHandleTestAccessDouble extends VarHandleBaseTest {
                 vh.set(array, i, 1.0d);
 
                 double o = (double) vh.getAndAddRelease(array, i, 2.0d);
-                assertEquals(1.0d, o, "getAndAddReleasedouble");
+                assertEquals(1.0d, o, "getAndAddRelease double");
                 double x = (double) vh.get(array, i);
                 assertEquals((double)(1.0d + 2.0d), x, "getAndAddRelease double value");
             }
@@ -1341,6 +1350,5 @@ public class VarHandleTestAccessDouble extends VarHandleBaseTest {
 
         }
     }
-
 }
 

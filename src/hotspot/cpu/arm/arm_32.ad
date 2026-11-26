@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -430,18 +430,18 @@ OptoRegPair c2::return_value(int ideal_reg) {
 //       from the start of the call to the point where the return address
 //       will point.
 
-int MachCallStaticJavaNode::ret_addr_offset() {
+int MachCallStaticJavaNode::ret_addr_offset() const {
   bool far = (_method == nullptr) ? maybe_far_call(this) : !cache_reachable();
   return (far ? 3 : 1) * NativeInstruction::instruction_size;
 }
 
-int MachCallDynamicJavaNode::ret_addr_offset() {
+int MachCallDynamicJavaNode::ret_addr_offset() const {
   bool far = !cache_reachable();
   // mov_oop is always 2 words
   return (2 + (far ? 3 : 1)) * NativeInstruction::instruction_size;
 }
 
-int MachCallRuntimeNode::ret_addr_offset() {
+int MachCallRuntimeNode::ret_addr_offset() const {
   // bl or movw; movt; blx
   bool far = maybe_far_call(this);
   return (far ? 3 : 1) * NativeInstruction::instruction_size;
@@ -501,7 +501,7 @@ operand immIRotn() %{
 %}
 
 operand immPRot() %{
-  predicate(n->get_ptr() == 0 || (AsmOperand::is_rotated_imm(n->get_ptr()) && ((ConPNode*)n)->type()->reloc() == relocInfo::none));
+  predicate(n->get_ptr() == 0 || (AsmOperand::is_rotated_imm(n->get_ptr()) && ((ConPNode*)n)->type()->is_ptr()->reloc() == relocInfo::none));
 
   match(ConP);
 

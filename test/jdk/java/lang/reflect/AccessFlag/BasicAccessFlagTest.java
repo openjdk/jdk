@@ -142,6 +142,8 @@ public class BasicAccessFlagTest {
                 Set<AccessFlag> computedSet =
                     AccessFlag.maskToAccessFlags(accessFlag.mask(), location);
                 if (!expectedSet.equals(computedSet)) {
+                    System.out.println("expected: " + expectedSet);
+                    System.out.println("computed: " + computedSet);
                     throw new RuntimeException("Bad set computation on " +
                                                accessFlag + ", " + location);
                 }

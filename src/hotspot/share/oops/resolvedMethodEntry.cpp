@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  *
  */
 
+#include "cds/aotArtifactFinder.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cppstdlib/type_traits.hpp"
 #include "oops/method.hpp"
@@ -58,6 +59,18 @@ void ResolvedMethodEntry::reset_entry() {
 #if INCLUDE_CDS
 void ResolvedMethodEntry::remove_unshareable_info() {
   reset_entry();
+}
+
+// Called from AOTArtifactFinder.
+void ResolvedMethodEntry::record_archivable_classes() {
+  if (_method == nullptr) {
+    assert(bytecode2() == Bytecodes::_invokevirtual, "");
+  } else {
+    AOTArtifactFinder::add_cached_class(_method->method_holder());
+  }
+  if (bytecode1() == Bytecodes::_invokeinterface) {
+    AOTArtifactFinder::add_cached_class(_entry_specific._interface_klass);
+  }
 }
 
 void ResolvedMethodEntry::mark_and_relocate(ConstantPool* src_cp) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,8 +83,11 @@ public class LigatureCaretTest {
         String bidiWithNumbers = "abc\u05D0\u05D1\u05D2123abc";
         Font font = getFontForText(bidiWithNumbers);
         if (font == null) {
+            System.out.println("testBidiWithNumbers: no font found, skipping");
             return;
         }
+        System.out.println("testBidiWithNumbers: font=" + font.getFontName()
+                + " (" + font.getFamily() + ", ps=" + font.getPSName() + ")");
         Hashtable map = new Hashtable();
         map.put(TextAttribute.FONT, font);
 
@@ -134,8 +137,12 @@ public class LigatureCaretTest {
 
         Font font = getFontForText(lamAlef+ltrText);
         if (font == null) {
+            System.out.println("testLamAlef: no font found for lam-alef text, skipping");
             return;
         }
+        System.out.println("testLamAlef: font=" + font.getFontName()
+                + " (" + font.getFamily() + ", ps=" + font.getPSName() + ")");
+
         Hashtable map = new Hashtable();
         map.put(TextAttribute.FONT, font);
 
@@ -143,20 +150,25 @@ public class LigatureCaretTest {
         // should only be two valid caret positions:  one at
         // insertion offset 0 and the other at insertion offset 2.
         TextLayout layout = new TextLayout(lamAlef, map, frc);
+        System.out.println("testLamAlef: lam-alef layout: charCount=" + layout.getCharacterCount()
+                + " advance=" + layout.getAdvance() + " ltr=" + layout.isLeftToRight());
 
         TextHitInfo hit;
 
         hit = layout.getNextLeftHit(0);
+        System.out.println("testLamAlef: getNextLeftHit(0)=" + hit);
         if (hit.getInsertionIndex() != 2) {
             throw new Error("Left hit failed.  Hit:" + hit);
         }
 
         hit = layout.getNextRightHit(2);
+        System.out.println("testLamAlef: getNextRightHit(2)=" + hit);
         if (hit.getInsertionIndex() != 0) {
             throw new Error("Right hit failed.  Hit:" + hit);
         }
 
         hit = layout.hitTestChar(layout.getAdvance()/2, 0);
+        System.out.println("testLamAlef: hitTestChar(advance/2)=" + hit);
         if (hit.getInsertionIndex() != 0 && hit.getInsertionIndex() != 2) {
             throw new Error("Hit-test allowed incorrect caret.  Hit:" + hit);
         }
@@ -173,16 +185,19 @@ public class LigatureCaretTest {
         for (int i=0; i < ltrLen; i++) {
             hit = layout.getNextRightHit(i);
             if (hit.getInsertionIndex() != i+1) {
+                System.out.println("testLamAlef: getNextRightHit(" + i + ")=" + hit);
                 throw new Error("Right hit failed in ltr text.");
             }
         }
 
         hit = layout.getNextRightHit(ltrLen);
+        System.out.println("testLamAlef: getNextRightHit(ltrLen=" + ltrLen + ")=" + hit);
         if (layoutLen != hit.getInsertionIndex()) {
             throw new Error("Right hit failed at direction boundary.");
         }
 
         hit = layout.getNextLeftHit(layoutLen);
+        System.out.println("testLamAlef: getNextLeftHit(layoutLen=" + layoutLen + ")=" + hit);
         if (hit.getInsertionIndex() != ltrLen) {
             throw new Error("Left hit failed at end of text.");
         }

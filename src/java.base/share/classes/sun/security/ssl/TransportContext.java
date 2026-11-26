@@ -261,7 +261,7 @@ final class TransportContext implements ConnectionContext {
                 (handshakeContext instanceof PostHandshakeContext);
     }
 
-    // Note: Don't use this method for close_nofity, use closeNotify() instead.
+    // Note: Don't use this method for close_notify, use closeNotify() instead.
     void warning(Alert alert) {
         // For initial handshaking, don't send a warning alert message to peer
         // if handshaker has not started.

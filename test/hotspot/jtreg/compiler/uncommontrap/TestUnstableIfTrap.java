@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8030976 8059226
- * @requires !vm.graal.enabled & (vm.opt.StressUnstableIfTraps == null | !vm.opt.StressUnstableIfTraps)
+ * @requires (vm.opt.StressUnstableIfTraps == null | !vm.opt.StressUnstableIfTraps)
  * @library /test/lib /
  * @library /testlibrary/asm
  * @modules java.base/jdk.internal.misc
@@ -57,6 +57,55 @@
  *                   -XX:+WhiteBoxAPI -XX:+LogCompilation
  *                   -XX:CompileCommand=compileonly,UnstableIfExecutable.test
  *                   -XX:LogFile=never_taken_fired.xml
+ *                   compiler.uncommontrap.TestUnstableIfTrap NEVER_TAKEN true
+ * @run driver compiler.testlibrary.uncommontrap.Verifier always_taken_not_fired.xml
+ *                                                        always_taken_fired.xml
+ *                                                        never_taken_not_fired.xml
+ *                                                        never_taken_fired.xml
+ */
+
+/*
+ * @test
+ * @bug 8030976 8059226
+ * @requires (vm.opt.StressUnstableIfTraps == null | !vm.opt.StressUnstableIfTraps)
+ * @library /test/lib /
+ * @library /testlibrary/asm
+ * @modules java.base/jdk.internal.misc
+ *          java.compiler
+ *          java.management
+ *          jdk.internal.jvmstat/sun.jvmstat.monitor
+ *
+ * @requires os.arch == "aarch64"
+ * @requires vm.compiler2.enabled
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbatch -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+UnlockExperimentalVMOptions -XX:PerMethodTrapLimit=100
+ *                   -XX:+WhiteBoxAPI -XX:+LogCompilation
+ *                   -XX:CompileCommand=compileonly,UnstableIfExecutable.test
+ *                   -XX:LogFile=always_taken_not_fired.xml
+ *                   -XX:+PreferCallBasedUncommonTraps
+ *                   compiler.uncommontrap.TestUnstableIfTrap ALWAYS_TAKEN false
+ * @run main/othervm -Xbatch -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+UnlockExperimentalVMOptions -XX:PerMethodTrapLimit=100
+ *                   -XX:+WhiteBoxAPI -XX:+LogCompilation
+ *                   -XX:CompileCommand=compileonly,UnstableIfExecutable.test
+ *                   -XX:LogFile=always_taken_fired.xml
+ *                   -XX:+PreferCallBasedUncommonTraps
+ *                   compiler.uncommontrap.TestUnstableIfTrap ALWAYS_TAKEN true
+ * @run main/othervm -Xbatch -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+UnlockExperimentalVMOptions -XX:PerMethodTrapLimit=100
+ *                   -XX:+WhiteBoxAPI -XX:+LogCompilation
+ *                   -XX:CompileCommand=compileonly,UnstableIfExecutable.test
+ *                   -XX:LogFile=never_taken_not_fired.xml
+ *                   -XX:+PreferCallBasedUncommonTraps
+ *                   compiler.uncommontrap.TestUnstableIfTrap NEVER_TAKEN false
+ * @run main/othervm -Xbatch -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+UnlockExperimentalVMOptions -XX:PerMethodTrapLimit=100
+ *                   -XX:+WhiteBoxAPI -XX:+LogCompilation
+ *                   -XX:CompileCommand=compileonly,UnstableIfExecutable.test
+ *                   -XX:LogFile=never_taken_fired.xml
+ *                   -XX:+PreferCallBasedUncommonTraps
  *                   compiler.uncommontrap.TestUnstableIfTrap NEVER_TAKEN true
  * @run driver compiler.testlibrary.uncommontrap.Verifier always_taken_not_fired.xml
  *                                                        always_taken_fired.xml
@@ -210,7 +259,7 @@ public class TestUnstableIfTrap {
         boolean isMethodCompiledAtMaxTier
                 = WB.getMethodCompilationLevel(m) == MAX_TIER;
 
-        return Platform.isServer() && !Platform.isEmulatedClient() && isMethodCompiled
+        return Platform.isServer() && isMethodCompiled
                 && (!isTiered || isMethodCompiledAtMaxTier);
     }
 

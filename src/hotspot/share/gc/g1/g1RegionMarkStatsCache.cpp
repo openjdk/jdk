@@ -38,7 +38,7 @@ G1RegionMarkStatsCache::G1RegionMarkStatsCache(G1RegionMarkStats* target, uint n
 }
 
 G1RegionMarkStatsCache::~G1RegionMarkStatsCache() {
-  FREE_C_HEAP_ARRAY(G1RegionMarkStatsCacheEntry, _cache);
+  FREE_C_HEAP_ARRAY(_cache);
 }
 
 void G1RegionMarkStatsCache::add_live_words(oop obj) {

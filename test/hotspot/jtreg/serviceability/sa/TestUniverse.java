@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,14 +109,6 @@ public class TestUniverse {
         if (!gc.isSelected()) {
             // Not selected
             return false;
-        }
-
-        if (Compiler.isGraalEnabled()) {
-            if (gc == GC.Epsilon || gc == GC.Z || gc == GC.Shenandoah) {
-                // Not supported
-                System.out.println ("Skipped testing of " + gc + "GC, not supported by Graal");
-                return false;
-            }
         }
 
         // Selected and supported

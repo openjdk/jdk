@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,12 +36,12 @@ public final class MethodImpl
         extends AbstractElement
         implements MethodModel, MethodInfo, Util.Writable {
 
-    private final ClassReader reader;
+    private final ClassReaderImpl reader;
     private final int startPos, endPos, attributesPos;
     private List<Attribute<?>> attributes;
     private int[] parameterSlots;
 
-    public MethodImpl(ClassReader reader, int startPos, int endPos, int attrStart) {
+    public MethodImpl(ClassReaderImpl reader, int startPos, int endPos, int attrStart) {
         this.reader = reader;
         this.startPos = startPos;
         this.endPos = endPos;
@@ -50,7 +50,7 @@ public final class MethodImpl
 
     @Override
     public AccessFlags flags() {
-        return new AccessFlagsImpl(AccessFlag.Location.METHOD, reader.readU2(startPos));
+        return new AccessFlagsImpl(AccessFlag.Location.METHOD, reader.readU2(startPos), reader.classFileVersion());
     }
 
     @Override
@@ -98,7 +98,7 @@ public final class MethodImpl
 
     @Override
     public void writeTo(BufWriterImpl buf) {
-        if (buf.canWriteDirect(reader)) {
+        if (Util.canSkipMethodInflation(reader, this, buf)) {
             reader.copyBytesTo(buf, startPos, endPos - startPos);
         }
         else {

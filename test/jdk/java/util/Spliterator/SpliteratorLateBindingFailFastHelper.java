@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -182,26 +182,26 @@ class SpliteratorLateBindingFailFastHelper {
         }
     }
 
-    static class AbstractRandomAccessListImpl extends AbstractList<Integer> implements RandomAccess {
-        List<Integer> l;
+    static class AbstractRandomAccessListImpl<T> extends AbstractList<T> implements RandomAccess {
+        List<T> l;
 
-        AbstractRandomAccessListImpl(Collection<Integer> c) {
+        AbstractRandomAccessListImpl(Collection<T> c) {
             this.l = new ArrayList<>(c);
         }
 
         @Override
-        public boolean add(Integer integer) {
+        public boolean add(T value) {
             modCount++;
-            return l.add(integer);
+            return l.add(value);
         }
 
         @Override
-        public Iterator<Integer> iterator() {
+        public Iterator<T> iterator() {
             return l.iterator();
         }
 
         @Override
-        public Integer get(int index) {
+        public T get(int index) {
             return l.get(index);
         }
 
@@ -217,7 +217,7 @@ class SpliteratorLateBindingFailFastHelper {
         }
 
         @Override
-        public List<Integer> subList(int fromIndex, int toIndex) {
+        public List<T> subList(int fromIndex, int toIndex) {
             return l.subList(fromIndex, toIndex);
         }
     }

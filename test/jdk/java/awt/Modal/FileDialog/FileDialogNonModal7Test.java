@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,10 +32,12 @@ import java.awt.Dialog;
  * @library ../helpers /lib/client/
  * @library /test/lib
  * @build ExtendedRobot
+ * @build jdk.test.lib.Asserts
  * @build Flag
  * @build TestDialog
  * @build TestFrame
  * @build TestWindow
+ * @requires (os.family != "mac")
  * @run main FileDialogNonModal7Test
  */
 

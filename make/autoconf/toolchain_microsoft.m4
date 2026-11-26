@@ -217,10 +217,12 @@ AC_DEFUN([TOOLCHAIN_FIND_VISUAL_STUDIO_BAT_FILE],
     TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT([$TARGET_CPU], [$VS_VERSION],
         [$PROGRAMFILES_X86/$VS_INSTALL_DIR], [well-known name])
   fi
+  # Derive system drive root from CMD (which is at <drive>/windows/system32/cmd.exe)
+  WINSYSDRIVE_ROOT="$(dirname "$(dirname "$(dirname "$CMD")")")"
   TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT([$TARGET_CPU], [$VS_VERSION],
-      [c:/program files/$VS_INSTALL_DIR], [well-known name])
+      [$WINSYSDRIVE_ROOT/program files/$VS_INSTALL_DIR], [well-known name])
   TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT([$TARGET_CPU], [$VS_VERSION],
-      [c:/program files (x86)/$VS_INSTALL_DIR], [well-known name])
+      [$WINSYSDRIVE_ROOT/program files (x86)/$VS_INSTALL_DIR], [well-known name])
   if test "x$SDK_INSTALL_DIR" != x; then
     if test "x$ProgramW6432" != x; then
       TOOLCHAIN_CHECK_POSSIBLE_WIN_SDK_ROOT([$TARGET_CPU], [$VS_VERSION],
@@ -235,9 +237,9 @@ AC_DEFUN([TOOLCHAIN_FIND_VISUAL_STUDIO_BAT_FILE],
           [$PROGRAMFILES/$SDK_INSTALL_DIR], [well-known name])
     fi
     TOOLCHAIN_CHECK_POSSIBLE_WIN_SDK_ROOT([$TARGET_CPU], [$VS_VERSION],
-        [c:/program files/$SDK_INSTALL_DIR], [well-known name])
+        [$WINSYSDRIVE_ROOT/program files/$SDK_INSTALL_DIR], [well-known name])
     TOOLCHAIN_CHECK_POSSIBLE_WIN_SDK_ROOT([$TARGET_CPU], [$VS_VERSION],
-        [c:/program files (x86)/$SDK_INSTALL_DIR], [well-known name])
+        [$WINSYSDRIVE_ROOT/program files (x86)/$SDK_INSTALL_DIR], [well-known name])
   fi
 
   VCVARS_VER=auto
@@ -338,7 +340,7 @@ AC_DEFUN([TOOLCHAIN_EXTRACT_VISUAL_STUDIO_ENV],
   OLDPATH="$PATH"
   # Make sure we only capture additions to PATH needed by VS.
   # Clear out path, but need system dir present for vsvars cmd file to be able to run
-  export PATH=$WINENV_PREFIX/c/windows/system32
+  export PATH="$(dirname "$CMD")"
   # The "| cat" is to stop SetEnv.Cmd to mess with system colors on some systems
   # We can't pass -vcvars_ver=$VCVARS_VER here because cmd.exe eats all '='
   # in bat file arguments. :-(

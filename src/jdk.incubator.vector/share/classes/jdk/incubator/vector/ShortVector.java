@@ -49,7 +49,8 @@ import static jdk.incubator.vector.VectorOperators.*;
  * {@code short} values.
  */
 @SuppressWarnings("cast")  // warning: redundant cast
-public abstract class ShortVector extends AbstractVector<Short> {
+public abstract sealed class ShortVector extends AbstractVector<Short>
+         permits ShortVector64, ShortVector128, ShortVector256, ShortVector512, ShortVectorMax {
 
     ShortVector(short[] vec) {
         super(vec);
@@ -2020,6 +2021,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
                 m = compare(LT, (short) 0);
             }
             else {
+                int opc = opCode(op);
                 throw new AssertionError(op);
             }
             return maskType.cast(m);
@@ -2051,6 +2053,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
                 m = compare(LT, (short) 0, m);
             }
             else {
+                int opc = opCode(op);
                 throw new AssertionError(op);
             }
             return maskType.cast(m);
@@ -2312,15 +2315,20 @@ public abstract class ShortVector extends AbstractVector<Short> {
     /*package-private*/
     final
     @ForceInline
-    ShortVector sliceTemplate(int origin, Vector<Short> v1) {
+    <V extends Vector<Short>>
+    ShortVector sliceTemplate(int origin, V v1) {
         ShortVector that = (ShortVector) v1;
         that.check(this);
         Objects.checkIndex(origin, length() + 1);
-        ShortVector iotaVector = (ShortVector) iotaShuffle().toBitsVector();
-        ShortVector filter = broadcast((short)(length() - origin));
-        VectorMask<Short> blendMask = iotaVector.compare(VectorOperators.LT, filter);
-        AbstractShuffle<Short> iota = iotaShuffle(origin, 1, true);
-        return that.rearrange(iota).blend(this.rearrange(iota), blendMask);
+        return (ShortVector)VectorSupport.sliceOp(origin, getClass(), LANE_TYPE_ORDINAL, length(), this, that,
+            (index, vec1, vec2) ->  {
+                ShortVector iotaVector = (ShortVector) vec1.iotaShuffle().toBitsVector();
+                ShortVector filter = vec1.broadcast((short)(vec1.length() - index));
+                VectorMask<Short> blendMask = iotaVector.compare(VectorOperators.LT, filter);
+                AbstractShuffle<Short> iota = vec1.iotaShuffle(index, 1, true);
+                return vec2.rearrange(iota).blend(vec1.rearrange(iota), blendMask);
+            }
+        );
     }
 
     /**
@@ -2347,11 +2355,16 @@ public abstract class ShortVector extends AbstractVector<Short> {
     @ForceInline
     ShortVector sliceTemplate(int origin) {
         Objects.checkIndex(origin, length() + 1);
-        ShortVector iotaVector = (ShortVector) iotaShuffle().toBitsVector();
-        ShortVector filter = broadcast((short)(length() - origin));
-        VectorMask<Short> blendMask = iotaVector.compare(VectorOperators.LT, filter);
-        AbstractShuffle<Short> iota = iotaShuffle(origin, 1, true);
-        return vspecies().zero().blend(this.rearrange(iota), blendMask);
+        ShortVector that = (ShortVector) vspecies().zero();
+        return (ShortVector)VectorSupport.sliceOp(origin, getClass(), LANE_TYPE_ORDINAL, length(), this, that,
+            (index, vec1, vec2) ->  {
+                ShortVector iotaVector = (ShortVector) vec1.iotaShuffle().toBitsVector();
+                ShortVector filter = vec1.broadcast((short)(vec1.length() - index));
+                VectorMask<Short> blendMask = iotaVector.compare(VectorOperators.LT, filter);
+                AbstractShuffle<Short> iota = vec1.iotaShuffle(index, 1, true);
+                return vec2.blend(vec1.rearrange(iota), blendMask);
+            }
+        );
     }
 
     /**
@@ -2369,6 +2382,9 @@ public abstract class ShortVector extends AbstractVector<Short> {
         ShortVector that = (ShortVector) w;
         that.check(this);
         Objects.checkIndex(origin, length() + 1);
+        if ((-2 & part) != 0) {
+            throw wrongPartForSlice(part);
+        }
         ShortVector iotaVector = (ShortVector) iotaShuffle().toBitsVector();
         ShortVector filter = broadcast((short)origin);
         VectorMask<Short> blendMask = iotaVector.compare((part == 0) ? VectorOperators.GE : VectorOperators.LT, filter);
@@ -4078,18 +4094,6 @@ public abstract class ShortVector extends AbstractVector<Short> {
         return this;
     }
 
-    @Override
-    @ForceInline
-    final
-    ShortVector swapIfNeeded(AbstractSpecies<?> srcSpecies) {
-        int subLanesPerSrc = subLanesToSwap(srcSpecies);
-        if (subLanesPerSrc < 0) {
-            return this;
-        }
-        VectorShuffle<Short> shuffle = normalizeSubLanesForSpecies(this.vspecies(), subLanesPerSrc);
-        return (ShortVector) this.rearrange(shuffle);
-    }
-
     static final int ARRAY_SHIFT =
         31 - Integer.numberOfLeadingZeros(Unsafe.ARRAY_SHORT_INDEX_SCALE);
     static final long ARRAY_BASE =
@@ -4145,22 +4149,14 @@ public abstract class ShortVector extends AbstractVector<Short> {
 
     /**
      * {@inheritDoc} <!--workaround-->
-     *
-     * @implNote This method always throws
-     * {@code UnsupportedOperationException}, because there is no floating
-     * point type of the same size as {@code short}.  The return type
-     * of this method is arbitrarily designated as
-     * {@code Vector<?>}.  Future versions of this API may change the return
-     * type if additional floating point types become available.
      */
     @ForceInline
     @Override
     public final
-    Vector<?>
+    Float16Vector
     viewAsFloatingLanes() {
         LaneType flt = LaneType.SHORT.asFloating();
-        // asFloating() will throw UnsupportedOperationException for the unsupported type short
-        throw new AssertionError("Cannot reach here");
+        return (Float16Vector) asVectorRaw(flt);
     }
 
     // ================================================

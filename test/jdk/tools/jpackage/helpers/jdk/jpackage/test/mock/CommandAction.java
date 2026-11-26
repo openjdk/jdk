@@ -60,6 +60,36 @@ public interface CommandAction {
         public MockIllegalStateException unexpectedArguments() {
             return new MockIllegalStateException(String.format("Unexpected arguments: %s", args));
         }
+
+        public Context shift(int count) {
+            if (count < 0) {
+                throw new IllegalArgumentException();
+            } else if (count == 0) {
+                return this;
+            } else {
+                return new Context(out, err, args.subList(Integer.min(count, args.size()), args.size()));
+            }
+        }
+
+        public Context shift() {
+            return shift(1);
+        }
+
+        public void printlnOut(Object obj) {
+            out.println(obj);
+        }
+
+        public void printlnOut(String str) {
+            out.println(str);
+        }
+
+        public void printlnErr(Object obj) {
+            err.println(obj);
+        }
+
+        public void printlnErr(String str) {
+            err.println(str);
+        }
     }
 
     /**

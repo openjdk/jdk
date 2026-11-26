@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -201,7 +201,7 @@ public final class XEmbedChildProxyPeer implements ComponentPeer, XEventDispatch
     public void                 updateCursorImmediately() {}
 
     void postEvent(AWTEvent event) {
-        XToolkit.postEvent(XToolkit.targetToAppContext(proxy), event);
+        XToolkit.postEvent(event);
     }
 
     boolean simulateMotifRequestFocus(Component lightweightChild, boolean temporary,
@@ -323,9 +323,9 @@ public final class XEmbedChildProxyPeer implements ComponentPeer, XEventDispatch
     }
 
     void childResized() {
-        XToolkit.postEvent(XToolkit.targetToAppContext(proxy), new ComponentEvent(proxy, ComponentEvent.COMPONENT_RESIZED));
+        XToolkit.postEvent(new ComponentEvent(proxy, ComponentEvent.COMPONENT_RESIZED));
         container.childResized(proxy);
-//         XToolkit.postEvent(XToolkit.targetToAppContext(proxy), new InvocationEvent(proxy, new Runnable() {
+//         XToolkit.postEvent(new InvocationEvent(proxy, new Runnable() {
 //                 public void run() {
 //                     getTopLevel(proxy).invalidate();
 //                     getTopLevel(proxy).pack();

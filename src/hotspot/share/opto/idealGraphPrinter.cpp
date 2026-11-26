@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,15 +40,59 @@ class PrintProperties
 {
 private:
   IdealGraphPrinter* _printer;
+  void print_alias_properties(Node* node);
+  void print_escape_properties(Node* node);
 
 public:
   PrintProperties(IdealGraphPrinter* printer) : _printer(printer) {}
   void print_node_properties(Node* node);
+  void print_node_details(Node* node);
   void print_lrg_properties(const LRG& lrg, const char* buffer);
   void print_property(int flag, const char* name);
   void print_property(int flag, const char* name, const char* val);
   void print_property(int flag, const char* name, int val);
 };
+
+void PrintProperties::print_alias_properties(Node* node) {
+  const TypePtr* adr_type = node->in_adr_type();
+  Compile* C = _printer->C;
+  if (adr_type != nullptr && C->have_alias_type(adr_type)) {
+    Compile::AliasType* at = C->alias_type(adr_type);
+    if (at != nullptr) {
+      print_property(true, "alias_index", at->index());
+      // The value of at->field(), if present, is already dumped in the
+      // "source"/"destination" properties.
+      const Type* element = at->element();
+      if (element != nullptr) {
+        stringStream element_stream;
+        element->dump_on(&element_stream);
+        print_property(true, "alias_element", element_stream.freeze());
+      }
+      print_property(at->is_rewritable(), "alias_is_rewritable");
+      print_property(at->is_volatile(), "alias_is_volatile");
+      print_property(at->general_index() != at->index(), "alias_general_index", at->general_index());
+    }
+  }
+}
+
+void PrintProperties::print_escape_properties(Node* node) {
+  // Dump escape analysis state for relevant nodes.
+  if (node->is_Allocate()) {
+    AllocateNode* alloc = node->as_Allocate();
+    print_property(alloc->_is_scalar_replaceable, "is_scalar_replaceable");
+    print_property(alloc->_is_non_escaping, "is_non_escaping");
+    print_property(alloc->does_not_escape_thread(), "does_not_escape_thread");
+  }
+  if (node->is_SafePoint() && node->as_SafePoint()->has_ea_local_in_scope()) {
+    print_property(true, "has_ea_local_in_scope");
+  }
+  if (node->is_CallJava() && node->as_CallJava()->arg_escape()) {
+    print_property(true, "arg_escape");
+  }
+  if (node->is_Initialize() && node->as_Initialize()->does_not_escape()) {
+    print_property(true, "does_not_escape");
+  }
+}
 
 void PrintProperties::print_node_properties(Node* node) {
   const jushort flags = node->flags();
@@ -73,6 +117,23 @@ void PrintProperties::print_node_properties(Node* node) {
       print_property(true, "old_node_idx", old->_idx);
     }
   }
+}
+
+void PrintProperties::print_node_details(Node* node) {
+  print_alias_properties(node);
+
+  print_escape_properties(node);
+
+  if (node->is_Allocate()) {
+    ciKlass* alloc_klass = node->as_Allocate()->allocation_klass();
+    if (alloc_klass != nullptr) {
+      stringStream stream;
+      alloc_klass->print_name_on(&stream);
+      print_property(true, "allocation_class", stream.freeze());
+    }
+  }
+  print_property(node->is_block_proj() != nullptr, "is_block_proj");
+  print_property(node->is_block_start(), "is_block_start");
 }
 
 void PrintProperties::print_lrg_properties(const LRG &lrg, const char *buffer) {
@@ -550,10 +611,15 @@ void IdealGraphPrinter::visit_node(Node* n, bool edges) {
         }
       }
     }
-    if (n->adr_type() != nullptr) {
+    if (const TypePtr* out = n->out_adr_type(); out != nullptr) {
       stringStream adr_type_stream;
-      n->adr_type()->dump_on(&adr_type_stream);
-      print_prop("adr_type", adr_type_stream.freeze());
+      out->dump_on(&adr_type_stream);
+      print_prop("out_adr_type", adr_type_stream.freeze());
+    }
+    if (const TypePtr* in = n->in_adr_type(); in != nullptr) {
+      stringStream adr_type_stream;
+      in->dump_on(&adr_type_stream);
+      print_prop("in_adr_type", adr_type_stream.freeze());
     }
 
     if (C->cfg() != nullptr) {
@@ -644,68 +710,13 @@ void IdealGraphPrinter::visit_node(Node* n, bool edges) {
       }
       t->dump_on(&s2);
     } else if( t == Type::MEMORY ) {
-      s2.print("  Memory:");
-      MemNode::dump_adr_type(node->adr_type(), &s2);
+      s2.print("  Memory");
     }
 
     assert(s2.size() < sizeof(buffer), "size in range");
     print_prop("dump_spec", buffer);
 
-    const TypePtr* adr_type = node->adr_type();
-    if (adr_type != nullptr && C->have_alias_type(adr_type)) {
-      Compile::AliasType* at = C->alias_type(adr_type);
-      if (at != nullptr) {
-        print_prop("alias_index", at->index());
-        // The value of at->field(), if present, is already dumped in the
-        // "source"/"destination" properties.
-        const Type* element = at->element();
-        if (element != nullptr) {
-          stringStream element_stream;
-          element->dump_on(&element_stream);
-          print_prop("alias_element", element_stream.freeze());
-        }
-        if (at->is_rewritable()) {
-          print_prop("alias_is_rewritable", "true");
-        }
-        if (at->is_volatile()) {
-          print_prop("alias_is_volatile", "true");
-        }
-        if (at->general_index() != at->index()) {
-          print_prop("alias_general_index", at->general_index());
-        }
-      }
-    }
-
-    if (node->is_block_proj()) {
-      print_prop("is_block_proj", "true");
-    }
-
-    if (node->is_block_start()) {
-      print_prop("is_block_start", "true");
-    }
-
-    // Dump escape analysis state for relevant nodes.
-    if (node->is_Allocate()) {
-      AllocateNode* alloc = node->as_Allocate();
-      if (alloc->_is_scalar_replaceable) {
-        print_prop("is_scalar_replaceable", "true");
-      }
-      if (alloc->_is_non_escaping) {
-        print_prop("is_non_escaping", "true");
-      }
-      if (alloc->does_not_escape_thread()) {
-        print_prop("does_not_escape_thread", "true");
-      }
-    }
-    if (node->is_SafePoint() && node->as_SafePoint()->has_ea_local_in_scope()) {
-      print_prop("has_ea_local_in_scope", "true");
-    }
-    if (node->is_CallJava() && node->as_CallJava()->arg_escape()) {
-      print_prop("arg_escape", "true");
-    }
-    if (node->is_Initialize() && node->as_Initialize()->does_not_escape()) {
-      print_prop("does_not_escape", "true");
-    }
+    print_node.print_node_details(node);
 
     const char *short_name = "short_name";
     if (strcmp(node->Name(), "Parm") == 0 && node->as_Proj()->_con >= TypeFunc::Parms) {
@@ -899,7 +910,7 @@ void IdealGraphPrinter::print_field(const Node* node) {
 }
 
 ciField* IdealGraphPrinter::get_field(const Node* node) {
-  const TypePtr* adr_type = node->adr_type();
+  const TypePtr* adr_type = node->in_adr_type();
   Compile::AliasType* atp = nullptr;
   if (C->have_alias_type(adr_type)) {
     atp = C->alias_type(adr_type);
@@ -922,7 +933,7 @@ ciField* IdealGraphPrinter::find_source_field_of_array_access(const Node* node, 
   }
 
   do {
-    if (node->adr_type() != nullptr && node->adr_type()->isa_aryptr()) {
+    if (const TypePtr* in = node->in_adr_type(); in != nullptr && in->isa_aryptr()) {
       // Only process array accesses. Pattern match to find actual field source access.
       node = get_load_node(node);
       if (node != nullptr) {

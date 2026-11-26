@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,6 +67,8 @@ class FinalImageRecipes {
   // Called when dumping final image
   void apply_recipes_impl(TRAPS);
   void load_all_classes(TRAPS);
+  void link_all_classes(TRAPS);
+  void initialize_all_safe_classes(TRAPS);
   void apply_recipes_for_constantpool(JavaThread* current);
 
 public:

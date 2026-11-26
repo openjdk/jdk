@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,7 @@ public class JFRDynamicCDS extends DynamicArchiveTestBase {
             .assertNormalExit(output -> {
                 output.shouldHaveExitValue(0)
                       .shouldMatch(".class.load. jdk.jfr.events.*source:.*jrt:/jdk.jfr")
-                      .shouldContain("[class,load] JFRDynamicCDSApp source: shared objects file (top)");
+                      .shouldMatch("\\[class,load *\\] JFRDynamicCDSApp source: shared objects file \\(top\\)");
             });
     }
 }

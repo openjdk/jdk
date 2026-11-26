@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ public final class CCheckboxMenuItem extends CMenuItem implements CheckboxMenuIt
             }
         });
         ItemEvent event = new ItemEvent(target, ItemEvent.ITEM_STATE_CHANGED, target.getLabel(), state ? ItemEvent.SELECTED : ItemEvent.DESELECTED);
-        SunToolkit.postEvent(SunToolkit.targetToAppContext(getTarget()), event);
+        SunToolkit.postEvent(event);
     }
 
     public void setIsIndeterminate(final boolean indeterminate) {

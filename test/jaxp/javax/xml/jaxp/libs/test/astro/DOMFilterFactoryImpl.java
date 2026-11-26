@@ -22,12 +22,12 @@
  */
 package test.astro;
 
-import static jaxp.library.JAXPTestUtilities.filenameToURL;
 import static test.astro.AstroConstants.DECXSL;
 import static test.astro.AstroConstants.RAXSL;
 import static test.astro.AstroConstants.STYPEXSL;
 
 import java.io.IOException;
+import java.nio.file.Path;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -75,6 +75,7 @@ public class DOMFilterFactoryImpl extends SourceFilterFactory {
     private Document getStylesheetDOM(String xslfilename) throws SAXException, IOException, ParserConfigurationException {
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
         dbf.setNamespaceAware(true);
-        return dbf.newDocumentBuilder().parse(filenameToURL(xslfilename));
+        String xslUri = Path.of(xslfilename).toUri().toASCIIString();
+        return dbf.newDocumentBuilder().parse(xslUri);
     }
 }

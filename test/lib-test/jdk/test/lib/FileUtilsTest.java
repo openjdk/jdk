@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 8285452
+ * @bug 8285452 8355320
  * @summary Unit Test for a common Test API in jdk.test.lib.util.FileUtils
  * @library .. /test/lib
  * @run main FileUtilsTest
@@ -37,6 +37,7 @@ import jdk.test.lib.util.FileUtils;
 public class FileUtilsTest {
 
     public static void main(String[] args) throws Exception {
+        testCopyDirectoryToPWD();
         // Replace with same line
         test("a", 1, 1, null, "a", "a\n");
         // Replace with different line
@@ -120,5 +121,32 @@ public class FileUtilsTest {
             // output is null
         }
         Asserts.assertEQ(output, (expected != null) ? expected.replaceAll("\n", System.lineSeparator()) : null);
+    }
+
+    private static void testCopyDirectoryToPWD() throws IOException {
+        // Create a source directory with a file
+        Path srcDir = Files.createTempDirectory("copyDirTest");
+        Path srcFile = srcDir.resolve("file1.txt");
+        Files.writeString(srcFile, "hello");
+
+        try {
+            // Copy to PWD (current directory)
+            Path pwd = Paths.get(".");
+            System.out.println("copyDirectory(\"" + srcDir + "\", \"" + pwd + "\")");
+            FileUtils.copyDirectory(srcDir, pwd);
+
+            // Verify the file was copied
+            Path copiedFile = pwd.resolve(srcDir.relativize(srcFile));
+            Asserts.assertTrue(Files.exists(copiedFile), "Copied file should exist");
+
+            // Verify we can still write to PWD after copyDirectory
+            Path newFile = Paths.get("file2.txt");
+            Files.writeString(newFile, "world");
+            Asserts.assertTrue(Files.exists(newFile), "Should be able to create files in PWD after copyDirectory");
+            Files.delete(newFile);
+            Files.delete(copiedFile);
+        } finally {
+            FileUtils.deleteFileTreeUnchecked(srcDir);
+        }
     }
 }
