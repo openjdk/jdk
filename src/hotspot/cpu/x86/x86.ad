@@ -5595,7 +5595,7 @@ operand rFlagsRegU()
 operand rFlagsRegUCF() %{
   constraint(ALLOC_IN_RC(int_flags));
   match(RegFlags);
-  predicate(is_fp_compare(n) && (!UseAPX || !VM_Version::supports_avx10_2());
+  predicate(is_fp_compare(n) && (!UseAPX || !VM_Version::supports_avx10_2()));
 
   format %{ "RFLAGS_U_CF" %}
   interface(REG_INTER);
@@ -5604,7 +5604,7 @@ operand rFlagsRegUCF() %{
 operand rFlagsRegUCFE() %{
   constraint(ALLOC_IN_RC(int_flags));
   match(RegFlags);
-  predicate(is_fp_compare(n) && UseAPX && VM_Version::supports_avx10_2());
+  predicate(is_fp_compare(n) && UseAPX && VM_Version::supports_avx10_2()));
 
   format %{ "RFLAGS_U_CFE" %}
   interface(REG_INTER);
