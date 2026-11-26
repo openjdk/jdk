@@ -27,8 +27,6 @@
 #include "gc/parallel/psScavenge.hpp"
 #include "gc/parallel/psVMOperations.hpp"
 #include "gc/shared/gcLocker.hpp"
-#include "memory/universe.hpp"
-#include "runtime/java.hpp"
 #include "utilities/dtrace.hpp"
 
 // The following methods are used by the parallel scavenge collector
@@ -45,10 +43,6 @@ void VM_ParallelCollectForAllocation::doit() {
 
   GCCauseSetter gccs(heap, _gc_cause);
   _result = heap->satisfy_failed_allocation(_word_size, _is_tlab);
-
-  if (_result == nullptr && !_is_tlab && !is_vm_created()) {
-    Universe::heap()->oom_during_initialization();
-  }
 }
 
 static bool is_cause_full(GCCause::Cause cause) {

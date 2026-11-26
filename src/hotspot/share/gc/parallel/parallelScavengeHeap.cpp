@@ -295,7 +295,13 @@ HeapWord* ParallelScavengeHeap::mem_allocate(size_t size) {
   assert(!Heap_lock->owned_by_self(), "this thread should not own the Heap_lock");
 
   bool is_tlab = false;
-  return mem_allocate_work(size, is_tlab);
+  HeapWord* result = mem_allocate_work(size, is_tlab);
+
+  if (result == nullptr && !is_vm_created()) {
+    safepoint_and_oom_during_initialization();
+  }
+
+  return result;
 }
 
 HeapWord* ParallelScavengeHeap::mem_allocate_cas_noexpand(size_t size, bool is_tlab) {
@@ -386,9 +392,6 @@ HeapWord* ParallelScavengeHeap::mem_allocate_work(size_t size, bool is_tlab) {
     // Was the gc-overhead reached inside the safepoint? If so, this mutator
     // should return null as well for global consistency.
     if (_gc_overhead_counter >= GCOverheadLimitThreshold) {
-      if (!is_tlab && !is_vm_created()) {
-        oom_safepoint_during_initialization();
-      }
       return nullptr;
     }
 

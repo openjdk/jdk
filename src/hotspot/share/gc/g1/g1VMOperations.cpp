@@ -134,7 +134,7 @@ void VM_G1CollectForAllocation::doit() {
     _result = g1h->satisfy_failed_allocation(_node_index, _word_size);
 
     if (_result == nullptr && !is_vm_created()) {
-      Universe::heap()->oom_during_initialization();
+      g1h->oom_at_safepoint_during_initialization();
     }
   } else if (g1h->should_upgrade_to_full_gc()) {
     // There has been a request to perform a GC to free some space. We have no

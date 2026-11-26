@@ -23,9 +23,7 @@
  */
 
 #include "gc/serial/serialVMOperations.hpp"
-#include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gcLocker.hpp"
-#include "memory/universe.hpp"
 #include "runtime/java.hpp"
 
 void VM_SerialCollectForAllocation::doit() {
@@ -35,7 +33,7 @@ void VM_SerialCollectForAllocation::doit() {
   assert(_result == nullptr || gch->is_in_reserved(_result), "result not in heap");
 
   if (_result == nullptr && !_tlab && !is_vm_created()) {
-    Universe::heap()->oom_during_initialization();
+    gch->oom_at_safepoint_during_initialization();
   }
 }
 

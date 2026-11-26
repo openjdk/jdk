@@ -288,5 +288,5 @@ VM_CollectForAllocation::VM_CollectForAllocation(size_t word_size, uint gc_count
 }
 
 void VM_OOMDuringInitialization::doit() {
-  Universe::heap()->oom_during_initialization();
+  Universe::heap()->oom_at_safepoint_during_initialization();
 }

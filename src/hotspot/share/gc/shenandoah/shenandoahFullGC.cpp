@@ -132,7 +132,7 @@ void ShenandoahFullGC::op_full(GCCause::Cause cause) {
                                     cause == GCCause::_shenandoah_upgrade_to_full_gc;
 
     if (allocation_failure && !is_vm_created()) {
-      heap->oom_during_initialization();
+      heap->oom_at_safepoint_during_initialization();
     }
   }
 

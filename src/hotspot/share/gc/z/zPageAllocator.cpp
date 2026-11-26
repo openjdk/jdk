@@ -28,6 +28,7 @@
 #include "gc/z/zAddress.hpp"
 #include "gc/z/zAllocationFlags.hpp"
 #include "gc/z/zArray.inline.hpp"
+#include "gc/z/zCollectedHeap.hpp"
 #include "gc/z/zDriver.hpp"
 #include "gc/z/zFuture.inline.hpp"
 #include "gc/z/zGeneration.inline.hpp"
@@ -54,7 +55,6 @@
 #include "jfr/jfrEvents.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
-#include "memory/universe.hpp"
 #include "nmt/memTag.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/init.hpp"
@@ -2924,9 +2924,8 @@ void ZPageAllocator::notify_out_of_memory() {
     }
 
     if (!is_vm_created()) {
-      ZUnlocker<ZLock> unlocker(&_lock);
-      Universe::heap()->oom_safepoint_during_initialization();
-      ShouldNotReachHere();
+      ZUnlocker<ZLock> locker(&_lock);
+      ZCollectedHeap::heap()->safepoint_and_oom_during_initialization();
     }
 
     // Out of memory, dequeue and fail allocation request
