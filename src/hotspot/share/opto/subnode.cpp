@@ -1775,18 +1775,27 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
   }
 
-  // Change "bool lt/le (cmpu (add x -1) x)" into "bool ne (cmp x 0)"
-  // and "bool gt/ge (cmpu (add x -1) x)" into "bool eq (cmp x 0)"
-  // for both int and long types.
+  // Change "bool lt/le (cmpu (add x offset) x)" into "bool ge (cmpu x -offset)"
+  // and    "bool gt/ge (cmpu (add x offset) x)" into "bool lt (cmpu x -offset)"
+  // where offset is a non-zero constant, for both int and long types.
+  // For offset == -1, use "bool ne/eq (cmp x 0)" instead.
   if (cop == Op_CmpU || cop == Op_CmpUL) {
     const BasicType bt = cop == Op_CmpU ? T_INT : T_LONG;
-    if (cmp1_op == Op_Add(bt) &&
-        phase->type(cmp1->in(2)) == TypeInteger::minus_1(bt) &&
-        cmp1->in(1) == cmp2 &&
+    if (cmp1_op == Op_Add(bt) && cmp1->in(1) == cmp2 &&
         (_test.is_less() || _test.is_greater())) {
-      Node* zero = phase->makecon(TypeInteger::zero(bt));
-      Node* ncmp = phase->transform(CmpNode::make(cmp2, zero, bt));
-      return new BoolNode(ncmp, _test.is_less() ? BoolTest::ne : BoolTest::eq);
+      const TypeInteger* offset_type = phase->type(cmp1->in(2))->isa_integer(bt);
+      if (offset_type != nullptr && offset_type->is_con() && offset_type->get_con_as_long(bt) != 0) {
+        const jlong offset = offset_type->get_con_as_long(bt);
+        const jlong limit = java_negate(offset, bt);
+        if (limit == 1) {
+          Node* zero = phase->integercon(0, bt);
+          Node* ncmp = phase->transform(CmpNode::make(cmp2, zero, bt));
+          return new BoolNode(ncmp, _test.is_less() ? BoolTest::ne : BoolTest::eq);
+        }
+        Node* limit_con = phase->integercon(limit, bt);
+        Node* ncmp = phase->transform(CmpNode::make(cmp2, limit_con, bt, true));
+        return new BoolNode(ncmp, _test.is_less() ? BoolTest::ge : BoolTest::lt);
+      }
     }
   }
 

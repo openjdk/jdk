@@ -311,6 +311,314 @@ public class TestUnsignedComparison {
     }
 
     @Test
+    @IR(failOn = {ADD_I, SUB_I})
+    @IR(counts = {CMP_U, "1"})
+    public int testIntSubThreeLT(int x) {
+        return Integer.compareUnsigned(x - 3, x) < 0 ? TRUE_RESULT : FALSE_RESULT;
+    }
+
+    @Test
+    @IR(failOn = {ADD_I, SUB_I})
+    @IR(counts = {CMP_U, "1"})
+    public int testIntSubThreeLE(int x) {
+        return Integer.compareUnsigned(x - 3, x) <= 0 ? TRUE_RESULT : FALSE_RESULT;
+    }
+
+    @Test
+    @IR(failOn = {ADD_I, SUB_I})
+    @IR(counts = {CMP_U, "1"})
+    public int testIntSubThreeGT(int x) {
+        return Integer.compareUnsigned(x - 3, x) > 0 ? TRUE_RESULT : FALSE_RESULT;
+    }
+
+    @Test
+    @IR(failOn = {ADD_I, SUB_I})
+    @IR(counts = {CMP_U, "1"})
+    public int testIntSubThreeGE(int x) {
+        return Integer.compareUnsigned(x - 3, x) >= 0 ? TRUE_RESULT : FALSE_RESULT;
+    }
+
+    @Test
+    @IR(failOn = {ADD_I, SUB_I})
+    @IR(counts = {CMP_U, "1"})
+    public int testIntSubNegativeThreeLT(int x) {
+        return Integer.compareUnsigned(x - (-3), x) < 0 ? TRUE_RESULT : FALSE_RESULT;
+    }
+
+    @Test
+    @IR(failOn = {ADD_I, SUB_I})
+    @IR(counts = {CMP_U, "1"})
+    public int testIntSubNegativeThreeLE(int x) {
+        return Integer.compareUnsigned(x - (-3), x) <= 0 ? TRUE_RESULT : FALSE_RESULT;
+    }
+
+    @Test
+    @IR(failOn = {ADD_I, SUB_I})
+    @IR(counts = {CMP_U, "1"})
+    public int testIntSubNegativeThreeGT(int x) {
+        return Integer.compareUnsigned(x - (-3), x) > 0 ? TRUE_RESULT : FALSE_RESULT;
+    }
+
+    @Test
+    @IR(failOn = {ADD_I, SUB_I})
+    @IR(counts = {CMP_U, "1"})
+    public int testIntSubNegativeThreeGE(int x) {
+        return Integer.compareUnsigned(x - (-3), x) >= 0 ? TRUE_RESULT : FALSE_RESULT;
+    }
+
+    @Test
+    @IR(failOn = {ADD_I, SUB_I})
+    @IR(counts = {CMP_U, "1"})
+    public int testIntSubMinLT(int x) {
+        return Integer.compareUnsigned(x - INT_MIN, x) < 0 ? TRUE_RESULT : FALSE_RESULT;
+    }
+
+    @Test
+    @IR(failOn = {ADD_I, SUB_I})
+    @IR(counts = {CMP_U, "1"})
+    public int testIntSubMinLE(int x) {
+        return Integer.compareUnsigned(x - INT_MIN, x) <= 0 ? TRUE_RESULT : FALSE_RESULT;
+    }
+
+    @Test
+    @IR(failOn = {ADD_I, SUB_I})
+    @IR(counts = {CMP_U, "1"})
+    public int testIntSubMinGT(int x) {
+        return Integer.compareUnsigned(x - INT_MIN, x) > 0 ? TRUE_RESULT : FALSE_RESULT;
+    }
+
+    @Test
+    @IR(failOn = {ADD_I, SUB_I})
+    @IR(counts = {CMP_U, "1"})
+    public int testIntSubMinGE(int x) {
+        return Integer.compareUnsigned(x - INT_MIN, x) >= 0 ? TRUE_RESULT : FALSE_RESULT;
+    }
+
+    @Test
+    @IR(failOn = {ADD_I, SUB_I})
+    @IR(counts = {CMP_U, "1"})
+    public int testIntSubMaxLT(int x) {
+        return Integer.compareUnsigned(x - INT_MAX, x) < 0 ? TRUE_RESULT : FALSE_RESULT;
+    }
+
+    @Test
+    @IR(failOn = {ADD_I, SUB_I})
+    @IR(counts = {CMP_U, "1"})
+    public int testIntSubMaxLE(int x) {
+        return Integer.compareUnsigned(x - INT_MAX, x) <= 0 ? TRUE_RESULT : FALSE_RESULT;
+    }
+
+    @Test
+    @IR(failOn = {ADD_I, SUB_I})
+    @IR(counts = {CMP_U, "1"})
+    public int testIntSubMaxGT(int x) {
+        return Integer.compareUnsigned(x - INT_MAX, x) > 0 ? TRUE_RESULT : FALSE_RESULT;
+    }
+
+    @Test
+    @IR(failOn = {ADD_I, SUB_I})
+    @IR(counts = {CMP_U, "1"})
+    public int testIntSubMaxGE(int x) {
+        return Integer.compareUnsigned(x - INT_MAX, x) >= 0 ? TRUE_RESULT : FALSE_RESULT;
+    }
+
+    @Run(test = {
+        "testIntSubThreeLT", "testIntSubThreeLE", "testIntSubThreeGT", "testIntSubThreeGE",
+        "testIntSubNegativeThreeLT", "testIntSubNegativeThreeLE", "testIntSubNegativeThreeGT", "testIntSubNegativeThreeGE",
+        "testIntSubMinLT", "testIntSubMinLE", "testIntSubMinGT", "testIntSubMinGE",
+        "testIntSubMaxLT", "testIntSubMaxLE", "testIntSubMaxGT", "testIntSubMaxGE"
+    })
+    public void checkTestIntSubConstant() {
+        for (int x : INT_DATA) {
+            assertTestIntSubConstant(x);
+        }
+        for (int c : new int[] {3, -3, INT_MIN, INT_MAX}) {
+            assertTestIntSubConstant(c - 1);
+            assertTestIntSubConstant(c);
+            assertTestIntSubConstant(c + 1);
+        }
+        assertTestIntSubConstant(RunInfo.getRandom().nextInt());
+    }
+
+    @DontCompile
+    private void assertTestIntSubConstant(int x) {
+        int cmpThree = Integer.compareUnsigned(x - 3, x);
+        Asserts.assertEquals(testIntSubThreeLT(x), cmpThree < 0 ? TRUE_RESULT : FALSE_RESULT);
+        Asserts.assertEquals(testIntSubThreeLE(x), cmpThree <= 0 ? TRUE_RESULT : FALSE_RESULT);
+        Asserts.assertEquals(testIntSubThreeGT(x), cmpThree > 0 ? TRUE_RESULT : FALSE_RESULT);
+        Asserts.assertEquals(testIntSubThreeGE(x), cmpThree >= 0 ? TRUE_RESULT : FALSE_RESULT);
+        int cmpNegativeThree = Integer.compareUnsigned(x - (-3), x);
+        Asserts.assertEquals(testIntSubNegativeThreeLT(x), cmpNegativeThree < 0 ? TRUE_RESULT : FALSE_RESULT);
+        Asserts.assertEquals(testIntSubNegativeThreeLE(x), cmpNegativeThree <= 0 ? TRUE_RESULT : FALSE_RESULT);
+        Asserts.assertEquals(testIntSubNegativeThreeGT(x), cmpNegativeThree > 0 ? TRUE_RESULT : FALSE_RESULT);
+        Asserts.assertEquals(testIntSubNegativeThreeGE(x), cmpNegativeThree >= 0 ? TRUE_RESULT : FALSE_RESULT);
+        int cmpMin = Integer.compareUnsigned(x - INT_MIN, x);
+        Asserts.assertEquals(testIntSubMinLT(x), cmpMin < 0 ? TRUE_RESULT : FALSE_RESULT);
+        Asserts.assertEquals(testIntSubMinLE(x), cmpMin <= 0 ? TRUE_RESULT : FALSE_RESULT);
+        Asserts.assertEquals(testIntSubMinGT(x), cmpMin > 0 ? TRUE_RESULT : FALSE_RESULT);
+        Asserts.assertEquals(testIntSubMinGE(x), cmpMin >= 0 ? TRUE_RESULT : FALSE_RESULT);
+        int cmpMax = Integer.compareUnsigned(x - INT_MAX, x);
+        Asserts.assertEquals(testIntSubMaxLT(x), cmpMax < 0 ? TRUE_RESULT : FALSE_RESULT);
+        Asserts.assertEquals(testIntSubMaxLE(x), cmpMax <= 0 ? TRUE_RESULT : FALSE_RESULT);
+        Asserts.assertEquals(testIntSubMaxGT(x), cmpMax > 0 ? TRUE_RESULT : FALSE_RESULT);
+        Asserts.assertEquals(testIntSubMaxGE(x), cmpMax >= 0 ? TRUE_RESULT : FALSE_RESULT);
+    }
+
+    @Test
+    @IR(failOn = {ADD_L, SUB_L})
+    @IR(counts = {CMP_UL, "1"})
+    public int testLongSubThreeLT(long x) {
+        return Long.compareUnsigned(x - 3, x) < 0 ? TRUE_RESULT : FALSE_RESULT;
+    }
+
+    @Test
+    @IR(failOn = {ADD_L, SUB_L})
+    @IR(counts = {CMP_UL, "1"})
+    public int testLongSubThreeLE(long x) {
+        return Long.compareUnsigned(x - 3, x) <= 0 ? TRUE_RESULT : FALSE_RESULT;
+    }
+
+    @Test
+    @IR(failOn = {ADD_L, SUB_L})
+    @IR(counts = {CMP_UL, "1"})
+    public int testLongSubThreeGT(long x) {
+        return Long.compareUnsigned(x - 3, x) > 0 ? TRUE_RESULT : FALSE_RESULT;
+    }
+
+    @Test
+    @IR(failOn = {ADD_L, SUB_L})
+    @IR(counts = {CMP_UL, "1"})
+    public int testLongSubThreeGE(long x) {
+        return Long.compareUnsigned(x - 3, x) >= 0 ? TRUE_RESULT : FALSE_RESULT;
+    }
+
+    @Test
+    @IR(failOn = {ADD_L, SUB_L})
+    @IR(counts = {CMP_UL, "1"})
+    public int testLongSubNegativeThreeLT(long x) {
+        return Long.compareUnsigned(x - (-3), x) < 0 ? TRUE_RESULT : FALSE_RESULT;
+    }
+
+    @Test
+    @IR(failOn = {ADD_L, SUB_L})
+    @IR(counts = {CMP_UL, "1"})
+    public int testLongSubNegativeThreeLE(long x) {
+        return Long.compareUnsigned(x - (-3), x) <= 0 ? TRUE_RESULT : FALSE_RESULT;
+    }
+
+    @Test
+    @IR(failOn = {ADD_L, SUB_L})
+    @IR(counts = {CMP_UL, "1"})
+    public int testLongSubNegativeThreeGT(long x) {
+        return Long.compareUnsigned(x - (-3), x) > 0 ? TRUE_RESULT : FALSE_RESULT;
+    }
+
+    @Test
+    @IR(failOn = {ADD_L, SUB_L})
+    @IR(counts = {CMP_UL, "1"})
+    public int testLongSubNegativeThreeGE(long x) {
+        return Long.compareUnsigned(x - (-3), x) >= 0 ? TRUE_RESULT : FALSE_RESULT;
+    }
+
+    @Test
+    @IR(failOn = {ADD_L, SUB_L})
+    @IR(counts = {CMP_UL, "1"})
+    public int testLongSubMinLT(long x) {
+        return Long.compareUnsigned(x - LONG_MIN, x) < 0 ? TRUE_RESULT : FALSE_RESULT;
+    }
+
+    @Test
+    @IR(failOn = {ADD_L, SUB_L})
+    @IR(counts = {CMP_UL, "1"})
+    public int testLongSubMinLE(long x) {
+        return Long.compareUnsigned(x - LONG_MIN, x) <= 0 ? TRUE_RESULT : FALSE_RESULT;
+    }
+
+    @Test
+    @IR(failOn = {ADD_L, SUB_L})
+    @IR(counts = {CMP_UL, "1"})
+    public int testLongSubMinGT(long x) {
+        return Long.compareUnsigned(x - LONG_MIN, x) > 0 ? TRUE_RESULT : FALSE_RESULT;
+    }
+
+    @Test
+    @IR(failOn = {ADD_L, SUB_L})
+    @IR(counts = {CMP_UL, "1"})
+    public int testLongSubMinGE(long x) {
+        return Long.compareUnsigned(x - LONG_MIN, x) >= 0 ? TRUE_RESULT : FALSE_RESULT;
+    }
+
+    @Test
+    @IR(failOn = {ADD_L, SUB_L})
+    @IR(counts = {CMP_UL, "1"})
+    public int testLongSubMaxLT(long x) {
+        return Long.compareUnsigned(x - LONG_MAX, x) < 0 ? TRUE_RESULT : FALSE_RESULT;
+    }
+
+    @Test
+    @IR(failOn = {ADD_L, SUB_L})
+    @IR(counts = {CMP_UL, "1"})
+    public int testLongSubMaxLE(long x) {
+        return Long.compareUnsigned(x - LONG_MAX, x) <= 0 ? TRUE_RESULT : FALSE_RESULT;
+    }
+
+    @Test
+    @IR(failOn = {ADD_L, SUB_L})
+    @IR(counts = {CMP_UL, "1"})
+    public int testLongSubMaxGT(long x) {
+        return Long.compareUnsigned(x - LONG_MAX, x) > 0 ? TRUE_RESULT : FALSE_RESULT;
+    }
+
+    @Test
+    @IR(failOn = {ADD_L, SUB_L})
+    @IR(counts = {CMP_UL, "1"})
+    public int testLongSubMaxGE(long x) {
+        return Long.compareUnsigned(x - LONG_MAX, x) >= 0 ? TRUE_RESULT : FALSE_RESULT;
+    }
+
+    @Run(test = {
+        "testLongSubThreeLT", "testLongSubThreeLE", "testLongSubThreeGT", "testLongSubThreeGE",
+        "testLongSubNegativeThreeLT", "testLongSubNegativeThreeLE", "testLongSubNegativeThreeGT", "testLongSubNegativeThreeGE",
+        "testLongSubMinLT", "testLongSubMinLE", "testLongSubMinGT", "testLongSubMinGE",
+        "testLongSubMaxLT", "testLongSubMaxLE", "testLongSubMaxGT", "testLongSubMaxGE"
+    })
+    public void checkTestLongSubConstant() {
+        for (long x : LONG_DATA) {
+            assertTestLongSubConstant(x);
+        }
+        for (long c : new long[] {3, -3, LONG_MIN, LONG_MAX}) {
+            assertTestLongSubConstant(c - 1);
+            assertTestLongSubConstant(c);
+            assertTestLongSubConstant(c + 1);
+        }
+        assertTestLongSubConstant(RunInfo.getRandom().nextLong());
+    }
+
+    @DontCompile
+    private void assertTestLongSubConstant(long x) {
+        int cmpThree = Long.compareUnsigned(x - 3, x);
+        Asserts.assertEquals(testLongSubThreeLT(x), cmpThree < 0 ? TRUE_RESULT : FALSE_RESULT);
+        Asserts.assertEquals(testLongSubThreeLE(x), cmpThree <= 0 ? TRUE_RESULT : FALSE_RESULT);
+        Asserts.assertEquals(testLongSubThreeGT(x), cmpThree > 0 ? TRUE_RESULT : FALSE_RESULT);
+        Asserts.assertEquals(testLongSubThreeGE(x), cmpThree >= 0 ? TRUE_RESULT : FALSE_RESULT);
+        int cmpNegativeThree = Long.compareUnsigned(x - (-3), x);
+        Asserts.assertEquals(testLongSubNegativeThreeLT(x), cmpNegativeThree < 0 ? TRUE_RESULT : FALSE_RESULT);
+        Asserts.assertEquals(testLongSubNegativeThreeLE(x), cmpNegativeThree <= 0 ? TRUE_RESULT : FALSE_RESULT);
+        Asserts.assertEquals(testLongSubNegativeThreeGT(x), cmpNegativeThree > 0 ? TRUE_RESULT : FALSE_RESULT);
+        Asserts.assertEquals(testLongSubNegativeThreeGE(x), cmpNegativeThree >= 0 ? TRUE_RESULT : FALSE_RESULT);
+        int cmpMin = Long.compareUnsigned(x - LONG_MIN, x);
+        Asserts.assertEquals(testLongSubMinLT(x), cmpMin < 0 ? TRUE_RESULT : FALSE_RESULT);
+        Asserts.assertEquals(testLongSubMinLE(x), cmpMin <= 0 ? TRUE_RESULT : FALSE_RESULT);
+        Asserts.assertEquals(testLongSubMinGT(x), cmpMin > 0 ? TRUE_RESULT : FALSE_RESULT);
+        Asserts.assertEquals(testLongSubMinGE(x), cmpMin >= 0 ? TRUE_RESULT : FALSE_RESULT);
+        int cmpMax = Long.compareUnsigned(x - LONG_MAX, x);
+        Asserts.assertEquals(testLongSubMaxLT(x), cmpMax < 0 ? TRUE_RESULT : FALSE_RESULT);
+        Asserts.assertEquals(testLongSubMaxLE(x), cmpMax <= 0 ? TRUE_RESULT : FALSE_RESULT);
+        Asserts.assertEquals(testLongSubMaxGT(x), cmpMax > 0 ? TRUE_RESULT : FALSE_RESULT);
+        Asserts.assertEquals(testLongSubMaxGE(x), cmpMax >= 0 ? TRUE_RESULT : FALSE_RESULT);
+    }
+
+    @Test
     @IR(failOn = {CMP_L, ADD_L})
     @IR(counts = {CMP_UL, "1"})
     public boolean testLongVarEQ(long x, long y) {
