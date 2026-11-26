@@ -207,16 +207,9 @@ void ShenandoahTaskQueueSet::try_grow(ShenandoahTaskQueueSegment* seen_head) {
   }
 }
 
-inline int ShenandoahTaskTerminator::waiters() {
-  size_t active = _active_workers.load_relaxed();
-  if (_total_workers > active) {
-    return _total_workers - active;
-  }
-  return 0;
-}
-
 inline bool ShenandoahTaskTerminator::has_waiters() {
-  return waiters() > 0;
+  size_t active = _active_workers.load_relaxed();
+  return (_total_workers > active);
 }
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHTASKQUEUE_INLINE_HPP

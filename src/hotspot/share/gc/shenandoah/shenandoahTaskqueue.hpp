@@ -380,7 +380,6 @@ public:
   ShenandoahTaskTerminator(int workers, ShenandoahTaskQueueSet* queues);
 
   bool offer_termination(bool cancellable);
-  int waiters();
   bool has_waiters();
 };
 
