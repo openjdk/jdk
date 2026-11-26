@@ -126,7 +126,7 @@ public class TableOfContents {
 
         }
         content.add(header);
-        content.add(listBuilder);
+        content.add(listBuilder.toContent());
         content.add(HtmlTree.BUTTON(HtmlStyles.hideSidebar)
                 .add(HtmlTree.SPAN(writer.contents.hideSidebar).add(Entity.NO_BREAK_SPACE))
                 .add(HtmlTree.IMG(writer.pathToRoot.resolve(DocPaths.RESOURCE_FILES).resolve(DocPaths.LEFT_SVG),

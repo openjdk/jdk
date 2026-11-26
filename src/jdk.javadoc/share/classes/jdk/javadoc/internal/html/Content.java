@@ -27,7 +27,6 @@ package jdk.javadoc.internal.html;
 
 import java.io.IOException;
 import java.io.StringWriter;
-import java.io.Writer;
 import java.util.Collection;
 import java.util.function.Function;
 
@@ -37,16 +36,18 @@ import java.util.function.Function;
 public abstract class Content {
 
     /**
-     * Returns a string representation of the content.
-     * Newlines are represented by {@code \n}.
+     * Returns a string representation of the content suitable for use in an HTML document.
+     * Subclasses that contain text content must make sure characters with special meaning such
+     * as {@code <} or {@code &} are properly escaped with character references (entities).
+     * Newlines are represented as a single {@code \n} character.
      *
-     * @return string representation of the content
+     * @return content suitable for use in an HTML document
      */
     @Override
     public String toString() {
         StringWriter out = new StringWriter();
         try {
-            write(out, "\n", true);
+            write(new ContentWriter(out, "\n"), true);
         } catch (IOException e) {
             // cannot happen from StringWriter
             throw new AssertionError(e);
@@ -107,16 +108,14 @@ public abstract class Content {
     }
 
     /**
-     * Writes content to a writer, using a given newline sequence, which should be
-     * either {@code \n} or the platform line separator.
+     * Writes content to a writer.
      *
-     * @param writer the writer
-     * @param newline the newline sequence to use
+     * @param writer the content writer
      * @param atNewline whether the writer has just written a newline
      * @return whether the writer has just written a newline
      * @throws IOException if an error occurs while writing the output
      */
-    public abstract boolean write(Writer writer, String newline, boolean atNewline) throws IOException;
+    public abstract boolean write(ContentWriter writer, boolean atNewline) throws IOException;
 
     /**
      * Returns true if the content is empty.
@@ -143,11 +142,13 @@ public abstract class Content {
     }
 
     /**
-     * {@return the plain text of this content with HTML tags removed}
+     * Returns a plain text version of this content with HTML tags and comments removed.
+     * Character references are converted to the characters they represent. The text content
+     * of script elements, although technically a text node, is also discarded.
+     *
+     * @return the content as plain text
      */
-    public Content stripTags() {
-        return this;
-    }
+    public abstract String toPlainText();
 
     /**
      * {@return true if the content is "phrasing content"}

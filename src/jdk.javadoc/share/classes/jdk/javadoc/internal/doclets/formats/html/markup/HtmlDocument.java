@@ -32,6 +32,7 @@ import java.io.Writer;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.ContentWriter;
 import jdk.javadoc.internal.html.DocType;
 import jdk.javadoc.internal.html.HtmlTag;
 
@@ -56,11 +57,12 @@ public class HtmlDocument {
      * Newlines are written using the platform line separator.
      *
      * @param docFile the file
+     * @param encoding the used character encoding
      * @throws DocFileIOException if an {@code IOException} occurs while writing the file
      */
-    public void write(DocFile docFile) throws DocFileIOException {
+    public void write(DocFile docFile, String encoding) throws DocFileIOException {
         try (Writer writer = docFile.openWriter()) {
-            write(writer, DocFile.PLATFORM_LINE_SEPARATOR);
+            write(new ContentWriter(writer, DocFile.PLATFORM_LINE_SEPARATOR, encoding));
         } catch (IOException e) {
             throw new DocFileIOException(docFile, DocFileIOException.Mode.WRITE, e);
         }
@@ -69,16 +71,16 @@ public class HtmlDocument {
     @Override
     public String toString() {
         try (Writer writer = new StringWriter()) {
-            write(writer, "\n");
+            write(new ContentWriter(writer, "\n"));
             return writer.toString();
         } catch (IOException e) {
             throw new Error(e);
         }
     }
 
-    private void write(Writer writer, String newline) throws IOException {
-        writer.write(docType.text);
-        writer.write(newline);
-        docContent.write(writer, newline, true);
+    private void write(ContentWriter writer) throws IOException {
+        writer.writeRaw(docType.text);
+        writer.writeNewline();
+        docContent.write(writer, true);
     }
 }

@@ -65,26 +65,22 @@ const UNICODE_OTHER = 2;
 function checkUnnamed(name, separator) {
     return name === "<Unnamed>" || !name ? "" : name + separator;
 }
-function escapeHtml(str) {
-    return str.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-}
-function getHighlightedText(str, boundaries, from, to) {
-    var start = from;
-    var text = "";
-    for (var i = 0; i < boundaries.length; i += 2) {
-        var b0 = boundaries[i];
-        var b1 = boundaries[i + 1];
-        if (b0 >= to || b1 <= from) {
-            continue;
-        }
-        text += escapeHtml(str.slice(start, Math.max(start, b0)));
-        text += "<span class='result-highlight'>";
-        text += escapeHtml(str.slice(Math.max(start, b0), Math.min(to, b1)));
-        text += "</span>";
-        start = Math.min(to, b1);
+function getHighlightedResult(text, boundaries) {
+    const result = document.createDocumentFragment();
+    let position = 0;
+    for (let i = 0; i < boundaries.length; i += 2) {
+        const start = boundaries[i];
+        const end = boundaries[i + 1];
+        result.append(text.slice(position, start));
+
+        const highlight = document.createElement("span");
+        highlight.className = "result-highlight";
+        highlight.textContent = text.slice(start, end);
+        result.append(highlight);
+        position = end;
     }
-    text += escapeHtml(str.slice(start, to));
-    return text;
+    result.append(text.slice(position));
+    return result;
 }
 function getURLPrefix(item, category) {
     var urlPrefix = "";
@@ -379,7 +375,7 @@ function getResultLabel(item) {
     if (item.l) {
         return item.l;
     }
-    return getHighlightedText(item.name, item.boundaries, 0, item.name.length);
+    return getHighlightedResult(item.name, item.boundaries);
 }
 function getResultDescription(item) {
     if (!item.indexItem) {
@@ -652,9 +648,6 @@ window.addEventListener("load", () => {
     }
 
     function renderItem(item, table) {
-        const label = getResultLabel(item);
-        const desc = getResultDescription(item);
-
         const link = document.createElement("a");
         link.href = pathtoroot + getURL(item.indexItem, item.category);
         link.tabIndex = 0;
@@ -666,11 +659,11 @@ window.addEventListener("load", () => {
 
         const labelSpan = document.createElement("span");
         labelSpan.className = "search-result-label";
-        labelSpan.innerHTML = label;
+        labelSpan.replaceChildren(getResultLabel(item));
 
         const descSpan = document.createElement("span");
         descSpan.className = "search-result-desc";
-        descSpan.textContent = desc;
+        descSpan.textContent = getResultDescription(item);
 
         link.appendChild(labelSpan);
         link.appendChild(descSpan);

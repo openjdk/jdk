@@ -26,7 +26,6 @@
 package jdk.javadoc.internal.html;
 
 import java.io.IOException;
-import java.io.Writer;
 import java.util.Objects;
 
 /**
@@ -51,14 +50,19 @@ public class Comment extends Content {
     }
 
     @Override
-    public boolean write(Writer out, String newline, boolean atNewline) throws IOException {
+    public String toPlainText() {
+        return "";
+    }
+
+    @Override
+    public boolean write(ContentWriter out, boolean atNewline) throws IOException {
         if (!atNewline) {
-            out.write(newline);
+            out.writeNewline();
         }
-        out.write("<!-- ");
-        out.write(commentText.replace("\n", newline));
-        out.write(" -->");
-        out.write(newline);
+        out.writeRaw("<!-- ");
+        out.writeRaw(commentText);
+        out.writeRaw(" -->");
+        out.writeNewline();
         return true;
     }
 }

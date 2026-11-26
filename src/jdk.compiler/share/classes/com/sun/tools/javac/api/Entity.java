@@ -42,7 +42,7 @@ import com.sun.tools.javac.util.StringUtils;
  * risk.  This code and its internal interfaces are subject to change
  * or deletion without notice.</b></p>
  */
-class Entity {
+public class Entity {
 
     private static final HashMap<String,String> entities = new HashMap<>();
 
@@ -2182,8 +2182,24 @@ class Entity {
         entities.put(name, String.valueOf(new char[] { c1, c2 }));
     }
 
-    static String getCharacters(EntityTree tree) {
-        String name = tree.getName().toString();
+    /**
+     * Returns the characters represented by an {@code EntityTree} instance.
+     *
+     * @param tree an entity tree
+     * @return the characters, or {@code null} if the tree does not represent a valid reference
+     */
+    public static String getCharacters(EntityTree tree) {
+        return getCharacters(tree.getName().toString());
+    }
+
+    /**
+     * Returns the characters represented by the given character entity name.
+     *
+     * @param name the name of the entity without the surrounding {@code &} and {@code ;},
+     * for example {@code amp}, {@code #38}, or {@code #x26}
+     * @return the characters, or {@code null} if {@code name} is not a valid reference
+     */
+    public static String getCharacters(String name) {
         if (name.startsWith("#")) {
             try {
                 int v = StringUtils.toLowerCase(name).startsWith("#x")

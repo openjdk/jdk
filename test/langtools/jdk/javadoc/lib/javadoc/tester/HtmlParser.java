@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -338,11 +339,7 @@ public abstract class HtmlParser {
                         sb.append((char) ch);
                         nextChar();
                     }
-                    value = sb.toString() // hack to replace common entities
-                            .replace("&lt;", "<")
-                            .replace("&gt;", ">")
-                            .replace("&amp;", "&")
-                            .replace("&quot;", "\"");
+                    value = decodeEntities(sb.toString());
                     nextChar();
                 } else {
                     StringBuilder sb = new StringBuilder();
@@ -358,6 +355,39 @@ public abstract class HtmlParser {
         }
 
         return map;
+    }
+
+    private static final Pattern ENTITY_PATTERN = Pattern.compile(
+            "&(#(?:[xX][0-9a-fA-F]+|[0-9]+)|[A-Za-z][A-Za-z0-9]*);");
+
+    private String decodeEntities(String str) {
+        return ENTITY_PATTERN.matcher(str).replaceAll(match -> {
+            String name = match.group(1);
+            String result = null;
+            if (name.startsWith("#")) {
+                // Numeric (decimal or hex) reference
+                try {
+                    int v = name.toLowerCase(Locale.ROOT).startsWith("#x")
+                            ? Integer.parseInt(name.substring(2), 16)
+                            : Integer.parseInt(name.substring(1), 10);
+                    result = new String(Character.toChars(v));
+                } catch (IllegalArgumentException e) {
+                    // Return undecoded entity below.
+                }
+            } else {
+                // Only a few common named references are recognized.
+                result = switch (name) {
+                    case "lt" -> "<";
+                    case "gt" -> ">";
+                    case "amp" -> "&";
+                    case "quot" -> "\"";
+                    case "nbsp" -> "\u00A0";
+                    default -> null;
+                };
+            }
+            // Return unchanged entity if not recognized.
+            return Matcher.quoteReplacement(result != null ? result : "&" + name + ";");
+        });
     }
 
     private boolean isIdentifierStart(char ch) {

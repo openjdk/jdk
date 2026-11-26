@@ -26,7 +26,6 @@
 package jdk.javadoc.internal.html;
 
 import java.io.IOException;
-import java.io.Writer;
 
 /**
  * Class for generating string content for HTML tags of javadoc output.
@@ -83,14 +82,12 @@ public class TextBuilder extends Content {
     }
 
     @Override
-    public String toString() {
+    public String toPlainText() {
         return stringBuilder.toString();
     }
 
     @Override
-    public boolean write(Writer out, String newline, boolean atNewline) throws IOException {
-        String s = Entity.escapeHtmlChars(stringBuilder);
-        out.write(s.replace("\n", newline));
-        return s.endsWith("\n");
+    public boolean write(ContentWriter out, boolean atNewline) throws IOException {
+        return out.writeText(stringBuilder);
     }
 }

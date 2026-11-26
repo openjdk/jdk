@@ -25,8 +25,9 @@
 
 package jdk.javadoc.internal.html;
 
+import com.sun.tools.javac.api.Entity;
+
 import java.io.IOException;
-import java.io.Writer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -157,9 +158,27 @@ public class RawHtml extends Content {
         return true;
     }
 
+    private static final Pattern ENTITY_PATTERN = Pattern.compile(
+            "&(#(?:[xX][0-9a-fA-F]+|[0-9]+)|[A-Za-z][A-Za-z0-9]*);");
+    private static final Pattern MARKUP_PATTERN = Pattern.compile(
+            "<!--[\\s\\S]*?-->"
+                    + "|<(/?[A-Za-z][A-Za-z0-9:-]*)(?=[\\s/>])(?:[^<>\"']"
+                    + "|\"[^\"]*\"|'[^']*')*>");
+
+    // Note: this implementation uses regular expressions to convert raw HTML to plain text.
+    // An alternative solution would be to use an HTML scanner, similar to the one used in the
+    // charCount method below.
     @Override
-    public Content stripTags() {
-        return Text.of(rawHtmlContent.replaceAll("<[^>]*>", ""));
+    public String toPlainText() {
+        var str = MARKUP_PATTERN.matcher(rawHtmlContent).replaceAll(
+                match -> "br".equalsIgnoreCase(match.group(1)) ? " " : "");
+
+        return ENTITY_PATTERN.matcher(str).replaceAll(match -> {
+            String characters = Entity.getCharacters(match.group(1));
+
+            // Preserve references the decoder does not recognize.
+            return Matcher.quoteReplacement(characters != null ? characters : match.group());
+        });
     }
 
     @Override
@@ -217,8 +236,7 @@ public class RawHtml extends Content {
     }
 
     @Override
-    public boolean write(Writer out, String newline, boolean atNewline) throws IOException {
-        out.write(rawHtmlContent.replace("\n", newline));
-        return rawHtmlContent.endsWith("\n");
+    public boolean write(ContentWriter out, boolean atNewline) throws IOException {
+        return out.writeMarkup(rawHtmlContent);
     }
 }

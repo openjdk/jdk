@@ -26,18 +26,23 @@
 package jdk.javadoc.internal.html;
 
 import java.io.IOException;
-import java.io.Writer;
 
 /**
  * A representation of HTML entities.
  */
 public class Entity extends Content {
-    public static final Entity LESS_THAN = new Entity("&lt;");
-    public static final Entity GREATER_THAN = new Entity("&gt;");
-    public static final Entity AMPERSAND = new Entity("&amp;");
-    public static final Entity NO_BREAK_SPACE = new Entity("&nbsp;");
+    public static final Entity LESS_THAN = new Entity("&lt;", "<");
+    public static final Entity GREATER_THAN = new Entity("&gt;", ">");
+    public static final Entity AMPERSAND = new Entity("&amp;", "&");
+    public static final Entity DOUBLE_QUOTE = new Entity("&quot;", "\"");
+    public static final Entity NO_BREAK_SPACE = new Entity("&nbsp;", "\u00A0");
+    public static final Entity LEFT_ARROW = new Entity("&leftarrow;", "\u2190");
+    public static final Entity UP_ARROW = new Entity("&uparrow;", "\u2191");
+    public static final Entity RIGHT_ARROW = new Entity("&rightarrow;", "\u2192");
+    public static final Entity DOWN_ARROW = new Entity("&downarrow;", "\u2193");
 
     public final String text;
+    private final String characters;
 
     /**
      * Creates an entity with a given name or numeric value.
@@ -45,18 +50,20 @@ public class Entity extends Content {
      * @param name the name, or numeric value
      * @return the entity
      */
-    public static Entity of(CharSequence name) {
-        return new Entity("&" + name + ";");
+    public static Entity of(String name) {
+        String reference = "&" + name + ";";
+        String characters = com.sun.tools.javac.api.Entity.getCharacters(name);
+        return new Entity(reference, characters != null ? characters : reference);
     }
 
-    private Entity(String text) {
+    private Entity(String text, String characters) {
         this.text = text;
+        this.characters = characters;
     }
 
     @Override
-    public boolean write(Writer writer, String newline, boolean atNewline) throws IOException {
-        writer.write(text);
-        return false;
+    public boolean write(ContentWriter writer, boolean atNewline) throws IOException {
+        return writer.writeRaw(text);
     }
 
     @Override
@@ -71,54 +78,11 @@ public class Entity extends Content {
 
     @Override
     public int charCount() {
-        return 1;
+        return characters.length();
     }
 
-    /**
-     * Escapes the special HTML characters in a given string using the appropriate
-     * entities.
-     *
-     * @param s the string to escape
-     * @return the string with all of the HTML characters escaped
-     */
-    static String escapeHtmlChars(CharSequence s) {
-        // Convert to string as CharSequence implementations can be slow - see JDK-8263321
-        String str = s.toString();
-        for (int i = 0; i < str.length(); i++) {
-            char ch = str.charAt(i);
-            switch (ch) {
-                // only start building a new string if we need to
-                case '<', '>', '&' -> {
-                    StringBuilder sb = new StringBuilder(str.substring(0, i));
-                    escapeHtmlChars(str, i, sb);
-                    return sb.toString();
-                }
-            }
-        }
-        return str;
+    @Override
+    public String toPlainText() {
+        return characters;
     }
-
-    /**
-     * Escapes the special HTML characters in a given string using the appropriate
-     * entities, appending the results into a string builder.
-     *
-     * @param s the string
-     * @param sb the string builder
-     */
-    static void escapeHtmlChars(CharSequence s, StringBuilder sb) {
-        escapeHtmlChars(s.toString(), 0, sb);
-    }
-
-    private static void escapeHtmlChars(String s, int start, StringBuilder sb) {
-        for (int i = start ; i < s.length(); i++) {
-            char ch = s.charAt(i);
-            switch (ch) {
-                case '<' -> sb.append(Entity.LESS_THAN.text);
-                case '>' -> sb.append(Entity.GREATER_THAN.text);
-                case '&' -> sb.append(Entity.AMPERSAND.text);
-                default ->  sb.append(ch);
-            }
-        }
-    }
-
 }

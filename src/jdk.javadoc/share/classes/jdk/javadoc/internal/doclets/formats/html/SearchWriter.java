@@ -136,9 +136,9 @@ public class SearchWriter extends HtmlDocletWriter {
 
         return HtmlTree.DIV(HtmlStyles.pageSearchInfo, helpSection)
                 .add(HtmlTree.P(contents.getContent("doclet.search.keyboard_info",
-                        HtmlTree.KBD(Entity.of("downarrow")), HtmlTree.KBD(Entity.of("uparrow")),
-                        new ContentBuilder(HtmlTree.KBD(Entity.of("leftarrow")), Text.of("/"),
-                                HtmlTree.KBD(Entity.of("rightarrow"))))))
+                        HtmlTree.KBD(Entity.DOWN_ARROW), HtmlTree.KBD(Entity.UP_ARROW),
+                        new ContentBuilder(HtmlTree.KBD(Entity.LEFT_ARROW), Text.of("/"),
+                                HtmlTree.KBD(Entity.RIGHT_ARROW)))))
                 .add(HtmlTree.P(contents.getContent("doclet.search.browser_info")))
                 .add(HtmlTree.SPAN(Text.of("link"))
                         .setId(HtmlId.of("page-search-link")))

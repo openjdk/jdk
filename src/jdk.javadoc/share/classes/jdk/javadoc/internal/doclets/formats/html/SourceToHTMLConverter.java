@@ -237,7 +237,8 @@ public class SourceToHTMLConverter {
         var html = HtmlTree.HTML(configuration.getLocale().getLanguage(), head.toContent(), body);
         HtmlDocument document = new HtmlDocument(html);
         messages.notice("doclet.Generating_0", path.getPath());
-        document.write(DocFile.createFileForOutput(configuration, path));
+        document.write(DocFile.createFileForOutput(configuration, path),
+                configuration.getOptions().docEncoding());
     }
 
     /**
