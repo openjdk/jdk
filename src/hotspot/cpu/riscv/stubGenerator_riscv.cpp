@@ -1035,58 +1035,54 @@ class StubGenerator: public StubCodeGenerator {
 
   typedef void (MacroAssembler::*copy_insn)(Register Rd, const Address &adr, Register temp);
 
-  void copy_memory_v(Register s, Register d, Register count, int step) {
-    bool is_backward = step < 0;
+  void copy_memory_v_forward(Register s, Register d, Register count, int step) {
     int granularity = g_uabs(step);
 
-    const Register src = x30, dst = x31, vl = x14, cnt = x15, tmp1 = x16, tmp2 = x17;
-    assert_different_registers(s, d, cnt, vl, tmp1, tmp2);
+    const Register src = x30, dst = x31, vl = x14, cnt = x15;
+    assert_different_registers(s, d, count, src, dst, cnt, vl, t0);
     Assembler::SEW sew = Assembler::elembytes_to_sew(granularity);
     // Use a 128-byte tuning target for vector group capacity, with a minimum LMUL of m1.
     const int vector_length = static_cast<int>(VM_Version::initial_vector_length());
     const int lmul_multiplier = MAX2(128 / vector_length, 1);
     const Assembler::LMUL lmul = static_cast<Assembler::LMUL>(exact_log2(lmul_multiplier));
-    Label loop_forward, loop_backward, done;
+    Label loop;
 
     __ mv(dst, d);
     __ mv(src, s);
     __ mv(cnt, count);
 
-    __ bind(loop_forward);
+    __ bind(loop);
     __ vsetvli(vl, cnt, sew, lmul);
-    if (is_backward) {
-      __ bne(vl, cnt, loop_backward);
-    }
-
     __ vlex_v(v0, src, sew);
     __ sub(cnt, cnt, vl);
-    if (sew != Assembler::e8) {
-      // when sew == e8 (e.g., elem size is 1 byte), slli R, R, 0 is a nop and unnecessary
-      __ slli(vl, vl, sew);
-    }
-    __ add(src, src, vl);
-
+    __ shift_left_add(src, vl, src, sew, t0);
     __ vsex_v(v0, dst, sew);
-    __ add(dst, dst, vl);
-    __ bnez(cnt, loop_forward);
+    __ shift_left_add(dst, vl, dst, sew, t0);
+    __ bnez(cnt, loop);
+  }
 
-    if (is_backward) {
-      __ j(done);
+  void copy_memory_v_backward(Register s, Register d, Register count, int step) {
+    int granularity = g_uabs(step);
 
-      __ bind(loop_backward);
-      __ sub(t0, cnt, vl);
-      if (sew != Assembler::e8) {
-        // when sew == e8 (e.g., elem size is 1 byte), slli R, R, 0 is a nop and unnecessary
-        __ slli(t0, t0, sew);
-      }
-      __ add(tmp1, s, t0);
-      __ vlex_v(v0, tmp1, sew);
-      __ add(tmp2, d, t0);
-      __ vsex_v(v0, tmp2, sew);
-      __ sub(cnt, cnt, vl);
-      __ bnez(cnt, loop_forward);
-      __ bind(done);
-    }
+    const Register src = x30, dst = x31, vl = x14, cnt = x15;
+    assert_different_registers(s, d, count, src, dst, cnt, vl, t0);
+    Assembler::SEW sew = Assembler::elembytes_to_sew(granularity);
+    // Use a 128-byte tuning target for vector group capacity, with a minimum LMUL of m1.
+    const int vector_length = static_cast<int>(VM_Version::initial_vector_length());
+    const int lmul_multiplier = MAX2(128 / vector_length, 1);
+    const Assembler::LMUL lmul = static_cast<Assembler::LMUL>(exact_log2(lmul_multiplier));
+    Label loop;
+
+    __ mv(cnt, count);
+
+    __ bind(loop);
+    __ vsetvli(vl, cnt, sew, lmul);
+    __ sub(cnt, cnt, vl);
+    __ shift_left_add(src, cnt, s, sew, t0);
+    __ vlex_v(v0, src, sew);
+    __ shift_left_add(dst, cnt, d, sew, t0);
+    __ vsex_v(v0, dst, sew);
+    __ bnez(cnt, loop);
   }
 
   // All-singing all-dancing memory copy.
@@ -1099,7 +1095,11 @@ class StubGenerator: public StubCodeGenerator {
                    Register s, Register d, Register count, int step) {
     BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
     if (UseRVV && (!is_reference_type(type) || bs_asm->supports_rvv_arraycopy())) {
-      return copy_memory_v(s, d, count, step);
+      if (step > 0) {
+        return copy_memory_v_forward(s, d, count, step);
+      } else {
+        return copy_memory_v_backward(s, d, count, step);
+      }
     }
 
     bool is_backwards = step < 0;
