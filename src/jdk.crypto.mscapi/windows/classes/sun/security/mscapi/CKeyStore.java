@@ -194,9 +194,10 @@ abstract class CKeyStore extends KeyStoreSpi {
             if (privateKey != null) {
                 long hCryptProvider = privateKey.getHCryptProvider();
                 if (privateKey.getHCryptKey() != 0) {
-                    destroyKeyContainer(CKey.getContainerName(hCryptProvider), hCryptProvider);
+                    destroyKeyContainer(CKey.getContainerName(hCryptProvider),
+                            hCryptProvider, storeLocation);
                 } else {
-                    removeCngKey(hCryptProvider);
+                    removeCngKey(hCryptProvider, storeLocation);
                 }
             }
         }
@@ -876,16 +877,18 @@ abstract class CKeyStore extends KeyStoreSpi {
      *
      * @param keyContainerName The name of the key container.
      * @param hCryptProvider The handle of the cryptographic provider.
+     * @param storeLocation The location of the keystore.
      */
-    private native void destroyKeyContainer(String keyContainerName, long hCryptProvider)
+    private native void destroyKeyContainer(String keyContainerName, long hCryptProvider, int storeLocation)
             throws KeyStoreException;
 
     /**
      * Removes a CNG key.
      *
      * @param k the handle of the key
+     * @param storeLocation The location of the keystore.
      */
-    private native void removeCngKey(long k) throws KeyStoreException;
+    private native void removeCngKey(long k, int storeLocation) throws KeyStoreException;
 
     /**
      * Generates a private-key BLOB from a key's components.

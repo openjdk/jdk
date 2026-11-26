@@ -30,9 +30,9 @@
  * @modules java.base/sun.security.tools.keytool
  *          java.base/sun.security.x509
  *          jdk.crypto.mscapi/sun.security.mscapi:open
+ * @run main/manual/native/othervm --enable-native-access=ALL-UNNAMED ${test.main.class}
  * @comment Run with administrative privileges because this test modifies
  *          the LOCALMACHINE store.
- * @run main/manual/othervm --enable-native-access=ALL-UNNAMED ${test.main.class}
  */
 
 import sun.security.tools.keytool.CertAndKeyGen;
@@ -50,6 +50,7 @@ import java.lang.reflect.Method;
 import java.security.KeyStore;
 import java.security.PrivateKey;
 import java.security.Signature;
+import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.UUID;
 
@@ -62,12 +63,18 @@ import static jdk.test.lib.Asserts.assertFalse;
 import static jdk.test.lib.Asserts.assertTrue;
 
 public class LocalMachineStore {
+    static {
+        System.loadLibrary("LocalMachineStore");
+    }
+
+    private static native void copyCertWithKeyAssociationToLocalMachine(byte[] certBytes);
 
     public static void main(String[] args) throws Throwable {
         String alias = "jdk-8328184-" + UUID.randomUUID();
 
         testCertificates(alias);
         testPrivateKeys(alias);
+        testCrossLocationKeyDeletion(alias);
     }
 
     private static void testCertificates(String alias) throws Exception {
@@ -131,18 +138,9 @@ public class LocalMachineStore {
             // Use the private key reloaded from the store.
             PrivateKey storedKey = (PrivateKey) localMachine.getKey(alias, null);
             assertMachineKey(storedKey);
-            byte[] data = {1, 2, 3, 4};
 
-            Signature signer = Signature.getInstance("SHA256withRSA");
-            signer.initSign(storedKey);
-            signer.update(data);
-            byte[] signature = signer.sign();
-
-            Signature verifier = Signature.getInstance("SHA256withRSA");
-            verifier.initVerify(localMachine.getCertificate(alias));
-            verifier.update(data);
-            assertTrue(verifier.verify(signature),
-                    "Signature made with the stored private key should verify");
+            Certificate cert = localMachine.getCertificate(alias);
+            assertCanSign(cert, storedKey);
 
             // Verify deletion separately from clean-up.
             localMachine.deleteEntry(alias);
@@ -157,6 +155,69 @@ public class LocalMachineStore {
                 load("LOCALMACHINE").deleteEntry(alias);
             }
         }
+    }
+
+    private static void testCrossLocationKeyDeletion(String alias) throws Throwable {
+        KeyStore currentUser = load("CURRENTUSER");
+        try {
+            CertAndKeyGen keyGen = new CertAndKeyGen("RSA", "SHA256WithRSA", null);
+            keyGen.generate(2048);
+            X509Certificate currentUserCert = keyGen.getSelfCertificate(
+                    new X500Name("CN=" + alias),
+                    24 * 60 * 60);
+            currentUser.setKeyEntry(alias, keyGen.getPrivateKey(), null,
+                    new X509Certificate[]{currentUserCert});
+
+            // Reload the CURRENTUSER store to ensure the private key is actually persisted
+            currentUser = load("CURRENTUSER");
+            assertTrue(currentUser.isKeyEntry(alias),
+                    "Private key should be in CURRENTUSER store");
+            PrivateKey priv = (PrivateKey) currentUser.getKey(alias, null);
+            assertCanSign(currentUserCert, priv);
+
+            // Copy the certificate with its CURRENTUSER key association to LOCALMACHINE.
+            copyCertWithKeyAssociationToLocalMachine(currentUserCert.getEncoded());
+
+            KeyStore localMachine = load("LOCALMACHINE");
+            assertTrue(localMachine.isKeyEntry(alias),
+                       "LOCALMACHINE entry should reference the CURRENTUSER private key");
+            PrivateKey localMachinePriv = (PrivateKey) localMachine.getKey(alias, null);
+            assertCanSign(localMachine.getCertificate(alias), localMachinePriv);
+
+            // Delete the entry from LOCALMACHINE and verify that the CURRENTUSER copy is still intact.
+            localMachine.deleteEntry(alias);
+            localMachine = load("LOCALMACHINE");
+            assertFalse(localMachine.containsAlias(alias),
+                    "Private key entry should be removed from LOCALMACHINE store");
+            currentUser = load("CURRENTUSER");
+            assertTrue(currentUser.isKeyEntry(alias),
+                    "Private key should still be in CURRENTUSER store");
+
+            PrivateKey currentUserPriv = (PrivateKey) currentUser.getKey(alias, null);
+            assertCanSign(currentUser.getCertificate(alias), currentUserPriv);
+        } finally {
+            try {
+                load("LOCALMACHINE").deleteEntry(alias);
+            } finally {
+                load("CURRENTUSER").deleteEntry(alias);
+            }
+        }
+    }
+
+
+    private static void assertCanSign(Certificate cert, PrivateKey privKey) throws Exception {
+        byte[] data = {1, 2, 3, 4};
+
+        Signature signer = Signature.getInstance("SHA256withRSA");
+        signer.initSign(privKey);
+        signer.update(data);
+        byte[] signature = signer.sign();
+
+        Signature verifier = Signature.getInstance("SHA256withRSA");
+        verifier.initVerify(cert);
+        verifier.update(data);
+        assertTrue(verifier.verify(signature),
+                "Signature made with the stored private key should verify");
     }
 
     private static void assertMachineKey(PrivateKey key) throws Throwable {

@@ -1883,9 +1883,24 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_removeCertificate
 }
 
 JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_removeCngKey
-  (JNIEnv *env, jobject clazz, jlong k)
+  (JNIEnv *env, jobject clazz, jlong k, jint storeLocation)
 {
-    SECURITY_STATUS ss;
+    DWORD keyType = 0;
+    DWORD resultSize = 0;
+    SECURITY_STATUS ss = ::NCryptGetProperty((NCRYPT_KEY_HANDLE) k,
+            NCRYPT_KEY_TYPE_PROPERTY, (PBYTE) &keyType, sizeof(keyType), &resultSize, 0);
+    if (ss != ERROR_SUCCESS) {
+        ThrowException(env, KEYSTORE_EXCEPTION, ss);
+        return;
+    }
+
+    // Do not delete a key stored in a different location from this keystore.
+    bool storeIsMachine = storeLocation == KEYSTORE_LOCATION_LOCALMACHINE;
+    bool keyIsMachine = (keyType & NCRYPT_MACHINE_KEY_FLAG) != 0;
+    if (storeIsMachine != keyIsMachine) {
+        return;
+    }
+
     ss = ::NCryptDeleteKey((NCRYPT_KEY_HANDLE)k, 0);
     if (ss != ERROR_SUCCESS) {
         ThrowException(env, KEY_EXCEPTION, ss);
@@ -1895,10 +1910,10 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_removeCngKey
 /*
  * Class:     sun_security_mscapi_CKeyStore
  * Method:    destroyKeyContainer
- * Signature: (Ljava/lang/String;J)V
+ * Signature: (Ljava/lang/String;JI)V
  */
 JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_destroyKeyContainer
-  (JNIEnv *env, jobject clazz, jstring keyContainerName, jlong hKeyProv)
+  (JNIEnv *env, jobject clazz, jstring keyContainerName, jlong hKeyProv, jint storeLocation)
 {
     HCRYPTPROV hCryptProv = NULL;
     const char* pszKeyContainerName = NULL;
@@ -1923,6 +1938,13 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_destroyKeyContainer
         if (!::CryptGetProvParam((HCRYPTPROV) hKeyProv,
                 PP_KEYSET_TYPE, (BYTE*) &keysetType, &keysetTypeLen, 0)) {
             ThrowException(env, KEYSTORE_EXCEPTION, GetLastError());
+            __leave;
+        }
+
+        // Do not delete a key stored in a different location from this keystore.
+        bool storeIsMachine = storeLocation == KEYSTORE_LOCATION_LOCALMACHINE;
+        bool keyIsMachine = (keysetType & CRYPT_MACHINE_KEYSET) != 0;
+        if (storeIsMachine != keyIsMachine) {
             __leave;
         }
 
