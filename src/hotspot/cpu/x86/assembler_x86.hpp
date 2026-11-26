@@ -456,10 +456,141 @@ const int AVX10_2_MINMAX_MIN_COMPARE_SIGN = 0x4;
 // level (e.g. mov rax, 0 is not translated into xor rax, rax!); i.e., what you write
 // is what you get. The Assembler is generating code into a CodeBuffer.
 
+// CPU features an Assembler instance encodes for. Production assemblers use
+// HotSpotAssemblerFeatures, which refers to the VM-selected flags and
+// VM_Version. Tests may supply a synthetic feature set to encode instructions
+// the host cannot use, without modifying global VM state read by other threads.
+//
+// Each Assembler holds a reference to the concrete class
+// (e.g., HotSpotAssemblerFeatures) implementing the needed
+// AbstractAssemblerFeatures, supplied at construction time. Feature checks in
+// Assembler code must query the assembler features rather than reading UseAVX,
+// UseAPX or VM_Version::supports_*() directly; otherwise a synthetic feature
+// set is silently bypassed, leading to assembler test failures.
+class AbstractAssemblerFeatures {
+  //stateless and only reads from VM_Version or other global CPU feature flags
+ public:
+  virtual int use_avx() const = 0;
+  virtual bool use_apx() const = 0;
+  virtual bool supports_3dnow_prefetch() const = 0;
+  virtual bool supports_adx() const = 0;
+  virtual bool supports_aes() const = 0;
+  virtual bool supports_apx_f() const = 0;
+  virtual bool supports_avx() const = 0;
+  virtual bool supports_avx10_2() const = 0;
+  virtual bool supports_avx2() const = 0;
+  virtual bool supports_avx512_bitalg() const = 0;
+  virtual bool supports_avx512_fp16() const = 0;
+  virtual bool supports_avx512_vbmi() const = 0;
+  virtual bool supports_avx512_vbmi2() const = 0;
+  virtual bool supports_avx512_vnni() const = 0;
+  virtual bool supports_avx512_vpclmulqdq() const = 0;
+  virtual bool supports_avx512_vpopcntdq() const = 0;
+  virtual bool supports_avx512bw() const = 0;
+  virtual bool supports_avx512cd() const = 0;
+  virtual bool supports_avx512dq() const = 0;
+  virtual bool supports_avx512ifma() const = 0;
+  virtual bool supports_avx512novl() const = 0;
+  virtual bool supports_avx512vl() const = 0;
+  virtual bool supports_avx512vlbw() const = 0;
+  virtual bool supports_avx512vldq() const = 0;
+  virtual bool supports_avxifma() const = 0;
+  virtual bool supports_bmi1() const = 0;
+  virtual bool supports_bmi2() const = 0;
+  virtual bool supports_clflushopt() const = 0;
+  virtual bool supports_clmul() const = 0;
+  virtual bool supports_clwb() const = 0;
+  // EVEX support of the CPU itself, even when the VM disabled it (e.g. UseAVX < 3).
+  virtual bool cpu_supports_evex() const = 0;
+  virtual bool supports_evex() const = 0;
+  virtual bool supports_f16c() const = 0;
+  virtual bool supports_fma() const = 0;
+  virtual bool supports_gfni() const = 0;
+  virtual bool supports_lzcnt() const = 0;
+  virtual bool supports_popcnt() const = 0;
+  virtual bool supports_serialize() const = 0;
+  virtual bool supports_sha() const = 0;
+  virtual bool supports_sha512() const = 0;
+  virtual bool supports_sse3() const = 0;
+  virtual bool supports_sse4_1() const = 0;
+  virtual bool supports_sse4_2() const = 0;
+  virtual bool supports_ssse3() const = 0;
+  virtual bool supports_vaes() const = 0;
+  virtual bool supports_vzeroupper() const = 0;
+
+ protected:
+  // An Assembler only refers to its feature set; it never owns or deletes it.
+  // So the destructor is protected and non-virtual. A virtual destructor would
+  // make the compiler reference the global operator delete, which HotSpot
+  // does not allow.
+  ~AbstractAssemblerFeatures() = default;
+};
+
+// HotSpot-specific implementation of assembler features.
+class HotSpotAssemblerFeatures final : public AbstractAssemblerFeatures {
+  // Stateless: reads VM flags and VM_Version features on each
+  // call, so it is safe to use before VM_Version is initialized (the first
+  // assembler is created for the CPU detection stubs). Do not cache values here.
+ public:
+  static const HotSpotAssemblerFeatures& instance();
+  int use_avx() const override;
+  bool use_apx() const override;
+  bool supports_3dnow_prefetch() const override;
+  bool supports_adx() const override;
+  bool supports_aes() const override;
+  bool supports_apx_f() const override;
+  bool supports_avx() const override;
+  bool supports_avx10_2() const override;
+  bool supports_avx2() const override;
+  bool supports_avx512_bitalg() const override;
+  bool supports_avx512_fp16() const override;
+  bool supports_avx512_vbmi() const override;
+  bool supports_avx512_vbmi2() const override;
+  bool supports_avx512_vnni() const override;
+  bool supports_avx512_vpclmulqdq() const override;
+  bool supports_avx512_vpopcntdq() const override;
+  bool supports_avx512bw() const override;
+  bool supports_avx512cd() const override;
+  bool supports_avx512dq() const override;
+  bool supports_avx512ifma() const override;
+  bool supports_avx512novl() const override;
+  bool supports_avx512vl() const override;
+  bool supports_avx512vlbw() const override;
+  bool supports_avx512vldq() const override;
+  bool supports_avxifma() const override;
+  bool supports_bmi1() const override;
+  bool supports_bmi2() const override;
+  bool supports_clflushopt() const override;
+  bool supports_clmul() const override;
+  bool supports_clwb() const override;
+  bool cpu_supports_evex() const override;
+  bool supports_evex() const override;
+  bool supports_f16c() const override;
+  bool supports_fma() const override;
+  bool supports_gfni() const override;
+  bool supports_lzcnt() const override;
+  bool supports_popcnt() const override;
+  bool supports_serialize() const override;
+  bool supports_sha() const override;
+  bool supports_sha512() const override;
+  bool supports_sse3() const override;
+  bool supports_sse4_1() const override;
+  bool supports_sse4_2() const override;
+  bool supports_ssse3() const override;
+  bool supports_vaes() const override;
+  bool supports_vzeroupper() const override;
+};
+
 class Assembler : public AbstractAssembler  {
   friend class AbstractAssembler; // for the non-virtual hack
   friend class LIR_Assembler; // as_Address()
   friend class StubGenerator;
+
+ private:
+  const AbstractAssemblerFeatures* _asm_features;
+
+ protected:
+  const AbstractAssemblerFeatures& asm_features() const { return *_asm_features; }
 
  public:
   enum Condition {                     // The x86 condition codes used for conditional jumps/moves.
@@ -998,17 +1129,27 @@ private:
   public:
 
   // Creation
-  Assembler(CodeBuffer* code) : AbstractAssembler(code) {
+  Assembler(CodeBuffer* code)
+    : AbstractAssembler(code), _asm_features(&HotSpotAssemblerFeatures::instance()) {
     init_attributes();
   }
 
+  Assembler(CodeBuffer* code, const AbstractAssemblerFeatures& asm_features)
+    : AbstractAssembler(code), _asm_features(&asm_features) {
+    init_attributes();
+  }
+  // Disallow temporaries: the assembler keeps a pointer to the assembler feature set.
+  Assembler(CodeBuffer* code, const AbstractAssemblerFeatures&& asm_features) = delete;
+
   // Decoding
   static address locate_operand(address inst, WhichOperand which);
+  static address locate_operand(address inst, WhichOperand which, const AbstractAssemblerFeatures& asm_features);
   static address locate_next_instruction(address inst);
+  static address locate_next_instruction(address inst, const AbstractAssemblerFeatures& asm_features);
 
   // Utilities
-  static bool query_compressed_disp_byte(int disp, bool is_evex_inst, int vector_len,
-                                         int cur_tuple_type, int in_size_in_bits, int cur_encoding);
+  bool query_compressed_disp_byte(int disp, bool is_evex_inst, int vector_len,
+                                  int cur_tuple_type, int in_size_in_bits, int cur_encoding);
 
   // Generic instructions
   // Does 32bit or 64bit as needed for the platform. In some sense these
@@ -3171,7 +3312,7 @@ public:
     bool uses_vl)       // This instruction may have legacy constraints based on vector length for EVEX
     :
       _rex_vex_w(rex_vex_w),
-      _legacy_mode(legacy_mode || UseAVX < 3),
+      _legacy_mode(legacy_mode),
       _no_reg_mask(no_reg_mask),
       _uses_vl(uses_vl),
       _rex_vex_w_reverted(false),
@@ -3236,6 +3377,8 @@ public:
   // Set the instruction to be encoded in AVX mode
   void set_is_legacy_mode(void) { _legacy_mode = true; }
 
+  void set_legacy_mode_if_avx_below_3(int avx_level) { _legacy_mode = _legacy_mode || avx_level < 3; }
+
   // Set the current instruction to be encoded as an EVEX instruction
   void set_is_evex_instruction(void) { _is_evex_instruction = true; }
 
@@ -3249,8 +3392,15 @@ public:
   // Map back to current assembler so that we can manage object level association
   void set_current_assembler(Assembler *current_assembler) { _current_assembler = current_assembler; }
 
-  // Address modifiers used for compressed displacement calculation
-  void set_address_attributes(int tuple_type, int input_size_in_bits);
+  // Address modifiers used for compressed displacement calculation; only recorded
+  // when the encoding policy supports EVEX.
+  void set_address_attributes(int tuple_type, int input_size_in_bits,
+                              const AbstractAssemblerFeatures& asm_features) {
+    if (asm_features.supports_evex()) {
+      _tuple_type = tuple_type;
+      _input_size_in_bits = input_size_in_bits;
+    }
+  }
 
   // Set embedded opmask register specifier.
   void set_embedded_opmask_register_specifier(KRegister mask) {

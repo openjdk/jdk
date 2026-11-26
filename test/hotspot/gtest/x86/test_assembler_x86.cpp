@@ -64,16 +64,76 @@ static void asm_check(const uint8_t *insns, const uint8_t *insns1, const unsigne
   }
 }
 
-TEST_OTHER_VM(AssemblerX86, validate) {
-  UseAVX = 3;
-  FlagSetting flag_change_apx(UseAPX, true);
-  VM_Version::set_bmi_cpuFeatures();
-  VM_Version::set_evex_cpuFeatures();
-  VM_Version::set_avx_cpuFeatures();
-  VM_Version::set_apx_cpuFeatures();
+// Full synthetic x86 feature profile for asmtest: the features need for testing
+// the encoding of various instructions. 
+// Key settings:
+//   use_avx() == 3              - EVEX encoding and 512-bit vectors
+//   use_apx() == true           - extended GPRs (r16-r31), REX2 and APX EVEX forms
+//   supports_evex() == true     - EVEX instructions
+//   supports_avx512vl() == true - EVEX at 128/256-bit vector lengths
+//   cpu_supports_evex() == true - accepted by the locate_operand() EVEX assert
+// Some features also select encodings (e.g. avx512bw/dq, avx512ifma), so the
+// expected bytes in asmtest.out.h depend on this whole profile.
+// Values that VM_Version derives from others must stay consistent:
+//   supports_avx512novl() == supports_evex() && !supports_avx512vl()
+//   supports_avx512vlbw() == supports_evex() && supports_avx512bw() && supports_avx512vl()
+//   supports_avx512vldq() == supports_evex() && supports_avx512dq() && supports_avx512vl()
+class SyntheticAssemblerFeatures : public AbstractAssemblerFeatures {
+ public:
+  int use_avx() const override { return 3; }
+  bool use_apx() const override { return true; }
+  bool supports_3dnow_prefetch() const override { return true; }
+  bool supports_adx() const override { return true; }
+  bool supports_aes() const override { return true; }
+  bool supports_apx_f() const override { return true; }
+  bool supports_avx() const override { return true; }
+  bool supports_avx10_2() const override { return true; }
+  bool supports_avx2() const override { return true; }
+  bool supports_avx512_bitalg() const override { return true; }
+  bool supports_avx512_fp16() const override { return true; }
+  bool supports_avx512_vbmi() const override { return true; }
+  bool supports_avx512_vbmi2() const override { return true; }
+  bool supports_avx512_vnni() const override { return true; }
+  bool supports_avx512_vpclmulqdq() const override { return true; }
+  bool supports_avx512_vpopcntdq() const override { return true; }
+  bool supports_avx512bw() const override { return true; }
+  bool supports_avx512cd() const override { return true; }
+  bool supports_avx512dq() const override { return true; }
+  bool supports_avx512ifma() const override { return true; }
+  bool supports_avx512novl() const override { return false; }
+  bool supports_avx512vl() const override { return true; }
+  bool supports_avx512vlbw() const override { return true; }
+  bool supports_avx512vldq() const override { return true; }
+  bool supports_avxifma() const override { return true; }
+  bool supports_bmi1() const override { return true; }
+  bool supports_bmi2() const override { return true; }
+  bool supports_clflushopt() const override { return true; }
+  bool supports_clmul() const override { return true; }
+  bool supports_clwb() const override { return true; }
+  bool cpu_supports_evex() const override { return true; }
+  bool supports_evex() const override { return true; }
+  bool supports_f16c() const override { return true; }
+  bool supports_fma() const override { return true; }
+  bool supports_gfni() const override { return true; }
+  bool supports_lzcnt() const override { return true; }
+  bool supports_popcnt() const override { return true; }
+  bool supports_serialize() const override { return true; }
+  bool supports_sha() const override { return true; }
+  bool supports_sha512() const override { return true; }
+  bool supports_sse3() const override { return true; }
+  bool supports_sse4_1() const override { return true; }
+  bool supports_sse4_2() const override { return true; }
+  bool supports_ssse3() const override { return true; }
+  bool supports_vaes() const override { return true; }
+  bool supports_vzeroupper() const override { return true; }
+};
+
+TEST_VM(AssemblerX86, validate) {
+  SyntheticAssemblerFeatures asm_features;
+
   BufferBlob* b = BufferBlob::create("x64Test", 5000000);
   CodeBuffer code(b);
-  MacroAssembler _masm(&code);
+  MacroAssembler _masm(&code, asm_features);
   address entry = __ pc();
 
   // To build asmtest.out.h, ensure you have binutils version 2.34 or higher, then run:
