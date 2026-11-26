@@ -191,13 +191,9 @@ public class ContinuationFrameTest {
     static Object[][] badVariants() {
         return new Object[][] {
                 { noBodyhttp2URI,  noHeaders },
-                { noBodyhttp2URI,  noHeaders },
-                { noBodyhttps2URI, noHeaders },
                 { noBodyhttps2URI, noHeaders },
 
                 { noBodyhttp2URI,  strayPing },
-                { noBodyhttp2URI,  strayPing },
-                { noBodyhttps2URI, strayPing },
                 { noBodyhttps2URI, strayPing },
         };
     }
