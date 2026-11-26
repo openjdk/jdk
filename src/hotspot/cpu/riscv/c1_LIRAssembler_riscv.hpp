@@ -117,8 +117,6 @@ private:
   void lir_store_slowcheck(Register k_RInfo, Register klass_RInfo, Register Rtmp1,
                            Label* success_target, Label* failure_target);
 
-  // Returns zr for a zero or null constant; otherwise materializes it in t0 and returns t0.
-  Register load_cmp_constant(LIR_Opr src);
   void emit_branch(LIR_Condition cmp_flag, LIR_Opr cmp1, LIR_Opr cmp2, Label& label, bool is_far, bool is_unordered);
 
   void logic_op_reg32(Register dst, Register left, Register right, LIR_Code code);

@@ -940,20 +940,6 @@ void LIR_Assembler::emit_opBranch(LIR_OpBranch* op) {
   emit_branch(condition, op->in_opr1(), op->in_opr2(), *op->label(), /* is_far */ true, is_unordered);
 }
 
-Register LIR_Assembler::load_cmp_constant(LIR_Opr src) {
-  BasicType type = src->type();
-  assert(type == T_INT || type == T_LONG || type == T_ADDRESS ||
-         type == T_METADATA || is_reference_type(type),
-         "unexpected constant type for a CPU comparison");
-  if (is_null_or_zero_constant(type, src)) {
-    return zr;
-  }
-
-  LIR_Opr tmp = type == T_LONG ? FrameMap::t0_long_opr : FrameMap::t0_opr;
-  const2reg(src, tmp, lir_patch_none, nullptr);
-  return as_reg(tmp);
-}
-
 void LIR_Assembler::emit_branch(LIR_Condition cmp_flag, LIR_Opr cmp1, LIR_Opr cmp2, Label& label,
                                 bool is_far, bool is_unordered) {
 
@@ -968,8 +954,17 @@ void LIR_Assembler::emit_branch(LIR_Condition cmp_flag, LIR_Opr cmp1, LIR_Opr cm
       Register reg2 = as_reg(cmp2);
       __ c1_cmp_branch(cmp_flag, reg1, reg2, label, cmp1->type(), is_far);
     } else if (cmp2->is_constant()) {
-      Register reg2 = load_cmp_constant(cmp2);
-      __ c1_cmp_branch(cmp_flag, reg1, reg2, label, cmp2->type(), is_far);
+      BasicType type = cmp2->type();
+      assert(type == T_INT || type == T_LONG || type == T_ADDRESS ||
+             type == T_METADATA || is_reference_type(type),
+             "unexpected constant type for a CPU comparison");
+      Register reg2 = zr;
+      if (!is_null_or_zero_constant(type, cmp2)) {
+        LIR_Opr tmp = type == T_LONG ? FrameMap::t0_long_opr : FrameMap::t0_opr;
+        const2reg(cmp2, tmp, lir_patch_none, nullptr);
+        reg2 = as_reg(tmp);
+      }
+      __ c1_cmp_branch(cmp_flag, reg1, reg2, label, type, is_far);
     } else {
       ShouldNotReachHere();
     }
