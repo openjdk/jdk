@@ -64,8 +64,8 @@ static void asm_check(const uint8_t *insns, const uint8_t *insns1, const unsigne
   }
 }
 
-// Full synthetic x86 feature profile for asmtest: the features need for testing
-// the encoding of various instructions. 
+// Full synthetic x86 feature profile for asmtest: the features needed for testing
+// the encoding of various instructions.
 // Key settings:
 //   use_avx() == 3              - EVEX encoding and 512-bit vectors
 //   use_apx() == true           - extended GPRs (r16-r31), REX2 and APX EVEX forms
