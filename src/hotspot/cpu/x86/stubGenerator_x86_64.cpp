@@ -1379,7 +1379,7 @@ address StubGenerator::generate_vector_mask(StubId stub_id, int64_t mask) {
   if (start != nullptr) {
     return start;
   }
-  __ align(CodeEntryAlignment);
+  __ align64();
   StubCodeMark mark(this, stub_id);
   start = __ pc();
 
@@ -1406,7 +1406,7 @@ address StubGenerator::generate_vector_byte_perm_mask() {
   if (start != nullptr) {
     return start;
   }
-  __ align(CodeEntryAlignment);
+  __ align64();
   StubCodeMark mark(this, stub_id);
   start = __ pc();
 
