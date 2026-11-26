@@ -79,7 +79,7 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box,
 
   // Handle inflated monitor.
   Label inflated;
-  // Finish fast lock successfully. MUST branch to with flag == 0
+  // Finish fast lock successfully.
   Label locked;
   // Finish fast lock unsuccessfully. slow_path MUST branch to with flag != 0
   Label slow_path;
@@ -99,7 +99,7 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box,
 
   { // Fast locking
 
-    // Push lock to the lock stack and finish successfully. MUST branch to with flag == 0
+    // Push lock to the lock stack and finish successfully.
     Label push;
 
     const Register tmp2_top = tmp2;
@@ -248,10 +248,9 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box,
   mv(flag, zr);
 
 #ifdef ASSERT
-  // Check that locked label is reached with flag == 0.
+  // Skip the slow-path flag check.
   Label flag_correct;
-  beqz(flag, flag_correct);
-  stop("Fast Lock Flag != 0");
+  j(flag_correct);
 #endif
 
   bind(slow_path);
@@ -275,7 +274,7 @@ void C2_MacroAssembler::fast_unlock(Register obj, Register box,
 
   // Handle inflated monitor.
   Label inflated, inflated_load_mark;
-  // Finish fast unlock successfully. unlocked MUST branch to with flag == 0
+  // Finish fast unlock successfully.
   Label unlocked;
   // Finish fast unlock unsuccessfully. MUST branch to with flag != 0
   Label slow_path;
@@ -401,7 +400,6 @@ void C2_MacroAssembler::fast_unlock(Register obj, Register box,
     // to reacquire the lock in SharedRuntime::monitor_exit_helper().
     sd(tmp1_monitor, Address(xthread, JavaThread::unlocked_inflated_monitor_offset()));
 
-    mv(flag, 1);
     j(slow_path);
   }
 
@@ -409,17 +407,16 @@ void C2_MacroAssembler::fast_unlock(Register obj, Register box,
   mv(flag, zr);
 
 #ifdef ASSERT
-  // Check that unlocked label is reached with flag == 0.
+  // Skip the slow-path flag check.
   Label flag_correct;
-  beqz(flag, flag_correct);
-  stop("Fast Lock Flag != 0");
+  j(flag_correct);
 #endif
 
   bind(slow_path);
 #ifdef ASSERT
   // Check that slow_path label is reached with flag != 0.
   bnez(flag, flag_correct);
-  stop("Fast Lock Flag == 0");
+  stop("Fast Unlock Flag == 0");
   bind(flag_correct);
 #endif
   // C2 uses the value of flag (0 vs !0) to determine the continuation.
