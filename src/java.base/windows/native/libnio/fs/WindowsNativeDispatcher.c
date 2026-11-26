@@ -212,7 +212,7 @@ JNIEXPORT jstring JNICALL
 Java_sun_nio_fs_WindowsNativeDispatcher_FormatMessage(JNIEnv* env, jclass this, jint errorCode) {
     WCHAR message[255];
 
-    DWORD len = FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM,
+    DWORD len = FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_IGNORE_INSERTS,
                                NULL,
                                (DWORD)errorCode,
                                0,
