@@ -99,12 +99,12 @@ instruct g1StoreP(memory mem, any_RegP src, rRegP tmp1, rRegP tmp2, rRegP tmp3, 
   ins_pipe(ialu_mem_reg);
 %}
 
-instruct g1StoreLSpecialOneOopOff0(memory mem, rRegL src, immI_0 off, rRegP tmp1, rRegP tmp2, rRegP tmp3, rFlagsReg cr)
+instruct g1StoreLWithNarrowOopsOneOopOff0(memory mem, rRegL src, immI_0 off, rRegP tmp1, rRegP tmp2, rRegP tmp3, rFlagsReg cr)
 %{
   predicate(UseG1GC);
-  match(Set mem (StoreLSpecial mem (Binary src off)));
+  match(Set mem (StoreLWithNarrowOops mem (Binary src off)));
   effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, KILL cr);
-  format %{ "movq    $mem, $src\t# g1StoreLSpecialOneOopOff0" %}
+  format %{ "movq    $mem, $src\t# g1StoreLWithNarrowOopsOneOopOff0" %}
   ins_encode %{
     __ lea($tmp1$$Register, $mem$$Address);
     write_barrier_pre(masm, this,
@@ -132,12 +132,12 @@ instruct g1StoreLSpecialOneOopOff0(memory mem, rRegL src, immI_0 off, rRegP tmp1
   ins_pipe(ialu_mem_reg);
 %}
 
-instruct g1StoreLSpecialOneOopOff4(memory mem, rRegL src, immI_4 off, rRegP tmp1, rRegP tmp2, rRegP tmp3, rFlagsReg cr)
+instruct g1StoreLWithNarrowOopsOneOopOff4(memory mem, rRegL src, immI_4 off, rRegP tmp1, rRegP tmp2, rRegP tmp3, rFlagsReg cr)
 %{
   predicate(UseG1GC);
-  match(Set mem (StoreLSpecial mem (Binary src off)));
+  match(Set mem (StoreLWithNarrowOops mem (Binary src off)));
   effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, KILL cr);
-  format %{ "movq    $mem, $src\t# g1StoreLSpecialOneOopOff4" %}
+  format %{ "movq    $mem, $src\t# g1StoreLWithNarrowOopsOneOopOff4" %}
   ins_encode %{
     Address dst = $mem$$Address;
     // Adjust address to point to narrow oop if we need any barrier. Otherwise, no need to touch tmp1 at all.
@@ -172,12 +172,12 @@ instruct g1StoreLSpecialOneOopOff4(memory mem, rRegL src, immI_4 off, rRegP tmp1
   ins_pipe(ialu_mem_reg);
 %}
 
-instruct g1StoreLSpecialTwoOops(memory mem, rRegL src, rRegP tmp1, rRegP tmp2, rRegP tmp3, rFlagsReg cr)
+instruct g1StoreLWithNarrowOopsTwoOops(memory mem, rRegL src, rRegP tmp1, rRegP tmp2, rRegP tmp3, rFlagsReg cr)
 %{
   predicate(UseG1GC);
-  match(Set mem (StoreLSpecial mem src));
+  match(Set mem (StoreLWithNarrowOops mem src));
   effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, KILL cr);
-  format %{ "movq    $mem, $src\t# g1StoreLSpecialTwoOops" %}
+  format %{ "movq    $mem, $src\t# g1StoreLWithNarrowOopsTwoOops" %}
   ins_encode %{
     __ lea($tmp1$$Register, $mem$$Address);
     if ((barrier_data() & G1C2BarrierPre) == 0 && (barrier_data() & G1C2BarrierPost) == 0) {

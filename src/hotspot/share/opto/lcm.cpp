@@ -221,7 +221,7 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
     case Op_StoreF:
     case Op_StoreI:
     case Op_StoreL:
-    case Op_StoreLSpecial:
+    case Op_StoreLWithNarrowOops:
     case Op_StoreP:
     case Op_StoreN:
     case Op_StoreNKlass:
@@ -771,7 +771,7 @@ void PhaseCFG::adjust_register_pressure(Node* n, Block* block, intptr_t* recalc_
         case Op_StoreF:
         case Op_StoreI:
         case Op_StoreL:
-        case Op_StoreLSpecial:
+        case Op_StoreLWithNarrowOops:
         case Op_StoreP:
         case Op_StoreN:
         case Op_StoreVector:

@@ -1004,10 +1004,10 @@ public class IRNode {
     public static final String G1_STORE_L_SPECIAL_ONE_OOP_4_WITH_BARRIER_FLAG = COMPOSITE_PREFIX + "G1_STORE_L_SPECIAL_ONE_OOP_4_WITH_BARRIER_FLAG" + POSTFIX;
     public static final String G1_STORE_L_SPECIAL_TWO_OOPS_WITH_BARRIER_FLAG = COMPOSITE_PREFIX + "G1_STORE_L_SPECIAL_TWO_OOPS_WITH_BARRIER_FLAG" + POSTFIX;
     static {
-        String regex_any = START + "g1StoreLSpecial\\S*" + MID + "barrier\\(\\s*" + IS_REPLACED + "\\s*\\)" + END;
-        String regex_one_oop0 = START + "g1StoreLSpecialOneOopOff0" + MID + "barrier\\(\\s*" + IS_REPLACED + "\\s*\\)" + END;
-        String regex_one_oop4 = START + "g1StoreLSpecialOneOopOff4" + MID + "barrier\\(\\s*" + IS_REPLACED + "\\s*\\)" + END;
-        String regex_two_oops = START + "g1StoreLSpecialTwoOops" + MID + "barrier\\(\\s*" + IS_REPLACED + "\\s*\\)" + END;
+        String regex_any = START + "g1StoreLWithNarrowOops\\S*" + MID + "barrier\\(\\s*" + IS_REPLACED + "\\s*\\)" + END;
+        String regex_one_oop0 = START + "g1StoreLWithNarrowOopsOneOopOff0" + MID + "barrier\\(\\s*" + IS_REPLACED + "\\s*\\)" + END;
+        String regex_one_oop4 = START + "g1StoreLWithNarrowOopsOneOopOff4" + MID + "barrier\\(\\s*" + IS_REPLACED + "\\s*\\)" + END;
+        String regex_two_oops = START + "g1StoreLWithNarrowOopsTwoOops" + MID + "barrier\\(\\s*" + IS_REPLACED + "\\s*\\)" + END;
         machOnly(G1_STORE_L_SPECIAL_WITH_BARRIER_FLAG, regex_any);
         machOnly(G1_STORE_L_SPECIAL_ONE_OOP_0_WITH_BARRIER_FLAG, regex_one_oop0);
         machOnly(G1_STORE_L_SPECIAL_ONE_OOP_4_WITH_BARRIER_FLAG, regex_one_oop4);
@@ -1019,10 +1019,10 @@ public class IRNode {
     public static final String G1_STORE_L_SPECIAL_ONE_OOP_4 = PREFIX + "G1_STORE_L_SPECIAL_ONE_OOP_4" + POSTFIX;
     public static final String G1_STORE_L_SPECIAL_TWO_OOPS = PREFIX + "G1_STORE_L_SPECIAL_TWO_OOPS" + POSTFIX;
     static {
-        String regex_any = START + "g1StoreLSpecial\\S*" + MID + END;
-        String regex_one_oop0 = START + "g1StoreLSpecialOneOopOff0" + MID + END;
-        String regex_one_oop4 = START + "g1StoreLSpecialOneOopOff4" + MID + END;
-        String regex_two_oops = START + "g1StoreLSpecialTwoOops" + MID + END;
+        String regex_any = START + "g1StoreLWithNarrowOops\\S*" + MID + END;
+        String regex_one_oop0 = START + "g1StoreLWithNarrowOopsOneOopOff0" + MID + END;
+        String regex_one_oop4 = START + "g1StoreLWithNarrowOopsOneOopOff4" + MID + END;
+        String regex_two_oops = START + "g1StoreLWithNarrowOopsTwoOops" + MID + END;
         machOnly(G1_STORE_L_SPECIAL, regex_any);
         machOnly(G1_STORE_L_SPECIAL_ONE_OOP_0, regex_one_oop0);
         machOnly(G1_STORE_L_SPECIAL_ONE_OOP_4, regex_one_oop4);

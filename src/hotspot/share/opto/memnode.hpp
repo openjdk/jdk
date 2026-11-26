@@ -521,7 +521,7 @@ public:
   virtual int Opcode() const;
   virtual BasicType value_basic_type() const { return T_LONG; }
 
-  virtual int store_Opcode() const { return Op_StoreLSpecial; }
+  virtual int store_Opcode() const { return Op_StoreLWithNarrowOops; }
 
   virtual uint match_edge(uint idx) const { return idx == MemNode::Address ||
                                                    idx == MemNode::ValueIn; }
@@ -794,7 +794,7 @@ public:
 };
 
 // Special StoreL for flat stores that emits GC barriers for field at 'oop_off' in the backend
-class StoreLSpecialNode : public StoreNode {
+class StoreLWithNarrowOopsNode : public StoreNode {
 
 public:
   enum {
@@ -803,7 +803,7 @@ public:
     SecondOop,
   };
 
-  StoreLSpecialNode(Node* c, Node* mem, Node* adr, const TypePtr* at, Node* val, MemOrd mo)
+  StoreLWithNarrowOopsNode(Node* c, Node* mem, Node* adr, const TypePtr* at, Node* val, MemOrd mo)
     : StoreNode(c, mem, adr, at, val, mo) {
     set_mismatched_access();
   }
@@ -812,7 +812,7 @@ public:
 
   virtual uint match_edge(uint idx) const { return idx == MemNode::Address ||
                                                    idx == MemNode::ValueIn ||
-                                                   idx == StoreLSpecialNode::OopOffset; }
+                                                   idx == StoreLWithNarrowOopsNode::OopOffset; }
 };
 
 //------------------------------StoreFNode-------------------------------------

@@ -2494,14 +2494,14 @@ void Matcher::find_shared_post_visit(Node* n, uint opcode) {
       }
       break;
     }
-    case Op_StoreLSpecial: {
-      if (!n->in(StoreLSpecialNode::OopOffset)->is_top()) {
-        Node* pair = new BinaryNode(n->in(MemNode::ValueIn), n->in(StoreLSpecialNode::OopOffset));
+    case Op_StoreLWithNarrowOops: {
+      if (!n->in(StoreLWithNarrowOopsNode::OopOffset)->is_top()) {
+        Node* pair = new BinaryNode(n->in(MemNode::ValueIn), n->in(StoreLWithNarrowOopsNode::OopOffset));
         n->set_req(MemNode::ValueIn, pair);
       }
-      n->del_req(StoreLSpecialNode::SecondOop);
-      n->del_req(StoreLSpecialNode::FirstOop);
-      n->del_req(StoreLSpecialNode::OopOffset);
+      n->del_req(StoreLWithNarrowOopsNode::SecondOop);
+      n->del_req(StoreLWithNarrowOopsNode::FirstOop);
+      n->del_req(StoreLWithNarrowOopsNode::OopOffset);
       break;
     }
     default:

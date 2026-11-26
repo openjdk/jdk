@@ -73,14 +73,14 @@ static void write_barrier_post(MacroAssembler* masm,
 
 %} // source
 
-instruct g1StoreLSpecialOneOopOff0(indirect mem, iRegL src, immI_0 off, iRegL tmp1, iRegL tmp2, iRegL tmp3, flagsReg cr) %{
+instruct g1StoreLWithNarrowOopsOneOopOff0(indirect mem, iRegL src, immI_0 off, iRegL tmp1, iRegL tmp2, iRegL tmp3, flagsReg cr) %{
   predicate(UseG1GC);
-  match(Set mem (StoreLSpecial mem (Binary src off)));
+  match(Set mem (StoreLWithNarrowOops mem (Binary src off)));
   effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, KILL cr);
   ins_cost(MEMORY_REF_COST);
-  format %{ "STG     $src,$mem\t # g1StoreLSpecialOneOopOff0" %}
+  format %{ "STG     $src,$mem\t # g1StoreLWithNarrowOopsOneOopOff0" %}
   ins_encode %{
-    __ block_comment("g1StoreLSpecialOneOopOff0 {");
+    __ block_comment("g1StoreLWithNarrowOopsOneOopOff0 {");
 
     write_barrier_pre(masm, this,
                       $mem$$Register  /* obj     */,
@@ -105,19 +105,19 @@ instruct g1StoreLSpecialOneOopOff0(indirect mem, iRegL src, immI_0 off, iRegL tm
                        $tmp1$$Register /* new_val    */,
                        $tmp2$$Register /* tmp1       */,
                        $tmp3$$Register /* tmp2       */);
-    __ block_comment("} g1StoreLSpecialOneOopOff0");
+    __ block_comment("} g1StoreLWithNarrowOopsOneOopOff0");
   %}
   ins_pipe(pipe_class_dummy);
 %}
 
-instruct g1StoreLSpecialOneOopOff4(indirect mem, iRegL src, immI_4 off, iRegL tmp1, iRegL tmp2, iRegL tmp3, iRegL tmp4, flagsReg cr) %{
+instruct g1StoreLWithNarrowOopsOneOopOff4(indirect mem, iRegL src, immI_4 off, iRegL tmp1, iRegL tmp2, iRegL tmp3, iRegL tmp4, flagsReg cr) %{
   predicate(UseG1GC);
-  match(Set mem (StoreLSpecial mem (Binary src off)));
+  match(Set mem (StoreLWithNarrowOops mem (Binary src off)));
   effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, KILL cr);
   ins_cost(MEMORY_REF_COST);
-  format %{ "STG     $src,$mem\t # g1StoreLSpecialOneOopOff4" %}
+  format %{ "STG     $src,$mem\t # g1StoreLWithNarrowOopsOneOopOff4" %}
   ins_encode %{
-    __ block_comment("g1StoreLSpecialOneOopOff4 {");
+    __ block_comment("g1StoreLWithNarrowOopsOneOopOff4 {");
 
     __ z_la($tmp1$$Register, Address($mem$$Register, 4));
     write_barrier_pre(masm, this,
@@ -143,19 +143,19 @@ instruct g1StoreLSpecialOneOopOff4(indirect mem, iRegL src, immI_4 off, iRegL tm
                        $tmp2$$Register /* new_val    */,
                        $tmp3$$Register /* tmp1       */,
                        $tmp4$$Register /* tmp2       */);
-    __ block_comment("} g1StoreLSpecialOneOopOff4");
+    __ block_comment("} g1StoreLWithNarrowOopsOneOopOff4");
   %}
   ins_pipe(pipe_class_dummy);
 %}
 
-instruct g1StoreLSpecialTwoOops(indirect mem, iRegL src, iRegL tmp1, iRegL tmp2, iRegL tmp3, iRegL tmp4, flagsReg cr) %{
+instruct g1StoreLWithNarrowOopsTwoOops(indirect mem, iRegL src, iRegL tmp1, iRegL tmp2, iRegL tmp3, iRegL tmp4, flagsReg cr) %{
   predicate(UseG1GC);
-  match(Set mem (StoreLSpecial mem src));
+  match(Set mem (StoreLWithNarrowOops mem src));
   effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, KILL cr);
   ins_cost(MEMORY_REF_COST);
-  format %{ "STG     $src,$mem\t # g1StoreLSpecialTwoOops" %}
+  format %{ "STG     $src,$mem\t # g1StoreLWithNarrowOopsTwoOops" %}
   ins_encode %{
-    __ block_comment("g1StoreLSpecialTwoOops {");
+    __ block_comment("g1StoreLWithNarrowOopsTwoOops {");
 
     write_barrier_pre(masm, this,
                       $mem$$Register  /* obj */,
@@ -200,7 +200,7 @@ instruct g1StoreLSpecialTwoOops(indirect mem, iRegL src, iRegL tmp1, iRegL tmp2,
                        $tmp1$$Register /* new_val */,
                        $tmp2$$Register /* tmp1 */,
                        $tmp3$$Register /* tmp2 */);
-    __ block_comment("} g1StoreLSpecialTwoOops");
+    __ block_comment("} g1StoreLWithNarrowOopsTwoOops");
   %}
   ins_pipe(pipe_class_dummy);
 %}

@@ -2469,7 +2469,7 @@ void StoreFlatNode::expand_atomic(PhaseIterGVN& igvn) const {
                                     _decorators | C2_MISMATCHED | (needs_special ? C2_SPECIAL_ACCESS : 0),
                                     true, value);
   if (needs_special) {
-    assert(store->Opcode() == Op_StoreLSpecial, "must be special");
+    assert(store->Opcode() == Op_StoreLWithNarrowOops, "must be special");
     assert(!oop_1->is_top(), "if no oop, the store shouldn't be special");
     Node* oop_offset_node = (oop_off_2 == -1) ? igvn.intcon(oop_off_1) : igvn.C->top();
     store->add_req(oop_offset_node);

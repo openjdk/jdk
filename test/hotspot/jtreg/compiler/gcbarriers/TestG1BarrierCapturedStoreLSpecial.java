@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8387705
- * @summary Test that G1 barriers for StoreLSpecial are generated and optimized as expected
+ * @summary Test that G1 barriers for StoreLWithNarrowOops are generated and optimized as expected
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
@@ -40,7 +40,7 @@ import static compiler.lib.ir_framework.IRNode.*;
 import jdk.internal.vm.annotation.NullRestricted;
 import jdk.test.lib.Asserts;
 
-public class TestG1BarrierCapturedStoreLSpecial {
+public class TestG1BarrierCapturedStoreLWithNarrowOops {
     static final String PRE_ONLY = "pre";
     static final String PRE_AND_POST = "pre post";
     static final String PRE_AND_POST_NOT_NULL = "pre post notnull";
@@ -285,7 +285,7 @@ public class TestG1BarrierCapturedStoreLSpecial {
         Asserts.assertEQ(h.v, v);
     }
 
-    // Assign 2 oops in a single StoreLSpecial. Both are known to be not-null.
+    // Assign 2 oops in a single StoreLWithNarrowOops. Both are known to be not-null.
     // We can use a not-null post-barrier.
     @Test
     @IR(applyIf = {"UseCompressedOops", "false"},
@@ -307,7 +307,7 @@ public class TestG1BarrierCapturedStoreLSpecial {
         Asserts.assertNE(h2.v.v2, null);
     }
 
-    // Assign 2 oops in a single StoreLSpecial. Only left is known to be not-null.
+    // Assign 2 oops in a single StoreLWithNarrowOops. Only left is known to be not-null.
     // We cannot use a not-null post-barrier.
     @Test
     @IR(applyIf = {"UseCompressedOops", "false"},
@@ -351,7 +351,7 @@ public class TestG1BarrierCapturedStoreLSpecial {
         Asserts.assertNE(h2.v.v2, null);
     }
 
-    // Assign 2 null in a single StoreLSpecial.
+    // Assign 2 null in a single StoreLWithNarrowOops.
     // Not post barrier is needed.
     @Test
     @IR(applyIf = {"UseCompressedOops", "false"},
@@ -373,7 +373,7 @@ public class TestG1BarrierCapturedStoreLSpecial {
         Asserts.assertEQ(h2.v.v2, null);
     }
 
-    // Assign a single not-null oop at offset 0 with a StoreLSpecial. Not-null post-barrier does the trick.
+    // Assign a single not-null oop at offset 0 with a StoreLWithNarrowOops. Not-null post-barrier does the trick.
     @Test
     @IR(applyIf = {"UseCompressedOops", "false"},
         failOn = {G1_STORE_L_SPECIAL})
@@ -394,7 +394,7 @@ public class TestG1BarrierCapturedStoreLSpecial {
         Asserts.assertNE(h2.v.v, null);
     }
 
-    // Assign a single null at offset 0 with a StoreLSpecial. No post-barrier needed.
+    // Assign a single null at offset 0 with a StoreLWithNarrowOops. No post-barrier needed.
     @Test
     @IR(applyIf = {"UseCompressedOops", "false"},
         failOn = {G1_STORE_L_SPECIAL})
@@ -473,7 +473,7 @@ public class TestG1BarrierCapturedStoreLSpecial {
         }
     }
 
-    // Assign two oops in a single StoreLSpecial, just after initialization
+    // Assign two oops in a single StoreLWithNarrowOops, just after initialization
     @Test
     @IR(applyIf = {"UseCompressedOops", "false"},
         failOn = {G1_STORE_L_SPECIAL})

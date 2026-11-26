@@ -3124,7 +3124,7 @@ StoreNode* StoreNode::make(PhaseGVN& gvn, Node* ctl, Node* mem, Node* adr, const
   case T_SHORT:   return new StoreCNode(ctl, mem, adr, adr_type, val, mo);
   case T_LONG: {
     if (store_special) {
-      return new StoreLSpecialNode(ctl, mem, adr, adr_type, val, mo);
+      return new StoreLWithNarrowOopsNode(ctl, mem, adr, adr_type, val, mo);
     }
     return new StoreLNode(ctl, mem, adr, adr_type, val, mo, require_atomic_access);
   }

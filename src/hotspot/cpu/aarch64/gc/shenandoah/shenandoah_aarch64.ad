@@ -267,7 +267,7 @@ instruct encodePAndStoreN_Volatile_shenandoah(indirect mem, iRegP src, iRegPNoSp
 
 instruct storeLSpecial_both_shenandoah(indirect mem, iRegL src, iRegLNoSp tmp, rFlagsReg cr)
 %{
-  match(Set mem (StoreLSpecial mem src));
+  match(Set mem (StoreLWithNarrowOops mem src));
   predicate(UseShenandoahGC);
   effect(TEMP tmp, KILL cr);
   format %{ "shenandoah_store_special $mem, $src\t# both oops" %}
@@ -287,7 +287,7 @@ instruct storeLSpecial_both_shenandoah(indirect mem, iRegL src, iRegLNoSp tmp, r
 
 instruct storeLSpecial_single_shenandoah(indirect mem, iRegL src, immI off, iRegLNoSp tmp, rFlagsReg cr)
 %{
-  match(Set mem (StoreLSpecial mem (Binary src off)));
+  match(Set mem (StoreLWithNarrowOops mem (Binary src off)));
   predicate(UseShenandoahGC);
   effect(TEMP tmp, KILL cr);
   format %{ "shenandoah_store_special $mem, $src\t# single oop" %}
