@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,6 +108,7 @@ private:
   bool _is_heap_almost_full;
 
   void do_full_collection(bool clear_all_soft_refs) override;
+  void do_full_collection_internal(bool clear_all_soft_refs, size_t old_capacity_at_prologue);
 
   bool is_young_gc_safe() const;
 
@@ -131,6 +132,8 @@ private:
   // In particular, if any generation might iterate over the oops
   // in other generations, it should call this method.
   void save_marks();
+
+  bool upgrade_to_full_collection(size_t old_capacity_at_prologue) const;
 
 public:
   // Returns JNI_OK on success
