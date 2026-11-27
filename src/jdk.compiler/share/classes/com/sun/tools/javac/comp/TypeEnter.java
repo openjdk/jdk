@@ -770,7 +770,6 @@ public class TypeEnter implements Completer {
                                   true, false, false)
                 : syms.objectType;
             }
-            ct.supertype_field = modelMissingTypes(baseEnv, supertype, extending, false);
 
             // Determine interfaces.
             ListBuffer<Type> interfaces = new ListBuffer<>();
@@ -789,6 +788,7 @@ public class TypeEnter implements Completer {
                 }
             }
 
+            ct.supertype_field = modelMissingTypes(baseEnv, supertype, extending, false);
             if ((sym.flags_field & ANNOTATION) != 0) {
                 ct.interfaces_field = List.of(syms.annotationType);
                 ct.all_interfaces_field = ct.interfaces_field;

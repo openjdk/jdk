@@ -1281,7 +1281,7 @@ static HANDLE create_sharedmem_resources(const char* dirname, const char* filena
   // the file has been successfully created and the file mapping
   // object has been created.
   sharedmem_fileHandle = fh;
-  sharedmem_fileName = os::strdup(filename);
+  sharedmem_fileName = os::strdup(filename, mtInternal);
 
   return fmh;
 }

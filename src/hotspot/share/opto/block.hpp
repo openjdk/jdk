@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,7 +115,7 @@ class Block : public CFGElement {
 
 private:
   // Nodes in this block, in order
-  Node_List _nodes;
+  Node_List<Node> _nodes;
 
 public:
 
@@ -189,7 +189,6 @@ public:
   int num_fall_throughs();      // How many fall-through candidate this block has
   void update_uncommon_branch(Block* un); // Lower branch prob to uncommon code
   bool succ_fall_through(uint i); // Is successor "i" is a fall-through candidate
-  Block* lone_fall_through();   // Return lone fall-through Block or null
 
   Block* dom_lca(Block* that);  // Compute LCA in dominator tree.
 
@@ -206,9 +205,7 @@ public:
   uint compute_loop_alignment();
 
   // BLOCK_FREQUENCY is a sentinel to mark uses of constant block frequencies.
-  // It is currently also used to scale such frequencies relative to
-  // FreqCountInvocations relative to the old value of 1500.
-#define BLOCK_FREQUENCY(f) ((f * (double) 1500) / FreqCountInvocations)
+#define BLOCK_FREQUENCY(f) (f * 1500.0)
 
   // Register Pressure (estimate) for Splitting heuristic
   uint _reg_pressure;
@@ -426,12 +423,12 @@ class PhaseCFG : public Phase {
   void global_code_motion();
 
   // Schedule Nodes early in their basic blocks.
-  bool schedule_early(VectorSet &visited, Node_Stack &roots);
+  bool schedule_early(VectorSet& visited, Node_Stack<Node>& roots);
 
   // For each node, find the latest block it can be scheduled into
   // and then select the cheapest block between the latest and earliest
   // block to place the node.
-  void schedule_late(VectorSet &visited, Node_Stack &stack);
+  void schedule_late(VectorSet& visited, Node_Stack<Node>& stack);
 
   // Compute the (backwards) latency of a node from a single use
   int latency_from_use(Node *n, const Node *def, Node *use);
@@ -440,7 +437,7 @@ class PhaseCFG : public Phase {
   void partial_latency_of_defs(Node *n);
 
   // Compute the instruction global latency with a backwards walk
-  void compute_latencies_backwards(VectorSet &visited, Node_Stack &stack);
+  void compute_latencies_backwards(VectorSet& visited, Node_Stack<Node>& stack);
 
   // Check if a block between early and LCA block of uses is cheaper by
   // frequency-based policy, latency-based policy and random-based policy
@@ -457,12 +454,12 @@ class PhaseCFG : public Phase {
   void needed_for_next_call(Block* block, Node* this_call, VectorSet& next_call);
 
   // Perform basic-block local scheduling
-  Node* select(Block* block, Node_List& worklist, GrowableArray<int>& ready_cnt, VectorSet& next_call, uint sched_slot,
+  Node* select(Block* block, Node_List<Node>& worklist, GrowableArray<int>& ready_cnt, VectorSet& next_call, uint sched_slot,
                intptr_t* recacl_pressure_nodes);
   void adjust_register_pressure(Node* n, Block* block, intptr_t *recalc_pressure_nodes, bool finalize_mode);
 
   // Schedule a call next in the block
-  uint sched_call(Block* block, uint node_cnt, Node_List& worklist, GrowableArray<int>& ready_cnt, MachCallNode* mcall, VectorSet& next_call);
+  uint sched_call(Block* block, uint node_cnt, Node_List<Node>& worklist, GrowableArray<int>& ready_cnt, MachCallNode* mcall, VectorSet& next_call);
 
   // Cleanup if any code lands between a Call and his Catch
   void call_catch_cleanup(Block* block);
@@ -608,7 +605,7 @@ class PhaseCFG : public Phase {
   bool is_uncommon(const Block* block);
 
 #ifdef ASSERT
-  Unique_Node_List _raw_oops;
+  Unique_Node_List<const Node> _raw_oops;
 #endif
 
   // Do global code motion by first building dominator tree and estimate block frequency
@@ -742,7 +739,6 @@ class CFGLoop : public CFGElement {
     assert(hd->head()->is_Loop(), "must begin with loop head node");
     return hd;
   }
-  Block* backedge_block(); // Return the block on the backedge of the loop (else null)
   void compute_loop_depth(int depth);
   void compute_freq(); // compute frequency with loop assuming head freq 1.0f
   void scale_freq();   // scale frequency by loop trip count (including outer loops)

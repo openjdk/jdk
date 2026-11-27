@@ -327,6 +327,17 @@ public class TestMismatch {
     }
 
     @Test
+    public void testClosedEmptyRange() {
+        MemorySegment closed;
+        try (Arena arena = Arena.ofConfined()) {
+            closed = arena.allocate(4, 1);
+        }
+        var alive = MemorySegment.ofArray(new byte[4]);
+        assertThrows(ISE, () -> MemorySegment.mismatch(closed, 0, 0, alive, 0, 0));
+        assertThrows(ISE, () -> MemorySegment.mismatch(alive, 0, 0, closed, 0, 0));
+    }
+
+    @Test
     public void testThreadAccess() throws Exception {
         try (Arena arena = Arena.ofConfined()) {
             var segment = arena.allocate(4, 1);;

@@ -55,6 +55,7 @@ class ArchivePtrMarker : AllStatic {
   static CHeapBitMap*  _ptrmap;
   static CHeapBitMap*  _rw_ptrmap;
   static CHeapBitMap*  _ro_ptrmap;
+  static CHeapBitMap*  _ac_ptrmap;
   static VirtualSpace* _vs;
 
   // Once _ptrmap is compacted, we don't allow bit marking anymore. This is to
@@ -66,7 +67,7 @@ class ArchivePtrMarker : AllStatic {
 
 public:
   static void initialize(CHeapBitMap* ptrmap, VirtualSpace* vs);
-  static void initialize_rw_ro_maps(CHeapBitMap* rw_ptrmap, CHeapBitMap* ro_ptrmap);
+  static void initialize_rw_ro_ac_maps(CHeapBitMap* rw_ptrmap, CHeapBitMap* ro_ptrmap, CHeapBitMap* ac_ptrmap);
   static void mark_pointer(address* ptr_loc);
   static void clear_pointer(address* ptr_loc);
   static void compact(address relocatable_base, address relocatable_end);
@@ -95,10 +96,15 @@ public:
     return _ro_ptrmap;
   }
 
+  static CHeapBitMap* ac_ptrmap() {
+    return _ac_ptrmap;
+  }
+
   static void reset_map_and_vs() {
     _ptrmap = nullptr;
     _rw_ptrmap = nullptr;
     _ro_ptrmap = nullptr;
+    _ac_ptrmap = nullptr;
     _vs = nullptr;
   }
 };
@@ -185,7 +191,7 @@ public:
   char* allocate(size_t num_bytes, size_t alignment = 0);
   char* allocate_metaspace_obj(size_t num_bytes, address src, MetaspaceClosureType type, bool read_only, DumpAllocStats* stats);
 
-  void append_intptr_t(intptr_t n, bool need_to_mark = false) NOT_CDS_RETURN;
+  void append_intptr_t(intptr_t n) NOT_CDS_RETURN;
 
   char* base()      const { return _base;        }
   char* top()       const { return _top;         }
@@ -210,6 +216,24 @@ public:
   }
 
   static void report_gaps(DumpAllocStats* stats);
+};
+
+// RAII marker class -- if it's active, all WriteClosure::do_xxx() functions will write
+// zeros regardless of the input.
+//
+// This class is currently used only for demarcating data structures that are loaded
+// from the input archive in AOT retraining, but should not be written into the output AOT
+// configuration file. E.g., AOTLinkedClassTable.
+class AOTWriteClosureDisabler {
+  static int _active_count;
+  bool _is_active;
+public:
+  AOTWriteClosureDisabler(bool is_active);
+  ~AOTWriteClosureDisabler();
+
+  static bool is_active() {
+    return _active_count > 0;
+  }
 };
 
 // Closure for serializing initialization data out to a data area to be

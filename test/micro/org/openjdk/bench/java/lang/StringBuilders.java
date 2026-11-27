@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2025, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -489,6 +489,54 @@ public class StringBuilders {
     @Benchmark
     public String emptyToString(Data data) {
         return data.sbEmpty.toString();
+    }
+
+    @Benchmark
+    public StringBuilder repeatLatin1StringOntoLatin1StringBuilder(Data data) {
+        var sbLatin1 = new StringBuilder("a");
+        return sbLatin1.repeat(data.str, data.length);
+    }
+
+    @Benchmark
+    public StringBuilder repeatLatin1StringOntoUtf16StringBuilder(Data data) {
+        var sbUtf16 = new StringBuilder("\u04FF");
+        return sbUtf16.repeat(data.str, data.length);
+    }
+
+    @Benchmark
+    public StringBuilder repeatUtf16StringOntoLatin1StringBuilder(Data data) {
+        var sbLatin1 = new StringBuilder("a");
+        return sbLatin1.repeat(data.utf16Str, data.length);
+    }
+
+    @Benchmark
+    public StringBuilder repeatUtf16StringOntoUtf16StringBuilder(Data data) {
+        var sbUtf16 = new StringBuilder("\u04FF");
+        return sbUtf16.repeat(data.utf16Str, data.length);
+    }
+
+    @Benchmark
+    public StringBuilder repeatLatin1CodePointOntoLatin1StringBuilder(Data data) {
+        var sbLatin1 = new StringBuilder("a");
+        return sbLatin1.repeat('a', data.length);
+    }
+
+    @Benchmark
+    public StringBuilder repeatLatin1CodePointOntoUtf16StringBuilder(Data data) {
+        var sbUtf16 = new StringBuilder("\u04FF");
+        return sbUtf16.repeat('a', data.length);
+    }
+
+    @Benchmark
+    public StringBuilder repeatUtf16BmpCodePointOntoLatin1StringBuilder(Data data) {
+        var sbLatin1 = new StringBuilder("a");
+        return sbLatin1.repeat(0x4FF, data.length);
+    }
+
+    @Benchmark
+    public StringBuilder repeatUtf16BmpCodePointOntoUtf16StringBuilder(Data data) {
+        var sbUtf16 = new StringBuilder("\u04FF");
+        return sbUtf16.repeat(0x4FF, data.length);
     }
 
     @State(Scope.Thread)

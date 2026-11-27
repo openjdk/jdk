@@ -44,6 +44,7 @@
 #include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 size_t ShenandoahHeapRegion::RegionCount = 0;
@@ -57,36 +58,35 @@ size_t ShenandoahHeapRegion::MaxTLABSizeBytes = 0;
 size_t ShenandoahHeapRegion::MaxTLABSizeWords = 0;
 
 ShenandoahHeapRegion::ShenandoahHeapRegion(HeapWord* start, size_t index, bool committed) :
-  _index(index),
   _bottom(start),
   _end(start + RegionSizeWords),
+  _index(checked_cast<uint32_t>(index)),
+  _humongous_start_region_index(UndefinedRegionIndex),
+  _state(committed ? _empty_committed : _empty_uncommitted),
+  _has_self_forwards(false),
+  _age(0),
+  _needs_bitmap_reset(false),
+  _promoted_in_place(false),
   _new_top(nullptr),
-  _empty_time(os::elapsedTime()),
   _top_before_promoted(nullptr),
   _top_at_evac_start(start),
-  _state(committed ? _empty_committed : _empty_uncommitted),
+  _empty_time(os::elapsedTime()),
+  _mixed_candidate_garbage_words(0),
+  _coalesce_and_fill_boundary(start),
+  _critical_pins(0),
+  _update_watermark(start),
   _top(start),
+  _live_data(0),
   _tlab_allocs(0),
   _gclab_allocs(0),
   _plab_allocs(0),
-  _live_data(0),
-  _critical_pins(0),
-  _mixed_candidate_garbage_words(0),
-  _update_watermark(start),
-  _age(0),
-#ifdef SHENANDOAH_CENSUS_NOISE
-  _youth(0),
-#endif // SHENANDOAH_CENSUS_NOISE
-  _needs_bitmap_reset(false)
-  {
-
+  _recycling(false)
+{
   assert(Universe::on_page_boundary(_bottom) && Universe::on_page_boundary(_end),
          "invalid space boundaries");
   if (ZapUnusedHeapArea && committed) {
     SpaceMangler::mangle_region(MemRegion(_bottom, _end));
   }
-  _recycling.unset();
-  _has_self_forwards.unset();
 }
 
 void ShenandoahHeapRegion::report_illegal_transition(const char *method) {
@@ -110,6 +110,21 @@ void ShenandoahHeapRegion::make_regular_allocation(ShenandoahAffiliation affilia
       return;
     default:
       report_illegal_transition("regular allocation");
+  }
+}
+
+void ShenandoahHeapRegion::make_regular_for_partial_recycling() {
+  shenandoah_assert_heaplocked_or_safepoint();
+  assert(has_self_forwards(), "Only for regions holding self forwarded objects");
+  switch (state()) {
+    case _cset:
+      set_state(_regular);
+      return;
+    case _pinned_cset:
+      set_state(_pinned);
+      return;
+    default:
+      report_illegal_transition("partially recycled");
   }
 }
 
@@ -140,8 +155,7 @@ void ShenandoahHeapRegion::make_affiliated_maybe() {
 
 void ShenandoahHeapRegion::make_regular_bypass() {
   shenandoah_assert_heaplocked();
-  assert (ShenandoahHeap::heap()->is_full_gc_in_progress() ||
-          ShenandoahHeap::heap()->is_degenerated_gc_in_progress(),
+  assert (ShenandoahHeap::heap()->is_full_gc_in_progress(),
           "Only for STW GC");
   reset_age();
   switch (state()) {
@@ -151,6 +165,7 @@ void ShenandoahHeapRegion::make_regular_bypass() {
     case _cset:
     case _humongous_start:
     case _humongous_cont:
+      _humongous_start_region_index = UndefinedRegionIndex;
       set_state(_regular);
       return;
     case _pinned_cset:
@@ -171,6 +186,7 @@ void ShenandoahHeapRegion::make_humongous_start() {
     case _empty_uncommitted:
       do_commit();
     case _empty_committed:
+      _humongous_start_region_index = checked_cast<uint32_t>(index());
       set_state(_humongous_start);
       return;
     default:
@@ -189,6 +205,7 @@ void ShenandoahHeapRegion::make_humongous_start_bypass(ShenandoahAffiliation aff
     case _regular:
     case _humongous_start:
     case _humongous_cont:
+      _humongous_start_region_index = checked_cast<uint32_t>(index());
       set_state(_humongous_start);
       return;
     default:
@@ -196,31 +213,35 @@ void ShenandoahHeapRegion::make_humongous_start_bypass(ShenandoahAffiliation aff
   }
 }
 
-void ShenandoahHeapRegion::make_humongous_cont() {
+void ShenandoahHeapRegion::make_humongous_cont(uint32_t start) {
   shenandoah_assert_heaplocked();
   reset_age();
+  assert(ShenandoahHeap::heap()->get_region(start)->is_humongous_start(), "Precondition");
   switch (state()) {
     case _empty_uncommitted:
       do_commit();
     case _empty_committed:
-     set_state(_humongous_cont);
+      _humongous_start_region_index = start;
+      set_state(_humongous_cont);
       return;
     default:
       report_illegal_transition("humongous continuation allocation");
   }
 }
 
-void ShenandoahHeapRegion::make_humongous_cont_bypass(ShenandoahAffiliation affiliation) {
+void ShenandoahHeapRegion::make_humongous_cont_bypass(ShenandoahAffiliation affiliation, uint32_t start) {
   shenandoah_assert_heaplocked();
   assert (ShenandoahHeap::heap()->is_full_gc_in_progress(), "only for full GC");
   set_affiliation(affiliation);
   // Don't bother to account for affiliated regions during Full GC.  We recompute totals at end.
   reset_age();
+  assert(ShenandoahHeap::heap()->get_region(start)->is_humongous_start(), "Precondition");
   switch (state()) {
     case _empty_committed:
     case _regular:
     case _humongous_start:
     case _humongous_cont:
+      _humongous_start_region_index = start;
       set_state(_humongous_cont);
       return;
     default:
@@ -287,7 +308,8 @@ void ShenandoahHeapRegion::make_cset() {
 }
 
 void ShenandoahHeapRegion::make_trash() {
-  shenandoah_assert_heaplocked();
+  shenandoah_assert_heaplocked_or_safepoint();
+  assert(!has_self_forwards(), "Should not have evacuation failures");
   reset_age();
   switch (state()) {
     case _humongous_start:
@@ -296,6 +318,7 @@ void ShenandoahHeapRegion::make_trash() {
       // Reclaiming humongous regions and reclaim humongous waste.  When this region is eventually recycled, we'll reclaim
       // its used memory.  At recycle time, we no longer recognize this as a humongous region.
       decrement_humongous_waste();
+      _humongous_start_region_index = UndefinedRegionIndex;
     }
     case _cset:
       // Reclaiming cset regions
@@ -320,11 +343,10 @@ void ShenandoahHeapRegion::make_trash_immediate() {
 
 void ShenandoahHeapRegion::make_empty() {
   reset_age();
-  CENSUS_NOISE(clear_youth();)
   switch (state()) {
     case _trash:
-      set_state(_empty_committed);
       _empty_time = os::elapsedTime();
+      set_state(_empty_committed);
       return;
     default:
       report_illegal_transition("emptying");
@@ -386,7 +408,7 @@ void ShenandoahHeapRegion::set_live_data(size_t s) {
 
 void ShenandoahHeapRegion::print_on(outputStream* st) const {
   st->print("|");
-  st->print("%5zu", this->_index);
+  st->print(UINT32_FORMAT_W(5), this->_index);
 
   switch (state()) {
     case _empty_uncommitted:
@@ -443,6 +465,10 @@ void ShenandoahHeapRegion::print_on(outputStream* st) const {
   st->print("|S %5zu%1s", byte_size_in_proper_unit(get_shared_allocs()),   proper_unit_for_byte_size(get_shared_allocs()));
   st->print("|L %5zu%1s", byte_size_in_proper_unit(get_live_data_bytes()), proper_unit_for_byte_size(get_live_data_bytes()));
   st->print("|CP %3zu", pin_count());
+
+  if (has_self_forwards()) {
+    st->print("|EF");
+  }
   st->cr();
 
 #undef SHR_PTR_FORMAT
@@ -489,10 +515,9 @@ bool ShenandoahHeapRegion::oop_coalesce_and_fill(bool cancellable, bool do_card_
       if (do_card_table_updates) {
         heap->old_generation()->card_scan()->coalesce_objects(obj_addr, fill_size);
       } else {
-        // A humongous object allocation failure during evacuation will skip the degenerated cycle and
-        // jump straight to a full GC. If this region is pinned when the full GC cycle starts, it will
-        // not be compacted. Therefore, if the region is old, we must fill in any unmarked objects. However,
-        // promoted objects will not have been registered yet, so we cannot use the card table here.
+        // If this region is pinned when the full GC cycle starts, it will not be compacted. Therefore, if the region is
+        // old, we must fill in any unmarked objects. However, promoted objects will not have been registered yet, so we
+        // cannot use the card table here.
         assert(heap->is_full_gc_in_progress(), "Can only skip card table updates during a full GC");
       }
 
@@ -518,12 +543,11 @@ size_t get_card_count(size_t words) {
 void ShenandoahHeapRegion::oop_iterate_humongous_slice_dirty(OopIterateClosure* blk,
                                                              HeapWord* start, size_t words, bool write_table) const {
   assert(is_humongous(), "only humongous region here");
-
-  ShenandoahHeapRegion* r = humongous_start_region();
+  ShenandoahGenerationalHeap* heap = ShenandoahGenerationalHeap::heap();
+  ShenandoahHeapRegion* r = heap->get_region(humongous_start_region());
   oop obj = cast_to_oop(r->bottom());
   size_t num_cards = get_card_count(words);
 
-  ShenandoahGenerationalHeap* heap = ShenandoahGenerationalHeap::heap();
   ShenandoahScanRemembered* scanner = heap->old_generation()->card_scan();
   size_t card_index = scanner->card_index_for_addr(start);
   if (write_table) {
@@ -546,31 +570,15 @@ void ShenandoahHeapRegion::oop_iterate_humongous_slice_dirty(OopIterateClosure* 
 void ShenandoahHeapRegion::oop_iterate_humongous_slice_all(OopIterateClosure* cl, HeapWord* start, size_t words) const {
   assert(is_humongous(), "only humongous region here");
 
-  ShenandoahHeapRegion* r = humongous_start_region();
+  ShenandoahHeapRegion* r = ShenandoahHeap::heap()->get_region(humongous_start_region());
   oop obj = cast_to_oop(r->bottom());
 
   // Scan all data, regardless of whether cards are dirty
   obj->oop_iterate(cl, MemRegion(start, start + words));
 }
 
-ShenandoahHeapRegion* ShenandoahHeapRegion::humongous_start_region() const {
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-  assert(is_humongous(), "Must be a part of the humongous region");
-  size_t i = index();
-  ShenandoahHeapRegion* r = const_cast<ShenandoahHeapRegion*>(this);
-  while (!r->is_humongous_start()) {
-    assert(i > 0, "Sanity");
-    i--;
-    r = heap->get_region(i);
-    assert(r->is_humongous(), "Must be a part of the humongous region");
-  }
-  assert(r->is_humongous_start(), "Must be");
-  return r;
-}
-
-
 void ShenandoahHeapRegion::recycle_internal() {
-  assert(_recycling.is_set() && is_trash(), "Wrong state");
+  assert(_recycling.load_acquire() && is_trash(), "Wrong state");
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
   _top_at_evac_start = _bottom;
@@ -601,7 +609,7 @@ void ShenandoahHeapRegion::try_recycle_under_lock() {
   if (!is_trash()) {
     return;
   }
-  if (_recycling.try_set()) {
+  if (_recycling.compare_set(false, true)) {
     if (is_trash()) {
       // At freeset rebuild time, which precedes recycling of collection set, we treat all cset regions as
       // part of capacity, as empty, as fully available, and as unaffiliated.  This provides short-lived optimism
@@ -609,12 +617,15 @@ void ShenandoahHeapRegion::try_recycle_under_lock() {
       // by more time-precise accounting of these details.
       recycle_internal();
     }
-    _recycling.unset();
+    // A release store is enough to hand the recycled region over: a racing recycler
+    // observes it through the CAS or the acquire load in the spin loop below, and
+    // nothing after this point depends on the store. No trailing fence is needed.
+    _recycling.release_store(false);
   } else {
     // Ensure recycling is unset before returning to mutator to continue memory allocation.
     // Otherwise, the mutator might see region as fully recycled and might change its affiliation only to have
     // the racing GC worker thread overwrite its affiliation to FREE.
-    while (_recycling.is_set()) {
+    while (_recycling.load_acquire()) {
       if (os::is_MP()) {
         SpinPause();
       } else {
@@ -632,7 +643,7 @@ void ShenandoahHeapRegion::try_recycle() {
   if (!is_trash()) {
     return;
   }
-  if (_recycling.try_set()) {
+  if (_recycling.compare_set(false, true)) {
     // Double check region state after win the race to set recycling flag
     if (is_trash()) {
       // At freeset rebuild time, which precedes recycling of collection set, we treat all cset regions as
@@ -641,7 +652,8 @@ void ShenandoahHeapRegion::try_recycle() {
       // by more time-precise accounting of these details.
       recycle_internal();
     }
-    _recycling.unset();
+    // A release store is enough here as well, see try_recycle_under_lock().
+    _recycling.release_store(false);
   }
 }
 
@@ -677,7 +689,7 @@ size_t ShenandoahHeapRegion::block_size(const HeapWord* p) const {
 
 size_t ShenandoahHeapRegion::setup_sizes(size_t max_heap_size) {
   // Generational Shenandoah needs this alignment for card tables.
-  if (strcmp(ShenandoahGCMode, "generational") == 0) {
+  if (ShenandoahModeFlag::value() == ShenandoahModeFlag::Mode::GENERATIONAL) {
     max_heap_size = align_up(max_heap_size , CardTable::ct_max_alignment_constraint());
   }
 
@@ -861,6 +873,97 @@ void ShenandoahHeapRegion::set_affiliation(ShenandoahAffiliation new_affiliation
       return;
   }
   heap->set_affiliation(this, new_affiliation);
+}
+
+// We would like to reclaim what we can from a partially evacuated region. We may have a mixture of objects that were
+// self-forwarded and objects that were successfully evacuated to another region. The simplest thing we can do is slide
+// top to the end of the last self forwarded object. This requires no changes on the allocation path.
+//
+// We must also leave old regions in a walkable state because they could be visited by a remembered set scan.
+class ShenandoahReclaimSelfForwarded : public ObjectClosure {
+
+  // This is a nullptr for young regions. For old regions, we use it to patch up the card table.
+  ShenandoahScanRemembered* _cards;
+
+  // This is the _end_ of the last self-forwarded object the closure encountered. We use this
+  // to know where to start the filler object and where to set top when the iteration is complete.
+  HeapWord* _previous;
+
+public:
+  explicit ShenandoahReclaimSelfForwarded(ShenandoahScanRemembered* cards, ShenandoahHeapRegion* region)
+    : _cards(cards), _previous(region->bottom()) {
+    assert(!region->is_old() || cards != nullptr, "Must have card table reference for old region: %zu", region->index());
+  }
+
+  void do_object(oop obj) override {
+    shenandoah_assert_forwarded(nullptr, obj);
+
+    if (ShenandoahForwarding::is_self_forwarded(obj)) {
+      HeapWord* current = cast_from_oop<HeapWord*>(obj);
+      const size_t object_size = ShenandoahForwarding::size(obj);
+
+      // Clear the self forwarded bit, this is just a regular object in a regular region now.
+      obj->unset_self_forwarded();
+
+      if (_cards != nullptr) {
+        // We will have reset registrations and cards before iterating here, so we need to (conservatively)
+        // update the card table and object registrations. We don't need a lock because each region will only
+        // be visited by one thread.
+        _cards->register_object_without_lock(current);
+        _cards->mark_range_as_dirty(current, object_size);
+
+        if (_previous != current) {
+          // We create a filler object to keep the old region parsable. We know there are no pointers in
+          // these filler objects, so we don't need to dirty cards, but we still need to register the object.
+          CollectedHeap::fill_with_object(_previous, pointer_delta(current, _previous));
+          _cards->register_object_without_lock(_previous);
+        }
+      }
+      _previous = current + object_size;
+    }
+  }
+
+  HeapWord* last_self_forwarded_object() const {
+    return _previous;
+  }
+};
+
+void ShenandoahHeapRegion::partially_recycle() {
+  assert(has_self_forwards(), "Region %zu must have self forwarded objects", index());
+
+  // This is only allowed for partially evacuated cset regions
+  make_regular_for_partial_recycling();
+
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+  ShenandoahScanRemembered* cards = is_old() ? heap->old_generation()->card_scan() : nullptr;
+  if (cards != nullptr) {
+    // Some of the objects here may be dead or forwarded, we don't want any stale object registrations or dirty cards.
+    // We will rebuild the registrations and dirty cards for self-forwarded objects that stay in this region.
+    cards->mark_range_as_empty(this->bottom(), region_size_words());
+  }
+
+  // Clear self-forwarded objects and fill in the gaps between them
+  ShenandoahReclaimSelfForwarded reclaimer(cards, this);
+  heap->marked_object_iterate(this, &reclaimer);
+
+  // Reset some of the region states that would be cleared if this region was completely recycled
+  const HeapWord* old_top = top();
+  _top_at_evac_start = _bottom;
+  _mixed_candidate_garbage_words = 0;
+  clear_live_data();
+  reset_alloc_metadata();
+  heap->marking_context()->reset_top_at_mark_start(this);
+  set_update_watermark(bottom());
+  clear_has_self_forwards();
+
+  // Adjust top to the end of our last encountered self-forwarded object. Everything above this is reusable memory.
+  set_top(reclaimer.last_self_forwarded_object());
+  const size_t reclaimed_bytes = pointer_delta(old_top, top()) * HeapWordSize;
+  if (reclaimed_bytes > 0) {
+    // Region could be used for new allocations, and we don't want those to be promoted prematurely
+    log_debug(gc)("Reclaimed " PROPERFMT " from partially evacuated region (%zu)", PROPERFMTARGS(reclaimed_bytes), index());
+    reset_age();
+  }
 }
 
 void ShenandoahHeapRegion::decrement_humongous_waste() {

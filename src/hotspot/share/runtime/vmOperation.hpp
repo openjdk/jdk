@@ -89,10 +89,10 @@
   template(ShenandoahFullGC)                      \
   template(ShenandoahInitMark)                    \
   template(ShenandoahFinalMarkStartEvac)          \
+  template(ShenandoahFinalRoots)                  \
   template(ShenandoahInitUpdateRefs)              \
   template(ShenandoahFinalUpdateRefs)             \
   template(ShenandoahFinalVerify)                 \
-  template(ShenandoahDegeneratedGC)               \
   template(Exit)                                  \
   template(LinuxDllLoad)                          \
   template(WhiteBoxOperation)                     \

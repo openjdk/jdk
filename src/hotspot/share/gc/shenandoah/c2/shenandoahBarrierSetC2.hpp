@@ -99,6 +99,7 @@ class ShenandoahBarrierSetC2 : public BarrierSetC2 {
   static bool is_Load(int opcode);
   static bool is_Store(int opcode);
   static bool is_LoadStore(int opcode);
+  static bool is_Special(int opcode);
 
 protected:
   virtual Node* load_at_resolved(C2Access& access, const Type* val_type) const;
@@ -110,10 +111,6 @@ protected:
   virtual Node* atomic_xchg_at_resolved(C2AtomicParseAccess& access, Node* new_val, const Type* val_type) const;
 
 public:
-  static ShenandoahBarrierSetC2* bsc2();
-
-  ShenandoahBarrierSetC2State* state() const;
-
   // This is the entry-point for the backend to perform accesses through the Access API.
   virtual void clone(GraphKit* kit, Node* src_base, Node* dst_base, Node* size, bool is_array) const;
   virtual void clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* ac) const;
@@ -172,7 +169,16 @@ class ShenandoahBarrierStubC2 : public BarrierStubC2 {
 
   void maybe_far_jump_if_zero(MacroAssembler& masm, Register reg);
 
-  void enter_if_gc_state(MacroAssembler& masm, const char test_state, Register tmp);
+  void patchable_jump(MacroAssembler& masm, char gc_state, bool jump_when_state, Register tmp1, Register tmp2, Label* L_target);
+
+  void patchable_jump_if_gc_state(MacroAssembler& masm, const char gc_state, Register tmp1, Register tmp2, Label* L_target) {
+    patchable_jump(masm, gc_state, true, tmp1, tmp2, L_target);
+  }
+  void patchable_jump_if_not_gc_state(MacroAssembler& masm, const char gc_state, Register tmp1, Register tmp2, Label* L_target) {
+    patchable_jump(masm, gc_state, false, tmp1, tmp2, L_target);
+  }
+
+  void enter_if_gc_state(MacroAssembler& masm, const char test_state, Register tmp1, Register tmp2);
 
   void keepalive(MacroAssembler& masm, Label* L_done);
   void lrb(MacroAssembler& masm);
@@ -182,10 +188,10 @@ class ShenandoahBarrierStubC2 : public BarrierStubC2 {
   address keepalive_runtime_entry_addr();
   address lrb_runtime_entry_addr();
 
-  static ShenandoahBarrierStubC2* create(const MachNode* node, Register obj, Address addr, Register tmp1, Register tmp2, bool narrow, bool do_load);
+  static ShenandoahBarrierStubC2* create(const MachNode* node, Register obj, Address addr, Register tmp1, Register tmp2, bool narrow, bool do_load, Register preserve1);
   void post_init();
 
-  ShenandoahBarrierStubC2(const MachNode* node, Register obj, Address addr, Register tmp1, Register tmp2, bool narrow, bool do_load) :
+  ShenandoahBarrierStubC2(const MachNode* node, Register obj, Address addr, Register tmp1, Register tmp2, bool narrow, bool do_load, Register preserve1) :
     BarrierStubC2(node),
     _obj(obj),
     _addr(addr),
@@ -203,6 +209,9 @@ class ShenandoahBarrierStubC2 : public BarrierStubC2 {
     } else {
       assert(_tmp1 == _tmp2, "should both be noreg");
       assert_different_registers(_obj, _addr.base(), _addr.index());
+    }
+    if (preserve1 != noreg) {
+      preserve(preserve1);
     }
     post_init();
   }
@@ -228,7 +237,7 @@ public:
     return needs_load_ref_barrier(node) || needs_keep_alive_barrier(node);
   }
 
-  static void       load_post(MacroAssembler* masm, const MachNode* node, Register obj, Address addr,  Register tmp1, Register tmp2, bool narrow);
+  static void       load_post(MacroAssembler* masm, const MachNode* node, Register obj, Address addr,  Register tmp1, Register tmp2, bool narrow, Register preserve1);
   static void       store_pre(MacroAssembler* masm, const MachNode* node, Address addr, Register tmp1, Register tmp2, Register tmp3, bool narrow);
   static void      store_post(MacroAssembler* masm, const MachNode* node, Address addr, Register tmp1, Register tmp2);
   static void  load_store_pre(MacroAssembler* masm, const MachNode* node, Address addr, Register tmp1, Register tmp2, Register tmp3, bool narrow);

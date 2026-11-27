@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,18 +89,34 @@
  * <p>The following implementation specific system properties are supported by the
  * default LDAP Naming Service Provider implementation in the JDK:
  * <ul>
- *     <li>{@systemProperty com.sun.jndi.ldap.object.trustSerialData}:
+ *     <li id="trustSerialData">{@systemProperty com.sun.jndi.ldap.object.trustSerialData}:
  *          <br>The value of this system property is the string representation of a boolean value
  *          that controls the deserialization of java objects from the {@code javaSerializedData} LDAP
  *          attribute, reconstruction of RMI references from the {@code javaRemoteLocation} LDAP attribute, and
  *          reconstruction of {@linkplain javax.naming.BinaryRefAddr binary reference addresses} from
- *          the {@code javaReferenceAddress} LDAP attribute.
+ *          the {@code javaReferenceAddress} LDAP attribute. It also controls whether RMI URL References
+ *          obtained from LDAP will be followed.
  *          To allow the deserialization or reconstruction of java objects from {@code javaSerializedData},
  *          {@code javaRemoteLocation} or {@code javaReferenceAddress} attributes, the system property value
  *          can be set to {@code true} (case insensitive).
  *          <br>If the property is not specified the deserialization of java objects
  *          from the {@code javaSerializedData}, the {@code javaRemoteLocation}, or {@code javaReferenceAddress}
- *          attributes is not allowed.
+ *          attributes is not allowed. In addition URL References obtained from LDAP that use the
+ *          {@code rmi} scheme will not be followed by default, unless the default value of the {@link
+ *          ##disabledURLSchemes jdk.jndi.ldap.disabledURLSchemes} system property is overridden on the
+ *          java command line to allow it.
+ *     </li>
+ *     <li id="disabledURLSchemes">{@systemProperty jdk.jndi.ldap.disabledURLSchemes}:
+ *          <br>The value of this system property is a comma separated list of URL schemes for which
+ *          use of a URL Context Factory is disabled when processing {@linkplain javax.naming.StringRefAddr
+ *          string reference addresses} in the built-in JNDI/LDAP provider. If the value of that property
+ *          is empty then all schemes are allowed.
+ *          <br>The default value of that property is empty if {@linkplain ##trustSerialData
+ *          deserialization of java objects} is allowed, and {@code "rmi"} if deserialization of java
+ *          objects is not allowed: in that latter case {@linkplain javax.naming.StringRefAddr string reference
+ *          addresses} of {@linkplain javax.naming.StringRefAddr#getType() type} {@code "URL"} whose {@linkplain
+ *          javax.naming.StringRefAddr#getContent() content} is an URL string with scheme {@code "rmi"}
+ *          will not be followed.
  *     </li>
  *     <li>{@systemProperty jdk.jndi.object.factoriesFilter}:
  *          <br>The value of this system property defines a filter used by

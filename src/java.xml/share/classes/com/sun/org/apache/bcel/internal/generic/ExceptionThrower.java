@@ -25,7 +25,7 @@ package com.sun.org.apache.bcel.internal.generic;
  * Denote an instruction that may throw a run-time or a linking exception (or both) during execution. This is not quite
  * the truth as such; because all instructions may throw a {@link VirtualMachineError}. These exceptions are omitted.
  *
- * The Lava Language Specification specifies exactly which <i>RUN-TIME</i> and which <i>LINKING</i> exceptions each
+ * The Lava Language Specification specifies exactly which <em>RUN-TIME</em> and which <em>LINKING</em> exceptions each
  * instruction may throw which is reflected by the implementers. Due to the structure of the JVM specification, it may
  * be possible that an Instruction implementing this interface returns a Class[] of size 0.
  *
@@ -34,5 +34,10 @@ package com.sun.org.apache.bcel.internal.generic;
  */
 public interface ExceptionThrower {
 
+    /**
+     * Gets the exceptions that may be thrown by this instruction.
+     *
+     * @return The exceptions that may be thrown by this instruction.
+     */
     Class<?>[] getExceptions();
 }

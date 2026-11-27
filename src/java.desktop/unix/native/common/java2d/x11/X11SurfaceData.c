@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -176,6 +176,9 @@ Java_sun_java2d_x11_XSurfaceData_isDrawableValid(JNIEnv *env, jobject this)
 
 #ifndef HEADLESS
     X11SDOps *xsdo = X11SurfaceData_GetOps(env, this);
+    if (xsdo == NULL) {
+        return JNI_FALSE;
+    }
 
     AWT_LOCK();
     if (xsdo->drawable != 0 || X11SD_InitWindow(env, xsdo) == SD_SUCCESS) {

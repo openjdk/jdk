@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,6 @@ package jdk.jfr.internal;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -299,6 +297,12 @@ public final class MetadataRepository {
         staleMetadata = true;
     }
 
+    synchronized Instant updateChunkStartTime(long nanos) {
+        Instant instant = Utils.epochNanosToInstant(nanos);
+        lastMillis = instant.toEpochMilli();
+        return instant;
+    }
+
     // Lock around setOutput ensures that other threads don't
     // emit events after setOutput and unregister the event class, before a call
     // to storeDescriptorInJVM
@@ -312,7 +316,7 @@ public final class MetadataRepository {
         // is what RecordingInfo:getStopTime() returns.
         awaitEpochMilliShift();
         JVM.setOutput(filename);
-        long chunkStart = JVMSupport.getChunkStartNanos();
+        Instant timestamp = updateChunkStartTime(JVMSupport.getChunkStartNanos());
         if (filename != null) {
             RepositoryFiles.notifyNewFile();
         }
@@ -323,7 +327,7 @@ public final class MetadataRepository {
             }
             unregistered = false;
         }
-        return Utils.epochNanosToInstant(chunkStart);
+        return timestamp;
     }
 
     private void awaitEpochMilliShift() {

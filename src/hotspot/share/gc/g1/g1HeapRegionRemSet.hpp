@@ -26,149 +26,105 @@
 #define SHARE_GC_G1_G1HEAPREGIONREMSET_HPP
 
 #include "gc/g1/g1CardSet.hpp"
+#include "gc/g1/g1CardSetGroup.hpp"
 #include "gc/g1/g1CardSetMemory.hpp"
 #include "gc/g1/g1CodeRootSet.hpp"
-#include "gc/g1/g1CollectionSetCandidates.hpp"
-#include "gc/g1/g1FromCardCache.hpp"
-#include "runtime/mutexLocker.hpp"
-#include "runtime/safepoint.hpp"
-#include "utilities/bitMap.hpp"
 
-class G1CardSetMemoryManager;
-class G1CSetCandidateGroup;
+class G1CardSetGroup;
+class G1FromCardCache;
 class outputStream;
 
+// Tracks the remembered set parts of a region:
+//
+// * code roots, i.e. nmethods that have embedded oops into the region associated with this
+//   G1HeapRegionRemSet. They are maintained all the time independently of the card set group
+//   below.
+// * an associated card set group that conservatively records cards that at some time had
+//   references into this region.
+//   The card set group is maintained on demand; only regions with a card
+//   set group in Complete state may be evacuated. If there is no card set group associated
+//   with a G1HeapRegionRemSet/G1HeapRegion, it is implicitly in Untracked state, otherwise
+//   its card set state is that of the card set group.
+//
 class G1HeapRegionRemSet : public CHeapObj<mtGC> {
   // A set of nmethods whose code contains pointers into
   // the region that owns this RSet.
   G1CodeRootSet _code_roots;
 
-  // The collection set groups to which the region owning this RSet is assigned.
-  G1CSetCandidateGroup* _cset_group;
-
-  G1HeapRegion* _hr;
+  G1CardSetGroup* _card_set_group;
 
   // Cached value of heap base address.
   static HeapWord* _heap_base_address;
 
-  void clear_fcc();
+  inline G1CardSet* card_set();
 
-  G1CardSet* card_set() {
-    assert(has_cset_group(), "pre-condition");
-    return cset_group()->card_set();
-  }
+  inline const G1CardSet* card_set() const;
 
-  const G1CardSet* card_set() const {
-    assert(has_cset_group(), "pre-condition");
-    return cset_group()->card_set();
-  }
+  inline bool card_set_is_empty() const;
 
 public:
-  G1HeapRegionRemSet(G1HeapRegion* hr);
+  G1HeapRegionRemSet();
   ~G1HeapRegionRemSet();
 
-  bool cardset_is_empty() const {
-    return !has_cset_group() || card_set()->is_empty();
+  void install_card_set_group(G1CardSetGroup* card_set_group) {
+    assert(card_set_group != nullptr, "pre-condition");
+    assert(_card_set_group == nullptr, "pre-condition");
+
+    _card_set_group = card_set_group;
   }
 
-  void install_cset_group(G1CSetCandidateGroup* cset_group) {
-    assert(cset_group != nullptr, "pre-condition");
-    assert(_cset_group == nullptr, "pre-condition");
+  void uninstall_card_set_group();
 
-    _cset_group = cset_group;
+  bool has_card_set_group() const {
+    return _card_set_group != nullptr;
   }
 
-  void uninstall_cset_group();
-
-  bool has_cset_group() const {
-    return _cset_group != nullptr;
+  G1CardSetGroup* card_set_group() {
+    return _card_set_group;
   }
 
-  G1CSetCandidateGroup* cset_group() {
-    return _cset_group;
+  const G1CardSetGroup* card_set_group() const {
+    return _card_set_group;
   }
 
-  const G1CSetCandidateGroup* cset_group() const {
-    return _cset_group;
-  }
+  inline uint card_set_group_id() const;
 
-  uint cset_group_id() const {
-    assert(has_cset_group(), "pre-condition");
-    return cset_group()->group_id();
-  }
+  inline bool is_empty() const;
 
-  bool is_empty() const {
-    return (code_roots_list_length() == 0) && cardset_is_empty();
-  }
+  inline bool occupancy_less_or_equal_than(size_t occ) const;
 
-  bool occupancy_less_or_equal_than(size_t occ) const {
-    return (code_roots_list_length() == 0) && card_set()->occupancy_less_or_equal_to(occ);
-  }
-
-  // Iterate the card based remembered set for merging them into the card table.
-  // The passed closure must be a CardOrRangeVisitor; we use a template parameter
-  // to pass it in to facilitate inlining as much as possible.
-  template <class CardOrRangeVisitor>
-  inline void iterate_for_merge(CardOrRangeVisitor& cl);
-
-  template <class CardOrRangeVisitor>
-  inline static void iterate_for_merge(G1CardSet* card_set, CardOrRangeVisitor& cl);
-
-  size_t occupied() {
-    assert(has_cset_group(), "pre-condition");
-    return card_set()->occupied();
-  }
-
+  inline size_t occupied() const;
 
   static void initialize(MemRegion reserved);
 
   inline uintptr_t to_card(OopOrNarrowOopStar from) const;
 
-private:
-  enum RemSetState {
-    Untracked,
-    Updating,
-    Complete
-  };
+  inline bool is_tracked() const;
+  inline bool is_updating() const;
+  inline bool is_complete() const;
 
-  RemSetState _state;
+  inline const char* get_short_state_str() const;
+  inline const char* get_state_str() const;
 
-  static const char* _state_strings[];
-  static const char* _short_state_strings[];
-public:
+  inline void add_reference(OopOrNarrowOopStar from, G1FromCardCache& from_card_cache);
 
-  const char* get_state_str() const { return _state_strings[_state]; }
-  const char* get_short_state_str() const { return _short_state_strings[_state]; }
-
-  bool is_tracked() { return _state != Untracked; }
-  bool is_updating() { return _state == Updating; }
-  bool is_complete() { return _state == Complete; }
-
-  inline void set_state_untracked();
-  inline void set_state_updating();
-  inline void set_state_complete();
-
-  inline void add_reference(OopOrNarrowOopStar from, uint tid);
-
-  // The region is being reclaimed; clear its remset, and any mention of
-  // entries for this region in other remsets.
-  void clear(bool only_cardset = false, bool keep_tracked = false);
+  // Clear the code roots.
+  void clear_code_roots();
 
   void reset_code_root_table_scanner();
-  void reset_table_scanner();
 
   G1MonotonicArenaMemoryStats card_set_memory_stats() const;
 
   // The actual # of bytes this hr_remset takes up. Also includes the code
   // root set.
   size_t mem_size() {
-    return sizeof(G1HeapRegionRemSet) + code_roots_mem_size();
+    return sizeof(G1HeapRegionRemSet) - sizeof(G1CodeRootSet) + code_roots_mem_size();
   }
 
   // Returns the memory occupancy of all static data structures associated
   // with remembered sets.
   static size_t static_mem_size() {
-    return G1CardSet::static_mem_size() + G1FromCardCache::static_mem_size();
+    return G1CardSet::static_mem_size();
   }
 
   static void print_static_mem_size(outputStream* out);
@@ -177,10 +133,9 @@ public:
 
   inline void print_info(outputStream* st, OopOrNarrowOopStar from);
 
-  // Routines for managing the list of code roots that point into
-  // the heap region that owns this RSet.
+  // Routines for managing the code roots that point into the heap region
+  // that owns this RSet.
   void add_code_root(nmethod* nm);
-  void remove_code_root(nmethod* nm);
   void bulk_remove_code_roots();
   void prepare_for_adding_code_roots(size_t num_code_roots);
 
@@ -190,13 +145,13 @@ public:
   void clean_code_roots(G1HeapRegion* hr);
 
   // Returns the number of elements in _code_roots
-  size_t code_roots_list_length() const {
+  size_t code_roots_length() const {
     return _code_roots.length();
   }
 
   // Returns true if the code roots contains the given
   // nmethod.
-  bool code_roots_list_contains(nmethod* nm) {
+  bool code_roots_contains(nmethod* nm) {
     return _code_roots.contains(nm);
   }
 
@@ -204,15 +159,7 @@ public:
   // consumed by the code roots.
   size_t code_roots_mem_size();
 
-  static void invalidate_from_card_cache(uint start_idx, size_t num_regions) {
-    G1FromCardCache::invalidate(start_idx, num_regions);
-  }
-
 #ifndef PRODUCT
-  static void print_from_card_cache() {
-    G1FromCardCache::print();
-  }
-
   static void test();
 #endif
 };

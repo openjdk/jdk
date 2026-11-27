@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -89,6 +89,19 @@ AC_DEFUN([TEST_ARG_ENABLE],
   UTIL_ASSERT_NOT_TRUE($disabled)
 ])
 
+AC_DEFUN([TEST_PLATFORM_LIBC],
+[
+  for TEST_OS in linux-musl linux-musleabi linux-musleabihf; do
+    PLATFORM_EXTRACT_VARS_FROM_LIBC($TEST_OS)
+    UTIL_ASSERT_STRING_EQUALS($VAR_LIBC, musl, [Incorrect libc for $TEST_OS])
+  done
+
+  for TEST_OS in linux-gnu linux-gnueabi linux-gnueabihf linux-gnuabi64; do
+    PLATFORM_EXTRACT_VARS_FROM_LIBC($TEST_OS)
+    UTIL_ASSERT_STRING_EQUALS($VAR_LIBC, gnu, [Incorrect libc for $TEST_OS])
+  done
+])
+
 # Use the CUSTOM_EARLY_HOOK to inject our test after basic init is done.
 AC_DEFUN_ONCE([CUSTOM_EARLY_HOOK],
 [
@@ -98,6 +111,7 @@ AC_DEFUN_ONCE([CUSTOM_EARLY_HOOK],
 
   TEST_STRING_OPS
   TEST_ARG_ENABLE
+  TEST_PLATFORM_LIBC
 
   # If no assertions failed, report success
   $ECHO "=============================="

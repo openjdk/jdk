@@ -24,12 +24,12 @@
 
 #include "cds/aotClassInitializer.hpp"
 #include "cds/aotLinkedClassBulkLoader.hpp"
+#include "cds/aotMetaspace.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/cdsConfig.hpp"
-#include "cds/heapShared.hpp"
 #include "cds/regeneratedClasses.hpp"
 #include "classfile/symbolTable.hpp"
-#include "classfile/systemDictionaryShared.hpp"
+#include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/symbol.hpp"
@@ -99,7 +99,7 @@ bool AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass* ik) {
   //
   // When CDSConfig::is_dumping_aot_linked_classes is enabled,
   // AOTArtifactFinder::find_artifacts() finds the classes of all
-  // heap objects that are reachable from HeapShared::_run_time_special_subgraph,
+  // heap objects that are reachable from AOTHeap::_run_time_special_subgraph,
   // and mark these classes as aot-inited. This preserves the initialized
   // mirrors of these classes, and their <clinit> methods are NOT executed
   // at runtime. See aotArtifactFinder.hpp for more info.

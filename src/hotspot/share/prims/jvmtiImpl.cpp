@@ -261,6 +261,13 @@ int JvmtiBreakpoints::set(JvmtiBreakpoint& bp) {
 
   // Ensure that bp._method is not deallocated before VM_ChangeBreakpoints::doit().
   methodHandle mh(Thread::current(), bp.method());
+
+  // Build MethodCounters on the calling JavaThread so the breakpoint count can't be dropped
+  // later in the VM operation.
+  if (mh->get_method_counters(Thread::current()) == nullptr) {
+    return JVMTI_ERROR_OUT_OF_MEMORY;
+  }
+
   VM_ChangeBreakpoints set_breakpoint(VM_ChangeBreakpoints::SET_BREAKPOINT, &bp);
   VMThread::execute(&set_breakpoint);
   return JVMTI_ERROR_NONE;
@@ -327,7 +334,6 @@ VM_BaseGetOrSetLocal::VM_BaseGetOrSetLocal(JavaThread* calling_thread, jint dept
   , _jvf(nullptr)
   , _set(set)
   , _self(self)
-  , _need_clone(false)
   , _result(JVMTI_ERROR_NONE)
 {
 }
@@ -477,34 +483,6 @@ bool VM_BaseGetOrSetLocal::check_slot_type_no_lvt(javaVFrame* jvf) {
   return true;
 }
 
-void VM_BaseGetOrSetLocal::check_and_clone_this_value_object() {
-  oop obj = JNIHandles::resolve(_value.l);
-  HandleMark hm(_calling_thread);
-  Handle obj_h(_calling_thread, obj);
-
-  assert(_type == T_OBJECT, "sanity check");
-  assert(obj != nullptr, "expected non-null oop");
-  assert(obj_h()->is_inline(), "expected inline oop");
-  assert(_index == 0, "expected slot 0 for THIS object");
-
-  InlineKlass* klass = InlineKlass::cast(obj_h()->klass());
-  inlineOop obj_copy = klass->allocate_instance(_calling_thread);
-  if (obj_copy == nullptr) {
-    _result = JVMTI_ERROR_OUT_OF_MEMORY;
-  } else {
-    inlineOop thisObj = inlineOop(obj_h());
-    // copy object payload into the object snapshot
-    BufferedValuePayload src(thisObj);
-    BufferedValuePayload dst(obj_copy, klass);
-    src.copy_to(dst);
-
-    // Must ensure the content of the buffered value is visible
-    // before publishing the buffered value oop
-    OrderAccess::storestore();
-  }
-  _value.l = JNIHandles::make_local(_calling_thread, obj_copy);
-}
-
 static bool can_be_deoptimized(vframe* vf) {
   return (vf->is_compiled_frame() && vf->fr().can_be_deoptimized());
 }
@@ -642,8 +620,9 @@ void VM_BaseGetOrSetLocal::doit() {
 
           if (Arguments::is_valhalla_enabled()) {
             bool is_ctor = _jvf->method()->is_object_constructor();
-            if (is_ctor && _index == 0 && obj != nullptr && obj->is_inline()) {
-              _need_clone = true; // need to allocate an object snapshot in doit_epilogue
+            if (is_ctor && _index == 0 && _jvf->method()->method_holder()->has_strict_instance_fields_in_hierarchy()) {
+              _result = JVMTI_ERROR_OPAQUE_FRAME; // can't expose THIS object in Ctor frame with strict-init instance fields
+              return;
             }
           }
           _value.l = JNIHandles::make_local(_calling_thread, obj);
@@ -652,12 +631,6 @@ void VM_BaseGetOrSetLocal::doit() {
         default: ShouldNotReachHere();
       }
     }
-  }
-}
-
-void VM_BaseGetOrSetLocal::doit_epilogue() {
-  if (_need_clone) {
-    check_and_clone_this_value_object();
   }
 }
 
@@ -823,7 +796,7 @@ JvmtiDeferredEvent JvmtiDeferredEvent::dynamic_code_generated_event(
   // the event poster will keep it around after we enqueue the
   // deferred event and return. strdup() failure is handled in
   // the post() routine below.
-  event._event_data.dynamic_code_generated.name = os::strdup(name);
+  event._event_data.dynamic_code_generated.name = os::strdup(name, mtServiceability);
   event._event_data.dynamic_code_generated.code_begin = code_begin;
   event._event_data.dynamic_code_generated.code_end = code_end;
   return event;
@@ -835,7 +808,7 @@ JvmtiDeferredEvent JvmtiDeferredEvent::class_unload_event(const char* name) {
   // the event poster will keep it around after we enqueue the
   // deferred event and return. strdup() failure is handled in
   // the post() routine below.
-  event._event_data.class_unload.name = os::strdup(name);
+  event._event_data.class_unload.name = os::strdup(name, mtServiceability);
   return event;
 }
 

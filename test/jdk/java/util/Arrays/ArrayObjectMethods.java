@@ -28,6 +28,7 @@
  * @author  Josh Bloch, Martin Buchholz
  * @key randomness
  * @library /test/lib
+ * @run main/othervm -Xmx64m ${test.main.class}
  */
 
 import java.util.*;

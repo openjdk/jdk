@@ -47,7 +47,6 @@ import static jdk.jpackage.internal.cli.StandardOption.RESOURCE_DIR;
 import static jdk.jpackage.internal.cli.StandardOption.VENDOR;
 
 import java.nio.file.Path;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -59,10 +58,10 @@ import jdk.jpackage.internal.cli.Options;
 import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.ApplicationLaunchers;
 import jdk.jpackage.internal.model.ApplicationLayout;
+import jdk.jpackage.internal.model.ApplicationLayout.Directory;
 import jdk.jpackage.internal.model.Launcher;
 import jdk.jpackage.internal.model.PackageType;
 import jdk.jpackage.internal.model.RuntimeLayout;
-import jdk.jpackage.internal.util.RootedPath;
 import jdk.jpackage.internal.util.RuntimeReleaseFile;
 
 final class FromOptions {
@@ -179,19 +178,26 @@ final class FromOptions {
         APP_VERSION.ifPresentIn(options, appBuilder::version);
         VENDOR.ifPresentIn(options, appBuilder::vendor);
         COPYRIGHT.ifPresentIn(options, appBuilder::copyright);
-        INPUT.ifPresentIn(options, appBuilder::appDirSources);
-        APP_CONTENT.findIn(options).map((List<Collection<RootedPath>> v) -> {
-            // Reverse the order of content sources.
-            // If there are multiple source files for the same
-            // destination file, only the first will be used.
-            // Reversing the order of content sources makes it use the last file
-            // from the original list of source files for the given destination file.
-            return v.reversed().stream().flatMap(Collection::stream).toList();
-        }).ifPresent(appBuilder::contentDirSources);
-        APP_RESOURCES.findIn(options).map((List<Collection<RootedPath>> v) -> {
-            return v.reversed().stream().flatMap(Collection::stream).toList();
-        }).ifPresent(appBuilder::resourcesDirSources);
 
+        // The order of processing APP_CONTENT, APP_RESOURCES and INPUT options is important!
+        // These options specify content to be copied in the application image.
+        // The order in which the content from different sources is copied is important
+        // when multiple sources route to the same destination file.
+        // In the case of such ambiguity, the implementation uses the first source and ignores others.
+        // We want files/directories in the APP_CONTENT option to override those in
+        // the APP_RESOURCES option and files/directories in the APP_CONTENT and APP_RESOURCES options
+        // to override those in the INPUT option.
+        APP_CONTENT.ifPresentIn(options, v -> {
+            appBuilder.addUserContent(v, Directory.CONTENT_DIR);
+        });
+
+        APP_RESOURCES.ifPresentIn(options, v -> {
+            appBuilder.addUserContent(v, Directory.RESOURCES_DIR);
+        });
+
+        INPUT.ifPresentIn(options, v -> {
+            appBuilder.addUserContent(v, Directory.APP_DIR);
+        });
 
         if (isRuntimeInstaller) {
             appBuilder.appImageLayout(runtimeLayout);

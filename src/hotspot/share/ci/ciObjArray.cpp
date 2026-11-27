@@ -26,7 +26,7 @@
 #include "ci/ciObjArray.hpp"
 #include "ci/ciUtilities.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
-#include "oops/oopCast.inline.hpp"
+#include "oops/oop.inline.hpp"
 
 // ciObjArray
 //

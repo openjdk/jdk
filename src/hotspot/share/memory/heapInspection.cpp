@@ -35,11 +35,12 @@
 #include "nmt/memTracker.hpp"
 #include "oops/fieldInfo.hpp"
 #include "oops/fieldStreams.inline.hpp"
-#include "oops/inlineKlass.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/valueKlass.inline.hpp"
 #include "runtime/atomicAccess.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/os.hpp"
+#include "services/diagnosticWorkers.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/stack.inline.hpp"
@@ -99,24 +100,45 @@ const char* KlassInfoEntry::name() const {
   return name;
 }
 
+const char* KlassInfoEntry::layout() const {
+  if (_klass->is_flatArray_klass()) {
+    switch (FlatArrayKlass::cast(_klass)->layout_kind()) {
+    case LayoutKind::NULL_FREE_NON_ATOMIC_FLAT:
+      return " [flat, null-restricted, non-atomic]";
+    case LayoutKind::NULL_FREE_ATOMIC_FLAT:
+      return " [flat, null-restricted, atomic]";
+    case LayoutKind::NULLABLE_NON_ATOMIC_FLAT:
+      return " [flat, nullable, non-atomic]";
+    case LayoutKind::NULLABLE_ATOMIC_FLAT:
+      return " [flat, nullable, atomic]";
+    default:
+      return " [unknown layout]";
+    }
+  }
+  return "";
+}
+
+
 void KlassInfoEntry::print_on(outputStream* st) const {
   ResourceMark rm;
 
   // simplify the formatting (ILP32 vs LP64) - always cast the numbers to 64-bit
   ModuleEntry* module = _klass->module();
   if (module->is_named()) {
-    st->print_cr(INT64_FORMAT_W(13) "  " UINT64_FORMAT_W(13) "  %s (%s%s%s)",
+    st->print_cr(INT64_FORMAT_W(13) "  " UINT64_FORMAT_W(13) "  %s%s (%s%s%s)",
                  (int64_t)_instance_count,
                  (uint64_t)_instance_words * HeapWordSize,
                  name(),
+                 layout(),
                  module->name()->as_C_string(),
                  module->version() != nullptr ? "@" : "",
                  module->version() != nullptr ? module->version()->as_C_string() : "");
   } else {
-    st->print_cr(INT64_FORMAT_W(13) "  " UINT64_FORMAT_W(13) "  %s",
+    st->print_cr(INT64_FORMAT_W(13) "  " UINT64_FORMAT_W(13) "  %s%s",
                  (int64_t)_instance_count,
                  (uint64_t)_instance_words * HeapWordSize,
-                 name());
+                 name(),
+                 layout());
   }
 }
 
@@ -551,26 +573,26 @@ private:
   int index() const { return _index; }
   const InstanceKlass* holder() { return _holder; }
   const AccessFlags& access_flags() { return _access_flags; }
-  bool is_null_free_inline_type() const { return _field_flags.is_null_free_inline_type(); }
+  bool is_null_free_value_type() const { return _field_flags.is_null_free_value_type(); }
 };
 
 static int compare_offset(FieldDesc* f1, FieldDesc* f2) {
    return f1->offset() > f2->offset() ? 1 : -1;
 }
 
-static void print_field(outputStream* st, int level, int offset, FieldDesc& fd, bool is_inline_type, bool is_flat ) {
+static void print_field(outputStream* st, int level, int offset, FieldDesc& fd, bool is_value_type, bool is_flat ) {
   const char* flat_field_msg = is_flat ? "flat" : "";
   st->print_cr("  @ %d %*s \"%s\" %s %s %s",
       offset, level * 3, "",
       fd.name()->as_C_string(),
       fd.signature()->as_C_string(),
-      is_inline_type ? " // inline type " : "",
+      is_value_type ? " // value type " : "",
       flat_field_msg);
 }
 
 static void print_flat_field(outputStream* st, int level, int offset, InstanceKlass* klass) {
-  assert(klass->is_inline_klass(), "Only inline types can be flat");
-  InlineKlass* vklass = InlineKlass::cast(klass);
+  assert(klass->is_value_klass(), "Only value types can be flat");
+  ValueKlass* vklass = ValueKlass::cast(klass);
   GrowableArray<FieldDesc>* fields = new (mtServiceability) GrowableArray<FieldDesc>(100, mtServiceability);
   for (AllFieldStream fd(klass); !fd.done(); fd.next()) {
     if (!fd.access_flags().is_static()) {
@@ -582,10 +604,10 @@ static void print_flat_field(outputStream* st, int level, int offset, InstanceKl
     FieldDesc fd = fields->at(i);
     int offset2 = offset + fd.offset() - vklass->payload_offset();
     print_field(st, level, offset2, fd,
-        fd.is_null_free_inline_type(), fd.holder()->field_is_flat(fd.index()));
+        fd.is_null_free_value_type(), fd.holder()->field_is_flat(fd.index()));
     if (fd.holder()->field_is_flat(fd.index())) {
       print_flat_field(st, level + 1, offset2 ,
-          InstanceKlass::cast(fd.holder()->get_inline_type_field_klass(fd.index())));
+          InstanceKlass::cast(fd.holder()->get_value_type_field_klass(fd.index())));
     }
   }
 }
@@ -628,10 +650,10 @@ void ClassPrintLayout::class_print_layout(outputStream* st, char* class_name) {
     fields->sort(compare_offset);
     for(int i = 0; i < fields->length(); i++) {
       FieldDesc fd = fields->at(i);
-      print_field(st, 0, fd.offset(), fd, fd.is_null_free_inline_type(), fd.holder()->field_is_flat(fd.index()));
+      print_field(st, 0, fd.offset(), fd, fd.is_null_free_value_type(), fd.holder()->field_is_flat(fd.index()));
       if (fd.holder()->field_is_flat(fd.index())) {
         print_flat_field(st, 1, fd.offset(),
-            InstanceKlass::cast(fd.holder()->get_inline_type_field_klass(fd.index())));
+            InstanceKlass::cast(fd.holder()->get_value_type_field_klass(fd.index())));
       }
     }
   }
@@ -713,8 +735,17 @@ uintx HeapInspection::populate_table(KlassInfoTable* cit, BoolObjectClosure *fil
   return ric.missed_count();
 }
 
-void HeapInspection::heap_inspection(outputStream* st, WorkerThreads* workers) {
+void HeapInspection::heap_inspection(outputStream* st, uint num_workers) {
   ResourceMark rm;
+
+  // Use parallel workers if we have enough active workers and parallel heap iteration is supported.
+  WorkerThreads* workers = nullptr;
+  if (Universe::heap()->supports_parallel_object_iteration() && num_workers > 1) {
+    const uint active_workers = DiagnosticWorkers::try_and_set_active_workers(num_workers);
+    if (active_workers > 1) {
+      workers = DiagnosticWorkers::workers();
+    }
+  }
 
   KlassInfoTable cit(false);
   if (!cit.allocation_failed()) {

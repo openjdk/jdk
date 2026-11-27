@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -152,7 +152,12 @@ public final class EventWriter {
 
     private void putStringValue(String s) {
         int length = s.length();
-        if (isValidForSize(1 + 5 + 3 * length)) {
+        long size = 1L + 5L + 3L * length;
+        if (usedSize() + size > MAX_EVENT_SIZE) {
+            valid = false;
+            return;
+        }
+        if (isValidForSize((int)size)) {
             putUncheckedByte(StringParser.Encoding.CHAR_ARRAY.byteValue()); // 1 byte
             putUncheckedInt(length); // max 5 bytes
             for (int i = 0; i < length; i++) {
@@ -211,7 +216,13 @@ public final class EventWriter {
             return false;
         }
         if (currentPosition + requestedSize > maxPosition) {
-            flush(usedSize(), requestedSize);
+            int used = usedSize();
+            // Do not provision a larger buffer for a request beyond the event-size limit.
+            if ((long) used + requestedSize > MAX_EVENT_SIZE) {
+                valid = false;
+                return false;
+            }
+            flush(used, requestedSize);
             // retry
             if (!valid) {
                 return false;
@@ -222,10 +233,6 @@ public final class EventWriter {
 
     private int usedSize() {
         return (int) (currentPosition - startPosition);
-    }
-
-    private void flush() {
-        flush(usedSize(), 0);
     }
 
     private void flush(int usedSize, int requestedSize) {

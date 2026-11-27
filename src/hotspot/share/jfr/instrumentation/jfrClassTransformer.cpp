@@ -97,8 +97,9 @@ InstanceKlass* JfrClassTransformer::create_instance_klass(InstanceKlass*& ik, Cl
 void JfrClassTransformer::copy_traceid(const InstanceKlass* ik, const InstanceKlass* new_ik) {
   assert(ik != nullptr, "invariant");
   assert(new_ik != nullptr, "invariant");
+  assert(new_ik->trace_id() == 0, "invariant");
   new_ik->set_trace_id(ik->trace_id());
-  assert(TRACE_ID(ik) == TRACE_ID(new_ik), "invariant");
+  ik->set_trace_id(0);
 }
 
 InstanceKlass* JfrClassTransformer::create_new_instance_klass(InstanceKlass* ik, ClassFileStream* stream, TRAPS) {
@@ -179,7 +180,8 @@ void JfrClassTransformer::rewrite_klass_pointer(InstanceKlass*& ik, InstanceKlas
   assert(ik != nullptr, "invariant");
   assert(new_ik != nullptr, "invariant");
   assert(thread != nullptr, "invariant");
-  assert(TRACE_ID(ik) == TRACE_ID(new_ik), "invariant");
+  assert(TRACE_ID(ik) == 0, "invariant");
+  assert(TRACE_ID(ik) != TRACE_ID(new_ik), "invariant");
   assert(!thread->has_pending_exception(), "invariant");
   // Assign original InstanceKlass* back onto "its" parser object for proper destruction.
   parser.set_klass_to_deallocate(ik);

@@ -86,9 +86,9 @@ public:
 template <class S, class U>
 class TypeIntPrototype {
 public:
-  static_assert(S(-1) < S(0), "");
-  static_assert(U(-1) > U(0), "");
-  static_assert(sizeof(S) == sizeof(U), "");
+  static_assert(S(-1) < S(0));
+  static_assert(U(-1) > U(0));
+  static_assert(sizeof(S) == sizeof(U));
 
   RangeInt<S> _srange;
   RangeInt<U> _urange;
@@ -126,9 +126,9 @@ public:
   // with the bottom type
   template <class S, class U>
   static U cardinality_from_bounds(const RangeInt<S>& srange, const RangeInt<U>& urange) {
-    static_assert(S(-1) < S(0), "");
-    static_assert(U(-1) > U(0), "");
-    static_assert(sizeof(S) == sizeof(U), "");
+    static_assert(S(-1) < S(0));
+    static_assert(U(-1) > U(0));
+    static_assert(sizeof(S) == sizeof(U));
 
     if (U(srange._lo) == urange._lo) {
       // srange is the same as urange

@@ -73,6 +73,13 @@ public:
   virtual void try_peek_weak_handle_in_nmethod(MacroAssembler* masm, Register weak_handle, Register obj, Label& slowpath);
   virtual void check_oop(MacroAssembler* masm, Register obj, Register tmp1, Register tmp2, Label& L_error);
 
+  // Jumps hotpatching
+  static address parse_jump_address(address pc);
+  static void insert_patchable_nop(address pc);
+  static bool is_patchable_nop(address pc);
+  static void insert_patchable_jump(address pc, address target_pc);
+  static bool is_patchable_jump(address pc, address target_pc);
+
 #ifdef COMPILER1
   void keepalive_barrier_c1_stub(LIR_Assembler* ce, ShenandoahKeepaliveBarrierStub* stub);
   void keepalive_barrier_c1_runtime_stub(StubAssembler* sasm);
@@ -84,8 +91,12 @@ public:
 #ifdef COMPILER2
   // Entry points from Matcher
   void load_c2(const MachNode* node, MacroAssembler* masm, Register dst, Address src, bool narrow);
+  void load_c2_special(const MachNode* node, MacroAssembler* masm,
+                       Register dst, Address src, int offset, Register tmp);
   void store_c2(const MachNode* node, MacroAssembler* masm,
                 Address dst, bool dst_narrow, Register src, bool src_narrow, Register tmp);
+  void store_c2_special(const MachNode* node, MacroAssembler* masm,
+                        Address dst, Register src, int offset, Register tmp);
   void compare_and_set_c2(const MachNode* node, MacroAssembler* masm, Register res, Address addr, Register oldval, Register newval,
                           Register tmp, bool narrow);
   void get_and_set_c2(const MachNode* node, MacroAssembler* masm, Register newval, Address addr, Register tmp, bool narrow);

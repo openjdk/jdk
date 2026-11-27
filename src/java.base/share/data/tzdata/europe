@@ -401,13 +401,33 @@
 # as a negative daylight saving time in winter.  So, in this database
 # IST stands for Irish Summer Time for timestamps before 1968, and for
 # Irish Standard Time after that.  See:
-# http://www.irishstatutebook.ie/eli/1971/act/17/enacted/en/print
+# https://www.irishstatutebook.ie/eli/1971/act/17/enacted/en/print
 
 # Michael Deckers (2017-06-01) gave the following URLs for Ireland's
 # Summer Time Act, 1925 and Summer Time Orders, 1926 and 1947:
-# http://www.irishstatutebook.ie/eli/1925/act/8/enacted/en/print
-# http://www.irishstatutebook.ie/eli/1926/sro/919/made/en/print
-# http://www.irishstatutebook.ie/eli/1947/sro/71/made/en/print
+# https://www.irishstatutebook.ie/eli/1925/act/8/enacted/en/print
+# https://www.irishstatutebook.ie/eli/1926/sro/919/made/en/print
+# https://www.irishstatutebook.ie/eli/1947/sro/71/made/en/print
+
+# From Stan Ulbrych (2026-09-12):
+# Ireland's Summer Time Act, 1925 (No. 8 of 1925, see above)
+# ended summer time at 02:00 GMT on the day after the third Saturday in
+# September, that is, 1925-09-20. The UK's Summer Time Act, 1925, however,
+# moved the UK's end date to the day after the first Saturday in October with
+# immediate effect, but it did not apply to the Irish Free State.
+# Ireland matched the October date only from 1926, via the Summer Time Order,
+# 1926, whose recital replaces the period fixed by section 2 of the 1925 Act
+# and mentions no earlier order. Moving approval of that order in the
+# Dáil on 1926-03-24, Minister Kevin O'Higgins said:
+#
+#     Deputies will remember that last year there was a discrepancy of a
+#     fortnight between the termination of Summer Time in the Saorstát and
+#     in Great Britain and Northern Ireland.  As a result of that, serious
+#     inconvenience was caused to railway companies, and there was a certain
+#     amount of dislocation of postal services in the country.
+#
+# (See: https://www.oireachtas.ie/en/debates/debate/dail/1926-03-24/18/)
+# So Dublin fell back on 1925-09-20, two weeks before London.
 
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 # Summer Time Act, 1916
@@ -560,6 +580,8 @@ Zone	Europe/Dublin	-0:25:21 -	LMT	1880 Aug  2
 			-0:25:21 -	DMT	1916 May 21  2:00s
 			-0:25:21 1:00	IST	1916 Oct  1  2:00s
 			 0:00	GB-Eire	%s	1921 Dec  6 # independence
+			 0:00	GB-Eire	GMT/IST	1925 Sep Sun>=16 2:00s
+			 0:00	-	GMT	1926
 			 0:00	GB-Eire	GMT/IST	1940 Feb 25  2:00s
 			 0:00	1:00	IST	1946 Oct  6  2:00s
 			 0:00	-	GMT	1947 Mar 16  2:00s

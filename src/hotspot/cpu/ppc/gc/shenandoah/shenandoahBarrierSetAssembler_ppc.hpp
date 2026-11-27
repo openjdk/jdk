@@ -127,12 +127,24 @@ public:
 
   virtual void check_oop(MacroAssembler *masm, Register obj, const char* msg);
 
+  // Jumps hotpatching
+  static address parse_jump_address(address pc);
+  static void insert_patchable_nop(address pc);
+  static bool is_patchable_nop(address pc);
+  static void insert_patchable_jump(address pc, address target_pc);
+  static bool is_patchable_jump(address pc, address target_pc);
+
 #ifdef COMPILER2
   // Entry points from Matcher
   void load_c2(const MachNode* node, MacroAssembler* masm, Register dst, Register addr, int disp, Register tmp1, Register tmp2, bool narrow, bool acquire);
 
+  void load_c2_special(const MachNode* node, MacroAssembler* masm, Register dst, Register addr, int offset, Register tmp1, Register tmp2, Register tmp3);
+
   void store_c2(const MachNode* node, MacroAssembler* masm,
                 Register dst, int disp, bool dst_narrow, Register src, bool src_narrow, Register tmp1, Register tmp2, Register tmp3);
+
+  void store_c2_special(const MachNode* node, MacroAssembler* masm,
+                        Register dst, Register src, int offset, Register tmp1, Register tmp2, Register tmp3);
 
   void compare_and_set_c2(const MachNode* node, MacroAssembler* masm, Register res, Register addr, Register oldval,
                           Register newval, Register tmp1, Register tmp2, bool exchange, bool narrow, bool weak, bool acquire);

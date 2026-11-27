@@ -87,14 +87,6 @@ void MethodCounters::metaspace_pointers_do(MetaspaceClosure* it) {
   it->push(&_method_training_data);
 }
 
-#if INCLUDE_CDS
-void MethodCounters::remove_unshareable_info() {
-}
-void MethodCounters::restore_unshareable_info(TRAPS) {
-  _method_training_data = method_training_data_sentinel();
-}
-#endif // INCLUDE_CDS
-
 void MethodCounters::print_on(outputStream* st) const {
   assert(is_methodCounters(), "should be method counters");
   st->print("method counters");

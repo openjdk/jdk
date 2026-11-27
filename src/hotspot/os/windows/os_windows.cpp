@@ -1256,24 +1256,24 @@ FILETIME java_to_windows_time(jlong l) {
   return result;
 }
 
-double os::elapsed_process_cpu_time() {
+bool os::elapsed_process_cpu_time(double& value) {
   FILETIME create;
   FILETIME exit;
   FILETIME kernel;
   FILETIME user;
 
   if (GetProcessTimes(GetCurrentProcess(), &create, &exit, &kernel, &user) == 0) {
-    return -1;
+    return false;
   }
 
   SYSTEMTIME user_total;
   if (FileTimeToSystemTime(&user, &user_total) == 0) {
-    return -1;
+    return false;
   }
 
   SYSTEMTIME kernel_total;
   if (FileTimeToSystemTime(&kernel, &kernel_total) == 0) {
-    return -1;
+    return false;
   }
 
   double user_seconds =
@@ -1285,7 +1285,8 @@ double os::elapsed_process_cpu_time() {
                           double(kernel_total.wSecond) +
                           double(kernel_total.wMilliseconds) / 1000.0;
 
-  return user_seconds + kernel_seconds;
+  value = user_seconds + kernel_seconds;
+  return true;
 }
 
 jlong os::javaTimeMillis() {
@@ -2010,6 +2011,21 @@ void os::print_os_info(outputStream* st) {
   VM_Version::print_platform_virtualization_info(st);
 }
 
+static bool getWindowsInstallationType(char* buffer, int bufferSize) {
+  const char* subKey = "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion";
+  const char* valueName = "InstallationType";
+  DWORD valueLength = bufferSize;
+  // Initialize buffer with empty string
+  buffer[0] = '\0';
+
+  if (RegGetValueA(HKEY_LOCAL_MACHINE, subKey, valueName,
+                   RRF_RT_REG_SZ, nullptr, buffer, &valueLength) != ERROR_SUCCESS) {
+    buffer[0] = '\0';
+    return false;
+  }
+  return true;
+}
+
 void os::win32::print_windows_version(outputStream* st) {
   bool is_workstation = !IsWindowsServer();
 
@@ -2097,6 +2113,12 @@ void os::win32::print_windows_version(outputStream* st) {
 
   st->print(" Build %d", build_number);
   st->print(" (%d.%d.%d.%d)", major_version, minor_version, build_number, build_minor);
+  // InstallationType (e.g. Server Core, Nano server)
+  const int BUFFER_SIZE = 256;
+  char installationType[BUFFER_SIZE];
+  if (getWindowsInstallationType(installationType, BUFFER_SIZE)) {
+    st->print(" InstallationType: \"%s\"", installationType);
+  }
   st->cr();
 }
 
@@ -2168,22 +2190,11 @@ void os::pd_print_cpu_info(outputStream* st, char* buf, size_t buflen) {
 }
 
 void os::get_summary_cpu_info(char* buf, size_t buflen) {
-  HKEY key;
-  DWORD status = RegOpenKey(HKEY_LOCAL_MACHINE,
-               "HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0", &key);
-  if (status == ERROR_SUCCESS) {
-    DWORD size = (DWORD)buflen;
-    status = RegQueryValueEx(key, "ProcessorNameString", nullptr, nullptr, (byte*)buf, &size);
-    if (status != ERROR_SUCCESS) {
-        strncpy(buf, "## __CPU__", buflen);
-    } else {
-      if (size < buflen) {
-        buf[size] = '\0';
-      }
-    }
-    RegCloseKey(key);
-  } else {
-    // Put generic cpu info to return
+  DWORD size = (DWORD)buflen;
+  DWORD status = RegGetValueA(HKEY_LOCAL_MACHINE,
+                              "HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0",
+                              "ProcessorNameString", RRF_RT_REG_SZ, nullptr, buf, &size);
+  if (status != ERROR_SUCCESS) {
     strncpy(buf, "## __CPU__", buflen);
   }
 }
@@ -2675,6 +2686,29 @@ LONG Handle_IDiv_Exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
   return EXCEPTION_CONTINUE_EXECUTION;
 }
 
+static bool grow_windows_stack_to(address target) {
+  const volatile NT_TIB* tib = (NT_TIB*)NtCurrentTeb();
+
+  // Touch the page immediately below the current stack limit. Windows handles
+  // this as ordinary stack growth: it commits more stack, lowers StackLimit,
+  // and installs a new moving guard.  Re-read StackLimit after every touch
+  // because Windows may grow the stack by more than one page at a time.
+  while (target < (address)tib->StackLimit) {
+    address old_limit = (address)tib->StackLimit;
+    volatile char* probe = reinterpret_cast<volatile char*>(
+        old_limit - os::vm_page_size());
+
+    // Dummy write to trigger an update to the stack limit.
+    *probe = 0;
+
+    if ((address)tib->StackLimit >= old_limit) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 //-----------------------------------------------------------------------------
 JNIEXPORT
 LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
@@ -2771,12 +2805,10 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
             return Handle_Exception(exceptionInfo, stub);
           }
         }
-        // If it's a legal stack address map the entire region in
-        if (thread->is_in_usable_stack(addr)) {
-          addr = (address)((uintptr_t)addr &
-                            (~((uintptr_t)os::vm_page_size() - (uintptr_t)1)));
-          os::commit_memory((char *)addr, thread->stack_base() - addr,
-                            !ExecMem);
+        // If it's a legal stack address, then commit the region of memory from
+        // the current StackLimit down to `addr`.
+        if (thread->is_in_usable_stack(addr) &&
+            grow_windows_stack_to(align_down(addr, os::vm_page_size()))) {
           return EXCEPTION_CONTINUE_EXECUTION;
         }
         // Null pointer exception.
@@ -4275,33 +4307,7 @@ int                       os::win32::_build_minor               = 0;
 bool                      os::win32::_processor_group_warning_displayed = false;
 bool                      os::win32::_job_object_processor_group_warning_displayed = false;
 
-void getWindowsInstallationType(char* buffer, int bufferSize) {
-  HKEY hKey;
-  const char* subKey = "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion";
-  const char* valueName = "InstallationType";
-
-  DWORD valueLength = bufferSize;
-
-  // Initialize buffer with empty string
-  buffer[0] = '\0';
-
-  // Open the registry key
-  if (RegOpenKeyExA(HKEY_LOCAL_MACHINE, subKey, 0, KEY_READ, &hKey) != ERROR_SUCCESS) {
-    // Return empty buffer if key cannot be opened
-    return;
-  }
-
-  // Query the value
-  if (RegQueryValueExA(hKey, valueName, nullptr, nullptr, (LPBYTE)buffer, &valueLength) != ERROR_SUCCESS) {
-    RegCloseKey(hKey);
-    buffer[0] = '\0';
-    return;
-  }
-
-  RegCloseKey(hKey);
-}
-
-bool isNanoServer() {
+static bool isNanoServer() {
   const int BUFFER_SIZE = 256;
   char installationType[BUFFER_SIZE];
   getWindowsInstallationType(installationType, BUFFER_SIZE);
@@ -5015,6 +5021,7 @@ static WCHAR* get_path_to_target(const wchar_t* wide_path) {
   if (target_path_size == 0) {
     DWORD errcode = ::GetLastError();
     log_debug(os)("get_path_to_target() failed to GetFinalPathNameByHandleW: GetLastError->%lu.", errcode);
+    ::CloseHandle(hFile);
     return nullptr;
   }
 
@@ -5026,12 +5033,15 @@ static WCHAR* get_path_to_target(const wchar_t* wide_path) {
   if (res != target_path_size - 1) {
     DWORD errcode = ::GetLastError();
     log_debug(os)("get_path_to_target() failed to GetFinalPathNameByHandleW: GetLastError->%lu.", errcode);
+    ::CloseHandle(hFile);
+    FREE_C_HEAP_ARRAY(path_to_target);
     return nullptr;
   }
 
   if (::CloseHandle(hFile) == 0) {
     DWORD errcode = ::GetLastError();
     log_debug(os)("get_path_to_target() failed to CloseHandle: GetLastError->%lu.", errcode);
+    FREE_C_HEAP_ARRAY(path_to_target);
     return nullptr;
   }
 
@@ -5173,9 +5183,9 @@ bool os::same_files(const char* file1, const char* file2) {
     return true;
   }
 
-  char* native_file1 = os::strdup_check_oom(file1);
+  char* native_file1 = os::strdup_check_oom(file1, mtInternal);
   native_file1 = os::native_path(native_file1);
-  char* native_file2 = os::strdup_check_oom(file2);
+  char* native_file2 = os::strdup_check_oom(file2, mtInternal);
   native_file2 = os::native_path(native_file2);
   if (strcmp(native_file1, native_file2) == 0) {
     os::free(native_file1);

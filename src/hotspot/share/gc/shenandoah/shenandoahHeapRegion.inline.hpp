@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2015, 2019, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
+#include "utilities/checkedCast.hpp"
 
 HeapWord* ShenandoahHeapRegion::allocate_fill(size_t size) {
   shenandoah_assert_heaplocked_or_safepoint();
@@ -75,11 +76,11 @@ inline void ShenandoahHeapRegion::adjust_alloc_metadata(const ShenandoahAllocReq
   // Only need to update alloc metadata for lab alloc, shared alloc is counted implicitly by tlab/gclab allocs
   if (req.is_lab_alloc()) {
     if (req.is_mutator_alloc()) {
-      _tlab_allocs += size;
+      _tlab_allocs = checked_cast<uint32_t>(_tlab_allocs + size);
     } else if (req.is_old()) {
-      _plab_allocs += size;
+      _plab_allocs = checked_cast<uint32_t>(_plab_allocs + size);
     } else {
-      _gclab_allocs += size;
+      _gclab_allocs = checked_cast<uint32_t>(_gclab_allocs + size);
     }
   }
 }
@@ -206,5 +207,11 @@ inline void ShenandoahHeapRegion::record_unpin(size_t value) {
          index(), pin_count(), value);
   _critical_pins.sub_then_fetch(value, memory_order_relaxed);
 }
+
+inline uint32_t ShenandoahHeapRegion::humongous_start_region() const {
+  assert(!is_humongous() || _humongous_start_region_index != UndefinedRegionIndex, "Bad start region index");
+  return _humongous_start_region_index;
+}
+
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHHEAPREGION_INLINE_HPP

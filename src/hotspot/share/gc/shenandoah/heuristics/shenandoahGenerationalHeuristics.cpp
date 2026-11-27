@@ -24,11 +24,13 @@
  */
 
 #include "gc/shenandoah/heuristics/shenandoahGenerationalHeuristics.hpp"
+#include "gc/shenandoah/shenandoahAgeCensus.hpp"
 #include "gc/shenandoah/shenandoahAllocRate.inline.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.inline.hpp"
+#include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahInPlacePromoter.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
@@ -107,9 +109,14 @@ size_t ShenandoahGenerationalHeuristics::prepare_regions_for_promotion(Shenandoa
   assert_no_in_place_promotions();
   size_t candidates = 0;
   for (size_t i = 0, num_regions = heap->num_regions(); i < num_regions; i++) {
+    if (!heap->is_region_young(i)) {
+      // Skip regions that aren't young
+      continue;
+    }
+
     ShenandoahHeapRegion* const r = heap->get_region(i);
-    if (r->is_empty() || !r->has_live() || !r->is_young()) {
-      // skip over regions that aren't young with some live data
+    if (r->is_empty() || !r->has_live()) {
+      // Skip over regions that don't have live data
       continue;
     }
 
@@ -512,14 +519,8 @@ void ShenandoahGenerationalHeuristics::adjust_evacuation_budgets(ShenandoahGener
   if (add_regions_to_young > 0) {
     assert(excess_old >= add_regions_to_young * region_size_bytes, "Cannot xfer more than excess old");
     if (heap->age_census()->is_always_tenure()) {
-      // Cap excess_old at one min-PLAB per worker so this much stays in old's promotion reserve
-      // instead of being transferred to young.
-      const size_t min_plab_total = heap->plab_min_size() * HeapWordSize * heap->workers()->max_workers();
-      if (excess_old > min_plab_total) {
-        excess_old = min_plab_total;
-        // Avoid underflowing excess_old when we subtract below.
-        add_regions_to_young = 0;
-      }
+      // Keep all excess old for promotions, give nothing back to young when we are expected to promote everything.
+      add_regions_to_young = 0;
     }
     excess_old -= add_regions_to_young * region_size_bytes;
     log_debug(gc, ergo)("Before start of evacuation, total_promotion reserve is young_advance_promoted_reserve: %zu "

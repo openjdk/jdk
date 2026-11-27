@@ -441,7 +441,6 @@ void AwtDropTarget::_RegisterTarget(void* param) {
  */
 
 void AwtDropTarget::RegisterTarget(WORD show) {
-    JNIEnv* env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
     HRESULT res;
 
     if (!AwtToolkit::IsMainThread()) {
@@ -953,8 +952,11 @@ jobject AwtDropTarget::ConvertMemoryMappedData(JNIEnv* env, jlong fmt, STGMEDIUM
             HGLOBAL glob;
             OLE_HRT(GetHGlobalFromStream(spFileNames, &glob));
             jbyte *pFileListWithDoubleZeroTerminator = (jbyte *)::GlobalLock(glob);
+            if (pFileListWithDoubleZeroTerminator == NULL) {
+                OLE_HRT(E_INVALIDARG);
+            }
             env->SetByteArrayRegion(bytes, 0, st.cbSize.LowPart, pFileListWithDoubleZeroTerminator);
-            ::GlobalUnlock(pFileListWithDoubleZeroTerminator);
+            ::GlobalUnlock(glob);
             retObj = bytes;
         }
         //std::bad_alloc could happen in JStringBuffer
@@ -1018,7 +1020,6 @@ const unsigned int AwtDropTarget::CACHE_INCR = 16;
 
 void AwtDropTarget::LoadCache(IDataObject* pDataObj) {
     JNIEnv*      env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
-    unsigned int cnt = 0;
     HRESULT      res;
     IEnumFORMATETC* pEnumFormatEtc = NULL;
 
@@ -1165,6 +1166,9 @@ BOOL AwtDropTarget::IsLocalDataObject(IDataObject __RPC_FAR *pDataObject) {
                 DWORD id = ::CoGetCurrentProcess();
 
                 LPVOID data = ::GlobalLock(stgmedium.hGlobal);
+                if (data == NULL) {
+                    return FALSE;
+                }
                 if (memcmp(data, &id, sizeof(id)) == 0) {
                     local = TRUE;
                 }
@@ -1249,8 +1253,6 @@ AwtDropTarget::call_dTCgetis(JNIEnv* env, jlong istream) {
  */
 
 WDTCPIStreamWrapper::WDTCPIStreamWrapper(STGMEDIUM* stgmedium) {
-    JNIEnv* env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
-
     m_stgmedium = *stgmedium;
     m_istream   = stgmedium->pstm;
     m_istream->AddRef();

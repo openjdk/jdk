@@ -152,7 +152,7 @@
   product(double, G1LastPLABAverageOccupancy, 50.0, EXPERIMENTAL,           \
                "The expected average occupancy of the last PLAB in "        \
                "percent.")                                                  \
-               range(0.001, 100.0)                                          \
+               range(0.0, 99.999)                                           \
                                                                             \
   product(size_t, G1SATBBufferSize, 1*K,                                    \
           "Number of entries in an SATB log buffer.")                       \
@@ -267,7 +267,7 @@
   product(size_t, G1HeapRegionSize, 0,                                      \
           "Size of the G1 regions.")                                        \
           range(0, NOT_LP64(32*M) LP64_ONLY(512*M))                         \
-          constraint(G1HeapRegionSizeConstraintFunc,AfterMemoryInit)        \
+          constraint(G1HeapRegionSizeConstraintFunc, AfterErgo)             \
                                                                             \
   product(uint, G1ConcRefinementThreads, 0,                                 \
           "The number of parallel remembered set update threads. "          \
@@ -316,16 +316,16 @@
           "Chunk size used for rebuilding the remembered set.")             \
           range(4 * K, 32 * M)                                              \
                                                                             \
-  product(uint, G1OldCSetRegionThresholdPercent, 10, EXPERIMENTAL,         \
+  product(uint, G1OldCSetRegionThresholdPercent, 10, EXPERIMENTAL,          \
           "An upper bound for the number of old CSet regions expressed "    \
           "as a percentage of the heap size.")                              \
           range(0, 100)                                                     \
                                                                             \
-  product(uint, G1OldCSetGroupSize, 5, EXPERIMENTAL,                        \
-          "The maximum number of old CSet regions in a collection group. "  \
-          "All regions in a group will be evacuated in the same GC pause."  \
-          "The first group calculated after marking from marking "          \
-          "candidates may exceed this limit as it is calculated based on "  \
+  product(uint, G1OldCardSetGroupSize, 5, EXPERIMENTAL,                     \
+          "The maximum number of old regions in a card set group. "         \
+          "All regions in a group will be evacuated in the same GC pause. " \
+          "The first group calculated in the concurrent cycle "             \
+          "may exceed this limit as it is calculated based on "             \
           "G1MixedGCCountTarget.")                                          \
           range(1, 256)                                                     \
                                                                             \
@@ -339,6 +339,7 @@
           "Number of milliseconds after a previous GC to wait before "      \
           "triggering a periodic gc. A value of zero disables periodically "\
           "enforced gc cycles.")                                            \
+          range(0, NOT_LP64(max_uintx) LP64_ONLY(max_jlong))                \
                                                                             \
   product(bool, G1PeriodicGCInvokesConcurrent, true,                        \
           "Determines the kind of periodic GC. Set to true to have G1 "     \
@@ -392,8 +393,8 @@
   develop(bool, G1ForceOptionalEvacuation, false,                           \
           "Force optional evacuation for all GCs where there are old gen "  \
           "collection set candidates."                                      \
-          "Also schedule all available optional groups for evacuation "     \
-          "regardless of timing.")                                          \
+          "Also schedule all available optional card set groups for "       \
+          "evacuation regardless of timing.")                               \
                                                                             \
   GC_G1_EVACUATION_FAILURE_FLAGS(develop,                                   \
                     develop_pd,                                             \

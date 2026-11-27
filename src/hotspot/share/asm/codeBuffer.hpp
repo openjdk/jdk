@@ -53,9 +53,9 @@ class CodeOffsets: public StackObj {
 public:
   enum Entries { Entry,
                  Verified_Entry,
-                 Inline_Entry,
-                 Verified_Inline_Entry,
-                 Verified_Inline_Entry_RO,
+                 Value_Entry,
+                 Verified_Value_Entry,
+                 Verified_Value_Entry_RO,
                  Frame_Complete, // Offset in the code where the frame setup is (for forte stackwalks) is complete
                  OSR_Entry,
                  Exceptions,     // Offset where exception handler lives
@@ -77,9 +77,9 @@ public:
   CodeOffsets() {
     _values[Entry         ] = 0;
     _values[Verified_Entry] = 0;
-    _values[Inline_Entry  ] = 0;
-    _values[Verified_Inline_Entry   ] = no_such_entry_point;
-    _values[Verified_Inline_Entry_RO] = no_such_entry_point;
+    _values[Value_Entry   ] = 0;
+    _values[Verified_Value_Entry   ] = no_such_entry_point;
+    _values[Verified_Value_Entry_RO] = no_such_entry_point;
     _values[Frame_Complete] = frame_never_safe;
     _values[OSR_Entry     ] = 0;
     _values[Exceptions    ] = -1;
@@ -302,7 +302,7 @@ class CodeSection {
 
 class CHeapString : public CHeapObj<mtCode> {
  public:
-  CHeapString(const char* str) : _string(os::strdup(str)) {}
+  CHeapString(const char* str) : _string(os::strdup(str, mtCode)) {}
   ~CHeapString();
   const char* string() const { return _string; }
 
@@ -440,6 +440,9 @@ class AsmRemarks {
 
   void share(const AsmRemarks &src);
   void clear();
+  // Clear Collection reference when storing AOT code,
+  // new one will be created during AOT code load.
+  void clear_ref() { _remarks = nullptr; }
   uint print(uint offset, outputStream* strm = tty) const;
 
   // For testing purposes only.
@@ -468,6 +471,9 @@ class DbgStrings {
 
   void share(const DbgStrings &src);
   void clear();
+  // Clear Collection reference when storing AOT code,
+  // new one will be created during AOT code load.
+  void clear_ref() { _strings = nullptr; }
 
   // For testing purposes only.
   const DbgStringCollection* ref() const { return _strings; }

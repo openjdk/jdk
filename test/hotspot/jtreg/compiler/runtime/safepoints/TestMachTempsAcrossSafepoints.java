@@ -34,6 +34,8 @@ import java.lang.ref.SoftReference;
  * @key randomness
  * @library /test/lib /
  * @requires vm.gc.G1 & vm.bits == 64 & vm.opt.final.UseCompressedOops == true
+ * @comment  Can't use AOT cache because training data may affect shape of test's code
+ * @requires !vm.cds.supports.aot.code.caching | vm.opt.AOTCache == null
  * @run driver compiler.runtime.safepoints.TestMachTempsAcrossSafepoints
  */
 

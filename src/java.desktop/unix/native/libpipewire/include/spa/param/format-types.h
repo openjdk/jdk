@@ -5,6 +5,13 @@
 #ifndef SPA_PARAM_FORMAT_TYPES_H
 #define SPA_PARAM_FORMAT_TYPES_H
 
+#include <spa/param/format.h>
+#include <spa/param/param-types.h>
+
+#include <spa/param/audio/type-info.h>
+#include <spa/param/video/type-info.h>
+#include <spa/control/type-info.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -13,12 +20,6 @@ extern "C" {
  * \addtogroup spa_param
  * \{
  */
-
-#include <spa/param/format.h>
-#include <spa/param/param-types.h>
-
-#include <spa/param/audio/type-info.h>
-#include <spa/param/video/type-info.h>
 
 #define SPA_TYPE_INFO_Format            SPA_TYPE_INFO_PARAM_BASE "Format"
 #define SPA_TYPE_INFO_FORMAT_BASE        SPA_TYPE_INFO_Format ":"
@@ -64,6 +65,11 @@ static const struct spa_type_info spa_type_media_subtype[] = {
     { SPA_MEDIA_SUBTYPE_flac, SPA_TYPE_Int, SPA_TYPE_INFO_MEDIA_SUBTYPE_BASE "flac", NULL },
     { SPA_MEDIA_SUBTYPE_ape, SPA_TYPE_Int, SPA_TYPE_INFO_MEDIA_SUBTYPE_BASE "ape", NULL },
     { SPA_MEDIA_SUBTYPE_opus, SPA_TYPE_Int, SPA_TYPE_INFO_MEDIA_SUBTYPE_BASE "opus", NULL },
+    { SPA_MEDIA_SUBTYPE_ac3, SPA_TYPE_Int, SPA_TYPE_INFO_MEDIA_SUBTYPE_BASE "ac3", NULL },
+    { SPA_MEDIA_SUBTYPE_eac3, SPA_TYPE_Int, SPA_TYPE_INFO_MEDIA_SUBTYPE_BASE "eac3", NULL },
+    { SPA_MEDIA_SUBTYPE_truehd, SPA_TYPE_Int, SPA_TYPE_INFO_MEDIA_SUBTYPE_BASE "truehd", NULL },
+    { SPA_MEDIA_SUBTYPE_dts, SPA_TYPE_Int, SPA_TYPE_INFO_MEDIA_SUBTYPE_BASE "dts", NULL },
+    { SPA_MEDIA_SUBTYPE_mpegh, SPA_TYPE_Int, SPA_TYPE_INFO_MEDIA_SUBTYPE_BASE "mpegh", NULL },
     /* video subtypes */
     { SPA_MEDIA_SUBTYPE_h264, SPA_TYPE_Int, SPA_TYPE_INFO_MEDIA_SUBTYPE_BASE "h264", NULL },
     { SPA_MEDIA_SUBTYPE_mjpg, SPA_TYPE_Int, SPA_TYPE_INFO_MEDIA_SUBTYPE_BASE "mjpg", NULL },
@@ -96,12 +102,19 @@ static const struct spa_type_info spa_type_media_subtype[] = {
 #define SPA_TYPE_INFO_FORMAT_AUDIO_WMA_BASE    SPA_TYPE_INFO_FORMAT_AUDIO_WMA ":"
 #define SPA_TYPE_INFO_FORMAT_AUDIO_AMR        SPA_TYPE_INFO_FORMAT_AUDIO_BASE "AMR"
 #define SPA_TYPE_INFO_FORMAT_AUDIO_AMR_BASE    SPA_TYPE_INFO_FORMAT_AUDIO_AMR ":"
+#define SPA_TYPE_INFO_FORMAT_AUDIO_MP3        SPA_TYPE_INFO_FORMAT_AUDIO_BASE "MP3"
+#define SPA_TYPE_INFO_FORMAT_AUDIO_MP3_BASE    SPA_TYPE_INFO_FORMAT_AUDIO_MP3 ":"
+#define SPA_TYPE_INFO_FORMAT_AUDIO_DTS        SPA_TYPE_INFO_FORMAT_AUDIO_BASE "DTS"
+#define SPA_TYPE_INFO_FORMAT_AUDIO_DTS_BASE    SPA_TYPE_INFO_FORMAT_AUDIO_DTS ":"
 
 #define SPA_TYPE_INFO_FormatVideo        SPA_TYPE_INFO_FORMAT_BASE "Video"
 #define SPA_TYPE_INFO_FORMAT_VIDEO_BASE        SPA_TYPE_INFO_FormatVideo ":"
 
 #define SPA_TYPE_INFO_FORMAT_VIDEO_H264        SPA_TYPE_INFO_FORMAT_VIDEO_BASE "H264"
 #define SPA_TYPE_INFO_FORMAT_VIDEO_H264_BASE    SPA_TYPE_INFO_FORMAT_VIDEO_H264 ":"
+
+#define SPA_TYPE_INFO_FormatControl        SPA_TYPE_INFO_FORMAT_BASE "Control"
+#define SPA_TYPE_INFO_FORMAT_CONTROL_BASE    SPA_TYPE_INFO_FormatControl ":"
 
 static const struct spa_type_info spa_type_format[] = {
     { SPA_FORMAT_START, SPA_TYPE_Id, SPA_TYPE_INFO_FORMAT_BASE, spa_type_param, },
@@ -135,6 +148,10 @@ static const struct spa_type_info spa_type_format[] = {
         spa_type_audio_wma_profile },
     { SPA_FORMAT_AUDIO_AMR_bandMode, SPA_TYPE_Id, SPA_TYPE_INFO_FORMAT_AUDIO_AMR_BASE "bandMode",
         spa_type_audio_amr_band_mode },
+    { SPA_FORMAT_AUDIO_MP3_channelMode, SPA_TYPE_Id, SPA_TYPE_INFO_FORMAT_AUDIO_MP3_BASE "channelMode",
+        spa_type_audio_mp3_channel_mode },
+    { SPA_FORMAT_AUDIO_DTS_extType, SPA_TYPE_Id, SPA_TYPE_INFO_FORMAT_AUDIO_DTS_BASE "extType",
+        spa_type_audio_dts_ext_type },
 
     { SPA_FORMAT_VIDEO_format, SPA_TYPE_Id, SPA_TYPE_INFO_FORMAT_VIDEO_BASE "format",
         spa_type_video_format, },
@@ -149,15 +166,23 @@ static const struct spa_type_info spa_type_format[] = {
     { SPA_FORMAT_VIDEO_multiviewMode, SPA_TYPE_Id, SPA_TYPE_INFO_FORMAT_VIDEO_BASE "multiviewMode", NULL },
     { SPA_FORMAT_VIDEO_multiviewFlags, SPA_TYPE_Id, SPA_TYPE_INFO_FORMAT_VIDEO_BASE "multiviewFlags", NULL },
     { SPA_FORMAT_VIDEO_chromaSite, SPA_TYPE_Id, SPA_TYPE_INFO_FORMAT_VIDEO_BASE "chromaSite", NULL },
-    { SPA_FORMAT_VIDEO_colorRange, SPA_TYPE_Id, SPA_TYPE_INFO_FORMAT_VIDEO_BASE "colorRange", NULL },
-    { SPA_FORMAT_VIDEO_colorMatrix, SPA_TYPE_Id, SPA_TYPE_INFO_FORMAT_VIDEO_BASE "colorMatrix", NULL },
-    { SPA_FORMAT_VIDEO_transferFunction, SPA_TYPE_Id, SPA_TYPE_INFO_FORMAT_VIDEO_BASE "transferFunction", NULL },
-    { SPA_FORMAT_VIDEO_colorPrimaries, SPA_TYPE_Id, SPA_TYPE_INFO_FORMAT_VIDEO_BASE "colorPrimaries", NULL },
+    { SPA_FORMAT_VIDEO_colorRange, SPA_TYPE_Id, SPA_TYPE_INFO_FORMAT_VIDEO_BASE "colorRange",
+        spa_type_video_color_range, },
+    { SPA_FORMAT_VIDEO_colorMatrix, SPA_TYPE_Id, SPA_TYPE_INFO_FORMAT_VIDEO_BASE "colorMatrix",
+        spa_type_video_color_matrix, },
+    { SPA_FORMAT_VIDEO_transferFunction, SPA_TYPE_Id, SPA_TYPE_INFO_FORMAT_VIDEO_BASE "transferFunction",
+        spa_type_video_transfer_function, },
+    { SPA_FORMAT_VIDEO_colorPrimaries, SPA_TYPE_Id, SPA_TYPE_INFO_FORMAT_VIDEO_BASE "colorPrimaries",
+        spa_type_video_color_primaries, },
     { SPA_FORMAT_VIDEO_profile, SPA_TYPE_Int, SPA_TYPE_INFO_FORMAT_VIDEO_BASE "profile", NULL },
     { SPA_FORMAT_VIDEO_level, SPA_TYPE_Int, SPA_TYPE_INFO_FORMAT_VIDEO_BASE "level", NULL },
 
     { SPA_FORMAT_VIDEO_H264_streamFormat, SPA_TYPE_Id, SPA_TYPE_INFO_FORMAT_VIDEO_H264_BASE "streamFormat", NULL },
     { SPA_FORMAT_VIDEO_H264_alignment, SPA_TYPE_Id, SPA_TYPE_INFO_FORMAT_VIDEO_H264_BASE "alignment", NULL },
+
+    { SPA_FORMAT_CONTROL_types, SPA_TYPE_Id, SPA_TYPE_INFO_FORMAT_CONTROL_BASE "types", spa_type_control },
+
+    { SPA_FORMAT_VIDEO_deviceId, SPA_TYPE_Bytes, SPA_TYPE_INFO_FORMAT_BASE "deviceId", NULL },
     { 0, 0, NULL, NULL },
 };
 

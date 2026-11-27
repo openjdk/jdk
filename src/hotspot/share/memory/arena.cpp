@@ -63,10 +63,10 @@ ChunkPoolLocker::~ChunkPoolLocker() {
 };
 
 // Pre-defined default chunk sizes must be arena-aligned, see Chunk::operator new()
-STATIC_ASSERT(is_aligned((int)Chunk::tiny_size, ARENA_AMALLOC_ALIGNMENT));
-STATIC_ASSERT(is_aligned((int)Chunk::init_size, ARENA_AMALLOC_ALIGNMENT));
-STATIC_ASSERT(is_aligned((int)Chunk::medium_size, ARENA_AMALLOC_ALIGNMENT));
-STATIC_ASSERT(is_aligned((int)Chunk::size, ARENA_AMALLOC_ALIGNMENT));
+static_assert(is_aligned((int)Chunk::tiny_size, ARENA_AMALLOC_ALIGNMENT));
+static_assert(is_aligned((int)Chunk::init_size, ARENA_AMALLOC_ALIGNMENT));
+static_assert(is_aligned((int)Chunk::medium_size, ARENA_AMALLOC_ALIGNMENT));
+static_assert(is_aligned((int)Chunk::size, ARENA_AMALLOC_ALIGNMENT));
 
 
 const char* Arena::tag_name[] = {

@@ -36,6 +36,9 @@ import sun.jvm.hotspot.utilities.Observer;
 // FlatArrayKlass is a proxy for FlatArrayKlass in the JVM
 
 public class FlatArrayKlass extends ObjArrayKlass {
+
+  private static sun.jvm.hotspot.types.Field flatLayoutField;
+
   static {
     VM.registerVMInitializedObserver(new Observer() {
         public void update(Observable o, Object data) {
@@ -46,11 +49,21 @@ public class FlatArrayKlass extends ObjArrayKlass {
 
   private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
     Type t = db.lookupType("FlatArrayKlass");
-    // TODO: implement similar features as in ObjArrayKlass
+
+    flatLayoutField  = t.getField("_flat_layout");
   }
 
   public FlatArrayKlass(Address addr) {
     super(addr);
+  }
+
+  public FlatLayout getFlatLayout() {
+    return new FlatLayout(addr.addOffsetTo(flatLayoutField.getOffset()));
+  }
+
+  public LayoutKind getLayoutKind() {
+    FlatLayout fl = getFlatLayout();
+    return fl.getLayoutKind();
   }
 
   public void printValueOn(PrintStream tty) {

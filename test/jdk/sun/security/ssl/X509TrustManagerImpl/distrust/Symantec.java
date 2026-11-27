@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ import java.util.*;
  * @modules java.base/sun.security.validator
  * @run main/othervm Symantec after policyOn invalid
  * @run main/othervm Symantec after policyOff valid
- * @run main/othervm Symantec before policyOn valid
+ * @run main/othervm Symantec before policyOn invalid
  * @run main/othervm Symantec before policyOff valid
  */
 
@@ -57,7 +57,7 @@ public class Symantec {
     // chain stored in a file named "<subCA>-chain.pem".
     private static String[] subCAsToTest = new String[]{"appleistca8g1"};
 
-    // Date when the restrictions take effect
+    // Date after the restrictions took effect when distrust was first announced
     private static final ZonedDateTime ROOTS_DISTRUST_DATE =
             LocalDate.of(2019, 4, 17).atStartOfDay(ZoneOffset.UTC);
 
@@ -87,9 +87,5 @@ public class Symantec {
         // test code-signing chain (should be valid as restrictions don't apply)
         Date validationDate = new Date(1544197375493L);
         distrust.testCodeSigningChain(certPath, "verisignclass3g5ca-codesigning", validationDate);
-
-        // test chains issued through subCAs
-        notBefore = distrust.getNotBefore(SUBCA_DISTRUST_DATE);
-        distrust.testCertificateChain(certPath, notBefore, tms, subCAsToTest);
     }
 }

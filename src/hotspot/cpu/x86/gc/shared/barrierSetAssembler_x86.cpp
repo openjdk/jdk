@@ -28,7 +28,6 @@
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
-#include "gc/shared/barrierSetRuntime.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "interpreter/interp_masm.hpp"
 #include "memory/universe.hpp"
@@ -161,19 +160,6 @@ void BarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators
     __ movptr(dst, val);
     break;
   default: Unimplemented();
-  }
-}
-
-void BarrierSetAssembler::flat_field_copy(MacroAssembler* masm, DecoratorSet decorators,
-                                          Register src, Register dst, Register inline_layout_info) {
-  // flat_field_copy implementation is fairly complex, and there are not any
-  // "short-cuts" to be made from asm. What there is, appears to have the same
-  // cost in C++, so just "call_VM_leaf" for now rather than maintain hundreds
-  // of hand-rolled instructions...
-  if (decorators & IS_DEST_UNINITIALIZED) {
-    __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSetRuntime::value_copy_is_dest_uninitialized), src, dst, inline_layout_info);
-  } else {
-    __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSetRuntime::value_copy), src, dst, inline_layout_info);
   }
 }
 
@@ -367,16 +353,13 @@ void BarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Register
   assert_different_registers(obj, tmp1, tmp2);
   // Check if the oop is in the right area of memory
   __ movptr(tmp1, obj);
-#if INCLUDE_CDS
   if (AOTCodeCache::is_on_for_dump()) {
     __ lea(tmp2, ExternalAddress(AOTRuntimeConstants::verify_oop_mask_address()));
     __ movptr(tmp2, Address(tmp2));
     __ andptr(tmp1, tmp2);
     __ lea(tmp2, ExternalAddress(AOTRuntimeConstants::verify_oop_bits_address()));
     __ movptr(tmp2, Address(tmp2));
-  } else
-#endif
-  {
+  } else {
     __ movptr(tmp2, (intptr_t) Universe::verify_oop_mask());
     __ andptr(tmp1, tmp2);
     __ movptr(tmp2, (intptr_t) Universe::verify_oop_bits());
@@ -529,8 +512,11 @@ void SaveLiveRegisters::initialize(BarrierStubC2* stub) {
     caller_saved.insert(OptoReg::as_OptoReg(r27->as_VMReg()));
     caller_saved.insert(OptoReg::as_OptoReg(r28->as_VMReg()));
     caller_saved.insert(OptoReg::as_OptoReg(r29->as_VMReg()));
+#ifndef _WINDOWS
+    // On Windows, r30 and r31 are nonvolatile per the x64 ABI.
     caller_saved.insert(OptoReg::as_OptoReg(r30->as_VMReg()));
     caller_saved.insert(OptoReg::as_OptoReg(r31->as_VMReg()));
+#endif
   }
 
   int gp_spill_size = 0;

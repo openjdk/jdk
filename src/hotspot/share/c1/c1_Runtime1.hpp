@@ -62,8 +62,8 @@ public:
   static uint _load_flat_array_slowcase_cnt;
   static uint _store_flat_array_slowcase_cnt;
   static uint _substitutability_check_slowcase_cnt;
-  static uint _buffer_inline_args_slowcase_cnt;
-  static uint _buffer_inline_args_no_receiver_slowcase_cnt;
+  static uint _buffer_value_args_slowcase_cnt;
+  static uint _buffer_value_args_no_receiver_slowcase_cnt;
   static uint _monitorenter_slowcase_cnt;
   static uint _monitorexit_slowcase_cnt;
   static uint _patch_code_slowcase_cnt;
@@ -76,11 +76,18 @@ public:
   static uint _throw_illegal_monitor_state_exception_count;
   static uint _throw_identity_exception_count;
   static uint _throw_count;
+
+  static address arraycopy_count_address(BasicType type);
+  static void increment_throw_count();
+#endif
+
+#if INCLUDE_CDS
+static void init_AOTAddressTable(GrowableArray<address>& external_addresses);
 #endif
 
  private:
   static CodeBlob* _blobs[(int)StubInfo::C1_STUB_COUNT];
-  static void buffer_inline_args_impl(JavaThread* current, Method* m, bool allocate_receiver);
+  static void buffer_value_args_impl(JavaThread* current, Method* m, bool allocate_receiver);
 
   // stub generation
  public:
@@ -105,8 +112,8 @@ public:
   static void load_flat_array(JavaThread* current, flatArrayOopDesc* array, int index);
   static void store_flat_array(JavaThread* current, flatArrayOopDesc* array, int index, oopDesc* value);
   static int  substitutability_check(JavaThread* current, oopDesc* left, oopDesc* right);
-  static void buffer_inline_args(JavaThread* current, Method* method);
-  static void buffer_inline_args_no_receiver(JavaThread* current, Method* method);
+  static void buffer_value_args(JavaThread* current, Method* method);
+  static void buffer_value_args_no_receiver(JavaThread* current, Method* method);
 
   static address counter_overflow(JavaThread* current, int bci, Method* method);
 
@@ -155,11 +162,6 @@ public:
 
   // method tracing
   static void trace_block_entry(jint block_id);
-
-#ifndef PRODUCT
-  static address throw_count_address()               { return (address)&_throw_count;             }
-  static address arraycopy_count_address(BasicType type);
-#endif
 
   // directly accessible leaf routine
   static int  is_instance_of(oopDesc* mirror, oopDesc* obj);

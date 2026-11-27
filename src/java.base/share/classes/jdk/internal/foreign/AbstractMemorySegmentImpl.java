@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -218,7 +218,7 @@ public abstract sealed class AbstractMemorySegmentImpl
 
     @Override
     public final ByteBuffer asByteBuffer() {
-        checkArraySize("ByteBuffer", 1);
+        checkArraySize("ByteBuffer", 1, true);
         ByteBuffer _bb = makeByteBuffer();
         if (readOnly) {
             //session is IMMUTABLE - obtain a RO byte buffer
@@ -245,10 +245,18 @@ public abstract sealed class AbstractMemorySegmentImpl
     @Override
     public final Optional<MemorySegment> asOverlappingSlice(MemorySegment other) {
         final AbstractMemorySegmentImpl that = (AbstractMemorySegmentImpl)Objects.requireNonNull(other);
-        if (overlaps(that)) {
-            final long offsetToThat = that.address() - this.address();
-            final long newOffset = offsetToThat >= 0 ? offsetToThat : 0;
-            return Optional.of(asSlice(newOffset, Math.min(this.byteSize() - newOffset, that.byteSize() + offsetToThat)));
+        if (unsafeGetBase() == that.unsafeGetBase()) { // both either native or the same heap segment
+            final long thisStart = this.unsafeGetOffset();
+            final long thatStart = that.unsafeGetOffset();
+            final long thisEnd = thisStart + this.byteSize();
+            final long thatEnd = thatStart + that.byteSize();
+            // Memory segments denote half-open intervals [start, end).
+            if (thisStart < thatEnd && thisEnd > thatStart) {
+                // The intersection is [max(starts), min(ends)).
+                final long overlapStart = Math.max(thisStart, thatStart);
+                final long overlapEnd = Math.min(thisEnd, thatEnd);
+                return Optional.of(asSlice(overlapStart - thisStart, overlapEnd - overlapStart));
+            }
         }
         return Optional.empty();
     }
@@ -338,7 +346,7 @@ public abstract sealed class AbstractMemorySegmentImpl
     }
 
     private <Z> Z toArray(Class<Z> arrayClass, ValueLayout elemLayout, IntFunction<Z> arrayFactory, Function<Z, MemorySegment> segmentFactory) {
-        int size = checkArraySize(arrayClass.getSimpleName(), (int)elemLayout.byteSize());
+        int size = checkArraySize(arrayClass.getSimpleName(), (int)elemLayout.byteSize(), false);
         Z arr = arrayFactory.apply(size);
         MemorySegment arrSegment = segmentFactory.apply(arr);
         MemorySegment.copy(this, elemLayout, 0, arrSegment, elemLayout.withOrder(ByteOrder.nativeOrder()), 0, size);
@@ -386,14 +394,20 @@ public abstract sealed class AbstractMemorySegmentImpl
         return (((unsafeGetOffset() + offset) | maxAlignMask()) & (byteAlignment - 1)) == 0;
     }
 
-    private int checkArraySize(String typeName, int elemSize) {
+    private int checkArraySize(String typeName, int elemSize, boolean uoeOnSizeOverflow) {
         // elemSize is guaranteed to be a power of two, so we can use an alignment check
         if (!Utils.isAligned(length, elemSize)) {
             throw new IllegalStateException(String.format("Segment size is not a multiple of %d. Size: %d", elemSize, length));
         }
         long arraySize = length / elemSize;
         if (arraySize > ArraysSupport.SOFT_MAX_ARRAY_LENGTH) { //conservative check
-            throw new IllegalStateException(String.format("Segment is too large to wrap as %s. Size: %d", typeName, length));
+            String msg = String.format("Segment is too large to wrap as %s. Size: %d", typeName, length);
+            if (uoeOnSizeOverflow) {
+                throw new UnsupportedOperationException(msg);
+            } else  {
+                throw new IllegalStateException(msg);
+            }
+
         }
         return (int)arraySize;
     }

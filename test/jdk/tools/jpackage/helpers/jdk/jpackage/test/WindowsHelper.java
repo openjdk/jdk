@@ -45,6 +45,7 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.ResourceBundle;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.model.DottedVersion;
@@ -312,6 +313,11 @@ public class WindowsHelper {
     public static MsiDatabase.UIAlterations getUIAlterations(JPackageCommand cmd) {
         cmd.verifyIsOfType(PackageType.WIN_MSI);
         return MsiDatabaseCache.INSTANCE.uiAlterations(cmd.outputBundle());
+    }
+
+    public static Collection<UUID> getMsiComponentIds(JPackageCommand cmd) {
+        cmd.verifyIsOfType(PackageType.WIN_MSI);
+        return MsiDatabaseCache.INSTANCE.getMsiComponentIds(cmd.outputBundle());
     }
 
     static Collection<MsiDatabase.Shortcut> getMsiShortcuts(JPackageCommand cmd) {
@@ -612,6 +618,10 @@ public class WindowsHelper {
 
         MsiDatabase.UIAlterations uiAlterations(Path msiPath) {
             return ensureTables(msiPath, MsiDatabase.Table.UI_ALTERATIONS_REQUIRED_TABLES).uiAlterations();
+        }
+
+        Collection<UUID> getMsiComponentIds(Path msiPath) {
+            return ensureTables(msiPath, MsiDatabase.Table.LIST_COMPONENT_IDS_REQUIRED_TABLES).listComponentIds();
         }
 
         MsiDatabase ensureTables(Path msiPath, Set<MsiDatabase.Table> tableNames) {

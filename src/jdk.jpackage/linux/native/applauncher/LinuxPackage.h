@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,24 @@
 extern "C" {
 #endif
 
-char* getJvmLauncherLibPath(void);
+#define PACKAGE_TYPE_UNKNOWN 0
+#define PACKAGE_TYPE_RPM 1
+#define PACKAGE_TYPE_DEB 2
+
+typedef struct {
+    const char* name;
+    int type;
+} PackageDesc;
+
+typedef struct {
+    const char* packageName;
+    int packageType;
+    const char* jvmLauncherLibPath;
+} JvmLauncherDesc;
+
+void freeJvmLauncherDesc(JvmLauncherDesc* desc);
+
+JvmLauncherDesc* getJvmLauncherDesc(void);
 
 #ifdef __cplusplus
 }

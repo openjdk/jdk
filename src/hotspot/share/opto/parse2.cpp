@@ -22,9 +22,9 @@
  *
  */
 
-#include "ci/ciInlineKlass.hpp"
 #include "ci/ciMethodData.hpp"
 #include "ci/ciSymbols.hpp"
+#include "ci/ciValueKlass.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "compiler/compileLog.hpp"
 #include "interpreter/linkResolver.hpp"
@@ -38,7 +38,6 @@
 #include "opto/divnode.hpp"
 #include "opto/idealGraphPrinter.hpp"
 #include "opto/idealKit.hpp"
-#include "opto/inlinetypenode.hpp"
 #include "opto/matcher.hpp"
 #include "opto/memnode.hpp"
 #include "opto/mulnode.hpp"
@@ -46,6 +45,7 @@
 #include "opto/parse.hpp"
 #include "opto/runtime.hpp"
 #include "opto/subtypenode.hpp"
+#include "opto/valuetypenode.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/globals.hpp"
@@ -82,14 +82,14 @@ void Parse::array_load(BasicType bt) {
   Node* array_index = pop();
   Node* array = pop();
 
-  // Handle inline type arrays
+  // Handle value type arrays
   const TypeOopPtr* element_ptr = elemtype->make_oopptr();
-  const TypeAryPtr* array_type = _gvn.type(array)->is_aryptr();
+  const TypeAryPtr* array_type = _gvn.type(array)->as_aryptr();
 
   if (!array_type->is_not_flat()) {
     // Cannot statically determine if array is a flat array, emit runtime check
-    assert(UseArrayFlattening && is_reference_type(bt) && element_ptr->can_be_inline_type() &&
-           (!element_ptr->is_inlinetypeptr() || element_ptr->inline_klass()->maybe_flat_in_array()), "array can't be flat");
+    assert(UseArrayFlattening && is_reference_type(bt) && element_ptr->can_be_value_type() &&
+           (!element_ptr->is_valueklassptr() || element_ptr->value_klass()->maybe_flat_in_array()), "array can't be flat");
     IdealKit ideal(this);
     IdealVariable res(ideal);
     ideal.declarations_done();
@@ -99,7 +99,7 @@ void Parse::array_load(BasicType bt) {
       if (!array_type->is_flat()) {
         assert(array_type->is_flat() || control()->in(0)->as_If()->is_flat_array_check(&_gvn), "Should be found");
         // Loading from a non-flat array, casting array to not flat.
-        const TypeAryPtr* ary_type = _gvn.type(prep_array)->is_aryptr();
+        const TypeAryPtr* ary_type = _gvn.type(prep_array)->as_aryptr();
         ary_type = ary_type->cast_to_not_flat();
         Node* not_flat_ary = _gvn.transform(new CheckCastPPNode(control(), prep_array, ary_type));
         Node* adr = get_ptr_to_array_element(not_flat_ary, array_index, bt, ary_type->size(), control());
@@ -112,8 +112,8 @@ void Parse::array_load(BasicType bt) {
           decorator_set |= C2_UNKNOWN_CONTROL_LOAD;
         }
         Node* ld = access_load_at(not_flat_ary, adr, adr_type, element_ptr, bt, decorator_set);
-        if (element_ptr->is_inlinetypeptr()) {
-          ld = InlineTypeNode::make_from_oop(this, ld, element_ptr->inline_klass());
+        if (element_ptr->is_valueklassptr()) {
+          ld = ValueTypeNode::make_from_oop(this, ld, element_ptr->value_klass());
         }
         ideal.set(res, ld);
       }
@@ -122,29 +122,30 @@ void Parse::array_load(BasicType bt) {
       // Flat array
       sync_kit(ideal);
       if (!array_type->is_not_flat()) {
-        if (element_ptr->is_inlinetypeptr()) {
-          ciInlineKlass* vk = element_ptr->inline_klass();
-          Node* flat_array = cast_to_flat_array(array, vk);
+        if (element_ptr->is_valueklassptr()) {
+          ciValueKlass* vk = element_ptr->value_klass();
+          ciObjArrayKlass* array_klass = get_flat_array_klass(vk);
+          Node* flat_array = cast_to_flat_array(array, array_klass, false);
 
           // It may be the case that array is only known to be not flat when we try to cast it to a
           // flat array. For example, array is a not-null-free array and vk does not have a
           // nullable layout.
           if (!flat_array->is_top()) {
-            Node* vt = InlineTypeNode::make_from_flat_array(this, vk, flat_array, array_index);
+            Node* vt = ValueTypeNode::make_from_flat_array(this, vk, flat_array, array_index);
             ideal.set(res, vt);
           } else {
-            ideal.set(res, InlineTypeNode::make_null(gvn(), vk));
+            ideal.set(res, ValueTypeNode::make_null(gvn(), vk));
           }
         } else {
           // Element type is unknown, and thus we cannot statically determine the exact flat array layout. Emit a
-          // runtime call to correctly load the inline type element from the flat array.
-          Node* inline_type = load_from_unknown_flat_array(array, array_index, element_ptr);
+          // runtime call to correctly load the value type element from the flat array.
+          Node* value_type = load_from_unknown_flat_array(array, array_index, element_ptr);
           bool is_null_free = array_type->is_null_free() ||
                               (!UseNullableAtomicValueFlattening && !UseNullableNonAtomicValueFlattening);
           if (is_null_free) {
-            inline_type = cast_not_null(inline_type);
+            value_type = cast_not_null(value_type);
           }
-          ideal.set(res, inline_type);
+          ideal.set(res, value_type);
         }
       }
       ideal.sync_kit(this);
@@ -164,10 +165,10 @@ void Parse::array_load(BasicType bt) {
   Node* ld = access_load_at(array, adr, adr_type, elemtype, bt,
                             IN_HEAP | IS_ARRAY | C2_CONTROL_DEPENDENT_LOAD);
   ld = record_profile_for_speculation_at_array_load(ld);
-  // Loading an inline type from a non-flat array
-  if (element_ptr != nullptr && element_ptr->is_inlinetypeptr()) {
-    assert(!array_type->is_null_free() || !element_ptr->maybe_null(), "inline type array elements should never be null");
-    ld = InlineTypeNode::make_from_oop(this, ld, element_ptr->inline_klass());
+  // Loading a value type from a non-flat array
+  if (element_ptr != nullptr && element_ptr->is_valueklassptr()) {
+    assert(!array_type->is_null_free() || !element_ptr->maybe_null(), "value type array elements should never be null");
+    ld = ValueTypeNode::make_from_oop(this, ld, element_ptr->value_klass());
   }
   push_node(bt, ld);
 }
@@ -186,8 +187,8 @@ Node* Parse::load_from_unknown_flat_array(Node* array, Node* array_index, const 
     inc_sp(2);
     kill_dead_locals();
     call = make_runtime_call(RC_NO_LEAF | RC_NO_IO,
-                             OptoRuntime::load_unknown_inline_Type(),
-                             OptoRuntime::load_unknown_inline_Java(),
+                             OptoRuntime::load_unknown_value_Type(),
+                             OptoRuntime::load_unknown_value_Java(),
                              nullptr, TypeRawPtr::BOTTOM,
                              array, array_index);
   }
@@ -196,8 +197,8 @@ Node* Parse::load_from_unknown_flat_array(Node* array, Node* array_index, const 
 
   insert_mem_bar_volatile(Op_MemBarCPUOrder, C->get_alias_index(TypeAryPtr::INLINES));
 
-  // Keep track of the information that the inline type is in flat arrays
-  const Type* unknown_value = element_ptr->is_instptr()->cast_to_flat_in_array();
+  // Keep track of the information that the value type is in flat arrays
+  const Type* unknown_value = element_ptr->as_instptr()->cast_to_flat_in_array();
   return _gvn.transform(new CheckCastPPNode(control(), buffer, unknown_value));
 }
 
@@ -208,7 +209,7 @@ void Parse::array_store(BasicType bt) {
   if (stopped())  return;     // guaranteed null or range check
 
   Node* adr = get_ptr_to_array_element(prep_array, /* index */peek(0+type2size[bt]), bt,
-    _gvn.type(prep_array)->is_aryptr()->size(), control());
+    _gvn.type(prep_array)->as_aryptr()->size(), control());
 
   Node* stored_value_casted = nullptr;
   if (bt == T_OBJECT) {
@@ -221,7 +222,7 @@ void Parse::array_store(BasicType bt) {
   Node* const array_index = pop();         // Index in the array
   Node* array = pop();                     // The array itself
 
-  const TypeAryPtr* array_type = _gvn.type(array)->is_aryptr();
+  const TypeAryPtr* array_type = _gvn.type(array)->as_aryptr();
   const TypeAryPtr* adr_type = TypeAryPtr::get_array_body_type(bt);
 
   if (elemtype == TypeInt::BOOL) {
@@ -231,13 +232,13 @@ void Parse::array_store(BasicType bt) {
     const Type* stored_value_casted_type = _gvn.type(stored_value_casted);
     // Based on the value to be stored, try to determine if the array is not null-free and/or not flat.
     // This is only legal for non-null stores because the array_store_check always passes for null, even
-    // if the array is null-free. Null stores are handled in GraphKit::inline_array_null_guard().
-    bool not_inline = !stored_value_casted_type->maybe_null() && !stored_value_casted_type->is_oopptr()->can_be_inline_type();
-    bool not_null_free = not_inline;
-    bool not_flat = not_inline || ( stored_value_casted_type->is_inlinetypeptr() &&
-                                   !stored_value_casted_type->inline_klass()->maybe_flat_in_array());
+    // if the array is null-free. Null stores are handled in GraphKit::value_array_null_guard().
+    bool not_value = !stored_value_casted_type->maybe_null() && !stored_value_casted_type->as_oopptr()->can_be_value_type();
+    bool not_null_free = not_value;
+    bool not_flat = not_value || ( stored_value_casted_type->is_valueklassptr() &&
+                                   !stored_value_casted_type->value_klass()->maybe_flat_in_array());
     if (!array_type->is_not_null_free() && not_null_free) {
-      // Storing a non-inline type, mark array as not null-free.
+      // Storing a non-value type, mark array as not null-free.
       array_type = array_type->cast_to_not_null_free();
       Node* cast = _gvn.transform(new CheckCastPPNode(control(), array, array_type));
       replace_in_map(array, cast);
@@ -251,15 +252,15 @@ void Parse::array_store(BasicType bt) {
       array = cast;
     }
 
-    if (array_type->is_null_free() && elemtype->is_inlinetypeptr() && elemtype->inline_klass()->is_empty()) {
-      // Array of null-free empty inline type, there is only 1 state for the elements
+    if (array_type->is_null_free() && elemtype->is_valueklassptr() && elemtype->value_klass()->is_empty()) {
+      // Array of null-free empty value type, there is only 1 state for the elements
       assert(!stored_value_casted_type->maybe_null(), "should be guaranteed by array store check");
       return;
     }
 
     if (!array_type->is_not_flat()) {
-      // Array might be a flat array, emit runtime checks (for null, a simple inline_array_null_guard is sufficient).
-      assert(UseArrayFlattening && !not_flat && elemtype->is_oopptr()->can_be_inline_type() &&
+      // Array might be a flat array, emit runtime checks (for null, a simple value_array_null_guard is sufficient).
+      assert(UseArrayFlattening && !not_flat && elemtype->as_oopptr()->can_be_value_type() &&
              (!array_type->klass_is_exact() || array_type->is_flat()), "array can't be a flat array");
       // If by chance (or using layout disabling flags), only the nullable version is flattenable
       // we could avoid this test in the else branch thereunder (the "Flat array" block) and do it
@@ -268,9 +269,9 @@ void Parse::array_store(BasicType bt) {
       // flat layout, 3. there is no null-free flat layout. Without flags, if a nullable
       // array is flattenable, so would be the null-free version. So, this optimization would
       // only apply with extra (experimental) flags which makes the optimization not worth.
-      array = inline_array_null_guard(array, stored_value_casted, 3);
-      // Reload array type which could have been updated by inline_array_null_guard().
-      array_type = _gvn.type(array)->is_aryptr();
+      array = value_array_null_guard(array, stored_value_casted, 3);
+      // Reload array type which could have been updated by value_array_null_guard().
+      array_type = _gvn.type(array)->as_aryptr();
       IdealKit ideal(this);
       ideal.if_then(flat_array_test(array, /* flat = */ false)); {
         // Non-flat array
@@ -278,7 +279,7 @@ void Parse::array_store(BasicType bt) {
           sync_kit(ideal);
           assert(array_type->is_not_flat() || ideal.ctrl()->in(0)->as_If()->is_flat_array_check(&_gvn), "Should be found");
           inc_sp(3);
-          access_store_at(array, adr, adr_type, stored_value_casted, elemtype, bt, MO_UNORDERED | IN_HEAP | IS_ARRAY, false);
+          access_store_at(array, adr, adr_type, stored_value_casted, elemtype, bt, MO_UNORDERED | IN_HEAP | IS_ARRAY, false, nullptr);
           dec_sp(3);
           ideal.sync_kit(this);
         }
@@ -286,17 +287,18 @@ void Parse::array_store(BasicType bt) {
         // Flat array
         sync_kit(ideal);
         if (!array_type->is_not_flat()) {
-          // Try to determine the inline klass type of the stored value
-          ciInlineKlass* vk = nullptr;
-          if (stored_value_casted_type->is_inlinetypeptr()) {
-            vk = stored_value_casted_type->inline_klass();
-          } else if (elemtype->is_inlinetypeptr()) {
-            vk = elemtype->inline_klass();
+          // Try to determine the value klass type of the stored value
+          ciValueKlass* vk = nullptr;
+          if (stored_value_casted_type->is_valueklassptr()) {
+            vk = stored_value_casted_type->value_klass();
+          } else if (elemtype->is_valueklassptr()) {
+            vk = elemtype->value_klass();
           }
 
           if (vk != nullptr) {
             // Element type is known, cast and store to flat array layout.
-            Node* flat_array = cast_to_flat_array(array, vk);
+            ciObjArrayKlass* array_klass = get_flat_array_klass(vk);
+            Node* flat_array = cast_to_flat_array(array, array_klass, false);
 
             // It may be the case that array is only known to be not flat when we try to cast it to
             // a flat array. For example, array is a not-null-free array and vk does not have a
@@ -307,12 +309,12 @@ void Parse::array_store(BasicType bt) {
               jvms()->set_should_reexecute(true);
               inc_sp(3);
 
-              if (!stored_value_casted->is_InlineType()) {
+              if (!stored_value_casted->is_ValueType()) {
                 assert(_gvn.type(stored_value_casted) == TypePtr::NULL_PTR, "Unexpected value");
-                stored_value_casted = InlineTypeNode::make_null(_gvn, vk);
+                stored_value_casted = ValueTypeNode::make_null(_gvn, vk);
               }
 
-              stored_value_casted->as_InlineType()->store_flat_array(this, flat_array, array_index);
+              stored_value_casted->as_ValueType()->store_flat_array(this, flat_array, array_index);
             }
           } else {
             // Element type is unknown, emit a runtime call since the flat array layout is not statically known.
@@ -326,8 +328,8 @@ void Parse::array_store(BasicType bt) {
       return;
     } else if (!array_type->is_not_null_free()) {
       // Array is not flat but may be null free
-      assert(elemtype->is_oopptr()->can_be_inline_type(), "array can't be null-free");
-      array = inline_array_null_guard(array, stored_value_casted, 3);
+      assert(elemtype->as_oopptr()->can_be_value_type(), "array can't be null-free");
+      array = value_array_null_guard(array, stored_value_casted, 3);
     }
   }
   inc_sp(3);
@@ -351,8 +353,8 @@ void Parse::store_to_unknown_flat_array(Node* array, Node* const idx, Node* non_
     inc_sp(3);
     kill_dead_locals();
     call = make_runtime_call(RC_NO_LEAF | RC_NO_IO,
-                      OptoRuntime::store_unknown_inline_Type(),
-                      OptoRuntime::store_unknown_inline_Java(),
+                      OptoRuntime::store_unknown_value_Type(),
+                      OptoRuntime::store_unknown_value_Java(),
                       nullptr, TypeRawPtr::BOTTOM,
                       non_null_stored_value, array, idx);
   }
@@ -372,14 +374,14 @@ Node* Parse::prepare_array_addressing(BasicType type, int vals, const Type*& ele
   // Compile-time detect of null-exception?
   if (stopped())  return top();
 
-  const TypeAryPtr* arytype  = _gvn.type(ary)->is_aryptr();
+  const TypeAryPtr* arytype  = _gvn.type(ary)->as_aryptr();
   const TypeInt*    sizetype = arytype->size();
   elemtype = arytype->elem();
 
   if (UseUniqueSubclasses) {
     const Type* el = elemtype->make_ptr();
-    if (el && el->isa_instptr()) {
-      const TypeInstPtr* toop = el->is_instptr();
+    if (el != nullptr && el->is_instptr()) {
+      const TypeInstPtr* toop = el->as_instptr();
       if (toop->instance_klass()->unique_concrete_subklass()) {
         // If we load from "AbstractClass[]" we must see "ConcreteSubClass".
         const Type* subklass = Type::get_const_type(toop->instance_klass());
@@ -399,7 +401,7 @@ Node* Parse::prepare_array_addressing(BasicType type, int vals, const Type*& ele
     return top();
   }
 
-  ary = create_speculative_inline_type_array_checks(ary, arytype, elemtype);
+  ary = create_speculative_value_type_array_checks(ary, arytype, elemtype);
 
   if (needs_range_check(sizetype, idx)) {
     create_range_check(idx, ary, sizetype);
@@ -425,7 +427,7 @@ Node* Parse::get_ptr_to_array_element(Node* array, Node* idx, BasicType elembt, 
 // Check if we need a range check for an array access. This is the case if the index is either negative or if it could
 // be greater or equal the smallest possible array size (i.e. out-of-bounds).
 bool Parse::needs_range_check(const TypeInt* size_type, const Node* index) const {
-  const TypeInt* index_type = _gvn.type(index)->is_int();
+  const TypeInt* index_type = _gvn.type(index)->as_int();
   return index_type->_hi >= size_type->_lo || index_type->_lo < 0;
 }
 
@@ -474,11 +476,11 @@ void Parse::create_range_check(Node* idx, Node* ary, const TypeInt* sizetype) {
   }
 }
 
-// For inline type arrays, we can use the profiling information for array accesses to speculate on the type, flatness,
+// For value type arrays, we can use the profiling information for array accesses to speculate on the type, flatness,
 // and null-freeness. We can either prepare the speculative type for later uses or emit explicit speculative checks with
 // traps now. In the latter case, the speculative type guarantees can avoid additional runtime checks later (e.g.
 // non-null-free implies non-flat which allows us to remove flatness checks). This makes the graph simpler.
-Node* Parse::create_speculative_inline_type_array_checks(Node* array, const TypeAryPtr* array_type,
+Node* Parse::create_speculative_value_type_array_checks(Node* array, const TypeAryPtr* array_type,
                                                          const Type*& element_type) {
   if (!array_type->is_flat() && !array_type->is_not_flat()) {
     // For arrays that might be flat, speculate that the array has the exact type reported in the profile data such that
@@ -490,7 +492,7 @@ Node* Parse::create_speculative_inline_type_array_checks(Node* array, const Type
     array = cast_to_profiled_array_type(array);
   }
 
-  // Even though the type does not tell us whether we have an inline type array or not, we can still check the profile data
+  // Even though the type does not tell us whether we have a value type array or not, we can still check the profile data
   // whether we have a non-null-free or non-flat array. Speculating on a non-null-free array doesn't help aaload but could
   // be profitable for a subsequent aastore.
   if (!array_type->is_null_free() && !array_type->is_not_null_free()) {
@@ -535,7 +537,7 @@ Node* Parse::cast_to_speculative_array_type(Node* const array, const TypeAryPtr*
         uncommon_trap_exact(reason, Deoptimization::Action_maybe_recompile);
       }
       replace_in_map(array, casted_array);
-      array_type = _gvn.type(casted_array)->is_aryptr();
+      array_type = _gvn.type(casted_array)->as_aryptr();
       element_type = array_type->elem();
       return casted_array;
     }
@@ -563,7 +565,7 @@ Node* Parse::speculate_non_null_free_array(Node* const array, const TypeAryPtr*&
   bool null_free_array = true;
   Deoptimization::DeoptReason reason = Deoptimization::Reason_none;
   if (array_type->speculative() != nullptr &&
-      array_type->speculative()->is_aryptr()->is_not_null_free() &&
+      array_type->speculative()->as_aryptr()->is_not_null_free() &&
       !too_many_traps_or_recompiles(Deoptimization::Reason_speculate_class_check)) {
     null_free_array = false;
     reason = Deoptimization::Reason_speculate_class_check;
@@ -584,7 +586,7 @@ Node* Parse::speculate_non_null_free_array(Node* const array, const TypeAryPtr*&
     assert(!stopped(), "null-free array should have been caught earlier");
     Node* casted_array = _gvn.transform(new CheckCastPPNode(control(), array, array_type->cast_to_not_null_free()));
     replace_in_map(array, casted_array);
-    array_type = _gvn.type(casted_array)->is_aryptr();
+    array_type = _gvn.type(casted_array)->as_aryptr();
     return casted_array;
   }
   return array;
@@ -596,7 +598,7 @@ Node* Parse::speculate_non_flat_array(Node* const array, const TypeAryPtr* const
   bool flat_array = true;
   Deoptimization::DeoptReason reason = Deoptimization::Reason_none;
   if (array_type->speculative() != nullptr &&
-      array_type->speculative()->is_aryptr()->is_not_flat() &&
+      array_type->speculative()->as_aryptr()->is_not_flat() &&
       !too_many_traps_or_recompiles(Deoptimization::Reason_speculate_class_check)) {
     flat_array = false;
     reason = Deoptimization::Reason_speculate_class_check;
@@ -1303,7 +1305,7 @@ bool Parse::create_jump_tables(Node* key_val, SwitchRange* lo, SwitchRange* hi) 
   i = 0;
   for (SwitchRange* r = lo; r <= hi; r++) {
     for (int64_t j = r->lo(); j <= r->hi(); j++, i++) {
-      Node* input = _gvn.transform(new JumpProjNode(jtn, i, r->dest(), (int)(j - lowval)));
+      Node* input = _gvn.transform(new JumpProjNode(jtn, i, r->dest()));
       {
         PreserveJVMState pjvms(this);
         set_control(input);
@@ -1618,7 +1620,7 @@ static bool counters_are_meaningful(int counter1, int counter2, int min) {
   }
   // check for integer overflow of the sum
   int64_t sum = (int64_t)counter1 + (int64_t)counter2;
-  STATIC_ASSERT(sizeof(counter1) < sizeof(sum));
+  static_assert(sizeof(counter1) < sizeof(sum));
   if (sum > INT_MAX) {
     return false;
   }
@@ -1678,13 +1680,13 @@ float Parse::dynamic_branch_prediction(float &cnt, BoolTest::mask btest, Node* t
   }
 
   // Compute frequency that we arrive here
-  float sum = taken + not_taken;
+  cnt = taken + not_taken;
   // Adjust, if this block is a cloned private block but the
   // Jump counts are shared.  Taken the private counts for
   // just this path instead of the shared counts.
-  if( block()->count() > 0 )
-    sum = block()->count();
-  cnt = sum / FreqCountInvocations;
+  if (block()->count() > 0) {
+    cnt = block()->count();
+  }
 
   // Pin probability to sane limits
   float prob;
@@ -1787,7 +1789,7 @@ inline int Parse::repush_if_args() {
 }
 
 // Used by StressUnstableIfTraps
-static volatile int _trap_stress_counter = 0;
+volatile int Parse::_trap_stress_counter = 0;
 
 void Parse::increment_trap_stress_counter(Node*& counter, Node*& incr_store) {
   Node* counter_addr = makecon(TypeRawPtr::make((address)&_trap_stress_counter));
@@ -2086,8 +2088,8 @@ void Parse::acmp_type_check(Node* input, const TypeOopPtr* tinput, ProfilePtrKin
       }
       acmp_type_check_or_trap(&cast, input_type, reason);
     } else {
-      // No specific type, check for inline type
-      BuildCutout unless(this, inline_type_test(cast, /* is_inline = */ false), PROB_MAX);
+      // No specific type, check for value type
+      BuildCutout unless(this, value_type_test(cast, /* is_value = */ false), PROB_MAX);
       inc_sp(2);
       uncommon_trap_exact(Deoptimization::Reason_class_check, Deoptimization::Action_maybe_recompile);
     }
@@ -2123,17 +2125,17 @@ void Parse::do_acmp(BoolTest::mask btest, Node* left, Node* right) {
   ciKlass* right_type = nullptr;
   ProfilePtrKind left_ptr = ProfileUnknownNull;
   ProfilePtrKind right_ptr = ProfileUnknownNull;
-  bool left_inline_type = true;
-  bool right_inline_type = true;
+  bool left_value_type = true;
+  bool right_value_type = true;
 
   // Leverage profiling at acmp
   if (UseACmpProfile) {
-    method()->acmp_profiled_type(bci(), left_type, right_type, left_ptr, right_ptr, left_inline_type, right_inline_type);
+    method()->acmp_profiled_type(bci(), left_type, right_type, left_ptr, right_ptr, left_value_type, right_value_type);
     if (too_many_traps_or_recompiles(Deoptimization::Reason_class_check) || too_many_traps_or_recompiles(Deoptimization::Reason_speculate_class_check)) {
       left_type = nullptr;
       right_type = nullptr;
-      left_inline_type = true;
-      right_inline_type = true;
+      left_value_type = true;
+      right_value_type = true;
     }
     if (too_many_traps_or_recompiles(Deoptimization::Reason_null_check) || too_many_traps_or_recompiles(Deoptimization::Reason_null_assert)) {
       left_ptr = ProfileUnknownNull;
@@ -2159,18 +2161,18 @@ void Parse::do_acmp(BoolTest::mask btest, Node* left, Node* right) {
     return;
   }
 
-  // Allocate inline type operands and re-execute on deoptimization
-  if (left->is_InlineType()) {
+  // Allocate value type operands and re-execute on deoptimization
+  if (left->is_ValueType()) {
     PreserveReexecuteState preexecs(this);
     inc_sp(2);
     jvms()->set_should_reexecute(true);
-    left = left->as_InlineType()->buffer(this);
+    left = left->as_ValueType()->buffer(this);
   }
-  if (right->is_InlineType()) {
+  if (right->is_ValueType()) {
     PreserveReexecuteState preexecs(this);
     inc_sp(2);
     jvms()->set_should_reexecute(true);
-    right = right->as_InlineType()->buffer(this);
+    right = right->as_ValueType()->buffer(this);
   }
 
   // First, do a normal pointer comparison
@@ -2179,9 +2181,9 @@ void Parse::do_acmp(BoolTest::mask btest, Node* left, Node* right) {
   Node* cmp = CmpP(left, right);
   record_for_igvn(cmp);
   cmp = optimize_cmp_with_klass(cmp);
-  if (tleft == nullptr || !tleft->can_be_inline_type() ||
-      tright == nullptr || !tright->can_be_inline_type()) {
-    // This is sufficient, if one of the operands can't be an inline type
+  if (tleft == nullptr || !tleft->can_be_value_type() ||
+      tright == nullptr || !tright->can_be_value_type()) {
+    // This is sufficient, if one of the operands can't be a value type
     do_if(btest, cmp);
     return;
   }
@@ -2258,23 +2260,23 @@ void Parse::do_acmp(BoolTest::mask btest, Node* left, Node* right) {
     acmp_always_null_input(right, tright, btest, eq_region);
     return;
   }
-  if (left_type != nullptr && !left_type->is_inlinetype()) {
+  if (left_type != nullptr && !left_type->is_value_klass()) {
     // Comparison with an object of known type
     acmp_type_check(left, tleft, left_ptr, left_type, btest, eq_region);
     return;
   }
-  if (right_type != nullptr && !right_type->is_inlinetype()) {
+  if (right_type != nullptr && !right_type->is_value_klass()) {
     // Comparison with an object of known type
     acmp_type_check(right, tright, right_ptr, right_type, btest, eq_region);
     return;
   }
-  if (!left_inline_type) {
-    // Comparison with an object known not to be an inline type
+  if (!left_value_type) {
+    // Comparison with an object known not to be a value type
     acmp_type_check(left, tleft, left_ptr, nullptr, btest, eq_region);
     return;
   }
-  if (!right_inline_type) {
-    // Comparison with an object known not to be an inline type
+  if (!right_value_type) {
+    // Comparison with an object known not to be a value type
     acmp_type_check(right, tright, right_ptr, nullptr, btest, eq_region);
     return;
   }
@@ -2288,27 +2290,27 @@ void Parse::do_acmp(BoolTest::mask btest, Node* left, Node* right) {
 
   Node* kls_right = nullptr;
   if (!stopped()) {
-    // First operand is non-null, check if it is the speculative inline type if possible
-    // (which later allows isSubstitutable to be intrinsified), or any inline type if no
+    // First operand is non-null, check if it is the speculative value type if possible
+    // (which later allows isSubstitutable to be intrinsified), or any value type if no
     // speculation is available.
-    if (right_type != nullptr && right_type->is_inlinetype()) {
+    if (right_type != nullptr && right_type->is_value_klass()) {
       acmp_type_check_or_trap(&not_null_right, right_type, Deoptimization::Reason_speculate_class_check);
     } else {
-      Node* is_value = inline_type_test(not_null_right);
+      Node* is_value = value_type_test(not_null_right);
       IfNode* is_value_iff = create_and_map_if(control(), is_value, PROB_FAIR, COUNT_UNKNOWN);
       Node* not_value = _gvn.transform(new IfFalseNode(is_value_iff));
       ne_region->init_req(2, not_value);
       set_control(_gvn.transform(new IfTrueNode(is_value_iff)));
     }
 
-    // The first operand is an inline type, check if the second operand is non-null
+    // The first operand is a value type, check if the second operand is non-null
     not_null_left = acmp_null_check(left, tleft, left_ptr, null_ctl);
     ne_region->init_req(3, null_ctl);
     if (!stopped()) {
-      // Check if lhs operand is of a specific speculative inline type (see above).
+      // Check if lhs operand is of a specific speculative value type (see above).
       // If not, we don't need to enforce that the lhs is a value object since we know
       // it already for the rhs, and must enforce that they have the same type.
-      if (left_type != nullptr && left_type->is_inlinetype()) {
+      if (left_type != nullptr && left_type->is_value_klass()) {
         acmp_type_check_or_trap(&not_null_left, left_type, Deoptimization::Reason_speculate_class_check);
       }
       if (!stopped()) {
@@ -2343,14 +2345,14 @@ void Parse::do_acmp(BoolTest::mask btest, Node* left, Node* right) {
 
   IfNode* mask_iff = nullptr;
   // If any operand has a precisely known type, isSubstitutable will be intrinsified, so we don't need the fast path
-  if (UseAcmpFastPath && !_gvn.type(not_null_left)->is_inlinetypeptr() && !_gvn.type(not_null_right)->is_inlinetypeptr()) {
+  if (UseAcmpFastPath && !_gvn.type(not_null_left)->is_valueklassptr() && !_gvn.type(not_null_right)->is_valueklassptr()) {
     /* Here, we are generating the fast path (the slow path being the call to isSubstitutable)
-     * See the declarations of _fast_acmp_offset and _fast_acmp_mask in InlineKlass::Members
+     * See the declarations of _fast_acmp_offset and _fast_acmp_mask in ValueKlass::Members
      * for details about the fast path logic, and the meaning of these values.
      */
-    Node* members_addr = off_heap_plus_addr(kls_right, in_bytes(InlineKlass::adr_members_offset()));
+    Node* members_addr = off_heap_plus_addr(kls_right, in_bytes(ValueKlass::adr_members_offset()));
     Node* members = make_load(control(), members_addr, TypeRawPtr::BOTTOM, T_ADDRESS, MemNode::unordered);
-    Node* offset_addr = off_heap_plus_addr(members, in_bytes(InlineKlass::fast_acmp_offset_offset()));
+    Node* offset_addr = off_heap_plus_addr(members, in_bytes(ValueKlass::fast_acmp_offset_offset()));
     Node* offset = make_load(control(), offset_addr, TypeInt::INT, T_INT, MemNode::unordered);
 
     Node* offset_bol = BoolCmpI(offset, BoolTest::lt, zerocon(T_INT));
@@ -2364,7 +2366,7 @@ void Parse::do_acmp(BoolTest::mask btest, Node* left, Node* right) {
       set_control(fast_path_ctl);
 
       Node* offset_l = ConvI2L(offset);
-      Node* fast_acmp_mask_addr = off_heap_plus_addr(members, in_bytes(InlineKlass::fast_acmp_mask_offset()));
+      Node* fast_acmp_mask_addr = off_heap_plus_addr(members, in_bytes(ValueKlass::fast_acmp_mask_offset()));
       Node* fast_acmp_mask = make_load(control(), fast_acmp_mask_addr, TypeLong::LONG, T_LONG, MemNode::unordered);
 
       // *(left + offset) & mask == *(right + offset) & mask
@@ -2499,7 +2501,7 @@ IfNode* Parse::acmp_fast_path_if_from_substitutable_call(PhaseGVN* phase, CallSt
     if (!node->is_Con()) return false;
     TypeNode* con = node->as_Type();
     assert(con->type()->is_intptr_t(), "");
-    return con->type()->is_intptr_t()->is_con(in_bytes(n));
+    return con->type()->as_intptr_t()->is_con(in_bytes(n));
   };
 
   assert(call->in(TypeFunc::Control) != nullptr, "");
@@ -2507,9 +2509,7 @@ IfNode* Parse::acmp_fast_path_if_from_substitutable_call(PhaseGVN* phase, CallSt
   IfProjNode* if_proj = call->in(TypeFunc::Control)->as_IfProj();
   if (if_proj->_con != 1) return nullptr;
 
-  assert(if_proj->in(0) != nullptr, "");
-  assert(if_proj->in(0)->is_If(), "");
-  IfNode* iff = if_proj->in(0)->as_If();
+  IfNode* iff = Node::as<IfNode>(if_proj->in(0));
 
   assert(iff->in(1) != nullptr, "");
   if (!iff->in(1)->is_Bool()) return nullptr;
@@ -2527,8 +2527,7 @@ IfNode* Parse::acmp_fast_path_if_from_substitutable_call(PhaseGVN* phase, CallSt
   LoadNode* load_offset = cmp_i->in(1)->as_Load();
   if (!cmp_i->in(2)->is_ConI()) return nullptr;
   ConINode* zero_i = cmp_i->in(2)->as_ConI();
-  assert(zero_i->type()->is_int() != nullptr, "");
-  if (!zero_i->type()->is_int()->is_con(0)) return nullptr;
+  if (!zero_i->type()->as_int()->is_con(0)) return nullptr;
 
   assert(load_offset->in(2) != nullptr, "");
   if (!load_offset->in(2)->is_AddP()) return nullptr;
@@ -2540,7 +2539,7 @@ IfNode* Parse::acmp_fast_path_if_from_substitutable_call(PhaseGVN* phase, CallSt
   if (!offset_addr_add->in(AddPNode::Base)->is_top()) return nullptr;
   if (offset_addr_add->in(AddPNode::Address)->Opcode() != Op_LoadP) return nullptr;
   LoadNode* load_members = offset_addr_add->in(AddPNode::Address)->as_Load();
-  if (!is_con_offset(offset_addr_add->in(AddPNode::Offset), InlineKlass::fast_acmp_offset_offset())) return nullptr;
+  if (!is_con_offset(offset_addr_add->in(AddPNode::Offset), ValueKlass::fast_acmp_offset_offset())) return nullptr;
 
   assert(load_members->in(2) != nullptr, "");
   if (!load_members->in(2)->is_AddP()) return nullptr;
@@ -2550,8 +2549,8 @@ IfNode* Parse::acmp_fast_path_if_from_substitutable_call(PhaseGVN* phase, CallSt
   assert(members_addr_add->in(AddPNode::Address) != nullptr, "");
   assert(members_addr_add->in(AddPNode::Offset) != nullptr, "");
   if (!members_addr_add->in(AddPNode::Base)->is_top()) return nullptr;
-  if (!phase->type(members_addr_add->in(AddPNode::Address))->isa_instklassptr()) return nullptr;
-  if (!is_con_offset(members_addr_add->in(AddPNode::Offset), InlineKlass::adr_members_offset())) return nullptr;
+  if (!phase->type(members_addr_add->in(AddPNode::Address))->is_instklassptr()) return nullptr;
+  if (!is_con_offset(members_addr_add->in(AddPNode::Offset), ValueKlass::adr_members_offset())) return nullptr;
 
   return iff;
 }
@@ -2700,15 +2699,15 @@ static Node* extract_obj_from_klass_load(PhaseGVN* gvn, Node* n) {
   } else {
     ldk = n;
   }
-  assert(ldk != nullptr && ldk->is_Load(), "should have found a LoadKlass or LoadNKlass node");
+  assert(Node::is<LoadNode>(ldk), "should have found a LoadKlass or LoadNKlass node");
 
   Node* adr = ldk->in(MemNode::Address);
   intptr_t off = 0;
   Node* obj = AddPNode::Ideal_base_and_offset(adr, gvn, off);
   if (obj == nullptr || off != oopDesc::klass_offset_in_bytes()) // loading oopDesc::_klass?
     return nullptr;
-  const TypePtr* tp = gvn->type(obj)->is_ptr();
-  if (tp == nullptr || !(tp->isa_instptr() || tp->isa_aryptr())) // is obj a Java object ptr?
+  const TypePtr* tp = gvn->type(obj)->as_ptr();
+  if (!(tp->is_instptr() || tp->is_aryptr())) // is obj a Java object ptr?
     return nullptr;
 
   return obj;
@@ -2729,7 +2728,7 @@ static bool match_type_check(PhaseGVN& gvn,
   // Look for opportunities to sharpen the type of a node whose klass is compared with a constant klass.
   // The constant klass being tested against can come from many bytecode instructions (implicitly or explicitly),
   // and also from profile data used by speculative casts.
-  if (btest == BoolTest::eq && tcon->isa_klassptr()) {
+  if (btest == BoolTest::eq && tcon->is_klassptr()) {
     // Found:
     //   Bool(CmpP(LoadKlass(obj._klass), ConP(Foo.klass)), [eq])
     // or the narrowOop equivalent.
@@ -2740,7 +2739,7 @@ static bool match_type_check(PhaseGVN& gvn,
     // These patterns with nullable klasses arise from example from
     // load_array_klass_from_mirror.
     if (*obj == nullptr) { return false; }
-    (*cast_type) = tcon->isa_klassptr()->as_exact_instance_type();
+    (*cast_type) = tcon->as_klassptr()->as_exact_instance_type();
     return true; // found
   }
 
@@ -2767,11 +2766,11 @@ static bool match_type_check(PhaseGVN& gvn,
   //                      Bool [btest]
   //                        |
   //
-  if (tcon->isa_int() && val->is_Phi() && val->in(0)->as_Region()->is_diamond()) {
+  if (tcon->is_int() && val->is_Phi() && val->in(0)->as_Region()->is_diamond()) {
     RegionNode* diamond = val->in(0)->as_Region();
     IfNode* if1 = diamond->in(1)->in(0)->as_If();
     BoolNode* b1 = if1->in(1)->isa_Bool();
-    if (b1 != nullptr && b1->in(1)->isa_SubTypeCheck()) {
+    if (b1 != nullptr && b1->in(1)->is_SubTypeCheck()) {
       assert(b1->_test._test == BoolTest::eq ||
              b1->_test._test == BoolTest::ne, "%d", b1->_test._test);
 
@@ -2783,15 +2782,15 @@ static bool match_type_check(PhaseGVN& gvn,
       // gen_instanceof() emits 1 on success and 0 on failure.
       // Check whether current comparison selects the success value.
       const Type* success_tval = gvn.type(val->in(success_idx));
-      assert(success_tval->isa_int(), "not an int: %s", Type::str(success_tval));
+      assert(success_tval->is_int(), "not an int: %s", Type::str(success_tval));
       if ((btest == BoolTest::eq && tcon == success_tval) ||
           (btest == BoolTest::ne && tcon->join(success_tval)->empty())) {
         SubTypeCheckNode* sub = b1->in(1)->as_SubTypeCheck();
         Node* obj_or_subklass = sub->in(SubTypeCheckNode::ObjOrSubKlass);
         Node* superklass = sub->in(SubTypeCheckNode::SuperKlass);
 
-        if (gvn.type(obj_or_subklass)->isa_oopptr()) {
-          const TypeKlassPtr* klass_ptr_type = gvn.type(superklass)->is_klassptr();
+        if (gvn.type(obj_or_subklass)->is_oopptr()) {
+          const TypeKlassPtr* klass_ptr_type = gvn.type(superklass)->as_klassptr();
           const TypeKlassPtr* improved_klass_ptr_type = klass_ptr_type->try_improve();
 
           (*obj) = obj_or_subklass;
@@ -2816,7 +2815,7 @@ void Parse::sharpen_type_after_if(BoolTest::mask btest,
     const Type* obj_type = _gvn.type(obj);
     const Type* tboth = obj_type->filter_speculative(cast_type);
     assert(tboth->higher_equal(obj_type) && tboth->higher_equal(cast_type), "sanity");
-    if (tboth == Type::TOP && KillPathsReachableByDeadTypeNode) {
+    if (tboth == Type::TOP && KillPathsReachableByDeadDataNode) {
       // Let dead type node cleaning logic prune effectively dead path for us.
       // CheckCastPP::Value() == TOP and it will trigger the cleanup during GVN.
       // Don't materialize the cast when cleanup is disabled, because
@@ -2831,8 +2830,8 @@ void Parse::sharpen_type_after_if(BoolTest::mask btest,
         // Delay transform() call to allow recovery of pre-cast value at the control merge.
         _gvn.set_type_bottom(ccast);
         record_for_igvn(ccast);
-        if (tboth->is_inlinetypeptr()) {
-          ccast = InlineTypeNode::make_from_oop(this, ccast, tboth->isa_oopptr()->exact_klass(true)->as_inline_klass());
+        if (tboth->is_valueklassptr()) {
+          ccast = ValueTypeNode::make_from_oop(this, ccast, tboth->as_oopptr()->exact_klass(true)->as_value_klass());
         }
         // Here's the payoff.
         replace_in_map(obj, ccast);
@@ -2860,7 +2859,7 @@ void Parse::sharpen_type_after_if(BoolTest::mask btest,
     {
       const Type* tboth = tcon->join_speculative(tval);
       if (tboth == tval)  break;        // Nothing to gain.
-      if (tcon->isa_int()) {
+      if (tcon->is_int()) {
         ccast = new CastIINode(control(), val, tboth);
       } else if (tcon == TypePtr::NULL_PTR) {
         // Cast to null, but keep the pointer identity temporarily live.
@@ -2931,15 +2930,15 @@ Node* Parse::optimize_cmp_with_klass(Node* c) {
     if (load_klass->in(2)->is_AddP()) {
       Node* addp = load_klass->in(2);
       Node* obj = addp->in(AddPNode::Address);
-      const TypeOopPtr* obj_type = _gvn.type(obj)->is_oopptr();
+      const TypeOopPtr* obj_type = _gvn.type(obj)->as_oopptr();
       if (obj_type->speculative_type_not_null() != nullptr) {
         ciKlass* k = obj_type->speculative_type();
         inc_sp(2);
         obj = maybe_cast_profiled_obj(obj, k);
         dec_sp(2);
-        if (obj->is_InlineType()) {
-          assert(obj->as_InlineType()->is_allocated(&_gvn), "must be allocated");
-          obj = obj->as_InlineType()->get_oop();
+        if (obj->is_ValueType()) {
+          assert(obj->as_ValueType()->is_allocated(&_gvn), "must be allocated");
+          obj = obj->as_ValueType()->get_oop();
         }
         // Make the CmpP use the casted obj
         addp = basic_plus_adr(obj, addp->in(AddPNode::Offset));
@@ -3036,7 +3035,11 @@ void Parse::do_one_bytecode() {
     assert(constant.is_loaded(), "constant is not loaded");
     const Type* con_type = Type::make_from_constant(constant);
     if (con_type != nullptr) {
-      push_node(con_type->basic_type(), makecon(con_type));
+      Node* con = makecon(con_type);
+      if (con_type->is_valueklassptr()) {
+        con = ValueTypeNode::make_from_oop(this, con, con_type->value_klass());
+      }
+      push_node(con_type->basic_type(), con);
     }
     break;
   }
@@ -3736,26 +3739,20 @@ void Parse::do_one_bytecode() {
     maybe_add_safepoint(iter().get_dest());
     a = null();
     b = pop();
-    if (b->is_InlineType()) {
-      // Null checking a scalarized but nullable inline type. Check the null marker
-      // input instead of the oop input to avoid keeping buffer allocations alive
-      c = _gvn.transform(new CmpINode(b->as_InlineType()->get_null_marker(), zerocon(T_INT)));
-    } else {
-      if (!_gvn.type(b)->speculative_maybe_null() &&
-          !too_many_traps(Deoptimization::Reason_speculate_null_check)) {
-        inc_sp(1);
-        Node* null_ctl = top();
-        b = null_check_oop(b, &null_ctl, true, true, true);
-        assert(null_ctl->is_top(), "no null control here");
-        dec_sp(1);
-      } else if (_gvn.type(b)->speculative_always_null() &&
-                 !too_many_traps(Deoptimization::Reason_speculate_null_assert)) {
-        inc_sp(1);
-        b = null_assert(b);
-        dec_sp(1);
-      }
-      c = _gvn.transform( new CmpPNode(b, a) );
+    if (!_gvn.type(b)->speculative_maybe_null() &&
+        !too_many_traps(Deoptimization::Reason_speculate_null_check)) {
+      inc_sp(1);
+      Node* null_ctl = top();
+      b = null_check_oop(b, &null_ctl, true, true, true);
+      assert(null_ctl->is_top(), "no null control here");
+      dec_sp(1);
+    } else if (_gvn.type(b)->speculative_always_null() &&
+               !too_many_traps(Deoptimization::Reason_speculate_null_assert)) {
+      inc_sp(1);
+      b = null_assert(b);
+      dec_sp(1);
     }
+    c = _gvn.transform(new CmpPNode(b, a));
     do_ifnull(btest, c);
     break;
 

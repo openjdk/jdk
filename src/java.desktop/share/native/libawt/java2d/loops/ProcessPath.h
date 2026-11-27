@@ -89,6 +89,7 @@ typedef struct _ProcessHandler {
     PHStroke stroke;
     PHClip clipMode;
     void* pData;
+    jint resultCode; /* 0 = OK, 1 = allocation error */
 } ProcessHandler;
 
 

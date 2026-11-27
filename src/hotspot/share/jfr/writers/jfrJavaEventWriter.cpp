@@ -101,7 +101,7 @@ static bool setup_event_writer_offsets(TRAPS) {
   assert(valid_offset != invalid_offset, "invariant");
 
   const char pin_name[] = "pinVirtualThread";
-  Symbol* const pin_sym = SymbolTable::new_symbol(valid_name);
+  Symbol* const pin_sym = SymbolTable::new_symbol(pin_name);
   assert(pin_sym != nullptr, "invariant");
   assert(invalid_offset == pin_offset, "invariant");
   JfrJavaSupport::compute_field_offset(pin_offset, klass, pin_sym, vmSymbols::bool_signature());
@@ -142,6 +142,10 @@ void JfrJavaEventWriter::flush(jobject writer, jint used, jint requested, JavaTh
     // mark writer as invalid for this write attempt
     w->release_bool_field_put(valid_offset, JNI_FALSE);
   }
+}
+
+void JfrJavaEventWriter::return_lease(jobject writer, JavaThread* jt) {
+  flush(writer, 0, 0, jt);
 }
 
 jlong JfrJavaEventWriter::commit(jlong next_position, JavaThread* jt) {

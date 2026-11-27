@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,6 @@ import jdk.jfr.events.MethodTraceEvent;
 import jdk.jfr.internal.periodic.PeriodicEvents;
 import jdk.jfr.internal.settings.MethodSetting;
 import jdk.jfr.internal.tracing.PlatformTracer;
-import jdk.jfr.tracing.MethodTracer;
 
 public final class JDKEvents {
 

@@ -104,7 +104,9 @@ class ThreadStateTransition : public StackObj {
       thread->set_thread_state(_thread_in_vm);
     }
     SafepointMechanism::process_if_requested_with_exit_check(thread, to != _thread_in_Java ? false : check_asyncs);
-    thread->set_thread_state(to);
+    if (to != _thread_in_vm) {
+      thread->set_thread_state(to);
+    }
   }
 
   static inline void transition_from_vm(JavaThread *thread, JavaThreadState to, bool check_asyncs = true) {

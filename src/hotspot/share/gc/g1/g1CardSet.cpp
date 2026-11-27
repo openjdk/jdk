@@ -189,7 +189,7 @@ const char* G1CardSetConfiguration::mem_object_type_name_str(uint index) {
 }
 
 void G1CardSetCoarsenStats::reset() {
-  STATIC_ASSERT(ARRAY_SIZE(_coarsen_from) == ARRAY_SIZE(_coarsen_collision));
+  static_assert(ARRAY_SIZE(_coarsen_from) == ARRAY_SIZE(_coarsen_collision));
   for (uint i = 0; i < ARRAY_SIZE(_coarsen_from); i++) {
     _coarsen_from[i].store_relaxed(0);
     _coarsen_collision[i].store_relaxed(0);
@@ -197,7 +197,7 @@ void G1CardSetCoarsenStats::reset() {
 }
 
 void G1CardSetCoarsenStats::set(G1CardSetCoarsenStats& other) {
-  STATIC_ASSERT(ARRAY_SIZE(_coarsen_from) == ARRAY_SIZE(_coarsen_collision));
+  static_assert(ARRAY_SIZE(_coarsen_from) == ARRAY_SIZE(_coarsen_collision));
   for (uint i = 0; i < ARRAY_SIZE(_coarsen_from); i++) {
     _coarsen_from[i].store_relaxed(other._coarsen_from[i].load_relaxed());
     _coarsen_collision[i].store_relaxed(other._coarsen_collision[i].load_relaxed());
@@ -205,7 +205,7 @@ void G1CardSetCoarsenStats::set(G1CardSetCoarsenStats& other) {
 }
 
 void G1CardSetCoarsenStats::subtract_from(G1CardSetCoarsenStats& other) {
-  STATIC_ASSERT(ARRAY_SIZE(_coarsen_from) == ARRAY_SIZE(_coarsen_collision));
+  static_assert(ARRAY_SIZE(_coarsen_from) == ARRAY_SIZE(_coarsen_collision));
   for (uint i = 0; i < ARRAY_SIZE(_coarsen_from); i++) {
     _coarsen_from[i].store_relaxed(other._coarsen_from[i].load_relaxed() - _coarsen_from[i].load_relaxed());
     _coarsen_collision[i].store_relaxed(other._coarsen_collision[i].load_relaxed() - _coarsen_collision[i].load_relaxed());
@@ -242,9 +242,9 @@ class G1CardSetHashTable : public CHeapObj<mtGCCardSet> {
   using CHTScanTask = CardSetHash::ScanTask;
 
   const static uint BucketClaimSize = 16;
-  // The claim size for group cardsets should be smaller to facilitate
-  // better work distribution. The group cardsets should be larger than
-  // the per region cardsets.
+  // The claim size for multi-region card set groups should be smaller to
+  // improve work distribution. The multi-region card set groups' card set
+  // should contain more entries than the single-region card set groups'.
   const static uint GroupBucketClaimSize = 4;
   // Did we insert at least one card in the table?
   Atomic<bool> _inserted_card;
@@ -498,7 +498,7 @@ void G1CardSet::release_and_must_free_container(ContainerPtr container) {
   free_mem_object(container);
 }
 
-class G1ReleaseCardsets : public StackObj {
+class G1ReleaseCardSets : public StackObj {
   G1CardSet* _card_set;
   using ContainerPtr = G1CardSet::ContainerPtr;
 
@@ -520,7 +520,7 @@ class G1ReleaseCardsets : public StackObj {
   }
 
 public:
-  explicit G1ReleaseCardsets(G1CardSet* card_set) : _card_set(card_set) { }
+  explicit G1ReleaseCardSets(G1CardSet* card_set) : _card_set(card_set) { }
 
   void operator ()(Atomic<ContainerPtr>* container_addr) {
     coarsen_to_full(container_addr);
@@ -650,7 +650,7 @@ bool G1CardSet::coarsen_container(Atomic<ContainerPtr>* container_addr,
     assert(!should_free, "must have had more than one reference");
     // Free containers if cur_container is ContainerHowl
     if (container_type(cur_container) == ContainerHowl) {
-      G1ReleaseCardsets rel(this);
+      G1ReleaseCardSets rel(this);
       container_ptr<G1CardSetHowl>(cur_container)->iterate(rel, _config->num_buckets_in_howl());
     }
     return true;
@@ -686,7 +686,10 @@ void G1CardSet::transfer_cards(G1CardSetHashTableValue* table_entry, ContainerPt
     assert(container_type(source_container) == ContainerHowl, "must be");
     // Need to correct for that the Full remembered set occupies more cards than the
     // AoCS before.
-    _num_occupied.add_then_fetch(_config->max_cards_in_region() - table_entry->_num_occupied.load_relaxed(), memory_order_relaxed);
+    // Use int64_t to represent the difference because due to races this difference can be negative.
+    const int64_t diff = (int64_t)_config->max_cards_in_region() - table_entry->_num_occupied.load_relaxed();
+
+    _num_occupied.add_then_fetch((size_t)diff, memory_order_relaxed);
   }
 }
 
@@ -702,7 +705,8 @@ void G1CardSet::transfer_cards_in_howl(ContainerPtr parent_container,
     G1TransferCard iter(this, card_region);
     iterate_cards_during_transfer(source_container, iter);
   } else {
-    uint diff = _config->max_cards_in_howl_bitmap() - container_ptr<G1CardSetBitMap>(source_container)->num_bits_set();
+    // Use int64_t to represent the difference because due to races this difference can be negative.
+    int64_t diff = (int64_t)_config->max_cards_in_howl_bitmap() - container_ptr<G1CardSetBitMap>(source_container)->num_bits_set();
 
     // Need to correct for that the Full remembered set occupies more cards than the
     // bitmap before.
@@ -712,14 +716,14 @@ void G1CardSet::transfer_cards_in_howl(ContainerPtr parent_container,
     diff -= 1;
 
     G1CardSetHowl* howling_array = container_ptr<G1CardSetHowl>(parent_container);
-    howling_array->_num_entries.add_then_fetch(diff, memory_order_relaxed);
+    howling_array->_num_entries.add_then_fetch((uint)diff, memory_order_relaxed);
 
     G1CardSetHashTableValue* table_entry = get_container(card_region);
     assert(table_entry != nullptr, "Table entry not found for transferred cards");
 
-    table_entry->_num_occupied.add_then_fetch(diff, memory_order_relaxed);
+    table_entry->_num_occupied.add_then_fetch((uint)diff, memory_order_relaxed);
 
-    _num_occupied.add_then_fetch(diff, memory_order_relaxed);
+    _num_occupied.add_then_fetch((size_t)diff, memory_order_relaxed);
   }
 }
 
@@ -782,8 +786,8 @@ G1AddCardResult G1CardSet::add_card(uintptr_t card) {
   {
     uint region_idx = card_region >> config()->log2_card_regions_per_heap_region();
     G1HeapRegion* r = G1CollectedHeap::heap()->region_at(region_idx);
-    assert(!r->rem_set()->has_cset_group() ||
-           r->rem_set()->cset_group()->card_set() != this, "Should not be sharing a cardset");
+    assert(!r->rem_set()->has_card_set_group() ||
+           r->rem_set()->card_set_group()->card_set() != this, "Should not be sharing a card set");
   }
 #endif
 

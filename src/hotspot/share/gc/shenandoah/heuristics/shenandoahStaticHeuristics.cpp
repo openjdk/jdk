@@ -34,23 +34,16 @@
 ShenandoahStaticHeuristics::ShenandoahStaticHeuristics(ShenandoahSpaceInfo* space_info) :
   ShenandoahHeuristics(space_info) {
   SHENANDOAH_ERGO_ENABLE_FLAG(ExplicitGCInvokesConcurrent);
-  SHENANDOAH_ERGO_ENABLE_FLAG(ShenandoahImplicitGCInvokesConcurrent);
 }
 
 bool ShenandoahStaticHeuristics::should_start_gc() {
-  size_t capacity = ShenandoahHeap::heap()->soft_max_capacity();
-  size_t available = _space_info->soft_mutator_available();
+  const size_t capacity = ShenandoahHeap::heap()->soft_max_capacity();
+  const size_t available = _space_info->soft_mutator_available();
 
-  log_debug(gc, ergo)("should_start_gc calculation: available: " PROPERFMT ", soft_max_capacity: "  PROPERFMT,
-                PROPERFMTARGS(available), PROPERFMTARGS(capacity));
-
-  size_t threshold_available = capacity / 100 * ShenandoahMinFreeThreshold;
-  if (available < threshold_available) {
-    log_trigger("Occupancy. " PROPERFMT " free, below " PROPERFMT " threshold",
-            PROPERFMTARGS(available), PROPERFMTARGS(threshold_available));
-    accept_trigger();
+  if (trigger_min_free_threshold(available, capacity)) {
     return true;
   }
+
   return ShenandoahHeuristics::should_start_gc();
 }
 

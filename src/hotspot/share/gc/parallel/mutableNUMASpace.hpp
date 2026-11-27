@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,6 +61,8 @@
  */
 
 class MutableNUMASpace : public MutableSpace {
+  friend class MutableNUMASpaceTest_reactivate_vm_Test;
+
   class LGRPSpace : public CHeapObj<mtGC> {
     uint _lgrp_id;
     MutableSpace* _space;
@@ -117,6 +119,9 @@ class MutableNUMASpace : public MutableSpace {
     void accumulate_statistics(size_t page_size);
   };
 
+  // The discovered topology is stable for the lifetime of this space. The
+  // active view may shrink and grow as eden crosses NUMA page-count limits.
+  GrowableArray<LGRPSpace*>* _all_lgrp_spaces;
   GrowableArray<LGRPSpace*>* _lgrp_spaces;
   unsigned _adaptation_cycles, _samples_count;
 
@@ -142,6 +147,12 @@ class MutableNUMASpace : public MutableSpace {
                     MemRegion* bottom_region, MemRegion *top_region);
 
   LGRPSpace *lgrp_space_for_current_thread() const;
+
+  GrowableArray<LGRPSpace*>* all_lgrp_spaces() const { return _all_lgrp_spaces; }
+  static int update_active_lgrp_spaces(GrowableArray<LGRPSpace*>* all_lgrp_spaces,
+                                       GrowableArray<LGRPSpace*>* active_lgrp_spaces,
+                                       size_t region_size,
+                                       size_t page_size);
 
 public:
   GrowableArray<LGRPSpace*>* lgrp_spaces() const     { return _lgrp_spaces;       }

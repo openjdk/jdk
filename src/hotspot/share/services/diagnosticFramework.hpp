@@ -338,7 +338,7 @@ public:
 // Each diagnostic command class has its own factory. A DCmdFactory
 // has to be registered to make the diagnostic command available (see
 // management.cpp)
-class DCmdFactory: public CHeapObj<mtInternal> {
+class DCmdFactory: public CHeapObj<mtServiceability> {
 private:
   static bool         _send_jmx_notification;
   static bool         _has_pending_jmx_notification;

@@ -252,6 +252,8 @@ public:
 };
 
 class G1CardSetHowl : public G1CardSetContainer {
+  DEBUG_ONLY(uint _num_buckets;)
+
 public:
   typedef uint EntryCountType;
   using ContainerPtr = G1CardSet::ContainerPtr;
@@ -264,7 +266,7 @@ private:
   // Iterates over the given ContainerPtr with at index in this Howl card set,
   // applying a CardOrRangeVisitor on it.
   template <class CardOrRangeVisitor>
-  void iterate_cardset(ContainerPtr const container, uint index, CardOrRangeVisitor& found, G1CardSetConfiguration* config);
+  void iterate_card_set(ContainerPtr const container, uint index, CardOrRangeVisitor& found, G1CardSetConfiguration* config);
 
   ContainerPtr at(EntryCountType index) const;
 

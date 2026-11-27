@@ -81,11 +81,11 @@ JVMFlag::Error G1HeapRegionSizeConstraintFunc(size_t value, bool verbose) {
   if (!UseG1GC) return JVMFlag::SUCCESS;
 
   // Default value of G1HeapRegionSize=0 means will be set ergonomically.
-  if (FLAG_IS_CMDLINE(G1HeapRegionSize) && (value < G1HeapRegionBounds::min_size())) {
+  if (value != 0 && value < G1HeapRegionBounds::min_size()) {
     JVMFlag::printError(verbose,
                         "G1HeapRegionSize (%zu) must be "
-                        "greater than or equal to ergonomic heap region minimum size\n",
-                        value);
+                        "greater than or equal to ergonomic heap region minimum size (%zuM)\n",
+                        value, G1HeapRegionBounds::min_size() / M);
     return JVMFlag::VIOLATES_CONSTRAINT;
   } else {
     return JVMFlag::SUCCESS;

@@ -619,9 +619,9 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
     default  : ShouldNotReachHere();
   }
 
-  if (state == atos && InlineTypeReturnedAsFields) {
-    __ unimplemented("return entry InlineTypeReturnedAsFields");
-    //__ store_inline_type_fields_to_buf(nullptr, true);
+  if (state == atos && ValueTypeReturnedAsFields) {
+    __ unimplemented("return entry ValueTypeReturnedAsFields");
+    //__ store_value_type_fields_to_buf(nullptr, true);
   }
 
   __ restore_interpreter_state(R11_scratch1, false /*bcp_and_mdx_only*/, true /*restore_top_frame_sp*/);
@@ -687,6 +687,10 @@ address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state, i
   }
 
   return entry;
+}
+
+address TemplateInterpreterGenerator::generate_cont_popframe_reexecute_entry() {
+  return nullptr;
 }
 
 address TemplateInterpreterGenerator::generate_safept_entry_for(TosState state, address runtime_entry) {
@@ -1487,7 +1491,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // We use release_store_fence to update values like the thread state, where
   // we don't want the current thread to continue until all our prior memory
   // accesses (including the new thread state) are visible to other threads.
-  __ li(R0/*thread_state*/, _thread_in_vm);
+  __ li(R0/*thread_state*/, _thread_in_Java);
   __ release();
   __ stw(R0/*thread_state*/, thread_(thread_state));
   if (!UseSystemMemoryBarrier) {
@@ -1497,10 +1501,6 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // Now before we return to java we must look for a current safepoint
   // (a new safepoint can not start since we entered _thread_in_vm).
   // We must check here because a current safepoint could be in progress.
-
-  // Acquire isn't strictly necessary here because of the fence, but
-  // sync_state is declared to be volatile, so we do it anyway
-  // (cmp-br-isync on one path, release (same as acquire on PPC64) on the other path).
 
   Label do_safepoint, sync_check_done;
   // No synchronization in progress nor yet synchronized.
@@ -1513,13 +1513,12 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ beq(CR1, sync_check_done);
 
   __ bind(do_safepoint);
-  __ isync();
   // Block. We do the call directly and leave the current
   // last_Java_frame setup undisturbed. We must save any possible
   // native result across the call. No oop is present.
 
   __ mr(R3_ARG1, R16_thread);
-  __ call_c(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans));
+  __ call_c(CAST_FROM_FN_PTR(address, SharedRuntime::check_special_condition_for_native_trans));
 
   __ bind(sync_check_done);
 
@@ -1540,14 +1539,6 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // On PPC64, we have stored the result directly after the native call.
 
   //=============================================================================
-  // Back in Java
-
-  // We use release_store_fence to update values like the thread state, where
-  // we don't want the current thread to continue until all our prior memory
-  // accesses (including the new thread state) are visible to other threads.
-  __ li(R0/*thread_state*/, _thread_in_Java);
-  __ lwsync(); // Acquire safepoint and suspend state, release thread state.
-  __ stw(R0/*thread_state*/, thread_(thread_state));
 
   if (support_vthread_preemption) {
     // Check preemption for Object.wait()
@@ -2102,12 +2093,14 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
     __ empty_expression_stack();
     __ unlock_if_synchronized_method(vtos, /* throw_monitor_exception */ false, /* install_monitor_exception */ false);
 
-    // Check to see whether we are returning to a deoptimized frame.
-    // (The PopFrame call ensures that the caller of the popped frame is
-    // either interpreted or compiled and deoptimizes it if compiled.)
+    // Check to see whether we are returning to a deoptimized frame or
+    // into the continuation return barrier (the PopFrame call ensures that
+    // the caller of the popped frame is either interpreted or compiled and
+    // deoptimizes it if compiled).
     // Note that we don't compare the return PC against the
     // deoptimization blob's unpack entry because of the presence of
-    // adapter frames in C2.
+    // adapter frames in C2. Checking for an interpreter return PC covers
+    // the return barrier as well.
     Label Lcaller_not_deoptimized;
     Register return_pc = R3_ARG1;
     __ ld(return_pc, 0, R1_SP);

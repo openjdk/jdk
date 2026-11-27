@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8195823
+ * @bug 8195823 8398147
  * @modules java.net.http/jdk.internal.net.http.frame
  * @run junit/othervm
  *       -Djdk.internal.httpclient.debug=true

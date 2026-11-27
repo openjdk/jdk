@@ -2774,6 +2774,8 @@ public abstract sealed class Vector<E> extends jdk.internal.vm.vector.VectorSupp
      * @param op the operation used to test lane values
      * @return the mask result of testing the lanes of this vector,
      *         according to the selected test operator
+     * @throws UnsupportedOperationException if this vector does
+     *         not support the requested operation
      * @see VectorOperators.Comparison
      * @see #test(VectorOperators.Test, VectorMask)
      * @see #compare(VectorOperators.Comparison, Vector)
@@ -2796,6 +2798,8 @@ public abstract sealed class Vector<E> extends jdk.internal.vm.vector.VectorSupp
      * @return the mask result of testing the lanes of this vector,
      *         according to the selected test operator,
      *         and only in the lanes selected by the mask
+     * @throws UnsupportedOperationException if this vector does
+     *         not support the requested operation
      * @see #test(VectorOperators.Test)
      */
     public abstract VectorMask<E> test(VectorOperators.Test op,

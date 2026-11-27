@@ -90,11 +90,6 @@ Node *CMoveNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       phase->type(in(IfTrue))    == Type::TOP) {
     return nullptr;
   }
-  Node* progress = TypeNode::Ideal(phase, can_reshape);
-  if (progress != nullptr) {
-    return progress;
-  }
-
   // Check for Min/Max patterns. This is called before constants are pushed to the true-case input, as that transform can
   // make BoolTests non-canonical.
   Node* minmax = Ideal_minmax(phase, this);
@@ -191,12 +186,12 @@ const Type* CMoveNode::Value(PhaseGVN* phase) const {
 // from the inputs we do not need to specify it here.
 CMoveNode* CMoveNode::make(Node* bol, Node* false_value, Node* true_value, const Type* t) {
   switch (t->basic_type()) {
-    case T_INT:     return new CMoveINode(bol, false_value, true_value, t->is_int());
+    case T_INT:     return new CMoveINode(bol, false_value, true_value, t->as_int());
     case T_FLOAT:   return new CMoveFNode(bol, false_value, true_value, t);
     case T_DOUBLE:  return new CMoveDNode(bol, false_value, true_value, t);
-    case T_LONG:    return new CMoveLNode(bol, false_value, true_value, t->is_long());
-    case T_OBJECT:  return new CMovePNode(bol, false_value, true_value, t->is_oopptr());
-    case T_ADDRESS: return new CMovePNode(bol, false_value, true_value, t->is_ptr());
+    case T_LONG:    return new CMoveLNode(bol, false_value, true_value, t->as_long());
+    case T_OBJECT:  return new CMovePNode(bol, false_value, true_value, t->as_oopptr());
+    case T_ADDRESS: return new CMovePNode(bol, false_value, true_value, t->as_ptr());
     case T_NARROWOOP: return new CMoveNNode(bol, false_value, true_value, t);
     default:
       ShouldNotReachHere();
@@ -490,7 +485,7 @@ Node* MoveNode::Identity(PhaseGVN* phase) {
 const Type* MoveL2DNode::Value(PhaseGVN* phase) const {
   const Type *t = phase->type( in(1) );
   if( t == Type::TOP ) return Type::TOP;
-  const TypeLong *tl = t->is_long();
+  const TypeLong* tl = t->as_long();
   if( !tl->is_con() ) return bottom_type();
   JavaValue v;
   v.set_jlong(tl->get_con());
@@ -509,7 +504,7 @@ Node* MoveL2DNode::Identity(PhaseGVN* phase) {
 const Type* MoveI2FNode::Value(PhaseGVN* phase) const {
   const Type *t = phase->type( in(1) );
   if( t == Type::TOP ) return Type::TOP;
-  const TypeInt *ti = t->is_int();
+  const TypeInt* ti = t->as_int();
   if( !ti->is_con() )   return bottom_type();
   JavaValue v;
   v.set_jint(ti->get_con());
@@ -529,7 +524,7 @@ const Type* MoveF2INode::Value(PhaseGVN* phase) const {
   const Type *t = phase->type( in(1) );
   if( t == Type::TOP )       return Type::TOP;
   if( t == Type::FLOAT ) return TypeInt::INT;
-  const TypeF *tf = t->is_float_constant();
+  const TypeF* tf = t->as_float_constant();
   JavaValue v;
   v.set_jfloat(tf->getf());
   return TypeInt::make( v.get_jint() );
@@ -548,7 +543,7 @@ const Type* MoveD2LNode::Value(PhaseGVN* phase) const {
   const Type *t = phase->type( in(1) );
   if( t == Type::TOP ) return Type::TOP;
   if( t == Type::DOUBLE ) return TypeLong::LONG;
-  const TypeD *td = t->is_double_constant();
+  const TypeD* td = t->as_double_constant();
   JavaValue v;
   v.set_jdouble(td->getd());
   return TypeLong::make( v.get_jlong() );

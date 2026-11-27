@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ import java.util.Date;
  * @modules java.base/sun.security.validator
  * @run main/othervm Camerfirma after policyOn invalid
  * @run main/othervm Camerfirma after policyOff valid
- * @run main/othervm Camerfirma before policyOn valid
+ * @run main/othervm Camerfirma before policyOn invalid
  * @run main/othervm Camerfirma before policyOff valid
  */
 
@@ -50,7 +50,7 @@ public class Camerfirma {
     // named "<root>-chain.pem".
     private static final String ROOT_TO_TEST = "camerfirmachambersca";
 
-    // Date after the restrictions take effect
+    // Date after the restrictions took effect when distrust was first announced
     private static final ZonedDateTime DISTRUST_DATE =
             LocalDate.of(2025, 04, 16).atStartOfDay(ZoneOffset.UTC);
 

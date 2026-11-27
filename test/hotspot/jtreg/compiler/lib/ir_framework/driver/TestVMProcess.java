@@ -25,10 +25,7 @@ package compiler.lib.ir_framework.driver;
 
 import compiler.lib.ir_framework.TestFramework;
 import compiler.lib.ir_framework.driver.network.TestVMData;
-import compiler.lib.ir_framework.shared.TestFrameworkException;
-import compiler.lib.ir_framework.shared.TestFrameworkSocket;
-import compiler.lib.ir_framework.shared.NoTestsRunException;
-import compiler.lib.ir_framework.shared.TestFormatException;
+import compiler.lib.ir_framework.shared.*;
 import compiler.lib.ir_framework.test.TestVM;
 import jdk.test.lib.Platform;
 import jdk.test.lib.Utils;
@@ -102,7 +99,7 @@ public class TestVMProcess {
             dumpTestVmOutputIfRequested();
             throw createNoTestsRunException();
         }
-        throw createTestVMExceptionForNonZeroExit(socket, allowNotCompilable);
+        throw createExceptionForNonZeroExit(socket, allowNotCompilable);
     }
 
     /**
@@ -110,10 +107,14 @@ public class TestVMProcess {
      */
     private void dumpTestVmOutputIfRequested() {
         if (DUMP_OUTPUT) {
-            System.out.println("Test VM Output");
-            System.out.println("--------------");
-            System.out.println(oa.getOutput());
+            dumpTestVmOutput();
         }
+    }
+
+    private void dumpTestVmOutput() {
+        System.out.println("Test VM Output");
+        System.out.println("--------------");
+        System.out.println(oa.getOutput());
     }
 
     private TestVMData readAndDumpTestVmData(TestFrameworkSocket socket, boolean allowNotCompilable) {
@@ -143,7 +144,11 @@ public class TestVMProcess {
                                        "Make sure to define a set of at least one @Test method");
     }
 
-    private TestVMException createTestVMExceptionForNonZeroExit(TestFrameworkSocket socket, boolean allowNotCompilable) {
+    private boolean overlappingIncludeExclude() {
+        return oa.getStderr().contains("OverlappingTestAndExclude");
+    }
+
+    private RuntimeException createExceptionForNonZeroExit(TestFrameworkSocket socket, boolean allowNotCompilable) {
         String secondaryException = "";
         try {
             readAndDumpTestVmData(socket, allowNotCompilable);
@@ -154,7 +159,13 @@ public class TestVMProcess {
             secondaryException = buildSecondaryExceptionInfo(e);
         }
         // Primary exception: non-zero Test VM exit.
-        return new TestVMException(buildExceptionInfo() + secondaryException);
+        String primaryException = buildPrimaryExceptionInfo();
+        if (overlappingIncludeExclude()) {
+            // The user specified conflicting -DTest and -DExlucd properties. This kind of failure only happens during
+            // debugging when specifying an empty test set with property flags. Directly show the primary exception.
+            return new OverlappingTestAndExcludeException(primaryException);
+        }
+        return new TestVMException(primaryException + secondaryException);
     }
 
     private String buildSecondaryExceptionInfo(RuntimeException e) {
@@ -172,7 +183,7 @@ public class TestVMProcess {
     /**
      * Get more detailed information about the exception in a pretty format.
      */
-    private String buildExceptionInfo() {
+    private String buildPrimaryExceptionInfo() {
         StringBuilder builder = new StringBuilder();
         builder.append("Test VM exited with code ").append(oa.getExitValue()).append(System.lineSeparator());
         if (hasFatalErrorMarker() || DUMP_OUTPUT) {

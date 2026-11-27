@@ -31,11 +31,11 @@
 
 ShenandoahThreadLocalData::ShenandoahThreadLocalData() :
   _gc_state(0),
-  _gc_state_fast_array{},
   _satb_mark_queue(&ShenandoahBarrierSet::satb_mark_queue_set()),
   _card_table(nullptr),
   _gclab(nullptr),
   _gclab_size(0),
+  _has_evac_failures(false),
   _shenandoah_plab(nullptr),
   _evacuation_stats(new ShenandoahEvacuationStats()),
   _invisible_root(nullptr),

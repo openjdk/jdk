@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2018, 2024, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  */
 
 #include "c1/c1_IR.hpp"
+#include "ci/ciValueKlass.hpp"
 #include "gc/shared/satbMarkQueue.hpp"
 #include "gc/shenandoah/c1/shenandoahBarrierSetC1.hpp"
 #include "gc/shenandoah/mode/shenandoahMode.hpp"
@@ -106,7 +107,7 @@ void ShenandoahBarrierSetC1::enter_if_gc_state(LIRGenerator* gen, int flags, Cod
   __ branch_destination(slow_stub->continuation());
 }
 
-void ShenandoahBarrierSetC1::keepalive_barrier(LIRGenerator* gen, LIR_Opr obj, LIR_Opr addr, DecoratorSet decorators) {
+void ShenandoahBarrierSetC1::keepalive_barrier(LIRGenerator* gen, LIR_Opr obj, LIR_Opr addr, CodeEmitInfo* info, DecoratorSet decorators) {
   CodeStub* slow_stub;
   if (obj == LIR_OprFact::illegalOpr) {
     // Caller wants us to do the load.
@@ -118,10 +119,11 @@ void ShenandoahBarrierSetC1::keepalive_barrier(LIRGenerator* gen, LIR_Opr obj, L
       addr = LIR_OprFact::address(new LIR_Address(addr, T_OBJECT));
     }
 
-    slow_stub = new ShenandoahKeepaliveBarrierStub(obj, addr);
+    slow_stub = new ShenandoahKeepaliveBarrierStub(obj, addr, info);
   } else {
     // Caller gave us the obj to work with.
     assert(addr == LIR_OprFact::illegalOpr, "sanity");
+    assert(info == nullptr, "sanity");
     assert(obj->is_register(), "must be");
     assert(obj->type() == T_OBJECT, "must be an object");
 
@@ -171,17 +173,59 @@ void ShenandoahBarrierSetC1::store_at_resolved(LIRAccess& access, LIR_Opr value)
   DecoratorSet decorators = access.decorators();
   LIRGenerator* gen = access.gen();
 
+  bool is_array = (decorators & IS_ARRAY) != 0;
+  bool on_anonymous = (decorators & ON_UNKNOWN_OOP_REF) != 0;
+  bool precise = is_array || on_anonymous;
+  LIR_Opr post_addr = precise ? access.resolved_addr() : access.base().opr();
+
+  ciValueKlass* vk = access.vk();
+  if (vk != nullptr && vk->has_object_fields()) {
+    // This is potentially atomic access to flat object, which needs separate barriers
+    // for each individual flattened oop field.
+    assert(!access.is_oop(), "Taking over the real oop barriers");
+
+    for (int i = 0; i < vk->nof_nonstatic_fields(); i++) {
+      ciField* field = vk->nonstatic_field_at(i);
+      if (!field->type()->is_primitive_type()) {
+        int off = access.offset().opr().as_jint() + field->offset_in_bytes() - vk->payload_offset();
+        CodeEmitInfo* info = access.patch_emit_info();
+        if (info != nullptr) {
+          info = new CodeEmitInfo(info);
+        }
+        CodeEmitInfo* access_info = access.access_emit_info();
+        if (access_info != nullptr) {
+          access_info = new CodeEmitInfo(access_info);
+        }
+        LIRAccess inner_access(access.gen(), decorators, access.base(), LIR_OprFact::intConst(off), field->type()->basic_type(), info, access_info);
+        LIR_Opr addr = resolve_address(inner_access, false);
+        inner_access.set_resolved_addr(addr);
+
+        LIR_Opr tmp = gen->new_register(T_OBJECT);
+        if (ShenandoahSATBBarrier || ShenandoahCardBarrier) {
+          BarrierSetC1::load_at_resolved(inner_access, tmp);
+          if (ShenandoahSATBBarrier) {
+            keepalive_barrier(gen, /* obj = */ tmp, /* addr = */ LIR_OprFact::illegalOpr, nullptr, decorators);
+          }
+          if (ShenandoahCardBarrier) {
+            // Card barriers are usually *post*-barriers, but in current Shenandoah we can perform
+            // this barrier before the actual store to simplify this code.
+            card_barrier(gen, post_addr, decorators);
+          }
+        }
+      }
+    }
+  }
+
   if (ShenandoahSATBBarrier && access.is_oop()) {
-    keepalive_barrier(gen, /* obj = */ LIR_OprFact::illegalOpr, /* addr = */ access.resolved_addr(), decorators);
+    CodeEmitInfo* info = access.access_emit_info();
+    if (info != nullptr) {
+      info = new CodeEmitInfo(info);
+    }
+    keepalive_barrier(gen, /* obj = */ LIR_OprFact::illegalOpr, /* addr = */ access.resolved_addr(), info, decorators);
   }
   BarrierSetC1::store_at_resolved(access, value);
 
   if (ShenandoahCardBarrier && access.is_oop()) {
-    bool is_array = (decorators & IS_ARRAY) != 0;
-    bool on_anonymous = (decorators & ON_UNKNOWN_OOP_REF) != 0;
-
-    bool precise = is_array || on_anonymous;
-    LIR_Opr post_addr = precise ? access.resolved_addr() : access.base().opr();
     card_barrier(gen, post_addr, decorators);
   }
 }
@@ -195,14 +239,44 @@ LIR_Opr ShenandoahBarrierSetC1::resolve_address(LIRAccess& access, bool resolve_
 }
 
 void ShenandoahBarrierSetC1::load_at_resolved(LIRAccess& access, LIR_Opr result) {
+  LIRGenerator* gen = access.gen();
+  DecoratorSet decorators = access.decorators();
+
+  // 0: Handle flat classes, which need separate barriers for each individual flattened oop field.
+  ciValueKlass* vk = access.vk();
+  if (ShenandoahLoadRefBarrier && vk != nullptr && vk->has_object_fields()) {
+    assert(!access.is_oop(), "Taking over the real oop barriers");
+
+    for (int i = 0; i < vk->nof_nonstatic_fields(); i++) {
+      ciField* field = vk->nonstatic_field_at(i);
+      if (!field->type()->is_primitive_type()) {
+        int off = access.offset().opr().as_jint() + field->offset_in_bytes() - vk->payload_offset();
+        CodeEmitInfo *info = access.patch_emit_info();
+        if (info != nullptr) {
+          info = new CodeEmitInfo(info);
+        }
+        CodeEmitInfo* access_info = access.access_emit_info();
+        if (access_info != nullptr) {
+          access_info = new CodeEmitInfo(access_info);
+        }
+        LIRAccess inner_access(access.gen(), decorators, access.base(), LIR_OprFact::intConst(off), field->type()->basic_type(), info, access_info);
+        LIR_Opr addr = resolve_address(inner_access, false);
+        inner_access.set_resolved_addr(addr);
+
+        // Executing this LRB for the sake of in-memory fixups.
+        LIR_Opr tmp = gen->new_register(T_OBJECT);
+        BarrierSetC1::load_at_resolved(inner_access, tmp);
+        load_reference_barrier(gen, tmp, addr, decorators);
+      }
+    }
+  }
+
   // 1: non-reference load, no additional barrier is needed
   if (!access.is_oop()) {
     BarrierSetC1::load_at_resolved(access, result);
     return;
   }
 
-  LIRGenerator* gen = access.gen();
-  DecoratorSet decorators = access.decorators();
   BasicType type = access.type();
 
   // 2: load a reference from src location and apply LRB if ShenandoahLoadRefBarrier is set
@@ -225,7 +299,7 @@ void ShenandoahBarrierSetC1::load_at_resolved(LIRAccess& access, LIR_Opr result)
       Lcont_anonymous = new LabelObj();
       generate_referent_check(access, Lcont_anonymous);
     }
-    keepalive_barrier(gen, /* obj = */ result, /* addr = */ LIR_OprFact::illegalOpr, decorators);
+    keepalive_barrier(gen, /* obj = */ result, /* addr = */ LIR_OprFact::illegalOpr, nullptr, decorators);
     if (is_anonymous) {
       __ branch_destination(Lcont_anonymous->label());
     }
@@ -353,6 +427,7 @@ void ShenandoahBarrierSetC1::card_barrier(LIRGenerator* gen, LIR_Opr addr, Decor
 
 LIR_Opr ShenandoahBarrierSetC1::atomic_cmpxchg_at_resolved(LIRAccess& access, LIRItem& cmp_value, LIRItem& new_value) {
   if (!access.is_oop()) {
+    assert(access.vk() == nullptr, "Unhandled value object");
     return BarrierSetC1::atomic_cmpxchg_at_resolved(access, cmp_value, new_value);
   }
 
@@ -365,7 +440,7 @@ LIR_Opr ShenandoahBarrierSetC1::atomic_cmpxchg_at_resolved(LIRAccess& access, LI
   // Handle the previous value through SATB, as we are about to perform the store.
   __ load(addr->as_address_ptr(), tmp);
   if (ShenandoahSATBBarrier) {
-    keepalive_barrier(gen, /* obj = */ tmp, /* addr = */ LIR_OprFact::illegalOpr, decorators);
+    keepalive_barrier(gen, /* obj = */ tmp, /* addr = */ LIR_OprFact::illegalOpr, nullptr, decorators);
   }
 
   // Perform LRB on location to fix it up for this and all following accesses.
@@ -386,6 +461,7 @@ LIR_Opr ShenandoahBarrierSetC1::atomic_cmpxchg_at_resolved(LIRAccess& access, LI
 
 LIR_Opr ShenandoahBarrierSetC1::atomic_xchg_at_resolved(LIRAccess& access, LIRItem& value) {
   if (!access.is_oop()) {
+    assert(access.vk() == nullptr, "Unhandled value object");
     return BarrierSetC1::atomic_xchg_at_resolved(access, value);
   }
 
@@ -398,7 +474,7 @@ LIR_Opr ShenandoahBarrierSetC1::atomic_xchg_at_resolved(LIRAccess& access, LIRIt
   // Handle the previous value through SATB, as we are about to perform the store.
   __ load(addr->as_address_ptr(), tmp);
   if (ShenandoahSATBBarrier) {
-    keepalive_barrier(gen, /* obj = */ tmp, /* addr = */ LIR_OprFact::illegalOpr, decorators);
+    keepalive_barrier(gen, /* obj = */ tmp, /* addr = */ LIR_OprFact::illegalOpr, nullptr, decorators);
   }
 
   // Perform LRB on location to fix it up for this and all following accesses.

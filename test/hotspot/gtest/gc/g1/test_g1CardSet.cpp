@@ -89,8 +89,10 @@ public:
     return (seed % i);
   }
 
-  static void cardset_basic_test();
-  static void cardset_mt_test();
+  static void card_set_basic_test();
+  static void card_set_mt_test();
+
+  static void card_set_howl_bounds_test();
 
   static void add_cards(G1CardSet* card_set, uint cards_per_region, uint* cards, uint num_cards, G1AddCardResult* results);
   static void contains_cards(G1CardSet* card_set, uint cards_per_region, uint* cards, uint num_cards);
@@ -215,7 +217,7 @@ void G1CardSetTest::check_iteration(G1CardSet* card_set, const size_t expected, 
   }
 }
 
-void G1CardSetTest::cardset_basic_test() {
+void G1CardSetTest::card_set_basic_test() {
 
   const uint CardsPerRegion = 2048;
   const double FullCardSetThreshold = 0.8;
@@ -435,7 +437,7 @@ public:
   size_t found() const { return _found.load_relaxed(); }
 };
 
-void G1CardSetTest::cardset_mt_test() {
+void G1CardSetTest::card_set_mt_test() {
   const uint CardsPerRegion = 16384;
   const double FullCardSetThreshold = 1.0;
   const uint BitmapCoarsenThreshold = 1.0;
@@ -456,7 +458,7 @@ void G1CardSetTest::cardset_mt_test() {
   G1CardSetMtTestTask cl(&card_set);
 
   {
-    GCTraceTime(Error, gc) x("Cardset test");
+    GCTraceTime(Error, gc) x("G1CardSet test");
     _workers->run_task(&cl, num_workers);
   }
 
@@ -492,10 +494,37 @@ void G1CardSetTest::cardset_mt_test() {
   ASSERT_TRUE(count_cards._num_cards <= cl.added());
 }
 
-TEST_VM(G1CardSetTest, basic_cardset_test) {
-  G1CardSetTest::cardset_basic_test();
+void G1CardSetTest::card_set_howl_bounds_test() {
+  const uint CardsPerRegion = 65536;
+  const double CoarsenThreshold = 0.9;
+
+  G1CardSetConfiguration config(1,
+                                CoarsenThreshold,
+                                8,
+                                CoarsenThreshold,
+                                CardsPerRegion,
+                                0);
+
+  G1CardSetFreePool free_pool(config.num_mem_object_types());
+  G1CardSetMemoryManager mm(&config, &free_pool);
+
+  G1CardSet card_set(&config, &mm);
+
+  // Add a few cards so that we coarsen to howl in this configuration.
+  card_set.add_card(0, 1);
+  card_set.add_card(0, 2);
+  card_set.add_card(0, 3);
+  card_set.add_card(0, 4);
 }
 
-TEST_VM(G1CardSetTest, mt_cardset_test) {
-  G1CardSetTest::cardset_mt_test();
+TEST_VM(G1CardSetTest, basic_card_set_test) {
+  G1CardSetTest::card_set_basic_test();
+}
+
+TEST_VM(G1CardSetTest, mt_card_set_test) {
+  G1CardSetTest::card_set_mt_test();
+}
+
+TEST_VM(G1CardSetTest, howl_container_bucket_bounds) {
+  G1CardSetTest::card_set_howl_bounds_test();
 }

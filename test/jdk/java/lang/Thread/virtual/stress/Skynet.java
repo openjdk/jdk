@@ -37,6 +37,14 @@
  *     -XX:+ZVerifyOops -XX:ZCollectionInterval=0.01 -Xmx1500m Skynet
  */
 
+/*
+ * @test id=no-lse
+ * @summary Stress test virtual threads with a variation of the Skynet 1M benchmark without LSE
+ * @requires os.arch == "aarch64" & vm.continuations
+ * @requires !vm.debug | vm.gc != "Z"
+ * @run main/othervm/timeout=1600 -XX:-UseLSE -Xmx1500m Skynet 2
+ */
+
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadFactory;

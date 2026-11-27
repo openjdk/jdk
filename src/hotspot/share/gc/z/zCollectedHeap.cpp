@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,8 +66,7 @@ ZCollectedHeap::ZCollectedHeap()
     _driver_minor(new ZDriverMinor()),
     _driver_major(new ZDriverMajor()),
     _director(new ZDirector()),
-    _stat(new ZStat()),
-    _runtime_workers() {}
+    _stat(new ZStat()) {}
 
 CollectedHeap::Name ZCollectedHeap::kind() const {
   return CollectedHeap::Z;
@@ -111,7 +110,7 @@ void ZCollectedHeap::stop() {
 }
 
 size_t ZCollectedHeap::max_capacity() const {
-  return _heap.max_capacity();
+  return _heap.dynamic_max_capacity();
 }
 
 size_t ZCollectedHeap::capacity() const {
@@ -243,7 +242,7 @@ MemoryUsage ZCollectedHeap::memory_usage() {
   const size_t initial_size = InitialHeapSize;
   const size_t committed    = ZHeap::heap()->capacity();
   const size_t used         = MIN2(ZHeap::heap()->used(), committed);
-  const size_t max_size     = ZHeap::heap()->max_capacity();
+  const size_t max_size     = MAX2(ZHeap::heap()->dynamic_max_capacity(), committed);
 
   return MemoryUsage(initial_size, used, committed, max_size);
 }
@@ -307,8 +306,8 @@ void ZCollectedHeap::verify_nmethod(nmethod* nm) {
   // Does nothing
 }
 
-WorkerThreads* ZCollectedHeap::safepoint_workers() {
-  return _runtime_workers.workers();
+bool ZCollectedHeap::supports_parallel_object_iteration() const {
+  return true;
 }
 
 void ZCollectedHeap::gc_threads_do(ThreadClosure* tc) const {
@@ -317,7 +316,6 @@ void ZCollectedHeap::gc_threads_do(ThreadClosure* tc) const {
   tc->do_thread(_driver_minor);
   tc->do_thread(_stat);
   _heap.threads_do(tc);
-  _runtime_workers.threads_do(tc);
 }
 
 VirtualSpaceSummary ZCollectedHeap::create_heap_space_summary() {
@@ -326,7 +324,7 @@ VirtualSpaceSummary ZCollectedHeap::create_heap_space_summary() {
   // Fake values. ZGC does not commit memory contiguously in the reserved
   // address space, and the reserved space is larger than MaxHeapSize.
   const uintptr_t committed_end = ZAddressHeapBase + capacity();
-  const uintptr_t reserved_end = ZAddressHeapBase + max_capacity();
+  const uintptr_t reserved_end = MAX2(ZAddressHeapBase + max_capacity(), committed_end);
 
   return VirtualSpaceSummary((HeapWord*)start, (HeapWord*)committed_end, (HeapWord*)reserved_end);
 }

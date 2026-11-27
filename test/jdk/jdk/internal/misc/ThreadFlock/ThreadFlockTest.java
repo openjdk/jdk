@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -382,8 +382,8 @@ class ThreadFlockTest {
     @Test
     void testAwaitAllWithNoThreads() throws Exception {
         try (var flock = ThreadFlock.open(null)) {
-            assertTrue(flock.awaitAll());
-            assertTrue(flock.awaitAll(Duration.ofSeconds(1)));
+            assertTrue(flock.awaitAll(null));
+            assertTrue(flock.awaitAll(null, Duration.ofSeconds(1)));
         }
     }
 
@@ -403,7 +403,7 @@ class ThreadFlockTest {
             };
             Thread thread = factory.newThread(task);
             flock.start(thread);
-            assertTrue(flock.awaitAll());
+            assertTrue(flock.awaitAll(null));
             assertTrue(done.get());
         }
     }
@@ -424,7 +424,7 @@ class ThreadFlockTest {
             flock.start(thread);
 
             long startMillis = millisTime();
-            boolean done = flock.awaitAll(Duration.ofSeconds(30));
+            boolean done = flock.awaitAll(null, Duration.ofSeconds(30));
             assertTrue(done);
             checkDuration(startMillis, 1900, 20_000);
         }
@@ -450,7 +450,7 @@ class ThreadFlockTest {
             try {
                 long startMillis = millisTime();
                 try {
-                    flock.awaitAll(Duration.ofSeconds(2));
+                    flock.awaitAll(null, Duration.ofSeconds(2));
                     fail("awaitAll did not throw");
                 } catch (TimeoutException e) {
                     checkDuration(startMillis, 1900, 20_000);
@@ -481,7 +481,7 @@ class ThreadFlockTest {
             try {
                 for (int i = 0; i < 3; i++) {
                     try {
-                        flock.awaitAll(Duration.ofMillis(50));
+                        flock.awaitAll(null, Duration.ofMillis(50));
                         fail("awaitAll did not throw");
                     } catch (TimeoutException expected) { }
                 }
@@ -489,7 +489,7 @@ class ThreadFlockTest {
                 latch.countDown();
             }
 
-            boolean done = flock.awaitAll();
+            boolean done = flock.awaitAll(null);
             assertTrue(done);
         }
     }
@@ -513,18 +513,18 @@ class ThreadFlockTest {
 
             try {
                 try {
-                    flock.awaitAll(Duration.ofSeconds(0));
+                    flock.awaitAll(null, Duration.ofSeconds(0));
                     fail("awaitAll did not throw");
                 } catch (TimeoutException expected) { }
                 try {
-                    flock.awaitAll(Duration.ofSeconds(-1));
+                    flock.awaitAll(null, Duration.ofSeconds(-1));
                     fail("awaitAll did not throw");
                 } catch (TimeoutException expected) { }
             } finally {
                 latch.countDown();
             }
 
-            boolean done = flock.awaitAll();
+            boolean done = flock.awaitAll(null);
             assertTrue(done);
         }
     }
@@ -553,17 +553,17 @@ class ThreadFlockTest {
             // invoke awaitAll with interrupted status set.
             Thread.currentThread().interrupt();
             try {
-                flock.awaitAll();
+                flock.awaitAll(null);
                 fail("awaitAll did not throw");
             } catch (InterruptedException e) {
                 // interrupted status should be clear
                 assertFalse(Thread.currentThread().isInterrupted());
             }
 
-            // invoke awaitAll(Duration) with interrupted status set.
+            // invoke awaitAll(null, Duration) with interrupted status set.
             Thread.currentThread().interrupt();
             try {
-                flock.awaitAll(Duration.ofSeconds(30));
+                flock.awaitAll(null, Duration.ofSeconds(30));
                 fail("awaitAll did not throw");
             } catch (TimeoutException e) {
                 fail("TimeoutException not expected");
@@ -606,7 +606,7 @@ class ThreadFlockTest {
 
             scheduleInterrupt(Thread.currentThread(), Duration.ofMillis(500));
             try {
-                flock.awaitAll();
+                flock.awaitAll(null);
                 fail("awaitAll did not throw");
             } catch (InterruptedException e) {
                 // interrupted status should be clear
@@ -615,7 +615,7 @@ class ThreadFlockTest {
 
             scheduleInterrupt(Thread.currentThread(), Duration.ofMillis(500));
             try {
-                flock.awaitAll(Duration.ofSeconds(30));
+                flock.awaitAll(null, Duration.ofSeconds(30));
                 fail("awaitAll did not throw");
             } catch (TimeoutException e) {
                 fail("TimeoutException not expected");
@@ -642,8 +642,8 @@ class ThreadFlockTest {
     void testAwaitAfterClose() throws Exception {
         var flock = ThreadFlock.open(null);
         flock.close();
-        assertTrue(flock.awaitAll());
-        assertTrue(flock.awaitAll(Duration.ofSeconds(1)));
+        assertTrue(flock.awaitAll(null));
+        assertTrue(flock.awaitAll(null, Duration.ofSeconds(1)));
     }
 
     /**
@@ -676,8 +676,8 @@ class ThreadFlockTest {
         var exception = new AtomicReference<Exception>();
         Thread thread = factory.apply(() -> {
             try {
-                flock.awaitAll();
-                flock.awaitAll(Duration.ofMillis(1));
+                flock.awaitAll(null);
+                flock.awaitAll(null, Duration.ofMillis(1));
             } catch (Exception e) {
                 exception.set(e);
             }
@@ -709,7 +709,7 @@ class ThreadFlockTest {
             // invoke awaitAll with permit
             try {
                 flock.wakeup();
-                assertFalse(flock.awaitAll());
+                assertFalse(flock.awaitAll(null));
             } finally {
                 latch.countDown();
             }
@@ -743,7 +743,7 @@ class ThreadFlockTest {
             flock.start(thread2);
 
             try {
-                assertFalse(flock.awaitAll());
+                assertFalse(flock.awaitAll(null));
             } finally {
                 latch.countDown();
             }
@@ -895,12 +895,7 @@ class ThreadFlockTest {
     void testStructureViolation() {
         try (var flock1 = ThreadFlock.open("flock1")) {
             try (var flock2 = ThreadFlock.open("flock2")) {
-                try {
-                    flock1.close();
-                    fail("close did not throw");
-                } catch (RuntimeException e) {
-                    assertTrue(e.toString().contains("Structure"));
-                }
+                assertThrows(StructureViolationException.class, flock1::close);
                 assertTrue(flock1.isClosed());
                 assertTrue(flock2.isClosed());
             }
@@ -955,7 +950,7 @@ class ThreadFlockTest {
     void testNulls() {
         try (var flock = ThreadFlock.open(null)) {
             assertThrows(NullPointerException.class, () -> flock.start(null));
-            assertThrows(NullPointerException.class, () -> flock.awaitAll(null));
+            assertThrows(NullPointerException.class, () -> flock.awaitAll(null, null));
             assertThrows(NullPointerException.class, () -> flock.containsThread(null));
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,9 @@
 
 package com.sun.rowset.internal;
 
-import org.xml.sax.*;
+import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
 import org.xml.sax.helpers.DefaultHandler;
-
-import com.sun.rowset.*;
-import javax.sql.rowset.*;
 
 
 /**
@@ -38,22 +36,16 @@ import javax.sql.rowset.*;
  * This is the ErrorHandler which helps <code>WebRowSetXmlReader</code>
  * to handle any errors while reading the xml data.
  */
-
-
 public class XmlErrorHandler extends DefaultHandler {
-       public int errorCounter = 0;
+    @Override
+    public void error(SAXParseException e) throws SAXException {
+        throw e;
+    }
 
-       public void error(SAXParseException e) throws SAXException {
-           errorCounter++;
-
-       }
-
-       public void fatalError(SAXParseException e) throws SAXException {
-           errorCounter++;
-
-       }
-
-       public void warning(SAXParseException exception) throws SAXException {
-
-       }
+    @Override
+    public void warning(SAXParseException e) throws SAXException {
+        // to ensure consistent handling of all XML parsing and validation diagnostics
+        // warnings are not ignored, though unlikely to happen
+        throw e;
+    }
 }

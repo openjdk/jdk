@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@ package jdk.jshell.execution;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.ObjectInput;
+import java.io.ObjectInputFilter;
+import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import jdk.jshell.JShellException;
 import jdk.jshell.spi.ExecutionControl;
@@ -45,16 +47,23 @@ public class StreamingExecutionControl implements ExecutionControl {
 
     private final ObjectOutput out;
     private final ObjectInput in;
+    private final ObjectInputFilterImpl filter = new ObjectInputFilterImpl();
 
     /**
      * Creates an instance.
      *
      * @param out the output for commands
-     * @param in the input for command responses
+     * @param in the input for command responses; must be an {@link ObjectInputStream}
+     * @throws IllegalArgumentException if {@code in} is not an {@linkplain ObjectInputStream}
      */
     public StreamingExecutionControl(ObjectOutput out, ObjectInput in) {
         this.out = out;
         this.in = in;
+        if (in instanceof ObjectInputStream ois) {
+            ois.setObjectInputFilter(filter);
+        } else {
+            throw new IllegalArgumentException("The 'in' parameter must be an ObjectInputStream.");
+        }
     }
 
     @Override
@@ -162,27 +171,16 @@ public class StreamingExecutionControl implements ExecutionControl {
     }
 
     /**
-     * @throws ExecutionControl.UserException {@inheritDoc}
-     * @throws ExecutionControl.ResolutionException {@inheritDoc}
-     * @throws ExecutionControl.StoppedException {@inheritDoc}
-     * @throws ExecutionControl.EngineTerminationException {@inheritDoc}
-     * @throws ExecutionControl.NotImplementedException {@inheritDoc}
+     * {@inheritDoc}
+     *
+     * @apiNote This method always throws {@link NotImplementedException}.
+     *
+     * @throws ExecutionControl.NotImplementedException always thrown.
      */
     @Override
     public Object extensionCommand(String command, Object arg)
-            throws RunException, EngineTerminationException, InternalException {
-        try {
-            writeCommand(command);
-            out.writeObject(arg);
-            out.flush();
-            // Retrieve and report results from the remote agent.
-            readAndReportExecutionResult();
-            Object result = in.readObject();
-            return result;
-        } catch (IOException | ClassNotFoundException ex) {
-            throw new EngineTerminationException("Exception transmitting remote extensionCommand: "
-                    + command + " -- " + ex);
-        }
+            throws NotImplementedException {
+        throw new NotImplementedException("extensionCommand not implemented.");
     }
 
     /**
@@ -378,5 +376,22 @@ public class StreamingExecutionControl implements ExecutionControl {
         int id = in.readInt();
         StackTraceElement[] elems = (StackTraceElement[]) in.readObject();
         return new ResolutionException(id, elems);
+    }
+
+    private static final class ObjectInputFilterImpl implements ObjectInputFilter {
+
+        @Override
+        public ObjectInputFilter.Status checkInput(ObjectInputFilter.FilterInfo filterInfo) {
+            if (filterInfo.serialClass() instanceof Class<?> clazz) {
+                while (clazz.isArray()) {
+                    clazz = clazz.componentType();
+                }
+                return clazz == StackTraceElement.class ||
+                       clazz == boolean.class ? Status.ALLOWED
+                                              : Status.REJECTED;
+            }
+
+            return Status.ALLOWED;
+        }
     }
 }

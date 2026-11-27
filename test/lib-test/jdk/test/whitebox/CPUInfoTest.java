@@ -60,14 +60,14 @@ public class CPUInfoTest {
                     "bmi2",         "rtm",              "adx",               "avx512f",
                     "avx512dq",     "avx512pf",         "avx512er",          "avx512cd",
                     "avx512bw",     "avx512vl",         "sha",               "fma",
-                    "vzeroupper",   "avx512_vpopcntdq", "avx512_vpclmulqdq", "avx512_vaes",
+                    "vzeroupper",   "avx512_vpopcntdq", "avx512_vpclmulqdq", "vaes",
                     "avx512_vnni",  "clflush",          "clflushopt",        "clwb",
                     "avx512_vbmi2", "avx512_vbmi",      "rdtscp",            "rdpid",
                     "hv",           "fsrm",             "avx512_bitalg",     "gfni",
                     "f16c",         "pku",              "ospke",             "cet_ibt",
                     "cet_ss",       "avx512_ifma",      "serialize",         "avx_ifma",
                     "apx_f",        "avx10_1",          "avx10_2",           "avx512_fp16",
-                    "sha512",       "hybrid",           "fast_bmi2"
+                    "sha512",       "hybrid"
                     );
             // @formatter:on
             // Checkstyle: resume

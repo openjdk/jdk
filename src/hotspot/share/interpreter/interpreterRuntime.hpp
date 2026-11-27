@@ -62,6 +62,7 @@ class InterpreterRuntime: AllStatic {
   static void    multianewarray(JavaThread* current, jint* first_size_address);
   static void    register_finalizer(JavaThread* current, oopDesc* obj);
   static void    read_flat_field(JavaThread* current, oopDesc* object, ResolvedFieldEntry* entry);
+  static void    write_null_free_flat_field(oopDesc* object, oopDesc* value, ResolvedFieldEntry* entry);
   static void    write_flat_field(JavaThread* current, oopDesc* object, oopDesc* value, ResolvedFieldEntry* entry);
 
   static void flat_array_load(JavaThread* current, arrayOopDesc* array, int index);
@@ -94,6 +95,7 @@ class InterpreterRuntime: AllStatic {
   static address exception_handler_for_exception(JavaThread* current, oopDesc* exception);
 #if INCLUDE_JVMTI
   static void    member_name_arg_or_null(JavaThread* current, address dmh, Method* m, address bcp);
+  static oop     popframe_member_name_arg_or_null(address member_name, Method* m, address bcp);
 #endif
   static void    throw_pending_exception(JavaThread* current);
 

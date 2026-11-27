@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -654,14 +654,17 @@ void LogConfiguration::print_command_line_help(outputStream* out) {
   out->cr();
 
   out->print_cr("Asynchronous logging (off by default):");
-  out->print_cr(" -Xlog:async[:[mode]]");
+  out->print_cr(" -Xlog:async[:[off|stall|drop]]");
   out->print_cr("  All log messages are written to an intermediate buffer first and will then be flushed"
-                " to the corresponding log outputs by a standalone thread. Write operations at logsites are"
-                " guaranteed non-blocking.");
-  out->print_cr(" A mode, either 'drop' or 'stall', may be provided. If 'drop' is provided then"
-                " messages will be dropped if there is no room in the intermediate buffer."
-                " If 'stall' is provided then the log operation will wait for room to be made by the output thread, without dropping any messages."
-                " The default mode is 'drop'.");
+                " to the corresponding log outputs by a standalone thread.");
+  out->print_cr(" A mode, either 'off', 'stall' or 'drop', may be provided.");
+  out->print_cr("  If 'off' is provided then asynchronous logging is disabled.");
+  out->print_cr("  If 'stall' is provided then the log operation will wait for room to be made"
+                " by the output thread, without dropping any messages.");
+  out->print_cr("  If 'drop' is provided then messages will be dropped if there is no room"
+                " in the intermediate buffer.");
+  out->print_cr("  Log entry write operations are guaranteed to be non-blocking in 'drop' mode.");
+  out->print_cr("  The default mode is 'drop'.");
 
   out->cr();
 
@@ -744,6 +747,8 @@ bool LogConfiguration::parse_async_argument(const char* async_tail) {
   if (*async_tail == '\0') {
     // Default is to drop.
     LogConfiguration::set_async_mode(LogConfiguration::AsyncMode::Drop);
+  } else if (strcmp(async_tail, ":off") == 0) {
+    LogConfiguration::set_async_mode(LogConfiguration::AsyncMode::Off);
   } else if (strcmp(async_tail, ":stall") == 0) {
     LogConfiguration::set_async_mode(LogConfiguration::AsyncMode::Stall);
   } else if (strcmp(async_tail, ":drop") == 0) {

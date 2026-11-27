@@ -916,10 +916,9 @@ void ThreadSnapshot::initialize(ThreadsList * t_list, JavaThread* thread) {
   oop blocker_object = nullptr;
   oop blocker_object_owner = nullptr;
 
-  if (thread->is_vthread_mounted() && thread->vthread() != threadObj) { // ThreadSnapshot only captures platform threads
+  oop vthread = thread->vthread();
+  if (java_lang_VirtualThread::is_instance(vthread)) { // ThreadSnapshot only captures platform threads
     _thread_status = JavaThreadStatus::IN_OBJECT_WAIT;
-    oop vthread = thread->vthread();
-    assert(vthread != nullptr, "");
     blocker_object = vthread;
     blocker_object_owner = vthread;
   } else if (_thread_status == JavaThreadStatus::BLOCKED_ON_MONITOR_ENTER ||
@@ -1211,19 +1210,31 @@ private:
   void detect_locks(javaVFrame* jvf, int depth) {
     Thread* current = Thread::current();
 
+    ObjectMonitor* waiting_monitor = _java_thread == nullptr ?
+                                         java_lang_VirtualThread::current_waiting_monitor(_thread_h()) :
+                                         jvf->thread()->current_waiting_monitor();
+
+    // Note we may have a waiting_monitor for internal waits i.e. class initialization waiting, and we
+    // don't want to report that as-if Object::wait was called. So we check the frame information directly.
     if (depth == 0 && _blocker.is_empty()) {
       // If this is the first frame and it is java.lang.Object.wait(...)
       // then print out the receiver.
       if (jvf->method()->name() == vmSymbols::wait_name() &&
         jvf->method()->method_holder()->name() == vmSymbols::java_lang_Object()) {
         OopHandle lock_object;
-        StackValueCollection* locs = jvf->locals();
-        if (!locs->is_empty()) {
-          StackValue* sv = locs->at(0);
-          if (sv->type() == T_OBJECT) {
-            Handle o = locs->at(0)->get_obj();
-            lock_object = OopHandle(oop_storage(), o());
+        if (waiting_monitor == nullptr) {
+          // We have started the native part of wait0() but have not yet set the current
+          // waiting monitor, so we need to extract the receiver directly from the frame.
+          StackValueCollection* locs = jvf->locals();
+          if (!locs->is_empty()) {
+            StackValue* sv = locs->at(0);
+            if (sv->type() == T_OBJECT) {
+              Handle o = locs->at(0)->get_obj();
+              lock_object = OopHandle(oop_storage(), o());
+            }
           }
+        } else {
+          lock_object = OopHandle(oop_storage(), waiting_monitor->object());
         }
         _blocker = Blocker(Blocker::WAITING_ON, lock_object);
       }
@@ -1250,7 +1261,7 @@ private:
           // the monitor is associated with an object, i.e., it is locked
 
           if (depth == 0 && _blocker.is_empty()) {
-            ObjectMonitor* pending_moninor = java_lang_VirtualThread::is_instance(_thread_h())
+            ObjectMonitor* pending_monitor = java_lang_VirtualThread::is_instance(_thread_h())
               ? java_lang_VirtualThread::current_pending_monitor(_thread_h())
               : jvf->thread()->current_pending_monitor();
 
@@ -1262,7 +1273,7 @@ private:
               if (// if the monitor is null we must be in the process of locking
                   mon == nullptr ||
                   // we have marked ourself as pending on this monitor
-                  mon == pending_moninor ||
+                  mon == pending_monitor ||
                   // we are not the owner of this monitor
                   (_java_thread != nullptr && !mon->is_entered(_java_thread))) {
                 _blocker = Blocker(Blocker::WAITING_TO_LOCK, OopHandle(oop_storage(), monitor->owner()));
@@ -1270,7 +1281,18 @@ private:
               }
             }
           }
-          _locks->push(OwnedLock(depth, OwnedLock::LOCKED, OopHandle(oop_storage(), monitor->owner())));
+          // Don't report the monitor as owned by this thread if it is doing wait() and has released it.
+          // Check the actual owning thread as we can dump the stack before the actual release happens.
+          // If waiting_monitor is null then we definitely haven't released it. If there is no java_thread
+          // then we have an unmounted vthread but it could still be the owner.
+          if (_blocker._type == Blocker::WAITING_ON && _blocker._obj.resolve() == monitor->owner() &&
+              waiting_monitor != nullptr &&
+              (_java_thread != nullptr ? !waiting_monitor->is_entered(_java_thread)
+                                       : waiting_monitor->owner() != ObjectMonitor::owner_id_from(_thread_h()))) {
+            // skip
+          } else {
+            _locks->push(OwnedLock(depth, OwnedLock::LOCKED, OopHandle(oop_storage(), monitor->owner())));
+          }
         }
       }
     }
@@ -1326,9 +1348,9 @@ public:
 
     // Pick minimum length that will cover most cases
     int init_length = 64;
-    _methods = new (mtInternal) GrowableArray<Method*>(init_length, mtInternal);
-    _bcis = new (mtInternal) GrowableArray<int>(init_length, mtInternal);
-    _locks = new (mtInternal) GrowableArray<OwnedLock>(init_length, mtInternal);
+    _methods = new (mtServiceability) GrowableArray<Method*>(init_length, mtServiceability);
+    _bcis = new (mtServiceability) GrowableArray<int>(init_length, mtServiceability);
+    _locks = new (mtServiceability) GrowableArray<OwnedLock>(init_length, mtServiceability);
     int total_count = 0;
 
     vframeStream vfst(_java_thread != nullptr
@@ -1392,6 +1414,7 @@ class jdk_internal_vm_ThreadSnapshot: AllStatic {
   static bool _inited;
   static int _name_offset;
   static int _threadStatus_offset;
+  static int _cpuTime_offset;
   static int _carrierThread_offset;
   static int _stackTrace_offset;
   static int _locks_offset;
@@ -1402,6 +1425,7 @@ class jdk_internal_vm_ThreadSnapshot: AllStatic {
   static void compute_offsets(InstanceKlass* klass, TRAPS) {
     JavaClasses::compute_offset(_name_offset, klass, "name", vmSymbols::string_signature(), false);
     JavaClasses::compute_offset(_threadStatus_offset, klass, "threadStatus", vmSymbols::int_signature(), false);
+    JavaClasses::compute_offset(_cpuTime_offset, klass, "cpuTime", vmSymbols::long_signature(), false);
     JavaClasses::compute_offset(_carrierThread_offset, klass, "carrierThread", vmSymbols::thread_signature(), false);
     JavaClasses::compute_offset(_stackTrace_offset, klass, "stackTrace", vmSymbols::java_lang_StackTraceElement_array(), false);
     JavaClasses::compute_offset(_locks_offset, klass, "locks", vmSymbols::jdk_internal_vm_ThreadLock_array(), false);
@@ -1429,6 +1453,9 @@ public:
   static void set_thread_status(oop snapshot, int status) {
     snapshot->int_field_put(_threadStatus_offset, status);
   }
+  static void set_cpu_time(oop snapshot, jlong cpu_time) {
+    snapshot->long_field_put(_cpuTime_offset, cpu_time);
+  }
   static void set_carrier_thread(oop snapshot, oop carrier_thread) {
     snapshot->obj_field_put(_carrierThread_offset, carrier_thread);
   }
@@ -1448,6 +1475,7 @@ public:
 bool jdk_internal_vm_ThreadSnapshot::_inited = false;
 int jdk_internal_vm_ThreadSnapshot::_name_offset;
 int jdk_internal_vm_ThreadSnapshot::_threadStatus_offset;
+int jdk_internal_vm_ThreadSnapshot::_cpuTime_offset;
 int jdk_internal_vm_ThreadSnapshot::_carrierThread_offset;
 int jdk_internal_vm_ThreadSnapshot::_stackTrace_offset;
 int jdk_internal_vm_ThreadSnapshot::_locks_offset;
@@ -1485,6 +1513,11 @@ oop ThreadSnapshotFactory::get_thread_snapshot(jobject jthread, TRAPS) {
     return nullptr; // thread terminated
   }
   assert(cl._thread_status != JavaThreadStatus::NEW, "unstarted Thread");
+
+  jlong cpu_time = -1;
+  if (!is_virtual && os::is_thread_cpu_time_supported()) {
+    cpu_time = os::thread_cpu_time(java_thread, true);
+  }
 
   // StackTrace
   InstanceKlass* ste_klass = vmClasses::StackTraceElement_klass();
@@ -1527,6 +1560,7 @@ oop ThreadSnapshotFactory::get_thread_snapshot(jobject jthread, TRAPS) {
   Handle snapshot = jdk_internal_vm_ThreadSnapshot::allocate(InstanceKlass::cast(snapshot_klass), CHECK_NULL);
   jdk_internal_vm_ThreadSnapshot::set_name(snapshot(), cl._thread_name.resolve());
   jdk_internal_vm_ThreadSnapshot::set_thread_status(snapshot(), (int)cl._thread_status);
+  jdk_internal_vm_ThreadSnapshot::set_cpu_time(snapshot(), cpu_time);
   jdk_internal_vm_ThreadSnapshot::set_carrier_thread(snapshot(), cl._carrier_thread.resolve());
   jdk_internal_vm_ThreadSnapshot::set_stack_trace(snapshot(), trace());
   jdk_internal_vm_ThreadSnapshot::set_locks(snapshot(), locks());

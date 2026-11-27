@@ -28,7 +28,6 @@
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
-#include "gc/shared/barrierSetRuntime.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "interpreter/interp_masm.hpp"
 #include "memory/universe.hpp"
@@ -136,19 +135,6 @@ void BarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators
 
 }
 
-void BarrierSetAssembler::flat_field_copy(MacroAssembler* masm, DecoratorSet decorators,
-                                          Register src, Register dst, Register inline_layout_info) {
-  // flat_field_copy implementation is fairly complex, and there are not any
-  // "short-cuts" to be made from asm. What there is, appears to have the same
-  // cost in C++, so just "call_VM_leaf" for now rather than maintain hundreds
-  // of hand-rolled instructions...
-  if (decorators & IS_DEST_UNINITIALIZED) {
-    __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSetRuntime::value_copy_is_dest_uninitialized), src, dst, inline_layout_info);
-  } else {
-    __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSetRuntime::value_copy), src, dst, inline_layout_info);
-  }
-}
-
 void BarrierSetAssembler::copy_load_at(MacroAssembler* masm,
                                        DecoratorSet decorators,
                                        BasicType type,
@@ -203,7 +189,7 @@ void BarrierSetAssembler::copy_store_at(MacroAssembler* masm,
 void BarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm, Register jni_env,
                                                         Register obj, Register tmp, Label& slowpath) {
   // If mask changes we need to ensure that the inverse is still encodable as an immediate
-  STATIC_ASSERT(JNIHandles::tag_mask == 3);
+  static_assert(JNIHandles::tag_mask == 3);
   __ andi(obj, obj, ~JNIHandles::tag_mask);
   __ ld(obj, Address(obj, 0));             // *obj
 }
@@ -375,14 +361,11 @@ void BarrierSetAssembler::c2i_entry_barrier(MacroAssembler* masm) {
 void BarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Register tmp1, Register tmp2, Label& error) {
   assert_different_registers(obj, tmp1, tmp2);
   // Check if the oop is in the right area of memory
-#if INCLUDE_CDS
   if (AOTCodeCache::is_on_for_dump()) {
     __ ld(tmp2, ExternalAddress(AOTRuntimeConstants::verify_oop_mask_address()));
     __ andr(tmp1, obj, tmp2);
     __ ld(tmp2, ExternalAddress(AOTRuntimeConstants::verify_oop_bits_address()));
-  } else
-#endif
-  {
+  } else {
     __ mv(tmp2, (intptr_t) Universe::verify_oop_mask());
     __ andr(tmp1, obj, tmp2);
     __ mv(tmp2, (intptr_t) Universe::verify_oop_bits());
@@ -441,6 +424,9 @@ void SaveLiveRegisters::initialize(BarrierStubC2* stub) {
 
   // Remove C-ABI SOE registers and tmp regs
   _gp_regs -= RegSet::range(x18, x27) + RegSet::of(x2, x5) + RegSet::of(x8, x9);
+
+  // Remove C-ABI SOE fp registers
+  _fp_regs -= FloatRegSet::range(f18, f27) + FloatRegSet::of(f8, f9);
 }
 
 SaveLiveRegisters::SaveLiveRegisters(MacroAssembler* masm, BarrierStubC2* stub)

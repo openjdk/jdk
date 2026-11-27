@@ -40,6 +40,7 @@ public class ThreadSnapshot {
     // filled by VM
     private String name;
     private int threadStatus;
+    private long cpuTime;
     private Thread carrierThread;
     private StackTraceElement[] stackTrace;
     // owned monitors
@@ -96,6 +97,13 @@ public class ThreadSnapshot {
      */
     Thread.State threadState() {
         return jdk.internal.misc.VM.toThreadState(threadStatus);
+    }
+
+    /**
+     * Returns CPU time in nanoseconds or -1L if not available.
+     */
+    long cpuTime() {
+        return cpuTime;
     }
 
     /**

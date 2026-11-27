@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,9 @@ import java.nio.ByteBuffer;
 import java.util.Objects;
 
 import jdk.internal.net.http.common.Utils;
+import jdk.internal.net.http.quic.VariableLengthEncoder;
 import jdk.internal.net.http.quic.packets.QuicPacketEncoder;
+import jdk.internal.net.quic.QuicTransportErrors;
 import jdk.internal.net.quic.QuicTransportException;
 
 /**
@@ -68,6 +70,11 @@ public final class StreamFrame extends QuicFrame {
             length = decodeVLFieldAsInt(buffer, "length");
         } else {
             length = -1;
+        }
+        if (length > VariableLengthEncoder.MAX_ENCODED_INTEGER - offset) {
+            throw new QuicTransportException(
+                    "Maximum stream frame offset exceeded",
+                    null, type, QuicTransportErrors.FRAME_ENCODING_ERROR);
         }
         if (length == -1) {
             int remaining = buffer.remaining();

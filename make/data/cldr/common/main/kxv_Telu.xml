@@ -434,6 +434,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="collation" type="phonebook">పోన్‌బుక్ క్రమబద్ధీకరణ క్రమం</type>
 			<type key="collation" type="search">సాధారణ-ప్రయోజన సోధన</type>
 			<type key="collation" type="standard">ప్రామాణిక క్రమబద్ధీకరణ క్రమం</type>
+			<type key="hc" type="c12">౧౨ గంటల పద్ధతి</type>
+			<type key="hc" type="c24">౨౪ గంటల పద్ధతి</type>
 			<type key="hc" type="h11">౧౨ గంటల పద్ధతి (0–౧౧)</type>
 			<type key="hc" type="h12">౧౨ గంటల పద్ధతి (౧–౧౨)</type>
 			<type key="hc" type="h23">౨౪ గంటల పద్ధతి (0–౨౩)</type>
@@ -828,6 +830,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yw" count="other">Y తి వారా w</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="mixed" draft="provisional">{0} – {1}</intervalFormatRange>
+							<intervalFormatRange type="non-numeric" draft="provisional">{0}–{1}</intervalFormatRange>
+							<intervalFormatRange type="numeric" draft="provisional">{0}–{1}</intervalFormatRange>
+						</intervalFormatRanges>
 						<intervalFormatItem id="Bh">
 							<greatestDifference id="B">B h – B h</greatestDifference>
 							<greatestDifference id="h">B h–h</greatestDifference>
@@ -1435,9 +1442,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>లెబర్విల్లే</exemplarCity>
 			</zone>
 			<zone type="Europe/London">
-				<long>
-					<daylight>బ్రిటీష్ వేసవి సమయం</daylight>
-				</long>
 				<exemplarCity>లండన్</exemplarCity>
 			</zone>
 			<zone type="America/Grenada">
@@ -1528,9 +1532,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>జయపుర</exemplarCity>
 			</zone>
 			<zone type="Europe/Dublin">
-				<long>
-					<daylight>ఐరిష్ ప్రామాణిక సమయం</daylight>
-				</long>
 				<exemplarCity>డబ్లిన్</exemplarCity>
 			</zone>
 			<zone type="Asia/Jerusalem">
@@ -2398,6 +2399,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>బ్రెజిలియా వేసవి సమయం</daylight>
 				</long>
 			</metazone>
+			<metazone type="British">
+				<long>
+					<daylight>బ్రిటీష్ వేసవి సమయం</daylight>
+				</long>
+			</metazone>
 			<metazone type="Brunei">
 				<long>
 					<standard>బ్రూనే దరుసలామ్ సమయం</standard>
@@ -2656,6 +2662,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>ఇరాన్ సమయం</generic>
 					<standard>ఇరాన్ ప్రామాణిక సమయం</standard>
 					<daylight>ఇరాన్ పగటి వెలుతురు సమయం</daylight>
+				</long>
+			</metazone>
+			<metazone type="Irish">
+				<long>
+					<daylight>ఐరిష్ ప్రామాణిక సమయం</daylight>
 				</long>
 			</metazone>
 			<metazone type="Irkutsk">
@@ -2943,9 +2954,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Samoa">
 				<long>
-					<generic>సమోవా సమయం</generic>
 					<standard>సమోవా ప్రామాణిక సమయం</standard>
-					<daylight>సమోవా పగటి వెలుతురు సమయం</daylight>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -294,7 +294,13 @@ public abstract class BaseFileManager implements JavaFileManager {
                 return true;
 
             case PREVIEWMODE:
-                previewMode = Boolean.parseBoolean(value);
+                if ("true".equals(value)) {
+                    previewMode = true;
+                } else if ("false".equals(value)) {
+                    previewMode = false;
+                } else {
+                    throw new IllegalArgumentException("Must be \"true\" or \"false\", got: " + value);
+                }
                 locations.setPreviewMode(previewMode);
                 return true;
 

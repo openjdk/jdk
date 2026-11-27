@@ -167,6 +167,12 @@ extern "C" {
  * Buffers that are queued after the process event completes will be delayed
  * to the next processing cycle.
  *
+ * \section sec_stream_timing Obtaining timing information
+ *
+ * With \ref pw_stream_get_time_n() and pw_stream_get_nsec() on can get accurate
+ * timing information of the data and the graph in the \ref pw_time. See
+ * the documentation of these functions.
+ *
  * \section sec_stream_driving Driving the graph
  *
  * Starting in 0.3.34, it is possible for a stream to drive the graph.
@@ -263,11 +269,11 @@ struct pw_buffer {
                       *  suggested amount of data to provide. For audio
                       *  streams this will be the amount of frames
                       *  required by the resampler. This field is 0
-                      *  when no suggestion is provided. Since 0.3.49 */
+                      *  when no suggestion is provided. Since 0.3.50 */
     uint64_t time;            /**< For capture streams, this field contains the
                       *  cycle time in nanoseconds when this buffer was
                       *  queued in the stream. It can be compared against
-                      *  the pw_time values or pw_stream_get_nsec()
+                      *  the \ref pw_time values or pw_stream_get_nsec()
                       *  Since 1.0.5 */
 };
 
@@ -287,10 +293,11 @@ struct pw_stream_control {
  * Use pw_stream_get_time_n() to get an updated time snapshot of the stream.
  * The time snapshot can give information about the time in the driver of the
  * graph, the delay to the edge of the graph and the internal queuing in the
- * stream.
+ * stream. This function should only be called in the STREAMING state and will
+ * return an error when called in any other state.
  *
  * pw_time.ticks gives a monotonic increasing counter of the time in the graph
- * driver. I can be used to generate a timetime to schedule samples as well
+ * driver. I can be used to generate a timeline to schedule samples as well
  * as detect discontinuities in the timeline caused by xruns.
  *
  * pw_time.delay is expressed as pw_time.rate, the time domain of the graph. This
@@ -305,15 +312,20 @@ struct pw_stream_control {
  *
  * pw_time.delay contains the total delay that a signal will travel through the
  * graph. This includes the delay caused by filters in the graph as well as delays
- * caused by the hardware. The delay is usually quite stable and should only change when
- * the topology, quantum or samplerate of the graph changes.
+ * caused by the hardware and extra delay offsets added to this. The delay is usually
+ * quite stable and should only change when the topology, quantum or samplerate of
+ * the graph changes.
  *
- * The delay requires the application to send the stream early relative to other synchronized
- * streams in order to arrive at the edge of the graph in time. This is usually done by
- * delaying the other streams with the given delay.
+ * The (positive) delay requires the application to send the stream early relative to other
+ * synchronized streams in order to arrive at the edge of the graph in time. This is usually
+ * done by delaying the other streams with the given delay.
  *
- * Note that the delay can be negative. A negative delay means that this stream should be
- * delayed with the (positive) delay relative to other streams.
+ * A delay offset is sometimes added (by the user) to improve synchronization of the streams
+ * when the reported latency is incorrect in some way. This means that with a large enough
+ * negative offset, the delay can become negative as well. A negative delay in this context
+ * means that the user would like this stream to be delayed with the (positive) delay amount
+ * in order to synchronize it with other streams. Streams are in general not expected to be
+ * able to delay themselves and it is acceptable to clamp negative delays to 0.
  *
  * pw_time.queued and pw_time.buffered is expressed in the time domain of the stream,
  * or the format that is used for the buffers of this stream.
@@ -379,10 +391,11 @@ struct pw_time {
                       *  the playback device or the time a sample traveled
                       *  from the capture device. This delay includes the
                       *  delay introduced by all filters on the path between
-                      *  the stream and the device. The delay is normally
-                      *  constant in a graph and can change when the topology
-                      *  of the graph or the quantum changes. This delay does
-                      *  not include the delay caused by queued buffers. */
+                      *  the stream and the device and extra delay offsets. The
+                      *  delay is normally constant in a graph and can change when
+                      *  the topology of the graph or the quantum changes. This delay
+                      *  does not include the delay caused by queued buffers.
+                      *  The delay can be negative, see \ref pw_time . */
     uint64_t queued;        /**< data queued in the stream, this is the sum
                       *  of the size fields in the pw_buffer that are
                       *  currently queued */
@@ -406,7 +419,8 @@ struct pw_stream_events {
     uint32_t version;
 
     void (*destroy) (void *data);
-    /** when the stream state changes */
+    /** when the stream state changes. Since 1.4 this also sets errno when the
+     * new state is PW_STREAM_STATE_ERROR */
     void (*state_changed) (void *data, enum pw_stream_state old,
                 enum pw_stream_state state, const char *error);
 
@@ -511,6 +525,8 @@ void pw_stream_add_listener(struct pw_stream *stream,
                 const struct pw_stream_events *events,
                 void *data);
 
+/** Get the current stream state. Since 1.4 this also sets errno when the
+ * state is PW_STREAM_STATE_ERROR */
 enum pw_stream_state pw_stream_get_state(struct pw_stream *stream, const char **error);
 
 const char *pw_stream_get_name(struct pw_stream *stream);
@@ -579,7 +595,7 @@ const struct pw_stream_control *pw_stream_get_control(struct pw_stream *stream, 
 /** Set control values */
 int pw_stream_set_control(struct pw_stream *stream, uint32_t id, uint32_t n_values, float *values, ...);
 
-/** Query the time on the stream, RT safe */
+/** Query the time on the stream. Returns an error when the stream is not running. RT safe */
 int pw_stream_get_time_n(struct pw_stream *stream, struct pw_time *time, size_t size);
 
 /** Get the current time in nanoseconds. This value can be compared with

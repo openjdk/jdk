@@ -28,6 +28,8 @@
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @requires vm.opt.final.ClassUnloading
+ * @requires vm.compMode != "Xcomp"
+ * @requires vm.opt.CompileThresholdScaling == null & vm.opt.CompileThreshold == null
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm
  *      -Xbootclasspath/a:.
