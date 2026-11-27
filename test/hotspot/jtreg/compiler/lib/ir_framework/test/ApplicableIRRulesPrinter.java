@@ -128,6 +128,7 @@ public class ApplicableIRRulesPrinter {
         "zbb",
         "zbkb",
         "zfh",
+        "zibi",
         "zvbb",
         "zvfh",
         "zvkn",
