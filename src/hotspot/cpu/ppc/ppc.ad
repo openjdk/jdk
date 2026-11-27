@@ -5640,51 +5640,53 @@ instruct loadConP_Ex(iRegPdst dst, immP src) %{
 %}
 
 // Load Float Constant
-instruct loadConF(regF dst, immF src) %{
+instruct loadConF(regF dst, immF src, iRegLdst tmp) %{
   match(Set dst src);
+  effect(TEMP tmp);
   ins_cost(MEMORY_REF_COST);
 
   // If this instruction rematerializes, it prolongs the live range
   // of the toc node, causing illegal graphs.
   ins_cannot_rematerialize(true);
 
-  format %{ "ADDIS/LFS/ADDIS $dst, $constantoffset, $constanttablebase \t// load float $src from TOC" %}
-  size(12);
+  format %{ "ADDIS/LFS $dst, $constantoffset, $constanttablebase, $tmp \t// load float $src from TOC" %}
+  size(8);
   ins_encode %{
     FloatRegister Rdst = $dst$$FloatRegister;
     Register Rtoc = $constanttablebase;
+    Register Rtmp = $tmp$$Register;
     int offset = $constantoffset($src);
     int hi = MacroAssembler::largeoffset_si16_si16_hi(offset);
     int lo = MacroAssembler::largeoffset_si16_si16_lo(offset);
 
-    __ addis(Rtoc, Rtoc, hi);
-    __ lfs(Rdst, lo, Rtoc);
-    __ addis(Rtoc, Rtoc, -hi);
+    __ addis(Rtmp, Rtoc, hi);
+    __ lfs(Rdst, lo, Rtmp);
   %}
   ins_pipe(pipe_class_memory);
 %}
 
 // Load Double Constant
-instruct loadConD(regD dst, immD src) %{
+instruct loadConD(regD dst, immD src, iRegLdst tmp) %{
   match(Set dst src);
+  effect(TEMP tmp);
   ins_cost(MEMORY_REF_COST);
 
   // If this instruction rematerializes, it prolongs the live range
   // of the toc node, causing illegal graphs.
   ins_cannot_rematerialize(true);
 
-  format %{ "ADDIS/LFD/ADDIS $dst, $constantoffset, $constanttablebase \t// load double $src from TOC" %}
-  size(12);
+  format %{ "ADDIS/LFD $dst, $constantoffset, $constanttablebase, $tmp \t// load double $src from TOC" %}
+  size(8);
   ins_encode %{
     FloatRegister Rdst = $dst$$FloatRegister;
     Register Rtoc = $constanttablebase;
+    Register Rtmp = $tmp$$Register;
     int offset = $constantoffset($src);
     int hi = MacroAssembler::largeoffset_si16_si16_hi(offset);
     int lo = MacroAssembler::largeoffset_si16_si16_lo(offset);
 
-    __ addis(Rtoc, Rtoc, hi);
-    __ lfd(Rdst, lo, Rtoc);
-    __ addis(Rtoc, Rtoc, -hi);
+    __ addis(Rtmp, Rtoc, hi);
+    __ lfd(Rdst, lo, Rtmp);
   %}
   ins_pipe(pipe_class_memory);
 %}
