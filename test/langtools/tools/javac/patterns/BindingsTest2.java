@@ -305,4 +305,71 @@ public class BindingsTest2 {
             s.length();
         }
     }
+
+    private static void testLoops(Object o) {
+        {
+            for (; !(o instanceof String s) || s.isEmpty(); o = "x") {
+            }
+
+            int result1; //intentionally uninitialized variable
+            int result2; //intentionally uninitialized variable
+
+            s.length();
+
+            System.err.println(result1);
+            System.err.println(result2);
+        }
+        {
+            for (int temp = 0; !(o instanceof String s) || s.isEmpty(); o = "x") {
+            }
+
+            int result1; //intentionally uninitialized variable
+            int result2; //intentionally uninitialized variable
+
+            s.length();
+
+            System.err.println(result1);
+            System.err.println(result2);
+        }
+        {
+            int notEffectivellyFinal;
+            do {
+                o = "";
+                notEffectivellyFinal = 0;
+            } while (!(o instanceof String s));
+            interface I { public int run(); }
+            I i = () -> notEffectivellyFinal;
+        }
+        {
+            int notEffectivellyFinal;
+            do {
+                o = "";
+                notEffectivellyFinal = 0;
+            } while (o == null);
+            interface I { public int run(); }
+            I i = () -> notEffectivellyFinal;
+        }
+        {
+            for (int notEffectivellyFinal; !(o instanceof String s); ) {
+                o = "";
+                notEffectivellyFinal = 0;
+                interface I { public int run(); }
+                I i = () -> notEffectivellyFinal;
+            }
+        }
+        {
+            for (int notEffectivellyFinal; o == null; ) {
+                o = "";
+                notEffectivellyFinal = 0;
+                interface I { public int run(); }
+                I i = () -> notEffectivellyFinal;
+            }
+        }
+        {
+            for (final int isFinal; !(o instanceof String s); ) {
+                o = "";
+                isFinal = 0;
+            }
+        }
+    }
 }

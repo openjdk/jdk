@@ -2184,7 +2184,7 @@ public class Flow {
 
         public void visitVarDef(JCVariableDecl tree) {
             boolean track = trackable(tree.sym);
-            if (track && (tree.sym.owner.kind == MTH || tree.sym.owner.kind == VAR)) {
+            if (track && (tree.sym.flags_field & MATCH_BINDING_HOISTED) == 0 && (tree.sym.owner.kind == MTH || tree.sym.owner.kind == VAR)) {
                 newVar(tree);
             }
             if (tree.init != null) {
@@ -2205,13 +2205,15 @@ public class Flow {
             ListBuffer<PendingExit> prevPendingExits = pendingExits;
             FlowKind prevFlowKind = flowKind;
             flowKind = FlowKind.NORMAL;
+            int startNextadr = nextadr;
+            hoistBindingVariables(tree.cond);
             final Bits initsSkip = new Bits(true);
             final Bits uninitsSkip = new Bits(true);
             pendingExits = new ListBuffer<>();
             int prevErrors = log.nerrors;
             do {
                 final Bits uninitsEntry = new Bits(uninits);
-                uninitsEntry.excludeFrom(nextadr);
+                uninitsEntry.excludeFrom(startNextadr);
                 scan(tree.body);
                 resolveContinues(tree);
                 scanCond(tree.cond);
@@ -2237,12 +2239,14 @@ public class Flow {
             ListBuffer<PendingExit> prevPendingExits = pendingExits;
             FlowKind prevFlowKind = flowKind;
             flowKind = FlowKind.NORMAL;
+            int startNextadr = nextadr;
+            hoistBindingVariables(tree.cond);
             final Bits initsSkip = new Bits(true);
             final Bits uninitsSkip = new Bits(true);
             pendingExits = new ListBuffer<>();
             int prevErrors = log.nerrors;
             final Bits uninitsEntry = new Bits(uninits);
-            uninitsEntry.excludeFrom(nextadr);
+            uninitsEntry.excludeFrom(startNextadr);
             do {
                 scanCond(tree.cond);
                 if (!flowKind.isFinal()) {
@@ -2273,6 +2277,8 @@ public class Flow {
             ListBuffer<PendingExit> prevPendingExits = pendingExits;
             FlowKind prevFlowKind = flowKind;
             flowKind = FlowKind.NORMAL;
+            int startNextadr = nextadr;
+            hoistBindingVariables(tree.cond);
             int nextadrPrev = nextadr;
             scan(tree.init);
             final Bits initsSkip = new Bits(true);
@@ -2281,6 +2287,9 @@ public class Flow {
             int prevErrors = log.nerrors;
             do {
                 final Bits uninitsEntry = new Bits(uninits);
+                for (int e = startNextadr; e < nextadrPrev; e++) {
+                    uninitsEntry.excl(e);
+                }
                 uninitsEntry.excludeFrom(nextadr);
                 if (tree.cond != null) {
                     scanCond(tree.cond);
@@ -2313,6 +2322,28 @@ public class Flow {
             uninits.assign(uninitsSkip);
             resolveBreaks(tree, prevPendingExits);
             nextadr = nextadrPrev;
+        }
+
+        private void hoistBindingVariables(JCExpression condition) {
+            //variables in loop conditions that are in scope after the loop
+            //are hoisted out of the loop, and hence should have assigned addresses
+            //before the loop:
+            new TreeScanner() {
+                @Override
+                public void visitVarDef(JCVariableDecl tree) {
+                    if ((tree.sym.flags() & MATCH_BINDING_TO_OUTER) != 0) {
+                        newVar(tree);
+                        tree.sym.flags_field |= MATCH_BINDING_HOISTED;
+                    }
+                    super.visitVarDef(tree);
+                }
+                @Override
+                public void visitLambda(JCLambda tree) {
+                }
+                @Override
+                public void visitClassDef(JCClassDecl tree) {
+                }
+            }.scan(condition);
         }
 
         public void visitForeachLoop(JCEnhancedForLoop tree) {
