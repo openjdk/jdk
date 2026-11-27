@@ -58,7 +58,7 @@ const DecoratorSet C2_ARRAY_COPY             = DECORATOR_LAST << 10;
 // Loads from immutable memory
 const DecoratorSet C2_IMMUTABLE_MEMORY       = DECORATOR_LAST << 11;
 // Accesses two narrow oops, or one narrow oop along with some primitive data at once.
-const DecoratorSet C2_SPECIAL_ACCESS         = DECORATOR_LAST << 12;
+const DecoratorSet C2_EMBEDDED_OOPS          = DECORATOR_LAST << 12;
 
 class Compile;
 class ConnectionGraph;
@@ -126,7 +126,7 @@ public:
   Node* base() const              { return _base; }
   C2AccessValuePtr& addr() const  { return _addr; }
   BasicType type() const          { return _type; }
-  bool is_oop() const             { return is_reference_type(_type) || (_decorators & C2_SPECIAL_ACCESS) != 0; }
+  bool is_oop() const             { return is_reference_type(_type) || (_decorators & C2_EMBEDDED_OOPS) != 0; }
   bool is_raw() const             { return (_decorators & AS_RAW) != 0; }
   Node* raw_access() const        { return _raw_access; }
 

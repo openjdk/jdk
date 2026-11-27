@@ -149,7 +149,7 @@ Node* BarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue& val) cons
   bool mismatched = (decorators & C2_MISMATCHED) != 0;
   bool unaligned = (decorators & C2_UNALIGNED) != 0;
   bool unsafe = (decorators & C2_UNSAFE_ACCESS) != 0;
-  bool store_special = (decorators & C2_SPECIAL_ACCESS) != 0;
+  bool store_special = (decorators & C2_EMBEDDED_OOPS) != 0;
   bool requires_atomic_access = (decorators & MO_UNORDERED) == 0;
 
   MemNode::MemOrd mo = access.mem_node_mo();
@@ -204,7 +204,7 @@ Node* BarrierSetC2::load_at_resolved(C2Access& access, const Type* val_type) con
   bool unknown_control = (decorators & C2_UNKNOWN_CONTROL_LOAD) != 0;
   bool unsafe = (decorators & C2_UNSAFE_ACCESS) != 0;
   bool immutable = (decorators & C2_IMMUTABLE_MEMORY) != 0;
-  bool special = (decorators & C2_SPECIAL_ACCESS) != 0;
+  bool special = (decorators & C2_EMBEDDED_OOPS) != 0;
 
   MemNode::MemOrd mo = access.mem_node_mo();
   LoadNode::ControlDependency dep = unknown_control ? LoadNode::UnknownControl : LoadNode::DependsOnlyOnTest;
@@ -470,7 +470,7 @@ Node* BarrierSetC2::atomic_cmpxchg_val_at_resolved(C2AtomicParseAccess& access, 
 
   Node* load_store = nullptr;
 
-  assert((access.decorators() & C2_SPECIAL_ACCESS) == 0, "access shouldn't be special");
+  assert((access.decorators() & C2_EMBEDDED_OOPS) == 0, "access shouldn't be special");
   if (access.is_oop()) {
 #ifdef _LP64
     if (adr->bottom_type()->is_ptr_to_narrowoop()) {
@@ -512,7 +512,7 @@ Node* BarrierSetC2::atomic_cmpxchg_val_at_resolved(C2AtomicParseAccess& access, 
   pin_atomic_op(access);
 
 #ifdef _LP64
-  assert((access.decorators() & C2_SPECIAL_ACCESS) == 0, "access shouldn't be special");
+  assert((access.decorators() & C2_EMBEDDED_OOPS) == 0, "access shouldn't be special");
   if (access.is_oop() && adr->bottom_type()->is_ptr_to_narrowoop()) {
     return kit->gvn().transform(new DecodeNNode(load_store, load_store->get_ptr_type()));
   }
@@ -531,7 +531,7 @@ Node* BarrierSetC2::atomic_cmpxchg_bool_at_resolved(C2AtomicParseAccess& access,
   Node* load_store = nullptr;
   Node* adr = access.addr().node();
 
-  assert((access.decorators() & C2_SPECIAL_ACCESS) == 0, "access shouldn't be special");
+  assert((access.decorators() & C2_EMBEDDED_OOPS) == 0, "access shouldn't be special");
   if (access.is_oop()) {
 #ifdef _LP64
     if (adr->bottom_type()->is_ptr_to_narrowoop()) {
@@ -606,7 +606,7 @@ Node* BarrierSetC2::atomic_xchg_at_resolved(C2AtomicParseAccess& access, Node* n
   const TypePtr* adr_type = access.addr().type();
   Node* load_store = nullptr;
 
-  assert((access.decorators() & C2_SPECIAL_ACCESS) == 0, "access shouldn't be special");
+  assert((access.decorators() & C2_EMBEDDED_OOPS) == 0, "access shouldn't be special");
   if (access.is_oop()) {
 #ifdef _LP64
     if (adr->bottom_type()->is_ptr_to_narrowoop()) {
@@ -643,7 +643,7 @@ Node* BarrierSetC2::atomic_xchg_at_resolved(C2AtomicParseAccess& access, Node* n
   pin_atomic_op(access);
 
 #ifdef _LP64
-  assert((access.decorators() & C2_SPECIAL_ACCESS) == 0, "access shouldn't be special");
+  assert((access.decorators() & C2_EMBEDDED_OOPS) == 0, "access shouldn't be special");
   if (access.is_oop() && adr->bottom_type()->is_ptr_to_narrowoop()) {
     return kit->gvn().transform(new DecodeNNode(load_store, load_store->get_ptr_type()));
   }

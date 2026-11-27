@@ -2197,7 +2197,7 @@ void LoadFlatNode::expand_atomic(PhaseIterGVN& igvn) const {
 
   kit.insert_mem_bar(Op_MemBarCPUOrder);
   Node* load = kit.access_load_at(base, ptr, TypeRawPtr::BOTTOM, Type::get_const_basic_type(payload_bt), payload_bt,
-                                  _decorators | C2_MISMATCHED | C2_CONTROL_DEPENDENT_LOAD | C2_UNKNOWN_CONTROL_LOAD | (needs_special ? C2_SPECIAL_ACCESS : 0),
+                                  _decorators | C2_MISMATCHED | C2_CONTROL_DEPENDENT_LOAD | C2_UNKNOWN_CONTROL_LOAD | (needs_special ? C2_EMBEDDED_OOPS : 0),
                                   kit.control());
   if (needs_special) {
     assert(load->Opcode() == Op_LoadLWithNarrowOops, "must be special");
@@ -2466,7 +2466,7 @@ void StoreFlatNode::expand_atomic(PhaseIterGVN& igvn) const {
 
   kit.insert_mem_bar(Op_MemBarCPUOrder);
   Node* store = kit.access_store_at(base, ptr, TypeRawPtr::BOTTOM, payload, Type::get_const_basic_type(payload_bt), payload_bt,
-                                    _decorators | C2_MISMATCHED | (needs_special ? C2_SPECIAL_ACCESS : 0),
+                                    _decorators | C2_MISMATCHED | (needs_special ? C2_EMBEDDED_OOPS : 0),
                                     true, value);
   if (needs_special) {
     assert(store->Opcode() == Op_StoreLWithNarrowOops, "must be special");
