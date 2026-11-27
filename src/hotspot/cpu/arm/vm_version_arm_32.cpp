@@ -312,6 +312,15 @@ void VM_Version::initialize() {
 #ifdef COMPILER2
   FLAG_SET_DEFAULT(UseFPUForSpilling, true);
 
+  // Partial inlining of array operations needs masked vector loads/stores
+  // which are not supported on arm32
+  if (ArrayOperationPartialInlineSize != 0) {
+    if (!FLAG_IS_DEFAULT(ArrayOperationPartialInlineSize)) {
+      warning("ArrayOperationPartialInlineSize is not supported on this CPU");
+    }
+    FLAG_SET_DEFAULT(ArrayOperationPartialInlineSize, 0);
+  }
+
   if (FLAG_IS_DEFAULT(MaxVectorSize)) {
     // FLAG_SET_DEFAULT(MaxVectorSize, has_simd() ? 16 : 8);
     // SIMD/NEON can use 16, but default is 8 because currently
