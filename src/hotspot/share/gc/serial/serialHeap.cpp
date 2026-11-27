@@ -513,16 +513,15 @@ void SerialHeap::scan_evacuated_objs(YoungGenScanClosure* young_cl,
   guarantee(young_gen()->promo_failure_scan_is_complete(), "Failed to finish scan");
 }
 
-bool SerialHeap::upgrade_to_full_collection(size_t old_capacity_at_collection_start) const {
+bool SerialHeap::should_upgrade_to_full_collection(size_t old_capacity_at_collection_start) const {
   bool should_run_young_gc_only = (gc_cause() == GCCause::_wb_young_gc)
                     DEBUG_ONLY(|| (gc_cause() == GCCause::_scavenge_alot));
-
   if (should_run_young_gc_only) {
     return false;
   }
 
   if (old_capacity_at_collection_start < _old_gen->capacity()) {
-    log_trace(gc)("SerialHeap::upgrade_to_full_collection: old gen capacity at collection start: %zu < old gen capacity: %zu",
+    log_trace(gc)("Upgrade to full collection: old gen capacity at collection start: %zu < old gen capacity: %zu",
                   old_capacity_at_collection_start, _old_gen->capacity());
     return true;
   }
@@ -531,7 +530,7 @@ bool SerialHeap::upgrade_to_full_collection(size_t old_capacity_at_collection_st
   // be a percentage of the capacity.
   const size_t min_free_bytes = 10000;
   if (_old_gen->free() < min_free_bytes) {
-    log_trace(gc)("SerialHeap::upgrade_to_full_collection: free %zu < %zu", _old_gen->free(), min_free_bytes);
+    log_trace(gc)("Upgrade to full collection: free %zu < %zu", _old_gen->free(), min_free_bytes);
     return true;
   }
 
@@ -546,7 +545,7 @@ void SerialHeap::collect_at_safepoint(bool full) {
   if (!full) {
     bool success = do_young_collection(clear_soft_refs);
     // Potentially upgrade to Full-GC regardless of success.
-    if (success && !upgrade_to_full_collection(old_capacity_at_collection_start)) {
+    if (success && !should_upgrade_to_full_collection(old_capacity_at_collection_start)) {
       return;
     }
   }

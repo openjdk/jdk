@@ -133,7 +133,7 @@ private:
   // in other generations, it should call this method.
   void save_marks();
 
-  bool upgrade_to_full_collection(size_t old_capacity_at_collection_start) const;
+  bool should_upgrade_to_full_collection(size_t old_capacity_at_collection_start) const;
 
 public:
   // Returns JNI_OK on success
