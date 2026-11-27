@@ -10117,13 +10117,13 @@ instruct cmpI_imm_branch(cmpOpEqNe cmp, iRegI op1, immIZibi imm, label lbl)
   effect(USE lbl);
 
   ins_cost(BRANCH_COST);
-  format %{ "b$cmp  $op1, $imm, $lbl\t#@cmpI_imm_branch" %}
+  format %{ "b$cmp" "i  $op1, $imm, $lbl\t#@cmpI_imm_branch" %}
 
   ins_encode %{
     __ cmpi_branch($cmp$$cmpcode, as_Register($op1$$reg), $imm$$constant, *($lbl$$label));
   %}
 
-  ins_pipe(pipe_cmp_branch);
+  ins_pipe(pipe_cmpz_branch);
   ins_short_branch(1);
 %}
 
@@ -10136,13 +10136,13 @@ instruct cmpI_imm_loop(cmpOpEqNe cmp, iRegI op1, immIZibi imm, label lbl)
   effect(USE lbl);
 
   ins_cost(BRANCH_COST);
-  format %{ "b$cmp  $op1, $imm, $lbl\t#@cmpI_imm_loop" %}
+  format %{ "b$cmp" "i  $op1, $imm, $lbl\t#@cmpI_imm_loop" %}
 
   ins_encode %{
     __ cmpi_branch($cmp$$cmpcode, as_Register($op1$$reg), $imm$$constant, *($lbl$$label));
   %}
 
-  ins_pipe(pipe_cmp_branch);
+  ins_pipe(pipe_cmpz_branch);
   ins_short_branch(1);
 %}
 
@@ -10156,13 +10156,13 @@ instruct cmpL_imm_branch(cmpOpEqNe cmp, iRegL op1, immLZibi imm, label lbl)
   effect(USE lbl);
 
   ins_cost(BRANCH_COST);
-  format %{ "b$cmp  $op1, $imm, $lbl\t#@cmpL_imm_branch" %}
+  format %{ "b$cmp" "i  $op1, $imm, $lbl\t#@cmpL_imm_branch" %}
 
   ins_encode %{
     __ cmpi_branch($cmp$$cmpcode, as_Register($op1$$reg), $imm$$constant, *($lbl$$label));
   %}
 
-  ins_pipe(pipe_cmp_branch);
+  ins_pipe(pipe_cmpz_branch);
   ins_short_branch(1);
 %}
 
@@ -10175,13 +10175,13 @@ instruct cmpL_imm_loop(cmpOpEqNe cmp, iRegL op1, immLZibi imm, label lbl)
   effect(USE lbl);
 
   ins_cost(BRANCH_COST);
-  format %{ "b$cmp  $op1, $imm, $lbl\t#@cmpL_imm_loop" %}
+  format %{ "b$cmp" "i  $op1, $imm, $lbl\t#@cmpL_imm_loop" %}
 
   ins_encode %{
     __ cmpi_branch($cmp$$cmpcode, as_Register($op1$$reg), $imm$$constant, *($lbl$$label));
   %}
 
-  ins_pipe(pipe_cmp_branch);
+  ins_pipe(pipe_cmpz_branch);
   ins_short_branch(1);
 %}
 
@@ -10546,13 +10546,13 @@ instruct far_cmpI_imm_branch(cmpOpEqNe cmp, iRegI op1, immIZibi imm, label lbl) 
   effect(USE lbl);
 
   ins_cost(BRANCH_COST * 2);
-  format %{ "far_b$cmp  $op1, $imm, $lbl\t#@far_cmpI_imm_branch" %}
+  format %{ "far_b$cmp" "i  $op1, $imm, $lbl\t#@far_cmpI_imm_branch" %}
 
   ins_encode %{
     __ cmpi_branch($cmp$$cmpcode, as_Register($op1$$reg), $imm$$constant, *($lbl$$label), /* is_far */ true);
   %}
 
-  ins_pipe(pipe_cmp_branch);
+  ins_pipe(pipe_cmpz_branch);
 %}
 
 instruct far_cmpI_imm_loop(cmpOpEqNe cmp, iRegI op1, immIZibi imm, label lbl) %{
@@ -10561,13 +10561,13 @@ instruct far_cmpI_imm_loop(cmpOpEqNe cmp, iRegI op1, immIZibi imm, label lbl) %{
   effect(USE lbl);
 
   ins_cost(BRANCH_COST * 2);
-  format %{ "far_b$cmp  $op1, $imm, $lbl\t#@far_cmpI_imm_loop" %}
+  format %{ "far_b$cmp" "i  $op1, $imm, $lbl\t#@far_cmpI_imm_loop" %}
 
   ins_encode %{
     __ cmpi_branch($cmp$$cmpcode, as_Register($op1$$reg), $imm$$constant, *($lbl$$label), /* is_far */ true);
   %}
 
-  ins_pipe(pipe_cmp_branch);
+  ins_pipe(pipe_cmpz_branch);
 %}
 
 // Zibi: compare signed long with small immediate and branch far instructions
@@ -10577,13 +10577,13 @@ instruct far_cmpL_imm_branch(cmpOpEqNe cmp, iRegL op1, immLZibi imm, label lbl) 
   effect(USE lbl);
 
   ins_cost(BRANCH_COST * 2);
-  format %{ "far_b$cmp  $op1, $imm, $lbl\t#@far_cmpL_imm_branch" %}
+  format %{ "far_b$cmp" "i  $op1, $imm, $lbl\t#@far_cmpL_imm_branch" %}
 
   ins_encode %{
     __ cmpi_branch($cmp$$cmpcode, as_Register($op1$$reg), $imm$$constant, *($lbl$$label), /* is_far */ true);
   %}
 
-  ins_pipe(pipe_cmp_branch);
+  ins_pipe(pipe_cmpz_branch);
 %}
 
 instruct far_cmpL_imm_loop(cmpOpEqNe cmp, iRegL op1, immLZibi imm, label lbl) %{
@@ -10592,13 +10592,13 @@ instruct far_cmpL_imm_loop(cmpOpEqNe cmp, iRegL op1, immLZibi imm, label lbl) %{
   effect(USE lbl);
 
   ins_cost(BRANCH_COST * 2);
-  format %{ "far_b$cmp  $op1, $imm, $lbl\t#@far_cmpL_imm_loop" %}
+  format %{ "far_b$cmp" "i  $op1, $imm, $lbl\t#@far_cmpL_imm_loop" %}
 
   ins_encode %{
     __ cmpi_branch($cmp$$cmpcode, as_Register($op1$$reg), $imm$$constant, *($lbl$$label), /* is_far */ true);
   %}
 
-  ins_pipe(pipe_cmp_branch);
+  ins_pipe(pipe_cmpz_branch);
 %}
 
 // ============================================================================
