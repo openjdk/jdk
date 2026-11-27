@@ -1527,6 +1527,13 @@ void MachPrologNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
   }
 
   C->output()->set_frame_complete(__ offset());
+
+  if (C->has_mach_constant_base_node()) {
+    // NOTE: We set the table base offset here because users might be
+    // emitted before MachConstantBaseNode.
+    ConstantTable& constant_table = C->output()->constant_table();
+    constant_table.set_table_base_offset(constant_table.calculate_table_base_offset());
+  }
 }
 
 int MachPrologNode::reloc() const {
@@ -2832,54 +2839,6 @@ encode %{
       nodes->push(m2);
       assert(m2->bottom_type()->is_ptr(), "must be ptr");
     }
-  %}
-
-  // Enc_class needed as consttanttablebase is not supported by postalloc
-  // expand.
-  enc_class postalloc_expand_load_float_constant(regF dst, immF src, iRegLdst toc) %{
-    bool large_constant_pool = true; // TODO: PPC port C->cfg()->_consts_size > 4000;
-
-    MachNode *m2;
-    if (large_constant_pool) {
-      m2 = new loadConFCompNode();
-    } else {
-      m2 = new loadConFNode();
-    }
-    // inputs for new nodes
-    m2->add_req(nullptr, n_toc);
-
-    // operands for new nodes
-    m2->_opnds[0] = op_dst;
-    m2->_opnds[1] = op_src;
-    m2->_opnds[2] = new iRegLdstOper(); // constanttablebase
-
-    // register allocation for new nodes
-    ra_->set_pair(m2->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-    nodes->push(m2);
-  %}
-
-  // Enc_class needed as consttanttablebase is not supported by postalloc
-  // expand.
-  enc_class postalloc_expand_load_double_constant(regD dst, immD src, iRegLdst toc) %{
-    bool large_constant_pool = true; // TODO: PPC port C->cfg()->_consts_size > 4000;
-
-    MachNode *m2;
-    if (large_constant_pool) {
-      m2 = new loadConDCompNode();
-    } else {
-      m2 = new loadConDNode();
-    }
-    // inputs for new nodes
-    m2->add_req(nullptr, n_toc);
-
-    // operands for new nodes
-    m2->_opnds[0] = op_dst;
-    m2->_opnds[1] = op_src;
-    m2->_opnds[2] = new iRegLdstOper(); // constanttablebase
-
-    // register allocation for new nodes
-    ra_->set_pair(m2->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-    nodes->push(m2);
   %}
 
   enc_class enc_stw(iRegIsrc src, memory mem) %{
@@ -5602,129 +5561,56 @@ instruct loadConP_Ex(iRegPdst dst, immP src) %{
   postalloc_expand( postalloc_expand_load_ptr_constant(dst, src, constanttablebase) );
 %}
 
-// Expand node for constant pool load: small offset.
-instruct loadConF(regF dst, immF src, iRegLdst toc) %{
-  effect(DEF dst, USE src, USE toc);
-  ins_cost(MEMORY_REF_COST);
-
-  ins_num_consts(1);
-
-  format %{ "LFS     $dst, offset, $toc \t// load float $src from TOC" %}
-  size(4);
-  ins_encode %{
-    address float_address = __ float_constant($src$$constant);
-    if (float_address == nullptr) {
-      ciEnv::current()->record_out_of_memory_failure();
-      return;
-    }
-    __ lfs($dst$$FloatRegister, __ offset_to_method_toc(float_address), $toc$$Register);
-  %}
-  ins_pipe(pipe_class_memory);
-%}
-
-// Expand node for constant pool load: large offset.
-instruct loadConFComp(regF dst, immF src, iRegLdst toc) %{
-  effect(DEF dst, USE src, USE toc);
-  ins_cost(MEMORY_REF_COST);
-
-  ins_num_consts(1);
-
-  format %{ "ADDIS   $toc, $toc, offset_hi\n\t"
-            "LFS     $dst, offset_lo, $toc \t// load float $src from TOC (hi/lo)\n\t"
-            "ADDIS   $toc, $toc, -offset_hi"%}
-  size(12);
-  ins_encode %{
-    FloatRegister Rdst    = $dst$$FloatRegister;
-    Register Rtoc         = $toc$$Register;
-    address float_address = __ float_constant($src$$constant);
-    if (float_address == nullptr) {
-      ciEnv::current()->record_out_of_memory_failure();
-      return;
-    }
-    int offset            = __ offset_to_method_toc(float_address);
-    int hi = (offset + (1<<15))>>16;
-    int lo = offset - hi * (1<<16);
-
-    __ addis(Rtoc, Rtoc, hi);
-    __ lfs(Rdst, lo, Rtoc);
-    __ addis(Rtoc, Rtoc, -hi);
-  %}
-  ins_pipe(pipe_class_memory);
-%}
-
-// Adlc adds toc node MachConstantTableBase.
-instruct loadConF_Ex(regF dst, immF src) %{
+// Load Float Constant
+instruct loadConF(regF dst, immF src, iRegLdst tmp) %{
   match(Set dst src);
+  effect(TEMP tmp);
   ins_cost(MEMORY_REF_COST);
 
-  // See loadConP.
+  // If this instruction rematerializes, it prolongs the live range
+  // of the toc node, causing illegal graphs.
   ins_cannot_rematerialize(true);
 
-  format %{ "LFS     $dst, offset, $constanttablebase \t// load $src from table, postalloc expanded" %}
-  postalloc_expand( postalloc_expand_load_float_constant(dst, src, constanttablebase) );
-%}
-
-// Expand node for constant pool load: small offset.
-instruct loadConD(regD dst, immD src, iRegLdst toc) %{
-  effect(DEF dst, USE src, USE toc);
-  ins_cost(MEMORY_REF_COST);
-
-  ins_num_consts(1);
-
-  format %{ "LFD     $dst, offset, $toc \t// load double $src from TOC" %}
-  size(4);
+  format %{ "ADDIS/LFS $dst, $constantoffset, $constanttablebase, $tmp \t// load float $src from TOC" %}
+  size(8);
   ins_encode %{
-    address float_address = __ double_constant($src$$constant);
-    if (float_address == nullptr) {
-      ciEnv::current()->record_out_of_memory_failure();
-      return;
-    }
-    int offset =  __ offset_to_method_toc(float_address);
-    __ lfd($dst$$FloatRegister, offset, $toc$$Register);
+    FloatRegister Rdst = $dst$$FloatRegister;
+    Register Rtoc = $constanttablebase;
+    Register Rtmp = $tmp$$Register;
+    int offset = $constantoffset($src);
+    int hi = MacroAssembler::largeoffset_si16_si16_hi(offset);
+    int lo = MacroAssembler::largeoffset_si16_si16_lo(offset);
+
+    __ addis(Rtmp, Rtoc, hi);
+    __ lfs(Rdst, lo, Rtmp);
   %}
   ins_pipe(pipe_class_memory);
 %}
 
-// Expand node for constant pool load: large offset.
-instruct loadConDComp(regD dst, immD src, iRegLdst toc) %{
-  effect(DEF dst, USE src, USE toc);
-  ins_cost(MEMORY_REF_COST);
-
-  ins_num_consts(1);
-
-  format %{ "ADDIS   $toc, $toc, offset_hi\n\t"
-            "LFD     $dst, offset_lo, $toc \t// load double $src from TOC (hi/lo)\n\t"
-            "ADDIS   $toc, $toc, -offset_hi" %}
-  size(12);
-  ins_encode %{
-    FloatRegister Rdst    = $dst$$FloatRegister;
-    Register      Rtoc    = $toc$$Register;
-    address float_address = __ double_constant($src$$constant);
-    if (float_address == nullptr) {
-      ciEnv::current()->record_out_of_memory_failure();
-      return;
-    }
-    int offset = __ offset_to_method_toc(float_address);
-    int hi = (offset + (1<<15))>>16;
-    int lo = offset - hi * (1<<16);
-
-    __ addis(Rtoc, Rtoc, hi);
-    __ lfd(Rdst, lo, Rtoc);
-    __ addis(Rtoc, Rtoc, -hi);
-  %}
-  ins_pipe(pipe_class_memory);
-%}
-
-// Adlc adds toc node MachConstantTableBase.
-instruct loadConD_Ex(regD dst, immD src) %{
+// Load Double Constant
+instruct loadConD(regD dst, immD src, iRegLdst tmp) %{
   match(Set dst src);
+  effect(TEMP tmp);
   ins_cost(MEMORY_REF_COST);
 
-  // See loadConP.
+  // If this instruction rematerializes, it prolongs the live range
+  // of the toc node, causing illegal graphs.
   ins_cannot_rematerialize(true);
 
-  format %{ "ConD    $dst, offset, $constanttablebase \t// load $src from table, postalloc expanded" %}
-  postalloc_expand( postalloc_expand_load_double_constant(dst, src, constanttablebase) );
+  format %{ "ADDIS/LFD $dst, $constantoffset, $constanttablebase, $tmp \t// load double $src from TOC" %}
+  size(8);
+  ins_encode %{
+    FloatRegister Rdst = $dst$$FloatRegister;
+    Register Rtoc = $constanttablebase;
+    Register Rtmp = $tmp$$Register;
+    int offset = $constantoffset($src);
+    int hi = MacroAssembler::largeoffset_si16_si16_hi(offset);
+    int lo = MacroAssembler::largeoffset_si16_si16_lo(offset);
+
+    __ addis(Rtmp, Rtoc, hi);
+    __ lfd(Rdst, lo, Rtmp);
+  %}
+  ins_pipe(pipe_class_memory);
 %}
 
 // Prefetch instructions.
