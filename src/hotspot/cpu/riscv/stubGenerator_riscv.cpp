@@ -1058,9 +1058,12 @@ class StubGenerator: public StubCodeGenerator {
       __ vsetvli(vl, cnt, sew, lmul);
       __ vlex_v(v0, src, sew);
       __ sub(cnt, cnt, vl);
-      __ shift_left_add(src, vl, src, sew, t0);
+      if (sew != Assembler::e8) {
+        __ slli(vl, vl, sew);
+      }
+      __ add(src, src, vl);
       __ vsex_v(v0, dst, sew);
-      __ shift_left_add(dst, vl, dst, sew, t0);
+      __ add(dst, dst, vl);
       __ bnez(cnt, loop);
     } else {
       Label loop;
@@ -1069,9 +1072,12 @@ class StubGenerator: public StubCodeGenerator {
       __ bind(loop);
       __ vsetvli(vl, cnt, sew, lmul);
       __ sub(cnt, cnt, vl);
-      __ shift_left_add(src, cnt, s, sew, t0);
+      if (sew != Assembler::e8) {
+        __ slli(t0, cnt, sew);
+      }
+      __ add(src, s, sew == Assembler::e8 ? cnt : t0);
       __ vlex_v(v0, src, sew);
-      __ shift_left_add(dst, cnt, d, sew, t0);
+      __ add(dst, d, sew == Assembler::e8 ? cnt : t0);
       __ vsex_v(v0, dst, sew);
       __ bnez(cnt, loop);
     }
