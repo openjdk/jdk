@@ -681,17 +681,23 @@ Node* PhaseCFG::select(
       if (recalc_pressure_nodes[n->_idx] == 0x7fff7fff) {
         _regalloc->_scratch_int_pressure.init(_regalloc->_sched_int_pressure.high_pressure_limit());
         _regalloc->_scratch_float_pressure.init(_regalloc->_sched_float_pressure.high_pressure_limit());
+        _regalloc->_scratch_mask_pressure.init(_regalloc->_sched_mask_pressure.high_pressure_limit());
         // simulate the notion that we just picked this node to schedule
         n->add_flag(Node::Flag_is_scheduled);
         // now calculate its effect upon the graph if we did
         adjust_register_pressure(n, block, recalc_pressure_nodes, false);
         // return its state for finalize in case somebody else wins
         n->remove_flag(Node::Flag_is_scheduled);
-        // now save the two final pressure components of register pressure, limiting pressure calcs to short size
+        // now save the final pressure components of register pressure, limiting pressure calcs to short size
+        // int in bits 0..15, float in bits 16..31 and mask in bits 32..47
         short int_pressure = (short)_regalloc->_scratch_int_pressure.current_pressure();
         short float_pressure = (short)_regalloc->_scratch_float_pressure.current_pressure();
-        recalc_pressure_nodes[n->_idx] = int_pressure;
-        recalc_pressure_nodes[n->_idx] |= (float_pressure << 16);
+        uintptr_t packed = (uintptr_t)(uint16_t)int_pressure | ((uintptr_t)(uint16_t)float_pressure << 16);
+#ifdef _LP64
+        short mask_pressure = (short)_regalloc->_scratch_mask_pressure.current_pressure();
+        packed |= (uintptr_t)(uint16_t)mask_pressure << 32;
+#endif
+        recalc_pressure_nodes[n->_idx] = (intptr_t)packed;
       }
 
       if (_scheduling_for_pressure) {
@@ -710,6 +716,15 @@ Node* PhaseCFG::select(
             short float_pressure = (short)(recalc_pressure_nodes[n->_idx] >> 16);
             n_score = (float_pressure < 0) ? ((score + n_score) - float_pressure) : (float_pressure > 0) ? 1 : n_score;
           }
+#ifdef _LP64
+          // when vector mask registers under pressure prefer one that end mask live ranges
+          // over ones that define new masks
+          if (_regalloc->_sched_mask_pressure.high_pressure_limit() > 0 &&
+              _regalloc->_sched_mask_pressure.current_pressure() > _regalloc->_sched_mask_pressure.high_pressure_limit()) {
+            short mask_pressure = (short)(recalc_pressure_nodes[n->_idx] >> 32);
+            n_score = (mask_pressure < 0) ? ((score + n_score) - mask_pressure) : (mask_pressure > 0) ? 1 : n_score;
+          }
+#endif
         } else {
           // make sure we choose these candidates
           score = 0;
@@ -809,8 +824,10 @@ void PhaseCFG::adjust_register_pressure(Node* n, Block* block, intptr_t* recalc_
     if (lrg_ends) {
       if (finalize_mode) {
         _regalloc->lower_pressure(block, 0, lrg_src, nullptr, _regalloc->_sched_int_pressure, _regalloc->_sched_float_pressure);
+        _regalloc->lower_mask_pressure(lrg_src, _regalloc->_sched_mask_pressure, 0);
       } else {
         _regalloc->lower_pressure(block, 0, lrg_src, nullptr, _regalloc->_scratch_int_pressure, _regalloc->_scratch_float_pressure);
+        _regalloc->lower_mask_pressure(lrg_src, _regalloc->_scratch_mask_pressure, 0);
       }
     }
   }
@@ -823,10 +840,14 @@ void PhaseCFG::adjust_register_pressure(Node* n, Block* block, intptr_t* recalc_
     LRG& lrg_dst = _regalloc->lrgs(dst);
     if (finalize_mode) {
       _regalloc->raise_pressure(block, lrg_dst, _regalloc->_sched_int_pressure, _regalloc->_sched_float_pressure);
+      _regalloc->raise_mask_pressure(lrg_dst, _regalloc->_sched_mask_pressure);
       // check to see if we fall over the register pressure cliff here
       if (_regalloc->_sched_int_pressure.current_pressure() > _regalloc->_sched_int_pressure.high_pressure_limit()) {
         _scheduling_for_pressure = true;
       } else if (_regalloc->_sched_float_pressure.current_pressure() > _regalloc->_sched_float_pressure.high_pressure_limit()) {
+        _scheduling_for_pressure = true;
+      } else if (_regalloc->_sched_mask_pressure.high_pressure_limit() > 0 &&
+                 _regalloc->_sched_mask_pressure.current_pressure() > _regalloc->_sched_mask_pressure.high_pressure_limit()) {
         _scheduling_for_pressure = true;
       } else {
         // restore latency scheduling mode
@@ -834,6 +855,7 @@ void PhaseCFG::adjust_register_pressure(Node* n, Block* block, intptr_t* recalc_
       }
     } else {
       _regalloc->raise_pressure(block, lrg_dst, _regalloc->_scratch_int_pressure, _regalloc->_scratch_float_pressure);
+      _regalloc->raise_mask_pressure(lrg_dst, _regalloc->_scratch_mask_pressure);
     }
   }
 }
@@ -1122,6 +1144,8 @@ bool PhaseCFG::schedule_local(Block* block, GrowableArray<int>& ready_cnt, Vecto
     _regalloc->_sched_float_pressure.init(Matcher::float_pressure_limit());
     _regalloc->_scratch_int_pressure.init(Matcher::int_pressure_limit());
     _regalloc->_scratch_float_pressure.init(Matcher::float_pressure_limit());
+    _regalloc->_sched_mask_pressure.init(Matcher::mask_pressure_limit());
+    _regalloc->_scratch_mask_pressure.init(Matcher::mask_pressure_limit());
 
     _regalloc->compute_entry_block_pressure(block);
   }
@@ -1255,6 +1279,9 @@ bool PhaseCFG::schedule_local(Block* block, GrowableArray<int>& ready_cnt, Vecto
       tty->print_cr("# pressure info : %d", block->_pre_order);
       _regalloc->print_pressure_info(_regalloc->_sched_int_pressure, "int register info");
       _regalloc->print_pressure_info(_regalloc->_sched_float_pressure, "float register info");
+      if (Matcher::mask_pressure_limit() > 0) {
+        _regalloc->print_pressure_info(_regalloc->_sched_mask_pressure, "mask register info");
+      }
     }
     tty->cr();
   }

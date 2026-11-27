@@ -669,10 +669,30 @@ public:
   Pressure _sched_float_pressure;
   Pressure _scratch_int_pressure;
   Pressure _scratch_float_pressure;
+  Pressure _sched_mask_pressure;
+  Pressure _scratch_mask_pressure;
 
   // Pressure functions for user context
   void lower_pressure(Block* b, uint location, LRG& lrg, IndexSet* liveout, Pressure& int_pressure, Pressure& float_pressure);
   void raise_pressure(Block* b, LRG& lrg, Pressure& int_pressure, Pressure& float_pressure);
+
+  // Mask pressure is checked on platforms with mask registers only.
+  bool is_mask_lrg(LRG& lrg) const {
+    return _sched_mask_pressure.high_pressure_limit() > 0 &&
+           lrg.mask_is_nonempty_and_up() &&
+           !lrg.is_float_or_vector() &&
+           lrg.mask().overlap(*Matcher::idealreg2regmask[Op_RegVectMask]);
+  }
+  void raise_mask_pressure(LRG& lrg, Pressure& mask_pressure) {
+    if (is_mask_lrg(lrg)) {
+      mask_pressure.raise(lrg);
+    }
+  }
+  void lower_mask_pressure(LRG& lrg, Pressure& mask_pressure, uint location) {
+    if (is_mask_lrg(lrg)) {
+      mask_pressure.lower(lrg, location);
+    }
+  }
   void compute_entry_block_pressure(Block* b);
   void compute_exit_block_pressure(Block* b);
   void print_pressure_info(Pressure& pressure, const char *str);

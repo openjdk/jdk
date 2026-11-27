@@ -355,6 +355,9 @@
   product_pd(bool, OptoRegScheduling,                                       \
           "Instruction Scheduling before register allocation for pressure") \
                                                                             \
+  product_pd(bool, OptoRegSchedulingMask,                                   \
+          "check vector mask register allocation for pressure")             \
+                                                                            \
   product(bool, PartialPeelLoop, true,                                      \
           "Partial peel (rotate) loops")                                    \
                                                                             \

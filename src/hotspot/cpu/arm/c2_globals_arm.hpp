@@ -61,6 +61,7 @@ define_pd_global(bool, OptoPeephole,                 false);
 define_pd_global(bool, UseCISCSpill,                 false);
 define_pd_global(bool, OptoScheduling,               true);
 define_pd_global(bool, OptoRegScheduling,            false);
+define_pd_global(bool, OptoRegSchedulingMask,        false);
 define_pd_global(bool, SuperWordLoopUnrollAnalysis,  false);
 define_pd_global(uint, SuperWordStoreToLoadForwardingFailureDetection, 16);
 define_pd_global(bool, IdealizeClearArrayNode,       true);

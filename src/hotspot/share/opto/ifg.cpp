@@ -568,6 +568,7 @@ void PhaseChaitin::compute_entry_block_pressure(Block* b) {
     while (lid != 0) {
       LRG &lrg = lrgs(lid);
       raise_pressure(b, lrg, _sched_int_pressure, _sched_float_pressure);
+      raise_mask_pressure(lrg, _sched_mask_pressure);
       lid = elements.next();
     }
   }
@@ -582,6 +583,7 @@ void PhaseChaitin::compute_entry_block_pressure(Block* b) {
         if (_cfg.get_block_for_node(phi_in) == b) {
           LRG& lrg = lrgs(phi_in->_idx);
           raise_pressure(b, lrg, _sched_int_pressure, _sched_float_pressure);
+          raise_mask_pressure(lrg, _sched_mask_pressure);
           break;
         }
       }
@@ -589,6 +591,7 @@ void PhaseChaitin::compute_entry_block_pressure(Block* b) {
   }
   _sched_int_pressure.set_start_pressure(_sched_int_pressure.current_pressure());
   _sched_float_pressure.set_start_pressure(_sched_float_pressure.current_pressure());
+  _sched_mask_pressure.set_start_pressure(_sched_mask_pressure.current_pressure());
 }
 
 /*
@@ -601,12 +604,14 @@ void PhaseChaitin::compute_exit_block_pressure(Block* b) {
   IndexSet* livein = _live->live(b);
   _sched_int_pressure.set_current_pressure(0);
   _sched_float_pressure.set_current_pressure(0);
+  _sched_mask_pressure.set_current_pressure(0);
   if (!livein->is_empty()) {
     IndexSetIterator elements(livein);
     uint lid = elements.next();
     while (lid != 0) {
       LRG &lrg = lrgs(lid);
       raise_pressure(b, lrg, _sched_int_pressure, _sched_float_pressure);
+      raise_mask_pressure(lrg, _sched_mask_pressure);
       lid = elements.next();
     }
   }
