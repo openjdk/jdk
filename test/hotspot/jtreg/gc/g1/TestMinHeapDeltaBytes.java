@@ -28,6 +28,7 @@ package gc.g1;
  * @bug 8394507
  * @summary G1 heap expansion must not truncate a large region count.
  * @requires vm.gc.G1 & (vm.bits == "64")
+ * @requires vm.flagless
  * @library /test/lib
  * @run driver gc.g1.TestMinHeapDeltaBytes
  */

@@ -5,11 +5,11 @@
 #ifndef PIPEWIRE_TYPE_H
 #define PIPEWIRE_TYPE_H
 
+#include <spa/utils/type.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <spa/utils/type.h>
 
 /** \defgroup pw_type Type info
  * Type information

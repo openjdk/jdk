@@ -275,9 +275,10 @@ static int setPixelsFormMlibImage(JNIEnv *env, RasterS_t *rasterP, mlib_image* i
  *                          External Functions                             *
  ***************************************************************************/
 JNIEXPORT jint JNICALL
-Java_sun_awt_image_ImagingLib_convolveBI(JNIEnv *env, jobject this,
+Java_sun_awt_image_ImagingLib_convolveBINative(JNIEnv *env, jobject this,
                                          jobject jsrc, jobject jdst,
-                                         jobject jkernel, jint edgeHint)
+                                         jint kwidth, jint kheight,
+                                         jfloatArray jdata, jint edgeHint)
 {
     void *sdata, *ddata;
     mlib_image *src;
@@ -292,9 +293,6 @@ Java_sun_awt_image_ImagingLib_convolveBI(JNIEnv *env, jobject this,
     int retStatus = 1;
     float *kern;
     BufImageS_t *srcImageP, *dstImageP;
-    jobject jdata;
-    int kwidth;
-    int kheight;
     int w, h;
     int x, y;
     mlibHintS_t hint;
@@ -307,10 +305,8 @@ Java_sun_awt_image_ImagingLib_convolveBI(JNIEnv *env, jobject this,
     if (s_nomlib) return 0;
     if (s_timeIt)     (*start_timer)(3600);
 
-    kwidth  = (*env)->GetIntField(env, jkernel, g_KernelWidthID);
-    kheight = (*env)->GetIntField(env, jkernel, g_KernelHeightID);
-    jdata = (*env)->GetObjectField(env, jkernel, g_KernelDataID);
     klen  = (*env)->GetArrayLength(env, jdata);
+
     kern  = (float *) (*env)->GetPrimitiveArrayCritical(env, jdata, NULL);
     if (kern == NULL) {
         /* out of memory exception already thrown */
@@ -516,9 +512,10 @@ Java_sun_awt_image_ImagingLib_convolveBI(JNIEnv *env, jobject this,
 }
 
 JNIEXPORT jint JNICALL
-Java_sun_awt_image_ImagingLib_convolveRaster(JNIEnv *env, jobject this,
+Java_sun_awt_image_ImagingLib_convolveRasterNative(JNIEnv *env, jobject this,
                                              jobject jsrc, jobject jdst,
-                                             jobject jkernel, jint edgeHint)
+                                             jint kwidth, jint kheight,
+                                             jfloatArray jdata, jint edgeHint)
 {
     mlib_image *src;
     mlib_image *dst;
@@ -534,11 +531,8 @@ Java_sun_awt_image_ImagingLib_convolveRaster(JNIEnv *env, jobject this,
     void *ddata;
     RasterS_t *srcRasterP;
     RasterS_t *dstRasterP;
-    int kwidth;
-    int kheight;
     int w, h;
     int x, y;
-    jobject jdata;
     float *kern;
 
     /* This function requires a lot of local refs ??? Is 64 enough ??? */
@@ -548,10 +542,8 @@ Java_sun_awt_image_ImagingLib_convolveRaster(JNIEnv *env, jobject this,
     if (s_nomlib) return 0;
     if (s_timeIt)     (*start_timer)(3600);
 
-    kwidth  = (*env)->GetIntField(env, jkernel, g_KernelWidthID);
-    kheight = (*env)->GetIntField(env, jkernel, g_KernelHeightID);
-    jdata = (*env)->GetObjectField(env, jkernel, g_KernelDataID);
     klen  = (*env)->GetArrayLength(env, jdata);
+
     kern  = (float *) (*env)->GetPrimitiveArrayCritical(env, jdata, NULL);
     if (kern == NULL) {
         /* out of memory exception already thrown */

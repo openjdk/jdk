@@ -158,6 +158,7 @@ bool ShenandoahBarrierSetC2::is_Load(int opcode) {
   switch (opcode) {
     case Op_LoadN:
     case Op_LoadP:
+    case Op_LoadLSpecial:
       return true;
     default:
       return false;
@@ -168,6 +169,7 @@ bool ShenandoahBarrierSetC2::is_Store(int opcode) {
   switch (opcode) {
     case Op_StoreN:
     case Op_StoreP:
+    case Op_StoreLSpecial:
       return true;
     default:
       return false;
@@ -184,6 +186,16 @@ bool ShenandoahBarrierSetC2::is_LoadStore(int opcode) {
     case Op_CompareAndSwapP:
     case Op_GetAndSetP:
     case Op_GetAndSetN:
+      return true;
+    default:
+      return false;
+  }
+}
+
+bool ShenandoahBarrierSetC2::is_Special(int opcode) {
+  switch (opcode) {
+    case Op_LoadLSpecial:
+    case Op_StoreLSpecial:
       return true;
     default:
       return false;
@@ -297,6 +309,11 @@ uint8_t ShenandoahBarrierSetC2::refine_load(Node* n, uint8_t bd) {
   assert(ShenandoahElideIdealBarriers, "Checked by caller");
   assert(bd != 0, "Checked by caller");
 
+  if (n->Opcode() == Op_LoadLSpecial) {
+    // Skip any refinement for special nodes for now.
+    return bd;
+  }
+
   // Do not touch weak loads at all: they are responsible for shielding from
   // Reference.referent resurrection.
   if ((bd & (ShenandoahBitWeak | ShenandoahBitPhantom)) != 0) {
@@ -314,6 +331,11 @@ uint8_t ShenandoahBarrierSetC2::refine_store(Node* n, uint8_t bd) {
   assert(ShenandoahElideIdealBarriers, "Checked by caller");
   assert(bd != 0, "Checked by caller");
   assert(n->is_Mem() || n->is_LoadStore(), "Sanity");
+
+  if (n->Opcode() == Op_StoreLSpecial) {
+    // Skip any refinement for special nodes for now.
+    return bd;
+  }
 
   const Node* newval = n->in(MemNode::ValueIn);
   assert(newval != nullptr, "Should be present");
@@ -428,6 +450,11 @@ void ShenandoahBarrierSetC2::elide_dominated_barrier(MachNode* node, MachNode* d
   uint8_t bd = orig_bd;
   int node_opcode = node->ideal_Opcode();
 
+  if (is_Special(node_opcode)) {
+    // Do not eliminate barriers on special nodes for now.
+    return;
+  }
+
   if (dominator == nullptr) {
     // Must be allocation node.
     if (is_Load(node_opcode) || is_LoadStore(node_opcode)) {
@@ -445,6 +472,11 @@ void ShenandoahBarrierSetC2::elide_dominated_barrier(MachNode* node, MachNode* d
     if (is_Load(node_opcode) || is_Store(node_opcode)) {
       int dom_opcode = dominator->ideal_Opcode();
       uint8_t dom_bd = dominator->barrier_data();
+
+      if (is_Special(dom_opcode)) {
+        // Do not eliminate barriers from special node dominators for now.
+        return;
+      }
 
       if (is_Load(dom_opcode) || is_LoadStore(dom_opcode)) {
         // If dominating load is set up to perform LRB fixups, no further LRB is needed.
@@ -536,7 +568,8 @@ uint ShenandoahBarrierSetC2::estimated_barrier_size(const Node* node) const {
 
   if ((bd & ~ShenandoahBitCardMark) != 0) {
     // Hot-patched GC state checks are either a single nop or a jump.
-    nodes += 1;
+    // Pessimistically assume special nodes have barriers for each offset.
+    nodes += is_Special(node->Opcode()) ? 2 : 1;
   }
 
   if ((bd & ShenandoahBitCardMark) != 0) {
@@ -920,19 +953,19 @@ void ShenandoahBarrierStubC2::register_stub(ShenandoahBarrierStubC2* stub) {
   }
 }
 
-ShenandoahBarrierStubC2* ShenandoahBarrierStubC2::create(const MachNode* node, Register obj, Address addr, Register tmp1, Register tmp2, bool narrow, bool do_load) {
-  auto* stub = new (Compile::current()->comp_arena()) ShenandoahBarrierStubC2(node, obj, addr, tmp1, tmp2, narrow, do_load);
+ShenandoahBarrierStubC2* ShenandoahBarrierStubC2::create(const MachNode* node, Register obj, Address addr, Register tmp1, Register tmp2, bool narrow, bool do_load, Register preserve1) {
+  auto* stub = new (Compile::current()->comp_arena()) ShenandoahBarrierStubC2(node, obj, addr, tmp1, tmp2, narrow, do_load, preserve1);
   register_stub(stub);
   return stub;
 }
 
-void ShenandoahBarrierStubC2::load_post(MacroAssembler* masm, const MachNode* node, Register obj, Address addr, Register tmp1, Register tmp2, bool narrow) {
+void ShenandoahBarrierStubC2::load_post(MacroAssembler* masm, const MachNode* node, Register obj, Address addr, Register tmp1, Register tmp2, bool narrow, Register preserve1) {
   // Load post-barrier:
   //  a. Satisfies the need for LRB for normal loads
   //  b. Passes a weak load through LRB-weak
   //  c. Keep-alives a weak load
   if (needs_slow_barrier(node)) {
-    ShenandoahBarrierStubC2* const stub = create(node, obj, addr, tmp1, tmp2, narrow, /* do_load = */ false);
+    ShenandoahBarrierStubC2* const stub = create(node, obj, addr, tmp1, tmp2, narrow, /* do_load = */ false, preserve1);
     char check = 0;
     check |= needs_keep_alive_barrier(node)    ? ShenandoahHeap::MARKING : 0;
     check |= needs_load_ref_barrier(node)      ? ShenandoahHeap::HAS_FORWARDED : 0;
@@ -945,7 +978,7 @@ void ShenandoahBarrierStubC2::store_pre(MacroAssembler* masm, const MachNode* no
   // Store pre-barrier: SATB, keep-alive the current memory value.
   if (needs_slow_barrier(node)) {
     assert(!needs_load_ref_barrier(node), "Should not be required for stores");
-    ShenandoahBarrierStubC2* const stub = create(node, tmp1, addr, tmp2, tmp3, narrow, /* do_load = */ true);
+    ShenandoahBarrierStubC2* const stub = create(node, tmp1, addr, tmp2, tmp3, narrow, /* do_load = */ true, noreg);
     stub->enter_if_gc_state(*masm, ShenandoahHeap::MARKING, tmp1, tmp2);
   }
 }
@@ -959,7 +992,7 @@ void ShenandoahBarrierStubC2::load_store_pre(MacroAssembler* masm, const MachNod
   // (a) and (b) are covered because load barrier does memory location fixup.
   // (c) is covered by KA on the current memory value.
   if (needs_slow_barrier(node)) {
-    ShenandoahBarrierStubC2* const stub = create(node, tmp1, addr, tmp2, tmp3, narrow, /* do_load = */ true);
+    ShenandoahBarrierStubC2* const stub = create(node, tmp1, addr, tmp2, tmp3, narrow, /* do_load = */ true, noreg);
     char check = 0;
     check |= needs_keep_alive_barrier(node) ? ShenandoahHeap::MARKING : 0;
     check |= needs_load_ref_barrier(node)   ? ShenandoahHeap::HAS_FORWARDED : 0;

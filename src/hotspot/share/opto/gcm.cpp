@@ -1453,7 +1453,7 @@ Block* PhaseCFG::hoist_to_cheaper_block(Block* LCA, Block* early, Node* self) {
   // Do not hoist (to cover latency) instructions which target a
   // single register.  Hoisting stretches the live range of the
   // single register and may force spilling.
-  MachNode* mach = self->is_Mach() ? self->as_Mach() : nullptr;
+  MachNode* mach = self->isa_Mach();
   if (mach != nullptr && mach->out_RegMask().is_bound1() && !mach->out_RegMask().is_empty()) {
     in_latency = true;
   }
@@ -1588,7 +1588,7 @@ void PhaseCFG::schedule_late(VectorSet& visited, Node_Stack<Node>& stack) {
     }
 #endif
 
-    MachNode* mach = self->is_Mach() ? self->as_Mach() : nullptr;
+    MachNode* mach = self->isa_Mach();
     if (mach) {
       switch (mach->ideal_Opcode()) {
       case Op_CreateEx:
@@ -1674,7 +1674,7 @@ void PhaseCFG::schedule_late(VectorSet& visited, Node_Stack<Node>& stack) {
     // Place temps in the block of their use.  This isn't a
     // requirement for correctness but it reduces useless
     // interference between temps and other nodes.
-    if (mach != nullptr && mach->is_MachTemp()) {
+    if (Node::is<MachTempNode>(mach)) {
       map_node_to_block(self, LCA);
       LCA->add_inst(self);
       continue;

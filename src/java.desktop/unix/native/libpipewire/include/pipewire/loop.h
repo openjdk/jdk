@@ -5,12 +5,12 @@
 #ifndef PIPEWIRE_LOOP_H
 #define PIPEWIRE_LOOP_H
 
+#include <spa/support/loop.h>
+#include <spa/utils/dict.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <spa/support/loop.h>
-#include <spa/utils/dict.h>
 
 /** \defgroup pw_loop Loop
  *
@@ -64,6 +64,12 @@ PW_API_LOOP_IMPL int pw_loop_invoke(struct pw_loop *object,
 {
     return spa_loop_invoke(object->loop, func, seq, data, size, block, user_data);
 }
+PW_API_LOOP_IMPL int pw_loop_locked(struct pw_loop *object,
+                spa_invoke_func_t func, uint32_t seq, const void *data,
+                size_t size, void *user_data)
+{
+    return spa_loop_locked(object->loop, func, seq, data, size, user_data);
+}
 
 PW_API_LOOP_IMPL int pw_loop_get_fd(struct pw_loop *object)
 {
@@ -88,6 +94,36 @@ PW_API_LOOP_IMPL int pw_loop_iterate(struct pw_loop *object,
 {
     return spa_loop_control_iterate_fast(object->control, timeout);
 }
+PW_API_LOOP_IMPL int pw_loop_check(struct pw_loop *object)
+{
+    return spa_loop_control_check(object->control);
+}
+PW_API_LOOP_IMPL int pw_loop_lock(struct pw_loop *object)
+{
+    return spa_loop_control_lock(object->control);
+}
+PW_API_LOOP_IMPL int pw_loop_unlock(struct pw_loop *object)
+{
+    return spa_loop_control_unlock(object->control);
+}
+PW_API_LOOP_IMPL int pw_loop_get_time(struct pw_loop *object, struct timespec *abstime, int64_t timeout)
+{
+    return spa_loop_control_get_time(object->control, abstime, timeout);
+}
+PW_API_LOOP_IMPL int pw_loop_wait(struct pw_loop *object, const struct timespec *abstime)
+{
+    return spa_loop_control_wait(object->control, abstime);
+}
+PW_API_LOOP_IMPL int pw_loop_signal(struct pw_loop *object, bool wait_for_accept)
+{
+    return spa_loop_control_signal(object->control, wait_for_accept);
+}
+PW_API_LOOP_IMPL int pw_loop_accept(struct pw_loop *object)
+{
+    return spa_loop_control_accept(object->control);
+}
+
+
 
 PW_API_LOOP_IMPL struct spa_source *
 pw_loop_add_io(struct pw_loop *object, int fd, uint32_t mask,
@@ -141,7 +177,7 @@ pw_loop_add_signal(struct pw_loop *object, int signal_number,
 PW_API_LOOP_IMPL void pw_loop_destroy_source(struct pw_loop *object,
                 struct spa_source *source)
 {
-    return spa_loop_utils_destroy_source(object->utils, source);
+    spa_loop_utils_destroy_source(object->utils, source);
 }
 
 /**

@@ -58,6 +58,7 @@
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/orderAccess.hpp"
 #include "runtime/os.hpp"
 #include "runtime/os_perf.hpp"
 #include "runtime/thread.inline.hpp"
@@ -576,9 +577,20 @@ TRACE_REQUEST_FUNC(GCHeapMemoryPoolUsage) {
 
 TRACE_REQUEST_FUNC(ClassLoadingStatistics) {
 #if INCLUDE_MANAGEMENT
+  jlong loaded;
+  jlong unloaded;
+  do {
+    loaded = ClassLoadingService::loaded_class_count();
+    unloaded = ClassLoadingService::unloaded_class_count();
+    // Keep the initial reads before the validation reads. Both totals are
+    // cumulative, so unchanged values establish a consistent snapshot.
+    OrderAccess::loadload();
+  } while (loaded != ClassLoadingService::loaded_class_count() ||
+           unloaded != ClassLoadingService::unloaded_class_count());
+
   EventClassLoadingStatistics event;
-  event.set_loadedClassCount(ClassLoadingService::loaded_class_count());
-  event.set_unloadedClassCount(ClassLoadingService::unloaded_class_count());
+  event.set_loadedClassCount(loaded);
+  event.set_unloadedClassCount(unloaded);
   event.commit();
 #else
   log_debug(jfr, system)("Unable to generate requestable event ClassLoadingStatistics. The required jvm feature 'management' is missing.");

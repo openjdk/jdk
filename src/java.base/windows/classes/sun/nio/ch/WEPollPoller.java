@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,25 +37,49 @@ class WEPollPoller extends Poller {
     private final int event;
     private final long address;
 
+    // pipe used for wakeup during shutdown
+    private final PipeImpl pipe;
+    private final int fd0;
+    private final int fd1;
+
     WEPollPoller(boolean read) throws IOException {
         long handle =  WEPoll.create();
-        long address;
+        long address = 0L;
+        PipeImpl pipe = null;
         try {
             address = WEPoll.allocatePollArray(MAX_EVENTS_TO_POLL);
+
+            // register one end of the pipe with wepoll to allow for wakeup
+            pipe = new PipeImpl(DefaultSelectorProvider.get(), true, false);
+            pipe.sink().configureBlocking(false);
+            int err = WEPoll.ctl(handle, EPOLL_CTL_ADD, pipe.source().getFDVal(), EPOLLIN);
+            if (err != 0) {
+                throw new IOException("epoll_ctl failed: " + err);
+            }
         } catch (Throwable e) {
             WEPoll.close(handle);
+            if (address != 0L) WEPoll.freePollArray(address);
+            if (pipe != null) {
+                pipe.sink().close();
+                pipe.source().close();
+            }
             throw e;
         }
 
         this.event = (read) ? EPOLLIN : EPOLLOUT;
         this.handle = handle;
         this.address = address;
+        this.pipe = pipe;
+        this.fd0 = pipe.source().getFDVal();
+        this.fd1 = pipe.sink().getFDVal();
     }
 
     @Override
-    void close() {
+    void close() throws IOException {
         WEPoll.close(handle);
         WEPoll.freePollArray(address);
+        pipe.sink().close();
+        pipe.source().close();
     }
 
     @Override
@@ -71,16 +95,25 @@ class WEPollPoller extends Poller {
     }
 
     @Override
+    void wakeupPoller() throws IOException {
+        IOUtil.write1(fd1, (byte) 0);
+    }
+
+    @Override
     int poll(int timeout) throws IOException {
         int n = WEPoll.wait(handle, address, MAX_EVENTS_TO_POLL, timeout);
+        int polled = 0;
         int i = 0;
         while (i < n) {
             long event = WEPoll.getEvent(address, i);
             int fdVal = WEPoll.getDescriptor(event);
-            polled(fdVal);
+            if (fdVal != fd0) {
+                polled(fdVal);
+                polled++;
+            }
             i++;
         }
-        return n;
+        return polled;
     }
 }
 

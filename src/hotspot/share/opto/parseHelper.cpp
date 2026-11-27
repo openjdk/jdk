@@ -348,8 +348,7 @@ void Parse::do_new() {
 // Debug dump of the mapping from address types to MergeMemNode indices.
 void Parse::dump_map_adr_mem() const {
   tty->print_cr("--- Mapping from address types to memory Nodes ---");
-  MergeMemNode *mem = map() == nullptr ? nullptr : (map()->memory()->is_MergeMem() ?
-                                      map()->memory()->as_MergeMem() : nullptr);
+  MergeMemNode* mem = map() == nullptr ? nullptr : map()->memory()->isa_MergeMem();
   for (uint i = 0; i < (uint)C->num_alias_types(); i++) {
     C->alias_type(i)->print_on(tty);
     tty->print("\t");

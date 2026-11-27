@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -128,6 +128,13 @@ public class NativeTestHelper {
      * The layout for the {@code size_t} C type
      */
     public static final ValueLayout C_SIZE_T = (ValueLayout) LINKER.canonicalLayouts().get("size_t");
+
+    public static final ValueLayout.OfByte UCHAR = (ValueLayout.OfByte) LINKER.canonicalLayouts().get("unsigned char");
+    public static final ValueLayout.OfShort USHORT = (ValueLayout.OfShort) LINKER.canonicalLayouts().get("unsigned short");
+    public static final ValueLayout.OfInt UINT = (ValueLayout.OfInt) LINKER.canonicalLayouts().get("unsigned int");
+    public static final ValueLayout.OfByte UINT8 = (ValueLayout.OfByte) LINKER.canonicalLayouts().get("uint8_t");
+    public static final ValueLayout.OfShort UINT16 = (ValueLayout.OfShort) LINKER.canonicalLayouts().get("uint16_t");
+    public static final ValueLayout.OfInt UINT32 = (ValueLayout.OfInt) LINKER.canonicalLayouts().get("uint32_t");
 
     // Common layout shared by some tests
     // struct S_PDI { void* p0; double p1; int p2; };

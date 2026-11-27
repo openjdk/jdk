@@ -103,14 +103,14 @@
 #define ZFILENAME_HEAP                   "java_heap"
 
 // Preferred tmpfs mount points, ordered by priority
-static const char* ZPreferredTmpfsMountpoints[] = {
+const char* ZPreferredTmpfsMountpoints[] = {
   "/dev/shm",
   "/run/shm",
   nullptr
 };
 
 // Preferred hugetlbfs mount points, ordered by priority
-static const char* ZPreferredHugetlbfsMountpoints[] = {
+const char* ZPreferredHugetlbfsMountpoints[] = {
   "/dev/hugepages",
   "/hugepages",
   nullptr

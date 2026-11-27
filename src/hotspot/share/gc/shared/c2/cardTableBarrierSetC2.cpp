@@ -87,6 +87,7 @@ Node* CardTableBarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue& 
 
 Node* CardTableBarrierSetC2::atomic_cmpxchg_val_at_resolved(C2AtomicParseAccess& access, Node* expected_val,
                                                             Node* new_val, const Type* value_type) const {
+  assert((access.decorators() & C2_SPECIAL_ACCESS) == 0, "access shouldn't be special");
   if (!access.is_oop()) {
     return BarrierSetC2::atomic_cmpxchg_val_at_resolved(access, expected_val, new_val, value_type);
   }
@@ -102,6 +103,7 @@ Node* CardTableBarrierSetC2::atomic_cmpxchg_bool_at_resolved(C2AtomicParseAccess
                                                              Node* new_val, const Type* value_type) const {
   GraphKit* kit = access.kit();
 
+  assert((access.decorators() & C2_SPECIAL_ACCESS) == 0, "access shouldn't be special");
   if (!access.is_oop()) {
     return BarrierSetC2::atomic_cmpxchg_bool_at_resolved(access, expected_val, new_val, value_type);
   }
@@ -131,6 +133,7 @@ Node* CardTableBarrierSetC2::atomic_cmpxchg_bool_at_resolved(C2AtomicParseAccess
 
 Node* CardTableBarrierSetC2::atomic_xchg_at_resolved(C2AtomicParseAccess& access, Node* new_val, const Type* value_type) const {
   Node* result = BarrierSetC2::atomic_xchg_at_resolved(access, new_val, value_type);
+  assert((access.decorators() & C2_SPECIAL_ACCESS) == 0, "access shouldn't be special");
   if (!access.is_oop()) {
     return result;
   }
@@ -142,13 +145,11 @@ Node* CardTableBarrierSetC2::atomic_xchg_at_resolved(C2AtomicParseAccess& access
 
 Node* CardTableBarrierSetC2::byte_map_base_node(IdealKit* kit) const {
   // Get base of card map
-#if INCLUDE_CDS
-  if (AOTCodeCache::is_on_for_dump()) {
+  if (Compile::current()->is_aot_compile()) {
     // load the card table address from the AOT Runtime Constants area
     Node* byte_map_base_adr = kit->makecon(TypeRawPtr::make(AOTRuntimeConstants::card_table_base_address()));
     return kit->load_aot_const(byte_map_base_adr, TypeRawPtr::NOTNULL);
   }
-#endif
   CardTable::CardValue* card_table_base = ci_card_table_address_const();
    if (card_table_base != nullptr) {
      return kit->makecon(TypeRawPtr::make((address)card_table_base, relocInfo::none));
