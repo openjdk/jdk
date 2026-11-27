@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
 import java.security.Provider;
 import java.security.PublicKey;
+import java.security.Security;
 import java.util.Arrays;
 import java.util.Random;
 import javax.crypto.BadPaddingException;
@@ -135,6 +136,7 @@ public class TestRSACipher extends PKCS11Test {
     }
 
     public static void main(String[] args) throws Exception {
+        Security.setProperty("jdk.crypto.disabledAlgorithms", "");
         main(new TestRSACipher(), args);
     }
 

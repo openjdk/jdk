@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,7 @@
  * questions.
  */
 
+import java.security.Security;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLException;
@@ -31,6 +32,7 @@ import javax.net.ssl.SSLException;
 public class EnginesClosureTest extends SSLEngineTestCase {
 
     public static void main(String[] args) {
+        Security.setProperty("jdk.crypto.disabledAlgorithms", "");
         EnginesClosureTest test = new EnginesClosureTest();
         setUpAndStartKDCIfNeeded();
         test.runTests();

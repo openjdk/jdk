@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * @summary encryption/decryption test for OAEP
  * @author Andreas Sterbenz
  * @key randomness
+ * @run main/othervm TestOAEP
  */
 
 import java.util.*;
@@ -46,7 +47,9 @@ public class TestOAEP {
     private static Random random = new Random();
 
     public static void main(String[] args) throws Exception {
+        Security.setProperty("jdk.crypto.disabledAlgorithms", "");
         long start = System.currentTimeMillis();
+
         cp = Security.getProvider(System.getProperty("test.provider.name", "SunJCE"));
         System.out.println("Testing provider " + cp.getName() + "...");
         Provider kfp = Security.getProvider(

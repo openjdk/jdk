@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,11 +37,11 @@
  *          java.security.jgss/sun.security.krb5.internal.ktab
  *          java.base/sun.security.util
  * @run main/othervm -Dtest.security.protocol=TLSv1.2
- *     -Dtest.mode=norm TLSEnginesClosureTest
+ *     -Dtest.mode=norm -Djava.security.properties=${test.src}/java.security TLSEnginesClosureTest
  * @run main/othervm -Dtest.security.protocol=TLSv1.2
- *     -Dtest.mode=norm_sni TLSEnginesClosureTest
+ *     -Dtest.mode=norm_sni -Djava.security.properties=${test.src}/java.security TLSEnginesClosureTest
  * @run main/othervm -Dtest.security.protocol=TLSv1.2
- *     -Dtest.mode=krb TLSEnginesClosureTest
+ *     -Dtest.mode=krb -Djava.security.properties=${test.src}/java.security TLSEnginesClosureTest
  */
 
 /**

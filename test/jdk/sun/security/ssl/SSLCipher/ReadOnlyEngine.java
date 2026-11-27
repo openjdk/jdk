@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -197,6 +197,7 @@ public class ReadOnlyEngine {
 
     public static void main(String[] args) throws Exception {
         Security.setProperty("jdk.tls.disabledAlgorithms", "");
+        Security.setProperty("jdk.crypto.disabledAlgorithms", "");
         new ReadOnlyEngine(SSLContext.getInstance("TLSv1.3"),
             "TLS_AES_256_GCM_SHA384");
         new ReadOnlyEngine(SSLContext.getInstance("TLSv1.3"),

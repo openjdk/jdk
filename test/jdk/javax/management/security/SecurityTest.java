@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -142,6 +142,7 @@ public class SecurityTest {
      * map  (argName, value) format, then calls original test's run method.
      */
     public static void main(String args[]) throws Exception {
+        Security.setProperty("jdk.crypto.disabledAlgorithms", "");
         // Disable default KeyManager's certificate checking so we can use
         // a certificate signed with MD5withRSA algorithm.
         System.setProperty("jdk.tls.SunX509KeyManager.certChecking", "false");
@@ -534,6 +535,7 @@ public class SecurityTest {
         private MBeanServerConnection mbsc = null;
 
         public static void main(String args[]) throws Exception {
+            Security.setProperty("jdk.crypto.disabledAlgorithms", "");
             // Disable default KeyManager's certificate checking so we can use
             // a certificate signed with MD5withRSA algorithm.
             System.setProperty("jdk.tls.SunX509KeyManager.certChecking",

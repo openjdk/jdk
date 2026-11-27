@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,10 @@
  * @bug 6220064
  * @summary make sure everything works ok in the Turkish local (dotted/dotless i problem)
  * @author Andreas Sterbenz
+ * @run main/othervm Turkish
  */
 
+import java.security.Security;
 import java.util.Locale;
 
 import javax.crypto.Cipher;
@@ -35,6 +37,7 @@ import javax.crypto.Cipher;
 public class Turkish {
 
     public static void main(String[] args) throws Exception {
+        Security.setProperty("jdk.crypto.disabledAlgorithms", "");
         Locale reservedLocale = Locale.getDefault();
         try {
             Locale.setDefault(Locale.of("tr", "TR"));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,6 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+import java.security.Security;
 import java.util.Arrays;
 import java.util.stream.Stream;
 import javax.net.ssl.SSLServerSocket;
@@ -82,6 +83,7 @@ public class SystemPropCipherSuitesOrder extends SSLSocketTemplate {
     private static String[] clientcipherSuites;
 
     public static void main(String[] args) {
+        Security.setProperty("jdk.crypto.disabledAlgorithms", "");
         servercipherSuites
                 = toArray(System.getProperty("jdk.tls.server.cipherSuites"));
         clientcipherSuites

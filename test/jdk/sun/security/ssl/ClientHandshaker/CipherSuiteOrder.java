@@ -199,6 +199,7 @@ public class CipherSuiteOrder {
         // reset the security property to make sure that the algorithms
         // and keys used in this test are not disabled.
         Security.setProperty("jdk.tls.disabledAlgorithms", "");
+        Security.setProperty("jdk.crypto.disabledAlgorithms", "");
 
         String keyFilename =
             System.getProperty("test.src", "./") + "/" + pathToStores +

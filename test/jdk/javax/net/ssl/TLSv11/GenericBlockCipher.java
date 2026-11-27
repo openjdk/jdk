@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@
 
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.security.Security;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLSocket;
@@ -172,6 +173,7 @@ public class GenericBlockCipher {
     volatile Exception clientException = null;
 
     public static void main(String[] args) throws Exception {
+        Security.setProperty("jdk.crypto.disabledAlgorithms", "");
         // Re-enable TLSv1.1 and TLS_RSA_* since test depends on it.
         SecurityUtils.removeFromDisabledTlsAlgs("TLSv1.1", "TLS_RSA_*");
 

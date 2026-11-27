@@ -60,6 +60,7 @@ public class Deterministic {
     private static int hash = 0;
 
     public static void main(String[] args) throws Exception {
+        Security.setProperty("jdk.crypto.disabledAlgorithms", "");
 
         for (var p : Security.getProviders()) {
             var name = p.getName();

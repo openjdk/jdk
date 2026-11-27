@@ -30,6 +30,7 @@
  *     absent from the SunMSCAPI provider in OpenJDK builds.
  * @requires os.family == "windows"
  * @library /test/lib/
+ * @run main/othervm RSAEncryptDecrypt
  */
 
 import jtreg.SkippedException;
@@ -39,11 +40,13 @@ import java.security.GeneralSecurityException;
 import java.security.KeyPairGenerator;
 import java.security.KeyPair;
 import java.security.Key;
+import java.security.Security;
 
 public class RSAEncryptDecrypt {
     public static final byte[] PLAINTEXT = {1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6};
 
     public static void main(String[] args) throws Exception {
+        Security.setProperty("jdk.crypto.disabledAlgorithms", "");
 
         KeyPairGenerator generator =
             KeyPairGenerator.getInstance("RSA", "SunMSCAPI");

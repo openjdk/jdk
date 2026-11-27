@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,12 +36,12 @@
  *          java.security.jgss/sun.security.krb5.internal.crypto
  *          java.security.jgss/sun.security.krb5.internal.ktab
  *          java.base/sun.security.util
- * @run main/othervm -Dtest.security.protocol=DTLS
- *      -Dtest.mode=norm DTLSHandshakeTest
- * @run main/othervm -Dtest.security.protocol=DTLS
- *      -Dtest.mode=norm_sni DTLSHandshakeTest
- * @run main/othervm -Dtest.security.protocol=DTLS
- *      -Dtest.mode=krb DTLSHandshakeTest
+ * @run main/othervm -Dtest.security.protocol=DTLS -Dtest.mode=norm
+        -Djava.security.properties=${test.src}/java.security DTLSHandshakeTest
+ * @run main/othervm -Dtest.security.protocol=DTLS -Dtest.mode=norm_sni
+        -Djava.security.properties=${test.src}/java.security DTLSHandshakeTest
+ * @run main/othervm -Dtest.security.protocol=DTLS -Dtest.mode=krb
+        -Djava.security.properties=${test.src}/java.security DTLSHandshakeTest
  */
 
 /**

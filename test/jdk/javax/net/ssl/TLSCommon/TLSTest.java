@@ -151,6 +151,7 @@ public class TLSTest {
     private volatile static boolean clientRenegoReady = false;
 
     public static void main(String[] args) throws Exception {
+        Security.setProperty("jdk.crypto.disabledAlgorithms", "");
         if (debug) {
             System.setProperty("javax.net.debug", "ssl,handshake");
         }

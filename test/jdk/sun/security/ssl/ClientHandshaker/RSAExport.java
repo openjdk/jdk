@@ -427,6 +427,7 @@ public class RSAExport {
         // and keys used in this test are not disabled.
         Security.setProperty("jdk.certpath.disabledAlgorithms", "MD2");
         Security.setProperty("jdk.tls.disabledAlgorithms", "MD2");
+        Security.setProperty("jdk.crypto.disabledAlgorithms", "");
 
         if (debug)
             System.setProperty("javax.net.debug", "all");

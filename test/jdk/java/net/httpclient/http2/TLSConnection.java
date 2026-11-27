@@ -72,6 +72,7 @@ public class TLSConnection {
     }
 
     public static void main(String[] args) throws Exception {
+        Security.setProperty("jdk.crypto.disabledAlgorithms", "");
         // re-enable 3DES
         Security.setProperty("jdk.tls.disabledAlgorithms", "");
 
