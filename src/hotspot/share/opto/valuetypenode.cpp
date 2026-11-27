@@ -2189,18 +2189,18 @@ void LoadFlatNode::expand_atomic(PhaseIterGVN& igvn) const {
   // G1: does not care about oop loads.
   // Shenandoah: LBE, needs special handling.
   // Z: does not produce flat atomics on this shape.
-  assert(!has_oops || !UseZGC, "ZGC does not have special loads with oops");
-  bool needs_special = has_oops && UseShenandoahGC;
+  assert(!has_oops || !UseZGC, "ZGC does not have loads with embedded oops");
+  bool needs_embedded_oop_handling = has_oops && UseShenandoahGC;
 
   BasicType payload_bt = _vk->atomic_size_to_basic_type(_null_free);
-  assert(!needs_special || payload_bt == T_LONG, "Unexpected payload type");
+  assert(!needs_embedded_oop_handling || payload_bt == T_LONG, "Unexpected payload type");
 
   kit.insert_mem_bar(Op_MemBarCPUOrder);
   Node* load = kit.access_load_at(base, ptr, TypeRawPtr::BOTTOM, Type::get_const_basic_type(payload_bt), payload_bt,
-                                  _decorators | C2_MISMATCHED | C2_CONTROL_DEPENDENT_LOAD | C2_UNKNOWN_CONTROL_LOAD | (needs_special ? C2_EMBEDDED_OOPS : 0),
+                                  _decorators | C2_MISMATCHED | C2_CONTROL_DEPENDENT_LOAD | C2_UNKNOWN_CONTROL_LOAD | (needs_embedded_oop_handling ? C2_EMBEDDED_OOPS : 0),
                                   kit.control());
-  if (needs_special) {
-    assert(load->Opcode() == Op_LoadLWithNarrowOops, "must be special");
+  if (needs_embedded_oop_handling) {
+    assert(load->Opcode() == Op_LoadLWithNarrowOops, "must have embedded oops");
     Node* oop_offset_node = (oop_off_2 == -1) ? igvn.intcon(oop_off_1) : igvn.intcon(-1);
     load->add_req(oop_offset_node);
   }
@@ -2458,19 +2458,19 @@ void StoreFlatNode::expand_atomic(PhaseIterGVN& igvn) const {
   // G1: LBE, needs special handling.
   // Shenandoah: LBE, needs special handling.
   // Z: does not produce flat atomics on this shape.
-  assert(!has_oops || !UseZGC, "ZGC does not have special stores with oops");
-  bool needs_special = has_oops && (UseG1GC || UseShenandoahGC);
+  assert(!has_oops || !UseZGC, "ZGC does not have stores with embedded oops");
+  bool needs_embedded_oop_handling = has_oops && (UseG1GC || UseShenandoahGC);
 
   BasicType payload_bt = vk->atomic_size_to_basic_type(_null_free);
-  assert(!needs_special || payload_bt == T_LONG, "Unexpected payload type");
+  assert(!needs_embedded_oop_handling || payload_bt == T_LONG, "Unexpected payload type");
 
   kit.insert_mem_bar(Op_MemBarCPUOrder);
   Node* store = kit.access_store_at(base, ptr, TypeRawPtr::BOTTOM, payload, Type::get_const_basic_type(payload_bt), payload_bt,
-                                    _decorators | C2_MISMATCHED | (needs_special ? C2_EMBEDDED_OOPS : 0),
+                                    _decorators | C2_MISMATCHED | (needs_embedded_oop_handling ? C2_EMBEDDED_OOPS : 0),
                                     true, value);
-  if (needs_special) {
-    assert(store->Opcode() == Op_StoreLWithNarrowOops, "must be special");
-    assert(!oop_1->is_top(), "if no oop, the store shouldn't be special");
+  if (needs_embedded_oop_handling) {
+    assert(store->Opcode() == Op_StoreLWithNarrowOops, "must have embedded oops");
+    assert(!oop_1->is_top(), "if no oop, the store shouldn't need embedded oop handling");
     Node* oop_offset_node = (oop_off_2 == -1) ? igvn.intcon(oop_off_1) : igvn.C->top();
     store->add_req(oop_offset_node);
     store->add_req(oop_1);
