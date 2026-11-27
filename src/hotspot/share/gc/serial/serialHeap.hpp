@@ -108,7 +108,7 @@ private:
   bool _is_heap_almost_full;
 
   void do_full_collection(bool clear_all_soft_refs) override;
-  void do_full_collection_internal(bool clear_all_soft_refs, size_t old_capacity_at_prologue);
+  void do_full_collection_internal(bool clear_all_soft_refs, size_t old_capacity_at_collection_start);
 
   bool is_young_gc_safe() const;
 
@@ -133,7 +133,7 @@ private:
   // in other generations, it should call this method.
   void save_marks();
 
-  bool upgrade_to_full_collection(size_t old_capacity_at_prologue) const;
+  bool upgrade_to_full_collection(size_t old_capacity_at_collection_start) const;
 
 public:
   // Returns JNI_OK on success

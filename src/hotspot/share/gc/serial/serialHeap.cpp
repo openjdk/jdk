@@ -513,14 +513,17 @@ void SerialHeap::scan_evacuated_objs(YoungGenScanClosure* young_cl,
   guarantee(young_gen()->promo_failure_scan_is_complete(), "Failed to finish scan");
 }
 
-bool SerialHeap::upgrade_to_full_collection(size_t old_capacity_at_prologue) const {
-  if (_gc_cause == GCCause::_wb_young_gc) {
+bool SerialHeap::upgrade_to_full_collection(size_t old_capacity_at_collection_start) const {
+  bool should_run_young_gc_only = (gc_cause() == GCCause::_wb_young_gc)
+                    DEBUG_ONLY(|| (gc_cause() == GCCause::_scavenge_alot));
+
+  if (should_run_young_gc_only) {
     return false;
   }
 
-  if (old_capacity_at_prologue < _old_gen->capacity()) {
-    log_trace(gc)("TenuredGeneration::upgrade_to_full_collection: old gen capacity_at_prologue: %zu < old gen capacity: %zu",
-                  old_capacity_at_prologue, _old_gen->capacity());
+  if (old_capacity_at_collection_start < _old_gen->capacity()) {
+    log_trace(gc)("SerialHeap::upgrade_to_full_collection: old gen capacity at collection start: %zu < old gen capacity: %zu",
+                  old_capacity_at_collection_start, _old_gen->capacity());
     return true;
   }
 
@@ -528,7 +531,7 @@ bool SerialHeap::upgrade_to_full_collection(size_t old_capacity_at_prologue) con
   // be a percentage of the capacity.
   const size_t min_free_bytes = 10000;
   if (_old_gen->free() < min_free_bytes) {
-    log_trace(gc)("TenuredGeneration::upgrade_to_full_collection: free %zu < %zu", _old_gen->free(), min_free_bytes);
+    log_trace(gc)("SerialHeap::upgrade_to_full_collection: free %zu < %zu", _old_gen->free(), min_free_bytes);
     return true;
   }
 
@@ -539,15 +542,15 @@ void SerialHeap::collect_at_safepoint(bool full) {
   assert(!GCLocker::is_active(), "precondition");
   bool clear_soft_refs = GCCause::should_clear_all_soft_refs(_gc_cause);
 
-  size_t old_capacity_at_prologue = _old_gen->capacity();
+  size_t old_capacity_at_collection_start = _old_gen->capacity();
   if (!full) {
     bool success = do_young_collection(clear_soft_refs);
     // Potentially upgrade to Full-GC regardless of success.
-    if (success && !upgrade_to_full_collection(old_capacity_at_prologue)) {
+    if (success && !upgrade_to_full_collection(old_capacity_at_collection_start)) {
       return;
     }
   }
-  do_full_collection_internal(clear_soft_refs, old_capacity_at_prologue);
+  do_full_collection_internal(clear_soft_refs, old_capacity_at_collection_start);
 }
 
 // public collection interfaces
@@ -579,7 +582,7 @@ void SerialHeap::do_full_collection(bool clear_all_soft_refs) {
   do_full_collection_internal(clear_all_soft_refs, _old_gen->capacity());
 }
 
-void SerialHeap::do_full_collection_internal(bool clear_all_soft_refs, size_t old_capacity_at_prologue) {
+void SerialHeap::do_full_collection_internal(bool clear_all_soft_refs, size_t old_capacity_at_collection_start) {
   IsSTWGCActiveMark gc_active_mark;
   SvcGCMarker sgcm(SvcGCMarker::FULL);
   GCIdMark gc_id_mark;
@@ -620,7 +623,7 @@ void SerialHeap::do_full_collection_internal(bool clear_all_soft_refs, size_t ol
   COMPILER2_PRESENT(DerivedPointerTable::update_pointers());
 
   // Adjust generation sizes.
-  _old_gen->compute_new_size(old_capacity_at_prologue);
+  _old_gen->compute_new_size(old_capacity_at_collection_start);
   _young_gen->resize_after_full_gc();
 
   _old_gen->update_promote_stats(pre_gc_values.old_gen_used());

@@ -76,10 +76,10 @@ class TenuredGeneration: public Generation {
   // Shrink generation with specified size
   void shrink(size_t bytes);
 
-  void compute_new_size_inner(size_t old_gen_capacity_at_prologue);
+  void compute_new_size_inner(size_t old_capacity_at_collection_start);
 
 public:
-  void compute_new_size(size_t old_gen_capacity_at_prologue);
+  void compute_new_size(size_t old_capacity_at_collection_start);
 
   ContiguousSpace* space() const { return _the_space; }
 

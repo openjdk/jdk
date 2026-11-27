@@ -141,7 +141,7 @@ void TenuredGeneration::shrink(size_t bytes) {
                       name(), old_mem_size/K, new_mem_size/K);
 }
 
-void TenuredGeneration::compute_new_size_inner(size_t old_capacity_at_prologue) {
+void TenuredGeneration::compute_new_size_inner(size_t old_capacity_at_collection_start) {
   assert(_shrink_factor <= 100, "invalid shrink factor");
   size_t current_shrink_factor = _shrink_factor;
   if (ShrinkHeapInSteps) {
@@ -205,8 +205,8 @@ void TenuredGeneration::compute_new_size_inner(size_t old_capacity_at_prologue) 
     maximum_desired_capacity = MAX2(maximum_desired_capacity, OldSize);
     log_trace(gc, heap)("    maximum_free_percentage: %6.2f  minimum_used_percentage: %6.2f",
                              maximum_free_percentage, minimum_used_percentage);
-    log_trace(gc, heap)("    capacity_at_prologue: %6.1fK  minimum_desired_capacity: %6.1fK  maximum_desired_capacity: %6.1fK",
-                             old_capacity_at_prologue / (double) K,
+    log_trace(gc, heap)("    old_capacity_at_collection_start: %6.1fK  minimum_desired_capacity: %6.1fK  maximum_desired_capacity: %6.1fK",
+                             old_capacity_at_collection_start / (double) K,
                              minimum_desired_capacity / (double) K,
                              maximum_desired_capacity / (double) K);
     assert(minimum_desired_capacity <= maximum_desired_capacity,
@@ -241,17 +241,17 @@ void TenuredGeneration::compute_new_size_inner(size_t old_capacity_at_prologue) 
     }
   }
 
-  if (capacity_after_gc > old_capacity_at_prologue) {
+  if (capacity_after_gc > old_capacity_at_collection_start) {
     // We might have expanded for promotions, in which case we might want to
     // take back that expansion if there's room after GC.  That keeps us from
     // stretching the heap with promotions when there's plenty of room.
-    size_t expansion_for_promotion = capacity_after_gc - old_capacity_at_prologue;
+    size_t expansion_for_promotion = capacity_after_gc - old_capacity_at_collection_start;
     expansion_for_promotion = MIN2(expansion_for_promotion, max_shrink_bytes);
     // We have two shrinking computations, take the largest
     shrink_bytes = MAX2(shrink_bytes, expansion_for_promotion);
     assert(shrink_bytes <= max_shrink_bytes, "invalid shrink size");
-    log_trace(gc, heap)("    aggressive shrinking:  capacity_at_prologue: %.1fK  capacity_after_gc: %.1fK  expansion_for_promotion: %.1fK  shrink_bytes: %.1fK",
-                        old_capacity_at_prologue / (double) K,
+    log_trace(gc, heap)("    aggressive shrinking:  old_capacity_at_collection_start: %.1fK  capacity_after_gc: %.1fK  expansion_for_promotion: %.1fK  shrink_bytes: %.1fK",
+                        old_capacity_at_collection_start / (double) K,
                         capacity_after_gc / (double) K,
                         expansion_for_promotion / (double) K,
                         shrink_bytes / (double) K);
@@ -332,14 +332,14 @@ TenuredGeneration::TenuredGeneration(ReservedSpace rs,
                                        _the_space->capacity());
 }
 
-void TenuredGeneration::compute_new_size(size_t old_capacity_at_prologue) {
+void TenuredGeneration::compute_new_size(size_t old_capacity_at_collection_start) {
   assert_locked_or_safepoint(Heap_lock);
 
   // Compute some numbers about the state of the heap.
   const size_t used_after_gc = used();
   const size_t capacity_after_gc = capacity();
 
-  compute_new_size_inner(old_capacity_at_prologue);
+  compute_new_size_inner(old_capacity_at_collection_start);
 
   assert(used() == used_after_gc && used_after_gc <= capacity(),
          "used: %zu used_after_gc: %zu"
