@@ -44,7 +44,7 @@ class JvmtiAgentLibraryManager : AllStatic {
   static int lookup(const void* handle, const char* static_name) NOT_JVMTI_RETURN_(0);
   static JvmtiAgentLibrary* intern(const void* handle,
                                    const char* static_name,
-                                   bool* inserted) NOT_JVMTI_RETURN_(nullptr);
+                                   bool& inserted) NOT_JVMTI_RETURN_(nullptr);
   static address lookup_native_entry(const char* name) NOT_JVMTI_RETURN_(nullptr);
 
  public:

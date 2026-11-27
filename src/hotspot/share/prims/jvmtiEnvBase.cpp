@@ -209,6 +209,7 @@ JvmtiEnvBase::JvmtiEnvBase(jint version) : _env_event_enable() {
   _native_method_prefixes = nullptr;
   _next = nullptr;
   _class_file_load_hook_ever_enabled = false;
+  _agent = nullptr;
 
   // Moot since ClassFileLoadHook not yet enabled.
   // But "true" will give a more predictable ClassFileLoadHook behavior
@@ -275,7 +276,11 @@ JvmtiEnvBase::env_dispose() {
     tag_map_to_clear->clear();
   }
 
-  JvmtiAgentManager::on_env_disposal(jvmti_external());
+  JvmtiAgent* const agent = _agent;
+  if (agent != nullptr) {
+    _agent = nullptr;
+    JvmtiAgentManager::on_env_disposal(agent);
+  }
 
   _needs_clean_up = true;
 }

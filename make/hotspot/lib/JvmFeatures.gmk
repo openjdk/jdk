@@ -95,7 +95,7 @@ ifneq ($(call check-jvm-feature, jvmti), true)
       evmCompat.cpp jvmtiEnter.xsl jvmtiExport.cpp \
       jvmtiClassFileReconstituter.cpp jvmtiTagMapTable.cpp jvmtiAgent.cpp \
       jvmtiAgentManager.cpp jvmtiAgentLibrary.cpp jvmtiAgentLibraryManager.cpp \
-      jvmtiAgentInvoker.cpp jvmtiAgentStartupRequest.cpp \
+      jvmtiAgentInvoker.cpp \
       jfrJvmtiAgent.cpp jfrJvmtiAgentEvent.cpp
 endif
 

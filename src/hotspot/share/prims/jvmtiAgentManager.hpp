@@ -25,12 +25,13 @@
 #ifndef SHARE_PRIMS_JVMTIAGENTMANAGER_HPP
 #define SHARE_PRIMS_JVMTIAGENTMANAGER_HPP
 
-#include "jvmtifiles/jvmti.h"
 #include "memory/allStatic.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/ticks.hpp"
 
 class JavaThread;
 class JvmtiAgent;
+class JvmtiEnvBase;
 class outputStream;
 
 class JvmtiAgentManager : AllStatic {
@@ -43,7 +44,6 @@ class JvmtiAgentManager : AllStatic {
   enum class StartResult { Retained, Discarded };
   static StartResult start(JvmtiAgent* agent, outputStream* st = nullptr);
   static void start();
-  static void start_xrun();
 
  public:
   static void on_argument_parse(const char* name,
@@ -83,11 +83,12 @@ class JvmtiAgentManager : AllStatic {
   static Iterator native_agents() NOT_JVMTI({ Iterator it; return it; });
   static Iterator xrun_agents() NOT_JVMTI({ Iterator it; return it; });
 
-  static void on_env_creation(const jvmtiEnv* env) NOT_JVMTI_RETURN;
-  static void on_env_disposal(const jvmtiEnv* env) NOT_JVMTI_RETURN;
+  static void on_env_creation(JavaThread* thread, JvmtiEnvBase* env) NOT_JVMTI_RETURN;
+  static void on_env_disposal(JvmtiAgent* agent) NOT_JVMTI_RETURN;
 
-  static JvmtiAgent* begin_initialization_timing(const jvmtiEnv* env) NOT_JVMTI_RETURN_(nullptr);
-  static void end_initialization_timing(JvmtiAgent* agent) NOT_JVMTI_RETURN;
+  static JvmtiAgent* prepare_vm_init_timing(const JvmtiEnvBase* env) NOT_JVMTI_RETURN_(nullptr);
+  static void finish_vm_init_timing(JvmtiAgent* agent, bool callback_completed,
+                                    const Ticks& start, const Ticks& end) NOT_JVMTI_RETURN;
 
   static void start_agents() NOT_JVMTI_RETURN;
   static void start_xrun_agents() NOT_JVMTI_RETURN;

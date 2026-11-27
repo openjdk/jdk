@@ -22,11 +22,11 @@
  */
 
 #include "jvm.h"
-#include "logging/log.hpp"
 #include "prims/jvmtiAgent.hpp"
 #include "prims/jvmtiAgentLibrary.hpp"
 #include "prims/jvmtiAgentLibraryManager.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -66,16 +66,14 @@ int JvmtiAgentLibraryManager::lookup(const void* handle, const char* static_name
 
 JvmtiAgentLibrary* JvmtiAgentLibraryManager::intern(const void* handle,
                                                     const char* static_name,
-                                                    bool* inserted) {
+                                                    bool& inserted) {
   assert(handle != nullptr, "invariant");
   ConditionalMutexLocker lock(Thread::current_or_null_safe(), JvmtiThreadState_lock, is_not_vm_bootstrap());
   if (_libraries == nullptr) {
     _libraries = new JvmtiAgentLibraryList(16);
   }
   const int location = lookup(handle, static_name);
-  if (inserted != nullptr) {
-    *inserted = location == -1;
-  }
+  inserted = location == -1;
   if (location != -1) {
     return _libraries->at(location);
   }
@@ -155,36 +153,6 @@ static bool build_platform_specific_library_name(const char* os_lib_name, char* 
   return os::dll_build_name(buffer, JVM_MAXPATHLEN, os_lib_name);
 }
 
-static char* prepare_library_load_name(const char* name, bool is_absolute_path, bool* in_std_dll_dir) {
-  assert(name != nullptr, "invariant");
-  if (in_std_dll_dir != nullptr) {
-    *in_std_dll_dir = false;
-  }
-  char* const buffer = NEW_C_HEAP_ARRAY(char, JVM_MAXPATHLEN, mtServiceability);
-  if (is_absolute_path) {
-    const size_t length = strlen(name);
-    if (length >= JVM_MAXPATHLEN) {
-      log_error(jvmti)("Agent library path is too long: %zu bytes (maximum %zu bytes)",
-                       length, static_cast<size_t>(JVM_MAXPATHLEN - 1));
-      deallocate(buffer);
-      return nullptr;
-    }
-    memcpy(buffer, name, length + 1);
-    return buffer;
-  }
-  if (resolve_to_platform_specific_absolute_path_in_std_dll_dir(name, buffer)) {
-    if (in_std_dll_dir != nullptr) {
-      *in_std_dll_dir = true;
-    }
-    return buffer;
-  }
-  if (build_platform_specific_library_name(name, buffer)) {
-    return buffer;
-  }
-  deallocate(buffer);
-  return nullptr;
-}
-
 static const char* not_found_error_msg = "Could not find agent library ";
 static const char* missing_module_error_msg = "\nModule java.instrument may be missing from runtime image.";
 
@@ -215,25 +183,33 @@ static const void* load_library(const char* name, bool is_absolute_path, bool is
   if (is_static) {
     return os::get_default_process_handle();
   }
+  const char* load_name = name;
+  char* path_buffer = nullptr;
   bool in_std_dll_dir = false;
-  char* const path = prepare_library_load_name(name, is_absolute_path, &in_std_dll_dir);
-  if (path == nullptr) {
-    if (vm_exit_on_error) {
-      exit_on_load_error(name, ", unable to resolve library path");
+  if (!is_absolute_path) {
+    path_buffer = NEW_C_HEAP_ARRAY(char, JVM_MAXPATHLEN, mtServiceability);
+    in_std_dll_dir = resolve_to_platform_specific_absolute_path_in_std_dll_dir(name, path_buffer);
+    if (!in_std_dll_dir && !build_platform_specific_library_name(name, path_buffer)) {
+      deallocate(path_buffer);
+      if (vm_exit_on_error) {
+        exit_on_load_error(name, ", unable to resolve library path");
+      }
+      st->print_cr("Unable to resolve agent library path: path is invalid or too long.");
+      return nullptr;
     }
-    st->print_cr("Unable to resolve agent library path: path is invalid or too long.");
-    return nullptr;
+    load_name = path_buffer;
   }
+
   char ebuf[1024] = {0};
-  const void* handle = os::dll_load(path, &ebuf[0], sizeof ebuf);
-  if (handle == nullptr && in_std_dll_dir) {
-    // On failure loading a file from the JDK directory,
-    // retain the normal library-search fallback for relative names.
-    if (build_platform_specific_library_name(name, path)) {
-      handle = os::dll_load(path, &ebuf[0], sizeof ebuf);
-    }
+  const void* handle = os::dll_load(load_name, &ebuf[0], sizeof ebuf);
+  // Keep the library-search fallback if the file in the JDK directory could not be loaded.
+  if (handle == nullptr && in_std_dll_dir &&
+      build_platform_specific_library_name(name, path_buffer)) {
+    handle = os::dll_load(path_buffer, &ebuf[0], sizeof ebuf);
   }
-  deallocate(path);
+  if (path_buffer != nullptr) {
+    deallocate(path_buffer);
+  }
   if (handle == nullptr) {
     on_load_error(name, is_absolute_path, vm_exit_on_error, &ebuf[0], st);
     return nullptr;
@@ -258,70 +234,83 @@ JvmtiAgentLibrary* JvmtiAgentLibraryManager::load(const JvmtiAgent* agent,
   }
   char* const static_name = is_static ? normalize_static_name(name, is_absolute_path) : nullptr;
   assert(!is_static || static_name != nullptr, "invariant");
-  JvmtiAgentLibrary* const library = intern(handle, static_name, initial_load);
+  bool inserted = false;
+  JvmtiAgentLibrary* const library = intern(handle, static_name, inserted);
   FREE_C_HEAP_ARRAY(static_name);
+  if (initial_load != nullptr) {
+    *initial_load = inserted;
+  }
+  if (!is_static && !inserted) {
+    // Release the extra loader reference; the existing library retains its own.
+    os::dll_unload(const_cast<void*>(handle));
+  }
   return library;
 }
+
+// Append-only registry of distinct handles in first successful startup order.
+// Publishing the tail makes the head and all preceding links visible to readers.
+static JvmtiAgentLibrary* _native_lookup_head = nullptr;
+static JvmtiAgentLibrary* volatile _native_lookup_tail = nullptr;
 
 void JvmtiAgentLibraryManager::register_for_native_lookup(JvmtiAgentLibrary* library) {
   assert(library != nullptr, "invariant");
   DEBUG_ONLY(assert_exclusivity();)
   assert(library->_unload_registered, "invariant");
   assert(_libraries != nullptr, "invariant");
-  if (!library->_native_lookup_registered) {
-    const int location = _libraries->find(library);
-    assert(location != -1, "library must have been added on intern");
-    // This move preserves the native lookup order.
-    _libraries->remove_at(location);
-    _libraries->append(library);
-    library->_native_lookup_registered = true;
+  if (library->_native_lookup_registered) {
+    return;
   }
-}
 
-using JvmtiConstLibraryList = GrowableArrayCHeap<const JvmtiAgentLibrary*, mtServiceability>;
+  // Preserve the library list order used by Agent_OnUnload_entry_points().
+  const int location = _libraries->find(library);
+  assert(location != -1, "invariant");
+  _libraries->remove_at(location);
+  _libraries->append(library);
+  library->_native_lookup_registered = true;
+
+  // Static agents share the process handle, so native-method lookup
+  // needs only one list entry for that handle.
+  for (const JvmtiAgentLibrary* registered = _native_lookup_head;
+       registered != nullptr; registered = registered->_native_lookup_next) {
+    if (registered->shares_handle(library)) {
+      return;
+    }
+  }
+
+  assert(library->_native_lookup_next == nullptr, "invariant");
+  JvmtiAgentLibrary* const tail = AtomicAccess::load(&_native_lookup_tail);
+  if (tail == nullptr) {
+    _native_lookup_head = library;
+  } else {
+    tail->_native_lookup_next = library;
+  }
+  AtomicAccess::release_store(&_native_lookup_tail, library);
+}
 
 address JvmtiAgentLibraryManager::lookup_native_entry(const char* name) {
   assert(name != nullptr, "invariant");
-  JvmtiConstLibraryList snapshot;
-
-  // Static agent libraries have distinct entry points but share a handle.
-  // Therefore, for native lookup, one static library representative suffices.
-  const auto contains_handle = [&snapshot](const JvmtiAgentLibrary* library) {
-    for (int index = 0; index < snapshot.length(); ++index) {
-      if (snapshot.at(index)->shares_handle(library)) {
-        return true;
-      }
-    }
-    return false;
-  };
-
-  {
-    ConditionalMutexLocker lock(Thread::current_or_null_safe(), JvmtiThreadState_lock, is_not_vm_bootstrap());
-    if (_libraries != nullptr) {
-      for (int index = 0; index < _libraries->length(); ++index) {
-        const JvmtiAgentLibrary* const library = _libraries->at(index);
-        if (library->_native_lookup_registered && !contains_handle(library)) {
-          snapshot.append(library);
-        }
-      }
-    }
+  const JvmtiAgentLibrary* const captured_tail = AtomicAccess::load_acquire(&_native_lookup_tail);
+  if (captured_tail == nullptr) {
+    return nullptr;
   }
 
-  for (int index = 0; index < snapshot.length(); ++index) {
-    address const entry = (address)snapshot.at(index)->resolve(name);
-    if (entry != nullptr) {
+  assert(_native_lookup_head != nullptr, "invariant");
+  const JvmtiAgentLibrary* library = _native_lookup_head;
+  while (true) {
+    assert(library != nullptr, "invariant");
+    address const entry = static_cast<address>(library->resolve(name));
+    // Stop at the captured tail without reading its potentially changing next link.
+    if (entry != nullptr || library == captured_tail) {
       return entry;
     }
+    library = library->_native_lookup_next;
   }
-  return nullptr;
 }
 
 void JvmtiAgentLibraryManager::register_for_unload_notification(JvmtiAgentLibrary* library) {
   assert(library != nullptr, "invariant");
   ConditionalMutexLocker lock(Thread::current_or_null_safe(), JvmtiThreadState_lock, is_not_vm_bootstrap());
-  if (!library->_unload_registered) {
-    library->_unload_registered = true;
-  }
+  library->_unload_registered = true;
 }
 
 using JvmtiVoidList = GrowableArrayCHeap<void*, mtServiceability>;

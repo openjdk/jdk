@@ -27,7 +27,6 @@
 #include "prims/jvmtiAgentLibrary.hpp"
 #include "prims/jvmtiAgentLibraryManager.hpp"
 #include "prims/jvmtiAgentManager.hpp"
-#include "prims/jvmtiAgentStartupRequest.hpp"
 #include "prims/jvmtiEnvBase.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/atomicAccess.hpp"
@@ -35,6 +34,7 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/threads.hpp"
+#include "utilities/autoRestore.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
@@ -62,13 +62,16 @@ static void assert_exclusive_access() {
 
 using JvmtiAgentList = GrowableArrayCHeap<JvmtiAgent*, mtServiceability>;
 
-// The _xrun_agent_list is a JVM lifetime stable list holding non-converted xrun agents, if any.
-// The list provides reachability of xrun agents via JFR, jcmd VM.info, and VM error reporting.
-static JvmtiAgentList* _xrun_agent_list = nullptr;
+// Agents still using JVM_OnLoad after -Xrun conversion.
+// Published once; membership remains fixed for the VM lifetime.
+static JvmtiAgentList* volatile _xrun_agent_list = nullptr;
 
-// The on_load_phase_agent_list holds all agents coming in from argument parsing.
-// It is a FIFO queue of startup requests that wíll be drained when starting up agents.
-static JvmtiAgentList* _on_load_phase_agent_list = nullptr;
+static const JvmtiAgentList* xrun_agent_list() {
+  return AtomicAccess::load_acquire(&_xrun_agent_list);
+}
+
+// Agents collected during argument parsing, drained in startup order.
+static JvmtiAgentList* _pending_agents = nullptr;
 
 static void append(JvmtiAgent* agent, JvmtiAgentList** list) {
   assert(agent != nullptr, "invariant");
@@ -95,7 +98,7 @@ void JvmtiAgentManager::on_argument_parse(const char* name,
                                           bool is_absolute_path,
                                           bool xrun /* false */) {
   assert(is_vm_bootstrap(), "invariant");
-  append(new JvmtiAgent(name, options, is_absolute_path, xrun), &_on_load_phase_agent_list);
+  append(new JvmtiAgent(name, options, is_absolute_path, xrun), &_pending_agents);
 }
 
 void JvmtiAgentManager::disable_agent_list() {
@@ -103,11 +106,15 @@ void JvmtiAgentManager::disable_agent_list() {
   assert(!Universe::is_bootstrapping() && !Universe::is_fully_initialized(), "must do this very early");
   assert(!is_live_phase(), "invariant");
   // Pretend that no agents have been added.
-  destroy(&_on_load_phase_agent_list);
+  destroy(&_pending_agents);
 #endif
 }
 
 static JvmtiAgent* volatile _agents = nullptr;
+
+// Points to the null link where the next agent will be appended.
+// Updated during single-threaded bootstrap or under JvmtiThreadState_lock.
+static JvmtiAgent* volatile* _agent_tail_link = &_agents;
 
 static inline JvmtiAgent* agent_head() {
   return AtomicAccess::load_acquire(&_agents);
@@ -117,19 +124,11 @@ void JvmtiAgentManager::add(JvmtiAgent* agent) {
   assert(agent != nullptr, "invariant");
   assert(is_vm_bootstrap() || JvmtiThreadState_lock->owned_by_self(), "invariant");
   assert(agent->next() == nullptr, "invariant");
+  assert(AtomicAccess::load(_agent_tail_link) == nullptr, "invariant");
   agent->mark_registered();
-  // FIFO queue. Inserted nodes are never removed, and each link changes only once,
-  // from null to its successor. The release-store publishes the new node to readers
-  // acquiring the head or a successor link.
-  JvmtiAgent* volatile* tail_ptr = &_agents;
-  while (true) {
-    JvmtiAgent* const next = AtomicAccess::load_acquire(tail_ptr);
-    if (next == nullptr) {
-      AtomicAccess::release_store(tail_ptr, agent);
-      return;
-    }
-    tail_ptr = &next->_next;
-  }
+  // Publish the new agent to readers acquiring the head or a successor link.
+  AtomicAccess::release_store(_agent_tail_link, agent);
+  _agent_tail_link = &agent->_next;
 }
 
 static inline bool is_element_of(const JvmtiAgent* agent, JvmtiAgentManager::Selection selection) {
@@ -152,10 +151,11 @@ static inline bool is_element_of(const JvmtiAgent* agent, JvmtiAgentManager::Sel
 
 static inline JvmtiAgent* next_xrun_agent(int& idx) {
   assert(idx >= 0, "invariant");
-  if (_xrun_agent_list == nullptr || idx == _xrun_agent_list->length()) {
+  const JvmtiAgentList* const list = xrun_agent_list();
+  if (list == nullptr || idx == list->length()) {
     return nullptr;
   }
-  return _xrun_agent_list->at(idx++);
+  return list->at(idx++);
 }
 
 JvmtiAgent* JvmtiAgentManager::Iterator::internal_next() const {
@@ -206,20 +206,6 @@ JvmtiAgentManager::Iterator JvmtiAgentManager::xrun_agents() {
   return Iterator(Selection::XRUN);
 }
 
-static JvmtiAgent* find_registered_agent(const jvmtiEnv* env) {
-  DEBUG_ONLY(assert_exclusive_access();)
-  assert(env != nullptr, "invariant");
-  JvmtiAgentManager::Iterator agent_iter = JvmtiAgentManager::agents();
-  while (agent_iter.has_next()) {
-    JvmtiAgent* const agent = agent_iter.next();
-    if (agent->matches_env(env)) {
-      assert(agent->is_registered() && agent->is_env_associated(), "invariant");
-      return agent;
-    }
-  }
-  return nullptr;
-}
-
 static void report_disposal(JvmtiAgent* agent) {
   assert(agent != nullptr, "invariant");
   assert(agent->is_env_disposed(), "invariant");
@@ -228,56 +214,66 @@ static void report_disposal(JvmtiAgent* agent) {
   JFR_ONLY(if (agent->is_timing_finalized()) { Jfr::on_jvmti_agent_disposal(agent);})
 }
 
-void JvmtiAgentManager::on_env_creation(const jvmtiEnv* env) {
-  JvmtiAgentStartupRequest::on_env_creation(env);
-}
+// The agent currently being started on this native thread, before or after
+// JavaThread creation. Nested startups restore the previous agent.
+static THREAD_LOCAL JvmtiAgent* _startup_agent = nullptr;
 
-void JvmtiAgentManager::on_env_disposal(const jvmtiEnv* env) {
+void JvmtiAgentManager::on_env_creation(JavaThread* thread, JvmtiEnvBase* env) {
   assert(env != nullptr, "invariant");
-  DEBUG_ONLY(assert_exclusive_access();)
-  JvmtiAgent* agent = find_registered_agent(env);
-  if (agent == nullptr) {
-    agent = JvmtiAgentStartupRequest::find(env);
-  }
-  if (agent != nullptr) {
-    agent->mark_env_disposed();
-    if (agent->is_registered()) {
-      if (agent->is_timing_pending()) {
-        // Disposed before VMInit. Publish the unavailable timing values.
-        // No later initialization timestamp should be assigned to this agent.
-        agent->finalize_unavailable_timing();
-      }
-      report_disposal(agent);
-    }
-  }
-}
-
-static JvmtiAgent* find_vm_init_agent(const jvmtiEnv* env) {
-  // Dynamic agents are timed around Agent_OnAttach, even if their environment
-  // is encountered during VMInit. Do not overwrite their published timing.
-  JvmtiAgent* const agent = find_registered_agent(env);
-  return agent != nullptr && !agent->is_dynamic() ? agent : nullptr;
-}
-
-JvmtiAgent* JvmtiAgentManager::begin_initialization_timing(const jvmtiEnv* env) {
-  assert(env != nullptr, "invariant");
-  MutexLocker lock(JvmtiThreadState_lock);
-  JvmtiAgent* const agent = find_vm_init_agent(env);
-  if (agent != nullptr) {
-    assert(agent->is_timing_pending(), "invariant");
-    agent->begin_initialization_timing();
-  }
-  return agent;
-}
-
-void JvmtiAgentManager::end_initialization_timing(JvmtiAgent* agent) {
+  JvmtiAgent* const agent = _startup_agent;
   if (agent == nullptr) {
     return;
   }
+
+  assert(thread != nullptr || is_vm_bootstrap(), "invariant");
+  ConditionalMutexLocker lock(thread, JvmtiThreadState_lock, thread != nullptr);
+  if (agent->can_associate_env()) {
+    assert(env->agent() == nullptr, "invariant");
+    env->set_agent(agent);
+    agent->mark_env_associated();
+  }
+}
+
+void JvmtiAgentManager::on_env_disposal(JvmtiAgent* agent) {
+  assert(agent != nullptr, "invariant");
+  DEBUG_ONLY(assert_exclusive_access();)
+  agent->mark_env_disposed();
+  if (!agent->is_registered()) {
+    return;
+  }
+  if (agent->is_timing_pending()) {
+    // Disposed before VMInit. Publish the unavailable timing values.
+    agent->finalize_unavailable_timing();
+  }
+  report_disposal(agent);
+}
+
+JvmtiAgent* JvmtiAgentManager::prepare_vm_init_timing(const JvmtiEnvBase* env) {
+  assert(env != nullptr, "invariant");
   MutexLocker lock(JvmtiThreadState_lock);
-  assert(agent->is_timing_measuring(), "invariant");
-  agent->end_initialization_timing();
-  if (agent->is_env_disposed()) {
+  JvmtiAgent* const agent = env->agent();
+  // Dynamic agents are timed around Agent_OnAttach.
+  if (agent == nullptr || !agent->is_registered() || agent->is_dynamic()) {
+    return nullptr;
+  }
+  agent->prepare_initialization_timing();
+  return agent;
+}
+
+void JvmtiAgentManager::finish_vm_init_timing(JvmtiAgent* agent, bool callback_completed,
+                                              const Ticks& start, const Ticks& end) {
+  assert(agent != nullptr, "invariant");
+  MutexLocker lock(JvmtiThreadState_lock);
+  const bool disposed = agent->is_env_disposed();
+  if (callback_completed) {
+    agent->end_initialization_timing(start, end);
+  } else {
+    agent->cancel_initialization_timing();
+    if (disposed) {
+      agent->finalize_unavailable_timing();
+    }
+  }
+  if (disposed) {
     report_disposal(agent);
   }
 }
@@ -310,14 +306,11 @@ void JvmtiAgentManager::finalize_pending_initialization_timing() {
 JvmtiAgentManager::StartResult JvmtiAgentManager::start(JvmtiAgent* agent, outputStream* st) {
   assert(agent != nullptr, "invariant");
   assert(st == nullptr || agent->is_dynamic(), "invariant");
-  JvmtiAgentStartupRequest request(agent);
+  AutoModifyRestore<JvmtiAgent*> startup(_startup_agent, agent);
   const bool succeeded = JvmtiAgentInvoker::invoke_startup(agent, st);
   ConditionalMutexLocker lock(Thread::current_or_null_safe(), JvmtiThreadState_lock, is_not_vm_bootstrap());
   if (succeeded && !agent->is_xrun()) {
     JvmtiAgentLibraryManager::register_for_native_lookup(agent->library());
-  }
-  if (!agent->is_env_associated() && !agent->is_env_disposed()) {
-    return StartResult::Discarded;
   }
   if (agent->is_env_disposed()) {
     if (!agent->is_timing_finalized()) {
@@ -326,35 +319,32 @@ JvmtiAgentManager::StartResult JvmtiAgentManager::start(JvmtiAgent* agent, outpu
     report_disposal(agent);
     return StartResult::Discarded;
   }
+  if (!agent->is_env_associated()) {
+    return StartResult::Discarded;
+  }
   add(agent);
   return StartResult::Retained;
 }
 
-static void add_to_xrun_list(JvmtiAgent* agent) {
-  assert(agent != nullptr, "invariant");
-  assert(agent->is_xrun(), "invariant");
-  assert(!agent->is_registered(), "xrun agents are retained separately from registered agents");
-  assert(is_vm_bootstrap(), "invariant");
-  append(agent, &_xrun_agent_list);
-}
-
-// Attempt to convert -Xrun to -agentlib: if there is no JVM_OnLoad entry point.
+// Attempt to convert -Xrun to -agentlib if there is no JVM_OnLoad entry point.
 static void convert_xrun_agents() {
   assert(is_vm_bootstrap(), "invariant");
-  assert(_on_load_phase_agent_list != nullptr, "invariant");
-  for (int i = 0; i < _on_load_phase_agent_list->length();) {
-    JvmtiAgent* const agent = _on_load_phase_agent_list->at(i);
+  assert(_pending_agents != nullptr, "invariant");
+  JvmtiAgentList* legacy_agents = nullptr;
+  for (int i = 0; i < _pending_agents->length();) {
+    JvmtiAgent* const agent = _pending_agents->at(i);
     if (agent->is_xrun()) {
       JvmtiAgentInvoker::attempt_xrun_conversion(agent);
       if (agent->is_xrun()) {
-        // Conversion did not happen. Move agent to the xrun list.
-        _on_load_phase_agent_list->remove_at(i);
-        add_to_xrun_list(agent);
+        assert(!agent->is_registered(), "legacy -Xrun agents are retained separately");
+        _pending_agents->remove_at(i);
+        append(agent, &legacy_agents);
         continue;
       }
     }
     ++i;
   }
+  AtomicAccess::release_store(&_xrun_agent_list, legacy_agents);
 }
 
 class JvmtiPhaseTransition : public StackObj {
@@ -370,27 +360,26 @@ public:
 };
 
 void JvmtiAgentManager::start() {
-  assert(_on_load_phase_agent_list != nullptr, "invariant");
-  while (_on_load_phase_agent_list->is_nonempty()) {
-    JvmtiAgent* const agent = _on_load_phase_agent_list->at(0);
+  assert(_pending_agents != nullptr, "invariant");
+  while (_pending_agents->is_nonempty()) {
+    JvmtiAgent* const agent = _pending_agents->at(0);
     assert(!agent->is_xrun(), "invariant");
     const StartResult result = start(agent);
-    assert(_on_load_phase_agent_list->at(0) == agent, "invariant");
-    _on_load_phase_agent_list->remove_at(0);
+    assert(_pending_agents->at(0) == agent, "invariant");
+    _pending_agents->remove_at(0);
     if (result == StartResult::Discarded) {
       delete agent;
     }
   }
-  assert(_on_load_phase_agent_list->is_empty(), "invariant");
-  destroy(&_on_load_phase_agent_list);
+  assert(_pending_agents->is_empty(), "invariant");
+  destroy(&_pending_agents);
 }
 
 // Invokes Agent_OnLoad for -agentlib:.. -agentpath:  and converted -Xrun agents.
 // Called very early -- before JavaThreads exist
 void JvmtiAgentManager::start_agents() {
   assert(is_vm_bootstrap(), "invariant");
-  JvmtiAgentStartupRequest::initialize();
-  if (_on_load_phase_agent_list == nullptr) {
+  if (_pending_agents == nullptr) {
     // No agents specified on the command-line.
     return;
   }
@@ -399,25 +388,14 @@ void JvmtiAgentManager::start_agents() {
   start();
 }
 
-void JvmtiAgentManager::start_xrun() {
-  assert(_xrun_agent_list != nullptr, "invariant");
-  for (int i = 0; i < _xrun_agent_list->length(); ++i) {
-    JvmtiAgent* const agent = _xrun_agent_list->at(i);
-    assert(agent->is_xrun(), "invariant");
-    start(agent);
-  }
-}
-
 // Launch -Xrun agents
 void JvmtiAgentManager::start_xrun_agents() {
   assert(JvmtiEnvBase::get_phase() == JVMTI_PHASE_PRIMORDIAL, "invariant");
-  assert(JvmtiAgentStartupRequest::is_initialized(), "invariant");
-  assert(_on_load_phase_agent_list == nullptr, "invariant");
-  if (_xrun_agent_list == nullptr) {
-    // No xrun agents specified on the command-line.
-    return;
+  assert(_pending_agents == nullptr, "invariant");
+  const Iterator iterator = xrun_agents();
+  while (iterator.has_next()) {
+    start(iterator.next());
   }
-  start_xrun();
 }
 
 // Invokes Agent_OnAttach for agents loaded dynamically during runtime.
@@ -503,10 +481,7 @@ void JvmtiAgentManager::print(outputStream* st) {
   while (agent_iter.has_next()) {
     ::print(agent_iter.next(), st, has_agents);
   }
-  if (is_vm_bootstrap()) {
-    ::print(_on_load_phase_agent_list, st, has_agents);
-  }
-  ::print(_xrun_agent_list, st, has_agents);
+  ::print(xrun_agent_list(), st, has_agents);
   if (!has_agents) {
     st->print_cr("JVMTI agents: none");
   }

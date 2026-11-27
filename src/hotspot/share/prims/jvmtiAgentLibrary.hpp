@@ -41,6 +41,7 @@ class JvmtiAgentLibrary : public CHeapObj<mtServiceability> {
   const char* _path;
   bool _native_lookup_registered;
   bool _unload_registered;
+  JvmtiAgentLibrary* _native_lookup_next = nullptr;
 
   JvmtiAgentLibrary(const void* handle, const char* static_name);
 
@@ -53,7 +54,10 @@ class JvmtiAgentLibrary : public CHeapObj<mtServiceability> {
   void* resolve_entry_point(const char* entry_point_name) const NOT_JVMTI_RETURN_(nullptr);
 
   const char* path() const NOT_JVMTI_RETURN_(nullptr);
-  bool initialize_path(void* entry_point) NOT_JVMTI_RETURN_(false);
+
+  // Resolve and publish the library path for diagnostics.
+  // Leave the path unset if it cannot be obtained; agent startup can continue.
+  void initialize_path(void* entry_point) NOT_JVMTI_RETURN;
 };
 
 #endif // SHARE_PRIMS_JVMTIAGENTLIBRARY_HPP

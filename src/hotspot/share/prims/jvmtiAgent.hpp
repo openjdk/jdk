@@ -25,7 +25,6 @@
 #ifndef SHARE_PRIMS_JVMTIAGENT_HPP
 #define SHARE_PRIMS_JVMTIAGENT_HPP
 
-#include "jvmtifiles/jvmti.h"
 #include "memory/allocation.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ticks.hpp"
@@ -58,7 +57,6 @@ class JvmtiAgent : public CHeapObj<mtServiceability> {
   JvmtiAgent* _next;
   bool _registered;
 
-  const jvmtiEnv* _env;
   EnvAssociation _association;
 
   TimingState _timing;
@@ -69,9 +67,14 @@ class JvmtiAgent : public CHeapObj<mtServiceability> {
   JvmtiAgent(const char* name, const char* options, bool is_absolute_path, bool xrun = false);
 
   void mark_registered() NOT_JVMTI_RETURN;
+  void mark_env_associated() NOT_JVMTI_RETURN;
+  void mark_env_disposed() NOT_JVMTI_RETURN;
 
   bool is_timing_pending() const NOT_JVMTI_RETURN_(false);
   bool is_timing_measuring() const NOT_JVMTI_RETURN_(false);
+  void prepare_initialization_timing() NOT_JVMTI_RETURN;
+  void end_initialization_timing(const Ticks& start, const Ticks& end) NOT_JVMTI_RETURN;
+  void cancel_initialization_timing() NOT_JVMTI_RETURN;
   void finalize_timing() NOT_JVMTI_RETURN;
   void finalize_unavailable_timing() NOT_JVMTI_RETURN;
   void finalize_timing_without_vm_init_callback() NOT_JVMTI_RETURN;
@@ -102,10 +105,6 @@ class JvmtiAgent : public CHeapObj<mtServiceability> {
   bool can_associate_env() const NOT_JVMTI_RETURN_(false);
   bool is_env_associated() const NOT_JVMTI_RETURN_(false);
   bool is_env_disposed() const NOT_JVMTI_RETURN_(false);
-  bool has_env() const NOT_JVMTI_RETURN_(false);
-  void associate_env(const jvmtiEnv* env) NOT_JVMTI_RETURN;
-  void mark_env_disposed() NOT_JVMTI_RETURN;
-  bool matches_env(const jvmtiEnv* rhs_env) const NOT_JVMTI_RETURN_(false);
 
   void begin_initialization_timing() NOT_JVMTI_RETURN;
   void end_initialization_timing() NOT_JVMTI_RETURN;

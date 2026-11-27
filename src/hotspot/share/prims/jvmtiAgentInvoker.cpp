@@ -58,8 +58,6 @@ static bool load_agent_library(JvmtiAgent* agent, bool vm_exit_on_error,
   return true;
 }
 
-static const char* library_path_error_msg = "Unable to resolve loaded agent library path";
-
 static void exit_on_startup_error(const JvmtiAgent* agent, const char* message) {
   vm_exit_during_initialization(message, agent->name());
 }
@@ -237,12 +235,9 @@ static bool locate_and_invoke_Agent_OnLoad(JvmtiAgent* agent) {
       "Unable to start agent because no Agent_OnLoad entry point in library");
   }
 
-  // 2. Initialize the descriptive path before invoking the entry point.
-  if (!agent->library()->initialize_path(entry_point)) {
-    vm_exit_during_initialization(library_path_error_msg);
-  }
+  agent->library()->initialize_path(entry_point);
 
-  // 3. Invoke the Agent_OnLoad entry point.
+  // 2. Invoke the Agent_OnLoad entry point.
   const jint result = invoke_startup(agent, entry_point);
   JvmtiAgentLibraryManager::register_for_unload_notification(agent->library());
   if (result != JNI_OK) {
@@ -283,12 +278,9 @@ static bool invoke_JVM_OnLoad(JvmtiAgent* agent) {
   void* const entry_point = agent->library()->resolve_entry_point("JVM_OnLoad");
   assert(entry_point != nullptr, "invariant");
 
-  // 3. Initialize the descriptive path before invoking the entry point..
-  if (!agent->library()->initialize_path(entry_point)) {
-    vm_exit_during_initialization(library_path_error_msg);
-  }
+  agent->library()->initialize_path(entry_point);
 
-  // 4. Invoke the JVM_OnLoad entry point.
+  // 3. Invoke the JVM_OnLoad entry point.
   JavaThread* const thread = JavaThread::current();
   assert(thread != nullptr, "invariant");
   jint result;
@@ -353,18 +345,14 @@ static bool locate_and_invoke_Agent_OnAttach(JvmtiAgent* agent, outputStream* st
     return false;
   }
 
-  // 3. Initialize the descriptive path before entering agent code.
-  if (!agent->library()->initialize_path(entry_point)) {
-    st->print_cr("%s", library_path_error_msg);
-    return false;
-  }
+  agent->library()->initialize_path(entry_point);
 
-  // 4. Invoke the Agent_OnAttach entry point.
+  // 3. Invoke the Agent_OnAttach entry point.
   JvmtiInvokeOnAttachContext invocation_context(entry_point);
   const jint result = invoke(agent, invocation_context);
   JvmtiAgentLibraryManager::register_for_unload_notification(agent->library());
 
-  // 5. Process return value.
+  // 4. Process return value.
   st->print_cr("return code: %d", result);
   if (result != JNI_OK) {
     // Do not unload the OS library after a failed Agent_OnAttach invocation.

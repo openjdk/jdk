@@ -53,17 +53,11 @@ class JvmtiLibraryBuffer : StackObj {
   char* _buffer;
   NONCOPYABLE(JvmtiLibraryBuffer);
  public:
-  JvmtiLibraryBuffer() : _buffer(NEW_C_HEAP_ARRAY(char, JVM_MAXPATHLEN, mtServiceability)) {}
+  JvmtiLibraryBuffer() : _buffer(NEW_C_HEAP_ARRAY_RETURN_NULL(char, JVM_MAXPATHLEN, mtServiceability)) {}
   JvmtiLibraryBuffer(char* buffer) : _buffer(buffer) {}
   ~JvmtiLibraryBuffer() { deallocate(_buffer); }
   char* buffer() { return _buffer; }
-  const char* buffer() const { return _buffer; }
-  bool is_notnull() const { return _buffer != nullptr; }
-  void reset(char* buffer) {
-    assert(buffer != _buffer, "invariant");
-    deallocate(_buffer);
-    _buffer = buffer;
-  }
+  bool is_null() const { return _buffer == nullptr; }
 };
 
 JvmtiAgentLibrary::JvmtiAgentLibrary(const void* handle, const char* static_name) :
@@ -93,6 +87,11 @@ bool JvmtiAgentLibrary::shares_handle(const JvmtiAgentLibrary* rhs) const {
   return rhs->_handle == _handle;
 }
 
+void* JvmtiAgentLibrary::resolve(const char* name) const {
+  assert(name != nullptr, "invariant");
+  return os::dll_lookup(const_cast<void*>(_handle), name);
+}
+
 static char* build_static_agent_function_name(const char* symbol, const char* normalized_name) {
   assert(symbol != nullptr, "invariant");
   assert(normalized_name != nullptr, "invariant");
@@ -106,11 +105,6 @@ static char* build_static_agent_function_name(const char* symbol, const char* no
   return result;
 }
 
-void* JvmtiAgentLibrary::resolve(const char* name) const {
-  assert(name != nullptr, "invariant");
-  return os::dll_lookup(const_cast<void*>(_handle), name);
-}
-
 void* JvmtiAgentLibrary::resolve_entry_point(const char* entry_point_name) const {
   assert(entry_point_name != nullptr, "invariant");
   if (!is_static()) {
@@ -120,30 +114,34 @@ void* JvmtiAgentLibrary::resolve_entry_point(const char* entry_point_name) const
   return resolve(static_entry_point_name.buffer());
 }
 
-static const char* library_path_error_msg = "Unable to resolve loaded agent library path";
-
 const char* JvmtiAgentLibrary::path() const {
   return AtomicAccess::load_acquire(&_path);
 }
 
-bool JvmtiAgentLibrary::initialize_path(void* entry_point) {
+void JvmtiAgentLibrary::initialize_path(void* entry_point) {
   assert(entry_point != nullptr, "invariant");
   if (path() != nullptr) {
-    return true;
+    return;
   }
   address pc = static_cast<address>(entry_point);
 #ifdef HAVE_FUNCTION_DESCRIPTORS
   pc = static_cast<address>(os::resolve_function_descriptor(pc));
 #endif
   JvmtiLibraryBuffer buffer;
-  if (pc == nullptr || !os::dll_address_to_library_name(pc, buffer.buffer(), JVM_MAXPATHLEN, nullptr) || buffer.buffer()[0] == '\0') {
-    log_error(jvmti)("%s", library_path_error_msg);
-    return false;
+  if (buffer.is_null()) {
+    return;
+  }
+  buffer.buffer()[0] = '\0';
+  if (pc == nullptr || !os::dll_address_to_library_name(pc, buffer.buffer(), JVM_MAXPATHLEN, nullptr) ||
+      buffer.buffer()[0] == '\0') {
+    log_debug(jvmti)("Unable to resolve loaded agent library path");
+    return;
   }
   ConditionalMutexLocker lock(Thread::current_or_null_safe(), JvmtiThreadState_lock, is_not_vm_bootstrap());
   if (path() == nullptr) {
-    const char* const resolved_path = os::strdup_check_oom(buffer.buffer(), mtServiceability);
-    AtomicAccess::release_store(&_path, resolved_path);
+    const char* const resolved_path = os::strdup(buffer.buffer(), mtServiceability);
+    if (resolved_path != nullptr) {
+      AtomicAccess::release_store(&_path, resolved_path);
+    }
   }
-  return true;
 }
