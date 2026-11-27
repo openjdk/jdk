@@ -91,6 +91,8 @@ public class WinBundlingEnvironment extends DefaultBundlingEnvironment {
     }
 
     private static void addWixSummary(Options options, WinSystemEnvironment sysEnv) {
-        OptionUtils.summary(options).put(StandardProperty.WIN_WIX_VERSION, sysEnv.wixToolset().getVersion());
+        var summary = OptionUtils.summary(options);
+        summary.put(StandardProperty.WIN_MSI_ARCH, WixPipeline.wixArch(sysEnv.wixToolset().getType()));
+        summary.put(StandardProperty.WIN_WIX_VERSION, sysEnv.wixToolset().getVersion());
     }
 }

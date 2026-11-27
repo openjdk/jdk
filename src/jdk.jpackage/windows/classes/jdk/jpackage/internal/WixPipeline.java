@@ -37,6 +37,7 @@ import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 import jdk.internal.util.Architecture;
+import jdk.jpackage.internal.WixToolset.WixToolsetType;
 import jdk.jpackage.internal.util.PathUtils;
 
 /**
@@ -192,7 +193,7 @@ final class WixPipeline {
                 "-pdbtype", "none",
                 "-intermediatefolder", wixObjDir.toString(),
                 "-ext", "WixToolset.Util.wixext",
-                "-arch", wix4Arch()
+                "-arch", wixArch(WixToolsetType.Wix4)
         ));
 
         cmdline.addAll(lightOptions);
@@ -208,14 +209,18 @@ final class WixPipeline {
         execute(cmdline);
     }
 
-    // Value of the "-arch" option of the WiX v4+ "build" command for the current platform
-    private static String wix4Arch() {
-        return switch (Architecture.current()) {
-            case X64 -> "x64";
-            case X86 -> "x86";
-            case AARCH64 -> "arm64";
-            default -> throw new UnsupportedOperationException(
-                    String.format("Unsupported architecture: %s", Architecture.current()));
+    // Value of the "-arch" option of the WiX commands for the current platform, i.e. the architecture of the MSI package
+    static String wixArch(WixToolsetType wixType) {
+        return switch (wixType) {
+            // Arm64 packages are only built with WiX v4+
+            case Wix3 -> WixFragmentBuilder.is64Bit() ? "x64" : "x86";
+            case Wix4 -> switch (Architecture.current()) {
+                case X64 -> "x64";
+                case X86 -> "x86";
+                case AARCH64 -> "arm64";
+                default -> throw new UnsupportedOperationException(
+                        String.format("Unsupported architecture: %s", Architecture.current()));
+            };
         };
     }
 
@@ -248,7 +253,7 @@ final class WixPipeline {
                 "-nologo",
                 wixSource.path.toString(),
                 "-ext", "WixUtilExtension",
-                "-arch", WixFragmentBuilder.is64Bit() ? "x64" : "x86",
+                "-arch", wixArch(WixToolsetType.Wix3),
                 "-out", wixObj.toString()
         ));
 
