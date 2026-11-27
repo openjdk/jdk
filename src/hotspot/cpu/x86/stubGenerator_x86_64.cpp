@@ -1020,7 +1020,7 @@ void StubGenerator::generate_iota_indices() {
     }
     return;
   }
-  __ align(CodeEntryAlignment);
+  __ align64();
   StubCodeMark mark(this, stub_id);
   start = __ pc();
   // B
@@ -1103,7 +1103,7 @@ address StubGenerator::generate_vector_reverse_bit_lut() {
   if (start != nullptr) {
     return start;
   }
-  __ align(CodeEntryAlignment);
+  __ align64();
   StubCodeMark mark(this, stub_id);
   start = __ pc();
 
@@ -1130,7 +1130,7 @@ address StubGenerator::generate_vector_reverse_byte_perm_mask_long() {
   if (start != nullptr) {
     return start;
   }
-  __ align(CodeEntryAlignment);
+  __ align64();
   StubCodeMark mark(this, stub_id);
   start = __ pc();
 
@@ -1157,7 +1157,7 @@ address StubGenerator::generate_vector_reverse_byte_perm_mask_int() {
   if (start != nullptr) {
     return start;
   }
-  __ align(CodeEntryAlignment);
+  __ align64();
   StubCodeMark mark(this, stub_id);
   start = __ pc();
 
@@ -1184,7 +1184,7 @@ address StubGenerator::generate_vector_reverse_byte_perm_mask_short() {
   if (start != nullptr) {
     return start;
   }
-  __ align(CodeEntryAlignment);
+  __ align64();
   StubCodeMark mark(this, stub_id);
   start = __ pc();
 
@@ -1481,32 +1481,6 @@ address StubGenerator::generate_vector_byte_shift_gfni_matrix() {
   }
 
   store_archive_data(stub_id, start, __ pc());
-  return start;
-}
-
-address StubGenerator::generate_vector_fp_mask(StubId stub_id, int64_t mask) {
-  int entry_count = StubInfo::entry_count(stub_id);
-  assert(entry_count == 1, "sanity check");
-  address start = load_archive_data(stub_id);
-  if (start != nullptr) {
-    return start;
-  }
-  __ align(CodeEntryAlignment);
-  StubCodeMark mark(this, stub_id);
-  start = __ pc();
-
-  __ emit_data64(mask, relocInfo::none);
-  __ emit_data64(mask, relocInfo::none);
-  __ emit_data64(mask, relocInfo::none);
-  __ emit_data64(mask, relocInfo::none);
-  __ emit_data64(mask, relocInfo::none);
-  __ emit_data64(mask, relocInfo::none);
-  __ emit_data64(mask, relocInfo::none);
-  __ emit_data64(mask, relocInfo::none);
-
-  // record the stub entry and end
-  store_archive_data(stub_id, start, __ pc());
-
   return start;
 }
 
