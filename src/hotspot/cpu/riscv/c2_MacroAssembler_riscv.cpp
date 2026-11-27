@@ -656,6 +656,8 @@ void C2_MacroAssembler::string_indexof(Register haystack, Register needle,
                                        Register result, int ae)
 {
   assert(ae != StrIntrinsicNode::LU, "Invalid encoding");
+  assert_different_registers(haystack, needle, haystack_len, needle_len, result,
+                             tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, t0, t1);
 
   Label LINEARSEARCH, LINEARSTUB, DONE, NOMATCH;
 
@@ -885,11 +887,8 @@ void C2_MacroAssembler::string_indexof(Register haystack, Register needle,
     // affect performance on in-order systems with 2 or more ld/st pipelines
     srli(tmp3, tmp6, BitsPerByte * (wordSize - needle_chr_size)); // UU/LL: pattern[m-1]
   }
-  if (!isLL) { // UU/UL case
-    slli(ch2, nlen_tmp, 1); // offsets in bytes
-  }
   bne(tmp3, skipch, BMSKIP); // if not equal, skipch is bad char
-  add(result, haystack, isLL ? nlen_tmp : ch2);
+  shift_left_add(result, nlen_tmp, haystack, haystack_chr_shift);
   // load 8 bytes from source string
   // if isLL is false then read granularity can be 2
   load_long_misaligned(ch2, Address(result), ch1, isLL ? 1 : 2); // can use ch1 as temp register here as it will be trashed by next mv anyway
