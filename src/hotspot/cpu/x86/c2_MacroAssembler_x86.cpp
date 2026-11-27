@@ -157,6 +157,7 @@ void C2_MacroAssembler::entry_barrier() {
 
 inline Assembler::AvxVectorLen C2_MacroAssembler::vector_length_encoding(int vlen_in_bytes) {
   switch (vlen_in_bytes) {
+    case 2: // fall-through, 16-bit mask payload for 2-lane vectors
     case  4: // fall-through
     case  8: // fall-through
     case 16: return Assembler::AVX_128bit;
@@ -1621,6 +1622,7 @@ void C2_MacroAssembler::load_vector_mask(KRegister dst, XMMRegister src, XMMRegi
 void C2_MacroAssembler::load_vector(BasicType bt, XMMRegister dst, Address src, int vlen_in_bytes) {
   if (is_integral_type(bt)) {
     switch (vlen_in_bytes) {
+      case 2:  pxor(dst, dst); pinsrw(dst, src, 0); break;
       case 4:  movdl(dst, src);   break;
       case 8:  movq(dst, src);    break;
       case 16: movdqu(dst, src);  break;
