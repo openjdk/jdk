@@ -122,8 +122,8 @@ import static java.awt.geom.AffineTransform.TYPE_TRANSLATION;
  */
 public class SwingUtilities2 {
 
-    // Records components whose UI delegates are being installed/uninstalled
-    // in this thread
+    // Records components undergoing UI installation, uninstallation, or
+    // keyboard-action refresh on this thread, including nested operations.
     private static final ThreadLocal<UIDelegateContext> UI_DELEGATE_CONTEXT =
             new ThreadLocal<>();
 
@@ -139,7 +139,7 @@ public class SwingUtilities2 {
         changeUI(ui, component, false);
     }
 
-    // Returns whether the component is undergoing UI installation/uninstallation
+    // Returns whether the component has an active UI-change operation.
     public static boolean isChangingUI(JComponent component) {
         for (UIDelegateContext frame = UI_DELEGATE_CONTEXT.get(); frame != null;
              frame = frame.previous) {
@@ -150,19 +150,25 @@ public class SwingUtilities2 {
         return false;
     }
 
-    // Records the component while installing or uninstalling the UI delegate,
-    // allowing SwingUtilities to preserve application key bindings.
-    // Restore the previous context on completion
     private static void changeUI(ComponentUI ui, JComponent component,
                                  boolean install) {
-        UIDelegateContext previous = UI_DELEGATE_CONTEXT.get();
-        UI_DELEGATE_CONTEXT.set(new UIDelegateContext(component, previous));
-        try {
+        runWithUIChange(component, () -> {
             if (install) {
                 ui.installUI(component);
             } else {
                 ui.uninstallUI(component);
             }
+        });
+    }
+
+    // Runs a UI update while preserving application key bindings through
+    // SwingUtilities.replaceUIInputMap/replaceUIActionMap.
+    // Restores the previous context on completion.
+    public static void runWithUIChange(JComponent component, Runnable update) {
+        UIDelegateContext previous = UI_DELEGATE_CONTEXT.get();
+        UI_DELEGATE_CONTEXT.set(new UIDelegateContext(component, previous));
+        try {
+            update.run();
         } finally {
             if (previous == null) {
                 UI_DELEGATE_CONTEXT.remove();

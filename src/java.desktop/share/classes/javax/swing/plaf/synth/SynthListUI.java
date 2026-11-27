@@ -38,6 +38,7 @@ import javax.swing.border.Border;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.UIResource;
 import javax.swing.plaf.basic.BasicListUI;
+import sun.swing.SwingUtilities2;
 
 /**
  * Provides the Synth L&amp;F UI delegate for
@@ -169,8 +170,10 @@ public class SynthListUI extends BasicListUI
                 list.setFixedCellHeight(height);
             }
             if (oldStyle != null) {
-                uninstallKeyboardActions();
-                installKeyboardActions();
+                SwingUtilities2.runWithUIChange(c, () -> {
+                    uninstallKeyboardActions();
+                    installKeyboardActions();
+                });
             }
         }
     }

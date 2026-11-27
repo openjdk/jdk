@@ -2849,7 +2849,7 @@ public class JList<E> extends JComponent implements Scrollable, Accessible
             byte count = JComponent.getWriteObjCounter(this);
             JComponent.setWriteObjCounter(this, --count);
             if (count == 0 && ui != null) {
-                ui.installUI(this);
+                SwingUtilities2.installUI(ui, this);
             }
         }
     }
