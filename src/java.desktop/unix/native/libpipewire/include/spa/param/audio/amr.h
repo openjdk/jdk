@@ -5,11 +5,11 @@
 #ifndef SPA_AUDIO_AMR_H
 #define SPA_AUDIO_AMR_H
 
+#include <spa/param/audio/raw.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <spa/param/audio/raw.h>
 
 /**
  * \addtogroup spa_param

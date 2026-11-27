@@ -22,6 +22,7 @@ package com.sun.org.apache.bcel.internal.generic;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
+import com.sun.org.apache.bcel.internal.Const;
 import com.sun.org.apache.bcel.internal.classfile.Constant;
 import com.sun.org.apache.bcel.internal.classfile.ConstantClass;
 import com.sun.org.apache.bcel.internal.classfile.ConstantPool;
@@ -34,8 +35,6 @@ import com.sun.org.apache.bcel.internal.util.ByteSequence;
  * @see ConstantPoolGen
  * @see LDC
  * @see INVOKEVIRTUAL
- *
- * @LastModified: Sept 2025
  */
 public abstract class CPInstruction extends Instruction implements TypedInstruction, IndexedInstruction {
 
@@ -52,7 +51,10 @@ public abstract class CPInstruction extends Instruction implements TypedInstruct
     }
 
     /**
-     * @param index to constant pool
+     * Constructs a CPInstruction.
+     *
+     * @param opcode The opcode.
+     * @param index to constant pool.
      */
     protected CPInstruction(final short opcode, final int index) {
         super(opcode, (short) 3);
@@ -60,9 +62,9 @@ public abstract class CPInstruction extends Instruction implements TypedInstruct
     }
 
     /**
-     * Dump instruction as byte code to stream out.
+     * Dumps instruction as byte code to stream out.
      *
-     * @param out Output stream
+     * @param out Output stream.
      */
     @Override
     public void dump(final DataOutputStream out) throws IOException {
@@ -84,7 +86,7 @@ public abstract class CPInstruction extends Instruction implements TypedInstruct
     @Override
     public Type getType(final ConstantPoolGen cpg) {
         final ConstantPool cp = cpg.getConstantPool();
-        String name = cp.getConstantString(index, com.sun.org.apache.bcel.internal.Const.CONSTANT_Class);
+        String name = cp.getConstantString(index, Const.CONSTANT_Class);
         if (!name.startsWith("[")) {
             name = "L" + name + ";";
         }
@@ -92,10 +94,10 @@ public abstract class CPInstruction extends Instruction implements TypedInstruct
     }
 
     /**
-     * Read needed data (i.e., index) from file.
+     * Reads needed data (that is, index) from file.
      *
-     * @param bytes input stream
-     * @param wide wide prefix?
+     * @param bytes input stream.
+     * @param wide wide prefix?.
      */
     @Override
     protected void initFromFile(final ByteSequence bytes, final boolean wide) throws IOException {
@@ -107,11 +109,12 @@ public abstract class CPInstruction extends Instruction implements TypedInstruct
      * Sets the index to constant pool.
      *
      * @param index in constant pool.
+     * @throws ClassGenException Thrown if index is out of bounds.
      */
     @Override
     public void setIndex(final int index) { // TODO could be package-protected?
-        if (index < 0) {
-            throw new ClassGenException("Negative index value: " + index);
+        if (!isNonNegativeUShort(index)) {
+            throw new ClassGenException("Illegal index: " + index);
         }
         this.index = index;
     }
@@ -122,8 +125,8 @@ public abstract class CPInstruction extends Instruction implements TypedInstruct
      * &lt;name of opcode&gt; "["&lt;opcode number&gt;"]" "("&lt;length of instruction&gt;")" "&lt;"&lt; constant pool
      * index&gt;"&gt;"
      *
-     * @param verbose long/short format switch
-     * @return mnemonic for instruction
+     * @param verbose long/short format switch.
+     * @return mnemonic for instruction.
      */
     @Override
     public String toString(final boolean verbose) {
@@ -131,7 +134,7 @@ public abstract class CPInstruction extends Instruction implements TypedInstruct
     }
 
     /**
-     * @return mnemonic for instruction with symbolic references resolved
+     * @return mnemonic for instruction with symbolic references resolved.
      */
     @Override
     public String toString(final ConstantPool cp) {
@@ -140,6 +143,6 @@ public abstract class CPInstruction extends Instruction implements TypedInstruct
         if (c instanceof ConstantClass) {
             str = Utility.packageToPath(str);
         }
-        return com.sun.org.apache.bcel.internal.Const.getOpcodeName(super.getOpcode()) + " " + str;
+        return Const.getOpcodeName(super.getOpcode()) + " " + str;
     }
 }

@@ -55,6 +55,7 @@ public class TestLongAltRootPath {
     public static void main(String[] args) throws Exception {
         LingeredApp theApp = null;
         String coreFileName = null;
+        SATestUtils.skipIfCannotAttach();
         try {
             theApp = new LingeredApp();
             theApp.setForceCrash(true);

@@ -436,8 +436,7 @@ void Method::metaspace_pointers_do(MetaspaceClosure* it) {
     lsh.cr();
   }
   // holder is null for MH intrinsic methods
-  if ((method_holder() != nullptr && !method_holder()->is_rewritten()) ||
-      Arguments::is_valhalla_enabled()) {
+  if (method_holder() != nullptr && !method_holder()->is_rewritten()) {
     it->push(&_constMethod, MetaspaceClosure::_writable);
   } else {
     it->push(&_constMethod);
@@ -456,12 +455,6 @@ void Method::metaspace_pointers_do(MetaspaceClosure* it) {
 
 void Method::remove_unshareable_info() {
   unlink_method();
-  if (method_data() != nullptr) {
-    method_data()->remove_unshareable_info();
-  }
-  if (method_counters() != nullptr) {
-    method_counters()->remove_unshareable_info();
-  }
   if (CDSConfig::is_dumping_adapters() && _adapter != nullptr) {
     _adapter->remove_unshareable_info();
     _adapter = nullptr;
@@ -471,12 +464,6 @@ void Method::remove_unshareable_info() {
 
 void Method::restore_unshareable_info(TRAPS) {
   assert(is_method() && is_valid_method(this), "ensure C++ vtable is restored");
-  if (method_data() != nullptr) {
-    method_data()->restore_unshareable_info(CHECK);
-  }
-  if (method_counters() != nullptr) {
-    method_counters()->restore_unshareable_info(CHECK);
-  }
   if (_adapter != nullptr) {
     assert(_adapter->is_linked(), "must be");
     _from_compiled_entry = _adapter->get_c2i_entry();
@@ -1289,11 +1276,6 @@ void Method::unlink_method() {
 
   clear_method_data();
   clear_method_counters();
-  clear_is_not_c1_compilable();
-  clear_is_not_c1_osr_compilable();
-  clear_is_not_c2_compilable();
-  clear_is_not_c2_osr_compilable();
-  clear_queued_for_compilation();
 
   remove_unshareable_flags();
 }
@@ -1311,7 +1293,18 @@ void Method::remove_unshareable_flags() {
   set_is_not_c2_osr_compilable(false);
   set_is_not_c1_osr_compilable(false);
   set_on_stack_flag(false);
+  // This flag describes the adapter selected for this method in
+  // the current VM. Recompute it when the method is linked and
+  // its adapter is selected.
   set_has_scalarized_args(false);
+  if (CDSConfig::is_dumping_aot_configuration()) {
+    // These flags may reflect class linking state during training run.
+    // Recompute them during assembly phase and preserve the results
+    // in the final AOT cache so production run uses the same
+    // conservative calling convention constraints as AOT compilation.
+    set_needs_stack_repair(false);
+    set_mismatch(false);
+  }
 }
 #endif
 

@@ -5,13 +5,13 @@
 #ifndef SPA_DICT_H
 #define SPA_DICT_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <string.h>
 
 #include <spa/utils/defs.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifndef SPA_API_DICT
  #ifdef SPA_API_IMPL

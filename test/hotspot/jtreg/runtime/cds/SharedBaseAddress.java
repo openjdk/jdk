@@ -129,8 +129,13 @@ public class SharedBaseAddress {
             String testEntry = testTable[i];
             String filename = "SharedBaseAddress-base" + testEntry + ".jsa";
             System.out.println("sharedBaseAddress = " + testEntry);
+            // Default value of ArchiveRelocationMode is 1 which implies always map the archive at OS provided address.
+            // SharedBaseAddress is ignored this scenario. Therefore, explicitly set ArchiveRelocationMode=0 which
+            // makes first attempt to map at the requested address, failing which it falls back to OS provided address.
             CDSOptions opts = (new CDSOptions())
                         .setArchiveName(filename)
+                        .addPrefix("-XX:+UnlockDiagnosticVMOptions")
+                        .addPrefix("-XX:ArchiveRelocationMode=0")
                         .addPrefix("-XX:SharedBaseAddress=" + testEntry)
                         .addPrefix("-Xlog:cds=debug")
                         .addPrefix("-Xlog:cds+reloc=debug")
@@ -152,8 +157,7 @@ public class SharedBaseAddress {
             CDSTestUtils.createArchiveAndCheck(opts);
             OutputAnalyzer out = CDSTestUtils.runWithArchiveAndCheck(opts);
             if (testEntry.equals("0")) {
-                out.shouldContain("Archive(s) were created with -XX:SharedBaseAddress=0. Always map at os-selected address.")
-                   .shouldContain("Try to map archive(s) at an alternative address")
+                out.shouldContain("Try to map archive(s) at an alternative address")
                    .shouldNotMatch(failedPattern);
             }
         }

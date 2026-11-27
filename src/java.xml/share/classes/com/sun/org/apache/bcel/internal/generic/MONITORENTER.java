@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -25,22 +25,25 @@ import com.sun.org.apache.bcel.internal.ExceptionConst;
 /**
  * MONITORENTER - Enter monitor for object
  *
- * <PRE>
+ * <pre>
  * Stack: ..., objectref -&gt; ...
- * </PRE>
- * @LastModified: Jan 2020
+ * </pre>
+ * @LastModified: Nov 2026
  */
 public class MONITORENTER extends Instruction implements ExceptionThrower, StackConsumer {
 
+    /**
+     * Constructs a MONITORENTER instruction.
+     */
     public MONITORENTER() {
         super(com.sun.org.apache.bcel.internal.Const.MONITORENTER, (short) 1);
     }
 
     /**
      * Call corresponding visitor method(s). The order is: Call visitor methods of implemented interfaces first, then call
-     * methods according to the class hierarchy in descending order, i.e., the most specific visitXXX() call comes last.
+     * methods according to the class hierarchy in descending order, that is, the most specific visitXXX() call comes last.
      *
-     * @param v Visitor object
+     * @param v Visitor object.
      */
     @Override
     public void accept(final Visitor v) {

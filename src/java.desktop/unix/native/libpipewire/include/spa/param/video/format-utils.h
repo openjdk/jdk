@@ -5,16 +5,17 @@
 #ifndef SPA_PARAM_VIDEO_FORMAT_UTILS_H
 #define SPA_PARAM_VIDEO_FORMAT_UTILS_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <spa/param/format-utils.h>
 #include <spa/param/video/format.h>
 #include <spa/param/video/raw-utils.h>
 #include <spa/param/video/dsp-utils.h>
 #include <spa/param/video/h264-utils.h>
+#include <spa/param/video/h265-utils.h>
 #include <spa/param/video/mjpg-utils.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifndef SPA_API_VIDEO_FORMAT_UTILS
  #ifdef SPA_API_IMPL

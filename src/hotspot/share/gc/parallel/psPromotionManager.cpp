@@ -53,7 +53,6 @@ PSPromotionManager::PSScannerTasksQueueSet* PSPromotionManager::_stack_array_dep
 PreservedMarksSet*             PSPromotionManager::_preserved_marks_set = nullptr;
 PSOldGen*                      PSPromotionManager::_old_gen = nullptr;
 MutableSpace*                  PSPromotionManager::_young_space = nullptr;
-PartialArrayStateManager*      PSPromotionManager::_partial_array_state_manager = nullptr;
 
 void PSPromotionManager::initialize() {
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
@@ -62,10 +61,6 @@ void PSPromotionManager::initialize() {
   _young_space = heap->young_gen()->to_space();
 
   const uint promotion_manager_num = ParallelGCThreads;
-
-  assert(_partial_array_state_manager == nullptr, "Attempt to initialize twice");
-  _partial_array_state_manager
-    = new PartialArrayStateManager(promotion_manager_num);
 
   // To prevent false sharing, we pad the PSPromotionManagers
   // and make sure that the first instance starts at a cache line.
@@ -160,7 +155,7 @@ PartialArrayTaskStats* PSPromotionManager::partial_array_task_stats() {
 
 // Most members are initialized either by initialize() or reset().
 PSPromotionManager::PSPromotionManager()
-  : _partial_array_splitter(_partial_array_state_manager, ParallelGCThreads)
+  : _partial_array_splitter(ParallelGCThreads)
 {
   // We set the old lab's start array.
   _old_lab.set_start_array(old_gen()->start_array());

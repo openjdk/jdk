@@ -26,6 +26,7 @@
 #define SHARE_PRIMS_JVMTIAGENT_HPP
 
 #include "memory/allocation.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ticks.hpp"
 

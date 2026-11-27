@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,16 +60,15 @@ JNIEXPORT jlong JNICALL Java_sun_security_pkcs11_Secmod_nssLoadLibrary
   (JNIEnv *env, jclass thisClass, jstring jName)
 {
     HINSTANCE hModule;
-    LPVOID lpMsgBuf;
+    LPVOID lpMsgBuf = NULL;
 
     const char *libName = (*env)->GetStringUTFChars(env, jName, NULL);
     debug_printf("-lib %s\n", libName);
-
     hModule = LoadLibrary(libName);
     (*env)->ReleaseStringUTFChars(env, jName, libName);
 
     if (hModule == NULL) {
-        FormatMessage(
+        DWORD fret = FormatMessage(
             FORMAT_MESSAGE_ALLOCATE_BUFFER |
             FORMAT_MESSAGE_FROM_SYSTEM |
             FORMAT_MESSAGE_IGNORE_INSERTS,
@@ -80,9 +79,13 @@ JNIEXPORT jlong JNICALL Java_sun_security_pkcs11_Secmod_nssLoadLibrary
             0,
             NULL
         );
-        debug_printf("-error: %s\n", lpMsgBuf);
-        p11ThrowIOException(env, (char*)lpMsgBuf);
-        LocalFree(lpMsgBuf);
+        if (fret != 0) {
+            debug_printf("-error: %s\n", lpMsgBuf);
+            p11ThrowIOException(env, (char*)lpMsgBuf);
+            LocalFree(lpMsgBuf);
+        } else {
+            p11ThrowIOException(env, "LoadLibrary failed");
+        }
         return 0;
     }
     debug_printf("-handle: %d (0X%X)\n", hModule, hModule);

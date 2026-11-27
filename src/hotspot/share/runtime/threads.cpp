@@ -109,6 +109,7 @@
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
+#include "utilities/zipLibrary.hpp"
 #ifdef COMPILER2
 #include "opto/idealGraphPrinter.hpp"
 #include "runtime/hotCodeCollector.hpp"
@@ -455,11 +456,25 @@ class ReadReleaseFileTask : public PeriodicTask {
 jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   extern void JDK_Version_init();
 
-  // Preinitialize version info.
-  VM_Version::early_initialize();
-
   // Check version
   if (!is_supported_jni_version(args->version)) return JNI_EVERSION;
+
+  // The ability to successfully re-initialize a partially initialized VM
+  // has significantly degraded over the years. Fastdebug VMs will trigger
+  // assertions almost immediately. In a product release the implications
+  // of re-initalizing already initialized subsystems is unclear - we know
+  // that if Arguments::init_system_properties() is called again it causes
+  // the classpath setting to be lost, rendering the VM almost unusable.
+  // Other logic likely leads to memory leaks and invalid state that may
+  // not be detected until much later in the execution of an application.
+  // Consequently, other than the trivial case above of asking for an
+  // unsupported JNI version, we do not allow the caller to try again upon
+  // error. Note that the ability to try again is not even documented in
+  // the JNI specification.
+  *canTryAgain = false;
+
+  // Preinitialize version info.
+  VM_Version::early_initialize();
 
   // Deferred "static" initialization
   NonJavaThread::init();
@@ -475,6 +490,10 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   // Initialize the os module
   os::init();
+
+  // Initialize the ZipLibraryLoaderLock before we potentially start
+  // loading resources from jar/zip files.
+  ZipLibrary::initialize_loader_lock();
 
   // Initialize memory pools
   Arena::initialize_chunk_pool();
@@ -585,7 +604,6 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
     vm_shutdown_during_initialization(
                                       "Failed necessary internal allocation. Out of swap space");
     main_thread->smr_delete();
-    *canTryAgain = false; // don't let caller call JNI_CreateJavaVM again
     return JNI_ENOMEM;
   }
 
@@ -603,7 +621,6 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   jint status = init_globals();
   if (status != JNI_OK) {
     main_thread->smr_delete();
-    *canTryAgain = false; // don't let caller call JNI_CreateJavaVM again
     return status;
   }
 
@@ -624,7 +641,6 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
     if (!main_thread->has_pending_exception()) {
       main_thread->smr_delete();
     }
-    *canTryAgain = false; // don't let caller call JNI_CreateJavaVM again
     return status;
   }
 
@@ -841,13 +857,10 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   JFR_ONLY(Jfr::on_create_vm_3();)
 
 #if INCLUDE_MANAGEMENT
-  bool start_agent = true;
-#if INCLUDE_CDS
-  start_agent = !CDSConfig::is_dumping_final_static_archive();
+  bool start_agent = !CDSConfig::is_dumping_aot_cache();
   if (!start_agent) {
     log_info(aot)("Not starting management agent during creation of AOT cache.");
   }
-#endif // INCLUDE_CDS
   if (start_agent) {
     Management::initialize(THREAD);
 
@@ -887,7 +900,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   if (CDSConfig::is_dumping_classic_static_archive()) {
     // Classic -Xshare:dump, aka "old workflow"
     AOTMetaspace::dump_static_archive(CHECK_JNI_ERR);
-  } else if (CDSConfig::is_dumping_final_static_archive()) {
+  } else if (CDSConfig::is_dumping_aot_cache()) {
     tty->print_cr("Reading AOTConfiguration %s and writing AOTCache %s", AOTConfiguration, AOTCache);
     AOTMetaspace::dump_static_archive(CHECK_JNI_ERR);
   } else if (CDSConfig::is_redumping_aot_configuration()) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,13 +56,6 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <errno.h>
-
-#ifdef _WINDOWS
-#define JVM_MAXPATHLEN _MAX_PATH
-#else
-#include <sys/param.h>
-#define JVM_MAXPATHLEN MAXPATHLEN
-#endif
 
 #include "jni_util.h"
 

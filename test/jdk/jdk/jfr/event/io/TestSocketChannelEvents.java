@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,12 @@
 package jdk.jfr.event.io;
 
 import static jdk.test.lib.Asserts.assertEquals;
+import static jdk.jfr.event.io.IOHelper.assertClosedChannelException;
 
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
@@ -41,8 +43,9 @@ import jdk.test.lib.jfr.Events;
 import jdk.test.lib.thread.TestThread;
 import jdk.test.lib.thread.XRun;
 
-/**
+/*
  * @test
+ * @bug 8397189
  * @summary test socket read/write events on SocketChannel
  * @requires vm.flagless
  * @requires vm.hasJFR
@@ -79,15 +82,16 @@ public class TestSocketChannelEvents {
                         ByteBuffer bufA = ByteBuffer.allocate(bufSizeA);
                         ByteBuffer bufB = ByteBuffer.allocate(bufSizeB);
                         try (SocketChannel sc = ssc.accept()) {
+                            Socket s = sc.socket();
                             int readSize = sc.read(bufA);
                             assertEquals(readSize, bufSizeA, "Wrong readSize bufA");
-                            addExpectedEvent(IOEvent.createSocketReadEvent(bufSizeA, sc.socket()));
+                            addExpectedEvent(IOEvent.createSocketReadEvent(bufSizeA, s));
 
                             bufA.clear();
                             bufA.limit(1);
                             readSize = (int) sc.read(new ByteBuffer[] { bufA, bufB });
                             assertEquals(readSize, 1 + bufSizeB, "Wrong readSize 1+bufB");
-                            addExpectedEvent(IOEvent.createSocketReadEvent(readSize, sc.socket()));
+                            addExpectedEvent(IOEvent.createSocketReadEvent(readSize, s));
 
                             // We try to read, but client have closed. Should
                             // get EOF.
@@ -95,7 +99,20 @@ public class TestSocketChannelEvents {
                             bufA.limit(1);
                             readSize = sc.read(bufA);
                             assertEquals(readSize, -1, "Wrong readSize at EOF");
-                            addExpectedEvent(IOEvent.createSocketReadEvent(-1, sc.socket()));
+                            addExpectedEvent(IOEvent.createSocketReadEvent(-1, s));
+
+                            sc.close();
+                            assertClosedChannelException(() -> sc.read(bufA), "sc.read(ByteBuffer)");
+                            addExpectedEvent(IOEvent.createSocketReadEvent(0, s));
+
+                            assertClosedChannelException(() -> sc.read(new ByteBuffer[] { bufA, bufB }, 0, 2), "sc.read(ByteBuffer[], int, int)");
+                            addExpectedEvent(IOEvent.createSocketReadEvent(0, s));
+
+                            assertClosedChannelException(() -> sc.write(bufA), "sc.write(ByteBuffer)");
+                            addExpectedEvent(IOEvent.createSocketWriteEvent(0, s));
+
+                            assertClosedChannelException(() -> sc.write(new ByteBuffer[] { bufA, bufB }, 0, 2), "sc.write(ByteBuffer[], int, int)");
+                            addExpectedEvent(IOEvent.createSocketWriteEvent(0, s));
                         }
                     }
                 });

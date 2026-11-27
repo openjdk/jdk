@@ -1558,7 +1558,7 @@
   </Type>
 
   <Type name="OldObject" label="Old Object">
-    <Field type="ulong" contentType="address" name="address" label="Memory Address" />
+    <Field type="ulong" contentType="address" name="address" label="Memory Address" description="Object memory address, or a nonzero synthetic identity for a flattened value with no independent object address" />
     <Field type="Class" name="type" label="Java Class" />
     <Field type="string" name="description" label="Object Description" description="Object description" />
     <Field type="Reference" name="referrer" label="Referrer Object" description="Object referencing this object" />

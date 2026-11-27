@@ -201,20 +201,18 @@ void JvmtiAgentInvoker::attempt_xrun_conversion(JvmtiAgent* agent) {
   assert(entry_point != nullptr, "invariant");
 }
 
-#if INCLUDE_CDS
 static void check_cds_dump() {
   if (CDSConfig::is_dumping_archive()) {
     if (CDSConfig::new_aot_flags_used()) {
       // Agents are allowed with -XX:AOTMode=record and -XX:AOTMode=required/auto.
       // Agents are completely disabled when -XX:AOTMode=create (see cdsConfig.cpp).
-      assert(!CDSConfig::is_dumping_final_static_archive(), "agents should have been disabled with -XX:AOTMode=create");
+      assert(!CDSConfig::is_dumping_aot_cache(), "agents should have been disabled with -XX:AOTMode=create");
     } else if (CDSConfig::is_dumping_classic_static_archive() || CDSConfig::is_dumping_dynamic_archive()) {
       // Classic CDS (static or dynamic dump). Disallow agents.
       vm_exit_during_cds_dumping("JVMTI agents are not allowed when dumping CDS archives");
     }
   }
 }
-#endif
 
 #ifdef ASSERT
 static void assert_agent_on_load(const JvmtiAgent* agent) {
@@ -249,7 +247,7 @@ static bool locate_and_invoke_Agent_OnLoad(JvmtiAgent* agent) {
 
 static bool invoke_Agent_OnLoad(JvmtiAgent* agent) {
   DEBUG_ONLY(assert_agent_on_load(agent);)
-  CDS_ONLY(check_cds_dump();)
+  check_cds_dump();
 
   // 1. Ensure the OS library is loaded.
   load_agent_library(agent, true);

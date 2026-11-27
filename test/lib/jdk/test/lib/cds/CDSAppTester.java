@@ -24,11 +24,11 @@
 package jdk.test.lib.cds;
 
 import java.io.File;
-import jdk.test.lib.cds.CDSTestUtils;
+
 import jdk.test.lib.Platform;
-import jdk.test.lib.process.ProcessTools;
-import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.StringArrayUtils;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 import jdk.test.whitebox.WhiteBox;
 import jtreg.SkippedException;
 
@@ -693,6 +693,17 @@ abstract public class CDSAppTester {
 
     public boolean isAOTRetraining() {
         return this.isAOTRetraining;
+    }
+
+    public void runAOTTraining() throws Exception {
+        this.workflow = Workflow.AOT;
+        recordAOTConfiguration();
+    }
+
+    // Ensure Training has already run
+    public void runAOTAssembly() throws Exception {
+        this.workflow = Workflow.AOT;
+        createAOTCache();
     }
 
     // See JEP 483; stop at the assembly run; do not execute production run

@@ -78,7 +78,7 @@ private:
 
   enum {
     // call stub: CompiledDirectCall::to_interp_stub_size() +
-    //            CompiledDirectCall::to_trampoline_stub_size()
+    //            MacroAssembler::max_address_stub_size()
     _call_stub_size = 11 * MacroAssembler::instruction_size +
                       1 * MacroAssembler::instruction_size + wordSize,
     // See emit_exception_handler for detail
@@ -116,8 +116,6 @@ private:
 
   void lir_store_slowcheck(Register k_RInfo, Register klass_RInfo, Register Rtmp1,
                            Label* success_target, Label* failure_target);
-
-  void const2reg_helper(LIR_Opr src);
 
   void emit_branch(LIR_Condition cmp_flag, LIR_Opr cmp1, LIR_Opr cmp2, Label& label, bool is_far, bool is_unordered);
 

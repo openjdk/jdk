@@ -24,6 +24,7 @@
 
 
 #include "code/relocInfo.hpp"
+#include "gc/shenandoah/shenandoahBarrierSet.inline.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetAssembler.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetNMethod.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
@@ -131,4 +132,16 @@ void ShenandoahBarrierSetNMethod::arm_all_nmethods() {
 
   // All currently allocated stack chunks now need to be fixed up.
   ShenandoahStackChunkGCData::change_epoch_id();
+}
+
+oop ShenandoahBarrierSetNMethod::oop_load_no_keepalive(const nmethod* nm, int index) {
+  // nmethod oops are fixed by nmethod entry barriers. Do not allow LRB to fix the nmethod slots here.
+  oop obj = RawAccess<>::oop_load(nm->oop_addr_at(index));
+  return ShenandoahBarrierSet::barrier_set()->oop_load_post(IN_NATIVE | ON_STRONG_OOP_REF | AS_NO_KEEPALIVE, obj, (oop*)nullptr);
+}
+
+oop ShenandoahBarrierSetNMethod::oop_load_phantom(const nmethod* nm, int index) {
+  // nmethod oops are fixed by nmethod entry barriers. Do not allow LRB to fix the nmethod slots here.
+  oop obj = RawAccess<>::oop_load(nm->oop_addr_at(index));
+  return ShenandoahBarrierSet::barrier_set()->oop_load_post(IN_NATIVE | ON_PHANTOM_OOP_REF, obj, (oop*)nullptr);
 }

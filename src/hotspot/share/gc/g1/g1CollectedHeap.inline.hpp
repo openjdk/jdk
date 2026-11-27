@@ -196,6 +196,12 @@ void G1CollectedHeap::register_humongous_candidate_region_with_region_attr(uint 
   _region_attr.set_humongous_candidate(index);
 }
 
+void G1CollectedHeap::register_humongous_non_candidate_region_with_region_attr(uint index) {
+  _region_attr.set_humongous_non_candidate(index,
+                                           region_at(index)->rem_set()->is_tracked(),
+                                           region_at(index)->has_pinned_objects());
+}
+
 void G1CollectedHeap::register_young_region_with_region_attr(G1HeapRegion* r) {
   assert(!is_in_cset(r), "should not already be registered as in collection set");
   _region_attr.set_in_young(r->hrm_index(), r->has_pinned_objects());
@@ -220,7 +226,8 @@ void G1CollectedHeap::register_old_collection_set_region_with_region_attr(G1Heap
 }
 
 void G1CollectedHeap::register_optional_region_with_region_attr(G1HeapRegion* r) {
-  _region_attr.set_optional(r->hrm_index(), r->rem_set()->is_tracked());
+  precond(r->rem_set()->is_tracked());
+  _region_attr.set_optional(r->hrm_index(), true /* is_remset_tracked */);
 }
 
 inline bool G1CollectedHeap::is_in_young(const oop obj) const {

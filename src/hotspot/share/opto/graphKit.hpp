@@ -538,15 +538,15 @@ class GraphKit : public Phase {
   // Access unaliased memory
   Node* memory(uint alias_idx);
   Node* memory(const TypePtr *tp) { return memory(C->get_alias_index(tp)); }
-  Node* memory(Node* adr) { return memory(_gvn.type(adr)->is_ptr()); }
+  Node* memory(Node* adr) { return memory(_gvn.type(adr)->as_ptr()); }
 
   // Access immutable memory
   Node* immutable_memory() { return C->immutable_memory(); }
 
   // Set unaliased memory
   void set_memory(Node* c, uint alias_idx) { merged_memory()->set_memory_at(alias_idx, c); }
-  void set_memory(Node* c, const TypePtr *tp) { set_memory(c,C->get_alias_index(tp)); }
-  void set_memory(Node* c, Node* adr) { set_memory(c,_gvn.type(adr)->is_ptr()); }
+  void set_memory(Node* c, const TypePtr* tp) { set_memory(c, C->get_alias_index(tp)); }
+  void set_memory(Node* c, Node* adr) { set_memory(c, _gvn.type(adr)->as_ptr()); }
 
   // Get the entire memory state (probably a MergeMemNode), and reset it
   // (The resetting prevents somebody from using the dangling Node pointer.)
@@ -574,7 +574,7 @@ class GraphKit : public Phase {
   Node* make_load(Node* ctl, Node* adr, const Type* t, BasicType bt,
                   MemNode::MemOrd mo, LoadNode::ControlDependency control_dependency = LoadNode::DependsOnlyOnTest,
                   bool require_atomic_access = false, bool unaligned = false,
-                  bool mismatched = false, bool unsafe = false, uint8_t barrier_data = 0);
+                  bool mismatched = false, bool unsafe = false, uint8_t barrier_data = 0, bool special = false);
 
   // Create & transform a StoreNode and store the effect into the
   // parser's memory state.
@@ -587,11 +587,14 @@ class GraphKit : public Phase {
   // Return the new StoreXNode
   Node* store_to_memory(Node* ctl, Node* adr, Node* val, BasicType bt,
                         MemNode::MemOrd,
-                        bool require_atomic_access = false,
-                        bool unaligned = false,
-                        bool mismatched = false,
-                        bool unsafe = false,
-                        int barrier_data = 0);
+                        bool require_atomic_access,
+                        bool unaligned,
+                        bool mismatched,
+                        bool unsafe,
+                        bool store_special,
+                        int barrier_data);
+  Node* store_to_memory(Node* ctl, Node* adr, Node* val, BasicType bt,
+                        MemNode::MemOrd);
 
   // Perform decorated accesses
 
@@ -602,8 +605,15 @@ class GraphKit : public Phase {
                         const Type* val_type,
                         BasicType bt,
                         DecoratorSet decorators,
-                        bool safe_for_replace = true,
-                        const ValueTypeNode* vt = nullptr);
+                        bool safe_for_replace,
+                        const ValueTypeNode* vt);
+  Node* access_store_at(Node* obj,   // containing obj
+                        Node* adr,   // actual address to store val at
+                        const TypePtr* adr_type,
+                        Node* val,
+                        const Type* val_type,
+                        BasicType bt,
+                        DecoratorSet decorators);
 
   Node* access_load_at(Node* obj,   // containing obj
                        Node* adr,   // actual address to load val at

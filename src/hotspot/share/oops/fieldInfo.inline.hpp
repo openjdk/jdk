@@ -30,6 +30,7 @@
 #include "memory/metadataFactory.hpp"
 #include "oops/constantPool.hpp"
 #include "oops/instanceKlass.hpp"
+#include "oops/layoutKind.hpp"
 #include "oops/symbol.hpp"
 #include "runtime/atomicAccess.hpp"
 #include "utilities/checkedCast.hpp"
@@ -98,8 +99,6 @@ inline void Mapper<CON>::map_field_info(const FieldInfo& fi) {
       _consumer->accept_uint(fi.contention_group());
     }
     if (fi.field_flags().is_flat()) {
-      assert(fi.layout_kind() != LayoutKind::UNKNOWN, "Must be set");
-      assert(fi.layout_kind() != LayoutKind::BUFFERED, "Sanity check");
       _consumer->accept_uint((uint32_t)fi.layout_kind());
     }
     if (fi.field_flags().has_null_marker()) {
@@ -150,7 +149,11 @@ inline void FieldInfoReader::read_field_info(FieldInfo& fi) {
     fi._contention_group = 0;
   }
   if (fi._field_flags.is_flat()) {
-    fi._layout_kind = static_cast<LayoutKind>(next_uint());
+    int layout_kind_value = integer_cast<int>(next_uint());
+    assert(LayoutKindHelper::is_valid_underlying_value(layout_kind_value), "Must be");
+    fi._flat_layout_slot = FlatLayout(static_cast<LayoutKind>(layout_kind_value));
+  } else {
+    fi._flat_layout_slot = FlatLayoutSlot();
   }
   if (fi._field_flags.has_null_marker()) {
     fi._null_marker_offset = next_uint();

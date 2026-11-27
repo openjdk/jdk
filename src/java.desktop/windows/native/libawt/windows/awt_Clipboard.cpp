@@ -305,7 +305,6 @@ Java_sun_awt_windows_WClipboard_getClipboardFormats
 {
     TRY;
 
-    unsigned int cFormats = 128; // Allocate enough space to hold all
     unsigned int pcFormatsOut = 0;
     unsigned int lpuiFormats[128] = { 0 };
 

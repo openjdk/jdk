@@ -585,10 +585,8 @@ void LIRGenerator::do_ShiftOp(ShiftOp* x) {
   LIRItem value(x->x(), this);
   LIRItem count(x->y(), this);
 
-  ValueTag elemType = x->type()->tag();
-  bool must_load_count = !count.is_constant() || elemType == longTag;
+  bool must_load_count = !count.is_constant();
   if (must_load_count) {
-    // count for long must be in register
     count.load_item_force(shiftCountOpr());
   } else {
     count.dont_load_item();
@@ -1149,6 +1147,8 @@ void LIRGenerator::do_NewTypeArray(NewTypeArray* x) {
     info = state_for(x, x->state());
   }
 
+  deoptimize_vmalloc_for_jvmti(!x->zero_array(), info);
+
   LIRItem length(x->length(), this);
   length.load_item_force(FrameMap::rbx_opr);
 
@@ -1177,6 +1177,11 @@ void LIRGenerator::do_NewObjectArray(NewObjectArray* x) {
   // and therefore provide the state before the parameters have been consumed
   CodeEmitInfo* patching_info = nullptr;
   ciKlass* obj = ciObjArrayKlass::make(x->klass());
+
+  if (x->klass()->is_loaded() && !obj->is_loaded()) {
+    BAILOUT("encountered unloaded ciobjarrayklass due to out of memory error");
+  }
+
   if (!x->klass()->is_loaded() || !obj->is_loaded() || PatchALot) {
     patching_info =  state_for(x, x->state_before());
   }
@@ -1199,9 +1204,7 @@ void LIRGenerator::do_NewObjectArray(NewObjectArray* x) {
   bool is_null_free = obj->is_loaded() && obj->as_array_klass()->is_elem_null_free();
 
   CodeStub* slow_path = new NewObjectArrayStub(klass_reg, len, reg, info, is_null_free);
-  if (x->klass()->is_loaded() && !obj->is_loaded()) {
-    BAILOUT("encountered unloaded ciobjarrayklass due to out of memory error");
-  }
+
   klass2reg_with_patching(klass_reg, obj, patching_info);
   bool always_slow_path = is_null_free || is_flat;
   __ allocate_array(reg, len, tmp1, tmp2, tmp3, tmp4, T_OBJECT, klass_reg, slow_path, true /*zero_array*/, always_slow_path);

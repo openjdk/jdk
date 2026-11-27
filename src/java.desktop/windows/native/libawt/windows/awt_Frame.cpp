@@ -370,8 +370,6 @@ BOOL AwtFrame::IsEmbeddedInIE(HWND hwndParent)
 LRESULT AwtFrame::ProxyWindowProc(UINT message, WPARAM wParam, LPARAM lParam, MsgRouting &mr)
 {
     LRESULT retValue = 0L;
-
-    AwtComponent *focusOwner = NULL;
     AwtComponent *imeTargetComponent = NULL;
 
     // IME and input language related messages need to be sent to a window
@@ -1131,8 +1129,6 @@ void AwtFrame::SetMenuBar(AwtMenuBar* mb)
 
 MsgRouting AwtFrame::WmDrawItem(UINT ctrlId, DRAWITEMSTRUCT& drawInfo)
 {
-    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
-
     // if the item to be redrawn is the menu bar, then do it
     AwtMenuBar* awtMenubar = GetMenuBar();
     if (drawInfo.CtlType == ODT_MENU && (awtMenubar != NULL) &&
@@ -1142,12 +1138,11 @@ MsgRouting AwtFrame::WmDrawItem(UINT ctrlId, DRAWITEMSTRUCT& drawInfo)
                 return mrConsume;
     }
 
-        return AwtComponent::WmDrawItem(ctrlId, drawInfo);
+    return AwtComponent::WmDrawItem(ctrlId, drawInfo);
 }
 
 MsgRouting AwtFrame::WmMeasureItem(UINT ctrlId, MEASUREITEMSTRUCT& measureInfo)
 {
-        JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
         AwtMenuBar* awtMenubar = GetMenuBar();
         if ((measureInfo.CtlType == ODT_MENU) && (awtMenubar != NULL))
         {

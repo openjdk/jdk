@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 package jdk.jfr.event.io;
 
 import static jdk.test.lib.Asserts.assertEquals;
+import static jdk.jfr.event.io.IOHelper.assertClosedChannelException;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -46,7 +47,7 @@ import jdk.test.lib.thread.XRun;
 
 /**
  * @test
- * @bug 8310978
+ * @bug 8310978 8397189
  * @summary test socket read/write events on socket adaptors
  * @requires vm.flagless
  * @requires vm.hasJFR
@@ -82,7 +83,8 @@ public class TestSocketAdapterEvents {
                     public void xrun() throws IOException {
                         byte[] bs = new byte[4];
                         try (SocketChannel sc = ssc.accept(); Socket s = sc.socket();
-                             InputStream is = s.getInputStream()) {
+                            InputStream is = s.getInputStream()) {
+                            OutputStream os = s.getOutputStream();
 
                             int readInt = is.read();
                             assertEquals(readInt, writeInt, "Wrong readInt");
@@ -99,8 +101,27 @@ public class TestSocketAdapterEvents {
                             // Try to read more, but writer have closed. Should
                             // get EOF.
                             readInt = is.read();
-                            assertEquals(readInt, -1, "Wrong readInt at EOF");
+                            assertEquals(readInt, -1, "Wrong readInt for read() at EOF");
                             addExpectedEvent(IOEvent.createSocketReadEvent(-1, s));
+
+                            s.close();
+                            assertClosedChannelException(is::read, "is.read()");
+                            addExpectedEvent(IOEvent.createSocketReadEvent(0, s));
+
+                            assertClosedChannelException(() -> is.read(bs), "is.read(byte[])");
+                            addExpectedEvent(IOEvent.createSocketReadEvent(0, s));
+
+                            assertClosedChannelException(() -> is.read(bs, 0, 3), "is.read(byte[], int, int)");
+                            addExpectedEvent(IOEvent.createSocketReadEvent(0, s));
+
+                            assertClosedChannelException(() -> os.write(42), "os.write(int)");
+                            addExpectedEvent(IOEvent.createSocketWriteEvent(0, s));
+
+                            assertClosedChannelException(() -> os.write(bs), "os.write(byte[])");
+                            addExpectedEvent(IOEvent.createSocketWriteEvent(0, s));
+
+                            assertClosedChannelException(() -> os.write(bs, 0, 3), "os.write(byte[], int, int)");
+                            addExpectedEvent(IOEvent.createSocketWriteEvent(0, s));
                         }
                     }
                 });

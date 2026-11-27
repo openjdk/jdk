@@ -5,11 +5,11 @@
 #ifndef PIPEWIRE_PROXY_H
 #define PIPEWIRE_PROXY_H
 
+#include <spa/utils/hook.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <spa/utils/hook.h>
 
 /** \page page_proxy Proxy
  *

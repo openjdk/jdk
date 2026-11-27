@@ -183,6 +183,7 @@ private:
 
   ShenandoahHeap* _heap;
   ShenandoahCardTable* _card_table;
+  bool _is_read_table_clean;
   size_t _card_shift;
   size_t _total_card_count;
   HeapWord* _whole_heap_base;   // Points to first HeapWord of data contained within heap memory
@@ -218,10 +219,6 @@ public:
   inline void mark_read_table_as_clean();
 
   inline void mark_write_table_as_clean();
-
-  // Merge any dirty values from write table into the read table, while leaving
-  // the write table unchanged.
-  void merge_write_table(HeapWord* start, size_t word_count);
 
   // See comment in ShenandoahScanRemembered
   void swap_card_tables();
@@ -773,8 +770,6 @@ public:
   // table for the next GC cycle.
   void swap_card_tables() { _rs->swap_card_tables(); }
 
-  void merge_write_table(HeapWord* start, size_t word_count) { _rs->merge_write_table(start, word_count); }
-
   size_t cluster_for_addr(HeapWord* addr);
   HeapWord* addr_for_cluster(size_t cluster_no);
 
@@ -835,8 +830,9 @@ public:
   void process_clusters(size_t first_cluster, size_t count, HeapWord* end_of_range, ClosureType* oops,
                         bool use_write_table, uint worker_id);
 
+  // Scan part of the humongous object that begins in start_region.
   template <typename ClosureType>
-  void process_humongous_clusters(ShenandoahHeapRegion* r, size_t first_cluster, size_t count,
+  void process_humongous_clusters(ShenandoahHeapRegion* start_region, size_t first_cluster, size_t count,
                                   HeapWord* end_of_range, ClosureType* oops, bool use_write_table);
 
   template <typename ClosureType>
