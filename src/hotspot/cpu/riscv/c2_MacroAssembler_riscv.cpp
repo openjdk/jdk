@@ -282,7 +282,6 @@ void C2_MacroAssembler::fast_unlock(Register obj, Register box,
   // Finish fast unlock unsuccessfully. MUST branch to with flag != 0
   Label slow_path;
 
-  const Register tmp1_mark = tmp1;
   const Register tmp2_top = tmp2;
   const Register tmp3_t = tmp3;
 
@@ -309,6 +308,7 @@ void C2_MacroAssembler::fast_unlock(Register obj, Register box,
 
     // Not recursive.
     // Load Mark.
+    const Register tmp1_mark = tmp1;
     ld(tmp1_mark, Address(obj, oopDesc::mark_offset_in_bytes()));
 
     // Check header for monitor (0b10).
@@ -338,6 +338,7 @@ void C2_MacroAssembler::fast_unlock(Register obj, Register box,
 
   { // Handle inflated monitor.
     bind(inflated_load_mark);
+    const Register tmp1_mark = tmp1;
     ld(tmp1_mark, Address(obj, oopDesc::mark_offset_in_bytes()));
 #ifdef ASSERT
     test_bit(tmp3_t, tmp1_mark, exact_log2(markWord::monitor_value));
