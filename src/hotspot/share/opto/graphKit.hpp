@@ -574,7 +574,7 @@ class GraphKit : public Phase {
   Node* make_load(Node* ctl, Node* adr, const Type* t, BasicType bt,
                   MemNode::MemOrd mo, LoadNode::ControlDependency control_dependency = LoadNode::DependsOnlyOnTest,
                   bool require_atomic_access = false, bool unaligned = false,
-                  bool mismatched = false, bool unsafe = false, uint8_t barrier_data = 0, bool special = false);
+                  bool mismatched = false, bool unsafe = false, uint8_t barrier_data = 0, bool has_embedded_oops = false);
 
   // Create & transform a StoreNode and store the effect into the
   // parser's memory state.
@@ -591,7 +591,7 @@ class GraphKit : public Phase {
                         bool unaligned,
                         bool mismatched,
                         bool unsafe,
-                        bool store_special,
+                        bool has_embedded_oops,
                         int barrier_data);
   Node* store_to_memory(Node* ctl, Node* adr, Node* val, BasicType bt,
                         MemNode::MemOrd);
