@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8202462 8340565
+ * @bug 8202462 8340565 8397227
  * @summary {@index} may cause duplicate labels
  * @library /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -152,5 +152,38 @@ public class TestIndexTaglet extends JavadocTester {
                     <div class="col-last even-row-color">
                     <div class="block"><code><a href="pkg/A.html#foo">class pkg.A</a></code>, <code\
                     ><a href="pkg/A.html#foo-1">pkg.A.m()</a></code></div>""");
+    }
+
+    @Test
+    public void testLongAttribute(Path base) throws Exception {
+        Path srcDir = base.resolve("src");
+        Path outDir = base.resolve("out");
+
+        new ClassBuilder(tb, "pkg.A")
+                .setModifiers("public", "class")
+                .setComments("A {@index class before <span data-value=" + "x".repeat(100_000) + ">inside</span> after}.")
+                .write(srcDir);
+
+        javadoc("-d", outDir.toString(),
+                "-sourcepath", srcDir.toString(),
+                "pkg");
+
+        checkExit(Exit.OK);
+
+        checkOutput("pkg/A.html", true,
+                """
+                    <div class="block">A <span id="class" class="search-tag-result">class</span>.</div>""");
+
+        checkOutput("tag-search-index.js", true,
+                """
+                    {"l":"class","h":"class pkg.A","d":"before inside after","u":"pkg/A.html#class"}""");
+
+        checkOrder("search-tags.html",
+                """
+                    <div class="col-first even-row-color">class</div>
+                    <div class="col-second even-row-color">before inside after</div>
+                    <div class="col-last even-row-color">
+                    <div class="block"><code><a href="pkg/A.html#class">class pkg.A</a></code></div>
+                    """);
     }
 }
