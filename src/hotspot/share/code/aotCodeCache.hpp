@@ -578,16 +578,17 @@ public:
 #define AOTCODECACHE_DECLARE_FUN(type, name, func) type _saved_ ## name;
 
 enum class DataKind: int {
-  No_Data   = -1,
-  Null      = 0,
-  Klass     = 1,
-  Method    = 2,
-  String    = 3,
-  MH_Oop    = 4,
-  Primitive = 5, // primitive Class object
-  SysLoader = 6, // java_system_loader
-  PlaLoader = 7, // java_platform_loader
-  MethodCnts= 8
+  No_Data    = -1,
+  Null       = 0,
+  Klass      = 1,
+  ArrayKlass = 2,
+  Method     = 3,
+  String     = 4,
+  MH_Oop     = 5,
+  Primitive  = 6, // primitive Class object
+  SysLoader  = 7, // java_system_loader
+  PlaLoader  = 8, // java_platform_loader
+  MethodCnts = 9
 };
 
 struct AOTCodeEntryStats;
@@ -722,6 +723,7 @@ protected:
     uint   _cache_size;      // cache size in bytes
     uint   _preload_entries_count; // entries for pre-loading code
     uint   _preload_entries_offset;
+    uint   _preload_table_offset;  // offset of table for looking up an preload entry
     uint   _entries_count;   // number of recorded entries
     uint   _entries_offset;  // offset of AOTCodeEntry array describing entries
     uint   _search_table_offset; // offset of table for looking up an AOTCodeEntry
@@ -744,6 +746,7 @@ protected:
   public:
     void init(uint cache_size,
               uint preload_entries_count, uint preload_entries_offset,
+              uint preload_table_offset,
               uint entries_count,         uint entries_offset,
               uint search_table_offset,
               uint strings_count,         uint strings_offset,
@@ -755,6 +758,7 @@ protected:
       _cache_size             = cache_size;
       _preload_entries_count  = preload_entries_count;
       _preload_entries_offset = preload_entries_offset;
+      _preload_table_offset   = preload_table_offset;
       _entries_count          = entries_count;
       _entries_offset         = entries_offset;
       _search_table_offset    = search_table_offset;
@@ -774,6 +778,7 @@ protected:
     uint cache_size()     const { return _cache_size; }
     uint preload_entries_count()  const { return _preload_entries_count; }
     uint preload_entries_offset() const { return _preload_entries_offset; }
+    uint preload_table_offset()   const { return _preload_table_offset; }
     uint entries_count()  const { return _entries_count; }
     uint entries_offset() const { return _entries_offset; }
     uint strings_count()  const { return _strings_count; }
@@ -849,6 +854,9 @@ private:
   // @(preload_entries[0]._offset):  nmethod preimage for preload entry #0
   // @(preload_entries[1]._offset):  nmethod preimage for preload entry #1
   // ...
+  //
+  // @preload_table_offset: uint[preload_entries_count] index, sorted by id.
+  // The id matches AOTCodeEntry::_id. The index point into the preload entries array.
   //
   // @entries_offset: AOTCodeEntry[entries_count] other code (A1/A2/A4/stub/adapter)
   // Main (non-preload) code array, presented in dump order (arbitrary).
@@ -957,6 +965,7 @@ public:
   bool verify_nmethod_entry(AOTCodeEntry* entry, uint id, uint low_bound, uint high_bound);
   AOTCodeEntry* find_entry(AOTCodeEntry::Kind kind, uint id, uint comp_level = 0);
   AOTCodeEntry* search_entry(AOTCodeEntry::Kind kind, uint id, uint comp_level);
+  AOTCodeEntry* find_preload_entry(uint method_id);
   void invalidate_entry(AOTCodeEntry* entry);
 
   static uint get_jvmti_state();
@@ -966,6 +975,7 @@ public:
   void log_stats_on_exit(AOTCodeEntryStats& stats);
 
   bool write_klass(Klass* klass);
+  bool write_array_klass(ArrayKlass* klass);
   bool write_method(Method* method);
   bool write_fingerprint(Method* method);
 
@@ -1183,7 +1193,8 @@ private:
   const char* _failure;  // Failed to lookup for info (skip only this code load)
   void set_lookup_failed(const char* failure) { _failure = failure; }
 
-  Klass* read_klass(JavaThread* thread);
+  Klass* read_klass();
+  Klass* read_array_klass(JavaThread* thread);
   Method* read_method();
   bool verify_fingerprint(Method* method);
 

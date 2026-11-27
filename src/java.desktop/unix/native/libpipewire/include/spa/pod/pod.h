@@ -5,17 +5,20 @@
 #ifndef SPA_POD_H
 #define SPA_POD_H
 
+#include <spa/utils/defs.h>
+#include <spa/utils/type.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <spa/utils/defs.h>
-#include <spa/utils/type.h>
 
 /**
  * \addtogroup spa_pod
  * \{
  */
+
+#define SPA_POD_ALIGN                8
+#define SPA_POD_MAX_SIZE            (1u<<20)
 
 #define SPA_POD_BODY_SIZE(pod)            (((struct spa_pod*)(pod))->size)
 #define SPA_POD_TYPE(pod)            (((struct spa_pod*)(pod))->type)
@@ -26,6 +29,15 @@ extern "C" {
 #define SPA_POD_CONTENTS_CONST(type,pod)    SPA_PTROFF((pod),sizeof(type),const void)
 #define SPA_POD_BODY(pod)            SPA_PTROFF((pod),sizeof(struct spa_pod),void)
 #define SPA_POD_BODY_CONST(pod)            SPA_PTROFF((pod),sizeof(struct spa_pod),const void)
+
+#define SPA_POD_IS_VALID(pod)                \
+    (SPA_POD_BODY_SIZE(pod) < SPA_POD_MAX_SIZE)
+#define SPA_POD_CHECK_TYPE(pod,_type)            \
+    (SPA_POD_IS_VALID(pod) &&            \
+    (pod)->type == (_type))
+#define SPA_POD_CHECK(pod,_type,_size) \
+    (SPA_POD_CHECK_TYPE(pod,_type) && (pod)->size >= (_size))
+
 
 struct spa_pod {
     uint32_t size;        /* size of the body */
@@ -94,8 +106,8 @@ struct spa_pod_bitmap {
 };
 
 #define SPA_POD_ARRAY_CHILD(arr)    (&((struct spa_pod_array*)(arr))->body.child)
-#define SPA_POD_ARRAY_VALUE_TYPE(arr)    (SPA_POD_TYPE(SPA_POD_ARRAY_CHILD(arr)))
-#define SPA_POD_ARRAY_VALUE_SIZE(arr)    (SPA_POD_BODY_SIZE(SPA_POD_ARRAY_CHILD(arr)))
+#define SPA_POD_ARRAY_VALUE_TYPE(arr)    (SPA_POD_ARRAY_CHILD(arr)->type)
+#define SPA_POD_ARRAY_VALUE_SIZE(arr)    (SPA_POD_ARRAY_CHILD(arr)->size)
 #define SPA_POD_ARRAY_N_VALUES(arr)    (SPA_POD_ARRAY_VALUE_SIZE(arr) ? ((SPA_POD_BODY_SIZE(arr) - sizeof(struct spa_pod_array_body)) / SPA_POD_ARRAY_VALUE_SIZE(arr)) : 0)
 #define SPA_POD_ARRAY_VALUES(arr)    SPA_POD_CONTENTS(struct spa_pod_array, arr)
 
@@ -112,8 +124,8 @@ struct spa_pod_array {
 #define SPA_POD_CHOICE_CHILD(choice)        (&((struct spa_pod_choice*)(choice))->body.child)
 #define SPA_POD_CHOICE_TYPE(choice)        (((struct spa_pod_choice*)(choice))->body.type)
 #define SPA_POD_CHOICE_FLAGS(choice)        (((struct spa_pod_choice*)(choice))->body.flags)
-#define SPA_POD_CHOICE_VALUE_TYPE(choice)    (SPA_POD_TYPE(SPA_POD_CHOICE_CHILD(choice)))
-#define SPA_POD_CHOICE_VALUE_SIZE(choice)    (SPA_POD_BODY_SIZE(SPA_POD_CHOICE_CHILD(choice)))
+#define SPA_POD_CHOICE_VALUE_TYPE(choice)    (SPA_POD_CHOICE_CHILD(choice)->type)
+#define SPA_POD_CHOICE_VALUE_SIZE(choice)    (SPA_POD_CHOICE_CHILD(choice)->size)
 #define SPA_POD_CHOICE_N_VALUES(choice)        (SPA_POD_CHOICE_VALUE_SIZE(choice) ? ((SPA_POD_BODY_SIZE(choice) - sizeof(struct spa_pod_choice_body)) / SPA_POD_CHOICE_VALUE_SIZE(choice)) : 0)
 #define SPA_POD_CHOICE_VALUES(choice)        (SPA_POD_CONTENTS(struct spa_pod_choice, choice))
 
@@ -122,7 +134,7 @@ enum spa_choice_type {
     SPA_CHOICE_Range,        /**< range: default, min, max */
     SPA_CHOICE_Step,        /**< range with step: default, min, max, step */
     SPA_CHOICE_Enum,        /**< list: default, alternative,...  */
-    SPA_CHOICE_Flags,        /**< flags: default, possible flags,... */
+    SPA_CHOICE_Flags,        /**< flags: first value is flags */
 };
 
 struct spa_pod_choice_body {
@@ -137,6 +149,9 @@ struct spa_pod_choice {
     struct spa_pod pod;
     struct spa_pod_choice_body body;
 };
+
+#define SPA_POD_STRUCT_BODY(pod)        SPA_PTROFF((pod),sizeof(struct spa_pod),struct spa_pod)
+#define SPA_POD_STRUCT_BODY_CONST(pod)        SPA_PTROFF((pod),sizeof(struct spa_pod),const struct spa_pod)
 
 struct spa_pod_struct {
     struct spa_pod pod;
@@ -186,8 +201,11 @@ struct spa_pod_prop {
                              *      Int : n_items,
                              *      (String : key,
                              *       String : value)*)) */
-#define SPA_POD_PROP_FLAG_MANDATORY    (1u<<3)        /**< is mandatory */
+#define SPA_POD_PROP_FLAG_MANDATORY    (1u<<3)        /**< is mandatory, when filtering, both sides
+                              *  need this property or filtering fails. */
 #define SPA_POD_PROP_FLAG_DONT_FIXATE    (1u<<4)        /**< choices need no fixation */
+#define SPA_POD_PROP_FLAG_DROP        (1u<<5)        /**< drop property, when filtering, both sides
+                                                          *  need the property or it will be dropped. */
     uint32_t flags;            /**< flags for property */
     struct spa_pod value;
     /* value follows */

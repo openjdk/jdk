@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 package jdk.jfr.event.io;
 
 import static jdk.test.lib.Asserts.assertEquals;
-
+import static jdk.jfr.event.io.IOHelper.assertSocketException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -42,7 +42,7 @@ import jdk.test.lib.jfr.Events;
 import jdk.test.lib.thread.TestThread;
 import jdk.test.lib.thread.XRun;
 
-/**
+/*
  * @test
  * @summary test socket read/write events on Socket
  * @requires vm.flagless
@@ -97,6 +97,12 @@ public class TestSocketEvents {
                             readInt = is.read();
                             assertEquals(readInt, -1, "Wrong readInt at EOF");
                             addExpectedEvent(IOEvent.createSocketReadEvent(-1, s));
+
+                            OutputStream os = s.getOutputStream();
+                            os.close();
+
+                            assertSocketException(() -> os.write(42), "os.write(int)");
+                            addExpectedEvent(IOEvent.createSocketWriteEvent(0, s));
                         }
                     }
                 });
@@ -105,12 +111,17 @@ public class TestSocketEvents {
                 try (Socket s = new Socket()) {
                     s.connect(ss.getLocalSocketAddress());
                     try (OutputStream os = s.getOutputStream()) {
+                        InputStream is = s.getInputStream();
                         os.write(writeInt);
                         addExpectedEvent(IOEvent.createSocketWriteEvent(1, s));
                         os.write(writeBuf, 0, 3);
                         addExpectedEvent(IOEvent.createSocketWriteEvent(3, s));
                         os.write(writeBuf);
                         addExpectedEvent(IOEvent.createSocketWriteEvent(writeBuf.length, s));
+                        is.close();
+
+                        assertSocketException(() -> is.read(), "is.read()");
+                        addExpectedEvent(IOEvent.createSocketReadEvent(0, s));
                     }
                 }
 

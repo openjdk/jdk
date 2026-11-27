@@ -762,26 +762,11 @@ JNIEXPORT jlong JNICALL Java_apple_security_KeychainStore__1addItemToKeychain
 
     NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init]; \
     @try {
-        jsize dataSize = (*env)->GetArrayLength(env, rawDataObj);
-        jbyte *rawData = (*env)->GetByteArrayElements(env, rawDataObj, NULL);
-        if (rawData == NULL) {
-            goto errOut;
-        }
-
-        CFDataRef cfDataToImport = CFDataCreate(kCFAllocatorDefault, (UInt8 *)rawData, dataSize);
-        CFArrayRef createdItems = NULL;
-
-        SecKeychainRef defaultKeychain = NULL;
-        SecKeychainCopyDefault(&defaultKeychain);
-
-        SecExternalFormat dataFormat = (isCertificate == JNI_TRUE ? kSecFormatX509Cert : kSecFormatWrappedPKCS8);
-
         // Convert the password obj into a CFStringRef that the keychain importer can use for encryption.
-        SecKeyImportExportParameters paramBlock;
         CFStringRef passwordStrRef = NULL;
-
         jsize passwordLen = 0;
         jchar *passwordChars = NULL;
+        jbyte *rawData = NULL;
 
         if (passwordObj) {
             passwordLen = (*env)->GetArrayLength(env, passwordObj);
@@ -799,6 +784,24 @@ JNIEXPORT jlong JNICALL Java_apple_security_KeychainStore__1addItemToKeychain
             }
         }
 
+        jsize dataSize = (*env)->GetArrayLength(env, rawDataObj);
+        rawData = (*env)->GetByteArrayElements(env, rawDataObj, NULL);
+        if (rawData == NULL) {
+            goto errOut;
+        }
+
+        CFDataRef cfDataToImport = CFDataCreate(kCFAllocatorDefault, (UInt8 *)rawData, dataSize);
+        CFArrayRef createdItems = NULL;
+        if (cfDataToImport == NULL) {
+            goto errOut;
+        }
+
+        SecKeychainRef defaultKeychain = NULL;
+        SecKeychainCopyDefault(&defaultKeychain);
+
+        SecExternalFormat dataFormat = (isCertificate == JNI_TRUE ? kSecFormatX509Cert : kSecFormatWrappedPKCS8);
+        SecKeyImportExportParameters paramBlock;
+
         paramBlock.version = SEC_KEY_IMPORT_EXPORT_PARAMS_VERSION;
         // Note that setting the flags field **requires** you to pass in a password of some kind.  The keychain will not prompt you.
         paramBlock.flags = 0;
@@ -811,9 +814,7 @@ JNIEXPORT jlong JNICALL Java_apple_security_KeychainStore__1addItemToKeychain
 
         err = SecKeychainItemImport(cfDataToImport, NULL, &dataFormat, NULL,
                                     0, &paramBlock, defaultKeychain, &createdItems);
-        if (cfDataToImport != NULL) {
-            CFRelease(cfDataToImport);
-        }
+        CFRelease(cfDataToImport);
 
         if (err == noErr) {
             SecKeychainItemRef anItem = (SecKeychainItemRef)CFArrayGetValueAtIndex(createdItems, 0);

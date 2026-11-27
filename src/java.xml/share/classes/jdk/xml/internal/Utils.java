@@ -29,6 +29,7 @@ import java.lang.reflect.Array;
 import java.net.URI;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -181,5 +182,25 @@ public class Utils {
             // fallback for paths with illegal characters (e.g. spaces)
             return Path.of(systemId).toUri();
         }
+    }
+
+    // converts the input to upper case using the ROOT locale
+    public static String toUpperCase(CharSequence input) {
+        return input == null ? null : input.toString().toUpperCase(Locale.ROOT);
+    }
+
+    // converts the input to lower case using the ROOT locale
+    public static String toLowerCase(CharSequence input) {
+        return input == null ? null : input.toString().toLowerCase(Locale.ROOT);
+    }
+
+    // converts the input to upper case using the specified locale
+    public static String toUpperCase(CharSequence input, Locale locale) {
+        return input == null ? null : input.toString().toUpperCase(locale);
+    }
+
+    // converts the input to lower case using the specified locale
+    public static String toLowerCase(CharSequence input, Locale locale) {
+        return input == null ? null : input.toString().toLowerCase(locale);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import java.net.http.HttpHeaders;
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -729,8 +730,14 @@ public class Http3ServerConnection {
         afterSettings.thenAccept((s) -> writeControlStream(buf));
     }
 
+    private volatile Consumer<Long> cancelPushListener = (id) -> {};
+
+    public void setCancelPushListener(Consumer<Long> listener) {
+        this.cancelPushListener = Objects.requireNonNull(listener);
+    }
 
     void cancelPushReceived(long pushId) {
+        cancelPushListener.accept(pushId);
         cancelPush(pushId);
     }
 

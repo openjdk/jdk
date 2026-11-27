@@ -62,6 +62,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.http.HttpHeaders;
 import java.nio.ByteBuffer;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
@@ -110,6 +111,8 @@ public class Http2TestServerConnection {
     final Map<Integer, BodyOutputStream> outStreams; // output q per stream
     final HashSet<Integer> pushStreams;
     final Queue<Http2Frame> outputQ;
+    private final java.util.Queue<Http2Frame> frames = new ArrayDeque<>();
+    private final FramesDecoder reader = new FramesDecoder(frames::add);
     volatile int nextstream;
     final Socket socket;
     final Http2TestExchangeSupplier exchangeSupplier;
@@ -330,6 +333,10 @@ public class Http2TestServerConnection {
         outputQ.put(frame);
     }
 
+    public void addToOutputQ(final List<Http2Frame> frames) throws IOException {
+        outputQ.putAll(frames);
+    }
+
     private static void handshake(final SNIMatcher sniMatcher, final SSLSocket sock) throws IOException {
         if (sniMatcher != null) {
             final SSLParameters params = sock.getSSLParameters();
@@ -444,13 +451,11 @@ public class Http2TestServerConnection {
         // simulate header of Settings Frame
         ByteBuffer bb0 = ByteBuffer.wrap(
                 new byte[] {0, 0, (byte)payload.length, 4, 0, 0, 0, 0, 0});
-        List<Http2Frame> frames = new ArrayList<>();
-        FramesDecoder reader = new FramesDecoder(frames::add);
         reader.decode(bb0);
         reader.decode(bb1);
         if (frames.size()!=1)
             throw new IOException("Expected 1 frame got "+frames.size()) ;
-        Http2Frame frame = frames.get(0);
+        Http2Frame frame = frames.remove();
         if (!(frame instanceof SettingsFrame))
             throw new IOException("Expected SettingsFrame");
         return (SettingsFrame)frame;
@@ -1247,14 +1252,12 @@ public class Http2TestServerConnection {
             int n = is.readNBytes(rest, 0, len);
             if (n != len)
                 throw new IOException("Error reading frame");
-            List<Http2Frame> frames = new ArrayList<>();
-            FramesDecoder reader = new FramesDecoder(frames::add);
             reader.decode(ByteBuffer.wrap(buf));
             reader.decode(ByteBuffer.wrap(rest));
             if (frames.size()!=1)
                 throw new IOException("Expected 1 frame got "+frames.size()) ;
 
-            return frames.get(0);
+            return frames.remove();
         } catch (IOException ee) {
             if (closed.get())
                 return null;

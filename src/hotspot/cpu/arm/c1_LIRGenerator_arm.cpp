@@ -986,6 +986,11 @@ void LIRGenerator::do_NewObjectArray(NewObjectArray* x) {
 
   CodeEmitInfo* patching_info = nullptr;
   ciMetadata* obj = ciObjArrayKlass::make(x->klass());
+
+  if (x->klass()->is_loaded() && !obj->is_loaded()) {
+    BAILOUT("encountered unloaded_ciobjarrayklass due to out of memory error");
+  }
+
   if (!x->klass()->is_loaded() || !obj->is_loaded() || PatchALot) {
     patching_info = state_for(x, x->state_before());
   }
@@ -1000,9 +1005,6 @@ void LIRGenerator::do_NewObjectArray(NewObjectArray* x) {
 
   CodeStub* slow_path = new NewObjectArrayStub(klass_reg, len, reg, info);
 
-  if (x->klass()->is_loaded() && !obj->is_loaded()) {
-    BAILOUT("encountered unloaded_ciobjarrayklass due to out of memory error");
-  }
   klass2reg_with_patching(klass_reg, obj, patching_info);
   __ allocate_array(reg, len, tmp1, tmp2, tmp3, tmp4, T_OBJECT, klass_reg, slow_path);
 

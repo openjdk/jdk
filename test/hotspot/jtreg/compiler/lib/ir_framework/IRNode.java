@@ -999,6 +999,36 @@ public class IRNode {
         machOnly(G1_STORE_P_WITH_BARRIER_FLAG, regex);
     }
 
+    public static final String G1_STORE_L_SPECIAL_WITH_BARRIER_FLAG = COMPOSITE_PREFIX + "G1_STORE_L_SPECIAL_WITH_BARRIER_FLAG" + POSTFIX;
+    public static final String G1_STORE_L_SPECIAL_ONE_OOP_0_WITH_BARRIER_FLAG = COMPOSITE_PREFIX + "G1_STORE_L_SPECIAL_ONE_OOP_0_WITH_BARRIER_FLAG" + POSTFIX;
+    public static final String G1_STORE_L_SPECIAL_ONE_OOP_4_WITH_BARRIER_FLAG = COMPOSITE_PREFIX + "G1_STORE_L_SPECIAL_ONE_OOP_4_WITH_BARRIER_FLAG" + POSTFIX;
+    public static final String G1_STORE_L_SPECIAL_TWO_OOPS_WITH_BARRIER_FLAG = COMPOSITE_PREFIX + "G1_STORE_L_SPECIAL_TWO_OOPS_WITH_BARRIER_FLAG" + POSTFIX;
+    static {
+        String regex_any = START + "g1StoreLSpecial\\S*" + MID + "barrier\\(\\s*" + IS_REPLACED + "\\s*\\)" + END;
+        String regex_one_oop0 = START + "g1StoreLSpecialOneOopOff0" + MID + "barrier\\(\\s*" + IS_REPLACED + "\\s*\\)" + END;
+        String regex_one_oop4 = START + "g1StoreLSpecialOneOopOff4" + MID + "barrier\\(\\s*" + IS_REPLACED + "\\s*\\)" + END;
+        String regex_two_oops = START + "g1StoreLSpecialTwoOops" + MID + "barrier\\(\\s*" + IS_REPLACED + "\\s*\\)" + END;
+        machOnly(G1_STORE_L_SPECIAL_WITH_BARRIER_FLAG, regex_any);
+        machOnly(G1_STORE_L_SPECIAL_ONE_OOP_0_WITH_BARRIER_FLAG, regex_one_oop0);
+        machOnly(G1_STORE_L_SPECIAL_ONE_OOP_4_WITH_BARRIER_FLAG, regex_one_oop4);
+        machOnly(G1_STORE_L_SPECIAL_TWO_OOPS_WITH_BARRIER_FLAG, regex_two_oops);
+    }
+
+    public static final String G1_STORE_L_SPECIAL = PREFIX + "G1_STORE_L_SPECIAL" + POSTFIX;
+    public static final String G1_STORE_L_SPECIAL_ONE_OOP_0 = PREFIX + "G1_STORE_L_SPECIAL_ONE_OOP_0" + POSTFIX;
+    public static final String G1_STORE_L_SPECIAL_ONE_OOP_4 = PREFIX + "G1_STORE_L_SPECIAL_ONE_OOP_4" + POSTFIX;
+    public static final String G1_STORE_L_SPECIAL_TWO_OOPS = PREFIX + "G1_STORE_L_SPECIAL_TWO_OOPS" + POSTFIX;
+    static {
+        String regex_any = START + "g1StoreLSpecial\\S*" + MID + END;
+        String regex_one_oop0 = START + "g1StoreLSpecialOneOopOff0" + MID + END;
+        String regex_one_oop4 = START + "g1StoreLSpecialOneOopOff4" + MID + END;
+        String regex_two_oops = START + "g1StoreLSpecialTwoOops" + MID + END;
+        machOnly(G1_STORE_L_SPECIAL, regex_any);
+        machOnly(G1_STORE_L_SPECIAL_ONE_OOP_0, regex_one_oop0);
+        machOnly(G1_STORE_L_SPECIAL_ONE_OOP_4, regex_one_oop4);
+        machOnly(G1_STORE_L_SPECIAL_TWO_OOPS, regex_two_oops);
+    }
+
     public static final String IF = PREFIX + "IF" + POSTFIX;
     static {
         beforeMatchingNameRegex(IF, "If\\b");
@@ -3112,6 +3142,11 @@ public class IRNode {
         machOnlyNameRegex(X86_VMULDQ_REG, "vmuldq_reg");
     }
 
+    public static final String X86_VSHIFT_B_GFNI = PREFIX + "X86_VSHIFT_B_GFNI" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_VSHIFT_B_GFNI, "vshiftB_gfni");
+    }
+
     public static final String AARCH64_VMULL_UINT_SVE2 = PREFIX + "AARCH64_VMULL_UINT_SVE2" + POSTFIX;
     static {
         machOnlyNameRegex(AARCH64_VMULL_UINT_SVE2, "vmulL_uint_sve2");
@@ -3606,6 +3641,16 @@ public class IRNode {
     public static final String CLONE_INTRINSIC_SLOW_PATH = PREFIX + "CLONE_INTRINSIC_SLOW_PATH" + POSTFIX;
     static {
         staticCallOfMethodNodes(CLONE_INTRINSIC_SLOW_PATH, "java.lang.Object::clone");
+    }
+
+    public static final String SLOW_ARRAYCOPY = PREFIX + "SLOW_ARRAYCOPY" + POSTFIX;
+    static {
+        staticCallOfMethodNodes(SLOW_ARRAYCOPY, "slow_arraycopy");
+    }
+
+    public static final String JINT_ARRAYCOPY = PREFIX + "JINT_ARRAYCOPY" + POSTFIX;
+    static {
+        callLeafNoFpOfMethodNodes(JINT_ARRAYCOPY, "jint_disjoint_arraycopy");
     }
 
     public static final String JLONG_ARRAYCOPY = PREFIX + "JLONG_ARRAYCOPY" + POSTFIX;

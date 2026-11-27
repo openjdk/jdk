@@ -75,6 +75,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
 import java.util.function.Predicate;
+import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -474,6 +475,9 @@ public interface HttpServerAdapters {
                 throws InterruptedException {
             throw new UnsupportedOperationException("waitForMaxPushId with " + getExchangeVersion());
         }
+        public void setHttp3CancelPushListener(Consumer<Long> listener) {
+            throw new UnsupportedOperationException("setHttp3CancelPushListener with " + getExchangeVersion());
+        }
         public boolean serverPushAllowed() {
             return false;
         }
@@ -649,6 +653,10 @@ public interface HttpServerAdapters {
             @Override
             public long waitForHttp3MaxPushId(long pushId) throws InterruptedException {
                 return exchange.waitForMaxPushId(pushId);
+            }
+            @Override
+            public void setHttp3CancelPushListener(Consumer<Long> listener) {
+                exchange.setCancelPushListener(listener);
             }
             @Override
             public Encoder qpackEncoder() {

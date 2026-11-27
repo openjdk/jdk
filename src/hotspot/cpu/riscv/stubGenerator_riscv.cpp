@@ -3923,9 +3923,8 @@ class StubGenerator: public StubCodeGenerator {
       __ bind(LOAD_LAST);   // cnt2 = 1..7 characters left
 
       __ subi(cnt2, cnt2, wordSize); // cnt2 is now an offset in strL which points to last 8 bytes
-      __ slli(t0, cnt2, 1);     // t0 is now an offset in strU which points to last 16 bytes
       __ add(strL, strL, cnt2); // Address of last 8 bytes in Latin1 string
-      __ add(strU, strU, t0);   // Address of last 16 bytes in UTF-16 string
+      __ shift_left_add(strU, cnt2, strU, 1, t0);
       __ load_int_misaligned(tmpL, Address(strL), t0, false);
       __ load_long_misaligned(tmpU, Address(strU), t0, 2);
       __ inflate_lo32(tmp3, tmpL);
@@ -5017,9 +5016,7 @@ class StubGenerator: public StubCodeGenerator {
       // As soon as we know the least significant digit of our result,
       // store it.
       // Pm_base[i-len] = tmp0;
-      // Rj as temp register
-      slli(Rj, Rj, LogBytesPerWord);
-      add(Rj, Pm_base, Rj);
+      shift_left_add(Rj, Rj, Pm_base, LogBytesPerWord);
       sd(tmp0, Address(Rj));
 
       // tmp0 = tmp1; tmp1 = tmp2; tmp2 = 0;
@@ -5053,8 +5050,7 @@ class StubGenerator: public StubCodeGenerator {
             add(Rm, Rm, t0);
             add(Rm, Rm, Rn);
             sltu(t0, Rm, Rn);
-            slli(Rn, i, LogBytesPerWord); // Rn as temp register
-            add(Rn, Pm_base, Rn);
+            shift_left_add(Rn, i, Pm_base, LogBytesPerWord);
             sd(Rm, Address(Rn));
             addi(i, i, 1);
             slli(Rn, i, LogBytesPerWord);
@@ -7177,8 +7173,7 @@ class StubGenerator: public StubCodeGenerator {
     // when the first data (at index 0) fails, no need to process data anymore
     __ beqz(failedIdx, FailureAtIdx0);
     __ vsetvli(x0, failedIdx, Assembler::e8, lmul, Assembler::mu, Assembler::tu);
-    __ slli(stepDst, failedIdx, 1);
-    __ add(stepDst, failedIdx, stepDst);
+    __ shift_left_add(stepDst, failedIdx, failedIdx, 1);
     __ BIND(NoFailure);
 
     //   3. compute the decoded data: vr(4) => vr(3)

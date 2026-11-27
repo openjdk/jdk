@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,10 +76,10 @@ public class NativeWin32Clear extends Frame {
         Insets insets = getInsets();
         Point location = getLocationOnScreen();
         Dimension size = getSize();
-        r.x = location.x + insets.left + 5;
-        r.y = location.y + insets.top + 5;
-        r.width = size.width - (insets.left + insets.right + 10);
-        r.height = size.height - (insets.top + insets.bottom + 10);
+        r.x = location.x + insets.left + 10;
+        r.y = location.y + insets.top + 10;
+        r.width = size.width - (insets.left + insets.right + 20);
+        r.height = size.height - (insets.top + insets.bottom + 20);
     }
 
     /*

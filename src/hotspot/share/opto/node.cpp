@@ -1356,8 +1356,8 @@ bool Node::should_process_when_disconnect_output(Node* output) const {
 //--------------------------find_exact_control---------------------------------
 // Skip Proj and CatchProj nodes chains. Check for Null and Top.
 Node* Node::find_exact_control(Node* ctrl) {
-  if (ctrl == nullptr && this->is_Region())
-    ctrl = this->as_Region()->is_copy();
+  if (auto this_as_region = isa<RegionNode>(this); ctrl == nullptr && this_as_region != nullptr)
+    ctrl = this_as_region->is_copy();
 
   if (ctrl != nullptr && ctrl->is_CatchProj()) {
     if (ctrl->as_CatchProj()->_con == CatchProjNode::fall_through_index)
@@ -1366,7 +1366,7 @@ Node* Node::find_exact_control(Node* ctrl) {
       ctrl = ctrl->in(0);
   }
 
-  if (ctrl != nullptr && ctrl->is_Proj())
+  if (is<ProjNode>(ctrl))
     ctrl = ctrl->in(0);
 
   return ctrl;
@@ -1673,13 +1673,13 @@ const TypeInteger* Node::find_integer_type(BasicType bt) const {
 // Returns the constant if it is a pointer ConstNode
 intptr_t Node::get_ptr() const {
   assert( Opcode() == Op_ConP, "" );
-  return ((ConPNode*)this)->type()->is_ptr()->get_con();
+  return ((ConPNode*)this)->type()->as_ptr()->get_con();
 }
 
 // Get a narrow oop constant from a ConNNode.
 intptr_t Node::get_narrowcon() const {
   assert( Opcode() == Op_ConN, "" );
-  return ((ConNNode*)this)->type()->is_narrowoop()->get_con();
+  return ((ConNNode*)this)->type()->as_narrowoop()->get_con();
 }
 
 // Get a long constant from a ConNode.
@@ -1713,21 +1713,21 @@ const TypePtr* Node::get_ptr_type() const {
 // Returns the constant if it is a double ConstNode
 jdouble Node::getd() const {
   assert( Opcode() == Op_ConD, "" );
-  return ((ConDNode*)this)->type()->is_double_constant()->getd();
+  return ((ConDNode*)this)->type()->as_double_constant()->getd();
 }
 
 // Get a float constant from a ConstNode.
 // Returns the constant if it is a float ConstNode
 jfloat Node::getf() const {
   assert( Opcode() == Op_ConF, "" );
-  return ((ConFNode*)this)->type()->is_float_constant()->getf();
+  return ((ConFNode*)this)->type()->as_float_constant()->getf();
 }
 
 // Get a half float constant from a ConstNode.
 // Returns the constant if it is a float ConstNode
 jshort Node::geth() const {
   assert( Opcode() == Op_ConH, "" );
-  return ((ConHNode*)this)->type()->is_half_float_constant()->geth();
+  return ((ConHNode*)this)->type()->as_half_float_constant()->geth();
 }
 
 #ifndef PRODUCT
@@ -2709,12 +2709,10 @@ void Node::dump(const char* suffix, bool mark, outputStream* st, DumpConfig* dc)
 
   const Type *t = bottom_type();
 
-  if (t != nullptr && (t->isa_instptr() || t->isa_instklassptr())) {
-    const TypeInstPtr  *toop = t->isa_instptr();
-    const TypeInstKlassPtr *tkls = t->isa_instklassptr();
-    if (toop) {
+  if (t != nullptr && (t->is_instptr() || t->is_instklassptr())) {
+    if (t->is_instptr()) {
       st->print("  Oop:");
-    } else if (tkls) {
+    } else {
       st->print("  Klass:");
     }
     t->dump_on(st);
@@ -2723,12 +2721,12 @@ void Node::dump(const char* suffix, bool mark, outputStream* st, DumpConfig* dc)
     MemNode::dump_adr_type(out_adr_type(), st);
   } else if (Verbose || WizardMode) {
     st->print("  Type:");
-    if (t) {
+    if (t != nullptr) {
       t->dump_on(st);
     } else {
       st->print("no type");
     }
-  } else if (t->isa_vect() && this->is_MachSpillCopy()) {
+  } else if (t->is_vect() && this->is_MachSpillCopy()) {
     // Dump MachSpillcopy vector type.
     t->dump_on(st);
   }
@@ -2971,7 +2969,7 @@ bool Node::is_iteratively_computed() {
   if (ideal_reg()) { // does operation have a result register?
     for (uint i = 1; i < req(); i++) {
       Node* n = in(i);
-      if (n != nullptr && n->is_Phi()) {
+      if (is<PhiNode>(n)) {
         for (uint j = 1; j < n->req(); j++) {
           if (n->in(j) == this) {
             return true;

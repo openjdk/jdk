@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -603,14 +604,16 @@ class Stream<T> extends ExchangeImpl<T> {
         if (debug.on()) debug.log("incoming: %s", frame);
         var cancelled = checkRequestCancelled() || closed;
         if ((frame instanceof HeaderFrame hf)) {
+            if (hf.getFlag(HeaderFrame.END_STREAM)) {
+                endStreamSeen = true;
+            }
             if (hf.endHeaders()) {
                 Log.logTrace("handling response (streamid={0})", streamid);
                 handleResponse(hf);
-            }
-            if (hf.getFlag(HeaderFrame.END_STREAM)) {
-                endStreamSeen = true;
-                if (debug.on()) debug.log("handling END_STREAM: %d", streamid);
-                receiveDataFrame(new DataFrame(streamid, DataFrame.END_STREAM, List.of()));
+                if (endStreamSeen) {
+                    if (debug.on()) debug.log("handling END_STREAM: %d", streamid);
+                    receiveDataFrame(new DataFrame(streamid, DataFrame.END_STREAM, List.of()));
+                }
             }
         } else if (frame instanceof DataFrame df) {
             if (df.getFlag(DataFrame.END_STREAM)) endStreamSeen = true;
@@ -1873,6 +1876,33 @@ class Stream<T> extends ExchangeImpl<T> {
      */
      boolean isCanceled() {
         return errorRef.get() != null;
+    }
+
+    /**
+     * Returns true if in closed/terminal state as defined by RFC 9113 (5.1).
+     * @return true if in closed/terminal state as defined by RFC 9113 (5.1).
+     */
+    boolean isTerminalState() {
+        // Closed locally or reset.
+        if (closed || streamState != 0) {
+            return true;
+        }
+        // Server finished sending.
+        if (!(endStreamSeen || endStreamReceived())) {
+            return false;
+        }
+        // Client finished sending. Never sends for PushedStream.
+        if (this instanceof PushedStream || requestBodyCF.isDone()) {
+            return true;
+        }
+        // Client finished sending for first request on an
+        // upgraded connection.
+        stateLock.lock();
+        try {
+            return requestSent;
+        } finally {
+            stateLock.unlock();
+        }
     }
 
     /**

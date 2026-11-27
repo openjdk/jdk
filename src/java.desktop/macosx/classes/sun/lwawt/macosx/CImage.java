@@ -130,23 +130,37 @@ public final class CImage extends CFRetainedResource {
             return createImageUsingNativeSize(nativeCreateNSImageFromImageName(name));
         }
 
+        private static boolean waitUntilImageLoaded(Image image) {
+            if (image instanceof BufferedImage) {
+                return true;
+            }
+
+            final MediaTracker mt = new MediaTracker(new Label());
+            final int id = 0;
+            mt.addImage(image, id);
+
+            try {
+                mt.waitForID(id);
+            } catch (InterruptedException e) {
+                return false;
+            }
+
+            if (mt.isErrorID(id)) {
+                return false;
+            }
+
+            if (image.getWidth(null) < 0 || image.getHeight(null) < 0) {
+                return false;
+            }
+
+            return true;
+        }
+
         private static BufferedImage getAsBufferedImage(Image image, boolean prepareImage, CTrayIcon.IconObserver observer) {
             if (image == null) return null;
 
-            if (prepareImage && !(image instanceof BufferedImage)) {
-                final MediaTracker mt = new MediaTracker(new Label());
-                final int id = 0;
-                mt.addImage(image, id);
-
-                try {
-                    mt.waitForID(id);
-                } catch (InterruptedException e) {
-                    return null;
-                }
-
-                if (mt.isErrorID(id)) {
-                    return null;
-                }
+            if (prepareImage && !waitUntilImageLoaded(image)) {
+                return null;
             }
 
             int w = image.getWidth(null);
@@ -160,6 +174,30 @@ public final class CImage extends CFRetainedResource {
             Graphics2D g2 = bimg.createGraphics();
             g2.setComposite(AlphaComposite.Src);
             g2.drawImage(image, 0, 0, observer);
+            g2.dispose();
+
+            return bimg;
+        }
+
+        public Image getOpaqueImage(Image image) {
+            if (image instanceof BufferedImage bufferedImage) {
+                if (!bufferedImage.getColorModel().hasAlpha()) {
+                    return bufferedImage;
+                }
+            }
+
+            if (!waitUntilImageLoaded(image)) {
+                return null;
+            }
+
+            int w = image.getWidth(null);
+            int h = image.getHeight(null);
+
+            BufferedImage bimg = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
+            Graphics2D g2 = bimg.createGraphics();
+            g2.setColor(Color.WHITE);
+            g2.fillRect(0, 0, w, h);
+            g2.drawImage(image, 0, 0, null);
             g2.dispose();
 
             return bimg;

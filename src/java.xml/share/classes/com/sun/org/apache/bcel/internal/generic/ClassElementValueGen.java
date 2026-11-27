@@ -29,6 +29,8 @@ import com.sun.org.apache.bcel.internal.classfile.ConstantUtf8;
 import com.sun.org.apache.bcel.internal.classfile.ElementValue;
 
 /**
+ * Generates class element values in annotations.
+ *
  * @since 6.0
  */
 public class ClassElementValueGen extends ElementValueGen {
@@ -37,6 +39,13 @@ public class ClassElementValueGen extends ElementValueGen {
     // For 'class' this points to the class entry in the cpool
     private final int idx;
 
+    /**
+     * Constructs a ClassElementValueGen.
+     *
+     * @param value The class element value.
+     * @param cpool The constant pool generator.
+     * @param copyPoolEntries whether to copy pool entries.
+     */
     public ClassElementValueGen(final ClassElementValue value, final ConstantPoolGen cpool, final boolean copyPoolEntries) {
         super(CLASS, cpool);
         if (copyPoolEntries) {
@@ -47,11 +56,23 @@ public class ClassElementValueGen extends ElementValueGen {
         }
     }
 
+    /**
+     * Constructs a ClassElementValueGen.
+     *
+     * @param typeIdx The type index.
+     * @param cpool The constant pool generator.
+     */
     protected ClassElementValueGen(final int typeIdx, final ConstantPoolGen cpool) {
         super(CLASS, cpool);
         this.idx = typeIdx;
     }
 
+    /**
+     * Constructs a ClassElementValueGen.
+     *
+     * @param t The object type.
+     * @param cpool The constant pool generator.
+     */
     public ClassElementValueGen(final ObjectType t, final ConstantPoolGen cpool) {
         super(CLASS, cpool);
         // this.idx = cpool.addClass(t);
@@ -64,6 +85,11 @@ public class ClassElementValueGen extends ElementValueGen {
         dos.writeShort(idx);
     }
 
+    /**
+     * Gets the class string.
+     *
+     * @return The class string.
+     */
     public String getClassString() {
         final ConstantUtf8 cu8 = (ConstantUtf8) getConstantPool().getConstant(idx);
         return cu8.getBytes();
@@ -74,13 +100,20 @@ public class ClassElementValueGen extends ElementValueGen {
     }
 
     /**
-     * Return immutable variant of this ClassElementValueGen
+     * Return immutable variant of this ClassElementValueGen.
+     *
+     * @return immutable variant of this ClassElementValueGen.
      */
     @Override
     public ElementValue getElementValue() {
         return new ClassElementValue(super.getElementValueType(), idx, getConstantPool().getConstantPool());
     }
 
+    /**
+     * Gets the index.
+     *
+     * @return The index.
+     */
     public int getIndex() {
         return idx;
     }
