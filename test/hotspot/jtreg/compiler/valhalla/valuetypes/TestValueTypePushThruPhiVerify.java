@@ -28,9 +28,9 @@ import java.util.Optional;
  * @bug 8394981
  * @summary [Valhalla] C2: assert(after.size() + vts_to_skip == _nodes_from_phi.size()) failed
  * @enablePreview
- * @run main/othervm -Xbatch -XX:+UnlockExperimentalVMOptions -XX:PerMethodTrapLimit=0
- *                   -XX:PerMethodSpecTrapLimit=0 -XX:+StressIGVN -XX:+StressIncrementalInlining
- *                   ${test.main.class}
+ * @run main/othervm -Xbatch -XX:+UnlockExperimentalVMOptions -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:PerMethodTrapLimit=0 -XX:PerMethodSpecTrapLimit=0 -XX:+StressIGVN
+ *                   -XX:+StressIncrementalInlining ${test.main.class}
  * @run main ${test.main.class}
  */
 
