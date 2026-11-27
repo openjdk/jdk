@@ -5016,9 +5016,7 @@ class StubGenerator: public StubCodeGenerator {
       // As soon as we know the least significant digit of our result,
       // store it.
       // Pm_base[i-len] = tmp0;
-      // Rj as temp register
-      slli(Rj, Rj, LogBytesPerWord);
-      add(Rj, Pm_base, Rj);
+      shift_left_add(Rj, Rj, Pm_base, LogBytesPerWord);
       sd(tmp0, Address(Rj));
 
       // tmp0 = tmp1; tmp1 = tmp2; tmp2 = 0;
@@ -5052,8 +5050,7 @@ class StubGenerator: public StubCodeGenerator {
             add(Rm, Rm, t0);
             add(Rm, Rm, Rn);
             sltu(t0, Rm, Rn);
-            slli(Rn, i, LogBytesPerWord); // Rn as temp register
-            add(Rn, Pm_base, Rn);
+            shift_left_add(Rn, i, Pm_base, LogBytesPerWord);
             sd(Rm, Address(Rn));
             addi(i, i, 1);
             slli(Rn, i, LogBytesPerWord);
