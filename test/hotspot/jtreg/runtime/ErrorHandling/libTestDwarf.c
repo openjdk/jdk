@@ -23,6 +23,7 @@
 #include "jni.h"
 #include "libTestDwarfHelper.h"
 #include <stdio.h>
+#include <stdint.h>
 
 volatile int zero = 0;
 int result = 0;
@@ -59,13 +60,13 @@ void foo(int x) {
     }
 }
 
-JNIEXPORT void JNICALL Java_TestDwarf_crashNativeDivByZero(JNIEnv* env, jclass jclazz) {
+JNIEXPORT void JNICALL Java_TestDwarf_crashNativeDivByZero(JNIEnv* env, jclass jclazz, jint divisor) {
   limit = 21;
-  foo(34 / zero); // Crash
+  foo(34 / divisor); // Crash
 }
 
-JNIEXPORT void JNICALL Java_TestDwarf_crashNativeStoreToNull(JNIEnv* env, jclass jclazz) {
-  store_to_null();
+JNIEXPORT void JNICALL Java_TestDwarf_crashNativeStoreToNull(JNIEnv* env, jclass jclazz, jlong address) {
+  store_to_null((int*)(uintptr_t)address);
 }
 
 JNIEXPORT void JNICALL Java_TestDwarf_crashNativeMultipleMethods(JNIEnv* env, jclass jclazz, jint x) {

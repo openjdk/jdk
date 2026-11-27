@@ -44,7 +44,6 @@ void unused5() {
 #if !defined(_MSC_VER)
 __attribute__((noinline))
 #endif
-EXPORT void store_to_null() {
-  volatile int* x = (volatile int*)0;
-  *x = 34; // Crash
+EXPORT void store_to_null(int* ptr) {
+  *ptr = 34; // Crash
 }

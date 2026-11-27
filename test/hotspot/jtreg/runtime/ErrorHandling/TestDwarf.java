@@ -72,7 +72,7 @@ public class TestDwarf {
                     Asserts.fail("Should crash in crashAbortVmOnException()");
                 }
                 case "nativeDivByZero" -> {
-                    crashNativeDivByZero();
+                    crashNativeDivByZero(0);
                     Asserts.fail("Should crash in crashNativeDivByZero()");
                 }
                 case "nativeMultipleMethods" -> {
@@ -83,7 +83,7 @@ public class TestDwarf {
                     crashNativeMultipleMethods(4);
                 }
                 case "nativeStoreToNull" -> {
-                    crashNativeStoreToNull();
+                    crashNativeStoreToNull(0L);
                     Asserts.fail("Should crash in crashNativeStoreToNull()");
                 }
             }
@@ -109,13 +109,13 @@ public class TestDwarf {
         if (Platform.isX64() || Platform.isX86()) {
             // Not all platforms raise SIGFPE but x86_32 and x86_64 do.
             runAndCheck(new Flags(TestDwarf.class.getCanonicalName(), "nativeDivByZero"),
-                        new DwarfConstraint(0, "Java_TestDwarf_crashNativeDivByZero", "libTestDwarf.c", 64));
+                        new DwarfConstraint(0, "Java_TestDwarf_crashNativeDivByZero", "libTestDwarf.c", 65));
             runAndCheck(new Flags(TestDwarf.class.getCanonicalName(), "nativeMultipleMethods"),
-                        new DwarfConstraint(0, "foo", "libTestDwarf.c", 47),
-                        new DwarfConstraint(1, "Java_TestDwarf_crashNativeMultipleMethods", "libTestDwarf.c", 75));
+                        new DwarfConstraint(0, "foo", "libTestDwarf.c", 48),
+                        new DwarfConstraint(1, "Java_TestDwarf_crashNativeMultipleMethods", "libTestDwarf.c", 76));
         }
         runAndCheck(new Flags(TestDwarf.class.getCanonicalName(), "nativeStoreToNull"),
-                    new DwarfConstraint(0, "store_to_null", "libTestDwarfHelper.h", 49));
+                    new DwarfConstraint(0, "store_to_null", "libTestDwarfHelper.h", 48));
     }
 
     // A full pattern could check for lines like:
@@ -238,8 +238,8 @@ public class TestDwarf {
         throw new MyException();
     }
 
-    private static native void crashNativeDivByZero();
-    private static native void crashNativeStoreToNull();
+    private static native void crashNativeDivByZero(int divisor);
+    private static native void crashNativeStoreToNull(long address);
     private static native void crashNativeMultipleMethods(int x);
 }
 
