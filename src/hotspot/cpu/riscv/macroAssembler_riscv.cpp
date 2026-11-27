@@ -4860,7 +4860,12 @@ void MacroAssembler::cmpxchg(Register addr, Register expected,
   } else {
     mv(result, expected);
   }
-  j(done);
+
+  // After this condition is met, subsequent mv generate no instructions;
+  // one jump instruction can be reduced through fallthrough.
+  if (result != t0 || result_as_bool) {
+    j(done);
+  }
 
   // not equal, failed
   bind(ne_done);
