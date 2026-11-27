@@ -32,7 +32,17 @@ import java.nio.charset.CharsetEncoder;
 import java.util.Locale;
 
 /**
- * An HTML content writer that takes care of newline and character encoding.
+ * Writes HTML content to an enclosed writer, escaping characters with special meaning in HTML
+ * and characters that can't be represented in the writer's output encoding with character
+ * references (entities) as appropriate for the content being written. It also converts newlines
+ * to the configured newline sequence.
+ *
+ * <p>The class provides write methods for plain HTML text, HTML markup, and raw content
+ * to apply the appropriate escaping.
+ *
+ * @apiNote HtmlWriter might have been a more fitting name for this class, but it is too
+ * similar to HtmlDocletWriter. The name ContentWriter also reflects the connection to the
+ * Content class hierarchy.
  */
 public class ContentWriter {
 
@@ -55,12 +65,12 @@ public class ContentWriter {
     /**
      * Creates a new content writer with the given enclosed writer, character encoding
      * and newline sequence, which should be either {@code \n} or the platform line separator.
-     * The new content writer will replace characters that can't be represented by the given
-     * {@code encoding} with numeric character references.
+     * The encoding is used to determine which characters require numeric character references;
+     * it does not configure the enclosed writer.
      *
      * @param writer the enclosed writer
-     * @param encoding the output encoding
      * @param newline the newline sequence to use
+     * @param encoding the output encoding
      */
     public ContentWriter(Writer writer, String newline, String encoding) {
         this.writer = writer;
@@ -69,11 +79,12 @@ public class ContentWriter {
     }
 
     /**
-     * Writes HTML text, escaping both characters with special meaning in HTML and
-     * characters that can't be represented in the output encoding with character references.
+     * Writes plain text as HTML text, escaping {@code <}, {@code >}, {@code &}, and
+     * non-breaking spaces with character references. Characters that cannot be represented
+     * in the output encoding are replaced with numeric character references.
      * Newlines are replaced with the configured newline sequence.
      *
-     * @param text the text
+     * @param text the plain text
      * @return true if text ends with a newline
      * @throws IOException if an I/O exception occurs
      */
@@ -84,12 +95,12 @@ public class ContentWriter {
     }
 
     /**
-     * Writes an HTML fragment, preserving markup and existing character
+     * Writes HTML content, preserving markup and existing character
      * references. Characters that cannot be represented in the output
      * encoding are replaced with numeric character references.
      * Newlines are replaced with the configured newline sequence.
      *
-     * @param markup the markup text
+     * @param markup the HTML content
      * @return true if text ends with a newline
      * @throws IOException if an I/O exception occurs
      */
@@ -100,10 +111,11 @@ public class ContentWriter {
     }
 
     /**
-     * Writes the argument as raw text. Newlines are replaced with the configured
-     * newline sequence.
+     * Writes raw content without HTML escaping or replacement of characters
+     * that cannot be represented in the output encoding. Newlines are converted
+     * to the configured newline sequence.
      *
-     * @param text the raw lines
+     * @param text the raw content
      * @return true if text ends with a newline
      * @throws IOException if an I/O exception occurs
      */
@@ -114,10 +126,14 @@ public class ContentWriter {
     }
 
     /**
-     * Writes an attribute with the given name and value.
+     * Writes an HTML attribute with the given name and value, preceded by a space.
+     * A non-empty value is enclosed in double quotes, with HTML special characters
+     * and double quotes escaped using character references. Characters that cannot
+     * be represented in the output encoding are replaced with numeric character
+     * references. If the value is empty, only the attribute name is written.
      *
      * @param attr the attribute name
-     * @param value the attribute value
+     * @param value the unescaped attribute value
      * @throws IOException if an I/O exception occurs
      */
     public void writeAttribute(HtmlAttr attr, String value) throws IOException {
@@ -131,7 +147,7 @@ public class ContentWriter {
     }
 
     /**
-     * Writes a single newline sequence.
+     * Writes the configured newline sequence.
      *
      * @throws IOException if an I/O exception occurs
      */
