@@ -206,7 +206,7 @@ Node* G1BarrierSetC2::load_at_resolved(C2Access& access, const Type* val_type) c
   // mechanism. Also we need to add a memory barrier to prevent commoning reads
   // from this field across safepoints, since GC can change its value.
   bool need_read_barrier = ((on_weak || on_phantom) && !no_keepalive);
-  assert((access.decorators() & C2_EMBEDDED_OOPS) == 0, "access shouldn't be special");
+  assert((access.decorators() & C2_EMBEDDED_OOPS) == 0, "embedded oops are not expected");
   if (access.is_oop() && need_read_barrier) {
     access.set_barrier_data(G1C2BarrierPre);
   }
@@ -227,7 +227,7 @@ void G1BarrierSetC2::eliminate_gc_barrier_data(Node* node) const {
   }
 }
 
-static TypePtr::PTR meet_ptr_of_oops_in_store_l_special(const MemNode* store) {
+static TypePtr::PTR meet_ptr_of_oops_in_store_l_with_narrow_oops(const MemNode* store) {
   const Type* oops_meet = store->in(StoreLWithNarrowOopsNode::FirstOop)->bottom_type();
   if (!store->in(StoreLWithNarrowOopsNode::SecondOop)->is_top()) {
     oops_meet = oops_meet->meet(store->in(StoreLWithNarrowOopsNode::SecondOop)->bottom_type());
@@ -246,7 +246,7 @@ static void refine_barrier_by_new_val_type(const Node* n) {
   uint8_t barrier_data = store->barrier_data();
   TypePtr::PTR newval_type;
   if (n->Opcode() == Op_StoreLWithNarrowOops) {
-    newval_type = meet_ptr_of_oops_in_store_l_special(store);
+    newval_type = meet_ptr_of_oops_in_store_l_with_narrow_oops(store);
   } else {
     const Node* newval = n->in(MemNode::ValueIn);
     assert(newval != nullptr, "");
@@ -373,7 +373,7 @@ Node* G1BarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue& val) co
 
 Node* G1BarrierSetC2::atomic_cmpxchg_val_at_resolved(C2AtomicParseAccess& access, Node* expected_val,
                                                      Node* new_val, const Type* value_type) const {
-  assert((access.decorators() & C2_EMBEDDED_OOPS) == 0, "access shouldn't be special");
+  assert((access.decorators() & C2_EMBEDDED_OOPS) == 0, "embedded oops are not expected");
   if (!access.is_oop()) {
     return BarrierSetC2::atomic_cmpxchg_val_at_resolved(access, expected_val, new_val, value_type);
   }
@@ -383,7 +383,7 @@ Node* G1BarrierSetC2::atomic_cmpxchg_val_at_resolved(C2AtomicParseAccess& access
 
 Node* G1BarrierSetC2::atomic_cmpxchg_bool_at_resolved(C2AtomicParseAccess& access, Node* expected_val,
                                                       Node* new_val, const Type* value_type) const {
-  assert((access.decorators() & C2_EMBEDDED_OOPS) == 0, "access shouldn't be special");
+  assert((access.decorators() & C2_EMBEDDED_OOPS) == 0, "embedded oops are not expected");
   if (!access.is_oop()) {
     return BarrierSetC2::atomic_cmpxchg_bool_at_resolved(access, expected_val, new_val, value_type);
   }
@@ -392,7 +392,7 @@ Node* G1BarrierSetC2::atomic_cmpxchg_bool_at_resolved(C2AtomicParseAccess& acces
 }
 
 Node* G1BarrierSetC2::atomic_xchg_at_resolved(C2AtomicParseAccess& access, Node* new_val, const Type* value_type) const {
-  assert((access.decorators() & C2_EMBEDDED_OOPS) == 0, "access shouldn't be special");
+  assert((access.decorators() & C2_EMBEDDED_OOPS) == 0, "embedded oops are not expected");
   if (!access.is_oop()) {
     return BarrierSetC2::atomic_xchg_at_resolved(access, new_val, value_type);
   }
