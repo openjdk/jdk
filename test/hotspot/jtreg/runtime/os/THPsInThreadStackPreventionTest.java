@@ -165,6 +165,7 @@ public class THPsInThreadStackPreventionTest {
     // in as a 2MB page, so RSS includes this arena growth as well as the thread stacks. Cap the
     // arenas at 1 on AArch64 so that growth stays small and the RSS check still reflects the thread
     // stacks. Reference: https://sourceware.org/pipermail/glibc-cvs/2025q4/090171.html
+    // Note: no effect if using musl libc.
     private static void limitGlibcMallocArenas(ProcessBuilder pb) {
         if (Platform.isAArch64()) {
             pb.environment().put("GLIBC_TUNABLES", "glibc.malloc.arena_max=1");
@@ -202,6 +203,11 @@ public class THPsInThreadStackPreventionTest {
                 OutputAnalyzer output = new OutputAnalyzer(pb.start());
                 output.shouldHaveExitValue(0);
 
+                // The JVM prints this only when THP mode is "always", and the mitigation is either on or not needed on
+                // the OS. Low RSS is expected in both cases.
+                output.shouldMatch("\\[pagesize *\\] (JVM will attempt to prevent THPs in thread stacks\\."
+                   + "|JVM does not need to prevent THPs in thread stacks on this OS\\.)");
+
                 ProcSelfStatus status = ProcSelfStatus.parse(output);
                 if (status.numLifeThreads < numThreads) {
                     throw new RuntimeException("Number of live threads lower than expected: " + status.numLifeThreads + ", expected " + numThreads);
@@ -237,12 +243,12 @@ public class THPsInThreadStackPreventionTest {
                 OutputAnalyzer output = new OutputAnalyzer(pb.start());
                 output.shouldHaveExitValue(0);
 
-                // The JVM prints this only when THP mode is "always", the kernel does not map MAP_STACK to
-                // VM_NOHUGEPAGE, and mitigation is off. Otherwise the high RSS this negative test expects cannot be
+                // The JVM prints this only when THP mode is "always", the OS does not prevent THPs from being allocated
+                // in stack area, and mitigation is off. Otherwise the high RSS this negative test expects cannot be
                 // reproduced.
                 if (!output.matches("\\[pagesize *\\] JVM will \\*not\\* prevent THPs in thread stacks\\. This may cause high RSS\\.")) {
                     throw new SkippedException("JVM did not report that THPs may form in thread stacks; "
-                        + "the kernel already prevents them.");
+                        + "the OS already prevents them.");
                 }
 
                 // Parse output from self/status
