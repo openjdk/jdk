@@ -533,7 +533,7 @@ static void javaPrinterJobToNSPrintInfo(JNIEnv* env, jobject srcPrinterJob, jobj
        NSString *nsDestStr = JavaStringToNSString(env, dest);
        NSURL *nsURL = [NSURL fileURLWithPath:nsDestStr isDirectory:NO];
        [printingDictionary setObject:nsURL forKey:NSPrintJobSavingURL];
-    } else {
+    } else if ([[dst jobDisposition] isEqualToString:NSPrintSaveJob]) {
        [dst setJobDisposition:NSPrintSpoolJob];
     }
 
