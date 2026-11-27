@@ -444,17 +444,17 @@ void SerialHeap::prune_unlinked_nmethods() {
   ScavengableNMethods::prune_unlinked_nmethods();
 }
 
-HeapWord* SerialHeap::satisfy_failed_allocation(size_t size, bool is_tlab) {
-  assert(size != 0, "precondition");
+HeapWord* SerialHeap::satisfy_failed_allocation(size_t word_size, bool is_tlab) {
+  assert(word_size != 0, "precondition");
 
   HeapWord* result = nullptr;
 
   // If young-gen can handle this allocation, attempt young-gc firstly.
-  bool should_run_young_gc = is_tlab || size <= _young_gen->eden()->capacity();
+  bool should_run_young_gc = is_tlab || word_size <= _young_gen->eden()->capacity() / HeapWordSize;
   collect_at_safepoint(!should_run_young_gc);
 
   // Just finished a GC, try to satisfy this allocation, using expansion if needed.
-  result = expand_heap_and_allocate(size, is_tlab);
+  result = expand_heap_and_allocate(word_size, is_tlab);
   if (result != nullptr) {
     return result;
   }
@@ -471,7 +471,7 @@ HeapWord* SerialHeap::satisfy_failed_allocation(size_t size, bool is_tlab) {
   }
 
   // The previous full-gc can shrink the heap, so re-expand it.
-  result = expand_heap_and_allocate(size, is_tlab);
+  result = expand_heap_and_allocate(word_size, is_tlab);
   if (result != nullptr) {
     return result;
   }
