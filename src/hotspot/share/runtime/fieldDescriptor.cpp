@@ -199,40 +199,73 @@ void fieldDescriptor::print_on(outputStream* st, const ValuePayloadContext* vpc)
 
 void fieldDescriptor::print() const { print_on(tty); }
 
-void fieldDescriptor::print_on_for(outputStream* st, oop obj, int indent, const ValuePayloadContext* vpc) {
+void fieldDescriptor::print_primitive_on(outputStream* st,
+                                         address field_addr,
+                                         const ValuePayloadContext* vpc) {
   BasicType ft = field_type();
-  int field_offset_in_obj = this->field_offset_in_obj(vpc);
   print_on(st, vpc);
   st->print(" ");
-  jint as_int = 0;
+
   switch (ft) {
     case T_BYTE:
-      st->print("%d", obj->byte_field(field_offset_in_obj));
+      st->print("%d", RawAccess<>::load((jbyte*)field_addr));
       break;
     case T_CHAR:
       {
-        jchar c = obj->char_field(field_offset_in_obj);
+        jchar c = RawAccess<>::load((jchar*)field_addr);
         st->print("%c %d", isprint(c) ? c : ' ', c);
       }
       break;
     case T_DOUBLE:
-      st->print("%lf", obj->double_field(field_offset_in_obj));
+      st->print("%lf", RawAccess<>::load((jdouble*)field_addr));
       break;
     case T_FLOAT:
-      st->print("%f", obj->float_field(field_offset_in_obj));
+      st->print("%f", RawAccess<>::load((jfloat*)field_addr));
       break;
     case T_INT:
-      st->print("%d", obj->int_field(field_offset_in_obj));
+      st->print("%d", RawAccess<>::load((jint*)field_addr));
       break;
     case T_LONG:
-      st->print_jlong(obj->long_field(field_offset_in_obj));
+      st->print_jlong(RawAccess<>::load((jlong*)field_addr));
       break;
     case T_SHORT:
-      st->print("%d", obj->short_field(field_offset_in_obj));
+      st->print("%d", RawAccess<>::load((jshort*)field_addr));
       break;
     case T_BOOLEAN:
-      st->print("%s", obj->bool_field(field_offset_in_obj) ? "true" : "false");
+      st->print("%s", RawAccess<>::load((jboolean*)field_addr) ? "true" : "false");
       break;
+    default:
+      ShouldNotReachHere();
+      break;
+  }
+
+  // Print a hint as to the underlying integer representation.
+  switch (ft) {
+    case T_LONG:    st->print(" (" INT64_FORMAT_X_0 ")", (int64_t)RawAccess<>::load((jlong*)field_addr));   break;
+    case T_DOUBLE:  st->print(" (" INT64_FORMAT_X_0 ")", (int64_t)RawAccess<>::load((jlong*)field_addr));   break;
+    case T_BYTE:    st->print(" (" INT8_FORMAT_X_0  ")", RawAccess<>::load((jbyte*)field_addr));            break;
+    case T_CHAR:    st->print(" (" INT16_FORMAT_X_0 ")", RawAccess<>::load((jchar*)field_addr));            break;
+    case T_FLOAT:   st->print(" (" INT32_FORMAT_X_0 ")", RawAccess<>::load((jint*)field_addr));             break;
+    case T_INT:     st->print(" (" INT32_FORMAT_X_0 ")", RawAccess<>::load((jint*)field_addr));             break;
+    case T_SHORT:   st->print(" (" INT16_FORMAT_X_0 ")", RawAccess<>::load((jshort*)field_addr));           break;
+    case T_BOOLEAN: st->print(" (" INT8_FORMAT_X_0  ")", RawAccess<>::load((jboolean*)field_addr));         break;
+    default:
+      ShouldNotReachHere();
+      break;
+  }
+}
+
+void fieldDescriptor::print_on_for(outputStream* st, oop obj, int indent, const ValuePayloadContext* vpc) {
+  BasicType ft = field_type();
+  int field_offset_in_obj = this->field_offset_in_obj(vpc);
+  jint as_int = 0;
+  if (is_java_primitive(ft)) {
+    print_primitive_on(st, obj->field_addr<u1>(field_offset_in_obj), vpc);
+    return;
+  }
+  print_on(st, vpc);
+  st->print(" ");
+  switch (ft) {
     case T_ARRAY:
     case T_OBJECT:
       if (is_flat()) {
@@ -290,20 +323,6 @@ void fieldDescriptor::print_on_for(outputStream* st, oop obj, int indent, const 
 #else
     st->print(" (" INT32_FORMAT_X_0 ")", obj->int_field(field_offset_in_obj));
 #endif
-  } else { // Primitives
-    switch (ft) {
-      case T_LONG:    st->print(" (" INT64_FORMAT_X_0 ")", (int64_t)obj->long_field(field_offset_in_obj)); break;
-      case T_DOUBLE:  st->print(" (" INT64_FORMAT_X_0 ")", (int64_t)obj->long_field(field_offset_in_obj)); break;
-      case T_BYTE:    st->print(" (" INT8_FORMAT_X_0  ")", obj->byte_field(field_offset_in_obj));          break;
-      case T_CHAR:    st->print(" (" INT16_FORMAT_X_0 ")", obj->char_field(field_offset_in_obj));          break;
-      case T_FLOAT:   st->print(" (" INT32_FORMAT_X_0 ")", obj->int_field(field_offset_in_obj));           break;
-      case T_INT:     st->print(" (" INT32_FORMAT_X_0 ")", obj->int_field(field_offset_in_obj));           break;
-      case T_SHORT:   st->print(" (" INT16_FORMAT_X_0 ")", obj->short_field(field_offset_in_obj));         break;
-      case T_BOOLEAN: st->print(" (" INT8_FORMAT_X_0  ")", obj->bool_field(field_offset_in_obj));          break;
-    default:
-      ShouldNotReachHere();
-      break;
-    }
   }
 }
 

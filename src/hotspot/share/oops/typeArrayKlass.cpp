@@ -227,62 +227,62 @@ void TypeArrayKlass::print_value_on(outputStream* st) const {
   st->print("}");
 }
 
-static void print_boolean_array(typeArrayOop ta, int print_len, outputStream* st) {
+static void print_boolean_array(jboolean* base, int print_len, outputStream* st) {
   for (int index = 0; index < print_len; index++) {
-    st->print_cr(" - %3d: %s", index, (ta->bool_at(index) == 0) ? "false" : "true");
+    st->print_cr(" - %3d: %s", index, (base[index] == 0) ? "false" : "true");
   }
 }
 
 
-static void print_char_array(typeArrayOop ta, int print_len, outputStream* st) {
+static void print_char_array(jchar* base, int print_len, outputStream* st) {
   for (int index = 0; index < print_len; index++) {
-    jchar c = ta->char_at(index);
+    jchar c = base[index];
     st->print_cr(" - %3d: %x %c", index, c, isprint(c) ? c : ' ');
   }
 }
 
 
-static void print_float_array(typeArrayOop ta, int print_len, outputStream* st) {
+static void print_float_array(jfloat* base, int print_len, outputStream* st) {
   for (int index = 0; index < print_len; index++) {
-    st->print_cr(" - %3d: %g", index, ta->float_at(index));
+    st->print_cr(" - %3d: %g", index, base[index]);
   }
 }
 
 
-static void print_double_array(typeArrayOop ta, int print_len, outputStream* st) {
+static void print_double_array(jdouble* base, int print_len, outputStream* st) {
   for (int index = 0; index < print_len; index++) {
-    st->print_cr(" - %3d: %g", index, ta->double_at(index));
+    st->print_cr(" - %3d: %g", index, base[index]);
   }
 }
 
 
-static void print_byte_array(typeArrayOop ta, int print_len, outputStream* st) {
+static void print_byte_array(jbyte* base, int print_len, outputStream* st) {
   for (int index = 0; index < print_len; index++) {
-    jbyte c = ta->byte_at(index);
+    jbyte c = base[index];
     st->print_cr(" - %3d: %x %c", index, c, isprint(c) ? c : ' ');
   }
 }
 
 
-static void print_short_array(typeArrayOop ta, int print_len, outputStream* st) {
+static void print_short_array(jushort* base, int print_len, outputStream* st) {
   for (int index = 0; index < print_len; index++) {
-    int v = ta->ushort_at(index);
+    int v = base[index];
     st->print_cr(" - %3d: 0x%x\t %d", index, v, v);
   }
 }
 
 
-static void print_int_array(typeArrayOop ta, int print_len, outputStream* st) {
+static void print_int_array(jint* base, int print_len, outputStream* st) {
   for (int index = 0; index < print_len; index++) {
-    jint v = ta->int_at(index);
+    jint v = base[index];
     st->print_cr(" - %3d: 0x%x %d", index, v, v);
   }
 }
 
 
-static void print_long_array(typeArrayOop ta, int print_len, outputStream* st) {
+static void print_long_array(jlong* base, int print_len, outputStream* st) {
   for (int index = 0; index < print_len; index++) {
-    jlong v = ta->long_at(index);
+    jlong v = base[index];
     st->print_cr(" - %3d: 0x%x 0x%x", index, high(v), low(v));
   }
 }
@@ -294,19 +294,23 @@ void TypeArrayKlass::oop_print_on(oop obj, outputStream* st) {
 }
 
 void TypeArrayKlass::oop_print_elements_on(typeArrayOop ta, outputStream* st) {
-  int print_len = MIN2(ta->length(), MaxElementPrintSize);
+  print_elements_on((address)ta->base(element_type()), ta->length(), st);
+}
+
+void TypeArrayKlass::print_elements_on(address base, int length, outputStream* st) {
+  int print_len = MIN2(length, MaxElementPrintSize);
   switch (element_type()) {
-    case T_BOOLEAN: print_boolean_array(ta, print_len, st); break;
-    case T_CHAR:    print_char_array(ta, print_len, st);    break;
-    case T_FLOAT:   print_float_array(ta, print_len, st);   break;
-    case T_DOUBLE:  print_double_array(ta, print_len, st);  break;
-    case T_BYTE:    print_byte_array(ta, print_len, st);    break;
-    case T_SHORT:   print_short_array(ta, print_len, st);   break;
-    case T_INT:     print_int_array(ta, print_len, st);     break;
-    case T_LONG:    print_long_array(ta, print_len, st);    break;
+    case T_BOOLEAN: print_boolean_array((jboolean*)base, print_len, st); break;
+    case T_CHAR:    print_char_array((jchar*)base, print_len, st);       break;
+    case T_FLOAT:   print_float_array((jfloat*)base, print_len, st);     break;
+    case T_DOUBLE:  print_double_array((jdouble*)base, print_len, st);   break;
+    case T_BYTE:    print_byte_array((jbyte*)base, print_len, st);       break;
+    case T_SHORT:   print_short_array((jushort*)base, print_len, st);    break;
+    case T_INT:     print_int_array((jint*)base, print_len, st);         break;
+    case T_LONG:    print_long_array((jlong*)base, print_len, st);       break;
     default: ShouldNotReachHere();
   }
-  int remaining = ta->length() - print_len;
+  int remaining = length - print_len;
   if (remaining > 0) {
     st->print_cr(" - <%d more elements, increase MaxElementPrintSize to print>", remaining);
   }

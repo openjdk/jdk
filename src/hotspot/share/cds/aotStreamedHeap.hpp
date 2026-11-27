@@ -134,7 +134,7 @@ public:
   }
 
   AOTMapLogger::OopData obj_at(oop* addr) override {
-    int dfs_index = (int)cast_from_oop<uintptr_t>(*addr);
+    int dfs_index = (int)*(uintptr_t*)addr;
     if (dfs_index == 0) {
       return null_data();
     } else {

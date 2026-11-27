@@ -620,9 +620,8 @@ void AOTMapLogger::log_as_hex(address base, address top, address requested_base,
 // - For +UseCompressedOops: pointers may use a different narrowOop encoding: see FakeOop::read_oop_at(narrowOop*)
 // - For -UseCompressedOops: pointers are not direct: see FakeOop::read_oop_at(oop*)
 //
-// Hence, in general, we cannot use regular oop API (such as oopDesc::obj_field()) on these objects. There
-// are a few rare case where regular oop API work, but these are all guarded with the raw_oop() method and
-// should be used with care.
+// Hence, in general, we cannot use regular oop API (such as oopDesc::obj_field()) on these objects.
+// A few layout accessors work with raw oopDesc pointers, but they must not construct an oop.
 //
 // Each AOT heap reader and writer has its own oop_iterator() API that retrieves all the data required to build
 // fake oops for logging.
@@ -643,10 +642,8 @@ public:
     return (address*)(buffered_addr() + field_offset);
   }
 
-  // Return an "oop" pointer so we can use APIs that accept regular oops. This
-  // must be used with care, as only a limited number of APIs can work with oops that
-  // live outside of the range of the heap.
-  oop raw_oop() { return _data._raw_oop; }
+  // Only use layout accessors that do not convert this pointer to an oop.
+  oopDesc* raw_oop() { return _data._raw_oop; }
 
   FakeOop() : _data() {}
   FakeOop(OopDataIterator* iter, OopData data) : _iter(iter), _data(data) {}
@@ -685,7 +682,7 @@ public:
 
   int array_length() {
     precond(is_array());
-    return arrayOop(raw_oop())->length();
+    return ((arrayOopDesc*)raw_oop())->length();
   }
 
   intptr_t target_location() {
@@ -711,15 +708,17 @@ public:
 
   FakeOop obj_field(int field_offset) {
     if (UseCompressedOops) {
-      return read_oop_at(raw_oop()->field_addr<narrowOop>(field_offset));
+      return read_oop_at((narrowOop*)(buffered_addr() + field_offset));
     } else {
-      return read_oop_at(raw_oop()->field_addr<oop>(field_offset));
+      return read_oop_at((oop*)(buffered_addr() + field_offset));
     }
   }
 
-  void print_non_oop_field(outputStream* st, fieldDescriptor* fd, int indent, const ValuePayloadContext* vpc) {
+  void print_non_oop_field(outputStream* st, fieldDescriptor* fd, const ValuePayloadContext* vpc) {
     precond(fd->field_type() != T_ARRAY && fd->field_type() != T_OBJECT);
-    fd->print_on_for(st, raw_oop(), indent, vpc);
+    fd->print_primitive_on(st,
+                           buffered_addr() + fd->field_offset_in_obj(vpc),
+                           vpc);
   }
 }; // AOTMapLogger::FakeOop
 
@@ -733,35 +732,29 @@ public:
     RequestedMetadataAddr mirrored_klass = metadata_field(java_lang_Class::klass_offset());
     return mirrored_klass.to_real_klass();
   }
-
-  int static_oop_field_count() {
-    return java_lang_Class::static_oop_field_count(raw_oop());
-  }
 }; // AOTMapLogger::FakeMirror
 
 class AOTMapLogger::FakeRefArray : public AOTMapLogger::FakeOop {
-  refArrayOop raw_refArrayOop() {
-    return (refArrayOop)raw_oop();
-  }
-
 public:
   FakeRefArray(OopDataIterator* iter, OopData data) : FakeOop(iter, data) {}
 
   int length() {
-    return raw_refArrayOop()->length();
+    return array_length();
   }
   FakeOop obj_at(int i) {
+    precond(0 <= i && i < length());
+    address base = buffered_addr() + arrayOopDesc::base_offset_in_bytes(T_OBJECT);
     if (UseCompressedOops) {
-      return read_oop_at(raw_refArrayOop()->obj_at_addr<narrowOop>(i));
+      return read_oop_at((narrowOop*)base + i);
     } else {
-      return read_oop_at(raw_refArrayOop()->obj_at_addr<oop>(i));
+      return read_oop_at((oop*)base + i);
     }
   }
 }; // AOTMapLogger::FakeRefArray
 
 class AOTMapLogger::FakeFlatArray : public AOTMapLogger::FakeOop {
-  flatArrayOop raw_flatArrayOop() {
-    return (flatArrayOop)raw_oop();
+  flatArrayOopDesc* raw_flatArrayOop() {
+    return (flatArrayOopDesc*)raw_oop();
   }
 
 public:
@@ -781,7 +774,7 @@ public:
   FakeString(OopDataIterator* iter, OopData data) : FakeOop(iter, data) {}
 
   bool is_latin1() {
-    jbyte coder = raw_oop()->byte_field(java_lang_String::coder_offset());
+    jbyte coder = RawAccess<>::load((jbyte*)(buffered_addr() + java_lang_String::coder_offset()));
     assert(CompactStrings || coder == java_lang_String::CODER_UTF16, "Must be UTF16 without CompactStrings");
     return coder == java_lang_String::CODER_LATIN1;
   }
@@ -793,20 +786,27 @@ public:
 }; // AOTMapLogger::FakeString
 
 class AOTMapLogger::FakeTypeArray : public AOTMapLogger::FakeOop {
-  typeArrayOop raw_typeArrayOop() {
-    return (typeArrayOop)raw_oop();
+  address base(BasicType type) {
+    return buffered_addr() + arrayOopDesc::base_offset_in_bytes(type);
   }
 
 public:
   FakeTypeArray(OopDataIterator* iter, OopData data) : FakeOop(iter, data) {}
 
   void print_elements_on(outputStream* st) {
-    TypeArrayKlass::cast(real_klass())->oop_print_elements_on(raw_typeArrayOop(), st);
+    TypeArrayKlass* klass = TypeArrayKlass::cast(real_klass());
+    klass->print_elements_on(base(klass->element_type()), length(), st);
   }
 
-  int length() { return raw_typeArrayOop()->length(); }
-  jbyte byte_at(int i) { return raw_typeArrayOop()->byte_at(i); }
-  jchar char_at(int i) { return raw_typeArrayOop()->char_at(i); }
+  int length() { return array_length(); }
+  jbyte byte_at(int i) {
+    precond(0 <= i && i < length());
+    return RawAccess<>::load((jbyte*)base(T_BYTE) + i);
+  }
+  jchar char_at(int i) {
+    precond(0 <= i && i < length());
+    return RawAccess<>::load((jchar*)base(T_CHAR) + i);
+  }
 }; // AOTMapLogger::FakeTypeArray
 
 AOTMapLogger::FakeMirror AOTMapLogger::FakeOop::as_mirror() {
@@ -966,7 +966,7 @@ public:
       }
       break;
     default:
-      _fake_oop.print_non_oop_field(_st, fd, _indent, _vpc);
+      _fake_oop.print_non_oop_field(_st, fd, _vpc);
       _st->cr();
     }
   }
@@ -1179,7 +1179,7 @@ void AOTMapLogger::print_oop_details(FakeOop fake_oop, outputStream* st) {
           st->print("null");
         }
 
-        st->print_cr("- ---- static fields (%d):", fake_mirror.static_oop_field_count());
+        st->print_cr("- ---- static fields (%d):", real_mirrored_ik->static_oop_field_count());
         real_mirrored_ik->do_local_static_fields(&print_field);
       }
     }

@@ -461,7 +461,7 @@ HeapWord* AOTMappedHeapWriter::init_filler_array_at_buffer_top(int array_length,
   } else {
     assert(!Arguments::is_valhalla_enabled() || Universe::objectArrayKlass()->prototype_header() == markWord::prototype(), "should be the same");
     oopDesc::set_mark(mem, markWord::prototype());
-    cast_to_oop(mem)->set_narrow_klass(nk);
+    ((oopDesc*)mem)->set_narrow_klass(nk);
   }
   arrayOopDesc::set_length(mem, array_length);
   return mem;
@@ -512,7 +512,7 @@ size_t AOTMappedHeapWriter::get_filler_size_at(address buffered_addr) {
 
 template <typename T>
 void update_buffered_object_field(address buffered_obj, int field_offset, T value) {
-  T* field_addr = cast_to_oop(buffered_obj)->field_addr<T>(field_offset);
+  T* field_addr = reinterpret_cast<T*>(buffered_obj + field_offset);
   *field_addr = value;
 }
 

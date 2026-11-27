@@ -130,6 +130,8 @@ class fieldDescriptor {
   void print() const;
   void print_on(outputStream* st, const ValuePayloadContext* vpc = nullptr) const;
   void print_on_for(outputStream* st, oop obj, int indent = 0, const ValuePayloadContext* vpc = nullptr);
+  void print_primitive_on(outputStream* st, address field_addr,
+                          const ValuePayloadContext* vpc = nullptr);
   void print_access_flags(outputStream* st) const;
 };
 

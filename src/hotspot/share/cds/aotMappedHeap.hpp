@@ -150,7 +150,7 @@ public:
   }
 
   AOTMapLogger::OopData obj_at(oop* addr) override {
-    address requested_value = cast_from_oop<address>(*addr);
+    address requested_value = *(address*)addr;
     if (requested_value == nullptr) {
       return null_data();
     } else {
