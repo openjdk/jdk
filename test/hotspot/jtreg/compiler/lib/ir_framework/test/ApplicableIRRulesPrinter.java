@@ -47,6 +47,8 @@ import java.util.function.Function;
  * termination of the Test VM. IR rule indices start at 1.
  */
 public class ApplicableIRRulesPrinter {
+    private static final boolean IGNORE_SKIP_IR = Boolean.parseBoolean(System.getProperty("IgnoreSkipIR", "false"));
+
     public static final String NO_RULES = "<no IR rules>";
 
     private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
@@ -99,6 +101,7 @@ public class ApplicableIRRulesPrinter {
         // Intel AVX
         "avx",
         "avx2",
+        "gfni",
         "avx512",
         "avx512bw",
         "avx512dq",
@@ -138,23 +141,21 @@ public class ApplicableIRRulesPrinter {
      * - indices of all @IR rules that should be applied, separated by a comma
      * - "-1" if no @IR rule should not be applied
      */
-    public void emitApplicableIRRules(Method m, boolean skipped) {
+    public void emitApplicableIRRules(Method m) {
         method = m;
         int i = 0;
         ArrayList<Integer> validRules = new ArrayList<>();
         IR[] irAnnos = m.getAnnotationsByType(IR.class);
-        if (!skipped) {
-            for (IR irAnno : irAnnos) {
-                ruleIndex = i + 1;
-                try {
-                    if (shouldApplyIrRule(irAnno, m.getName(), ruleIndex, irAnnos.length)) {
-                        validRules.add(ruleIndex);
-                    }
-                } catch (TestFormatException e) {
-                    // Catch logged failure and continue to check other IR annotations.
+        for (IR irAnno : irAnnos) {
+            ruleIndex = i + 1;
+            try {
+                if (shouldApplyIrRule(irAnno, m.getName(), ruleIndex, irAnnos.length)) {
+                    validRules.add(ruleIndex);
                 }
-                i++;
+            } catch (TestFormatException e) {
+                // Catch logged failure and continue to check other IR annotations.
             }
+            i++;
         }
 
         if (irAnnos.length == 0 || validRules.isEmpty()) {
@@ -168,8 +169,13 @@ public class ApplicableIRRulesPrinter {
     }
 
     private void printDisableReason(String method, String reason, String[] apply, int ruleIndex, int ruleMax) {
+        reason = reason + ": " + String.join(", ", apply);
+        printDisableReason(method, reason, ruleIndex, ruleMax);
+    }
+
+    private void printDisableReason(String method, String reason, int ruleIndex, int ruleMax) {
         TestVmSocket.send("Disabling IR matching for rule " + ruleIndex + " of " + ruleMax + " in " + method + ": " +
-                                  reason + ": " + String.join(", ", apply));
+                          reason);
     }
 
     private boolean shouldApplyIrRule(IR irAnno, String m, int ruleIndex, int ruleMax) {
@@ -202,6 +208,9 @@ public class ApplicableIRRulesPrinter {
             return false;
         } else if (irAnno.applyIfOr().length != 0 && hasNoRequiredFlags(irAnno.applyIfOr(), "applyIfOr")) {
             printDisableReason(m, "None of the flag constraints met (applyIfOr)", irAnno.applyIfOr(), ruleIndex, ruleMax);
+            return false;
+        } else if (shouldSkipIRRule(irAnno)) {
+            printDisableReason(m, "Defined @IR(skip = true, ...)", ruleIndex, ruleMax);
             return false;
         } else {
             // All preconditions satisfied: apply rule.
@@ -512,6 +521,10 @@ public class ApplicableIRRulesPrinter {
 
     private String failAt() {
         return " in @IR rule " + ruleIndex + " at " + method;
+    }
+
+    private boolean shouldSkipIRRule(IR irAnno) {
+        return irAnno.skip() && !IGNORE_SKIP_IR;
     }
 
     public void emit() {

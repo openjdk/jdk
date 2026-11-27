@@ -5,18 +5,18 @@
 #ifndef SPA_SYSTEM_H
 #define SPA_SYSTEM_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-struct itimerspec;
-
 #include <time.h>
 #include <errno.h>
 #include <sys/types.h>
 
 #include <spa/utils/defs.h>
 #include <spa/utils/hook.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+struct itimerspec;
 
 #ifndef SPA_API_SYSTEM
  #ifdef SPA_API_IMPL

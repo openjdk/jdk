@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,11 @@ HSpaceCounters::HSpaceCounters(const char* name_space,
                                const char* name,
                                int ordinal,
                                size_t max_size,
-                               size_t initial_capacity) {
-
+                               size_t initial_capacity) :
+  _capacity(nullptr),
+  _used(nullptr),
+  _name_space(nullptr)
+{
   if (UsePerfData) {
     EXCEPTION_MARK;
     ResourceMark rm;

@@ -5,6 +5,10 @@
 #ifndef SPA_PARAM_PROPS_TYPES_H
 #define SPA_PARAM_PROPS_TYPES_H
 
+#include <spa/param/param-types.h>
+
+#include <spa/param/bluetooth/type-info.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -13,10 +17,6 @@ extern "C" {
  * \addtogroup spa_param
  * \{
  */
-
-#include <spa/param/param-types.h>
-
-#include <spa/param/bluetooth/type-info.h>
 
 /** Props Param */
 #define SPA_TYPE_INFO_Props            SPA_TYPE_INFO_PARAM_BASE "Props"
@@ -40,13 +40,16 @@ static const struct spa_type_info spa_type_props[] = {
     { SPA_PROP_quality, SPA_TYPE_Int, SPA_TYPE_INFO_PROPS_BASE "quality", NULL },
     { SPA_PROP_bluetoothAudioCodec, SPA_TYPE_Id, SPA_TYPE_INFO_PROPS_BASE "bluetoothAudioCodec", spa_type_bluetooth_audio_codec },
     { SPA_PROP_bluetoothOffloadActive, SPA_TYPE_Bool, SPA_TYPE_INFO_PROPS_BASE "bluetoothOffloadActive", NULL },
+    { SPA_PROP_clockId, SPA_TYPE_String, SPA_TYPE_INFO_PROPS_BASE "clockId", NULL },
+    { SPA_PROP_clockDevice, SPA_TYPE_String, SPA_TYPE_INFO_PROPS_BASE "clockDevice", NULL },
+    { SPA_PROP_clockInterface, SPA_TYPE_String, SPA_TYPE_INFO_PROPS_BASE "clockInterface", NULL },
 
-    { SPA_PROP_waveType, SPA_TYPE_Id, SPA_TYPE_INFO_PROPS_BASE "waveType", NULL },
+    { SPA_PROP_waveType, SPA_TYPE_Int, SPA_TYPE_INFO_PROPS_BASE "waveType", NULL },
     { SPA_PROP_frequency, SPA_TYPE_Int, SPA_TYPE_INFO_PROPS_BASE "frequency", NULL },
     { SPA_PROP_volume, SPA_TYPE_Float, SPA_TYPE_INFO_PROPS_BASE "volume", NULL },
     { SPA_PROP_mute, SPA_TYPE_Bool, SPA_TYPE_INFO_PROPS_BASE "mute", NULL },
-    { SPA_PROP_patternType, SPA_TYPE_Id, SPA_TYPE_INFO_PROPS_BASE "patternType", NULL },
-    { SPA_PROP_ditherType, SPA_TYPE_Id, SPA_TYPE_INFO_PROPS_BASE "ditherType", NULL },
+    { SPA_PROP_patternType, SPA_TYPE_Int, SPA_TYPE_INFO_PROPS_BASE "patternType", NULL },
+    { SPA_PROP_ditherType, SPA_TYPE_Int, SPA_TYPE_INFO_PROPS_BASE "ditherType", NULL },
     { SPA_PROP_truncate, SPA_TYPE_Bool, SPA_TYPE_INFO_PROPS_BASE "truncate", NULL },
     { SPA_PROP_channelVolumes, SPA_TYPE_Array, SPA_TYPE_INFO_PROPS_BASE "channelVolumes", spa_type_prop_float_array },
     { SPA_PROP_volumeBase, SPA_TYPE_Float, SPA_TYPE_INFO_PROPS_BASE "volumeBase", NULL },
@@ -62,7 +65,7 @@ static const struct spa_type_info spa_type_props[] = {
     { SPA_PROP_volumeRampStepSamples, SPA_TYPE_Int, SPA_TYPE_INFO_PROPS_BASE "volumeRampStepSamples", NULL },
     { SPA_PROP_volumeRampTime, SPA_TYPE_Int, SPA_TYPE_INFO_PROPS_BASE "volumeRampTime", NULL },
     { SPA_PROP_volumeRampStepTime, SPA_TYPE_Int, SPA_TYPE_INFO_PROPS_BASE "volumeRampStepTime", NULL },
-    { SPA_PROP_volumeRampScale, SPA_TYPE_Id, SPA_TYPE_INFO_PROPS_BASE "volumeRampScale", NULL },
+    { SPA_PROP_volumeRampScale, SPA_TYPE_Id, SPA_TYPE_INFO_PROPS_BASE "volumeRampScale", spa_type_audio_volume_ramp_scale },
 
     { SPA_PROP_brightness, SPA_TYPE_Float, SPA_TYPE_INFO_PROPS_BASE "brightness", NULL },
     { SPA_PROP_contrast, SPA_TYPE_Float, SPA_TYPE_INFO_PROPS_BASE "contrast", NULL },

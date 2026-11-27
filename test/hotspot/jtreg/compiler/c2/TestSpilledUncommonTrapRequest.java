@@ -40,7 +40,7 @@
  * @bug 8358889
  * @summary Test that a spilled uncommon trap request is handled properly.
  * @requires vm.compiler2.enabled
- * @requires os.arch == "aarch64"
+ * @requires os.arch == "aarch64" | os.arch == "riscv64"
  * @library /test/lib
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:-TieredCompilation -Xcomp
  *                   -XX:+UnlockExperimentalVMOptions -XX:+PreferCallBasedUncommonTraps

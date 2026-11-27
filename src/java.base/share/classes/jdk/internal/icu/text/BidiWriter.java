@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -235,13 +235,14 @@ final class BidiWriter {
                     continue;
                 }
 
+                int origBaseLen = UTF16.getCharCount(c);
                 /* copy this "user character" */
                 int j = srcLength;
                 if((options & BidiBase.DO_MIRRORING) != 0) {
                     /* mirror only the base character */
                     c = UCharacter.getMirror(c);
                     UTF16.append(dest, c);
-                    j += UTF16.getCharCount(c);
+                    j += origBaseLen;
                 }
                 dest.append(src.substring(j, i));
             } while(srcLength > 0);

@@ -585,10 +585,8 @@ void LIRGenerator::do_ShiftOp(ShiftOp* x) {
   LIRItem value(x->x(), this);
   LIRItem count(x->y(), this);
 
-  ValueTag elemType = x->type()->tag();
-  bool must_load_count = !count.is_constant() || elemType == longTag;
+  bool must_load_count = !count.is_constant();
   if (must_load_count) {
-    // count for long must be in register
     count.load_item_force(shiftCountOpr());
   } else {
     count.dont_load_item();
@@ -1148,6 +1146,8 @@ void LIRGenerator::do_NewTypeArray(NewTypeArray* x) {
   } else {
     info = state_for(x, x->state());
   }
+
+  deoptimize_vmalloc_for_jvmti(!x->zero_array(), info);
 
   LIRItem length(x->length(), this);
   length.load_item_force(FrameMap::rbx_opr);

@@ -1474,9 +1474,9 @@ public class Attr extends JCTree.Visitor {
                 ClassSymbol cs = (ClassSymbol)env.info.scope.owner;
                 List<Attribute.TypeCompound> tas = localEnv.info.scope.owner.getRawTypeAttributes();
                 if ((tree.flags & STATIC) != 0) {
-                    cs.appendClassInitTypeAttributes(tas);
+                    cs.appendUniqueClassInitTypeAttributes(tas);
                 } else {
-                    cs.appendInitTypeAttributes(tas);
+                    cs.appendUniqueInitTypeAttributes(tas);
                 }
             }
         } else {
@@ -4671,7 +4671,7 @@ public class Attr extends JCTree.Visitor {
                     return syms.getClassField(site, types);
                 } else {
                     log.error(pos, Errors.CantDeref(site));
-                    return syms.errSymbol;
+                    return types.createErrorType(name, syms.errSymbol, site).tsym;
                 }
             }
         }

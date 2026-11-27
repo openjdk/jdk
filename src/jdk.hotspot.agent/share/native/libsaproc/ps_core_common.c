@@ -37,10 +37,6 @@
 #include "libproc_impl.h"
 #include "cds.h"
 
-#ifdef __APPLE__
-#include "sun_jvm_hotspot_debugger_amd64_AMD64ThreadContext.h"
-#endif
-
 // Define a segment permission flag allowing read if there is a read flag. Otherwise use 0.
 #ifdef PF_R
 #define MAP_R_FLAG PF_R

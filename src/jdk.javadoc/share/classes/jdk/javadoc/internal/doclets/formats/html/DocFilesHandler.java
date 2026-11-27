@@ -229,7 +229,8 @@ public class DocFilesHandler {
             htmlContent.add(new BodyContents()
                     .setHeader(getHeader(PageMode.DOC_FILE, dfElement.getElement()))
                     .addMainContent(pageContent)
-                    .setFooter(getFooter()));
+                    .setFooter(getFooter())
+                    .toContent());
             printHtmlDocument(List.of(), null, localTagsContent, List.of(), htmlContent);
         }
 

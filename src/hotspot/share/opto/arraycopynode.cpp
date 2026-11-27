@@ -122,8 +122,8 @@ int ArrayCopyNode::get_count(PhaseGVN *phase) const {
       return -1;
     }
 
-    if (src_type->isa_instptr()) {
-      const TypeInstPtr* inst_src = src_type->is_instptr();
+    if (src_type->is_instptr()) {
+      const TypeInstPtr* inst_src = src_type->as_instptr();
       ciInstanceKlass* ik = inst_src->instance_klass();
       // ciInstanceKlass::nof_nonstatic_fields() doesn't take injected
       // fields into account. They are rare anyway so easier to simply
@@ -223,7 +223,7 @@ Node* ArrayCopyNode::try_clone_instance(PhaseGVN *phase, bool can_reshape, int c
     }
   }
 
-  const TypeInstPtr* dest_type = phase->type(base_dest)->is_instptr();
+  const TypeInstPtr* dest_type = phase->type(base_dest)->as_instptr();
   if (dest_type->instance_klass() != ik) {
     // At parse time, the exact type of the object to clone was not known. That inexact type was captured by the CheckCastPP
     // of the newly allocated cloned object (in dest). The exact type is now known (in src), but the type for the cloned object
@@ -384,7 +384,7 @@ bool ArrayCopyNode::prepare_array_copy(PhaseGVN *phase, bool can_reshape,
       return false;
     }
 
-    BasicType elem = ary_src->isa_aryptr()->elem()->array_element_basic_type();
+    BasicType elem = ary_src->elem()->array_element_basic_type();
     if (is_reference_type(elem, true)) {
       elem = T_OBJECT;
     }
@@ -404,7 +404,7 @@ bool ArrayCopyNode::prepare_array_copy(PhaseGVN *phase, bool can_reshape,
     // If the clone copy is decomposed into load-stores - the address is adjusted to
     // point at where the array starts.
     const Type* toff = phase->type(src_offset);
-    int offset = toff->isa_long() ? (int) toff->is_long()->get_con() : (int) toff->is_int()->get_con();
+    int offset = toff->is_long() ? static_cast<int>(toff->as_long()->get_con()) : toff->as_int()->get_con();
     int diff = arrayOopDesc::base_offset_in_bytes(elem) - offset;
     assert(diff >= 0, "clone should not start after 1st array element");
     if (diff > 0) {
@@ -417,12 +417,49 @@ bool ArrayCopyNode::prepare_array_copy(PhaseGVN *phase, bool can_reshape,
   return true;
 }
 
+// Check whether the fast path arraycopy can be used:
+// - Return false: We could not prove that the fast path is safe
+// - Return true:  We might use the fast path
+//
+// Note that we do not need to check atomicity for flat arrays. Atomic flat layouts can only have an element size of
+// 1, 2, 4, or 8 bytes. We can use the corresponding primitive arraycopy stubs which copy the elements atomically.
+// Flat arrays with elements larger than 8 bytes cannot have an atomic layout.
+bool ArrayCopyNode::can_use_arraycopy_fast_path(const TypeAryPtr* src_ary, const TypeAryPtr* dest_ary) const {
+  assert(src_ary != nullptr, "src must be an array pointer");
+  assert(dest_ary != nullptr, "dest must be an array pointer");
+
+  if (!src_ary->has_compatible_arraycopy_layout(dest_ary)) {
+    // We cannot prove that src and dest have compatible layouts.
+    return false;
+  }
+
+  if (src_ary->is_not_flat()) {
+    assert(dest_ary->is_not_flat(), "same reference layout");
+    return true;
+  }
+
+  // Additional checks for flat arrays.
+  assert(src_ary->exact_klass() == dest_ary->exact_klass(), "same layout");
+  assert(dest_ary->is_flat(), "same flatness");
+  assert(src_ary->is_null_free() == dest_ary->is_null_free(), "same nullness");
+  assert(is_reference_type(dest_ary->elem()->array_element_basic_type(), true), "must be for flat arrays");
+
+  if (src_ary->elem()->value_klass()->contains_oops()) {
+    BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
+    bool needs_barriers = bs->array_copy_requires_gc_barriers(is_alloc_tightly_coupled(), T_OBJECT, false, false,
+                                                              BarrierSetC2::Expansion);
+    // When a flat array contains oops, we require GC barriers which we cannot handle
+    return !needs_barriers;
+  }
+  return true;
+}
+
 const TypeAryPtr* ArrayCopyNode::get_address_type(PhaseGVN* phase, const TypePtr* atp, Node* n) {
   if (atp == TypeOopPtr::BOTTOM) {
     atp = phase->type(n)->isa_ptr();
   }
   // adjust atp to be the correct array element address type
-  return atp->add_offset(Type::OffsetBot)->is_aryptr();
+  return atp->add_offset(Type::OffsetBot)->as_aryptr();
 }
 
 void ArrayCopyNode::array_copy_test_overlap(GraphKit& kit, bool disjoint_bases, int count, Node*& backward_ctl) {
@@ -643,7 +680,7 @@ Node *ArrayCopyNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   const Type* src_type = phase->type(src);
   const Type* dest_type = phase->type(dest);
 
-  if (src_type->isa_aryptr() && dest_type->isa_instptr()) {
+  if (src_type->is_aryptr() && dest_type->is_instptr()) {
     // clone used for load of unknown value type can't be optimized at
     // this point
     return nullptr;
@@ -783,9 +820,9 @@ bool ArrayCopyNode::may_modify(const TypeOopPtr* t_oop, PhaseValues* phase) cons
   if (dest->is_top()) {
     return false;
   }
-  const TypeOopPtr* dest_t = phase->type(dest)->is_oopptr();
+  const TypeOopPtr* dest_t = phase->type(dest)->as_oopptr();
   assert(!dest_t->is_known_instance() || _dest_type->is_known_instance(), "result of EA not recorded");
-  assert(in(ArrayCopyNode::Src)->is_top() || !phase->type(in(ArrayCopyNode::Src))->is_oopptr()->is_known_instance() ||
+  assert(in(ArrayCopyNode::Src)->is_top() || !phase->type(in(ArrayCopyNode::Src))->as_oopptr()->is_known_instance() ||
          _src_type->is_known_instance(), "result of EA not recorded");
 
   if (_dest_type != TypeOopPtr::BOTTOM || t_oop->is_known_instance()) {
@@ -797,10 +834,10 @@ bool ArrayCopyNode::may_modify(const TypeOopPtr* t_oop, PhaseValues* phase) cons
 }
 
 bool ArrayCopyNode::may_modify_helper(const TypeOopPtr* t_oop, Node* n, PhaseValues* phase, ArrayCopyNode*& ac) {
-  if (n != nullptr &&
-      n->is_ArrayCopy() &&
-      n->as_ArrayCopy()->may_modify(t_oop, phase)) {
-    ac = n->as_ArrayCopy();
+  if (ArrayCopyNode* n_copy = isa<ArrayCopyNode>(n);
+      n_copy != nullptr &&
+      n_copy->may_modify(t_oop, phase)) {
+    ac = n_copy;
     return true;
   }
   return false;
@@ -859,7 +896,7 @@ bool ArrayCopyNode::modifies(intptr_t offset_lo, intptr_t offset_hi, PhaseValues
     return !must_modify;
   }
 
-  BasicType ary_elem = ary_t->isa_aryptr()->elem()->array_element_basic_type();
+  BasicType ary_elem = ary_t->elem()->array_element_basic_type();
   if (is_reference_type(ary_elem, true)) ary_elem = T_OBJECT;
 
   uint header;

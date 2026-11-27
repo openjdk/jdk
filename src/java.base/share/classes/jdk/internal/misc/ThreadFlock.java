@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,8 +49,8 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
  * <p> ThreadFlock defines the {@link #open(String) open} method to open a new flock,
  * the {@link #start(Thread) start} method to start a thread in the flock, and the
  * {@link #close() close} method to close the flock. The {@code close} waits for all
- * threads in the flock to finish. The {@link #awaitAll() awaitAll} method may be used
- * to wait for all threads to finish without closing the flock. The {@link #wakeup()}
+ * threads in the flock to finish. The {@link #awaitAll(Object) awaitAll} method may be
+ * used to wait for all threads to finish without closing the flock. The {@link #wakeup()}
  * method will cause {@code awaitAll} method to complete early, which can be used to
  * support cancellation in higher-level APIs. ThreadFlock also defines the {@link
  * #shutdown() shutdown} method to prevent new threads from starting while allowing
@@ -290,19 +290,20 @@ public class ThreadFlock implements AutoCloseable {
      * <p> This method clears the effect of any previous invocations of the
      * {@code wakeup} method.
      *
+     * @param blocker the synchronization object responsible for this thread waiting
      * @return true if there are no threads in the flock, false if wakeup was invoked
      * and there are unfinished threads
      * @throws InterruptedException if interrupted while waiting
      * @throws WrongThreadException if invoked by a thread that is not the owner
      */
-    public boolean awaitAll() throws InterruptedException {
+    public boolean awaitAll(Object blocker) throws InterruptedException {
         ensureOwner();
 
         if (getAndSetPermit(false))
             return (threadCount == 0);
 
         while (threadCount > 0 && !permit) {
-            LockSupport.park();
+            LockSupport.park(blocker);
             if (Thread.interrupted())
                 throw new InterruptedException();
         }
@@ -322,6 +323,7 @@ public class ThreadFlock implements AutoCloseable {
      * <p> This method clears the effect of any previous invocations of the {@code wakeup}
      * method.
      *
+     * @param blocker the synchronization object responsible for this thread waiting
      * @param timeout the maximum duration to wait
      * @return true if there are no threads in the flock, false if wakeup was invoked
      * and there are unfinished threads
@@ -329,7 +331,7 @@ public class ThreadFlock implements AutoCloseable {
      * @throws TimeoutException if the wait timed out
      * @throws WrongThreadException if invoked by a thread that is not the owner
      */
-    public boolean awaitAll(Duration timeout)
+    public boolean awaitAll(Object blocker, Duration timeout)
             throws InterruptedException, TimeoutException {
         Objects.requireNonNull(timeout);
         ensureOwner();
@@ -341,7 +343,7 @@ public class ThreadFlock implements AutoCloseable {
         long nanos = NANOSECONDS.convert(timeout);
         long remainingNanos = nanos;
         while (threadCount > 0 && remainingNanos > 0 && !permit) {
-            LockSupport.parkNanos(remainingNanos);
+            LockSupport.parkNanos(blocker, remainingNanos);
             if (Thread.interrupted())
                 throw new InterruptedException();
             remainingNanos = nanos - (System.nanoTime() - startNanos);
@@ -357,8 +359,8 @@ public class ThreadFlock implements AutoCloseable {
     }
 
     /**
-     * Causes the call to {@link #awaitAll()} or {@link #awaitAll(Duration)} by the
-     * {@linkplain #owner() owner} to return immediately.
+     * Causes the call to {@link #awaitAll(Object)} or {@link #awaitAll(Object, Duration)}
+     * by the {@linkplain #owner() owner} to return immediately.
      *
      * <p> If the owner is blocked in {@code awaitAll} then it will return immediately.
      * If the owner is not blocked in {@code awaitAll} then its next call to wait
@@ -475,12 +477,7 @@ public class ThreadFlock implements AutoCloseable {
 
     @Override
     public String toString() {
-        String id = Objects.toIdentityString(this);
-        if (name != null) {
-            return name + "/" + id;
-        } else {
-            return id;
-        }
+        return name;
     }
 
     /**

@@ -269,20 +269,18 @@ void G1BarrierSetAssembler::g1_write_barrier_pre(MacroAssembler* masm,
   __ bind(done);
 }
 
-#if INCLUDE_CDS
 // return a register that differs from reg1, reg2, reg3 and reg4
-
 static Register pick_different_reg(Register reg1, Register reg2 = noreg, Register reg3= noreg, Register reg4 = noreg) {
   RegSet available = (RegSet::of(rscratch1, rscratch2, rax, rbx) + rdx -
                       RegSet::of(reg1, reg2, reg3, reg4));
   return *(available.begin());
 }
-#endif // INCLUDE_CDS
 
 static void generate_post_barrier(MacroAssembler* masm,
                                   const Register store_addr,
                                   const Register new_val,
                                   const Register tmp1,
+                                  bool use_aot_runtime_const,
                                   bool new_val_may_be_null) {
 
   assert_different_registers(store_addr, new_val, tmp1, noreg);
@@ -291,12 +289,10 @@ static void generate_post_barrier(MacroAssembler* masm,
 
   Label L_done;
   // Does store cross heap regions?
-#if INCLUDE_CDS
   // AOT code needs to load the barrier grain shift from the aot
   // runtime constants area in the code cache otherwise we can compile
   // it as an immediate operand
-
-  if (AOTCodeCache::is_on_for_dump()) {
+  if (INCLUDE_CDS && use_aot_runtime_const) {
     address grain_shift_addr = AOTRuntimeConstants::grain_shift_address();
     Register save = pick_different_reg(rcx, tmp1, new_val, store_addr);
     __ push(save);
@@ -309,9 +305,7 @@ static void generate_post_barrier(MacroAssembler* masm,
     __ pop(rcx);
     __ pop(save);
     __ jcc(Assembler::equal, L_done);
-  } else
-#endif // INCLUDE_CDS
-  {
+  } else {
     __ movptr(tmp1, store_addr);                                    // tmp1 := store address
     __ xorptr(tmp1, new_val);                                       // tmp1 := store address ^ new value
     __ shrptr(tmp1, G1HeapRegion::LogOfHRGrainBytes);               // ((store address ^ new value) >> LogOfHRGrainBytes) == 0?
@@ -343,7 +337,10 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm,
                                                   Register store_addr,
                                                   Register new_val,
                                                   Register tmp) {
-  generate_post_barrier(masm, store_addr, new_val, tmp, true /* new_val_may_be_null */);
+  // This method is used only for interpreter, adapter and stub code generation.
+  // Use the AOT cache dump state to determine the usage of AOT runtime constants.
+  bool use_aot_runtime_const = AOTCodeCache::is_on_for_dump();
+  generate_post_barrier(masm, store_addr, new_val, tmp, use_aot_runtime_const, true /* new_val_may_be_null */);
 }
 
 #if defined(COMPILER2)
@@ -404,7 +401,8 @@ void G1BarrierSetAssembler::g1_write_barrier_post_c2(MacroAssembler* masm,
                                                      Register new_val,
                                                      Register tmp,
                                                      bool new_val_may_be_null) {
-  generate_post_barrier(masm, store_addr, new_val, tmp, new_val_may_be_null);
+  bool use_aot_runtime_const = Compile::current()->is_aot_compile();
+  generate_post_barrier(masm, store_addr, new_val, tmp, use_aot_runtime_const, new_val_may_be_null);
 }
 
 #endif // COMPILER2
@@ -494,7 +492,8 @@ void G1BarrierSetAssembler::g1_write_barrier_post_c1(MacroAssembler* masm,
                                                      Register thread,
                                                      Register tmp1,
                                                      Register tmp2 /* unused on x86 */) {
-  generate_post_barrier(masm, store_addr, new_val, tmp1, true /* new_val_may_be_null */);
+  bool use_aot_runtime_const = ciEnv::current()->is_aot_compile();
+  generate_post_barrier(masm, store_addr, new_val, tmp1, use_aot_runtime_const, true /* new_val_may_be_null */);
 }
 
 #define __ sasm->
