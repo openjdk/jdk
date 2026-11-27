@@ -184,9 +184,6 @@ public:
   ShenandoahObjToScanQueueSet* task_queues() const { return _task_queues; }
   virtual ShenandoahObjToScanQueueSet* old_gen_task_queues() const;
 
-  // Scan remembered set at start of concurrent young-gen marking.
-  void scan_remembered_set(bool is_concurrent);
-
   virtual bool is_concurrent_mark_in_progress() = 0;
 };
 

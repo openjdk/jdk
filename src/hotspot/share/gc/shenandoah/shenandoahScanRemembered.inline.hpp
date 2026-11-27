@@ -336,6 +336,26 @@ ShenandoahScanRemembered::process_humongous_clusters(ShenandoahHeapRegion* start
   start_region->oop_iterate_humongous_slice_dirty(cl, first_cluster_addr, spanned_words, use_write_table);
 }
 
+template <typename ClosureType>
+void ShenandoahScanRemembered::process_chunk_for_mark(const ShenandoahRegionChunk& assignment, ClosureType* cl, uint worker_id) {
+  ShenandoahHeapRegion* region = assignment._r;
+  log_debug(gc, remset)("ShenandoahScanRememberedTask::do_work(%u), processing slice of region "
+                        "%zu at offset %zu, size: %zu",
+                        worker_id, region->index(), assignment._chunk_offset, assignment._chunk_size);
+  assert(region->is_old(), "Remembered set scan should only visit old regions, not: %zu", region->index());
+
+  const size_t cluster_size = CardTable::card_size_in_words() * ShenandoahCardCluster::CardsPerCluster;
+  const size_t clusters = assignment._chunk_size / cluster_size;
+  assert(clusters * cluster_size == assignment._chunk_size, "Chunk assignments must align on cluster boundaries");
+  HeapWord* end_of_range = region->bottom() + assignment._chunk_offset + assignment._chunk_size;
+
+  // During concurrent mark, region->top() equals TAMS with respect to the current young-gen pass.
+  if (end_of_range > region->top()) {
+    end_of_range = region->top();
+  }
+
+  process_region_slice(region, assignment._chunk_offset, clusters, end_of_range, cl, false, worker_id);
+}
 
 // This method takes a region & determines the end of the region that the worker can scan.
 template <typename ClosureType>

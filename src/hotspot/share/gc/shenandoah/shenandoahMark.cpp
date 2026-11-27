@@ -52,6 +52,7 @@ ShenandoahMark::ShenandoahMark(ShenandoahGeneration* generation, bool bootstrapp
   _generation(generation),
   _task_queues(generation->task_queues()),
   _old_gen_task_queues(generation->old_gen_task_queues()),
+  _remembered_set_scanner(ShenandoahHeap::heap()),
   _string_dedup(StringDedup::is_enabled()),
   _bootstrapping(bootstrapping) {
 }
@@ -77,48 +78,47 @@ void ShenandoahMark::mark_loop_prework(uint w, TaskTerminator *t, StringDedup::R
   heap->flush_liveness_cache(w);
 }
 
-template<bool CANCELLABLE, bool STRING_DEDUP>
-void ShenandoahMark::mark_loop(uint worker_id, TaskTerminator* terminator,
-                               ShenandoahGenerationType generation_type, StringDedup::Requests* const req) {
-  switch (generation_type) {
-    case YOUNG:
-      mark_loop_prework<YOUNG, CANCELLABLE, STRING_DEDUP>(worker_id, terminator, req);
-      break;
-    case OLD:
-      mark_loop_prework<OLD, CANCELLABLE, STRING_DEDUP>(worker_id, terminator, req);
-      break;
-    case GLOBAL:
-      mark_loop_prework<GLOBAL, CANCELLABLE, STRING_DEDUP>(worker_id, terminator, req);
-      break;
-    case NON_GEN:
-      mark_loop_prework<NON_GEN, CANCELLABLE, STRING_DEDUP>(worker_id, terminator, req);
-      break;
-    default:
-      ShouldNotReachHere();
+template<ShenandoahGenerationType GENERATION, bool CANCELLABLE>
+void ShenandoahMark::mark_loop(uint worker_id, TaskTerminator* terminator) {
+  if (_string_dedup) {
+    StringDedup::Requests req;
+    mark_loop_prework<GENERATION, CANCELLABLE, true>(worker_id, terminator, &req);
+  } else {
+    mark_loop_prework<GENERATION, CANCELLABLE, false>(worker_id, terminator, nullptr);
   }
 }
 
-void ShenandoahMark::mark_loop(uint worker_id, TaskTerminator* terminator, ShenandoahGenerationType generation_type,
-                               bool cancellable) {
-  if (_string_dedup) {
-    StringDedup::Requests req;
-    if (cancellable) {
-      mark_loop<true, true>(worker_id, terminator, generation_type, &req);
-    } else {
-      mark_loop<false, true>(worker_id, terminator, generation_type, &req);
+bool ShenandoahMark::try_process_remembered_set_chunks(uint worker_id, ShenandoahHeap* heap, ShenandoahObjToScanQueue* q) {
+  ShenandoahRedirtyCardsMarkClosure rset_closure(q, _generation->ref_processor());
+  _generation->ref_processor()->set_mark_closure(worker_id, &rset_closure);
+
+  uintx chunks_scanned = 0;
+  do {
+    // Always try to scan at least one chunk. Continue scanning until there is sufficient
+    // mark work, or until we have scanned too many chunks.
+    if (!try_process_remembered_set_chunk(worker_id, heap, &rset_closure)) {
+      return false;
     }
-  } else {
-    if (cancellable) {
-      mark_loop<true, false>(worker_id, terminator, generation_type, nullptr);
-    } else {
-      mark_loop<false, false>(worker_id, terminator, generation_type, nullptr);
-    }
+    ++chunks_scanned;
+  } while (q->full_size() < ShenandoahMarkLoopStride && chunks_scanned < ShenandoahRememberedSetLoopStride);
+  return true;
+}
+
+template <typename ClosureType>
+bool ShenandoahMark::try_process_remembered_set_chunk(uint worker_id, ShenandoahHeap* heap, ClosureType* rset_closure) {
+  ShenandoahRegionChunk assignment;
+  if (!_remembered_set_scanner.next(&assignment)) {
+    return false;
   }
+
+  ShenandoahScanRemembered* scanner = heap->old_generation()->card_scan();
+  scanner->process_chunk_for_mark(assignment, rset_closure, worker_id);
+  return true;
 }
 
 template <class T, class OT, ShenandoahGenerationType GENERATION, bool CANCELLABLE, bool STRING_DEDUP>
 void ShenandoahMark::mark_loop_work(T* cl, ShenandoahLiveData* live_data, uint worker_id, TaskTerminator *terminator, StringDedup::Requests* const req) {
-  uintx stride = ShenandoahMarkLoopStride;
+  const uintx stride = ShenandoahMarkLoopStride;
 
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   ShenandoahObjToScanQueueSet* queues = task_queues();
@@ -136,14 +136,24 @@ void ShenandoahMark::mark_loop_work(T* cl, ShenandoahLiveData* live_data, uint w
     if (CANCELLABLE && heap->check_cancelled_gc_and_yield()) {
       return;
     }
+
     while (satb_mq_set.completed_buffers_num() > 0) {
       satb_mq_set.apply_closure_to_completed_buffer(&drain_satb);
     }
 
     uint work = 0;
+    if (GENERATION == YOUNG) {
+      if (try_process_remembered_set_chunks(worker_id, heap, q)) {
+        // This counts as work even if the scanned chunk did not put any oops in our queue.
+        // We do not want this thread to enter termination just because there were no interesting
+        // pointers on the scanned chunk.
+        work++;
+      }
+      _generation->ref_processor()->set_mark_closure(worker_id, cl);
+    }
+
     for (uint i = 0; i < stride; i++) {
-      if (q->pop(t) ||
-          queues->steal(worker_id, t)) {
+      if (q->pop(t) || queues->steal(worker_id, t)) {
         do_task<T, OT, GENERATION, STRING_DEDUP>(q, cl, live_data, req, &t, worker_id);
         work++;
       } else {
@@ -160,3 +170,12 @@ void ShenandoahMark::mark_loop_work(T* cl, ShenandoahLiveData* live_data, uint w
     }
   }
 }
+
+template void ShenandoahMark::mark_loop<YOUNG, true>(uint worker_id, TaskTerminator* terminator);
+template void ShenandoahMark::mark_loop<OLD, true>(uint worker_id, TaskTerminator* terminator);
+template void ShenandoahMark::mark_loop<GLOBAL, true>(uint worker_id, TaskTerminator* terminator);
+template void ShenandoahMark::mark_loop<NON_GEN, true>(uint worker_id, TaskTerminator* terminator);
+template void ShenandoahMark::mark_loop<YOUNG, false>(uint worker_id, TaskTerminator* terminator);
+template void ShenandoahMark::mark_loop<OLD, false>(uint worker_id, TaskTerminator* terminator);
+template void ShenandoahMark::mark_loop<GLOBAL, false>(uint worker_id, TaskTerminator* terminator);
+template void ShenandoahMark::mark_loop<NON_GEN, false>(uint worker_id, TaskTerminator* terminator);
