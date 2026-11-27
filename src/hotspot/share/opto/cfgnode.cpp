@@ -2141,8 +2141,15 @@ bool PhiNode::is_unsafe_data_reference(Node *in) const {
 }
 
 // A Phi may only have other Phis as its transitive outputs, it is dead then. We may not be able to
-// remove it normally because a Phi can be a transitive output of itself.
-bool PhiNode::is_dead_phi() {
+// remove it normally because a Phi can be a transitive output of itself. This method only looks
+// for a dead memory Phi because dead data Phis may be created much more frequently, participate in
+// much more complex cycles. These reasons may lead to the compiler spending too much time
+// traversing those data Phis without making any progress.
+bool PhiNode::is_dead_memory_phi() {
+  if (!is_memory_phi()) {
+    return false;
+  }
+
   // Early return before we create the worklist
   for (DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++) {
     if (!fast_out(i)->is_Phi()) {

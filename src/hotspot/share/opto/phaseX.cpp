@@ -1056,7 +1056,7 @@ bool PhaseIterGVN::can_kill(Node* n) const {
   if (n->outcnt() == 0) {
     return true;
   }
-  if (n->is_Phi() && n->as_Phi()->is_dead_phi()) {
+  if (n->is_Phi() && n->as_Phi()->is_dead_memory_phi()) {
     return true;
   }
   return false;
