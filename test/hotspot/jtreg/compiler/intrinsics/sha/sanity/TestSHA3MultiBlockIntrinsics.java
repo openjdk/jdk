@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -157,8 +157,8 @@
 
 /**
  * @test
- * @bug 8337666
- * @requires os.arch == "aarch64"
+ * @bug 8337666 8392747
+ * @requires os.arch == "aarch64" | os.arch == "riscv64"
  * @summary Verify that SHA3-224, SHA3-256, SHA3-384, SHA3-512 multi block intrinsic is actually used.
  *          -XX:-UseSIMDForSHA3Intrinsic -XX:-PreserveFramePointer
  *
@@ -267,8 +267,8 @@
 
 /**
  * @test
- * @bug 8337666
- * @requires os.arch == "aarch64"
+ * @bug 8337666 8392747
+ * @requires os.arch == "aarch64" | os.arch == "riscv64"
  * @summary Verify that SHA3-224, SHA3-256, SHA3-384, SHA3-512 multi block intrinsic is actually used.
  *          -XX:-UseSIMDForSHA3Intrinsic -XX:+PreserveFramePointer
  *
