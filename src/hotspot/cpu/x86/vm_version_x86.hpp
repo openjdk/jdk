@@ -1154,7 +1154,7 @@ public:
 
   // Stores cpu features representation in the provided buffer. This representation is arch dependent.
   // Size of the buffer must be same as returned by cpu_features_size()
-  static void store_cpu_features(void* buf);
+  static void cpu_features_for_aot_cache(void* buf);
 
   static bool verify_aot_code_cache_features(void* features_buffer);
 

@@ -631,7 +631,7 @@ int VM_Version::cpu_features_size() {
   return sizeof(RVExtFeatureSet);
 }
 
-void VM_Version::store_cpu_features(void* buf) {
+void VM_Version::cpu_features_for_aot_cache(void* buf) {
   assert(is_aligned(buf, cpu_features_alignment()), "sanity check");
   memcpy(buf, RVExtFeatureSet::current(), sizeof(RVExtFeatureSet));
 }

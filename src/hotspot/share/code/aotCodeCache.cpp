@@ -848,7 +848,7 @@ bool AOTCodeCache::Header::verify_cpu_features(AOTCodeCache* cache) const {
       ResourceMark rm; // required for stringStream::as_string()
       load_failure_log().print_cr("AOT Code Cache disabled: cpu features are incompatible");
       char* runtime_cpu_features = NEW_RESOURCE_ARRAY(char, VM_Version::cpu_features_size());
-      VM_Version::store_cpu_features(runtime_cpu_features);
+      VM_Version::cpu_features_for_aot_cache(runtime_cpu_features);
 
       stringStream missing_features;
       VM_Version::get_missing_features_name(cached_cpu_features_buffer, runtime_cpu_features, missing_features);
@@ -909,14 +909,65 @@ bool check_config(T saved, T current, const char* name) {
   }
 }
 
+// Helpers to output aot cache config and actual jvm config to make an easy diff between them.
+inline void print_config_prefix(outputStream* st, const char* name) {
+  st->print("- %s:%*s", name, MAX2(1, 41 - (int)strlen(name)), "");
+}
+
+inline void print_config_value(outputStream* st, const char* name, CollectedHeap::Name value) {
+  print_config_prefix(st, name);
+  st->print_cr("%s", GCConfig::hs_err_name(value));
+}
+
+inline void print_config_value(outputStream* st, const char* name, bool value) {
+  print_config_prefix(st, name);
+  st->print_cr("%s", value ? "true" : "false");
+}
+
+inline void print_config_value(outputStream* st, const char* name, int value) {
+  print_config_prefix(st, name);
+  st->print_cr("%d", value);
+}
+
+inline void print_config_value(outputStream* st, const char* name, uint value) {
+  print_config_prefix(st, name);
+  st->print_cr("%u", value);
+}
+
+#ifdef _LP64
+inline void print_config_value(outputStream* st, const char* name, intx value) {
+  print_config_prefix(st, name);
+  st->print_cr("%zd", value);
+}
+
+inline void print_config_value(outputStream* st, const char* name, uintx value) {
+  print_config_prefix(st, name);
+  st->print_cr("%zu", value);
+}
+#endif
+
+template <typename T>
+void log_config_values(T saved, T current, const char* name) {
+  if (log_is_enabled(Info, aot, setting, required)) {
+    LogStreamHandle(Info, aot, setting, required) cache_config_out;
+    print_config_value(&cache_config_out, name, saved);
+  }
+  if (log_is_enabled(Info, aot, setting, selected)) {
+    LogStreamHandle(Info, aot, setting, selected) os_config_out;
+    print_config_value(&os_config_out, name, current);
+  }
+}
+
 bool AOTCodeCache::Config::verify() const {
   // Tests for config options which might affect validity of adapters,
   // stubs or nmethods. Currently we take a pessemistic stand and
   // drop the whole cache if any of these are changed.
 
 #define AOTCODECACHE_CHECK_VAR(type, name) \
+  log_config_values(_saved_ ## name, name, #name); \
   if (!check_config(_saved_ ## name, name, #name)) { return false; }
 #define AOTCODECACHE_CHECK_FUN(type, name, fun) \
+  log_config_values(_saved_ ## name, fun, #name); \
   if (!check_config(_saved_ ## name, fun, #fun)) { return false; }
 
   AOTCODECACHE_CONFIGS_DO(AOTCODECACHE_CHECK_VAR, AOTCODECACHE_CHECK_FUN);

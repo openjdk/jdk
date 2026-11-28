@@ -177,11 +177,13 @@ class outputStream;
   LOG_TAG(reloc) \
   LOG_TAG(relocator) \
   LOG_TAG(remset) \
+  LOG_TAG(required) \
   LOG_TAG(resolve) \
   LOG_TAG(safepoint) \
   LOG_TAG(sampling) \
   LOG_TAG(scavenge) \
   LOG_TAG(sealed) \
+  LOG_TAG(selected) \
   LOG_TAG(setting) \
   LOG_TAG(smr) \
   LOG_TAG(stackbarrier) \

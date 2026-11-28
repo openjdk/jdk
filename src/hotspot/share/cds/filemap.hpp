@@ -143,7 +143,7 @@ public:
 
   void init();
   bool runtime_check() const;
-  void print(outputStream* st) const;
+  void print(outputStream* st, bool actual_jvm_setting = false) const;
 
   int obj_alignment() const { return _v_ObjectAlignmentInBytes; }
   bool compact_strings() const { return _v_CompactStrings; }
@@ -313,7 +313,7 @@ public:
     return (0 <= region && region < NUM_CDS_REGIONS);
   }
 
-  void print(outputStream* st);
+  void print(outputStream* st, bool output_for_diff = false, bool actual_jvm_setting = false);
 };
 
 class FileMapInfo : public CHeapObj<mtInternal> {
@@ -502,7 +502,7 @@ public:
   BitMapView oopmap_view(int region_index);
   BitMapView ptrmap_view(int region_index);
 
-  void print(outputStream* st) const;
+  void print(outputStream* st, bool output_for_diff = false, bool actual_jvm_settig = false) const;
 
   const char* vm_version() {
     return header()->jvm_ident();
