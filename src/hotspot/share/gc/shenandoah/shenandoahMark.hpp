@@ -41,6 +41,7 @@ class ShenandoahMarkingContext;
 // maintained by task queues, mark bitmap and SATB buffers (concurrent mark)
 class ShenandoahMark: public StackObj {
 protected:
+  ShenandoahHeap* const _heap;
   ShenandoahGeneration* const _generation;
   ShenandoahObjToScanQueueSet* const _task_queues;
   ShenandoahObjToScanQueueSet* const _old_gen_task_queues;
@@ -104,20 +105,13 @@ private:
   ALWAYSINLINE
   static void dedup_string(oop obj, StringDedup::Requests* const req);
 
-  template <ShenandoahGenerationType GENERATION, bool CANCELLABLE, bool STRING_DEDUP>
-  void mark_loop_prework(uint worker_id, TaskTerminator *terminator, StringDedup::Requests* const req);
-
-  template <class T, class OT, ShenandoahGenerationType GENERATION, bool CANCELLABLE, bool STRING_DEDUP>
+  template <class OT, ShenandoahGenerationType GENERATION, bool CANCELLABLE, bool STRING_DEDUP>
   NOINLINE // Main hot loop, start inlining from here
-  void mark_loop_work(T* cl, ShenandoahLiveData* live_data, uint worker_id, TaskTerminator *t, StringDedup::Requests* const req);
+  void mark_loop_work(uint worker_id, TaskTerminator* terminator, ShenandoahLiveData* live_data, StringDedup::Requests* const req);
 
 protected:
-  template<bool CANCELLABLE, bool STRING_DEDUP>
-  void mark_loop(uint worker_id, TaskTerminator* terminator, ShenandoahGenerationType generation_type,
-                StringDedup::Requests* const req);
-
-  void mark_loop(uint worker_id, TaskTerminator* terminator, ShenandoahGenerationType generation_type,
-                 bool cancellable);
+  template<ShenandoahGenerationType GENERATION, bool CANCELLABLE>
+  void mark_loop(uint worker_id, TaskTerminator* terminator);
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHMARK_HPP
