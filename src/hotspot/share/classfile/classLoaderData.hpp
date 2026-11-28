@@ -228,6 +228,7 @@ private:
 
   void initialize_name(Handle class_loader);
 
+  OopHandle add_handle_locked(Handle h); // called whilst already holding the lock
  public:
   // GC interface.
 
@@ -327,7 +328,7 @@ private:
 
   OopHandle add_handle(Handle h);
   void remove_handle(OopHandle h);
-  void init_handle_locked(OopHandle& pd, Handle h);  // used for concurrent access to ModuleEntry::_pd field
+  void init_handle(OopHandle& pd, Handle h);  // used for concurrent access to ModuleEntry::_pd field
   void add_class(Klass* k, bool publicize = true);
   void remove_class(Klass* k);
   bool contains_klass(Klass* k);
