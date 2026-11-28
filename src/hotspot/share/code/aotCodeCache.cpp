@@ -4798,8 +4798,6 @@ void AOTCodeAddressTable::init_extrs() {
     ADD_EXTERNAL_ADDRESS(Runtime1::load_flat_array);
     ADD_EXTERNAL_ADDRESS(Runtime1::store_flat_array);
     ADD_EXTERNAL_ADDRESS(Runtime1::substitutability_check);
-    ADD_EXTERNAL_ADDRESS(Runtime1::buffer_value_args);
-    ADD_EXTERNAL_ADDRESS(Runtime1::buffer_value_args_no_receiver);
     ADD_EXTERNAL_ADDRESS(Runtime1::throw_identity_exception);
     ADD_EXTERNAL_ADDRESS(Runtime1::throw_illegal_monitor_state_exception);
 

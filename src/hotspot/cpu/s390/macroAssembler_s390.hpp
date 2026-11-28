@@ -33,6 +33,7 @@
 class ciValueKlass;
 class SigEntry;
 class VMRegPair;
+class CompiledEntrySignature;
 
 #define MODERN_IFUN(name)  ((void (MacroAssembler::*)(Register, int64_t, Register, Register))&MacroAssembler::name)
 #define CLASSIC_IFUN(name) ((void (MacroAssembler::*)(Register, int64_t, Register, Register))&MacroAssembler::name)

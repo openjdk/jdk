@@ -96,6 +96,7 @@ class SharedRuntime: AllStatic {
   static RuntimeStub*   generate_resolve_blob(StubId id, address destination);
   static RuntimeStub*   generate_throw_exception(StubId id, address runtime_entry);
   static RuntimeStub*   generate_return_value_stub(address destination);
+  static RuntimeStub*   generate_buffer_value_args_stub(address destination, bool allocate_receiver);
  public:
   static void generate_initial_stubs(void);
   static void generate_stubs(void);
@@ -305,6 +306,16 @@ class SharedRuntime: AllStatic {
   static address store_value_type_fields_to_buf_entry()   {
     assert(_store_value_type_fields_to_buf_blob != nullptr, "");
     return _store_value_type_fields_to_buf_blob->entry_point();
+  }
+
+  static address buffer_value_args_entry()   {
+    assert(_buffer_value_args_blob != nullptr, "");
+    return _buffer_value_args_blob->entry_point();
+  }
+
+  static address buffer_value_args_no_receiver_entry()   {
+    assert(_buffer_value_args_no_receiver_blob != nullptr, "");
+    return _buffer_value_args_no_receiver_blob->entry_point();
   }
 
 #if INCLUDE_JFR
@@ -543,6 +554,9 @@ class SharedRuntime: AllStatic {
   static void    save_native_result(MacroAssembler *_masm, BasicType ret_type, int frame_slots);
   static void restore_native_result(MacroAssembler *_masm, BasicType ret_type, int frame_slots);
 
+  static void emit_std_entries(MacroAssembler* masm, const methodHandle& method, OopMapSet* oop_maps, int stack_size,
+                               Register receiver, Label& verified_value_entry, CodeOffsets& offsets);
+
   // Generate a native wrapper for a given method.  The method takes arguments
   // in the Java compiled code convention, marshals them to the native
   // convention (handlizes oops, etc), transitions to native, makes the call,
@@ -587,7 +601,7 @@ class SharedRuntime: AllStatic {
   static address handle_wrong_method_abstract(JavaThread* current);
   static address handle_wrong_method_ic_miss(JavaThread* current);
   static void allocate_value_types(JavaThread* current, Method* callee, bool allocate_receiver);
-  static oop allocate_value_types_impl(JavaThread* current, methodHandle callee, bool allocate_receiver, bool from_c1, TRAPS);
+  static oop allocate_value_types_impl(JavaThread* current, methodHandle callee, bool allocate_receiver, TRAPS);
 
   static address handle_unsafe_access(JavaThread* thread, address next_pc);
 
@@ -634,6 +648,8 @@ class SharedRuntime: AllStatic {
   static uint _mon_exit_ctr;               // monitor exit slow
   static uint _partial_subtype_ctr;        // SubRoutines::partial_subtype_check
 
+  static uint _buffer_value_args_slowcase_cnt;
+  static uint _buffer_value_args_no_receiver_slowcase_cnt;
   // Statistics code
   // stats for "normal" compiled calls (non-interface)
   static int64_t _nof_normal_calls;               // total # of calls

@@ -2217,17 +2217,19 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     assert(vep_offset != -1,        "Must be set");
 #endif
 
+    CodeOffsets offsets;
+    offsets.set_value(CodeOffsets::Verified_Entry, vep_offset);
+    offsets.set_value(CodeOffsets::Frame_Complete, frame_complete);
+    offsets.set_value(CodeOffsets::Exceptions, exception_offset);
     // Code will be copied. No ICache sync required.
     nmethod* nm = nmethod::new_native_nmethod(method,
                                               compile_id,
                                               masm->code(),
-                                              vep_offset,
-                                              frame_complete,
+                                              offsets,
                                               stack_slots,
                                               in_ByteSize(-1),
                                               in_ByteSize(-1),
-                                              oop_maps,
-                                              exception_offset);
+                                              oop_maps);
     if (nm == nullptr) return nm;
     if (method->is_continuation_enter_intrinsic()) {
       ContinuationEntry::set_enter_code(nm, interpreted_entry_offset);
@@ -2251,11 +2253,13 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
 
     int stack_slots = SharedRuntime::out_preserve_stack_slots();  // No out slots at all, actually.
 
+    CodeOffsets offsets;
+    offsets.set_value(CodeOffsets::Verified_Entry, vep_offset);
+    offsets.set_value(CodeOffsets::Frame_Complete, frame_complete);
     return nmethod::new_native_nmethod(method,
                                        compile_id,
                                        masm->code(),
-                                       vep_offset,
-                                       frame_complete,
+                                       offsets,
                                        stack_slots / VMRegImpl::slots_per_word,
                                        in_ByteSize(-1),
                                        in_ByteSize(-1),
@@ -2963,11 +2967,13 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   //////////////////////////////////////////////////////////////////////
 
 
+  CodeOffsets offsets;
+  offsets.set_value(CodeOffsets::Verified_Entry, (int)(wrapper_VEPStart-wrapper_CodeStart));
+  offsets.set_value(CodeOffsets::Frame_Complete, (int)(wrapper_FrameDone-wrapper_CodeStart));
   nmethod *nm = nmethod::new_native_nmethod(method,
                                             compile_id,
                                             masm->code(),
-                                            (int)(wrapper_VEPStart-wrapper_CodeStart),
-                                            (int)(wrapper_FrameDone-wrapper_CodeStart),
+                                            offsets,
                                             stack_slots / VMRegImpl::slots_per_word,
                                             (method_is_static ? in_ByteSize(klass_offset) : in_ByteSize(receiver_offset)),
                                             in_ByteSize(lock_offset),
@@ -4368,6 +4374,11 @@ BufferedValueTypeBlob* SharedRuntime::generate_buffered_value_type_adapter(const
 // Call here from the interpreter or compiled code to store returned
 // values to a newly allocated value type instance.
 RuntimeStub* SharedRuntime::generate_return_value_stub(address destination) {
+  Unimplemented();
+  return nullptr;
+}
+
+RuntimeStub* SharedRuntime::generate_buffer_value_args_stub(address destination, bool allocate_receiver) {
   Unimplemented();
   return nullptr;
 }

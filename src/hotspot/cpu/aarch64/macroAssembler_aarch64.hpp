@@ -45,6 +45,7 @@ class ciValueKlass;
 
 class OopMap;
 struct GtestFriendToMacroAssembler;
+class CompiledEntrySignature;
 
 // MacroAssembler extends Assembler by frequently used macros.
 //
@@ -1960,6 +1961,10 @@ public:
   SVE_DESTRUCTIVE_TERNARY_UNPRED_INS(sve_eor3);
 
 #undef SVE_DESTRUCTIVE_TERNARY_UNPRED_INS
+
+  void maybe_return_value_as_fields();
+  protected:
+  void build_frame_helper(int frame_size_in_bytes, int sp_offset_for_orig_pc, bool reset_orig_pc);
 };
 
 #ifdef ASSERT
