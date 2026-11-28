@@ -1061,6 +1061,14 @@ class Assembler : public AbstractAssembler {
     return is_power_of_2((x >> count_trailing_zeros(x)) + 1);
   }
 
+  // Test if set bits of x are within in a field of at most 16 bits (e.g. 0x00ABCD00).
+  static bool has_field16(julong x) {
+    if (x == 0) return false;
+    int lo = count_trailing_zeros(x);
+    int hi = 63 - count_leading_zeros(x);
+    return hi - lo + 1 <= 16;
+  }
+
  protected:
   // helpers
 

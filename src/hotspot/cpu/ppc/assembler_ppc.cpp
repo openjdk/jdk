@@ -424,11 +424,11 @@ bool Assembler::load_consec_ones(Register d, long x) {
 bool Assembler::load_field16(Register d, long x) {
   precond(x != 0); // should have been handled already
   uint64_t ux = (uint64_t)x;
-  int lo = count_trailing_zeros(ux);     // field's lowest set bit (LE)
-  int hi = 63 - count_leading_zeros(ux); // field's highest set bit (LE)
-  if (hi - lo + 1 > 16) {
+  if (!has_field16(ux)) {
     return false;
   }
+  int lo = count_trailing_zeros(ux);
+  int hi = 63 - count_leading_zeros(ux);
   int16_t fd = (int16_t)(ux >> lo); // field value, fits in 16 bits
   int sh = lo;
   int mb = 63 - hi;
