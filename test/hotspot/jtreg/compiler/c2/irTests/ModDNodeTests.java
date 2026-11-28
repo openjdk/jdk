@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +34,7 @@ import compiler.lib.ir_framework.*;
  * @key randomness
  * @summary Test that Ideal transformations of ModDNode are being performed as expected.
  * @library /test/lib /
- * @run driver compiler.c2.irTests.ModDNodeTests
+ * @run driver ${test.main.class}
  */
 public class ModDNodeTests {
     public static final double q = Utils.getRandomInstance().nextDouble() * 100.0d;
