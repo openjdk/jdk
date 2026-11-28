@@ -148,6 +148,10 @@ void JfrThreadLocal::on_start(Thread* t) {
       JfrCPUTimeThreadSampling::on_javathread_create(jt);
     } else {
       assert(jt->thread_state() == _thread_in_vm, "invariant");
+      if (jt->is_attaching_via_jni()) {
+        // A thread attaching via JNI does not go through _thread_new state
+        JfrCPUTimeThreadSampling::on_javathread_create(jt);
+      }
       if (tl->should_write()) {
         JfrCheckpointManager::write_checkpoint(t);
       }
