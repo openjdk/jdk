@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8214031
+ * @bug 8214031 8294713
  * @summary Test the CharacterRangeTable generated for switch expressions
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -96,8 +96,8 @@ public class CRT {
                "            23, 25,   1418,   141e,   11        // 23, 25,    5:24,    5:30, statement, flow-target\n" +
                "             0, 25,    c10,   180a,    8        //  0, 25,    3:16,    6:10, flow-controller\n" +
                "            26, 26,   180e,   1814,   10        // 26, 26,    6:14,    6:20, flow-target\n" +
-               "             0, 35,    c09,   1815,    1        //  0, 35,    3:09,    6:21, statement\n" +
-               "             0, 35,    824,   1c06,    2        //  0, 35,    2:36,    7:06, block\n");
+               "             0, 33,    c09,   1815,    1        //  0, 33,    3:09,    6:21, statement\n" +
+               "             0, 33,    824,   1c06,    2        //  0, 33,    2:36,    7:06, block\n");
         doTest("    private boolean convert(int i) {\n" +
                "        return i >= 0 ? i == 0\n" +
                "                        ? true\n" +
