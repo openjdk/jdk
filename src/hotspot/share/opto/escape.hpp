@@ -401,7 +401,7 @@ private:
   void verify_connection_graph(GrowableArray<PointsToNode*>&   ptnodes_worklist,
                                GrowableArray<JavaObjectNode*>& non_escaped_worklist,
                                GrowableArray<JavaObjectNode*>& java_objects_worklist,
-                               GrowableArray<Node*>& addp_worklist);
+                               GrowableArray<AddPNode*>& addp_worklist);
 #endif
 
   // Add all references to this JavaObject node.
@@ -493,7 +493,7 @@ private:
   void find_scalar_replaceable_allocs(GrowableArray<JavaObjectNode*>& jobj_worklist, Unique_Node_List<PhiNode>& reducible_merges) const;
 
   // Optimize ideal graph.
-  void optimize_ideal_graph(GrowableArray<Node*>& ptr_cmp_worklist,
+  void optimize_ideal_graph(GrowableArray<CmpNode*>& ptr_cmp_worklist,
                             GrowableArray<MemBarStoreStoreNode*>& storestore_worklist);
   // Expand flat accesses to accesses to each component if the object does not escape
   void optimize_flat_accesses(GrowableArray<SafePointNode*>& sfn_worklist);

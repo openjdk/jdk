@@ -89,6 +89,7 @@ class RootNode;
 class relocInfo;
 class StartNode;
 class SafePointNode;
+class StoreNode;
 class JVMState;
 class Type;
 class TypeInt;
@@ -409,14 +410,15 @@ class Compile : public Phase {
   // List of OpaqueTemplateAssertionPredicateNode nodes for Template Assertion Predicates which can be seen as list
   // of Template Assertion Predicates themselves.
   GrowableArray<OpaqueTemplateAssertionPredicateNode*>  _template_assertion_predicate_opaques;
-  GrowableArray<Node*>  _expensive_nodes;       // List of nodes that are expensive to compute and that we'd better not let the GVN freely common
-  GrowableArray<ReachabilityFenceNode*> _reachability_fences; // List of reachability fences
-  GrowableArray<Node*>  _for_post_loop_igvn;    // List of nodes for IGVN after loop opts are over
-  GrowableArray<Node*>  _value_type_nodes;      // List of ValueType nodes
-  GrowableArray<Node*>  _flat_access_nodes;     // List of LoadFlat and StoreFlat nodes
-  GrowableArray<Node*>  _for_merge_stores_igvn; // List of nodes for IGVN merge stores
-  GrowableArray<UnstableIfTrap*> _unstable_if_traps;        // List of ifnodes after IGVN
-  GrowableArray<Node_List<AbstractLockNode>*> _coarsened_locks;   // List of coarsened Lock and Unlock nodes
+  // List of nodes that are expensive to compute and that we'd better not let the GVN freely common
+  GrowableArray<Node*> _expensive_nodes;
+  GrowableArray<ReachabilityFenceNode*> _reachability_fences;   // List of reachability fences
+  GrowableArray<Node*> _for_post_loop_igvn;                     // List of nodes for IGVN after loop opts are over
+  GrowableArray<ValueTypeNode*> _value_type_nodes;              // List of ValueType nodes
+  GrowableArray<SafePointNode*> _flat_access_nodes;             // List of LoadFlat and StoreFlat nodes
+  GrowableArray<StoreNode*> _for_merge_stores_igvn;             // List of nodes for IGVN merge stores
+  GrowableArray<UnstableIfTrap*> _unstable_if_traps;            // List of ifnodes after IGVN
+  GrowableArray<Node_List<AbstractLockNode>*> _coarsened_locks; // List of coarsened Lock and Unlock nodes
   ConnectionGraph*      _congraph;
 
   Stress                _stress;
@@ -846,15 +848,15 @@ public:
   void process_for_post_loop_opts_igvn(PhaseIterGVN& igvn);
 
   // Keep track of value type nodes for later processing
-  void add_value_type(Node* n);
-  void remove_value_type(Node* n);
+  void add_value_type(ValueTypeNode* value_type);
+  void remove_value_type(ValueTypeNode* value_type);
 
   static bool clear_argument_if_only_used_as_buffer_at_calls(const Node* result_cast, PhaseIterGVN& igvn);
 
   void process_value_types(PhaseIterGVN &igvn, bool remove = false);
 
-  void add_flat_access(Node* n);
-  void remove_flat_access(Node* n);
+  void add_flat_access(SafePointNode* n);
+  void remove_flat_access(SafePointNode* n);
   void process_flat_accesses(PhaseIterGVN& igvn);
 
   template <class F>
@@ -873,8 +875,8 @@ public:
 
   bool     merge_stores_phase() { return _merge_stores_phase;  }
   void set_merge_stores_phase() { _merge_stores_phase = true;  }
-  void record_for_merge_stores_igvn(Node* n);
-  void remove_from_merge_stores_igvn(Node* n);
+  void record_for_merge_stores_igvn(StoreNode* store);
+  void remove_from_merge_stores_igvn(StoreNode* store);
   void process_for_merge_stores_igvn(PhaseIterGVN& igvn);
 
   void shuffle_late_inlines();

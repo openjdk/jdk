@@ -143,7 +143,7 @@ bool ConnectionGraph::compute_escape() {
   Unique_Node_List<Node> delayed_worklist;
   Unique_Node_List<PhiNode> reducible_merges;
   GrowableArray<Node*> alloc_worklist;
-  GrowableArray<Node*> ptr_cmp_worklist;
+  GrowableArray<CmpNode*> ptr_cmp_worklist;
   GrowableArray<MemBarStoreStoreNode*> storestore_worklist;
   GrowableArray<ArrayCopyNode*>  arraycopy_worklist;
   GrowableArray<PointsToNode*>   ptnodes_worklist;
@@ -152,7 +152,7 @@ bool ConnectionGraph::compute_escape() {
   GrowableArray<FieldNode*>      oop_fields_worklist;
   GrowableArray<SafePointNode*>  sfn_worklist;
   GrowableArray<MergeMemNode*>   mergemem_worklist;
-  DEBUG_ONLY( GrowableArray<Node*> addp_worklist; )
+  DEBUG_ONLY( GrowableArray<AddPNode*> addp_worklist; )
 
   { Compile::TracePhase tp(Phase::_t_connectionGraph);
 
@@ -224,7 +224,7 @@ bool ConnectionGraph::compute_escape() {
       case Op_CmpN:
         // Collect compare pointers nodes.
         if (OptimizePtrCompare) {
-          ptr_cmp_worklist.append(n);
+          ptr_cmp_worklist.append(n->as_Cmp());
         }
         break;
       case Op_MemBarStoreStore:
@@ -243,7 +243,7 @@ bool ConnectionGraph::compute_escape() {
 #ifdef ASSERT
       case Op_AddP:
         // Collect address nodes for graph verification.
-        addp_worklist.append(n);
+        addp_worklist.append(n->as_AddP());
         break;
 #endif
       case Op_ArrayCopy:
@@ -3605,11 +3605,10 @@ void ConnectionGraph::find_scalar_replaceable_allocs(GrowableArray<JavaObjectNod
 }
 
 #ifdef ASSERT
-void ConnectionGraph::verify_connection_graph(
-                         GrowableArray<PointsToNode*>&   ptnodes_worklist,
-                         GrowableArray<JavaObjectNode*>& non_escaped_allocs_worklist,
-                         GrowableArray<JavaObjectNode*>& java_objects_worklist,
-                         GrowableArray<Node*>& addp_worklist) {
+void ConnectionGraph::verify_connection_graph(GrowableArray<PointsToNode*>& ptnodes_worklist,
+                                              GrowableArray<JavaObjectNode*>& non_escaped_allocs_worklist,
+                                              GrowableArray<JavaObjectNode*>& java_objects_worklist,
+                                              GrowableArray<AddPNode*>& addp_worklist) {
   // Verify that graph is complete - no new edges could be added.
   int java_objects_length = java_objects_worklist.length();
   int non_escaped_length  = non_escaped_allocs_worklist.length();
@@ -3629,11 +3628,11 @@ void ConnectionGraph::verify_connection_graph(
   // Verify fields information.
   int addp_length = addp_worklist.length();
   for (int next = 0; next < addp_length; ++next ) {
-    Node* n = addp_worklist.at(next);
-    FieldNode* field = ptnode_adr(n->_idx)->as_Field();
+    AddPNode* addp = addp_worklist.at(next);
+    FieldNode* field = ptnode_adr(addp->_idx)->as_Field();
     if (field->is_oop()) {
       // Verify that field has all bases
-      Node* base = get_addp_base(n);
+      Node* base = get_addp_base(addp);
       PointsToNode* ptn = ptnode_adr(base->_idx);
       if (ptn->is_JavaObject()) {
         assert(field->has_base(ptn->as_JavaObject()), "sanity");
@@ -3676,7 +3675,7 @@ void ConnectionGraph::verify_connection_graph(
 #endif
 
 // Optimize ideal graph.
-void ConnectionGraph::optimize_ideal_graph(GrowableArray<Node*>& ptr_cmp_worklist,
+void ConnectionGraph::optimize_ideal_graph(GrowableArray<CmpNode*>& ptr_cmp_worklist,
                                            GrowableArray<MemBarStoreStoreNode*>& storestore_worklist) {
   Compile* C = _compile;
   PhaseIterGVN* igvn = _igvn;
@@ -3706,7 +3705,7 @@ void ConnectionGraph::optimize_ideal_graph(GrowableArray<Node*>& ptr_cmp_worklis
 
   if (OptimizePtrCompare) {
     for (int i = 0; i < ptr_cmp_worklist.length(); i++) {
-      Node *n = ptr_cmp_worklist.at(i);
+      CmpNode* n = ptr_cmp_worklist.at(i);
       assert(n->Opcode() == Op_CmpN || n->Opcode() == Op_CmpP, "must be");
       const TypeInt* tcmp = optimize_ptr_compare(n->in(1), n->in(2));
       if (tcmp->singleton()) {
@@ -3763,8 +3762,9 @@ void ConnectionGraph::optimize_flat_accesses(GrowableArray<SafePointNode*>& sfn_
       expanded = n->as_StoreFlat()->expand_non_atomic(igvn);
     }
     if (expanded) {
-      sfn_worklist.remove(n->as_SafePoint());
-      igvn.C->remove_flat_access(n);
+      SafePointNode* safepoint = n->as_SafePoint();
+      sfn_worklist.remove(safepoint);
+      igvn.C->remove_flat_access(safepoint);
     }
   });
   igvn.set_delay_transform(delay);

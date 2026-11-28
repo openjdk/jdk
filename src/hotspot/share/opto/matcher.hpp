@@ -134,7 +134,7 @@ private:
   Node_Array<MachNode> _shared_nodes;
 
 #ifndef PRODUCT
-  Node_Array<const Node> _old2new_map;    // Map roots of ideal-trees to machine-roots
+  Node_Array<const MachNode> _old2new_map;    // Map roots of ideal-trees to machine-roots
   Node_Array<Node> _new2old_map;    // Maps machine nodes back to ideal
   VectorSet _reused;          // Ideal IGV identifiers reused by machine nodes
 #endif // !PRODUCT

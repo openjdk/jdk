@@ -49,7 +49,7 @@ class StringConcat : public ResourceObj {
   Node*               _arguments;      // The list of arguments to be concatenated
   GrowableArray<int>  _mode;           // into a String along with a mode flag
                                        // indicating how to treat the value.
-  Node_List<const Node> _constructors; // List of constructors (many in case of stacked concat)
+  Node_List<const CallStaticJavaNode> _constructors; // List of constructors (many in case of stacked concat)
   Node_List<Node>     _control;        // List of control nodes that will be deleted
   Node_List<CallStaticJavaNode> _uncommon_traps;  // Uncommon traps that needs to be rewritten
                                                   // to restart at the initial JVMState.
@@ -182,9 +182,9 @@ class StringConcat : public ResourceObj {
     assert(!_control.contains(ctrl), "only push once");
     _control.push(ctrl);
   }
-  void add_constructor(const Node* init) {
-    assert(!_constructors.contains(init), "only push once");
-    _constructors.push(init);
+  void add_constructor(const CallStaticJavaNode* constructor) {
+    assert(!_constructors.contains(constructor), "only push once");
+    _constructors.push(constructor);
   }
   CallStaticJavaNode* end() { return _end; }
   AllocateNode* begin() { return _begin; }
@@ -564,7 +564,7 @@ StringConcat* PhaseStringOpts::build_candidate(CallStaticJavaNode* call) {
 #endif
         break;
       }
-      Node* constructor = nullptr;
+      CallStaticJavaNode* constructor = nullptr;
       for (SimpleDUIterator i(result); i.has_next(); i.next()) {
         CallStaticJavaNode *use = i.get()->isa_CallStaticJava();
         if (use != nullptr &&
@@ -861,7 +861,7 @@ bool StringConcat::validate_mem_flow() {
       // Now here's the main invariant in our case:
       // For memory between the constructor, and appends, and toString we should only see bottom memory,
       // produced by the previous call we know about.
-      if (!_constructors.contains(curr)) {
+      if (!_constructors.contains(curr->isa_CallStaticJava())) {
         NOT_PRODUCT(path.push(curr);)
         Node* mem = curr->in(TypeFunc::Memory);
         assert(mem != nullptr, "calls should have memory edge");

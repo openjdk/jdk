@@ -418,14 +418,14 @@ void Compile::remove_useless_node(Node* dead) {
   if (dead->for_post_loop_opts_igvn()) {
     remove_from_post_loop_opts_igvn(dead);
   }
-  if (dead->is_ValueType()) {
-    remove_value_type(dead);
+  if (ValueTypeNode* vt = dead->isa_ValueType(); vt != nullptr) {
+    remove_value_type(vt);
   }
   if (dead->is_LoadFlat() || dead->is_StoreFlat()) {
-    remove_flat_access(dead);
+    remove_flat_access(dead->as_SafePoint());
   }
   if (dead->for_merge_stores_igvn()) {
-    remove_from_merge_stores_igvn(dead);
+    remove_from_merge_stores_igvn(dead->as_Store());
   }
   if (CallNode* dead_call = dead->isa_Call(); dead_call != nullptr) {
     remove_useless_late_inlines(                &_late_inlines, dead_call);
@@ -2011,16 +2011,12 @@ void Compile::process_for_post_loop_opts_igvn(PhaseIterGVN& igvn) {
   }
 }
 
-void Compile::add_value_type(Node* n) {
-  assert(n->is_ValueType(), "unexpected node");
-  _value_type_nodes.push(n);
+void Compile::add_value_type(ValueTypeNode* value_type) {
+  _value_type_nodes.push(value_type);
 }
 
-void Compile::remove_value_type(Node* n) {
-  assert(n->is_ValueType(), "unexpected node");
-  if (_value_type_nodes.contains(n)) {
-    _value_type_nodes.remove(n);
-  }
+void Compile::remove_value_type(ValueTypeNode* value_type) {
+  _value_type_nodes.remove_if_existing(value_type);
 }
 
 // Does the return value keep otherwise useless value type allocations alive?
@@ -2168,7 +2164,7 @@ void Compile::process_value_types(PhaseIterGVN &igvn, bool remove) {
     }
   }
 
-  if (_value_type_nodes.length() == 0) {
+  if (_value_type_nodes.is_empty()) {
     // keep the graph canonical
     igvn.optimize();
     return;
@@ -2176,8 +2172,8 @@ void Compile::process_value_types(PhaseIterGVN &igvn, bool remove) {
   // Scalarize value types in safepoint debug info.
   // Delay this until all inlining is over to avoid getting inconsistent debug info.
   set_scalarize_in_safepoints(true);
-  for (int i = _value_type_nodes.length()-1; i >= 0; i--) {
-    ValueTypeNode* vt = _value_type_nodes.at(i)->as_ValueType();
+  for (int i = _value_type_nodes.length() - 1; i >= 0; i--) {
+    ValueTypeNode* vt = _value_type_nodes.at(i);
     if (!vt->make_scalar_in_safepoints(&igvn)) {
       record_failure("out of nodes during scalarization");
       return;
@@ -2186,8 +2182,8 @@ void Compile::process_value_types(PhaseIterGVN &igvn, bool remove) {
   }
   if (remove) {
     // Remove value type nodes by replacing them with their oop input
-    while (_value_type_nodes.length() > 0) {
-      ValueTypeNode* vt = _value_type_nodes.pop()->as_ValueType();
+    while (!_value_type_nodes.is_empty()) {
+      ValueTypeNode* vt = _value_type_nodes.pop();
       if (vt->outcnt() == 0) {
         igvn.remove_dead_node(vt, PhaseIterGVN::NodeOrigin::Graph);
         continue;
@@ -2240,13 +2236,13 @@ void Compile::process_value_types(PhaseIterGVN &igvn, bool remove) {
   igvn.optimize();
 }
 
-void Compile::add_flat_access(Node* n) {
+void Compile::add_flat_access(SafePointNode* n) {
   assert(Node::is_exact<Op_LoadFlat>(n) || Node::is_exact<Op_StoreFlat>(n), "unexpected node %s", n == nullptr ? "nullptr" : n->Name());
   assert(!_flat_access_nodes.contains(n), "duplicate insertion");
   _flat_access_nodes.push(n);
 }
 
-void Compile::remove_flat_access(Node* n) {
+void Compile::remove_flat_access(SafePointNode* n) {
   assert(Node::is_exact<Op_LoadFlat>(n) || Node::is_exact<Op_StoreFlat>(n), "unexpected node %s", n == nullptr ? "nullptr" : n->Name());
   _flat_access_nodes.remove_if_existing(n);
 }
@@ -2628,17 +2624,17 @@ void Compile::adjust_flat_array_access_aliases(PhaseIterGVN& igvn) {
   print_method(PHASE_SPLIT_INLINES_ARRAY, 2);
 }
 
-void Compile::record_for_merge_stores_igvn(Node* n) {
-  if (!n->for_merge_stores_igvn()) {
-    assert(!_for_merge_stores_igvn.contains(n), "duplicate");
-    n->add_flag(Node::NodeFlags::Flag_for_merge_stores_igvn);
-    _for_merge_stores_igvn.append(n);
+void Compile::record_for_merge_stores_igvn(StoreNode* store) {
+  if (!store->for_merge_stores_igvn()) {
+    assert(!_for_merge_stores_igvn.contains(store), "duplicate");
+    store->add_flag(Node::NodeFlags::Flag_for_merge_stores_igvn);
+    _for_merge_stores_igvn.append(store);
   }
 }
 
-void Compile::remove_from_merge_stores_igvn(Node* n) {
-  n->remove_flag(Node::NodeFlags::Flag_for_merge_stores_igvn);
-  _for_merge_stores_igvn.remove(n);
+void Compile::remove_from_merge_stores_igvn(StoreNode* store) {
+  store->remove_flag(Node::NodeFlags::Flag_for_merge_stores_igvn);
+  _for_merge_stores_igvn.remove(store);
 }
 
 // We need to wait with merging stores until RangeCheck smearing has removed the RangeChecks during
@@ -2658,15 +2654,15 @@ void Compile::remove_from_merge_stores_igvn(Node* n) {
 void Compile::process_for_merge_stores_igvn(PhaseIterGVN& igvn) {
   C->set_merge_stores_phase();
 
-  if (_for_merge_stores_igvn.length() > 0) {
-    while (_for_merge_stores_igvn.length() > 0) {
-      Node* n = _for_merge_stores_igvn.pop();
+  if (!_for_merge_stores_igvn.is_empty()) {
+    while (!_for_merge_stores_igvn.is_empty()) {
+      StoreNode* n = _for_merge_stores_igvn.pop();
       n->remove_flag(Node::NodeFlags::Flag_for_merge_stores_igvn);
       igvn._worklist.push(n);
     }
     igvn.optimize();
     if (failing()) return;
-    assert(_for_merge_stores_igvn.length() == 0, "no more delayed nodes allowed");
+    assert(_for_merge_stores_igvn.is_empty(), "no more delayed nodes allowed");
     print_method(PHASE_AFTER_MERGE_STORES, 3);
   }
 }
