@@ -565,7 +565,6 @@ abstract public class CDSAppTester {
     public OutputAnalyzer productionRun(String[] extraVmArgs, String[] extraAppArgs) throws Exception {
         RunMode runMode = RunMode.PRODUCTION;
         String[] cmdLine = addCommonVMArgs(runMode);
-        cmdLine = StringArrayUtils.concat(cmdLine, vmArgs(runMode));
         cmdLine = StringArrayUtils.concat(cmdLine,
                                           logToFile(productionRunLog(), "aot", "cds"));
 
@@ -573,9 +572,10 @@ abstract public class CDSAppTester {
             cmdLine = StringArrayUtils.concat(cmdLine, "-Xshare:on", "-XX:SharedArchiveFile=" + staticArchiveFile);
         } else if (isDynamicWorkflow()) {
             cmdLine = StringArrayUtils.concat(cmdLine, "-Xshare:on", "-XX:SharedArchiveFile=" + dynamicArchiveFile);
-       } else if (isAOTWorkflow()) {
+        } else if (isAOTWorkflow()) {
             cmdLine = StringArrayUtils.concat(cmdLine, "-XX:AOTMode=required", "-XX:AOTCache=" + aotCacheFile);
         }
+        cmdLine = StringArrayUtils.concat(cmdLine, vmArgs(runMode));
 
         if (extraVmArgs != null) {
             cmdLine = StringArrayUtils.concat(cmdLine, extraVmArgs);
