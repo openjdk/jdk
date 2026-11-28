@@ -313,9 +313,10 @@ instead they are set as {@linkplain java.security.Security security} properties.
 <H2>Unix domain sockets</H2>
 <p>
 Calling {@link java.nio.channels.ServerSocketChannel#bind(SocketAddress,int) ServerSocketChannel.bind}
-with a {@code null} address parameter will bind to an <i>automatically assigned</i> socket address.
-For Unix domain sockets, this means a unique path in some predefined system temporary directory.
-There are a number of system (and networking) properties that affect this behavior.
+with a {@code null} or {@linkplain java.net.UnixDomainSocketAddress##unnamed unnamed} address parameter
+for Unix domain sockets will bind to an <i>automatically assigned</i> socket address, which means a
+unique path in some predefined system temporary directory. There are a number of system (and networking)
+properties that affect this behavior.
 <p>
 Unix domain socket addresses are limited in length to approximately 100
 bytes (depending on the platform), it is important to ensure that the temporary directory's name
