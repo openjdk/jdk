@@ -32,6 +32,8 @@ First, one must create a `new CompileFramework()`, which creates two directories
 
 The Compile Framework prints the names of the directories, they are subdirectories of the JTREG scratch directory `JTWork/scratch`.
 
+If `jdk.test.lib.random.seed` is not set, the constructor sets it to `jdk.test.lib.Utils.SEED` so that generated code uses the same seed. An explicitly set property is left unchanged.
+
 ### Adding Sources to the Compilation
 
 Java and Jasm sources can be added to the compilation using `compileFramework.addJavaSourceCode()` and `compileFramework.addJasmSourceCode()`. The source classes can depend on each other, and they can also use the IR Framework ([IRFrameworkJavaExample](../../../testlibrary_tests/compile_framework/examples/IRFrameworkJavaExample.java)).
