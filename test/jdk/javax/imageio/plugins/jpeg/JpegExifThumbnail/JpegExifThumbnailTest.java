@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,9 +137,12 @@ public class JpegExifThumbnailTest {
                 new Dimension(80, 60)).run();
 
         // This includes a JFIF thumbnail and an EXIF thumbnail.
+        // Keep the JFIF (APP0) thumbnail within 16 + 3*w*h <= 65535
+        // (w*h <= 21839 px) if regenerated, or the APP0 length overflows
+        // and parsing diverges under system vs bundled libjpeg (JDK-8394892).
         new JpegExifThumbnailTest("jfif-and-exif.jpg",
                 2025,2,21,1,14,51,
-                new Dimension(150, 200),
+                new Dimension(126, 168),
                 new Dimension(120, 160)).run();
 
         // this includes Exif data, but the `compression` tag is 0x60000 instead of 0x6,
