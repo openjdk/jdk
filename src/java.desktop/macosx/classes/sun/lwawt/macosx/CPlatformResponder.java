@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,10 +79,14 @@ final class CPlatformResponder {
         }
 
         int jmodifiers = NSEvent.nsToJavaModifiers(modifierFlags);
-        if ((jeventType == MouseEvent.MOUSE_PRESSED) && (jbuttonNumber > MouseEvent.NOBUTTON)) {
+        if ((jeventType == MouseEvent.MOUSE_PRESSED || jeventType == MouseEvent.MOUSE_DRAGGED)
+                && (jbuttonNumber > MouseEvent.NOBUTTON)) {
             // 8294426: NSEvent.nsToJavaModifiers returns 0 on M2 MacBooks if the event is generated
             //  via tapping (not pressing) on a trackpad
             //  (System Preferences -> Trackpad -> Tap to click must be turned on).
+            // 8396653: nsToJavaModifiers reads the current button state. If a MOUSE_DRAGGED event
+            //  is converted after the button is released, it has no button modifier, so the mouse
+            //  grab is dropped and MOUSE_RELEASED is delivered to the wrong component.
             // So let's set the modifiers manually.
             jmodifiers |= MouseEvent.getMaskForButton(jbuttonNumber);
         }
