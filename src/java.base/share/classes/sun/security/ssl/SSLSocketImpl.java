@@ -91,6 +91,8 @@ public final class SSLSocketImpl
     private final AppOutputStream   appOutput = new AppOutputStream();
 
     private String                  peerHost;
+    // Socket.getLocalAddress() returns the wildcard address after closure.
+    private volatile InetAddress    debugLocalAddress;
     private boolean                 autoClose;
     private boolean                 isConnected;
     private volatile boolean        tlsIsClosed;
@@ -371,7 +373,7 @@ public final class SSLSocketImpl
             ensureNegotiated(false);
         } catch (IOException ioe) {
             if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
-                SSLLogger.severe("handshake failed", ioe);
+                SSLLogger.severe("handshake failed", getDebugInfo(), ioe);
             }
 
             return new SSLSessionImpl();
@@ -445,6 +447,14 @@ public final class SSLSocketImpl
             }
 
             try {
+                if (SSLLogger.isOn() &&
+                        SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
+                    // TLS 1.3 uses this path for post-handshake key updates.
+                    boolean keyUpdate = conContext.isNegotiated &&
+                            conContext.protocolVersion.useTLS13PlusSpec();
+                    SSLLogger.fine(keyUpdate ? "Starting SSL key update" :
+                            "Starting SSL handshake", getDebugInfo());
+                }
                 conContext.kickstart();
 
                 // All initial handshaking goes through this operation until we
@@ -574,7 +584,7 @@ public final class SSLSocketImpl
         }
 
         if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
-            SSLLogger.fine("duplex close of SSLSocket");
+            SSLLogger.fine("duplex close of SSLSocket", getDebugInfo());
         }
 
         try {
@@ -592,7 +602,8 @@ public final class SSLSocketImpl
         } catch (IOException ioe) {
             // ignore the exception
             if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
-                SSLLogger.warning("SSLSocket duplex close failed. Debug info only. Exception details:", ioe);
+                SSLLogger.warning("SSLSocket duplex close failed. Debug info only. Exception details:",
+                        getDebugInfo(), ioe);
             }
         } finally {
             if (!isClosed()) {
@@ -602,7 +613,8 @@ public final class SSLSocketImpl
                 } catch (IOException ioe) {
                     // ignore the exception
                     if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
-                        SSLLogger.warning("SSLSocket close failed. Debug info only. Exception details:", ioe);
+                        SSLLogger.warning("SSLSocket close failed. Debug info only. Exception details:",
+                            getDebugInfo(), ioe);
                     }
                 } finally {
                     tlsIsClosed = true;
@@ -835,7 +847,7 @@ public final class SSLSocketImpl
         }
 
         if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
-            SSLLogger.fine("close inbound of SSLSocket");
+            SSLLogger.fine("close inbound of SSLSocket", getDebugInfo());
         }
 
         // Is it ready to close inbound?
@@ -871,7 +883,7 @@ public final class SSLSocketImpl
         }
 
         if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
-            SSLLogger.fine("close outbound of SSLSocket");
+            SSLLogger.fine("close outbound of SSLSocket", getDebugInfo());
         }
         conContext.closeOutbound();
 
@@ -1146,7 +1158,8 @@ public final class SSLSocketImpl
             } catch (IOException ioe) {
                 // ignore the exception
                 if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
-                    SSLLogger.warning("input stream close failed. Debug info only. Exception details:", ioe);
+                    SSLLogger.warning("input stream close failed. Debug info only. Exception details:",
+                            getDebugInfo(), ioe);
                 }
             }
         }
@@ -1339,7 +1352,8 @@ public final class SSLSocketImpl
             } catch (IOException ioe) {
                 // ignore the exception
                 if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
-                    SSLLogger.warning("output stream close failed. Debug info only. Exception details:", ioe);
+                    SSLLogger.warning("output stream close failed. Debug info only. Exception details:",
+                            getDebugInfo(), ioe);
                 }
             }
         }
@@ -1608,6 +1622,12 @@ public final class SSLSocketImpl
             conContext.outputRecord.setDeliverStream(sockOutput);
 
             this.isConnected = true;
+            if (SSLLogger.isOn()) {
+                debugLocalAddress = getLocalAddress();
+                if (SSLLogger.isOn(SSLLogger.Opt.SSL)) {
+                    SSLLogger.fine("SSLSocket connected", getDebugInfo());
+                }
+            }
         } finally {
             socketLock.unlock();
         }
@@ -1679,7 +1699,7 @@ public final class SSLSocketImpl
      */
     private void handleException(Exception cause) throws IOException {
         if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
-            SSLLogger.warning("handling exception", cause);
+            SSLLogger.warning("handling exception", getDebugInfo(), cause);
         }
 
         throw switch (cause) {
@@ -1754,6 +1774,28 @@ public final class SSLSocketImpl
         }
     }
 
+    // Use existing connection state only: logging must not perform name
+    // resolution, start a handshake, or acquire the socket/handshake locks.
+    String getDebugInfo() {
+        InetAddress remoteAddress = getInetAddress();
+        InetAddress localAddress = debugLocalAddress;
+        if (localAddress == null && isBound()) {
+            localAddress = getLocalAddress();
+        }
+        return "SSLSocket[peerHost=" +
+                (peerHost == null ? "<unavailable>" : peerHost) +
+                ", remoteAddress=" + (remoteAddress == null ?
+                        "<unavailable>" : remoteAddress.getHostAddress()) +
+                ", remotePort=" + (remoteAddress == null ?
+                        "<unavailable>" : Integer.toString(getPort())) +
+                ", localAddress=" + (localAddress == null ?
+                        "<unavailable>" : localAddress.getHostAddress()) +
+                ", localPort=" + (localAddress == null ?
+                        "<unavailable>" : Integer.toString(getLocalPort())) +
+                ", mode=" + (conContext.sslConfig.isClientMode ?
+                        "client" : "server") + "]";
+    }
+
     @Override
     public String toString() {
         return "SSLSocket[" +
@@ -1766,7 +1808,8 @@ public final class SSLSocketImpl
     private void closeSocket(boolean selfInitiated) throws IOException {
         if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
             SSLLogger.fine("close the SSL connection " +
-                (selfInitiated ? "(initiative)" : "(passive)"));
+                (selfInitiated ? "(initiative)" : "(passive)"),
+                getDebugInfo());
         }
 
         if (autoClose || !isLayered()) {
