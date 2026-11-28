@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,9 @@
 package sun.net.www.protocol.http.ntlm;
 
 import java.io.IOException;
+import java.lang.ref.Cleaner.Cleanable;
 import java.util.Base64;
+import jdk.internal.ref.CleanerFactory;
 
 /*
  * Hooks into Windows implementation of NTLM.
@@ -34,17 +36,16 @@ import java.util.Base64;
  * is implemented in the future.
  */
 
-public class NTLMAuthSequence {
+public class NTLMAuthSequence implements AutoCloseable {
 
     private String username;
     private String password;
     private String ntdomain;
     private int state;
-    private long crdHandle;
-    private long ctxHandle;
+    private NativeHandles handles;
 
     static {
-        initFirst(Status.class);
+        initFirst(Status.class, NativeHandles.class);
     }
 
     // Used by native code to indicate when a particular protocol sequence is completed
@@ -54,8 +55,48 @@ public class NTLMAuthSequence {
         boolean sequenceComplete;
     }
 
+    // Holds the native CredHandle* and CtxtHandle* pointers
+    static class NativeHandles implements Runnable {
+        long crdHandle;
+        long ctxHandle;
+        private final Cleanable cleanable;
+
+        NativeHandles(NTLMAuthSequence owner, long crdHandle) {
+            this.crdHandle = crdHandle;
+            this.ctxHandle = 0L;
+            this.cleanable = CleanerFactory.cleaner().register(owner, this);
+        }
+
+        synchronized long crdHandle() { return crdHandle; }
+
+        synchronized void setCtxHandle(long h) { ctxHandle = h; }
+
+        // Called by endSequence in native code after freeing handles, to prevent double-free
+        synchronized void clearHandles() {
+            crdHandle = 0L;
+            ctxHandle = 0L;
+        }
+
+        void clean() { cleanable.clean(); }
+
+        @Override
+        public void run() {
+            long crd, ctx;
+            synchronized (this) {
+                crd = crdHandle;
+                ctx = ctxHandle;
+                crdHandle = 0L;
+                ctxHandle = 0L;
+            }
+            if (crd != 0L || ctx != 0L) {
+                freeHandles(crd, ctx);
+            }
+        }
+    }
+
     Status status;
 
+    @SuppressWarnings("this-escape")
     NTLMAuthSequence (String username, String password, String ntdomain)
     throws IOException
     {
@@ -64,10 +105,11 @@ public class NTLMAuthSequence {
         this.ntdomain = ntdomain;
         this.status = new Status();
         state = 0;
-        crdHandle = getCredentialsHandle (username, ntdomain, password);
-        if (crdHandle == 0) {
-            throw new IOException ("could not get credentials handle");
+        long crd = getCredentialsHandle(username, ntdomain, password);
+        if (crd == 0) {
+            throw new IOException("could not get credentials handle");
         }
+        this.handles = new NativeHandles(this, crd);
     }
 
     public String getAuthHeader (String token) throws IOException {
@@ -77,9 +119,9 @@ public class NTLMAuthSequence {
 
         if (token != null)
             input = Base64.getDecoder().decode(token);
-        byte[] b = getNextToken (crdHandle, input, status);
+        byte[] b = getNextToken(handles.crdHandle(), input, status);
         if (b == null)
-            throw new IOException ("Internal authentication error");
+            throw new IOException("Internal authentication error");
         return Base64.getEncoder().encodeToString(b);
     }
 
@@ -87,11 +129,17 @@ public class NTLMAuthSequence {
         return status.sequenceComplete;
     }
 
-    private static native void initFirst (Class<NTLMAuthSequence.Status> clazz);
+    @Override
+    public void close() {
+        handles.clean();
+    }
+
+    private static native void initFirst(Class<NTLMAuthSequence.Status> statusClazz, Class<NTLMAuthSequence.NativeHandles> handlesClazz);
 
     private native long getCredentialsHandle (String user, String domain, String password);
 
     private native byte[] getNextToken (long crdHandle, byte[] lastToken, Status returned)
             throws IOException;
-}
 
+    static native void freeHandles(long crdHandle, long ctxHandle);
+}

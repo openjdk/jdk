@@ -41,19 +41,27 @@
 #define SECURITY_WIN32
 #include "sspi.h"
 
-static void endSequence (PCredHandle credHand, PCtxtHandle ctxHandle, JNIEnv *env, jobject status);
+static void endSequence (PCredHandle credHand, PCtxtHandle ctxHandle, JNIEnv *env, jobject handles, jobject status);
 
-static jfieldID ntlm_ctxHandleID;
-static jfieldID ntlm_crdHandleID;
-static jfieldID status_seqCompleteID;
+/* Cached IDs set in initFirst */
+static jfieldID  ntlm_handlesID;          /* NTLMAuthSequence.handles                  */
+static jfieldID  handles_ctxHandleID;     /* NativeHandles.ctxHandle (long)            */
+static jmethodID handles_setCtxHandleID;  /* NativeHandles.setCtxHandle(long)          */
+static jmethodID handles_clearHandlesID;  /* NativeHandles.clearHandles()              */
+static jfieldID  status_seqCompleteID;    /* Status.sequenceComplete                   */
 
 JNIEXPORT void JNICALL Java_sun_net_www_protocol_http_ntlm_NTLMAuthSequence_initFirst
-(JNIEnv *env, jclass authseq_clazz, jclass status_clazz)
+(JNIEnv *env, jclass authseq_clazz, jclass status_clazz, jclass handles_clazz)
 {
-    ntlm_ctxHandleID = (*env)->GetFieldID(env, authseq_clazz, "ctxHandle", "J");
-    CHECK_NULL(ntlm_ctxHandleID);
-    ntlm_crdHandleID = (*env)->GetFieldID(env, authseq_clazz, "crdHandle", "J");
-    CHECK_NULL(ntlm_crdHandleID);
+    ntlm_handlesID = (*env)->GetFieldID(env, authseq_clazz, "handles",
+                         "Lsun/net/www/protocol/http/ntlm/NTLMAuthSequence$NativeHandles;");
+    CHECK_NULL(ntlm_handlesID);
+    handles_ctxHandleID = (*env)->GetFieldID(env, handles_clazz, "ctxHandle", "J");
+    CHECK_NULL(handles_ctxHandleID);
+    handles_setCtxHandleID = (*env)->GetMethodID(env, handles_clazz, "setCtxHandle", "(J)V");
+    CHECK_NULL(handles_setCtxHandleID);
+    handles_clearHandlesID = (*env)->GetMethodID(env, handles_clazz, "clearHandles", "()V");
+    CHECK_NULL(handles_clearHandlesID);
     status_seqCompleteID = (*env)->GetFieldID(env, status_clazz, "sequenceComplete", "Z");
 }
 
@@ -170,15 +178,28 @@ JNIEXPORT jbyteArray JNICALL Java_sun_net_www_protocol_http_ntlm_NTLMAuthSequenc
     CredHandle      *pCred = (CredHandle *)crdHandle;
     CtxtHandle      *pCtx;
     CtxtHandle      *newContext;
-    TimeStamp            ltime;
-    jbyteArray       result;
+    TimeStamp       ltime;
+    jbyteArray      result = NULL;
+    jobject         handles;
 
+    handles = (*env)->GetObjectField(env, this, ntlm_handlesID);
+    if (handles == NULL) {
+        JNU_ThrowNullPointerException(env, "handles field is null");
+        return NULL;
+    }
 
-    pCtx = (CtxtHandle *) (*env)->GetLongField (env, this, ntlm_ctxHandleID);
-    if (pCtx == 0) { /* first call */
-        newContext = (CtxtHandle *)malloc(sizeof(CtxtHandle));
+    /* Read current ctxHandle — 0 on first call, non-0 on second */
+    pCtx = (CtxtHandle *)(uintptr_t)(*env)->GetLongField(env, handles, handles_ctxHandleID);
+
+    if (pCtx == 0) {
+        newContext = (CtxtHandle*) malloc(sizeof(CtxtHandle));
         if (newContext != NULL) {
-            (*env)->SetLongField (env, this, ntlm_ctxHandleID, (jlong)newContext);
+            (*env)->CallVoidMethod(env, handles, handles_setCtxHandleID, (jlong)(uintptr_t)newContext);
+            if ((*env)->ExceptionCheck(env)) {
+                free(newContext);
+                return NULL;
+            }
+            pCtx = newContext;
         } else {
             JNU_ThrowOutOfMemoryError(env, "native memory allocation failed");
             return NULL;
@@ -233,8 +254,8 @@ JNIEXPORT jbyteArray JNICALL Java_sun_net_www_protocol_http_ntlm_NTLMAuthSequenc
     if (ss < 0) {
         SetLastError(ss);
         JNU_ThrowIOExceptionWithMessageAndLastError(env, "InitializeSecurityContext");
-        endSequence (pCred, pCtx, env, status);
-        return 0;
+        endSequence(pCred, pCtx, env, handles, status);
+        return NULL;
     }
 
     if ((ss == SEC_I_COMPLETE_NEEDED) || (ss == SEC_I_COMPLETE_AND_CONTINUE) ) {
@@ -243,8 +264,8 @@ JNIEXPORT jbyteArray JNICALL Java_sun_net_www_protocol_http_ntlm_NTLMAuthSequenc
         if (ss < 0) {
             SetLastError(ss);
             JNU_ThrowIOExceptionWithMessageAndLastError(env, "CompleteAuthToken");
-            endSequence (pCred, pCtx, env, status);
-            return 0;
+            endSequence(pCred, pCtx, env, handles, status);
+            return NULL;
         }
     }
 
@@ -255,18 +276,41 @@ JNIEXPORT jbyteArray JNICALL Java_sun_net_www_protocol_http_ntlm_NTLMAuthSequenc
                     OutSecBuff.pvBuffer);
         }
         if (lastToken != 0) // 2nd stage
-            endSequence (pCred, pCtx, env, status);
+            endSequence(pCred, pCtx, env, handles, status);
         result = ret;
     }
 
     if ((ss != SEC_I_CONTINUE_NEEDED) && (ss == SEC_I_COMPLETE_AND_CONTINUE)) {
-        endSequence (pCred, pCtx, env, status);
+        endSequence(pCred, pCtx, env, handles, status);
     }
 
     return result;
 }
 
-static void endSequence (PCredHandle credHand, PCtxtHandle ctxHandle, JNIEnv *env, jobject status) {
+/*
+ * Class:     sun_net_www_protocol_http_ntlm_NTLMAuthSequence
+ * Method:    freeHandles
+ * Signature: (JJ)V
+ *
+ * Unconditionally releases non-zero handles. Called by the NativeHandles Cleaner action or by explicit close.
+ */
+JNIEXPORT void JNICALL Java_sun_net_www_protocol_http_ntlm_NTLMAuthSequence_freeHandles
+(JNIEnv *env, jclass clazz, jlong crdHandle, jlong ctxHandle)
+{
+    PCredHandle cred = (PCredHandle)(uintptr_t)crdHandle;
+    PCtxtHandle ctx  = (PCtxtHandle)(uintptr_t)ctxHandle;
+
+    if (cred != NULL) {
+        FreeCredentialsHandle(cred);
+        free(cred);
+    }
+    if (ctx != NULL) {
+        DeleteSecurityContext(ctx);
+        free(ctx);
+    }
+}
+
+static void endSequence(PCredHandle credHand, PCtxtHandle ctxHandle, JNIEnv *env, jobject handles, jobject status) {
     if (credHand != 0) {
         FreeCredentialsHandle(credHand);
         free(credHand);
@@ -276,6 +320,9 @@ static void endSequence (PCredHandle credHand, PCtxtHandle ctxHandle, JNIEnv *en
         DeleteSecurityContext(ctxHandle);
         free(ctxHandle);
     }
+
+    /* Zero both handle fields in NativeHandles to prevent double-free via Cleaner */
+    (*env)->CallVoidMethod(env, handles, handles_clearHandlesID);
 
     /* Sequence is complete so set flag */
     (*env)->SetBooleanField(env, status, status_seqCompleteID, JNI_TRUE);
