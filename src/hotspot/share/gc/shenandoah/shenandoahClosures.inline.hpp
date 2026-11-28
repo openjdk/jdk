@@ -68,9 +68,9 @@ void ShenandoahFlushSATBHandshakeClosure::do_thread(Thread* thread) {
   _qset.flush_queue(ShenandoahThreadLocalData::satb_mark_queue(thread));
 }
 
-ShenandoahMarkRefsSuperClosure::ShenandoahMarkRefsSuperClosure(ShenandoahObjToScanQueue* q,
+ShenandoahMarkRefsSuperClosure::ShenandoahMarkRefsSuperClosure(ShenandoahTaskQueue* q,
                                                                ShenandoahReferenceProcessor* rp,
-                                                               ShenandoahObjToScanQueue* old_q) :
+                                                               ShenandoahTaskQueue* old_q) :
         ShenandoahSuperClosure(rp),
         _queue(q),
         _old_queue(old_q),

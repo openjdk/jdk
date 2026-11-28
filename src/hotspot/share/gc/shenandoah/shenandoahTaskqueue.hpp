@@ -26,55 +26,16 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHTASKQUEUE_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHTASKQUEUE_HPP
 
-#include "gc/shared/taskqueue.hpp"
-#include "gc/shared/taskTerminator.hpp"
 #include "gc/shenandoah/shenandoahPadding.hpp"
+#include "memory/reservedSpace.hpp"
 #include "nmt/memTag.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/atomicAccess.hpp"
-#include "runtime/javaThread.hpp"
-#include "runtime/mutex.hpp"
 #include "utilities/debug.hpp"
 
+class ShenandoahTaskQueueSet;
 class ShenandoahHeap;
 
-template<class E, MemTag MT, unsigned int N = TASKQUEUE_SIZE>
-class BufferedOverflowTaskQueue: public OverflowTaskQueue<E, MT, N>
-{
-public:
-  typedef OverflowTaskQueue<E, MT, N> taskqueue_t;
-
-  BufferedOverflowTaskQueue() : _buf_empty(true) {};
-
-  TASKQUEUE_STATS_ONLY(using taskqueue_t::stats;)
-
-  // Push task t into the queue. Returns true on success.
-  ALWAYSINLINE
-  bool push(E t);
-
-  // Attempt to pop from the queue. Returns true on success.
-  ALWAYSINLINE
-  bool pop(E &t);
-
-  inline void clear();
-
-  inline bool is_empty()        const {
-    return _buf_empty && taskqueue_t::is_empty();
-  }
-
-  NOINLINE
-  void pop_more_overflow();
-
-  inline size_t full_size();
-
-  inline size_t capacity() const;
-
-private:
-  bool _buf_empty;
-  E _elem;
-};
-
-// ShenandoahMarkTask
+// ShenandoahTask
 //
 // Encodes both regular oops, and the array oops plus chunking data for parallel array processing.
 // The design goal is to make the regular oop ops very fast, because that would be the prevailing
@@ -129,10 +90,6 @@ private:
 // In future, these might be rebalanced to favor one degree of freedom against another. For example,
 // if/when Arrays 2.0 bring 2^64-sized arrays, we might need to steal another bit for power. We could regain
 // some bits back if chunks are counted in ObjArrayMarkingStride units.
-//
-// There is also a fallback version that uses plain fields, when we don't have enough space to steal the
-// bits from the native pointer. It is useful to debug the optimized version.
-//
 
 #ifdef _MSC_VER
 #pragma warning(push)
@@ -140,65 +97,58 @@ private:
 #pragma warning( disable:4522 )
 #endif
 
-#ifdef _LP64
-#define SHENANDOAH_OPTIMIZED_MARKTASK 1
-#else
-#define SHENANDOAH_OPTIMIZED_MARKTASK 0
-#endif
-
-#if SHENANDOAH_OPTIMIZED_MARKTASK
-class ShenandoahMarkTask
+class ShenandoahTask
 {
 private:
   // Everything is encoded into this field...
-  uintptr_t _obj;
+  uint64_t _obj;
 
   // ...with these:
   static const uint8_t chunk_bits  = 10;
   static const uint8_t pow_bits    = 5;
-  static const uint8_t oop_bits    = sizeof(uintptr_t)*8 - chunk_bits - pow_bits;
+  static const uint8_t oop_bits    = sizeof(uintptr_t)*8 LP64_ONLY(- chunk_bits - pow_bits);
 
   static const uint8_t oop_shift   = 0;
   static const uint8_t pow_shift   = oop_bits;
   static const uint8_t chunk_shift = oop_bits + pow_bits;
 
-  static const uintptr_t oop_extract_mask       = right_n_bits(oop_bits) - 3;
-  static const uintptr_t skip_live_extract_mask = 1 << 0;
-  static const uintptr_t weak_extract_mask      = 1 << 1;
-  static const uintptr_t chunk_pow_extract_mask = ~right_n_bits(oop_bits);
+  static const uint64_t oop_extract_mask       = right_n_bits(oop_bits) - 3;
+  static const uint64_t skip_live_extract_mask = 1 << 0;
+  static const uint64_t weak_extract_mask      = 1 << 1;
+  static const uint64_t chunk_pow_extract_mask = ~right_n_bits(oop_bits);
 
   static const int chunk_range_mask = right_n_bits<int>(chunk_bits);
   static const int pow_range_mask   = right_n_bits<int>(pow_bits);
 
-  inline oop decode_oop(uintptr_t val) const {
+  inline oop decode_oop(uint64_t val) const {
     static_assert(oop_shift == 0);
     return cast_to_oop(val & oop_extract_mask);
   }
 
-  inline bool decode_not_chunked(uintptr_t val) const {
+  inline bool decode_not_chunked(uint64_t val) const {
     // No need to shift for a comparison to zero
     return (val & chunk_pow_extract_mask) == 0;
   }
 
-  inline int decode_chunk(uintptr_t val) const {
+  inline int decode_chunk(uint64_t val) const {
     return (int) ((val >> chunk_shift) & chunk_range_mask);
   }
 
-  inline int decode_pow(uintptr_t val) const {
+  inline int decode_pow(uint64_t val) const {
     return (int) ((val >> pow_shift) & pow_range_mask);
   }
 
-  inline bool decode_weak(uintptr_t val) const {
+  inline bool decode_weak(uint64_t val) const {
     return (val & weak_extract_mask) != 0;
   }
 
-  inline bool decode_cnt_live(uintptr_t val) const {
+  inline bool decode_cnt_live(uint64_t val) const {
     return (val & skip_live_extract_mask) == 0;
   }
 
-  inline uintptr_t encode_oop(oop obj, bool skip_live, bool weak) const {
+  inline uint64_t encode_oop(oop obj, bool skip_live, bool weak) const {
     static_assert(oop_shift == 0);
-    uintptr_t encoded = cast_from_oop<uintptr_t>(obj);
+    uint64_t encoded = cast_from_oop<uint64_t>(obj);
     if (skip_live) {
       encoded |= skip_live_extract_mask;
     }
@@ -208,17 +158,17 @@ private:
     return encoded;
   }
 
-  inline uintptr_t encode_chunk(int chunk) const {
-    return ((uintptr_t) chunk) << chunk_shift;
+  inline uint64_t encode_chunk(int chunk) const {
+    return ((uint64_t) chunk) << chunk_shift;
   }
 
-  inline uintptr_t encode_pow(int pow) const {
-    return ((uintptr_t) pow) << pow_shift;
+  inline uint64_t encode_pow(int pow) const {
+    return ((uint64_t) pow) << pow_shift;
   }
 
 public:
-  ShenandoahMarkTask(oop o = nullptr, bool skip_live = false, bool weak = false) {
-    uintptr_t enc = encode_oop(o, skip_live, weak);
+  ShenandoahTask(oop o = nullptr, bool skip_live = false, bool weak = false) {
+    uint64_t enc = encode_oop(o, skip_live, weak);
     assert(decode_oop(enc) == o,     "oop encoding should work: " PTR_FORMAT, p2i(o));
     assert(decode_cnt_live(enc) == !skip_live, "skip_live encoding should work");
     assert(decode_weak(enc) == weak, "weak encoding should work");
@@ -226,11 +176,11 @@ public:
     _obj = enc;
   }
 
-  ShenandoahMarkTask(oop o, bool skip_live, bool weak, int chunk, int pow) {
-    uintptr_t enc_oop = encode_oop(o, skip_live, weak);
-    uintptr_t enc_chunk = encode_chunk(chunk);
-    uintptr_t enc_pow = encode_pow(pow);
-    uintptr_t enc = enc_oop | enc_chunk | enc_pow;
+  ShenandoahTask(oop o, bool skip_live, bool weak, int chunk, int pow) {
+    uint64_t enc_oop = encode_oop(o, skip_live, weak);
+    uint64_t enc_chunk = encode_chunk(chunk);
+    uint64_t enc_pow = encode_pow(pow);
+    uint64_t enc = enc_oop | enc_chunk | enc_pow;
     assert(decode_oop(enc) == o,       "oop encoding should work: " PTR_FORMAT, p2i(o));
     assert(decode_cnt_live(enc) == !skip_live, "skip_live should be true for chunked tasks");
     assert(decode_weak(enc) == weak,   "weak encoding should work");
@@ -254,80 +204,183 @@ public:
   DEBUG_ONLY(bool is_valid() const;) // Tasks to be pushed/popped must be valid.
 
   static uintptr_t max_addressable() {
-    return nth_bit(oop_bits);
+    return LP64_ONLY(nth_bit(oop_bits)) NOT_LP64(UINTPTR_MAX);
   }
 
   static int chunk_size() {
     return nth_bit<int>(chunk_bits);
   }
 };
-#else
-class ShenandoahMarkTask
-{
-private:
-  static const uint8_t chunk_bits  = 10;
-  static const uint8_t pow_bits    = 5;
-
-  static const int chunk_max       = nth_bit(chunk_bits) - 1;
-  static const int pow_max         = nth_bit(pow_bits) - 1;
-
-  oop _obj;
-  bool _skip_live;
-  bool _weak;
-  int _chunk;
-  int _pow;
-
-public:
-  ShenandoahMarkTask(oop o = nullptr, bool skip_live = false, bool weak = false, int chunk = 0, int pow = 0):
-    _obj(o), _skip_live(skip_live), _weak(weak), _chunk(chunk), _pow(pow) {
-    assert(0 <= chunk && chunk <= chunk_max, "chunk is in range: %d", chunk);
-    assert(0 <= pow && pow <= pow_max, "pow is in range: %d", pow);
-  }
-
-  // Trivially copyable.
-
-  inline oop obj()             const { return _obj; }
-  inline int chunk()           const { return _chunk; }
-  inline int pow()             const { return _pow; }
-  inline bool is_not_chunked() const { return _chunk == 0; }
-  inline bool is_weak()        const { return _weak; }
-  inline bool count_liveness() const { return !_skip_live; }
-
-  DEBUG_ONLY(bool is_valid() const;) // Tasks to be pushed/popped must be valid.
-
-  static size_t max_addressable() {
-    return sizeof(oop);
-  }
-
-  static int chunk_size() {
-    return nth_bit(chunk_bits);
-  }
-};
-#endif // SHENANDOAH_OPTIMIZED_MARKTASK
 
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif
 
-typedef BufferedOverflowTaskQueue<ShenandoahMarkTask, mtGC> ShenandoahBufferedOverflowTaskQueue;
-typedef Padded<ShenandoahBufferedOverflowTaskQueue> ShenandoahObjToScanQueue;
+class ShenandoahTaskQueueSegment;
 
-class ShenandoahObjToScanQueueSet: public GenericTaskQueueSet<ShenandoahObjToScanQueue, mtGC> {
+// Stack is the unit of load balancing.
+//
+// Each stack can be:
+//   used:   currently in use by a single thread
+//   shared: not in use by any thread, has tasks to share
+//   free:   not in use by any thread, has no tasks
+//
+class ShenandoahTaskQueueStack {
 public:
-  ShenandoahObjToScanQueueSet(int n) : GenericTaskQueueSet<ShenandoahObjToScanQueue, mtGC>(n) {}
+  static const int MAX_SIZE = (4096 - sizeof(size_t) * 2 - sizeof(ShenandoahTaskQueueSegment*)) / sizeof(ShenandoahTask);
+  static const int MIN_SIZE = 1;
 
-  void rebalance(size_t target_queues);
+private:
+  ShenandoahTaskQueueSegment* _segment;
+  size_t _index;
+  size_t _top;
+  ShenandoahTask _tasks[MAX_SIZE];
+
+public:
+  ShenandoahTaskQueueStack() : _segment(nullptr), _index(SIZE_MAX), _top(SIZE_MAX) {}
+  ShenandoahTaskQueueStack(ShenandoahTaskQueueSegment* segment, size_t index) : _segment(segment), _index(index), _top(0) {}
+
+  ALWAYSINLINE
+  bool push(ShenandoahTask t);
+
+  ALWAYSINLINE
+  bool pop(ShenandoahTask& t);
 
   bool is_empty();
   void clear();
+
+  ShenandoahTaskQueueSegment* segment() { return _segment; }
+  size_t index() { return _index; }
+
+  bool is_sliceable();
+  void slice_top(ShenandoahTaskQueueStack* to_stack);
 };
 
-class ShenandoahTerminatorTerminator : public TerminatorTerminator {
-private:
-  ShenandoahHeap* _heap;
+// Segment is the unit of allocation.
+//
+// Each segment is committed in full, carries the storage for stacks, plus small bitmaps
+// that describe the stack state. Segment is aligned by its size, which prevents false sharing
+// between adjacent segments and any stacks within the segment or outside the segment.
+//
+class ShenandoahTaskQueueSegment {
 public:
-  ShenandoahTerminatorTerminator(ShenandoahHeap* const heap) : _heap(heap) { }
-  virtual bool should_exit_termination();
+  static const int SEGMENT_SIZE_SHIFT = 6;
+  static const int SEGMENT_SIZE = 1 << SEGMENT_SIZE_SHIFT;
+  static_assert(SEGMENT_SIZE <= 64, "Bitmap encoding");
+
+  ShenandoahTaskQueueStack _stacks[SEGMENT_SIZE];
+
+  shenandoah_padding(0);
+  Atomic<uint64_t> _free_bm;
+  shenandoah_padding(1);
+  Atomic<uint64_t> _shared_bm;
+  shenandoah_padding(2);
+  ShenandoahTaskQueueSegment* _next;
+
+  ReservedSpace _rs;
+
+  static ShenandoahTaskQueueSegment* create();
+  static void destroy(ShenandoahTaskQueueSegment* seg);
+
+  inline ShenandoahTaskQueueStack* pick(Atomic<uint64_t>* bm);
+  inline ShenandoahTaskQueueStack* pick_shared();
+  inline ShenandoahTaskQueueStack* pick_free();
+
+  inline void mark(ShenandoahTaskQueueStack* stack, Atomic<uint64_t>* bm);
+  inline void mark_shared(ShenandoahTaskQueueStack* stack);
+  inline void mark_free(ShenandoahTaskQueueStack* stack);
+
+  bool all_are_free() const;
+
+  void clear();
+
+  void set_next(ShenandoahTaskQueueSegment * next) { _next = next; }
+
+  ShenandoahTaskQueueSegment * next() { return _next; }
+
+private:
+  ShenandoahTaskQueueSegment(ReservedSpace& rs);
+};
+
+// TaskQueue is the external interface: worker threads use push/pop from it,
+// and the rest is wired up automatically.
+//
+class ShenandoahTaskQueue : public CHeapObj<mtGC> {
+  shenandoah_padding(0);
+  ShenandoahTaskQueueStack* _stack;
+  ShenandoahTaskQueueSet* const _qs;
+  shenandoah_padding(1);
+
+public:
+  ShenandoahTaskQueue(ShenandoahTaskQueueSet* qs);
+  ~ShenandoahTaskQueue();
+
+  ALWAYSINLINE
+  void push(ShenandoahTask task);
+
+  ALWAYSINLINE
+  bool pop(ShenandoahTask& task);
+
+  void flush_to_shared();
+  void compact();
+  void clear();
+
+  bool is_empty();
+
+  bool share_work();
+};
+
+class ShenandoahTaskQueueSet : public CHeapObj<mtGC> {
+  static const size_t STACK_SIZE = sizeof(ShenandoahTaskQueueStack);
+  static_assert(is_power_of_2(STACK_SIZE));
+
+  ShenandoahTaskQueue** _queues;
+  size_t _queue_count;
+
+  Atomic<ShenandoahTaskQueueSegment*> _segments_head;
+  Atomic<size_t> _num_segments;
+  Atomic<size_t> _peak_segments;
+
+  shenandoah_padding(0);
+  Atomic<size_t> _shared_count;
+  shenandoah_padding(1);
+
+  inline void try_grow(ShenandoahTaskQueueSegment* seen_head);
+
+public:
+  ShenandoahTaskQueueSet(uint queue_count);
+  ~ShenandoahTaskQueueSet();
+
+  inline ShenandoahTaskQueueStack* pick_shared();
+  inline ShenandoahTaskQueueStack* pick_free();
+
+  inline void mark_shared(ShenandoahTaskQueueStack* stack);
+  inline void mark_free(ShenandoahTaskQueueStack* stack);
+
+  ShenandoahTaskQueue* queue(uint i) {
+    return _queues[i];
+  }
+
+  bool is_empty();
+  inline bool is_shared_empty();
+  inline size_t shared_count();
+
+  void clear();
+  void flush_to_shared();
+  void trim();
+};
+
+class ShenandoahTaskTerminator {
+  ShenandoahHeap* _heap;
+  ShenandoahTaskQueueSet* _queues;
+  Atomic<size_t> _active_workers;
+  size_t _total_workers;
+
+public:
+  ShenandoahTaskTerminator(int workers, ShenandoahTaskQueueSet* queues);
+
+  bool offer_termination(bool cancellable);
+  bool has_waiters();
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHTASKQUEUE_HPP

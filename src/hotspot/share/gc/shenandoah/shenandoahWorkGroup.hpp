@@ -29,7 +29,7 @@
 #include "gc/shenandoah/shenandoahTaskqueue.hpp"
 #include "memory/allocation.hpp"
 
-class ShenandoahObjToScanQueueSet;
+class ShenandoahTaskQueueSet;
 
 class ShenandoahWorkerScope : public StackObj {
 private:
