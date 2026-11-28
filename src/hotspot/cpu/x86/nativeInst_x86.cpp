@@ -181,16 +181,17 @@ int NativeMovRegMem::instruction_start() const {
   u_char instr_0 = ubyte_at(off);
 
   // See comment in Assembler::locate_operand() about VEX prefixes.
+  DEBUG_ONLY(const HotSpotAssemblerFeatures& asm_features = HotSpotAssemblerFeatures::instance();)
   if (instr_0 == instruction_VEX_prefix_2bytes) {
-    assert((UseAVX > 0), "shouldn't have VEX prefix");
+    assert((asm_features.use_avx() > 0), "shouldn't have VEX prefix");
     return 2;
   }
   if (instr_0 == instruction_VEX_prefix_3bytes) {
-    assert((UseAVX > 0), "shouldn't have VEX prefix");
+    assert((asm_features.use_avx() > 0), "shouldn't have VEX prefix");
     return 3;
   }
   if (instr_0 == instruction_EVEX_prefix_4bytes) {
-    assert(VM_Version::supports_evex(), "shouldn't have EVEX prefix");
+    assert(asm_features.supports_evex(), "shouldn't have EVEX prefix");
     return 4;
   }
 

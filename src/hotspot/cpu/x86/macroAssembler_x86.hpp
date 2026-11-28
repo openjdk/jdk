@@ -76,6 +76,10 @@ class MacroAssembler: public Assembler {
 
  public:
   MacroAssembler(CodeBuffer* code) : Assembler(code) {}
+  MacroAssembler(CodeBuffer* code, const AbstractAssemblerFeatures& asm_features)
+    : Assembler(code, asm_features) {}
+  // Disallow temporaries: the assembler keeps a pointer to the feature set.
+  MacroAssembler(CodeBuffer* code, const AbstractAssemblerFeatures&& asm_features) = delete;
 
  // These routines should emit JVMTI PopFrame and ForceEarlyReturn handling code.
  // The implementation is only non-empty for the InterpreterMacroAssembler,
@@ -517,7 +521,7 @@ private:
   // is no need for FPU or AVX opmask related methods because C1/interpreter
   // - we save/restore FPU state as a whole always
   // - do not care about AVX-512 opmask
-  static RegSet call_clobbered_gp_registers();
+  RegSet call_clobbered_gp_registers();
   static XMMRegSet call_clobbered_xmm_registers();
 
   void push_set(XMMRegSet set, int offset);
