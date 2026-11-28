@@ -206,7 +206,7 @@ Node* G1BarrierSetC2::load_at_resolved(C2Access& access, const Type* val_type) c
   // mechanism. Also we need to add a memory barrier to prevent commoning reads
   // from this field across safepoints, since GC can change its value.
   bool need_read_barrier = ((on_weak || on_phantom) && !no_keepalive);
-  assert((access.decorators() & C2_SPECIAL_ACCESS) == 0, "access shouldn't be special");
+  assert((access.decorators() & C2_EMBEDDED_OOPS) == 0, "embedded oops are not expected");
   if (access.is_oop() && need_read_barrier) {
     access.set_barrier_data(G1C2BarrierPre);
   }
@@ -227,10 +227,10 @@ void G1BarrierSetC2::eliminate_gc_barrier_data(Node* node) const {
   }
 }
 
-static TypePtr::PTR meet_ptr_of_oops_in_store_l_special(const MemNode* store) {
-  const Type* oops_meet = store->in(StoreLSpecialNode::FirstOop)->bottom_type();
-  if (!store->in(StoreLSpecialNode::SecondOop)->is_top()) {
-    oops_meet = oops_meet->meet(store->in(StoreLSpecialNode::SecondOop)->bottom_type());
+static TypePtr::PTR meet_ptr_of_oops_in_store_l_with_narrow_oops(const MemNode* store) {
+  const Type* oops_meet = store->in(StoreLWithNarrowOopsNode::FirstOop)->bottom_type();
+  if (!store->in(StoreLWithNarrowOopsNode::SecondOop)->is_top()) {
+    oops_meet = oops_meet->meet(store->in(StoreLWithNarrowOopsNode::SecondOop)->bottom_type());
   }
   const TypePtr* oops_meet_as_ptr = oops_meet->make_ptr();
   return oops_meet_as_ptr->ptr();
@@ -239,14 +239,14 @@ static TypePtr::PTR meet_ptr_of_oops_in_store_l_special(const MemNode* store) {
 static void refine_barrier_by_new_val_type(const Node* n) {
   if (n->Opcode() != Op_StoreP &&
       n->Opcode() != Op_StoreN &&
-      n->Opcode() != Op_StoreLSpecial) {
+      n->Opcode() != Op_StoreLWithNarrowOops) {
     return;
   }
   MemNode* store = n->as_Mem();
   uint8_t barrier_data = store->barrier_data();
   TypePtr::PTR newval_type;
-  if (n->Opcode() == Op_StoreLSpecial) {
-    newval_type = meet_ptr_of_oops_in_store_l_special(store);
+  if (n->Opcode() == Op_StoreLWithNarrowOops) {
+    newval_type = meet_ptr_of_oops_in_store_l_with_narrow_oops(store);
   } else {
     const Node* newval = n->in(MemNode::ValueIn);
     assert(newval != nullptr, "");
@@ -306,7 +306,7 @@ uint G1BarrierSetC2::estimated_barrier_size(const Node* node) const {
   uint8_t barrier_data = MemNode::barrier_data(node);
   uint nodes = 0;
   uint factor = 1;
-  if (node->Opcode() == Op_StoreLSpecial && !node->in(StoreLSpecialNode::SecondOop)->is_top()) {
+  if (node->Opcode() == Op_StoreLWithNarrowOops && !node->in(StoreLWithNarrowOopsNode::SecondOop)->is_top()) {
     // assigning two oops will make two barrier sets
     factor = 2;
   }
@@ -332,7 +332,7 @@ uint G1BarrierSetC2::estimated_barrier_size(const Node* node) const {
 }
 
 bool G1BarrierSetC2::can_initialize_object(const StoreNode* store) const {
-  assert(store->Opcode() == Op_StoreP || store->Opcode() == Op_StoreN || store->Opcode() == Op_StoreLSpecial, "OOP store expected");
+  assert(store->Opcode() == Op_StoreP || store->Opcode() == Op_StoreN || store->Opcode() == Op_StoreLWithNarrowOops, "OOP store expected");
   // It is OK to move the store across the object initialization boundary only
   // if it does not have any barrier, or if it has barriers that can be safely
   // elided (because of the compensation steps taken on the allocation slow path
@@ -373,7 +373,7 @@ Node* G1BarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue& val) co
 
 Node* G1BarrierSetC2::atomic_cmpxchg_val_at_resolved(C2AtomicParseAccess& access, Node* expected_val,
                                                      Node* new_val, const Type* value_type) const {
-  assert((access.decorators() & C2_SPECIAL_ACCESS) == 0, "access shouldn't be special");
+  assert((access.decorators() & C2_EMBEDDED_OOPS) == 0, "embedded oops are not expected");
   if (!access.is_oop()) {
     return BarrierSetC2::atomic_cmpxchg_val_at_resolved(access, expected_val, new_val, value_type);
   }
@@ -383,7 +383,7 @@ Node* G1BarrierSetC2::atomic_cmpxchg_val_at_resolved(C2AtomicParseAccess& access
 
 Node* G1BarrierSetC2::atomic_cmpxchg_bool_at_resolved(C2AtomicParseAccess& access, Node* expected_val,
                                                       Node* new_val, const Type* value_type) const {
-  assert((access.decorators() & C2_SPECIAL_ACCESS) == 0, "access shouldn't be special");
+  assert((access.decorators() & C2_EMBEDDED_OOPS) == 0, "embedded oops are not expected");
   if (!access.is_oop()) {
     return BarrierSetC2::atomic_cmpxchg_bool_at_resolved(access, expected_val, new_val, value_type);
   }
@@ -392,7 +392,7 @@ Node* G1BarrierSetC2::atomic_cmpxchg_bool_at_resolved(C2AtomicParseAccess& acces
 }
 
 Node* G1BarrierSetC2::atomic_xchg_at_resolved(C2AtomicParseAccess& access, Node* new_val, const Type* value_type) const {
-  assert((access.decorators() & C2_SPECIAL_ACCESS) == 0, "access shouldn't be special");
+  assert((access.decorators() & C2_EMBEDDED_OOPS) == 0, "embedded oops are not expected");
   if (!access.is_oop()) {
     return BarrierSetC2::atomic_xchg_at_resolved(access, new_val, value_type);
   }
@@ -563,7 +563,7 @@ void G1BarrierSetC2::analyze_dominating_barriers() const {
       switch (mach->ideal_Opcode()) {
       case Op_StoreP:
       case Op_StoreN:
-      case Op_StoreLSpecial:
+      case Op_StoreLWithNarrowOops:
       case Op_CompareAndExchangeP:
       case Op_CompareAndSwapP:
       case Op_GetAndSetP:

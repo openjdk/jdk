@@ -298,7 +298,7 @@ public:
                     const TypePtr* at, const Type* rt, BasicType bt,
                     MemOrd mo, ControlDependency control_dependency = DependsOnlyOnTest,
                     bool require_atomic_access = false, bool unaligned = false, bool mismatched = false, bool unsafe = false,
-                    uint8_t barrier_data = 0, bool special = false);
+                    uint8_t barrier_data = 0, bool has_embedded_oops = false);
 
   virtual uint hash()   const;  // Check the type
 
@@ -509,19 +509,19 @@ public:
   virtual int Opcode() const;
 };
 
-//------------------------------LoadLSpecialNode--------------------------------------
+//------------------------------LoadLWithNarrowOopsNode--------------------------------------
 // Special LoadL for flat loads that emits GC barriers for field in backend.
-class LoadLSpecialNode : public LoadNode {
+class LoadLWithNarrowOopsNode : public LoadNode {
 public:
-  LoadLSpecialNode(Node *c, Node *mem, Node *adr, const TypePtr* at,
-                   MemOrd mo, ControlDependency control_dependency = DependsOnlyOnTest)
+  LoadLWithNarrowOopsNode(Node *c, Node *mem, Node *adr, const TypePtr* at,
+                          MemOrd mo, ControlDependency control_dependency = DependsOnlyOnTest)
     : LoadNode(c, mem, adr, at, TypeLong::LONG, mo, control_dependency) {
     set_mismatched_access();
   }
   virtual int Opcode() const;
   virtual BasicType value_basic_type() const { return T_LONG; }
 
-  virtual int store_Opcode() const { return Op_StoreLSpecial; }
+  virtual int store_Opcode() const { return Op_StoreLWithNarrowOops; }
 
   virtual uint match_edge(uint idx) const { return idx == MemNode::Address ||
                                                    idx == MemNode::ValueIn; }
@@ -704,7 +704,7 @@ public:
   static StoreNode* make(PhaseGVN& gvn, Node* c, Node* mem, Node* adr,
                          const TypePtr* at, Node* val, BasicType bt,
                          MemOrd mo, bool require_atomic_access = false,
-                         bool store_special = false);
+                         bool has_embedded_oops = false);
 
   virtual uint hash() const;    // Check the type
 
@@ -794,7 +794,7 @@ public:
 };
 
 // Special StoreL for flat stores that emits GC barriers for field at 'oop_off' in the backend
-class StoreLSpecialNode : public StoreNode {
+class StoreLWithNarrowOopsNode : public StoreNode {
 
 public:
   enum {
@@ -803,7 +803,7 @@ public:
     SecondOop,
   };
 
-  StoreLSpecialNode(Node* c, Node* mem, Node* adr, const TypePtr* at, Node* val, MemOrd mo)
+  StoreLWithNarrowOopsNode(Node* c, Node* mem, Node* adr, const TypePtr* at, Node* val, MemOrd mo)
     : StoreNode(c, mem, adr, at, val, mo) {
     set_mismatched_access();
   }
@@ -812,7 +812,7 @@ public:
 
   virtual uint match_edge(uint idx) const { return idx == MemNode::Address ||
                                                    idx == MemNode::ValueIn ||
-                                                   idx == StoreLSpecialNode::OopOffset; }
+                                                   idx == StoreLWithNarrowOopsNode::OopOffset; }
 };
 
 //------------------------------StoreFNode-------------------------------------

@@ -99,7 +99,7 @@ instruct load_N_volatile_shenandoah(iRegNNoSp dst, indirect mem, rFlagsReg cr)
 
 instruct loadLSpecial_shenandoah(iRegLNoSp dst, indirect mem, immI off, iRegLNoSp tmp, rFlagsReg cr)
 %{
-  match(Set dst (LoadLSpecial mem off));
+  match(Set dst (LoadLWithNarrowOops mem off));
   predicate(UseShenandoahGC);
   effect(TEMP_DEF dst, TEMP tmp, KILL cr);
   // The main load is a candidate to implement implicit null checks.
@@ -235,7 +235,7 @@ instruct encodePAndStoreN_volatile_shenandoah(iRegP src, indirect mem, iRegPNoSp
 
 instruct storeLSpecial_both_shenandoah(iRegLNoSp src, indirect mem, iRegPNoSp tmp, rFlagsReg cr)
 %{
-  match(Set mem (StoreLSpecial mem src));
+  match(Set mem (StoreLWithNarrowOops mem src));
   predicate(UseShenandoahGC);
   effect(TEMP tmp, KILL cr);
   format %{ "sd  $src, $mem\t# shenandoah late-barrier, both oops #@storeLSpecial_shenandoah" %}
@@ -254,7 +254,7 @@ instruct storeLSpecial_both_shenandoah(iRegLNoSp src, indirect mem, iRegPNoSp tm
 
 instruct storeLSpecial_single_shenandoah(iRegLNoSp src, immI off, indirect mem, iRegPNoSp tmp, rFlagsReg cr)
 %{
-  match(Set mem (StoreLSpecial mem (Binary src off)));
+  match(Set mem (StoreLWithNarrowOops mem (Binary src off)));
   predicate(UseShenandoahGC);
   effect(TEMP tmp, KILL cr);
   format %{ "sd  $src, $mem\t# shenandoah late-barrier, single oop #@storeLSpecial_shenandoah" %}

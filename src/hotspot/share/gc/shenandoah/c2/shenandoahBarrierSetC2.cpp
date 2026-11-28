@@ -158,7 +158,7 @@ bool ShenandoahBarrierSetC2::is_Load(int opcode) {
   switch (opcode) {
     case Op_LoadN:
     case Op_LoadP:
-    case Op_LoadLSpecial:
+    case Op_LoadLWithNarrowOops:
       return true;
     default:
       return false;
@@ -169,7 +169,7 @@ bool ShenandoahBarrierSetC2::is_Store(int opcode) {
   switch (opcode) {
     case Op_StoreN:
     case Op_StoreP:
-    case Op_StoreLSpecial:
+    case Op_StoreLWithNarrowOops:
       return true;
     default:
       return false;
@@ -194,8 +194,8 @@ bool ShenandoahBarrierSetC2::is_LoadStore(int opcode) {
 
 bool ShenandoahBarrierSetC2::is_Special(int opcode) {
   switch (opcode) {
-    case Op_LoadLSpecial:
-    case Op_StoreLSpecial:
+    case Op_LoadLWithNarrowOops:
+    case Op_StoreLWithNarrowOops:
       return true;
     default:
       return false;
@@ -309,7 +309,7 @@ uint8_t ShenandoahBarrierSetC2::refine_load(Node* n, uint8_t bd) {
   assert(ShenandoahElideIdealBarriers, "Checked by caller");
   assert(bd != 0, "Checked by caller");
 
-  if (n->Opcode() == Op_LoadLSpecial) {
+  if (n->Opcode() == Op_LoadLWithNarrowOops) {
     // Skip any refinement for special nodes for now.
     return bd;
   }
@@ -332,7 +332,7 @@ uint8_t ShenandoahBarrierSetC2::refine_store(Node* n, uint8_t bd) {
   assert(bd != 0, "Checked by caller");
   assert(n->is_Mem() || n->is_LoadStore(), "Sanity");
 
-  if (n->Opcode() == Op_StoreLSpecial) {
+  if (n->Opcode() == Op_StoreLWithNarrowOops) {
     // Skip any refinement for special nodes for now.
     return bd;
   }

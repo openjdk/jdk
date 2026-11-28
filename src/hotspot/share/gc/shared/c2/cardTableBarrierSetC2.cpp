@@ -87,7 +87,7 @@ Node* CardTableBarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue& 
 
 Node* CardTableBarrierSetC2::atomic_cmpxchg_val_at_resolved(C2AtomicParseAccess& access, Node* expected_val,
                                                             Node* new_val, const Type* value_type) const {
-  assert((access.decorators() & C2_SPECIAL_ACCESS) == 0, "access shouldn't be special");
+  assert((access.decorators() & C2_EMBEDDED_OOPS) == 0, "embedded oops are not expected");
   if (!access.is_oop()) {
     return BarrierSetC2::atomic_cmpxchg_val_at_resolved(access, expected_val, new_val, value_type);
   }
@@ -103,7 +103,7 @@ Node* CardTableBarrierSetC2::atomic_cmpxchg_bool_at_resolved(C2AtomicParseAccess
                                                              Node* new_val, const Type* value_type) const {
   GraphKit* kit = access.kit();
 
-  assert((access.decorators() & C2_SPECIAL_ACCESS) == 0, "access shouldn't be special");
+  assert((access.decorators() & C2_EMBEDDED_OOPS) == 0, "embedded oops are not expected");
   if (!access.is_oop()) {
     return BarrierSetC2::atomic_cmpxchg_bool_at_resolved(access, expected_val, new_val, value_type);
   }
@@ -133,7 +133,7 @@ Node* CardTableBarrierSetC2::atomic_cmpxchg_bool_at_resolved(C2AtomicParseAccess
 
 Node* CardTableBarrierSetC2::atomic_xchg_at_resolved(C2AtomicParseAccess& access, Node* new_val, const Type* value_type) const {
   Node* result = BarrierSetC2::atomic_xchg_at_resolved(access, new_val, value_type);
-  assert((access.decorators() & C2_SPECIAL_ACCESS) == 0, "access shouldn't be special");
+  assert((access.decorators() & C2_EMBEDDED_OOPS) == 0, "embedded oops are not expected");
   if (!access.is_oop()) {
     return result;
   }

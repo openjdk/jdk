@@ -73,13 +73,13 @@ static void write_barrier_post(MacroAssembler* masm,
 
 %}
 
-instruct g1StoreLSpecialOneOopOff0(indirect mem, iRegLNoSp src, immI0 off, iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3, rFlagsReg cr)
+instruct g1StoreLWithOneNarrowOopOff0(indirect mem, iRegLNoSp src, immI0 off, iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3, rFlagsReg cr)
 %{
   predicate(UseG1GC && !needs_releasing_store(n));
-  match(Set mem (StoreLSpecial mem (Binary src off)));
+  match(Set mem (StoreLWithNarrowOops mem (Binary src off)));
   effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, KILL cr);
   ins_cost(INSN_COST);
-  format %{ "str  $src, $mem\t# g1StoreLSpecialOneOopOff0" %}
+  format %{ "str  $src, $mem\t# g1StoreLWithOneNarrowOopOff0" %}
   ins_encode %{
     write_barrier_pre(masm, this,
                       $mem$$Register /* obj */,
@@ -109,13 +109,13 @@ instruct g1StoreLSpecialOneOopOff0(indirect mem, iRegLNoSp src, immI0 off, iRegP
   ins_pipe(istore_reg_mem);
 %}
 
-instruct g1StoreLSpecialOneOopOff4(indirect mem, iRegLNoSp src, immI_4 off, iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3, iRegPNoSp tmp4, rFlagsReg cr)
+instruct g1StoreLWithOneNarrowOopOff4(indirect mem, iRegLNoSp src, immI_4 off, iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3, iRegPNoSp tmp4, rFlagsReg cr)
 %{
   predicate(UseG1GC && !needs_releasing_store(n));
-  match(Set mem (StoreLSpecial mem (Binary src off)));
+  match(Set mem (StoreLWithNarrowOops mem (Binary src off)));
   effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, KILL cr);
   ins_cost(INSN_COST);
-  format %{ "str  $src, $mem\t# g1StoreLSpecialOneOopOff4" %}
+  format %{ "str  $src, $mem\t# g1StoreLWithOneNarrowOopOff4" %}
   ins_encode %{
     // Adjust address to point to narrow oop
     if ((barrier_data() & G1C2BarrierPre) != 0 || (barrier_data() & G1C2BarrierPost) != 0) {
@@ -148,13 +148,13 @@ instruct g1StoreLSpecialOneOopOff4(indirect mem, iRegLNoSp src, immI_4 off, iReg
   ins_pipe(istore_reg_mem);
 %}
 
-instruct g1StoreLSpecialTwoOops(indirect mem, iRegLNoSp src, iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3, iRegPNoSp tmp4, rFlagsReg cr)
+instruct g1StoreLWithTwoNarrowOops(indirect mem, iRegLNoSp src, iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3, iRegPNoSp tmp4, rFlagsReg cr)
 %{
   predicate(UseG1GC && !needs_releasing_store(n));
-  match(Set mem (StoreLSpecial mem src));
+  match(Set mem (StoreLWithNarrowOops mem src));
   effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, KILL cr);
   ins_cost(INSN_COST);
-  format %{ "str  $src, $mem\t# g1StoreLSpecialTwoOops" %}
+  format %{ "str  $src, $mem\t# g1StoreLWithTwoNarrowOops" %}
   ins_encode %{
     write_barrier_pre(masm, this,
                       $mem$$Register /* obj */,
