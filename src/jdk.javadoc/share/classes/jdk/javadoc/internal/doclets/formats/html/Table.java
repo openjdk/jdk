@@ -26,7 +26,6 @@
 package jdk.javadoc.internal.doclets.formats.html;
 
 import java.io.IOException;
-import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -37,10 +36,10 @@ import java.util.function.Predicate;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
 import jdk.javadoc.internal.html.Content;
 import jdk.javadoc.internal.html.ContentBuilder;
+import jdk.javadoc.internal.html.ContentWriter;
 import jdk.javadoc.internal.html.HtmlAttr;
 import jdk.javadoc.internal.html.HtmlId;
 import jdk.javadoc.internal.html.HtmlStyle;
-import jdk.javadoc.internal.html.HtmlTag;
 import jdk.javadoc.internal.html.HtmlTree;
 import jdk.javadoc.internal.html.Text;
 
@@ -349,8 +348,13 @@ public class Table<T> extends Content {
     }
 
     @Override
-    public boolean write(Writer out, String newline, boolean atNewline) throws IOException {
-        return toContent().write(out, newline, atNewline);
+    public boolean write(ContentWriter out, boolean atNewline) throws IOException {
+        return toContent().write(out, atNewline);
+    }
+
+    @Override
+    public String toPlainText() {
+        return toContent().toPlainText();
     }
 
     /**

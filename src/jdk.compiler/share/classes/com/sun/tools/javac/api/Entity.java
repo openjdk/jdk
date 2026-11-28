@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,16 +33,16 @@ import com.sun.tools.javac.util.StringUtils;
 /**
  * Table of entities defined in HTML 5.2.
  *
- * <p> Derived from the
- * <a href="https://www.w3.org/TR/html52/syntax.html#named-character-references">Named character references</a>
- * section of the HTML 5.2 specification.
+ * <p>Derived from the
+ * <a href="https://html.spec.whatwg.org/multipage/named-characters.html#named-character-references">
+ * Named character references</a> section of the HTML Living Standard.
  *
  * <p><b>This is NOT part of any supported API.
  * If you write code that depends on this, you do so at your own
  * risk.  This code and its internal interfaces are subject to change
  * or deletion without notice.</b></p>
  */
-class Entity {
+public class Entity {
 
     private static final HashMap<String,String> entities = new HashMap<>();
 
@@ -2182,8 +2182,24 @@ class Entity {
         entities.put(name, String.valueOf(new char[] { c1, c2 }));
     }
 
-    static String getCharacters(EntityTree tree) {
-        String name = tree.getName().toString();
+    /**
+     * Returns the characters represented by an {@code EntityTree} instance.
+     *
+     * @param tree an entity tree
+     * @return the characters, or {@code null} if the tree does not represent a valid reference
+     */
+    public static String getCharacters(EntityTree tree) {
+        return getCharacters(tree.getName().toString());
+    }
+
+    /**
+     * Returns the characters represented by the given character entity name.
+     *
+     * @param name the name of the entity without the surrounding {@code &} and {@code ;},
+     * for example {@code amp}, {@code #38}, or {@code #x26}
+     * @return the characters, or {@code null} if {@code name} is not a valid reference
+     */
+    public static String getCharacters(String name) {
         if (name.startsWith("#")) {
             try {
                 int v = StringUtils.toLowerCase(name).startsWith("#x")
@@ -2193,7 +2209,8 @@ class Entity {
                 if (Character.isDefined(v)
                         && (!Character.isISOControl(v) || Character.isSpaceChar(v))
                         && (v < 0xd800 || v > 0xdfff)) {
-                    return String.valueOf((char) v);
+                    // Entity may represent a supplementary code point
+                    return new String(Character.toChars(v));
                 }
             } catch (NumberFormatException ex) {
                 //ignore

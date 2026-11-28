@@ -26,7 +26,6 @@
 package jdk.javadoc.internal.html;
 
 import java.io.IOException;
-import java.io.Writer;
 
 /**
  * A builder for HTML script elements.
@@ -194,10 +193,14 @@ public class Script  {
         }
 
         @Override
-        public boolean write(Writer writer, String newline, boolean atNewline) throws IOException {
-            String s = sb.toString();
-            writer.write(s.replace("\n", newline));
-            return s.endsWith("\n");
+        public boolean write(ContentWriter writer, boolean atNewline) throws IOException {
+            return writer.writeRaw(sb.toString());
+        }
+
+        @Override
+        public String toPlainText() {
+            // Exclude script content from plain text
+            return "";
         }
 
         @Override

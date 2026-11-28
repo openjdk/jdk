@@ -62,7 +62,7 @@ public class IndexTaglet extends BaseTaglet {
 
         Content desc = tagletWriter.htmlWriter.commentTagsToContent(element, indexTree.getDescription(),
                 context.within(indexTree));
-        String descText = utils.normalizeWhitespace(desc.stripTags().toString());
+        String descText = utils.normalizeWhitespace(desc.toPlainText());
 
         return tagletWriter.createAnchorAndSearchIndex(element, tagText, descText, tag);
     }

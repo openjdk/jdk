@@ -216,7 +216,7 @@ public class HtmlIndexBuilder extends IndexBuilder {
                 } else {
                     wr.write(",");
                 }
-                wr.write(item.toJSON());
+                wr.write(item.toJSON(configuration.getOptions().docEncoding()));
             }
             wr.write("];");
             wr.write("updateSearchResults();");

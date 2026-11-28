@@ -25,6 +25,8 @@
 
 package jdk.javadoc.internal.doclets.toolkit.util;
 
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetEncoder;
 import java.util.Objects;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
@@ -580,11 +582,14 @@ public class IndexItem {
     /**
      * Returns a string representing this item in JSON notation.
      *
+     * @see <a href="https://datatracker.ietf.org/doc/html/rfc8259">
+     *     The JavaScript Object Notation (JSON) Data Interchange Format</a>
+     *
+     * @param encoding the used character encoding
      * @return a string representing this item in JSON notation
      */
-    public String toJSON() {
-        // TODO: Additional processing is required, see JDK-8238495
-        JSONBuilder builder = new JSONBuilder();
+    public String toJSON(String encoding) {
+        JSONBuilder builder = new JSONBuilder(encoding);
         Category category = getCategory();
         switch (category) {
             case MODULES:
@@ -638,15 +643,15 @@ public class IndexItem {
             case TAGS:
                 String holder = getHolder();
                 String description = getDescription();
-                builder.append("l", escapeQuotes(label))
+                builder.append("l", label)
                        .append("h", holder);
                 if (!description.isEmpty()) {
-                    builder.append("d", escapeQuotes(description));
+                    builder.append("d", description);
                 }
                 if (kind != null && kind != Kind.SEARCH_ITEM) {
                     builder.append("k", kind.ordinal());
                 }
-                builder.append("u", escapeQuotes(url));
+                builder.append("u", url);
                 break;
 
             default:
@@ -655,27 +660,82 @@ public class IndexItem {
         return builder.toString();
     }
 
-    private static String escapeQuotes(String s) {
-        return s.replace("\\", "\\\\").replace("\"", "\\\"");
-    }
-
     // Simple JSON object string builder class
     private static class JSONBuilder {
 
-        StringBuilder b = new StringBuilder("{");
+        final StringBuilder sb;
+        final CharsetEncoder encoder;
+
+        JSONBuilder(String encoding) {
+            sb = new StringBuilder("{");
+            encoder = Charset.forName(encoding).newEncoder();
+        }
 
         public JSONBuilder append(String name, Object value) {
-            if (b.length() > 1) {
-                b.append(",");
+            if (sb.length() > 1) {
+                sb.append(",");
             }
-            b.append("\"").append(name).append("\":\"").append(value).append("\"");
+            sb.append("\"")
+                    .append(name)
+                    .append("\":\"")
+                    .append(encodeString(String.valueOf(value)))
+                    .append("\"");
             return this;
         }
 
         @Override
         public String toString() {
-            b.append("}");
-            return b.toString();
+            sb.append("}");
+            return sb.toString();
+        }
+
+        private String encodeString(String str) {
+            StringBuilder result = new StringBuilder(str.length());
+
+            // See https://datatracker.ietf.org/doc/html/rfc8259#section-7
+            for (int i = 0; i < str.length(); ) {
+                int cp = str.codePointAt(i);
+                i += Character.charCount(cp);
+
+                switch (cp) {
+                    case '"'  -> result.append("\\\"");
+                    case '\\' -> result.append("\\\\");
+                    case '\b' -> result.append("\\b");
+                    case '\f' -> result.append("\\f");
+                    case '\n' -> result.append("\\n");
+                    case '\r' -> result.append("\\r");
+                    case '\t' -> result.append("\\t");
+
+                    default -> {
+                        if (cp < 0x20) {
+                            appendUnicodeEscape((char) cp, result);
+                        } else if (Character.isBmpCodePoint(cp)) {
+                            if (encoder.canEncode((char) cp)) {
+                                result.append((char) cp);
+                            } else {
+                                appendUnicodeEscape((char) cp, result);
+                            }
+                        } else {
+                            char[] pair = Character.toChars(cp);
+                            if (encoder.canEncode(new String(pair))) {
+                                result.append(pair);
+                            } else {
+                                appendUnicodeEscape(pair[0], result);
+                                appendUnicodeEscape(pair[1], result);
+                            }
+                        }
+                    }
+                }
+            }
+
+            return result.toString();
+        }
+
+        private static void appendUnicodeEscape(char ch, StringBuilder result) {
+            String hex = Integer.toHexString(ch);
+            result.append("\\u")
+                    .append("0".repeat(4 - hex.length()))
+                    .append(hex);
         }
     }
  }

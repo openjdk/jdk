@@ -25,8 +25,6 @@
 
 package jdk.javadoc.internal.html;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.NoSuchElementException;
@@ -37,7 +35,7 @@ import java.util.Objects;
  * stack of nested list trees which it adapts to obtain the desired nesting
  * level of added items.
  */
-public class ListBuilder extends Content {
+public class ListBuilder {
 
     private final HtmlTag listTag;
     private final HtmlStyle listStyle;
@@ -113,15 +111,20 @@ public class ListBuilder extends Content {
         currentList = pair.list;
     }
 
-    @Override
-    public boolean write(Writer writer, String newline, boolean atNewline) throws IOException {
+    /**
+     * {@return the content root of the list}
+     */
+    public Content toContent() {
         while (!stack.isEmpty()) {
             popNestedList();
         }
-        return root.write(writer, newline, atNewline);
+        return root;
     }
 
-    @Override
+
+    /**
+     * {@return true if the list is empty}
+     */
     public boolean isEmpty() {
         return root.isEmpty();
     }

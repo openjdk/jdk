@@ -517,7 +517,8 @@ public abstract class HtmlDocletWriter {
 
         HtmlDocument htmlDocument = new HtmlDocument(
                 HtmlTree.HTML(configuration.getLocale().getLanguage(), head.toContent(), body));
-        htmlDocument.write(DocFile.createFileForOutput(configuration, path));
+        htmlDocument.write(DocFile.createFileForOutput(configuration, path),
+                configuration.getOptions().docEncoding());
     }
 
     /**
@@ -1732,7 +1733,7 @@ public abstract class HtmlDocletWriter {
 
         @Override
         public Boolean visitEntity(EntityTree node, Content content) {
-            content.add(Entity.of(node.getName()));
+            content.add(Entity.of(node.getName().toString()));
             return false;
         }
 
@@ -1851,36 +1852,42 @@ public abstract class HtmlDocletWriter {
         String id = getIdAttributeValue(node).orElse(null);
         StringBuilder sb = new StringBuilder();
         String tagName = node.getName().toString().toLowerCase(Locale.ROOT);
+
         // Go through heading content to collect content and look for existing id
         for (DocTree docTree : trees.subList(trees.indexOf(node) + 1, trees.size())) {
-            if (docTree instanceof TextTree text) {
-                sb.append(text.getBody());
-            } else if (docTree instanceof RawTextTree raw) {
-                sb.append(raw.getContent().replaceAll("[^A-Za-z0-9]+", " "));
-            } else if (docTree instanceof LiteralTree literal) {
-                sb.append(literal.getBody().getBody());
-            } else if (docTree instanceof IndexTree index) {
-                DocTree searchTerm = index.getSearchTerm();
-                String tagText = (searchTerm instanceof TextTree tt) ? tt.getBody() : "";
-                if (tagText.charAt(0) == '"' && tagText.charAt(tagText.length() - 1) == '"') {
-                    tagText = tagText.substring(1, tagText.length() - 1);
-                }
-                sb.append(tagText);
-            } else if (docTree instanceof EntityTree entity) {
-                sb.append(utils.docTrees.getCharacters(entity));
-            } else if (docTree instanceof LinkTree link) {
-                var label = link.getLabel();
-                sb.append(label.isEmpty() ? link.getReference().getSignature() : label.toString());
-            } else if (id == null && docTree instanceof StartElementTree nested
-                    && equalsIgnoreCase(nested.getName(), "a")) {
-                // Use id of embedded anchor element if present
-                id = getIdAttributeValue(nested).orElse(null);
-            } else if (docTree instanceof EndElementTree endElement
+            if (docTree instanceof EndElementTree endElement
                     && equalsIgnoreCase(endElement.getName(), tagName)) {
                 break;
             }
+            if (id == null && docTree instanceof StartElementTree nested
+                    && equalsIgnoreCase(nested.getName(), "a")) {
+                id = getIdAttributeValue(nested).orElse(null);  // Use id of embedded anchor element if present
+            }
+
+            String str = switch (docTree) {
+                case TextTree text        -> text.getBody();
+                case RawTextTree raw      -> raw.getContent().replaceAll("[^A-Za-z0-9]+", " ");
+                case LiteralTree literal  -> literal.getBody().getBody();
+                case IndexTree index      -> {
+                    String tagText = (index.getSearchTerm() instanceof TextTree tt)
+                            ? tt.getBody()
+                            : "";
+                    if (tagText.charAt(0) == '"' && tagText.charAt(tagText.length() - 1) == '"') {
+                        tagText = tagText.substring(1, tagText.length() - 1);
+                    }
+                    yield tagText;
+                }
+                case EntityTree entity    -> utils.docTrees.getCharacters(entity);
+                case LinkTree link        -> link.getLabel().isEmpty()
+                        ? link.getReference().getSignature()
+                        : link.getLabel().toString();
+                default -> "";
+            };
+            sb.append(str);
         }
+
         String headingContent = sb.toString().trim();
+
         if (id == null) {
             // Generate id attribute
             HtmlId htmlId = htmlIds.forHeading(headingContent, headingIds);

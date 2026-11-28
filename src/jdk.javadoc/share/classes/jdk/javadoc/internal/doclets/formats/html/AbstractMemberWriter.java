@@ -333,7 +333,7 @@ public abstract class AbstractMemberWriter {
                 summaryCount++;
                 var label = new ContentBuilder();
                 addInheritedSummaryLabel(inheritedClass, label);
-                tocEntries.put(getInheritedSummaryId(inheritedClass), label.stripTags());
+                tocEntries.put(getInheritedSummaryId(inheritedClass), Text.of(label.toPlainText()));
             }
         }
 

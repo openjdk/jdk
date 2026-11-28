@@ -26,7 +26,6 @@
 package jdk.javadoc.internal.html;
 
 import java.io.IOException;
-import java.io.Writer;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -109,7 +108,7 @@ public class HtmlTree extends Content {
     public HtmlTree put(HtmlAttr attrName, String attrValue) {
         if (attrs.isEmpty())
             attrs = new LinkedHashMap<>(3);
-        attrs.put(Objects.requireNonNull(attrName), Entity.escapeHtmlChars(attrValue));
+        attrs.put(Objects.requireNonNull(attrName), attrValue);
         return this;
     }
 
@@ -131,7 +130,7 @@ public class HtmlTree extends Content {
      * @return this object
      */
     public HtmlTree setTitle(Content body) {
-        return put(HtmlAttr.TITLE, stripHtml(body));
+        return put(HtmlAttr.TITLE, body.toPlainText());
     }
 
     /**
@@ -281,12 +280,17 @@ public class HtmlTree extends Content {
     }
 
     @Override
-    public Content stripTags() {
-        var text = new ContentBuilder();
-        for (Content c : content) {
-            text.add(c.stripTags());
+    public String toPlainText() {
+        if (tag == HtmlTag.BR) {
+            return " ";
         }
-        return text;
+
+        var text = new StringBuilder();
+        for (Content c : content) {
+            text.append(c.toPlainText());
+        }
+
+        return text.toString();
     }
 
     /*
@@ -1180,21 +1184,12 @@ public class HtmlTree extends Content {
 
     @Override
     public boolean isEmpty() {
-        return (!hasContent() && !hasAttrs());
+        return (content.isEmpty() && !hasAttrs());
     }
 
     @Override
     public boolean isPhrasingContent() {
         return tag.blockType == HtmlTag.BlockType.INLINE;
-    }
-
-    /**
-     * Returns true if the HTML tree has content.
-     *
-     * @return true if the HTML tree has content else return false
-     */
-    public boolean hasContent() {
-        return (!content.isEmpty());
     }
 
     /**
@@ -1227,7 +1222,7 @@ public class HtmlTree extends Content {
     @Override
     public boolean isDiscardable() {
         return !isVoid()
-            && !hasContent()
+            && content.isEmpty()
             && !hasAttr(HtmlAttr.ID)
             && tag != HtmlTag.SCRIPT;
     }
@@ -1261,59 +1256,33 @@ public class HtmlTree extends Content {
     }
 
     @Override
-    public boolean write(Writer out, String newline, boolean atNewline) throws IOException {
+    public boolean write(ContentWriter out, boolean atNewline) throws IOException {
         boolean isInline = isInline();
         if (!isInline && !atNewline) {
-            out.write(newline);
+            out.writeNewline();
         }
         String tagString = tag.getName();
-        out.write("<");
-        out.write(tagString);
+        out.writeRaw("<");
+        out.writeRaw(tagString);
         for (var attr : attrs.entrySet()) {
-            var key = attr.getKey();
-            var value = attr.getValue();
-            out.write(" ");
-            out.write(key.getName());
-            if (!value.isEmpty()) {
-                out.write("=\"");
-                out.write(value.replace("\"", "&quot;"));
-                out.write("\"");
-            }
+            out.writeAttribute(attr.getKey(), attr.getValue());
         }
-        out.write(">");
+        out.writeRaw(">");
         boolean nl = false;
         for (Content c : content) {
-            nl = c.write(out, newline, nl);
+            nl = c.write(out, nl);
         }
         if (!isVoid()) {
-            out.write("</");
-            out.write(tagString);
-            out.write(">");
+            out.writeRaw("</");
+            out.writeRaw(tagString);
+            out.writeRaw(">");
         }
         if (!isInline) {
-            out.write(newline);
+            out.writeNewline();
             return true;
         } else {
             return false;
         }
-    }
-
-    /**
-     * Given a Content node, strips all html characters and
-     * returns the result.
-     *
-     * @param body The content node to check.
-     * @return the plain text from the content node
-     *
-     */
-    private static String stripHtml(Content body) {
-        String rawString = body.toString();
-        // remove HTML tags
-        rawString = rawString.replaceAll("<.*?>", " ");
-        // consolidate multiple spaces between a word to a single space
-        rawString = rawString.replaceAll("\\b\\s{2,}\\b", " ");
-        // remove extra whitespaces
-        return rawString.trim();
     }
 
     private static HtmlTree unmodifiableTree(HtmlTag tag) {

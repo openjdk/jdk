@@ -26,7 +26,6 @@
 package jdk.javadoc.internal.html;
 
 import java.io.IOException;
-import java.io.Writer;
 
 /**
  * Class for containing immutable string content for HTML tags of javadoc output.
@@ -79,14 +78,13 @@ public class Text extends Content {
     }
 
     @Override
-    public String toString() {
+    public String toPlainText() {
         return string;
     }
 
     @Override
-    public boolean write(Writer out, String newline, boolean atNewline) throws IOException {
-        out.write(Entity.escapeHtmlChars(string).replace("\n", newline));
-        return string.endsWith("\n");
+    public boolean write(ContentWriter out, boolean atNewline) throws IOException {
+        return out.writeText(string);
     }
 
     /**

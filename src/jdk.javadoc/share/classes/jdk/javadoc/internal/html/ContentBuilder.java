@@ -26,7 +26,6 @@
 package jdk.javadoc.internal.html;
 
 import java.io.IOException;
-import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -81,9 +80,9 @@ public class ContentBuilder extends Content {
     }
 
     @Override
-    public boolean write(Writer writer, String newline, boolean atNewline) throws IOException {
+    public boolean write(ContentWriter writer, boolean atNewline) throws IOException {
         for (Content content: contents) {
-            atNewline = content.write(writer, newline, atNewline);
+            atNewline = content.write(writer, atNewline);
         }
         return atNewline;
     }
@@ -106,12 +105,12 @@ public class ContentBuilder extends Content {
     }
 
     @Override
-    public Content stripTags() {
-        var text = new ContentBuilder();
+    public String toPlainText() {
+        var text = new StringBuilder();
         for (Content c : contents) {
-            text.add(c.stripTags());
+            text.append(c.toPlainText());
         }
-        return text;
+        return text.toString();
     }
 
     @Override

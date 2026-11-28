@@ -25,10 +25,9 @@
 
 package jdk.javadoc.internal.html;
 
+import com.sun.tools.javac.api.Entity;
+
 import java.io.IOException;
-import java.io.Writer;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Class for generating raw HTML content to be added to HTML pages of javadoc output.
@@ -47,12 +46,7 @@ public class RawHtml extends Content {
      * @return the HTML
      */
     public static RawHtml of(CharSequence rawHtml) {
-        return new RawHtml(rawHtml) {
-            @Override
-            public int charCount() {
-                return charCount(rawHtmlContent);
-            }
-        };
+        return new RawHtml(rawHtml);
     }
 
     /**
@@ -63,6 +57,24 @@ public class RawHtml extends Content {
      */
     public static RawHtml markdown(CharSequence markdownOutput) {
         return of(markdownOutput);
+    }
+
+    /**
+     * Creates HTML with known plain text representation, allowing to skip
+     * costly implementations of {@code toPlainText()} and {@code charCount()}.
+     */
+    private static RawHtml withPlainText(CharSequence rawHtml, String plainText) {
+        return new RawHtml(rawHtml) {
+            @Override
+            public String toPlainText() {
+                return plainText;
+            }
+
+            @Override
+            public int charCount() {
+                return plainText.length();
+            }
+        };
     }
 
     /**
@@ -80,7 +92,8 @@ public class RawHtml extends Content {
             sb.append(attrs);
         }
         sb.append(selfClosing ? "/>" : ">");
-        return new RawHtml(sb);
+        // <br> tag is converted to " " in plain text
+        return withPlainText(sb, name.toString().equalsIgnoreCase("br") ? " " : "");
     }
 
     /**
@@ -90,7 +103,7 @@ public class RawHtml extends Content {
      * @return the HTML
      */
     public static RawHtml endElement(CharSequence name) {
-        return new RawHtml("</" + name + ">");
+        return withPlainText("</" + name + ">", "");
     }
 
     /**
@@ -106,6 +119,7 @@ public class RawHtml extends Content {
     public static RawHtml comment(String body) {
         return section("<!--", body, "-->");
     }
+
     /**
      * Creates HTML for an HTML CDATA section.
      *
@@ -121,7 +135,31 @@ public class RawHtml extends Content {
     }
 
     private static RawHtml section(String prefix, String body, String suffix) {
-        return new RawHtml(body.startsWith(prefix) && body.endsWith(suffix) ? body : prefix + body + suffix);
+        // Character references are not interpreted inside comments or CDATA,
+        // so write their contents without character-reference substitution.
+        // Since CDATA is treated like a comment in ordinary HTML content, the
+        // empty string is used as plain text representation.
+        return new RawHtml(body.startsWith(prefix) && body.endsWith(suffix) ? body : prefix + body + suffix) {
+            @Override
+            public boolean isPhrasingContent() {
+                return true; // Not actual phrasing content, but does not require block treatment.
+            }
+
+            @Override
+            public int charCount() {
+                return 0;
+            }
+
+            @Override
+            public String toPlainText() {
+                return "";
+            }
+
+            @Override
+            public boolean write(ContentWriter out, boolean atNewline) throws IOException {
+                return out.writeRaw(rawHtmlContent);
+            }
+        };
     }
 
     /**
@@ -139,27 +177,97 @@ public class RawHtml extends Content {
         return rawHtmlContent.isEmpty();
     }
 
-    Pattern tag = Pattern.compile("<(?<tag>[A-Za-z0-9]+)(\\s|>)");
     @Override
     public boolean isPhrasingContent() {
-        Matcher m = tag.matcher(rawHtmlContent);
-        while (m.find()) {
-            try {
-                var tn = HtmlTag.of(m.group("tag"));
-                if (tn.blockType != HtmlTag.BlockType.INLINE) {
-                    return false;
+        return scan(rawHtmlContent, new ScanHandler<>() {
+            boolean isPhrasing = true;
+
+            @Override
+            public void text(int start, int end) {}
+
+            @Override
+            public void entity(int start, int end) {}
+
+            @Override
+            public void tag(int nameStart, int nameEnd, boolean closing) {
+                if (!closing) {
+                    String tagName = rawHtmlContent.substring(nameStart, nameEnd);
+                    HtmlTag tag = HtmlTag.of(tagName);
+                    isPhrasing &= tag != null && tag.blockType == HtmlTag.BlockType.INLINE;
                 }
-            } catch (IllegalArgumentException e) {
-                // unknown tag
-                return false;
             }
-        }
-        return true;
+
+            @Override
+            public Boolean result() {
+                return isPhrasing;
+            }
+        });
     }
 
     @Override
-    public Content stripTags() {
-        return Text.of(rawHtmlContent.replaceAll("<[^>]*>", ""));
+    public int charCount() {
+        return scan(rawHtmlContent, new ScanHandler<>() {
+            int count = 0;
+
+            @Override
+            public void text(int start, int end) {
+                count += end - start;
+            }
+
+            @Override
+            public void entity(int start, int end) {
+                String name = rawHtmlContent.substring(start, end);
+                String str = Entity.getCharacters(name);
+                count += str != null ? str.length() : name.length() + 2;
+            }
+
+            @Override
+            public void tag(int nameStart, int nameEnd, boolean closing) {
+                if (!closing && nameEnd - nameStart == 2
+                        && rawHtmlContent.regionMatches(true, nameStart, "br", 0, 2)) {
+                    count++;
+                }
+            }
+
+            @Override
+            public Integer result() {
+                return count;
+            }
+        });
+    }
+
+    @Override
+    public String toPlainText() {
+        return scan(rawHtmlContent, new ScanHandler<>() {
+
+            final StringBuilder sb = new StringBuilder();
+
+            @Override
+            public void text(int start, int end) {
+                sb.append(rawHtmlContent, start, end);
+            }
+
+            @Override
+            public void entity(int start, int end) {
+                String name = rawHtmlContent.substring(start, end);
+                String chars = Entity.getCharacters(name);
+                // Preserve references the decoder does not recognize.
+                sb.append(chars != null ? chars : "&" + name + ";");
+            }
+
+            @Override
+            public void tag(int nameStart, int nameEnd, boolean closing) {
+                if (!closing && nameEnd - nameStart == 2
+                        && rawHtmlContent.regionMatches(true, nameStart, "br", 0, 2)) {
+                    sb.append(" ");
+                }
+            }
+
+            @Override
+            public String result() {
+                return sb.toString();
+            }
+        });
     }
 
     @Override
@@ -167,11 +275,38 @@ public class RawHtml extends Content {
         return rawHtmlContent;
     }
 
-    private enum State { TEXT, ENTITY, TAG, STRING }
+    @Override
+    public boolean write(ContentWriter out, boolean atNewline) throws IOException {
+        return out.writeMarkup(rawHtmlContent);
+    }
 
-    protected static int charCount(CharSequence htmlText) {
+    /**
+     * A generic callback interface to pass to the {@link #scan} method.
+     *
+     * @param <R> the type of the result produced by the handler
+     */
+    protected interface ScanHandler<R> {
+        void text(int start, int end);
+        void entity(int start, int end);
+        void tag(int nameStart, int nameEnd, boolean closing);
+        R result();
+    }
+
+    private enum State { TEXT, ENTITY, TAG, ATTR, COMMENT }
+
+    /**
+     * Scans the content of a raw HTML fragment.
+     *
+     * @param htmlText an HTML fragment
+     * @param handler callback handler
+     * @return the result generated by the handler
+     * @param <R> the type of the generated result
+     */
+    protected static <R> R scan(String htmlText, ScanHandler<R> handler) {
         State state = State.TEXT;
-        int count = 0;
+        int start = 0;
+        char quote = 0;
+
         for (int i = 0; i < htmlText.length(); i++) {
             char c = htmlText.charAt(i);
             switch (state) {
@@ -179,46 +314,118 @@ public class RawHtml extends Content {
                     switch (c) {
                         case '<':
                             state = State.TAG;
+                            handler.text(start, i);
+                            start = i;
                             break;
                         case '&':
                             state = State.ENTITY;
-                            count++;
+                            handler.text(start, i);
+                            start = i;
                             break;
-                        default:
-                            count++;
                     }
                     break;
 
                 case ENTITY:
-                    if (!Character.isLetterOrDigit(c))
-                        state = State.TEXT;
+                    switch (c) {
+                        case '#':
+                            if (i > start + 1) {
+                                state = State.TEXT;
+                            }
+                            break;
+                        case ';':
+                            handler.entity(start + 1, i);
+                            start = i + 1;
+                            state = State.TEXT;
+                            break;
+                        case '<':
+                        case '&':
+                            handler.text(start, i);
+                            state = c == '<' ? State.TAG : State.ENTITY;
+                            start = i;
+                            break;
+                        default:
+                            if (!Character.isLetterOrDigit(c)) {
+                                state = State.TEXT;
+                            }
+                    }
                     break;
 
                 case TAG:
                     switch (c) {
                         case '"':
-                            state = State.STRING;
+                        case '\'':
+                            state = State.ATTR;
+                            quote = c;
                             break;
                         case '>':
+                            if (i > start + 1) {
+                                int nameStart = start + 1;
+                                boolean closing = htmlText.charAt(nameStart) == '/';
+                                if (closing) {
+                                    nameStart++;
+                                }
+                                int nameEnd = nameStart;
+                                if (nameEnd < i && isTagNameStart(htmlText.charAt(nameEnd))) {
+                                    do {
+                                        nameEnd++;
+                                    } while (nameEnd < i && isTagNamePart(htmlText.charAt(nameEnd)));
+                                }
+                                if (nameEnd > nameStart
+                                        && (nameEnd == i || (nameEnd == i - 1 && htmlText.charAt(nameEnd) == '/')
+                                                         || Character.isWhitespace(htmlText.charAt(nameEnd)))) {
+                                    handler.tag(nameStart, nameEnd, closing);
+                                    start = i + 1;
+                                }
+                            }
+
                             state = State.TEXT;
+                            break;
+                        case '<':
+                            handler.text(start, i);
+                            start = i;
+                            break;
+                        case '-':
+                            if (i == start + 3 && htmlText.charAt(i - 2) == '!' && htmlText.charAt(i - 1) == '-') {
+                                state = State.COMMENT;
+                            }
                             break;
                     }
                     break;
 
-                case STRING:
+                case ATTR:
                     switch (c) {
                         case '"':
-                            state = State.TAG;
+                        case '\'':
+                            if (c == quote) {
+                                quote = 0;
+                                state = State.TAG;
+                            }
                             break;
                     }
+                    break;
+
+                case COMMENT:
+                    if (c == '>' && i > start + 5 && htmlText.charAt(i - 1) == '-' && htmlText.charAt(i - 2) == '-') {
+                        state = State.TEXT;
+                        start = i + 1;
+                    }
+                    break;
             }
         }
-        return count;
+
+        if (start < htmlText.length()) {
+            // Handle incomplete tags, entities and comments as plain text.
+            handler.text(start, htmlText.length());
+        }
+
+        return handler.result();
     }
 
-    @Override
-    public boolean write(Writer out, String newline, boolean atNewline) throws IOException {
-        out.write(rawHtmlContent.replace("\n", newline));
-        return rawHtmlContent.endsWith("\n");
+    private static boolean isTagNameStart(char c) {
+        return c >= 'A' && c <= 'Z' || c >= 'a' && c <= 'z';
+    }
+
+    private static boolean isTagNamePart(char c) {
+        return isTagNameStart(c) || c >= '0' && c <= '9' || c == ':' || c == '-';
     }
 }
