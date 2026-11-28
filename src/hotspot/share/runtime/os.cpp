@@ -1338,15 +1338,21 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
     return;
   }
 
-  // Compressed klass needs to be decoded first.
-  // Todo: questionable for COH - can we do this better?
 #ifdef _LP64
   if (UseCompactObjectHeaders) {
+    // We can't recognise all potentially valid markword values, but if the value
+    // contains a valid klass pointer then that is a strong indication. To check
+    // for a valid klass pointer we must exclude the cases where it is not valid:
+    // - has reserved bits set
+    // - is forwarded
+    // To reduce the likelihood of misinterpreting a random value as a markword we
+    // also require the markword to have no hash set.
     markWord mw = (markWord)(uintptr_t)(addr);
-    static constexpr uintptr_t valhalla_reserved_bits_in_place = right_n_bits(markWord::valhalla_reserved_bits)
+    constexpr uintptr_t valhalla_reserved_bits_in_place = right_n_bits(markWord::valhalla_reserved_bits)
                                                                     << markWord::valhalla_reserved_shift;
-    static constexpr uintptr_t markbits_must_be_zero = valhalla_reserved_bits_in_place | markWord::self_fwd_bit_in_place;
-    if ((!mw.has_hash()) && (mw.value() & markbits_must_be_zero) == 0 && Klass::is_valid(mw.klass_without_asserts())) {
+    constexpr uintptr_t markbits_must_be_zero = valhalla_reserved_bits_in_place | markWord::self_fwd_bit_in_place;
+    if ((!mw.is_marked() && !mw.has_hash()) &&
+        (mw.value() & markbits_must_be_zero) == 0 && Klass::is_valid(mw.klass_without_asserts())) {
       st->print(PTR_FORMAT " looks like a valid markword: ", p2i(addr));
       mw.print_on(st);
       st->print(" ");
@@ -1355,6 +1361,7 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
     }
   }
 
+  // Whether we use COH or not, the value could be a narrowKlass.
   if (((uintptr_t)addr &~ (uintptr_t)max_juint) == 0) {
     narrowKlass narrow_klass = (narrowKlass)(uintptr_t)addr;
     Klass* k = CompressedKlassPointers::decode_without_asserts(narrow_klass);
