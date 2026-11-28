@@ -1396,11 +1396,17 @@ const int ObjectAlignmentInBytes = 8;
   product(size_t, MetaspaceSize, NOT_LP64(16 * M) LP64_ONLY(21 * M),        \
           "Initial threshold (in bytes) at which a garbage collection "     \
           "is done to reduce Metaspace usage")                              \
-          constraint(MetaspaceSizeConstraintFunc,AfterErgo)                 \
+          /* Metaspace::ergo_initialize() will silently lower a */          \
+          /* default MetaspaceSize value that is higher than a */           \
+          /* specified MaxMetaspaceSize. */                                 \
+          constraint(MetaspaceSizeConstraintFunc,AtParse)                   \
                                                                             \
   product(size_t, MaxMetaspaceSize, max_uintx,                              \
           "Maximum size of Metaspaces (in bytes)")                          \
-          constraint(MaxMetaspaceSizeConstraintFunc,AfterErgo)              \
+          /* 0 is unreasonable; 128K appears to be minimum needed */        \
+          /* to run just "java -version" */                                 \
+          range(128 * K, max_uintx)                                         \
+          constraint(MaxMetaspaceSizeConstraintFunc,AtParse)                \
                                                                             \
   product(size_t, CompressedClassSpaceSize, 1*G,                            \
           "Maximum size of class area in Metaspace when compressed "        \

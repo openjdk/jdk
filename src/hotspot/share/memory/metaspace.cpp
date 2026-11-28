@@ -654,7 +654,12 @@ void Metaspace::ergo_initialize() {
   // We still adjust CompressedClassSpaceSize to reasonable limits, mainly to
   //  save on reserved space, and to make ergnonomics less confusing.
 
-  MaxMetaspaceSize = MAX2(MaxMetaspaceSize, commit_alignment());
+  // The lower bound of MaxMetaspaceSize is currently 128K so this
+  // logic only comes into play if commit_alignment() is larger.
+  size_t new_mms = MAX2(MaxMetaspaceSize, commit_alignment());
+  if (new_mms != MaxMetaspaceSize) {
+    FLAG_SET_ERGO(MaxMetaspaceSize, new_mms);
+  }
 
 #if INCLUDE_CLASS_SPACE
 
@@ -703,16 +708,25 @@ void Metaspace::ergo_initialize() {
 
   // Set MetaspaceSize, MinMetaspaceExpansion and MaxMetaspaceExpansion
   if (MetaspaceSize > MaxMetaspaceSize) {
-    MetaspaceSize = MaxMetaspaceSize;
+    FLAG_SET_ERGO(MetaspaceSize, MaxMetaspaceSize);
   }
 
-  MetaspaceSize = align_down_bounded(MetaspaceSize, commit_alignment());
+  size_t aligned_size = align_down_bounded(MetaspaceSize, commit_alignment());
+  if (aligned_size != MetaspaceSize) {
+    FLAG_SET_ERGO(MetaspaceSize, aligned_size);
+  }
 
   assert(MetaspaceSize <= MaxMetaspaceSize, "MetaspaceSize should be limited by MaxMetaspaceSize");
 
-  MinMetaspaceExpansion = align_down_bounded(MinMetaspaceExpansion, commit_alignment());
-  MaxMetaspaceExpansion = align_down_bounded(MaxMetaspaceExpansion, commit_alignment());
+  aligned_size = align_down_bounded(MinMetaspaceExpansion, commit_alignment());
+  if (aligned_size != MinMetaspaceExpansion) {
+    FLAG_SET_ERGO(MinMetaspaceExpansion, aligned_size);
+  }
 
+  aligned_size = align_down_bounded(MaxMetaspaceExpansion, commit_alignment());
+  if (aligned_size != MaxMetaspaceExpansion) {
+    FLAG_SET_ERGO(MaxMetaspaceExpansion, aligned_size);
+  }
 }
 
 void Metaspace::global_initialize() {
