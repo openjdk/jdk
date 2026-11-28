@@ -649,6 +649,123 @@ int VectorSupport::vop2ideal(jint id, LaneType lt) {
   }
   return 0; // Unimplemented
 }
+
+int VectorSupport::vop2reduction(jint id, LaneType lt) {
+  VectorOperation vop = (VectorOperation)id;
+  switch (vop) {
+    case VECTOR_OP_ADD: {
+      switch (lt) {
+        case LT_BYTE:
+        case LT_SHORT:
+        case LT_INT:     return Op_AddReductionVI;
+        case LT_LONG:    return Op_AddReductionVL;
+        case LT_FLOAT16: return Op_AddReductionVHF;
+        case LT_FLOAT:   return Op_AddReductionVF;
+        case LT_DOUBLE:  return Op_AddReductionVD;
+        default:         break;
+      }
+      break;
+    }
+    case VECTOR_OP_MUL: {
+      switch (lt) {
+        case LT_BYTE:
+        case LT_SHORT:
+        case LT_INT:     return Op_MulReductionVI;
+        case LT_LONG:    return Op_MulReductionVL;
+        case LT_FLOAT16: return Op_MulReductionVHF;
+        case LT_FLOAT:   return Op_MulReductionVF;
+        case LT_DOUBLE:  return Op_MulReductionVD;
+        default:         break;
+      }
+      break;
+    }
+    case VECTOR_OP_MIN: {
+      switch (lt) {
+        // FIXME: Add support for float16
+        case LT_FLOAT16: return 0;
+        case LT_BYTE:
+        case LT_SHORT:
+        case LT_INT:
+        case LT_LONG:
+        case LT_FLOAT:
+        case LT_DOUBLE:  return Op_MinReductionV;
+        default:         break;
+      }
+      break;
+    }
+    case VECTOR_OP_MAX: {
+      switch (lt) {
+        // FIXME: Add support for float16
+        case LT_FLOAT16: return 0;
+        case LT_BYTE:
+        case LT_SHORT:
+        case LT_INT:
+        case LT_LONG:
+        case LT_FLOAT:
+        case LT_DOUBLE:  return Op_MaxReductionV;
+        default:         break;
+      }
+      break;
+    }
+    case VECTOR_OP_UMIN: {
+      switch (lt) {
+        case LT_BYTE:
+        case LT_SHORT:
+        case LT_INT:
+        case LT_LONG:    return Op_UMinReductionV;
+        default:         break;
+      }
+      break;
+    }
+    case VECTOR_OP_UMAX: {
+      switch (lt) {
+        case LT_BYTE:
+        case LT_SHORT:
+        case LT_INT:
+        case LT_LONG:    return Op_UMaxReductionV;
+        default:         break;
+      }
+      break;
+    }
+    case VECTOR_OP_AND: {
+      switch (lt) {
+        case LT_BYTE:
+        case LT_SHORT:
+        case LT_INT:
+        case LT_LONG:    return Op_AndReductionV;
+        default:         break;
+      }
+      break;
+    }
+    case VECTOR_OP_OR: {
+      switch (lt) {
+        case LT_BYTE:
+        case LT_SHORT:
+        case LT_INT:
+        case LT_LONG:    return Op_OrReductionV;
+        default:         break;
+      }
+      break;
+    }
+    case VECTOR_OP_XOR: {
+      switch (lt) {
+        case LT_BYTE:
+        case LT_SHORT:
+        case LT_INT:
+        case LT_LONG:    return Op_XorReductionV;
+        default:         break;
+      }
+      break;
+    }
+    case VECTOR_OP_SUADD:
+      // FIXME: Add support for saturating unsigned add operation
+      return 0;
+    default:
+      break;
+  }
+  assert(false, "unsupported reduction operation: %d", id);
+  return 0;
+}
 #endif // COMPILER2
 
 /**
