@@ -27,3 +27,4 @@
 
   void make_div_by_zero_check(LIR_Opr right_arg, BasicType type, CodeEmitInfo* info);
 
+  void arm_cas_long(LIR_Opr addr, LIRItem& cmp_value, LIRItem& new_value, LIR_Opr &result);
