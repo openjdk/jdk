@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1297,6 +1297,8 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
             buf.append("float");
          } else if (type == Location.Type.DBL) {
             buf.append("double");
+         } else if (type == Location.Type.VECTOR) {
+            buf.append("vector");
          } else if (type == Location.Type.ADDR) {
             buf.append("address");
          } else if (type == Location.Type.INVALID) {
