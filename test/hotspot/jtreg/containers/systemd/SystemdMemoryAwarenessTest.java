@@ -32,6 +32,7 @@ import jtreg.SkippedException;
  * @bug 8322420 8217338
  * @summary Memory/CPU awareness test for JDK-under-test inside a systemd slice.
  * @requires systemd.support
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.platform
  * @build HelloSystemd jdk.test.whitebox.WhiteBox

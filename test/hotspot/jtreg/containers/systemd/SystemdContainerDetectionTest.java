@@ -32,6 +32,7 @@ import jtreg.SkippedException;
  * @test
  * @summary Container detection test for a JDK inside a systemd slice.
  * @requires systemd.support
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.platform
  * @build HelloSystemd jdk.test.whitebox.WhiteBox
