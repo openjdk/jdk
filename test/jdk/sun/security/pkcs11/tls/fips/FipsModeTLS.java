@@ -430,7 +430,9 @@ public final class FipsModeTLS extends SecmodTest {
                 throw new RuntimeException("No ECDHE named groups available");
             }
             // remove XDH named groups - not available in PKCS11
-            namedGroups = Arrays.stream(namedGroups).filter(s-> !s.startsWith("x")).toArray(String[]::new);
+            namedGroups = Arrays.stream(namedGroups)
+                    .filter(s -> !s.startsWith("x") && !s.startsWith("*x"))
+                    .toArray(String[]::new);
             sslParameters.setNamedGroups(namedGroups);
             ssle.setSSLParameters(sslParameters);
 
