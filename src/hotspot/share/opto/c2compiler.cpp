@@ -152,6 +152,15 @@ void C2Compiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci, boo
   assert(!for_aot_preload || (ClassInitBarrierMode > 0), "sanity");
 
   while (!env->failing()) {
+    // We want to keep the reason arised from the compiler if any, but we also want to abort
+    // creating a new Compile object if the current ciEnv object is unusable, so we check for
+    // paradoxical hierarchy here after reporting the other failure, but before creating a new
+    // Compile object
+    if (env->paradoxical_hierarchy()) {
+      env->record_failure("paradoxical hierarchy");
+      break;
+    }
+
     ResourceMark rm;
     // Attempt to compile while subsuming loads into machine instructions.
     Options options(subsume_loads,
