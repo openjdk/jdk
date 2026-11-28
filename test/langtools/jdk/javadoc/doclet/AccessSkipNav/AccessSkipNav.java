@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,6 @@ public class AccessSkipNav extends JavadocTester {
                     <a href="#skip-navbar-top" title="Skip navigation links">Skip navigation links</a>""",
                 // Top navbar <span id>
                 """
-                    <span class="skip-nav" id="skip-navbar-top"></span>""");
+                    <main role="main" id="skip-navbar-top">""");
     }
 }
