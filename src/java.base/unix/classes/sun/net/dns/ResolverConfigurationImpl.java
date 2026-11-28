@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,19 +57,19 @@ public final class ResolverConfigurationImpl
     // keyword.
     //
     private ArrayList<String> resolvconf(String keyword,
-                                          int maxperkeyword,
-                                          int maxkeywords)
+                                         int maxperkeyword,
+                                         int maxkeywords)
     {
         ArrayList<String> ll = new ArrayList<>();
 
-        try {
-            BufferedReader in =
-                new BufferedReader(new FileReader("/etc/resolv.conf"));
+        try (FileReader fr = new FileReader("/etc/resolv.conf");
+             BufferedReader in = new BufferedReader(fr))
+        {
             String line;
             while ((line = in.readLine()) != null) {
                 int maxvalues = maxperkeyword;
                 if (line.isEmpty())
-                   continue;
+                    continue;
                 if (line.charAt(0) == '#' || line.charAt(0) == ';')
                     continue;
                 if (!line.startsWith(keyword))
@@ -103,7 +103,6 @@ public final class ResolverConfigurationImpl
                     break;
                 }
             }
-            in.close();
         } catch (IOException ioe) {
             // problem reading value
         }
