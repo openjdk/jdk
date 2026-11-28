@@ -2041,7 +2041,7 @@ static Assembler::SEW elemtype_to_sew(BasicType etype) {
 
 #define INSN(NAME, op, funct3)                                            \
   void NAME(Register Rd, Register Rs1, SEW sew, LMUL lmul = m1,           \
-            VMA vma = mu, VTA vta = tu, bool vill = false) {              \
+            VMA vma = ma, VTA vta = ta, bool vill = false) {              \
     unsigned insn = 0;                                                    \
     patch((address)&insn, 6, 0, op);                                      \
     patch((address)&insn, 14, 12, funct3);                                \
@@ -2058,9 +2058,9 @@ static Assembler::SEW elemtype_to_sew(BasicType etype) {
 
 #define INSN(NAME, op, funct3)                                            \
   void NAME(Register Rd, uint32_t imm, SEW sew, LMUL lmul = m1,           \
-            VMA vma = mu, VTA vta = tu, bool vill = false) {              \
+            VMA vma = ma, VTA vta = ta, bool vill = false) {              \
     unsigned insn = 0;                                                    \
-    guarantee(is_uimm5(imm), "uimm is invalid");                           \
+    guarantee(is_uimm5(imm), "uimm is invalid");                          \
     patch((address)&insn, 6, 0, op);                                      \
     patch((address)&insn, 14, 12, funct3);                                \
     patch((address)&insn, 19, 15, imm);                                   \

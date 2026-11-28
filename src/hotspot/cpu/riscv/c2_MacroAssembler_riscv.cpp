@@ -2325,7 +2325,7 @@ void C2_MacroAssembler::compress_bits_v(VectorRegister dst, VectorRegister src, 
   const int bits = is_int ? BitsPerInt : BitsPerLong;
   const int rounds = exact_log2(bits);
 
-  vsetvli_helper(bt, vector_length);
+  vsetvli_helper(bt, vector_length, vm == Assembler::v0_t ? Assembler::mu : Assembler::ma);
   vand_vv(dst, src, bit_mask, vm);
   vmv_v_v(mask_tmp, bit_mask);
   vnot_v(tmp1, mask_tmp);
@@ -2367,7 +2367,7 @@ void C2_MacroAssembler::expand_bits_v(VectorRegister dst, VectorRegister src, Ve
     mask_move1, mask_move2, mask_move3, mask_move4, mask_move5, mask_move6
   };
 
-  vsetvli_helper(bt, vector_length);
+  vsetvli_helper(bt, vector_length, vm == Assembler::v0_t ? Assembler::mu : Assembler::ma);
   vmv_v_v(src_tmp, src);
   vmv_v_v(mask_tmp, bit_mask);
   vor_vv(dst, mask_tmp, mask_tmp, vm);
@@ -2647,7 +2647,7 @@ static void float16_to_float_v_slow_path(C2_MacroAssembler& masm, C2GeneralStub<
   // we need the payloads of non-canonical NaNs to be preserved.
 
   // adjust vector type to 2 * SEW.
-  __ vsetvli_helper(T_FLOAT, vector_length, Assembler::m1);
+  __ vsetvli_helper(T_FLOAT, vector_length, Assembler::m1, Assembler::mu);
   // widen and sign-extend src data.
   __ vsext_vf2(dst, src, Assembler::v0_t);
   __ mv(t0, 0x7f800000);
@@ -2772,7 +2772,8 @@ void C2_MacroAssembler::float_to_float16_v(VectorRegister dst, VectorRegister sr
   vmfne_vv(v0, src, src);
   vcpop_m(t0, v0);
 
-  vsetvli_helper(BasicType::T_SHORT, vector_length, Assembler::mf2, tmp);
+  // The slow path must preserve the converted non-NaN lanes.
+  vsetvli_helper(BasicType::T_SHORT, vector_length, Assembler::mf2, Assembler::mu, Assembler::ta, tmp);
 
   // For non-NaN cases, just use built-in instructions.
   vfncvt_f_f_w(dst, src);
@@ -2784,7 +2785,7 @@ void C2_MacroAssembler::float_to_float16_v(VectorRegister dst, VectorRegister sr
 }
 
 void C2_MacroAssembler::signum_fp_v(VectorRegister dst, VectorRegister one, BasicType bt, int vlen) {
-  vsetvli_helper(bt, vlen);
+  vsetvli_helper(bt, vlen, Assembler::mu);
 
   // check if input is -0, +0, signaling NaN or quiet NaN
   vfclass_v(v0, dst);
@@ -2821,7 +2822,7 @@ void C2_MacroAssembler::java_round_float_v(VectorRegister dst, VectorRegister sr
   // Check MacroAssembler::java_round_float and C2_MacroAssembler::vector_round_sve in aarch64 for more details.
 
   csrwi(CSR_FRM, C2_MacroAssembler::rdn);
-  vsetvli_helper(bt, vector_length);
+  vsetvli_helper(bt, vector_length, Assembler::mu);
 
   // don't rearrage the instructions sequence order without performance testing.
   // check MacroAssembler::java_round_float in riscv64 for more details.
@@ -2847,7 +2848,7 @@ void C2_MacroAssembler::java_round_double_v(VectorRegister dst, VectorRegister s
   // check C2_MacroAssembler::java_round_float_v above for more details.
 
   csrwi(CSR_FRM, C2_MacroAssembler::rdn);
-  vsetvli_helper(bt, vector_length);
+  vsetvli_helper(bt, vector_length, Assembler::mu);
 
   mv(t0, julong_cast(0.5));
   fmv_d_x(ftmp, t0);
@@ -3179,7 +3180,7 @@ void C2_MacroAssembler::minmax_fp_v(VectorRegister dst, VectorRegister src1, Vec
                                     BasicType bt, bool is_min, uint vector_length) {
   assert_different_registers(dst, src1, src2);
 
-  vsetvli_helper(bt, vector_length);
+  vsetvli_helper(bt, vector_length, Assembler::mu);
 
   is_min ? vfmin_vv(dst, src1, src2)
          : vfmax_vv(dst, src1, src2);
@@ -3197,7 +3198,7 @@ void C2_MacroAssembler::minmax_fp_masked_v(VectorRegister dst, VectorRegister sr
                                            VectorRegister vmask, VectorRegister tmp1, VectorRegister tmp2,
                                            BasicType bt, bool is_min, uint vector_length) {
   assert_different_registers(src1, src2, tmp1, tmp2);
-  vsetvli_helper(bt, vector_length);
+  vsetvli_helper(bt, vector_length, Assembler::mu);
 
   // Check vector elements of src1 and src2 for NaN.
   vmfeq_vv(tmp1, src1, src1);
@@ -3367,16 +3368,15 @@ void C2_MacroAssembler::reduce_mul_integral_v(Register dst, Register src1, Vecto
 }
 
 // Set vl and vtype for full and partial vector operations.
-// (vma = mu, vta = tu, vill = false)
-void C2_MacroAssembler::vsetvli_helper(BasicType bt, uint vector_length, LMUL vlmul, Register tmp) {
+void C2_MacroAssembler::vsetvli_helper(BasicType bt, uint vector_length, LMUL vlmul, VMA vma, VTA vta, Register tmp) {
   Assembler::SEW sew = Assembler::elemtype_to_sew(bt);
   if (vector_length <= 31) {
-    vsetivli(tmp, vector_length, sew, vlmul);
+    vsetivli(tmp, vector_length, sew, vlmul, vma, vta);
   } else if (vector_length == (MaxVectorSize / type2aelembytes(bt))) {
-    vsetvli(tmp, x0, sew, vlmul);
+    vsetvli(tmp, x0, sew, vlmul, vma, vta);
   } else {
     mv(tmp, vector_length);
-    vsetvli(tmp, tmp, sew, vlmul);
+    vsetvli(tmp, tmp, sew, vlmul, vma, vta);
   }
 }
 
@@ -3384,7 +3384,7 @@ void C2_MacroAssembler::compare_integral_v(VectorRegister vd, VectorRegister src
                                            int cond, BasicType bt, uint vector_length, VectorMask vm) {
   assert(is_integral_type(bt), "unsupported element type");
   assert(vm == Assembler::v0_t ? vd != v0 : true, "should be different registers");
-  vsetvli_helper(bt, vector_length);
+  vsetvli_helper(bt, vector_length, vm == Assembler::v0_t ? Assembler::mu : Assembler::ma);
   if (vm == Assembler::v0_t) {
     vmclr_m(vd);
   }
@@ -3409,7 +3409,7 @@ void C2_MacroAssembler::compare_fp_v(VectorRegister vd, VectorRegister src1, Vec
                                      int cond, BasicType bt, uint vector_length, VectorMask vm) {
   assert(is_floating_point_type(bt), "unsupported element type");
   assert(vm == Assembler::v0_t ? vd != v0 : true, "should be different registers");
-  vsetvli_helper(bt, vector_length);
+  vsetvli_helper(bt, vector_length, vm == Assembler::v0_t ? Assembler::mu : Assembler::ma);
   if (vm == Assembler::v0_t) {
     vmclr_m(vd);
   }
@@ -3538,6 +3538,7 @@ void C2_MacroAssembler::integer_narrow_v(VectorRegister dst, BasicType dst_bt, u
   }
 }
 
+// Requires mask-undisturbed policy to retain zero for NaN lanes.
 #define VFCVT_SAFE(VFLOATCVT)                                                      \
 void C2_MacroAssembler::VFLOATCVT##_safe(VectorRegister dst, VectorRegister src) { \
   assert_different_registers(dst, src);                                            \

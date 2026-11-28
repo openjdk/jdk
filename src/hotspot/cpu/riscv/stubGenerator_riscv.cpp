@@ -3687,7 +3687,7 @@ class StubGenerator: public StubCodeGenerator {
     __ vsetivli(x0, 1, Assembler::e8, Assembler::m1);
     __ vmv_v_i(v0, MASK_VALUE);
 
-    __ vsetivli(x0, 4, Assembler::e32, Assembler::m1);
+    __ vsetivli(x0, 4, Assembler::e32, Assembler::m1, Assembler::mu);
     // load keys to working_vregs according to round
     aes_load_keys(key, working_vregs, round);
 
