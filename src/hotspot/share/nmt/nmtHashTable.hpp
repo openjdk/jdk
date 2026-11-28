@@ -135,6 +135,13 @@ private:
   }
 
   bool grow_and_rehash() {
+    if (_length > INT_MAX / 2) {
+      if constexpr (alloc_failmode == AllocFailStrategy::EXIT_OOM) {
+        vm_exit_out_of_memory((size_t)_length * 2, OOM_MALLOC_ERROR, "Hashtable resize failed, table too large");
+      }
+      return false;
+    }
+
     int new_length = _length * 2;
 
     KVElement* new_members = allocate_kvelement_array(new_length);
