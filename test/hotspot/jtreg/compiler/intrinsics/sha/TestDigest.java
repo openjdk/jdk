@@ -186,18 +186,14 @@ public class TestDigest {
 
             /* check result */
             if (Arrays.equals(hash, expectedHash) == false) {
-                System.out.println("TestDigest Error: ");
                 showArray(expectedHash, "expectedHash");
                 showArray(hash,         "computedHash");
-                //System.exit(1);
-                throw new Exception("TestDigest Error");
+                throw new Exception("TestDigest Error: expected hash does not match computed hash");
             } else {
                 showArray(hash, "hash");
             }
         } catch (Exception e) {
-            System.out.println("Exception: " + e);
-            //System.exit(1);
-            throw new Exception(e);
+            throw new RuntimeException(e);
         }
     }
 
