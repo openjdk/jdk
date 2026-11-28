@@ -42,6 +42,6 @@
  *      -gp nonbranchyTree(high)
  *      -gp1 random(arrays)
  *      -ms high
- *      -size2 1000000
+ *      -size2 5000000
  */
 
