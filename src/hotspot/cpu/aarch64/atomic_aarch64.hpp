@@ -55,7 +55,7 @@ typedef uint64_t (*aarch64_atomic_stub_t)(volatile void *ptr, uint64_t arg1, uin
 // x3, x8, x9: scratch
 
 // DEFAULT_ATOMIC_OP(name, bytesize, memory_order)
-// memory_order is blank (i.e. conservative), _acquire, _release, _acq_rel, _seq_cst
+// memory_order is blank (i.e. conservative), _acquire, _release, _acq_rel, _seq_cst, _relaxed
 
 // Pointers to stubs
 
@@ -67,6 +67,9 @@ DEFAULT_ATOMIC_OP(fetch_add, 8, _relaxed)       \
 DEFAULT_ATOMIC_OP(xchg, 1, )                    \
 DEFAULT_ATOMIC_OP(xchg, 4, )                    \
 DEFAULT_ATOMIC_OP(xchg, 8, )                    \
+DEFAULT_ATOMIC_OP(xchg, 1, _relaxed)            \
+DEFAULT_ATOMIC_OP(xchg, 4, _relaxed)            \
+DEFAULT_ATOMIC_OP(xchg, 8, _relaxed)            \
 DEFAULT_ATOMIC_OP(cmpxchg, 1, )                 \
 DEFAULT_ATOMIC_OP(cmpxchg, 4, )                 \
 DEFAULT_ATOMIC_OP(cmpxchg, 8, )                 \

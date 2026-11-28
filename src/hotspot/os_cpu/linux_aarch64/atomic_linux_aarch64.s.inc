@@ -116,33 +116,43 @@ DECLARE_LOCAL_FUNC(aarch64_atomic_fetch_add_4_relaxed_default_impl):
 #undef ATOMIC_OP
 
 #ifdef __ARM_FEATURE_ATOMICS
-#define ATOMIC_OP(LOAD, STORE, SZ, LSEOP)        \
+#define ATOMIC_OP(LOAD, STORE, SZ, MEMBAR, LSEOP) \
         hint    #0x22 /* bti c */               ;\
         LSEOP   SZ ## 1, SZ ## 2, [x0]          ;\
-        dmb     ish                             ;\
+        MEMBAR                                  ;\
         mov     SZ ## 0, SZ ## 2                ;\
         ret
 #else
-#define ATOMIC_OP(LOAD, STORE, SZ, LSEOP)        \
+#define ATOMIC_OP(LOAD, STORE, SZ, MEMBAR, LSEOP) \
         hint    #0x22 /* bti c */               ;\
         prfm    pstl1strm, [x0]                 ;\
 0:      LOAD    SZ ## 2, [x0]                   ;\
         STORE   w8, SZ ## 1, [x0]               ;\
         cbnz    w8, 0b                          ;\
-        dmb     ish                             ;\
+        MEMBAR                                  ;\
         mov     SZ ## 0, SZ ## 2                ;\
         ret
 #endif
 
         .align 5
 DECLARE_LOCAL_FUNC(aarch64_atomic_xchg_1_default_impl):
-        ATOMIC_OP(ldaxrb, stlxrb, w, swpalb)
+        ATOMIC_OP(ldaxrb, stlxrb, w, DMB, swpalb)
         .align 5
 DECLARE_LOCAL_FUNC(aarch64_atomic_xchg_4_default_impl):
-        ATOMIC_OP(ldaxr,  stlxr,  w, swpal)
+        ATOMIC_OP(ldaxr,  stlxr,  w, DMB, swpal)
         .align 5
 DECLARE_LOCAL_FUNC(aarch64_atomic_xchg_8_default_impl):
-        ATOMIC_OP(ldaxr,  stlxr,  x, swpal)
+        ATOMIC_OP(ldaxr,  stlxr,  x, DMB, swpal)
+
+        .align 5
+DECLARE_LOCAL_FUNC(aarch64_atomic_xchg_1_relaxed_default_impl):
+        ATOMIC_OP(ldxrb, stxrb, w, , swpb)
+        .align 5
+DECLARE_LOCAL_FUNC(aarch64_atomic_xchg_4_relaxed_default_impl):
+        ATOMIC_OP(ldxr,  stxr,  w, , swp)
+        .align 5
+DECLARE_LOCAL_FUNC(aarch64_atomic_xchg_8_relaxed_default_impl):
+        ATOMIC_OP(ldxr,  stxr,  x, , swp)
 
 #undef ATOMIC_OP
 #ifdef __ARM_FEATURE_ATOMICS

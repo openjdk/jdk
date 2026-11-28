@@ -119,7 +119,15 @@ inline T AtomicAccess::PlatformXchg<1>::operator()(T volatile* dest,
                                                    T exchange_value,
                                                    atomic_memory_order order) const {
   static_assert(1 == sizeof(T));
-  T old_value = atomic_fastcall(aarch64_atomic_xchg_1_impl, dest, exchange_value);
+  aarch64_atomic_stub_t stub;
+  switch (order) {
+  case memory_order_relaxed:
+    stub = aarch64_atomic_xchg_1_relaxed_impl; break;
+  default:
+    stub = aarch64_atomic_xchg_1_impl; break;
+  }
+
+  T old_value = atomic_fastcall(stub, dest, exchange_value);
   return old_value;
 }
 
@@ -129,7 +137,15 @@ inline T AtomicAccess::PlatformXchg<4>::operator()(T volatile* dest,
                                                    T exchange_value,
                                                    atomic_memory_order order) const {
   static_assert(4 == sizeof(T));
-  T old_value = atomic_fastcall(aarch64_atomic_xchg_4_impl, dest, exchange_value);
+  aarch64_atomic_stub_t stub;
+  switch (order) {
+  case memory_order_relaxed:
+    stub = aarch64_atomic_xchg_4_relaxed_impl; break;
+  default:
+    stub = aarch64_atomic_xchg_4_impl; break;
+  }
+
+  T old_value = atomic_fastcall(stub, dest, exchange_value);
   return old_value;
 }
 
@@ -139,7 +155,15 @@ inline T AtomicAccess::PlatformXchg<8>::operator()(T volatile* dest,
                                                    T exchange_value,
                                                    atomic_memory_order order) const {
   static_assert(8 == sizeof(T));
-  T old_value = atomic_fastcall(aarch64_atomic_xchg_8_impl, dest, exchange_value);
+  aarch64_atomic_stub_t stub;
+  switch (order) {
+  case memory_order_relaxed:
+    stub = aarch64_atomic_xchg_8_relaxed_impl; break;
+  default:
+    stub = aarch64_atomic_xchg_8_impl; break;
+  }
+
+  T old_value = atomic_fastcall(stub, dest, exchange_value);
   return old_value;
 }
 
