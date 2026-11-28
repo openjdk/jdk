@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,22 +30,6 @@
 //
 // This class represents an typeArrayOop in the HotSpot virtual
 // machine.
-
-
-// ------------------------------------------------------------------
-// ciTypeArray::char_at
-//
-// Implementation of the char_at method.
-jchar ciTypeArray::char_at(int index) {
-  VM_ENTRY_MARK;
-  assert(index >= 0 && index < length(), "out of range");
-  jchar c = get_typeArrayOop()->char_at(index);
-#ifdef ASSERT
-  jchar d = element_value(index).as_char();
-  assert(c == d, "");
-#endif //ASSERT
-  return c;
-}
 
 // ------------------------------------------------------------------
 // ciTypeArray::byte_at
