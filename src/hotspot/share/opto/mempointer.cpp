@@ -755,3 +755,35 @@ bool MemPointer::always_overlaps_with(const MemPointer& other) const {
 
   return is_always_overlap;
 }
+
+bool MemPointer::always_contains(const MemPointer& other) const {
+  if (size() < other.size()) {
+    return false;
+  }
+
+  const MemPointerAliasing aliasing = get_aliasing_with(other NOT_PRODUCT( COMMA _trace ));
+  // The aliasing tries to compute:
+  //   distance = other - this
+  //
+  // Complete containment requires:
+  //   0 <= distance
+  //   distance + other.size <= this.size
+  //
+  // Therefore:
+  //   -1 < distance < this.size - other.size + 1
+  const jint distance_lo = -1;
+  const jint distance_hi = size() - other.size() + 1;
+  bool is_always_contain = aliasing.is_always_in_distance_range(distance_lo, distance_hi);
+
+#ifndef PRODUCT
+  if (_trace.is_trace_overlap()) {
+    tty->print("Always Contains: %s, distance_lo: %d, distance_hi: %d, aliasing: ",
+               is_always_contain ? "true" : "false",
+               distance_lo, distance_hi);
+    aliasing.print_on(tty);
+    tty->cr();
+  }
+#endif
+
+  return is_always_contain;
+}
