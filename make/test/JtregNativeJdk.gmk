@@ -69,6 +69,7 @@ ifeq ($(call isTargetOs, windows), true)
   BUILD_JDK_JTREG_EXECUTABLES_LIBS_exeNullCallerTest := $(LIBCXX)
   BUILD_JDK_JTREG_EXECUTABLES_LIBS_exerevokeall := advapi32.lib
   BUILD_JDK_JTREG_EXECUTABLES_CFLAGS_exeNullCallerTest := /EHsc
+  BUILD_JDK_JTREG_LIBRARIES_LIBS_libLocalMachineStore := crypt32.lib
 else
   BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libNativeThread := -pthread
 
@@ -91,6 +92,7 @@ else
     BUILD_JDK_JTREG_EXECUTABLES_LIBS_exelauncher := -ldl
   endif
   BUILD_JDK_JTREG_EXECUTABLES_LIBS_exeNullCallerTest := $(LIBCXX)
+  BUILD_JDK_JTREG_EXCLUDE += libLocalMachineStore.cpp
 endif
 
 ifeq ($(call isTargetOs, macosx), true)

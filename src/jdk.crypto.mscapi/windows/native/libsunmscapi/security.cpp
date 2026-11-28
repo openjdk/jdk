@@ -1476,10 +1476,10 @@ JNIEXPORT jstring JNICALL Java_sun_security_mscapi_CKey_getKeyType
 /*
  * Class:     sun_security_mscapi_CKeyStore
  * Method:    storeCertificate
- * Signature: (Ljava/lang/String;Ljava/lang/String;[BIJJ)V
+ * Signature: (Ljava/lang/String;ILjava/lang/String;[BIJJ)V
  */
 JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_storeCertificate
-  (JNIEnv *env, jobject obj, jstring jCertStoreName, jstring jCertAliasName,
+  (JNIEnv *env, jobject obj, jstring jCertStoreName, jint jCertStoreLocation, jstring jCertAliasName,
         jbyteArray jCertEncoding, jint jCertEncodingSize, jlong hCryptProv,
         jlong hCryptKey)
 {
@@ -1501,7 +1501,20 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_storeCertificate
             == NULL) {
             __leave;
         }
-        if ((hCertStore = ::CertOpenSystemStore(NULL, pszCertStoreName)) == NULL) {
+
+        if (jCertStoreLocation == KEYSTORE_LOCATION_CURRENTUSER) {
+            hCertStore = ::CertOpenSystemStore(NULL, pszCertStoreName);
+        }
+        else if (jCertStoreLocation == KEYSTORE_LOCATION_LOCALMACHINE) {
+            hCertStore = CertOpenStore(CERT_STORE_PROV_SYSTEM_A, 0, NULL,
+                CERT_SYSTEM_STORE_LOCAL_MACHINE, pszCertStoreName);
+        }
+        else {
+            ThrowException(env, KEYSTORE_EXCEPTION, ERROR_INVALID_PARAMETER);
+            __leave;
+        }
+
+        if (hCertStore == NULL) {
             ThrowException(env, KEYSTORE_EXCEPTION, GetLastError());
             __leave;
         }
@@ -1652,8 +1665,10 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_storeCertificate
                 __leave;
             }
 
-            // Set no provider flags
-            keyProviderInfo.dwFlags = 0;
+            // Record whether the private key container is machine-specific
+            keyProviderInfo.dwFlags =
+                jCertStoreLocation == KEYSTORE_LOCATION_LOCALMACHINE
+                    ? CRYPT_MACHINE_KEYSET : 0;
 
             // Set no provider parameters
             keyProviderInfo.cProvParam = 0;
@@ -1741,11 +1756,11 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_storeCertificate
 /*
  * Class:     sun_security_mscapi_CKeyStore
  * Method:    removeCertificate
- * Signature: (Ljava/lang/String;Ljava/lang/String;[BI)V
+ * Signature: (Ljava/lang/String;ILjava/lang/String;[BI)V
  */
 JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_removeCertificate
-  (JNIEnv *env, jobject obj, jstring jCertStoreName, jstring jCertAliasName,
-  jbyteArray jCertEncoding, jint jCertEncodingSize) {
+  (JNIEnv *env, jobject obj, jstring jCertStoreName, jint jCertStoreLocation,
+  jstring jCertAliasName, jbyteArray jCertEncoding, jint jCertEncodingSize) {
 
     const char* pszCertStoreName = NULL;
     const wchar_t* pszCertAliasName = NULL;
@@ -1764,7 +1779,20 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_removeCertificate
             == NULL) {
             __leave;
         }
-        if ((hCertStore = ::CertOpenSystemStore(NULL, pszCertStoreName)) == NULL) {
+
+        if (jCertStoreLocation == KEYSTORE_LOCATION_CURRENTUSER) {
+            hCertStore = ::CertOpenSystemStore(NULL, pszCertStoreName);
+        }
+        else if (jCertStoreLocation == KEYSTORE_LOCATION_LOCALMACHINE) {
+            hCertStore = CertOpenStore(CERT_STORE_PROV_SYSTEM_A, 0, NULL,
+                CERT_SYSTEM_STORE_LOCAL_MACHINE, pszCertStoreName);
+        }
+        else {
+            ThrowException(env, KEYSTORE_EXCEPTION, ERROR_INVALID_PARAMETER);
+            __leave;
+        }
+
+        if (hCertStore == NULL) {
             ThrowException(env, KEYSTORE_EXCEPTION, GetLastError());
             __leave;
         }
@@ -1855,9 +1883,24 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_removeCertificate
 }
 
 JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_removeCngKey
-  (JNIEnv *env, jobject clazz, jlong k)
+  (JNIEnv *env, jobject clazz, jlong k, jint storeLocation)
 {
-    SECURITY_STATUS ss;
+    DWORD keyType = 0;
+    DWORD resultSize = 0;
+    SECURITY_STATUS ss = ::NCryptGetProperty((NCRYPT_KEY_HANDLE) k,
+            NCRYPT_KEY_TYPE_PROPERTY, (PBYTE) &keyType, sizeof(keyType), &resultSize, 0);
+    if (ss != ERROR_SUCCESS) {
+        ThrowException(env, KEYSTORE_EXCEPTION, ss);
+        return;
+    }
+
+    // Do not delete a key stored in a different location from this keystore.
+    bool storeIsMachine = storeLocation == KEYSTORE_LOCATION_LOCALMACHINE;
+    bool keyIsMachine = (keyType & NCRYPT_MACHINE_KEY_FLAG) != 0;
+    if (storeIsMachine != keyIsMachine) {
+        return;
+    }
+
     ss = ::NCryptDeleteKey((NCRYPT_KEY_HANDLE)k, 0);
     if (ss != ERROR_SUCCESS) {
         ThrowException(env, KEY_EXCEPTION, ss);
@@ -1867,10 +1910,10 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_removeCngKey
 /*
  * Class:     sun_security_mscapi_CKeyStore
  * Method:    destroyKeyContainer
- * Signature: (Ljava/lang/String;)V
+ * Signature: (Ljava/lang/String;JI)V
  */
 JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_destroyKeyContainer
-  (JNIEnv *env, jobject clazz, jstring keyContainerName)
+  (JNIEnv *env, jobject clazz, jstring keyContainerName, jlong hKeyProv, jint storeLocation)
 {
     HCRYPTPROV hCryptProv = NULL;
     const char* pszKeyContainerName = NULL;
@@ -1889,13 +1932,29 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_destroyKeyContainer
             __leave;
         }
 
+        // Determine whether the private key container is machine-specific.
+        DWORD keysetType = 0;
+        DWORD keysetTypeLen = sizeof(keysetType);
+        if (!::CryptGetProvParam((HCRYPTPROV) hKeyProv,
+                PP_KEYSET_TYPE, (BYTE*) &keysetType, &keysetTypeLen, 0)) {
+            ThrowException(env, KEYSTORE_EXCEPTION, GetLastError());
+            __leave;
+        }
+
+        // Do not delete a key stored in a different location from this keystore.
+        bool storeIsMachine = storeLocation == KEYSTORE_LOCATION_LOCALMACHINE;
+        bool keyIsMachine = (keysetType & CRYPT_MACHINE_KEYSET) != 0;
+        if (storeIsMachine != keyIsMachine) {
+            __leave;
+        }
+
         // Acquire a CSP context (to the key container).
         if (::CryptAcquireContext( //deprecated
             &hCryptProv,
             pszKeyContainerName,
             NULL,
             PROV_RSA_FULL,
-            CRYPT_DELETEKEYSET) == FALSE)
+            CRYPT_DELETEKEYSET | keysetType) == FALSE)
         {
             ThrowExceptionWithMessageAndErrcode(env, KEYSTORE_EXCEPTION, "CryptAcquireContext failure", GetLastError());
             __leave;
@@ -2536,11 +2595,11 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_mscapi_CSignature_00024RSA_genera
 /*
  * Class:     sun_security_mscapi_CKeyStore
  * Method:    storePrivateKey
- * Signature: (Ljava/lang/String;[BLjava/lang/String;I)Lsun/security/mscapi/CPrivateKey;
+ * Signature: (Ljava/lang/String;[BLjava/lang/String;II)Lsun/security/mscapi/CPrivateKey;
  */
 JNIEXPORT jobject JNICALL Java_sun_security_mscapi_CKeyStore_storePrivateKey
     (JNIEnv *env, jobject clazz, jstring alg, jbyteArray keyBlob,
-     jstring keyContainerName, jint keySize)
+     jstring keyContainerName, jint keyStoreLocation, jint keySize)
 {
     HCRYPTPROV hCryptProv = NULL;
     HCRYPTKEY hKey = NULL;
@@ -2561,13 +2620,18 @@ JNIEXPORT jobject JNICALL Java_sun_security_mscapi_CKeyStore_storePrivateKey
             __leave;
         }
 
+        DWORD flags = CRYPT_NEWKEYSET;
+        if (keyStoreLocation == KEYSTORE_LOCATION_LOCALMACHINE) {
+            flags |= CRYPT_MACHINE_KEYSET;
+        }
+
         // Acquire a CSP context (create a new key container).
         if (::CryptAcquireContext( //deprecated
             &hCryptProv,
             pszKeyContainerName,
             NULL,
             PROV_RSA_FULL,
-            CRYPT_NEWKEYSET) == FALSE)
+            flags) == FALSE)
         {
             ThrowException(env, KEYSTORE_EXCEPTION, GetLastError());
             __leave;
