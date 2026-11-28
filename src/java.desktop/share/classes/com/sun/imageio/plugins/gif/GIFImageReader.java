@@ -482,7 +482,7 @@ public class GIFImageReader extends ImageReader {
                 streamX = 0;
                 if (imageMetadata.interlaceFlag) {
                     streamY += interlaceIncrement[interlacePass];
-                    if (streamY >= height) {
+                    while (streamY >= height) {
                         // Inform IIOReadUpdateListeners of end of pass
                         if (updateListeners != null) {
                             processPassComplete(theImage);
