@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -155,7 +155,7 @@ public:
   // This function does everything necessary/possible to satisfy an
   // allocation request that failed in the youngest generation that should
   // have handled it (including collection, expansion, etc.)
-  HeapWord* satisfy_failed_allocation(size_t size, bool is_tlab);
+  HeapWord* satisfy_failed_allocation(size_t word_size, bool is_tlab);
 
   // Callback from VM_SerialGCCollect.
   void collect_at_safepoint(bool full);
