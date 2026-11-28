@@ -146,8 +146,6 @@ void ShenandoahBarrierSet::on_thread_attach(Thread *thread) {
   ShenandoahThreadLocalData::set_gc_state(thread, _heap->gc_state());
 
   if (thread->is_Java_thread()) {
-    ShenandoahThreadLocalData::initialize_gclab(thread);
-
     BarrierSetNMethod* bs_nm = barrier_set_nmethod();
     thread->set_nmethod_disarmed_guard_value(bs_nm->disarmed_guard_value());
 
@@ -159,16 +157,6 @@ void ShenandoahBarrierSet::on_thread_attach(Thread *thread) {
 
 void ShenandoahBarrierSet::on_thread_detach(Thread *thread) {
   if (thread->is_Java_thread()) {
-    PLAB* gclab = ShenandoahThreadLocalData::gclab(thread);
-    if (gclab != nullptr) {
-      gclab->retire();
-    }
-
-    ShenandoahPLAB* shenandoah_plab = ShenandoahThreadLocalData::shenandoah_plab(thread);
-    if (shenandoah_plab != nullptr) {
-      shenandoah_plab->retire();
-    }
-
     // SATB protocol requires to keep alive reachable oops from roots at the beginning of GC
     if (_heap->is_concurrent_mark_in_progress()) {
       ShenandoahKeepAliveClosure oops;

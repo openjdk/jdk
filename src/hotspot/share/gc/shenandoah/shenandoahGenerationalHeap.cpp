@@ -298,9 +298,9 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, Shena
         alloc_from_lab = false;
       }
       // else, we leave copy equal to nullptr, signaling a promotion failure below if appropriate.
-      // We choose not to promote objects smaller than size_threshold by way of shared allocations as this is too
-      // costly.  Instead, we'll simply "evacuate" to young-gen memory (using a GCLAB) and will promote in a future
-      // evacuation pass.  This condition is denoted by: is_promotion && has_plab && (size <= size_threshhold).
+      // For GC workers, we choose not to promote objects no larger than PLAB::min_size() by way of shared allocations as
+      // this is too costly. Instead, we'll simply "evacuate" to young-gen memory (using a GCLAB) and will promote in a future
+      // evacuation pass. This condition is denoted by: is_promotion && has_plab && (size <= PLAB::min_size()).
     }
 #ifdef ASSERT
   }

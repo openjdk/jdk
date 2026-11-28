@@ -111,7 +111,7 @@ void ShenandoahConcurrentGC::entry_concurrent_update_refs_prepare(ShenandoahHeap
   EventMark em("%s", msg);
 
   heap->try_inject_pin();
-  // Evacuation is complete, retire gc labs and change gc state
+  // Evacuation is complete, retire labs and change gc state
   heap->concurrent_prepare_for_update_refs();
 }
 
