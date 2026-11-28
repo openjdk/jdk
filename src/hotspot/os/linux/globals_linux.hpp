@@ -76,9 +76,10 @@
                                                                         \
   product(bool, THPStackMitigation, true, DIAGNOSTIC,                   \
           "If THPs are unconditionally enabled on the system (mode "    \
-          "\"always\"), the JVM will prevent THP from forming in "      \
-          "thread stacks. When disabled, the absence of this mitigation"\
-          "allows THPs to form in thread stacks.")                      \
+          "\"always\") and the OS does not prevent THPs from being "    \
+          "allocated for stack area, the JVM will prevent THP from "    \
+          "forming in thread stacks. When disabled, the absence of "    \
+          "this mitigation allows THPs to form in thread stacks.")      \
                                                                         \
   develop(bool, DelayThreadStartALot, false,                            \
           "Artificially delay thread starts randomly for testing.")     \
