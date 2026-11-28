@@ -477,6 +477,13 @@ public class Flags {
     public static final long MATCH_BINDING_TO_OUTER = 1L<<60;
 
     /**
+     * A flag to indicate a match binding variable has already go an assigned address in Flow
+     * (used on Flow only).
+     */
+    @Use({FlagTarget.VARIABLE})
+    public static final long MATCH_BINDING_HOISTED = 1L<<57;
+
+    /**
      * Flag to indicate that a class is a record. The flag is also used to mark fields that are
      * part of the state vector of a record and to mark the canonical constructor
      */

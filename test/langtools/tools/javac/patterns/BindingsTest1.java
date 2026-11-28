@@ -1,5 +1,15 @@
+
+import java.net.URI;
+import java.util.List;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+import java.util.function.IntFunction;
+import javax.tools.JavaFileObject;
+import javax.tools.SimpleJavaFileObject;
+import javax.tools.ToolProvider;
+
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -297,7 +307,128 @@ public class BindingsTest1 {
             throw new AssertionError();
         }
 
+        testAddressReuse1(1);
+        testAddressReuse2(1);
+        testAddressReuse3(1);
+        testAddressReuse4(1);
+        testAddressReuse5(1);
+
+        deeplyNestedLoopTestPerformance();
+
         System.out.println("BindingsTest1 complete");
+    }
+
+    private static void testAddressReuse1(Object o) {
+        for (; !(o instanceof String s) || s.isEmpty(); o = "x") {
+        }
+
+        int result1; //intentionally uninitialized variable
+        int result2; //intentionally uninitialized variable
+
+        s.length();
+    }
+
+    private static void testAddressReuse2(Object o) {
+        for (int temp = 0; !(o instanceof String s) || s.isEmpty(); o = "x") {
+        }
+
+        int result1; //intentionally uninitialized variable
+        int result2; //intentionally uninitialized variable
+
+        s.length();
+    }
+
+    private static void testAddressReuse3(Object o) {
+        int x;
+        for (int temp = 0; !(o instanceof String s) || s.isEmpty(); o = "x") {
+            x = 0;
+        }
+
+        int result1; //intentionally uninitialized variable
+        int result2; //intentionally uninitialized variable
+
+        s.length();
+    }
+
+    private static void testAddressReuse4(Object o) {
+        int x;
+        while (!(o instanceof String s) || s.isEmpty()) {
+            x = 0;
+            o = "x";
+        }
+
+        int result1; //intentionally uninitialized variable
+        int result2; //intentionally uninitialized variable
+
+        s.length();
+    }
+
+    private static void testAddressReuse5(Object o) {
+        int x;
+        do {
+            x = 0;
+            o = "x";
+        } while (!(o instanceof String s) || s.isEmpty());
+
+        int result1; //intentionally uninitialized variable
+        int result2; //intentionally uninitialized variable
+
+        s.length();
+    }
+
+    private static void testAssingBlankInForLoopInit(Object o) {
+        final int x;
+        for (int temp = x = 0; temp < 10 ; temp++) {
+        }
+    }
+
+    private static void deeplyNestedLoopTestPerformance() {
+        deeplyNestedLoopTestPerformance(_ -> "do {",
+                                        _ -> """
+                                             o = "";
+                                             } while (!(o instanceof String s));
+                                             """);
+        deeplyNestedLoopTestPerformance(_ -> "while (!(o instanceof String s)) {",
+                                        _ -> """
+                                             o = "";
+                                             }
+                                             """);
+        deeplyNestedLoopTestPerformance(_ -> "for (;!(o instanceof String s);) {",
+                                        _ -> """
+                                             o = "";
+                                             }
+                                             """);
+    }
+
+    private static void deeplyNestedLoopTestPerformance(IntFunction<CharSequence> start,
+                                                        IntFunction<CharSequence> end) {
+        final int depth = 50;
+        StringBuilder code = new StringBuilder();
+        code.append("""
+                    class Test {
+                        void test(Object o) {
+                    """);
+        for (int i = 0; i < depth; i++) {
+            code.append(start.apply(i));
+        }
+        for (int i = 0; i < depth; i++) {
+            code.append(end.apply(i));
+        }
+        code.append("""
+                        }
+                    }
+                    """);
+        JavaFileObject sourceFile =
+                SimpleJavaFileObject.forSource(URI.create("mem://Test.java"), code.toString());
+
+        Boolean result =
+            ToolProvider.getSystemJavaCompiler()
+                        .getTask(null, null, null, null, null, List.of(sourceFile))
+                        .call();
+
+        if (!result) {
+            throw new AssertionError("Incorrect compilation result.");
+        }
     }
 
     interface VoidPredicate {

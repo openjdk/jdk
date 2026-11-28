@@ -55,4 +55,13 @@ BindingsTest2.java:135:17: compiler.err.unreachable.stmt
 BindingsTest2.java:160:17: compiler.err.unreachable.stmt
 BindingsTest2.java:185:17: compiler.err.unreachable.stmt
 BindingsTest2.java:241:17: compiler.err.unreachable.stmt
-57 errors
+BindingsTest2.java:319:32: compiler.err.var.might.not.have.been.initialized: result1
+BindingsTest2.java:320:32: compiler.err.var.might.not.have.been.initialized: result2
+BindingsTest2.java:331:32: compiler.err.var.might.not.have.been.initialized: result1
+BindingsTest2.java:332:32: compiler.err.var.might.not.have.been.initialized: result2
+BindingsTest2.java:371:17: compiler.err.var.might.be.assigned.in.loop: isFinal
+BindingsTest2.java:341:25: compiler.err.cant.ref.non.effectively.final.var: notEffectivellyFinal, (compiler.misc.lambda)
+BindingsTest2.java:350:25: compiler.err.cant.ref.non.effectively.final.var: notEffectivellyFinal, (compiler.misc.lambda)
+BindingsTest2.java:357:29: compiler.err.cant.ref.non.effectively.final.var: notEffectivellyFinal, (compiler.misc.lambda)
+BindingsTest2.java:365:29: compiler.err.cant.ref.non.effectively.final.var: notEffectivellyFinal, (compiler.misc.lambda)
+66 errors
