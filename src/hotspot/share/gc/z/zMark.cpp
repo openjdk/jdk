@@ -688,23 +688,25 @@ public:
 
 class ZMarkThreadClosure : public ThreadClosure {
 private:
+  const ZGenerationId _id;
   static ZUncoloredRoot::RootFunction root_function() {
     return ZUncoloredRoot::mark;
   }
 
 public:
-  ZMarkThreadClosure() {
-    ZThreadLocalAllocBuffer::reset_statistics();
+  ZMarkThreadClosure(ZGenerationId id) :
+    _id(id) {
+    ZThreadLocalAllocBuffer::reset_statistics(id);
   }
   ~ZMarkThreadClosure() {
-    ZThreadLocalAllocBuffer::publish_statistics();
+    ZThreadLocalAllocBuffer::publish_statistics(_id);
   }
 
   virtual void do_thread(Thread* thread) {
     JavaThread* const jt = JavaThread::cast(thread);
 
     StackWatermarkSet::finish_processing(jt, (void*)root_function(), StackWatermarkKind::gc);
-    ZThreadLocalAllocBuffer::update_stats(jt);
+    ZThreadLocalAllocBuffer::update_stats(_id, jt);
   }
 };
 
@@ -812,7 +814,7 @@ public:
       _roots_uncolored(ZGenerationIdOptional::old),
       _cl_colored(),
       _cld_cl(&_cl_colored),
-      _thread_cl(),
+      _thread_cl(ZGenerationId::old),
       _nm_cl() {}
 
   virtual void work() {
@@ -868,7 +870,7 @@ public:
       _roots_uncolored(ZGenerationIdOptional::young),
       _cl_colored(),
       _cld_cl(&_cl_colored),
-      _thread_cl(),
+      _thread_cl(ZGenerationId::young),
       _nm_cl() {}
 
   virtual void work() {

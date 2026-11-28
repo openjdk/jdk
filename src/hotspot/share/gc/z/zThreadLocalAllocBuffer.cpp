@@ -30,30 +30,33 @@
 #include "runtime/javaThread.hpp"
 #include "runtime/stackWatermarkSet.inline.hpp"
 
-ZPerWorker<ThreadLocalAllocStats>* ZThreadLocalAllocBuffer::_stats = nullptr;
+ZPerWorker<ThreadLocalAllocStats>* ZThreadLocalAllocBuffer::_stats[2] = {};
 
 void ZThreadLocalAllocBuffer::initialize() {
   if (UseTLAB) {
-    assert(_stats == nullptr, "Already initialized");
-    _stats = new ZPerWorker<ThreadLocalAllocStats>();
-    reset_statistics();
+    assert(_stats[(int)ZGenerationId::young] == nullptr, "Already initialized");
+    assert(_stats[(int)ZGenerationId::old] == nullptr, "Already initialized");
+    _stats[(int)ZGenerationId::young] = new ZPerWorker<ThreadLocalAllocStats>();
+    _stats[(int)ZGenerationId::old] = new ZPerWorker<ThreadLocalAllocStats>();
+    reset_statistics(ZGenerationId::young);
+    reset_statistics(ZGenerationId::old);
   }
 }
 
-void ZThreadLocalAllocBuffer::reset_statistics() {
+void ZThreadLocalAllocBuffer::reset_statistics(ZGenerationId id) {
   if (UseTLAB) {
-    ZPerWorkerIterator<ThreadLocalAllocStats> iter(_stats);
+    ZPerWorkerIterator<ThreadLocalAllocStats> iter(_stats[(int)id]);
     for (ThreadLocalAllocStats* stats; iter.next(&stats);) {
       stats->reset();
     }
   }
 }
 
-void ZThreadLocalAllocBuffer::publish_statistics() {
+void ZThreadLocalAllocBuffer::publish_statistics(ZGenerationId id) {
   if (UseTLAB) {
     ThreadLocalAllocStats total;
 
-    ZPerWorkerIterator<ThreadLocalAllocStats> iter(_stats);
+    ZPerWorkerIterator<ThreadLocalAllocStats> iter(_stats[(int)id]);
     for (ThreadLocalAllocStats* stats; iter.next(&stats);) {
       total.update(*stats);
     }
@@ -72,9 +75,9 @@ void ZThreadLocalAllocBuffer::retire(JavaThread* thread, ThreadLocalAllocStats* 
   }
 }
 
-void ZThreadLocalAllocBuffer::update_stats(JavaThread* thread) {
+void ZThreadLocalAllocBuffer::update_stats(ZGenerationId id, JavaThread* thread) {
   if (UseTLAB) {
     ZStackWatermark* const watermark = StackWatermarkSet::get<ZStackWatermark>(thread, StackWatermarkKind::gc);
-    _stats->addr()->update(watermark->stats());
+    _stats[(int)id]->addr()->update(watermark->stats());
   }
 }
