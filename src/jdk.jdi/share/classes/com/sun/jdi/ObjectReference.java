@@ -53,8 +53,7 @@ import com.sun.jdi.event.VMDisconnectEvent;
  * {@link ObjectCollectedException} if the mirrored object has been
  * garbage collected.
  *
- * <div class="preview-block">
- *      <div class="preview-comment">
+ * {@previewNote (jep=401)
  * <h2><a id=valueObjects>Value Objects</a></h2>
  * The Java Debug Interface (JDI) supports debugging of programs that use
  * {@linkplain Class#isValue() value objects}.
@@ -66,8 +65,7 @@ import com.sun.jdi.event.VMDisconnectEvent;
  * Any further changes to the initialization state of the value object will not
  * be reflected in this ObjectReference. A new ObjectReference would need to
  * be obtained to see the updated state. See {@link StackFrame#thisObject}.
- *      </div>
- * </div>
+ * }
  *
  * @author Robert Field
  * @author Gordon Hirsch
@@ -103,13 +101,12 @@ public interface ObjectReference extends Value {
      * The Field must be valid for this ObjectReference;
      * that is, it must be from
      * the mirrored object's class or a superclass of that class.
-     * <div class="preview-block">
-     *      <div class="preview-comment">
+     *
+     * {@previewNote (jep=401)
      * This method does not prevent a
      * {@linkplain java.lang.reflect.Field#isStrictInit() strictly-initialized field}
      * from being read before it has been initialized.
-     *      </div>
-     * </div>
+     * }
      *
      * @param sig the field containing the requested value
      * @return the {@link Value} of the instance field.
@@ -123,13 +120,12 @@ public interface ObjectReference extends Value {
      * The Fields must be valid for this ObjectReference;
      * that is, they must be from
      * the mirrored object's class or a superclass of that class.
-     * <div class="preview-block">
-     *      <div class="preview-comment">
+     *
+     * {@previewNote (jep=401)
      * This method does not prevent a
      * {@linkplain java.lang.reflect.Field#isStrictInit() strictly-initialized field}
      * from being read before it has been initialized.
-     *      </div>
-     * </div>
+     * }
      *
      * @param fields a list of {@link Field} objects containing the
      * requested values.
