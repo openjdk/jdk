@@ -1672,7 +1672,7 @@ void PhaseStringOpts::copy_constant_string(GraphKit& kit, IdealKit& ideal, ciTyp
       Node* adr = kit.array_element_address(dst_array, index, T_BYTE);
       Node* val = __ ConI(src_array->byte_at(i));
       __ store(__ ctrl(), adr, val, T_BYTE, byte_adr_idx, MemNode::unordered);
-      index = __ AddI(index, __ ConI(1));
+      index = kit.AddI(index, __ ConI(1));
     }
   }
   if (!dcon) {
@@ -1691,7 +1691,7 @@ void PhaseStringOpts::copy_constant_string(GraphKit& kit, IdealKit& ideal, ciTyp
       }
       __ store(__ ctrl(), adr, __ ConI(val), T_CHAR, byte_adr_idx, MemNode::unordered, false /* require_atomic_access */,
                true /* mismatched */);
-      index = __ AddI(index, __ ConI(2));
+      index = kit.AddI(index, __ ConI(2));
     }
     if (src_is_byte) {
       // Multiply count by two since we now need two bytes per char
@@ -1753,7 +1753,7 @@ Node* PhaseStringOpts::copy_string(GraphKit& kit, Node* str, Node* dst_array, No
 
   // Finally sync IdealKit and GraphKit.
   kit.sync_kit(ideal);
-  return __ AddI(start, __ value(count));
+  return kit.AddI(start, __ value(count));
 }
 
 // Compress copy the char into dst_array at index start.
@@ -1770,7 +1770,7 @@ Node* PhaseStringOpts::copy_char(GraphKit& kit, Node* val, Node* dst_array, Node
   if (!dcon || dbyte) {
     // Destination is Latin1. Store a byte.
     __ store(__ ctrl(), adr, val, T_BYTE, byte_adr_idx, MemNode::unordered);
-    __ set(end, __ AddI(start, __ ConI(1)));
+    __ set(end, kit.AddI(start, __ ConI(1)));
   }
   if (!dcon) {
     __ else_();
@@ -1779,7 +1779,7 @@ Node* PhaseStringOpts::copy_char(GraphKit& kit, Node* val, Node* dst_array, Node
     // Destination is UTF16. Store a char.
     __ store(__ ctrl(), adr, val, T_CHAR, byte_adr_idx, MemNode::unordered, false /* require_atomic_access */,
              true /* mismatched */);
-    __ set(end, __ AddI(start, __ ConI(2)));
+    __ set(end, kit.AddI(start, __ ConI(2)));
   }
   if (!dcon) {
     __ end_if();
