@@ -622,3 +622,5 @@ int os::extra_bang_size_in_bytes() {
   // ARM does not require an additional stack bang.
   return 0;
 }
+
+uintptr_t os::vm_max_address() { return 2 * G; }
