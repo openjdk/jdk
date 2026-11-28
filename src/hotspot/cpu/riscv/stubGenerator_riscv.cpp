@@ -3402,81 +3402,29 @@ class StubGenerator: public StubCodeGenerator {
     __ sd(t1, Address(counter));
   }
 
-  void counterMode_AESCrypt(int round, Register in, Register out, Register key, Register counter,
-                            Register input_len,  Register saved_encrypted_ctr, Register used_ptr) {
-    // Algorithm:
-    //
-    //   aes_load_keys();
-    //   load_counter_128(counter_hi, counter_lo, counter);
-    //
-    //   L_next:
-    //     if (used >= BLOCK_SIZE) goto L_main_loop;
-    //
-    //   L_encrypt_next:
-    //       *out = *in ^ saved_encrypted_ctr[used]);
-    //       out++; in++; used++; len--;
-    //       if (len == 0) goto L_exit;
-    //       goto L_next;
-    //
-    //   L_main_loop:
-    //     if (len == 0) goto L_exit;
-    //     saved_encrypted_ctr = aes_encrypt(counter);
-    //
-    //     add_counter_128(counter_hi, counter_lo);
-    //     be_store_counter_128(counter_hi, counter_lo, counter);
-    //     used = 0;
-    //
-    //     if(len < BLOCK_SIZE) goto L_encrypt_next;
-    //
-    //     v_in = load_16Byte(in);
-    //     v_out = load_16Byte(out);
-    //     v_saved_encrypted_ctr = load_16Byte(saved_encrypted_ctr);
-    //     v_out = v_in ^ v_saved_encrypted_ctr;
-    //     out += BLOCK_SIZE;
-    //     in += BLOCK_SIZE;
-    //     len -= BLOCK_SIZE;
-    //     used = BLOCK_SIZE;
-    //     goto L_main_loop;
-    //
-    //
-    //   L_exit:
-    //     store(used);
-    //     result = input_len
-    //     return result;
-
+  void counterMode_AESCrypt(Register in, Register out, Register key, Register counter,
+                            Register input_len, Register saved_encrypted_ctr,
+                            Register used_ptr, Register batch_bytes,
+                            VectorRegister rk[], int first_key) {
     const Register used          = x28;
     const Register len           = x29;
     const Register counter_hi    = x30;
     const Register counter_lo    = x31;
-    const Register block_size    = t2;
+    const Register staging       = key;
+    const Register staging_bytes = t2;
 
-    const unsigned int BLOCK_SIZE = 16;
+    const int BLOCK_SIZE = 16;
 
-    VectorRegister working_vregs[] = {
-      v1, v2, v3, v4, v5, v6, v7, v8,
-      v9, v10, v11, v12, v13, v14, v15
-    };
+    Label L_next, L_encrypt_next, L_batch_setup, L_batch_loop;
+    Label L_single_loop, L_single_block, L_batch_single_block;
+    Label L_process_batch, L_partial, L_exit, L_counter_stored;
 
-    __ vsetivli(x0, 4, Assembler::e32, Assembler::m1);
-
-    __ lwu(used, Address(used_ptr));
-    __ mv(len, input_len);
-    __ mv(block_size, BLOCK_SIZE);
-
-    // load keys to working_vregs according to round
-    aes_load_keys(key, working_vregs, round);
-
-    // 128-bit big-endian load
-    be_load_counter_128(counter_hi, counter_lo, counter);
-
-    Label L_next, L_encrypt_next, L_main_loop, L_exit;
-    // Check the last saved_encrypted_ctr used value, we fall through
-    // to L_encrypt_next when the used value lower than block_size
     __ bind(L_next);
-    __ bgeu(used, block_size, L_main_loop);
+    __ li(t0, BLOCK_SIZE);
+    __ bltu(used, t0, L_encrypt_next);
+    __ beq(len, t0, L_single_block);
+    __ j(L_batch_setup);
 
-    // There is still data left fewer than block_size after L_main_loop
-    // or last used, we encrypt them one by one.
     __ bind(L_encrypt_next);
     __ add(t0, saved_encrypted_ctr, used);
     __ lbu(t1, Address(t0));
@@ -3490,42 +3438,98 @@ class StubGenerator: public StubCodeGenerator {
     __ beqz(len, L_exit);
     __ j(L_next);
 
-    // We will calculate the next saved_encrypted_ctr and encrypt the blocks of data
-    // one by one until there is less than a full block remaining if len not zero
-    __ bind(L_main_loop);
-    __ beqz(len, L_exit);
-    __ vle32_v(v16, counter);
+    // Process one VLMAX-sized vector batch at a time. The final group of complete
+    // blocks uses a shorter VL, leaving at most one partial block for the byte loop.
+    __ bind(L_batch_setup);
+    __ vsetvli(batch_bytes, x0, Assembler::e32, Assembler::m1);
+    __ slli(batch_bytes, batch_bytes, 2);
+    __ li(t0, BLOCK_SIZE);
+    __ bltu(len, t0, L_partial);
+    __ beq(len, t0, L_single_block);
+    __ beq(batch_bytes, t0, L_single_loop);
+    __ sub(sp, sp, batch_bytes);
 
-    // encrypt counter according to round
-    aes_encrypt(v16, working_vregs, round);
+    __ bind(L_batch_loop);
+    __ li(t0, BLOCK_SIZE);
+    __ bltu(len, t0, L_partial);
+    __ bgeu(len, batch_bytes, L_process_batch);
+    __ beq(len, t0, L_batch_single_block);
+    __ srli(t0, len, 4);
+    __ slli(t0, t0, 2);
+    __ vsetvli(t0, t0, Assembler::e32, Assembler::m1);
+    __ slli(batch_bytes, t0, 2);
 
-    __ vse32_v(v16, saved_encrypted_ctr);
-
-    // 128-bit little-endian increment
+    __ bind(L_process_batch);
+    __ mv(staging, sp);
+    __ mv(staging_bytes, batch_bytes);
+    Label L_generate_counters;
+    __ bind(L_generate_counters);
+    __ rev8(t0, counter_lo);
+    __ rev8(t1, counter_hi);
+    __ sd(t1, Address(staging));
+    __ sd(t0, Address(staging, 8));
     add_counter_128(counter_hi, counter_lo);
-    // 128-bit big-endian store
-    be_store_counter_128(counter_hi, counter_lo, counter);
+    __ addi(staging, staging, BLOCK_SIZE);
+    __ subi(staging_bytes, staging_bytes, BLOCK_SIZE);
+    __ bnez(staging_bytes, L_generate_counters);
 
-    __ mv(used, 0);
-    // Check if we have a full block_size
-    __ bltu(len, block_size, L_encrypt_next);
-
-    // We have one full block to encrypt at least
+    __ vle32_v(v16, sp);
+    aes_encrypt_bulk(v16, first_key, rk);
     __ vle32_v(v17, in);
     __ vxor_vv(v16, v16, v17);
     __ vse32_v(v16, out);
-    __ add(out, out, block_size);
-    __ add(in, in, block_size);
-    __ sub(len, len, block_size);
-    __ mv(used, block_size);
-    __ j(L_main_loop);
+    __ add(in, in, batch_bytes);
+    __ add(out, out, batch_bytes);
+    __ sub(len, len, batch_bytes);
+    __ li(used, BLOCK_SIZE);
+    __ j(L_batch_loop);
+
+    __ bind(L_single_loop);
+    __ li(t0, BLOCK_SIZE);
+    __ bltu(len, t0, L_partial);
+    __ j(L_single_block);
+
+    __ bind(L_batch_single_block);
+    be_store_counter_128(counter_hi, counter_lo, counter);
+
+    __ bind(L_single_block);
+    __ vsetivli(x0, 4, Assembler::e32, Assembler::m1);
+    __ vle32_v(v16, counter);
+    aes_encrypt_bulk(v16, first_key, rk);
+    __ vle32_v(v17, in);
+    __ vxor_vv(v16, v16, v17);
+    __ vse32_v(v16, out);
+    add_counter_128(counter_hi, counter_lo);
+    be_store_counter_128(counter_hi, counter_lo, counter);
+    __ addi(in, in, BLOCK_SIZE);
+    __ addi(out, out, BLOCK_SIZE);
+    __ subi(len, len, BLOCK_SIZE);
+    __ li(used, BLOCK_SIZE);
+    __ beqz(len, L_counter_stored);
+    __ li(t0, BLOCK_SIZE);
+    __ beq(batch_bytes, t0, L_single_loop);
+    __ j(L_batch_loop);
+
+    __ bind(L_partial);
+    __ beqz(len, L_exit);
+    be_store_counter_128(counter_hi, counter_lo, counter);
+    __ vsetivli(x0, 4, Assembler::e32, Assembler::m1);
+    __ vle32_v(v16, counter);
+    aes_encrypt_bulk(v16, first_key, rk);
+    __ vse32_v(v16, saved_encrypted_ctr);
+    add_counter_128(counter_hi, counter_lo);
+    __ mv(used, zr);
+    __ j(L_encrypt_next);
 
     __ bind(L_exit);
+    be_store_counter_128(counter_hi, counter_lo, counter);
+
+    __ bind(L_counter_stored);
     __ sw(used, Address(used_ptr));
     __ mv(x10, input_len);
     __ leave();
     __ ret();
-  };
+  }
 
   // CTR AES crypt.
   // Arguments:
@@ -3563,32 +3567,63 @@ class StubGenerator: public StubCodeGenerator {
     const Register saved_encrypted_ctr = c_rarg5;
     const Register used_len_ptr        = c_rarg6;
 
-    const Register keylen              = c_rarg7; // temporary register
+    const Register keylen              = c_rarg7;
 
     start = __ pc();
     __ enter();
 
-    Label L_exit;
+    Label L_aes128, L_aes192, L_regular, L_exit;
     __ beqz(input_len, L_exit);
 
-    Label L_aes128, L_aes192;
-    // Compute #rounds for AES based on the length of the key array
     __ lwu(keylen, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
-    __ mv(t0, 52); // key length could be only {11, 13, 15} * 4 = {44, 52, 60}
+
+    VectorRegister rk[] = {
+      v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15
+    };
+    aes_load_round_keys(key, keylen, rk);
+
+    const Register used        = x28;
+    const Register len         = x29;
+    const Register counter_hi  = x30;
+    const Register counter_lo  = x31;
+    const Register batch_bytes = keylen;
+
+    __ lwu(used, Address(used_len_ptr));
+    __ mv(len, input_len);
+    be_load_counter_128(counter_hi, counter_lo, counter);
+
+    __ li(t0, 16);
+    __ bne(len, t0, L_regular);
+    __ bltu(used, t0, L_regular);
+    __ vsetivli(x0, 4, Assembler::e32, Assembler::m1);
+    __ vle32_v(v16, counter);
+    aes_encrypt_all(v16, keylen, rk);
+    __ vle32_v(v17, in);
+    __ vxor_vv(v16, v16, v17);
+    __ vse32_v(v16, out);
+    add_counter_128(counter_hi, counter_lo);
+    be_store_counter_128(counter_hi, counter_lo, counter);
+    __ li(used, 16);
+    __ sw(used, Address(used_len_ptr));
+    __ mv(x10, input_len);
+    __ leave();
+    __ ret();
+
+    __ bind(L_regular);
+
+    __ mv(t0, AES_192_KEYLEN_INTS);
     __ bltu(keylen, t0, L_aes128);
     __ beq(keylen, t0, L_aes192);
-    // Else we fallthrough to the biggest case (256-bit key size)
+    counterMode_AESCrypt(in, out, key, counter, input_len, saved_encrypted_ctr,
+                        used_len_ptr, batch_bytes, rk, 0);
 
-    // Note: the following function performs crypt with key += 15*16
-    counterMode_AESCrypt(15, in, out, key, counter, input_len, saved_encrypted_ctr, used_len_ptr);
-
-    // Note: the following function performs crypt with key += 13*16
     __ bind(L_aes192);
-    counterMode_AESCrypt(13, in, out, key, counter, input_len, saved_encrypted_ctr, used_len_ptr);
+    counterMode_AESCrypt(in, out, key, counter, input_len, saved_encrypted_ctr,
+                        used_len_ptr, batch_bytes, rk, 2);
 
-    // Note: the following function performs crypt with key += 11*16
     __ bind(L_aes128);
-    counterMode_AESCrypt(11, in, out, key, counter, input_len, saved_encrypted_ctr, used_len_ptr);
+    counterMode_AESCrypt(in, out, key, counter, input_len, saved_encrypted_ctr,
+                        used_len_ptr, batch_bytes, rk, 4);
 
     __ bind(L_exit);
     __ mv(x10, input_len);
