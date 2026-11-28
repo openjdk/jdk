@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,7 +141,7 @@ void TenuredGeneration::shrink(size_t bytes) {
                       name(), old_mem_size/K, new_mem_size/K);
 }
 
-void TenuredGeneration::compute_new_size_inner() {
+void TenuredGeneration::compute_new_size_inner(size_t old_capacity_at_collection_start) {
   assert(_shrink_factor <= 100, "invalid shrink factor");
   size_t current_shrink_factor = _shrink_factor;
   if (ShrinkHeapInSteps) {
@@ -205,8 +205,8 @@ void TenuredGeneration::compute_new_size_inner() {
     maximum_desired_capacity = MAX2(maximum_desired_capacity, OldSize);
     log_trace(gc, heap)("    maximum_free_percentage: %6.2f  minimum_used_percentage: %6.2f",
                              maximum_free_percentage, minimum_used_percentage);
-    log_trace(gc, heap)("    _capacity_at_prologue: %6.1fK  minimum_desired_capacity: %6.1fK  maximum_desired_capacity: %6.1fK",
-                             _capacity_at_prologue / (double) K,
+    log_trace(gc, heap)("    old_capacity_at_collection_start: %6.1fK  minimum_desired_capacity: %6.1fK  maximum_desired_capacity: %6.1fK",
+                             old_capacity_at_collection_start / (double) K,
                              minimum_desired_capacity / (double) K,
                              maximum_desired_capacity / (double) K);
     assert(minimum_desired_capacity <= maximum_desired_capacity,
@@ -241,18 +241,18 @@ void TenuredGeneration::compute_new_size_inner() {
     }
   }
 
-  if (capacity_after_gc > _capacity_at_prologue) {
+  if (capacity_after_gc > old_capacity_at_collection_start) {
     // We might have expanded for promotions, in which case we might want to
     // take back that expansion if there's room after GC.  That keeps us from
     // stretching the heap with promotions when there's plenty of room.
-    size_t expansion_for_promotion = capacity_after_gc - _capacity_at_prologue;
+    size_t expansion_for_promotion = capacity_after_gc - old_capacity_at_collection_start;
     expansion_for_promotion = MIN2(expansion_for_promotion, max_shrink_bytes);
     // We have two shrinking computations, take the largest
     shrink_bytes = MAX2(shrink_bytes, expansion_for_promotion);
     assert(shrink_bytes <= max_shrink_bytes, "invalid shrink size");
-    log_trace(gc, heap)("    aggressive shrinking:  _capacity_at_prologue: %.1fK  capacity_after_gc: %.1fK  expansion_for_promotion: %.1fK  shrink_bytes: %.1fK",
+    log_trace(gc, heap)("    aggressive shrinking:  old_capacity_at_collection_start: %.1fK  capacity_after_gc: %.1fK  expansion_for_promotion: %.1fK  shrink_bytes: %.1fK",
+                        old_capacity_at_collection_start / (double) K,
                         capacity_after_gc / (double) K,
-                        _capacity_at_prologue / (double) K,
                         expansion_for_promotion / (double) K,
                         shrink_bytes / (double) K);
   }
@@ -288,8 +288,7 @@ TenuredGeneration::TenuredGeneration(ReservedSpace rs,
                                      size_t max_byte_size,
                                      CardTableRS* remset) :
   Generation(rs, initial_byte_size), _rs(remset),
-  _min_heap_delta_bytes(), _capacity_at_prologue(),
-  _used_at_prologue()
+  _min_heap_delta_bytes()
 {
   // If we don't shrink the heap in steps, '_shrink_factor' is always 100%.
   _shrink_factor = ShrinkHeapInSteps ? 0 : 100;
@@ -310,15 +309,12 @@ TenuredGeneration::TenuredGeneration(ReservedSpace rs,
   guarantee(CardTable::is_card_aligned(reserved_mr.start()), "generation must be card aligned");
   guarantee(CardTable::is_card_aligned(reserved_mr.end()), "generation must be card aligned");
   _min_heap_delta_bytes = MinHeapDeltaBytes;
-  _capacity_at_prologue = initial_byte_size;
-  _used_at_prologue = 0;
   HeapWord* bottom = (HeapWord*) _virtual_space.low();
   HeapWord* end    = (HeapWord*) _virtual_space.high();
   _the_space  = new ContiguousSpace();
   _the_space->initialize(MemRegion(bottom, end), SpaceDecorator::Clear);
   // If we don't shrink the heap in steps, '_shrink_factor' is always 100%.
   _shrink_factor = ShrinkHeapInSteps ? 0 : 100;
-  _capacity_at_prologue = 0;
 
   _avg_promoted = new AdaptivePaddedNoZeroDevAverage(AdaptiveSizePolicyWeight, PromotedPadding);
 
@@ -336,30 +332,25 @@ TenuredGeneration::TenuredGeneration(ReservedSpace rs,
                                        _the_space->capacity());
 }
 
-void TenuredGeneration::gc_prologue() {
-  _capacity_at_prologue = capacity();
-  _used_at_prologue = used();
-}
-
-void TenuredGeneration::compute_new_size() {
+void TenuredGeneration::compute_new_size(size_t old_capacity_at_collection_start) {
   assert_locked_or_safepoint(Heap_lock);
 
   // Compute some numbers about the state of the heap.
   const size_t used_after_gc = used();
   const size_t capacity_after_gc = capacity();
 
-  compute_new_size_inner();
+  compute_new_size_inner(old_capacity_at_collection_start);
 
   assert(used() == used_after_gc && used_after_gc <= capacity(),
          "used: %zu used_after_gc: %zu"
          " capacity: %zu", used(), used_after_gc, capacity());
 }
 
-void TenuredGeneration::update_promote_stats() {
+void TenuredGeneration::update_promote_stats(size_t old_used_at_prologue) {
   size_t used_after_gc = used();
   size_t promoted_in_bytes;
-  if (used_after_gc > _used_at_prologue) {
-    promoted_in_bytes = used_after_gc - _used_at_prologue;
+  if (used_after_gc > old_used_at_prologue) {
+    promoted_in_bytes = used_after_gc - old_used_at_prologue;
   } else {
     promoted_in_bytes = 0;
   }

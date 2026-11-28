@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,12 +57,6 @@ class TenuredGeneration: public Generation {
 
   size_t _min_heap_delta_bytes;   // Minimum amount to expand.
 
-  // Some statistics from before gc started.
-  // These are gathered in the gc_prologue (and should_collect)
-  // to control growing/shrinking policy in spite of promotions.
-  size_t _capacity_at_prologue;
-  size_t _used_at_prologue;
-
   void assert_correct_size_change_locking();
 
   ContiguousSpace*    _the_space;       // Actual space holding objects
@@ -82,10 +76,10 @@ class TenuredGeneration: public Generation {
   // Shrink generation with specified size
   void shrink(size_t bytes);
 
-  void compute_new_size_inner();
+  void compute_new_size_inner(size_t old_capacity_at_collection_start);
 
 public:
-  void compute_new_size();
+  void compute_new_size(size_t old_capacity_at_collection_start);
 
   ContiguousSpace* space() const { return _the_space; }
 
@@ -132,7 +126,6 @@ public:
   // Expand the old-gen then invoke allocate above.
   HeapWord* expand_and_allocate(size_t size);
 
-  void gc_prologue();
   void gc_epilogue();
 
   // Performance Counter support
@@ -140,7 +133,7 @@ public:
 
   // Statistics
 
-  void update_promote_stats();
+  void update_promote_stats(size_t old_used_at_prologue);
 
   // Returns true if promotions of the specified amount are
   // likely to succeed without a promotion failure.
