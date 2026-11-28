@@ -48,6 +48,8 @@ public enum StandardProperty implements Property {
 
     WIN_MSI_UPGRADE_CODE("summary.property.win-upgrade-code"),
 
+    WIN_MSI_ARCH("summary.property.win-msi-arch"),
+
     MAC_BUNDLE_IDENTIFIER("summary.property.mac-bundle-identifier"),
 
     MAC_BUNDLE_NAME("summary.property.mac-bundle-name"),

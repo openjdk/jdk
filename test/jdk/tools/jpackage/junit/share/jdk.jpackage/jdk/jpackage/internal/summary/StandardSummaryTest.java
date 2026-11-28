@@ -46,6 +46,7 @@ import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.spi.ToolProvider;
 import java.util.stream.Stream;
+import jdk.internal.util.Architecture;
 import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.internal.Globals;
 import jdk.jpackage.internal.cli.CliBundlingEnvironment;
@@ -121,6 +122,7 @@ public class StandardSummaryTest extends JUnitAdapter {
                 case CREATE_WIN_MSI, CREATE_WIN_EXE -> {
                     testCase.properties(StandardProperty.WIN_MSI_PRODUCT_CODE);
                     testCase.properties(StandardProperty.WIN_MSI_UPGRADE_CODE);
+                    testCase.properties(StandardProperty.WIN_MSI_ARCH);
                     testCase.properties(StandardProperty.WIN_WIX_VERSION);
                 }
                 case CREATE_MAC_DMG, CREATE_MAC_PKG, CREATE_MAC_APP_IMAGE -> {
@@ -157,6 +159,7 @@ public class StandardSummaryTest extends JUnitAdapter {
         LINUX_PACKAGE_NAME("summary.property.linux-package-name"),
         WIN_MSI_PRODUCT_CODE("summary.property.win-product-code"),
         WIN_MSI_UPGRADE_CODE("summary.property.win-upgrade-code"),
+        WIN_MSI_ARCH("summary.property.win-msi-arch"),
         MAC_BUNDLE_IDENTIFIER("summary.property.mac-bundle-identifier"),
         MAC_BUNDLE_NAME("summary.property.mac-bundle-name"),
         VERSION("summary.property.version"),
@@ -462,6 +465,10 @@ public class StandardSummaryTest extends JUnitAdapter {
                 case WIN_MSI_PRODUCT_CODE, WIN_MSI_UPGRADE_CODE -> {
                     pattern = Pattern.compile(Pattern.quote(p.formatKey())
                             + ".+[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}");
+                }
+                case WIN_MSI_ARCH -> {
+                    // The mocked WiX is v4+, which builds arm64 packages on aarch64
+                    formatArgs = List.of(Architecture.isAARCH64() ? "arm64" : "x64");
                 }
                 case VERSION -> {
                     formatArgs = List.of(cmd.fullVersion());

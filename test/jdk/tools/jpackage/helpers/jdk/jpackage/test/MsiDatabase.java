@@ -87,6 +87,7 @@ public final class MsiDatabase {
         SHORTCUT("Shortcut"),
         CONTROL_EVENT("ControlEvent"),
         INSTALL_UI_SEQUENCE("InstallUISequence"),
+        SUMMARY_INFORMATION("_SummaryInformation"),
         ;
 
         Table(String name) {
@@ -103,6 +104,7 @@ public final class MsiDatabase {
         static final Set<Table> LIST_SHORTCUTS_REQUIRED_TABLES = Set.of(COMPONENT, DIRECTORY, FILE, SHORTCUT);
         static final Set<Table> UI_ALTERATIONS_REQUIRED_TABLES = Set.of(CONTROL_EVENT, INSTALL_UI_SEQUENCE);
         static final Set<Table> LIST_COMPONENT_IDS_REQUIRED_TABLES = Set.of(COMPONENT);
+        static final Set<Table> FIND_SUMMARY_PROPERTY_REQUIRED_TABLES = Set.of(SUMMARY_INFORMATION);
     }
 
 
@@ -123,6 +125,13 @@ public final class MsiDatabase {
     Optional<String> findProperty(String propertyName) {
         Objects.requireNonNull(propertyName);
         return tables.get(Table.PROPERTY).findRow("Property", propertyName).map(row -> {
+            return row.apply("Value");
+        });
+    }
+
+    // https://learn.microsoft.com/en-us/windows/win32/msi/summary-information-stream-property-set
+    Optional<String> findSummaryProperty(int propertyId) {
+        return tables.get(Table.SUMMARY_INFORMATION).findRow("PropertyId", Integer.toString(propertyId)).map(row -> {
             return row.apply("Value");
         });
     }
