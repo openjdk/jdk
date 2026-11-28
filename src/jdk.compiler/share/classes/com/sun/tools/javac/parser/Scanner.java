@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Queue;
 
+import com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.JCDiagnostic.LintWarning;
 import com.sun.tools.javac.util.Position.LineMap;
@@ -154,7 +155,7 @@ public class Scanner implements Lexer {
 
     @Override
     public void lintWarning(DiagnosticPosition pos, LintWarning key) {
-        tokenizer.log.warning(pos, key);
+        tokenizer.log.warning(DiagnosticFlag.SYNTAX, pos, key);
     }
 
     public int errPos() {
