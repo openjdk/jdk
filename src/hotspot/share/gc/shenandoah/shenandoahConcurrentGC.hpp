@@ -50,6 +50,7 @@ protected:
   ShenandoahConcurrentMark    _mark;
 
 private:
+  // _controller will be null for old marking increments
   ShenandoahController* _controller;
   bool                  _abbreviated;
   const bool            _do_old_gc_bootstrap;

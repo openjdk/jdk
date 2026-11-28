@@ -27,6 +27,7 @@
 
 #include "gc/shenandoah/shenandoahMark.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.hpp"
+#include "gc/shenandoah/shenandoahTaskTerminator.hpp"
 
 class ShenandoahGeneration;
 
@@ -34,8 +35,8 @@ class ShenandoahSTWMark : public ShenandoahMark {
   friend class ShenandoahSTWMarkTask;
 
 private:
-  ShenandoahSTWRootScanner      _root_scanner;
-  TaskTerminator                _terminator;
+  ShenandoahSTWRootScanner _root_scanner;
+  ShenandoahTaskTerminator _terminator;
 public:
  ShenandoahSTWMark(ShenandoahGeneration* generation);
  void mark();

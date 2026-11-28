@@ -31,15 +31,20 @@
 #include "logging/log.hpp"
 #include "runtime/threads.hpp"
 
-ShenandoahWorkerScope::ShenandoahWorkerScope(WorkerThreads* workers, uint nworkers, const char* msg, bool check) :
-  _workers(workers) {
+ShenandoahWorkerScope::ShenandoahWorkerScope(WorkerThreads* workers, uint nworkers, const char* msg, bool check)
+  : ShenandoahWorkerScope(workers, nworkers, nworkers, msg, check) { }
+
+ShenandoahWorkerScope::ShenandoahWorkerScope(WorkerThreads* workers, uint active_worker_count,
+                                             uint eligible_worker_count, const char* msg, bool check)
+  : _workers(workers)
+{
   assert(msg != nullptr, "Missing message");
 
-  _n_workers = _workers->set_active_workers(nworkers);
-  assert(_n_workers <= nworkers, "Must be");
+  _n_workers = _workers->set_active_workers(active_worker_count);
+  assert(_n_workers <= active_worker_count, "Must be");
 
   log_info(gc, task)("Using %u of %u workers for %s",
-    _n_workers, ShenandoahHeap::heap()->max_workers(), msg);
+    eligible_worker_count, ShenandoahHeap::heap()->max_workers(), msg);
 
   if (check) {
     ShenandoahHeap::heap()->assert_gc_workers(_n_workers);
