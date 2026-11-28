@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2023, Red Hat and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @bug 8320237
+ * @bug 8320237 8393699
  * @summary late inlining output shouldn't produce both failure and success messages
  * @library /test/lib
  * @requires vm.compiler2.enabled
@@ -38,7 +38,8 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.List;
-import java.util.stream.IntStream;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
@@ -47,12 +48,16 @@ public class TestDuplicatedLateInliningOutput {
     public static void main(String[] args) throws Exception {
         test(
             NonConstantReceiverLauncher.class,
-            "@ (\\d+)\\s+java\\.lang\\.invoke\\.MethodHandle::invokeBasic\\(\\)V \\(\\d+ bytes\\)\\s+failed to inline: receiver not constant\\s+callee changed to\\s+java\\.lang\\.invoke\\.LambdaForm\\$DMH\\/0x[0-9a-f]+::invokeStatic \\(\\d+ bytes\\)\\s+force inline by annotation\\s+late inline succeeded \\(method handle\\)",
+            "@ (\\d+)\\h+java\\.lang\\.invoke\\.MethodHandle::invokeBasic\\(\\)V \\(\\d+ bytes\\)\\h+failed to inline: receiver not constant"
+                    + "\\R\\h+@ \\1\\h+java\\.lang\\.invoke\\.LambdaForm\\$DMH\\/0x[0-9a-f]+::invokeStatic \\(\\d+ bytes\\)"
+                    + "\\h+force inline by annotation\\h+late inline succeeded \\(method handle\\)",
             "@ (\\d+)\\s+java\\.lang\\.invoke\\.MethodHandle::invokeBasic\\(\\)V \\(\\d+ bytes\\)\\s+failed to inline: receiver not constant");
 
         test(
             VirtualCallLauncher.class,
-            "@ (\\d+)\\s+compiler\\.inlining\\.TestDuplicatedLateInliningOutput\\$VirtualCallLauncher\\$A::lateInlined2 \\(\\d+ bytes\\)\\s+failed to inline: virtual call\\s+callee changed to\\s+\\s+compiler\\.inlining\\.TestDuplicatedLateInliningOutput\\$VirtualCallLauncher\\$B::lateInlined2 \\(\\d+ bytes\\)\\s+inline \\(hot\\)\\s+late inline succeeded",
+            "@ (\\d+)\\h+compiler\\.inlining\\.TestDuplicatedLateInliningOutput\\$VirtualCallLauncher\\$A::lateInlined2 \\(\\d+ bytes\\)\\h+failed to inline: virtual call"
+                    + "\\R\\h+@ \\1\\h+compiler\\.inlining\\.TestDuplicatedLateInliningOutput\\$VirtualCallLauncher\\$B::lateInlined2 \\(\\d+ bytes\\)"
+                    + "\\h+inline \\(hot\\)\\h+late inline succeeded",
             "@ (\\d+)\\s+compiler\\.inlining\\.TestDuplicatedLateInliningOutput\\$VirtualCallLauncher\\$A::lateInlined2 \\(\\d+ bytes\\)\\s+failed to inline: virtual call"
         );
     }
@@ -74,12 +79,14 @@ public class TestDuplicatedLateInliningOutput {
         analyzer.errorTo(System.err);
 
         List<String> lines = analyzer.asLines();
-        int index = IntStream.range(0, lines.size())
-                .filter(i -> lines.get(i).trim().matches(pattern1))
-                .findFirst()
-                .orElseThrow(() -> new Exception("No inlining found" + pattern1));
+        String output = analyzer.getOutput();
+        Matcher matcher = Pattern.compile("(?m)^\\h*" + pattern1 + "$").matcher(output);
+        if (!matcher.find()) {
+            throw new Exception("No inlining found" + pattern1);
+        }
+        int index = (int) output.substring(0, matcher.start()).lines().count();
 
-        if (lines.get(index - 1).trim().matches(pattern2)) {
+        if (index > 0 && lines.get(index - 1).trim().matches(pattern2)) {
             throw new Exception("Both failure and success message found");
         }
     }
