@@ -55,7 +55,7 @@ public class KAKeyDerivation implements SSLKeyDerivation {
     private final PublicKey peerPublicKey;
     private final byte[] keyshare;
 
-    // Constructor called by Key Agreement
+    // Constructor called by Key Agreement or KEM encapsulator
     KAKeyDerivation(String algorithmName,
             HandshakeContext context,
             PrivateKey localPrivateKey,
@@ -64,8 +64,8 @@ public class KAKeyDerivation implements SSLKeyDerivation {
                 peerPublicKey, null);
     }
 
-    // When the constructor called by KEM: store the client's public key or the
-    // encapsulated message in keyshare.
+    // Constructor called by KEM decapsulator, keyshare is filled instead
+    // of peerPublicKey.
     KAKeyDerivation(String algorithmName,
                     HandshakeContext context,
                     PrivateKey localPrivateKey,
@@ -170,21 +170,12 @@ public class KAKeyDerivation implements SSLKeyDerivation {
     KEM.Encapsulated encapsulate(String algorithm, SecureRandom random)
             throws IOException {
         SecretKey sharedSecret = null;
-
-        if (keyshare == null) {
-            throw new IOException("No keyshare available for KEM " +
-                    "encapsulation");
-        }
-
         // All exceptions thrown during KEM encapsulation are mapped
         // to TLS fatal alerts:
         // illegal_parameter alert or internal_error alert.
         try {
-            // Hybrid TLS keys have no X.509 encoding. The KEM receives the
-            // TLS key_share directly as a RAW public key.
-            PublicKey pk = KeyUtil.newRawPublicKey(algorithmName, keyshare);
             KEM kem = KEM.getInstance(algorithmName);
-            KEM.Encapsulator e = kem.newEncapsulator(pk, random);
+            KEM.Encapsulator e = kem.newEncapsulator(peerPublicKey, random);
             KEM.Encapsulated enc = e.encapsulate();
             sharedSecret = enc.key();
 

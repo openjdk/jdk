@@ -220,17 +220,17 @@ enum NamedGroup {
     ML_KEM_512(0x0200, "MLKEM512",
             NamedGroupSpec.NAMED_GROUP_KEM,
             ProtocolVersion.PROTOCOLS_OF_13,
-            null),
+            NamedParameterSpec.ML_KEM_512),
 
     ML_KEM_768(0x0201, "MLKEM768",
             NamedGroupSpec.NAMED_GROUP_KEM,
             ProtocolVersion.PROTOCOLS_OF_13,
-            null),
+            NamedParameterSpec.ML_KEM_768),
 
     ML_KEM_1024(0x0202, "MLKEM1024",
             NamedGroupSpec.NAMED_GROUP_KEM,
             ProtocolVersion.PROTOCOLS_OF_13,
-            null),
+            NamedParameterSpec.ML_KEM_1024),
 
     X25519MLKEM768(0x11ec, "X25519MLKEM768",
             NamedGroupSpec.NAMED_GROUP_KEM,
@@ -298,12 +298,17 @@ enum NamedGroup {
         if (mediator) {
             try {
                 // Skip AlgorithmParameters for KEMs (not supported).
-                // A direct hybrid KEM must provide both KeyPairGenerator
-                // and KEM. It does not require a KeyFactory because TLS
+                // A KEM must provide both KeyPairGenerator and KEM.
+                // Hybrid KEM does not require a KeyFactory because TLS
                 // passes a RAW key_share directly to the KEM encapsulator.
                 if (namedGroupSpec == NamedGroupSpec.NAMED_GROUP_KEM) {
-                    KeyPairGenerator.getInstance(name);
-                    KEM.getInstance(name);
+                    if (keAlgParamSpec instanceof NamedParameterSpec nps) {
+                        KeyPairGenerator.getInstance(nps.getName());
+                        KEM.getInstance(nps.getName());
+                    } else {
+                        KeyPairGenerator.getInstance(name);
+                        KEM.getInstance(name);
+                    }
                 } else {
                     // ECDHE or others: use AlgorithmParameters as before
                     algParams = AlgorithmParameters.getInstance(
@@ -468,6 +473,12 @@ enum NamedGroup {
         return false;
     }
 
+    boolean requireRawPublicKey() {
+        return this == SECP256R1MLKEM768
+                || this == SECP384R1MLKEM1024
+                || this == X25519MLKEM768;
+    }
+
     // Get preferred named group from the configured named groups for the
     // negotiated protocol and named group types.
     static NamedGroup getPreferredGroup(
@@ -604,7 +615,6 @@ enum NamedGroup {
         NAMED_GROUP_XDH("XDH", XDHScheme.instance),
 
         // Post-Quantum Cryptography (PQC) KEM groups
-        // Currently used for hybrid named groups
         NAMED_GROUP_KEM("KEM", KEMScheme.instance),
 
         // arbitrary prime and curves (ECDHE)
