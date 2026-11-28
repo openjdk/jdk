@@ -118,6 +118,30 @@ public:
   virtual bool is_thread_safe() { return false; }
 };
 
+class ShenandoahHumongousAllocationHistory {
+  struct Epoch {
+    size_t max_requested_region_count;
+    size_t total_requested_region_count;
+  };
+public:
+  static const size_t max_history_entry = 16;
+  ShenandoahHumongousAllocationHistory() : _sample_count(0), _next(0) {};
+  void push(size_t max_requested_region_count, size_t total_requested_region_count);
+  double probability_of_failure(const size_t* empty_region_array, size_t empty_region_array_length, double recency_weight) const;
+  // Largest single humongous request (in regions) across the most recent `window` epochs, 0 if none.
+  size_t max_requested_region_count(size_t window) const;
+
+private:
+  Epoch _epochs[max_history_entry];
+  size_t _sample_count; // sample count
+  size_t _next; // index of the next slot to overwrite
+
+  static bool can_fit(const Epoch& e, const size_t* empty_region_array, size_t empty_region_array_length, size_t max_contig);
+
+public:
+  size_t sample_count() const { return _sample_count; };
+};
+
 typedef ShenandoahLock                       ShenandoahHeapLock;
 // ShenandoahHeapLocker implements locker to assure mutually exclusive access to the global heap data structures.
 // Asserts in the implementation detect potential deadlock usage with regards the rebuild lock that is present
@@ -242,7 +266,20 @@ private:
   shenandoah_padding(1);
 
   ShenandoahAllocationRate _alloc_rate;
+  ShenandoahAllocationRate _humongous_alloc_rate;
+  Atomic<size_t> _max_humongous_region_count_requested_since_gc_end;
+  Atomic<size_t> _total_humongous_region_count_requested_since_gc_end;
+  Atomic<bool> _humongous_alloc_failure_risk_high;
+  Atomic<bool> _humongous_triggered_gc;
+  Atomic<size_t> _empty_humongous_region_count_at_trigger;
+  Atomic<size_t> _humongous_alloc_targeted_backoff_epoch;
+  Atomic<size_t> _humongous_alloc_backoff_epochs_left;
+  static const uint humongous_backoff_max_epochs = 16;
+  Atomic<size_t> _humongous_budget_region_count;
+  Atomic<size_t> _humongous_budget_request_size; // request size (regions) the budget was computed for
+  ShenandoahHumongousAllocationHistory _humongous_allocation_history;
   ShenandoahDecayAllocRate _alloc_rate_decay;
+  ShenandoahDecayAllocRate _humongous_alloc_rate_decay;
 
 public:
   void increase_committed(size_t bytes);
@@ -260,6 +297,36 @@ public:
 
   ShenandoahAllocationRate& alloc_rate() {
     return _alloc_rate;
+  }
+
+  ShenandoahAllocationRate& humongous_alloc_rate() {
+    return _humongous_alloc_rate;
+  }
+
+  size_t max_humongous_region_count_requested_since_gc_end() const {
+    return _max_humongous_region_count_requested_since_gc_end.load_relaxed();
+  }
+
+  size_t total_humongous_region_count_requested_since_gc_end() const {
+    return _total_humongous_region_count_requested_since_gc_end.load_relaxed();
+  }
+
+  bool read_humongous_alloc_failure_risk_high_and_reset() {
+    return _humongous_alloc_failure_risk_high.exchange(false, memory_order_relaxed);
+  }
+
+  size_t humongous_budget_region_count() const {
+    return _humongous_budget_region_count.load_relaxed();
+  }
+
+  size_t humongous_budget_request_size() const {
+    return _humongous_budget_request_size.load_relaxed();
+  }
+
+  void update_humongous_budget(size_t k);
+
+  size_t humongous_alloc_backoff_epochs_left() const {
+    return _humongous_alloc_backoff_epochs_left.load_relaxed();
   }
 
 // ---------- Periodic Tasks
@@ -524,6 +591,7 @@ public:
   void notify_gc_progress();
   void notify_gc_no_progress();
   size_t get_gc_no_progress_count() const;
+  void record_humongous_triggered_gc();
 
   // The uncommit thread targets soft max heap, notify this thread when that value has changed.
   void notify_soft_max_changed();
@@ -738,6 +806,7 @@ private:
 
 public:
   HeapWord* allocate_memory(ShenandoahAllocRequest& request);
+  void record_humongous_request(const ShenandoahAllocRequest& req);
   HeapWord* mem_allocate(size_t size) override;
   oop array_allocate(Klass* klass, size_t size, int length, bool do_zero, TRAPS) override;
   MetaWord* satisfy_failed_metadata_allocation(ClassLoaderData* loader_data,
