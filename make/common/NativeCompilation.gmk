@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -222,6 +222,29 @@ define SetupNativeCompilationBody
     $1 := $$($1_ALL_OBJS_JSON) $$($1_LDFLAGS_FILE)
     TARGETS := $(filter $(MAKESUPPORT_OUTPUTDIR)/compile-commands/%, $(TARGETS))
   endif
+
+  # Drop the variables that are only needed while parsing. There is one set
+  # per library or executable, and make walks all global variables every time
+  # it starts a recipe. Variables used by recipes, or by callers after this
+  # macro returns (e.g. TARGET, OUTPUT_DIR, OBJECT_DIR, ALL_OBJS, BUILD_INFO,
+  # BUILD_INFO_DEPS), must be kept.
+  $$(call UndefineVariables, \
+      $$(foreach f, $$($1_SRCS), \
+        $$(addprefix $1_$$(notdir $$f)_, OBJ_JSON OBJ_PROCESSED)) \
+      $$(addprefix $1_, ALL_OBJS_JSON AS BINS CFLAGS COMPILE_VARDEPS \
+        COMPILE_VARDEPS_FILE COMPILE_VARDEPS_filename COMPILE_VARDEPS_old \
+        COMPILE_WITH_DEBUG_SYMBOLS CREATE_DEBUGINFO CXX CXXFLAGS DEFAULT_LIBCXX \
+        DEFAULT_VERSIONINFO_RESOURCE DEPS_FILE_LOADED DISABLED_WARNINGS_clang \
+        DISABLED_WARNINGS_gcc DISABLED_WARNINGS_microsoft EXPECTED_OBJS \
+        EXPECTED_OBJS_FILENAMES EXTRA_ASFLAGS EXTRA_CFLAGS EXTRA_CXXFLAGS \
+        EXTRA_FILES EXTRA_HEADER_DIRS EXTRA_HEADER_FLAGS JDK_LIBS LDFLAGS_FILE \
+        LD_SET_ORIGIN LINK_TYPE MODULES_PATH NATIVE_DIR_PREFIX NOSUFFIX \
+        OPT_CFLAGS OPT_CXXFLAGS OPTIMIZATION PROCESSED_EXTRA_HEADER_DIRS RC_EXT \
+        RC_FILEDESC RC_FTYPE SRC_HEADER_FLAGS SRCS SRCS_RAW STRIP_SYMBOLS \
+        SUPERFLOUS_OBJS TARGET_DEPS TYPE UNIQUE_NAME VARDEPS VARDEPS_FILE \
+        VARDEPS_filename VARDEPS_old WARNINGS_AS_ERRORS_clang \
+        WARNINGS_AS_ERRORS_gcc WARNINGS_AS_ERRORS_microsoft \
+        ZIP_EXTERNAL_DEBUG_SYMBOLS))
 endef
 
 ################################################################################
