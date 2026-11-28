@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,14 +77,25 @@ public class SSLHandshake {
     boolean resume;
 
     @Param({
-            "TLSv1.2-secp256r1",
-            "TLSv1.3-x25519", "TLSv1.3-secp256r1", "TLSv1.3-secp384r1",
-            "TLSv1.3-X25519MLKEM768", "TLSv1.3-SecP256r1MLKEM768", "TLSv1.3-SecP384r1MLKEM1024"
+            "12/P256/ECDSA",
+            "13/X25519/ECDSA",
+            "13/X25519/MLDSA65",
+            "13/P256/ECDSA",
+            "13/P256/MLDSA65",
+            "13/P384/ECDSA",
+            "13/P384/MLDSA65",
+            "13/X+K768/ECDSA",
+            "13/X+K768/MLDSA65",
+            "13/P256+K768/ECDSA",
+            "13/P256+K768/MLDSA65",
+            "13/P384+K1024/ECDSA",
+            "13/P384+K1024/MLDSA65"
     })
-    String versionAndGroup;
+    String tlsProfile;
 
     private String tlsVersion;
     private String namedGroup;
+    private String[] sigSchemes;
 
     private static SSLContext getServerContext() {
         try {
@@ -102,11 +113,50 @@ public class SSLHandshake {
         }
     }
 
+    private static String[] getSigSchemes(String authProfile, String tlsVersion) {
+        if (!"TLSv1.3".equals(tlsVersion)) {
+            return null;
+        }
+
+        return switch (authProfile) {
+            case TestCertificates.AUTH_PROFILE_ECDSA_P256 ->
+                    new String[] {"ecdsa_secp256r1_sha256"};
+            case TestCertificates.AUTH_PROFILE_MLDSA65 ->
+                    new String[] {"mldsa65"};
+            default -> throw new IllegalArgumentException(
+                    "Unknown auth profile: " + authProfile);
+        };
+    }
+
     @Setup(Level.Trial)
     public void init() throws Exception {
-        String[] components = versionAndGroup.split("-", 2);
-        tlsVersion = components[0];
-        namedGroup = components[1];
+        String[] components = tlsProfile.split("/", 3);
+        tlsVersion = switch (components[0]) {
+            case "12" -> "TLSv1.2";
+            case "13" -> "TLSv1.3";
+            default -> throw new IllegalArgumentException(
+                    "Unknown TLS version: " + components[0]);
+        };
+
+        namedGroup = switch (components[1]) {
+            case "X25519" -> "x25519";
+            case "P256" -> "secp256r1";
+            case "P384" -> "secp384r1";
+            case "X+K768" -> "X25519MLKEM768";
+            case "P256+K768" -> "SecP256r1MLKEM768";
+            case "P384+K1024" -> "SecP384r1MLKEM1024";
+            default -> throw new IllegalArgumentException(
+                    "Unknown named group: " + components[1]);
+        };
+
+        String authProfile = switch (components[2]) {
+            case "ECDSA" -> TestCertificates.AUTH_PROFILE_ECDSA_P256;
+            case "MLDSA65" -> TestCertificates.AUTH_PROFILE_MLDSA65;
+            default -> throw new IllegalArgumentException(
+                    "Unknown authentication profile: " + components[2]);
+        };
+
+        sigSchemes = getSigSchemes(authProfile, tlsVersion);
 
         KeyStore ts = TestCertificates.getTrustStore();
 
@@ -211,10 +261,16 @@ public class SSLHandshake {
         // Set the key exchange named group in client and server engines
         SSLParameters clientParams = clientEngine.getSSLParameters();
         clientParams.setNamedGroups(new String[]{namedGroup});
+        if (sigSchemes != null) {
+            clientParams.setSignatureSchemes(sigSchemes);
+        }
         clientEngine.setSSLParameters(clientParams);
 
         SSLParameters serverParams = serverEngine.getSSLParameters();
         serverParams.setNamedGroups(new String[]{namedGroup});
+        if (sigSchemes != null) {
+            serverParams.setSignatureSchemes(sigSchemes);
+        }
         serverEngine.setSSLParameters(serverParams);
     }
 }
