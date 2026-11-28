@@ -42,9 +42,9 @@ public class AttachReturnError extends AttachFailedTestBase {
             output = executor.execute("JVMTI.agent_load " + libpath);
             output.shouldContain("return code: -1");
 
-            // Check loaded libraries
+            // A failed attach may have started native threads. Keep its library loaded.
             output = executor.execute("VM.dynlibs");
-            output.shouldNotContain(libpath);
+            output.shouldContain(libpath);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

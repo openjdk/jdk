@@ -47,8 +47,6 @@
 #include "oops/compressedKlass.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvm_misc.hpp"
-#include "prims/jvmtiAgent.hpp"
-#include "prims/jvmtiAgentList.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomicAccess.hpp"
 #include "runtime/frame.inline.hpp"
@@ -539,54 +537,6 @@ void* os::native_java_library() {
 #endif
   }
   return _native_java_library;
-}
-
-/*
- * Support for finding Agent_On(Un)Load/Attach<_lib_name> if it exists.
- * If check_lib == true then we are looking for an
- * Agent_OnLoad_lib_name or Agent_OnAttach_lib_name function to determine if
- * this library is statically linked into the image.
- * If check_lib == false then we will look for the appropriate symbol in the
- * executable if agent_lib->is_static_lib() == true or in the shared library
- * referenced by 'handle'.
- */
-void* os::find_agent_function(JvmtiAgent *agent_lib, bool check_lib, const char *sym) {
-  assert(agent_lib != nullptr, "sanity check");
-  void *handle = agent_lib->os_lib();
-  void *entryName = nullptr;
-
-  // If checking then use the agent name otherwise test is_static_lib() to
-  // see how to process this lookup
-  const char *lib_name = ((check_lib || agent_lib->is_static_lib()) ? agent_lib->name() : nullptr);
-
-  char* agent_function_name = build_agent_function_name(sym, lib_name, agent_lib->is_absolute_path());
-  if (agent_function_name != nullptr) {
-    entryName = dll_lookup(handle, agent_function_name);
-    FREE_C_HEAP_ARRAY(agent_function_name);
-  }
-  return entryName;
-}
-
-// See if the passed in agent is statically linked into the VM image.
-bool os::find_builtin_agent(JvmtiAgent* agent, const char* sym) {
-  assert(agent != nullptr, "sanity check");
-  if (agent->name() == nullptr) {
-    return false;
-  }
-  void* proc_handle = get_default_process_handle();
-  // Check for Agent_OnLoad/Attach_lib_name function
-  void* save_handle = agent->os_lib();
-  // We want to look in this process' symbol table.
-  agent->set_os_lib(proc_handle);
-  void* ret = find_agent_function(agent, true, sym);
-  if (ret != nullptr) {
-    // Found an entry point like Agent_OnLoad_lib_name so we have a static agent
-    agent->set_static_lib();
-    agent->set_loaded();
-    return true;
-  }
-  agent->set_os_lib(save_handle);
-  return false;
 }
 
 // --------------------- heap allocation utilities ---------------------
@@ -1111,31 +1061,6 @@ void os::print_environment_variables(outputStream* st, const char** env_list) {
       }
     }
   }
-}
-
-void os::print_jvmti_agent_info(outputStream* st) {
-#if INCLUDE_JVMTI
-  JvmtiAgentList::Iterator it = JvmtiAgentList::all();
-  if (it.has_next()) {
-    st->print_cr("JVMTI agents:");
-  } else {
-    st->print_cr("JVMTI agents: none");
-  }
-  while (it.has_next()) {
-    const JvmtiAgent* agent = it.next();
-    if (agent != nullptr) {
-      const char* dyninfo = agent->is_dynamic() ? "dynamic " : "";
-      const char* instrumentinfo = agent->is_instrument_lib() ? "instrumentlib " : "";
-      const char* loadinfo = agent->is_loaded() ? "loaded" : "not loaded";
-      const char* initinfo = agent->is_initialized() ? "initialized" : "not initialized";
-      const char* optionsinfo = agent->options();
-      const char* pathinfo = agent->os_lib_path();
-      if (optionsinfo == nullptr) optionsinfo = "none";
-      if (pathinfo == nullptr) pathinfo = "none";
-      st->print_cr("%s path:%s, %s, %s, %s%soptions:%s", agent->name(), pathinfo, loadinfo, initinfo, dyninfo, instrumentinfo, optionsinfo);
-    }
-  }
-#endif
 }
 
 void os::print_register_info(outputStream* st, const void* context) {
@@ -2591,62 +2516,4 @@ jint os::set_minimum_stack_sizes() {
 
 jlong os::get_minimum_java_stack_size() {
   return static_cast<jlong>(_java_thread_min_stack_allowed);
-}
-
-// Builds a platform dependent Agent_OnLoad_<lib_name> function name
-// which is used to find statically linked in agents.
-// Parameters:
-//            sym_name: Symbol in library we are looking for
-//            lib_name: Name of library to look in, null for shared libs.
-//            is_absolute_path == true if lib_name is absolute path to agent
-//                                     such as "C:/a/b/L.dll" or "/a/b/libL.so"
-//            == false if only the base name of the library is passed in
-//               such as "L"
-char* os::build_agent_function_name(const char *sym_name, const char *lib_name,
-                                    bool is_absolute_path) {
-  char *agent_entry_name;
-  size_t len = 0;
-  size_t name_len = 0;
-  size_t prefix_len = strlen(JNI_LIB_PREFIX);
-  size_t suffix_len = strlen(JNI_LIB_SUFFIX);
-  size_t underscore_len = 0; // optional underscore if lib_name is set
-  const char *start;
-
-  if (lib_name != nullptr) {
-    if (is_absolute_path) {
-      // Need to strip path, prefix and suffix
-      if ((start = strrchr(lib_name, *os::file_separator())) != nullptr) {
-        lib_name = ++start;
-      }
-#ifdef _WINDOWS
-      else { // Need to check for drive prefix e.g. C:L.dll
-        if ((start = strchr(lib_name, ':')) != nullptr) {
-          lib_name = ++start;
-        }
-      }
-#endif
-      name_len = strlen(lib_name);
-      if (name_len <= (prefix_len + suffix_len)) {
-        return nullptr;
-      }
-      lib_name += prefix_len;
-      name_len = strlen(lib_name) - suffix_len;
-    } else {
-      name_len = strlen(lib_name);
-    }
-    underscore_len = 1;
-  }
-  // Total buffer length to allocate - includes null terminator.
-  len = strlen(sym_name) + underscore_len + name_len + 1;
-  agent_entry_name = NEW_C_HEAP_ARRAY_RETURN_NULL(char, len, mtThread);
-  if (agent_entry_name == nullptr) {
-    return nullptr;
-  }
-
-  strcpy(agent_entry_name, sym_name);
-  if (lib_name != nullptr) {
-    strcat(agent_entry_name, "_");
-    strncat(agent_entry_name, lib_name, name_len);
-  }
-  return agent_entry_name;
 }

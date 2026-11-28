@@ -63,7 +63,7 @@
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
 #include "oops/trainingData.hpp"
-#include "prims/jvmtiAgentList.hpp"
+#include "prims/jvmtiAgentManager.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/deoptimization.hpp"
@@ -480,7 +480,7 @@ void before_exit(JavaThread* thread, bool halt) {
   // Always call even when there are not JVMTI environments yet, since environments
   // may be attached late and JVMTI must track phases of VM execution.
   JvmtiExport::post_vm_death();
-  JvmtiAgentList::unload_agents();
+  JvmtiAgentManager::invoke_Agent_OnUnload_entry_points(thread);
 
   // No user code can be executed in the current thread after this point.
 

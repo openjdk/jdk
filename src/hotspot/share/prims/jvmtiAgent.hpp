@@ -27,64 +27,94 @@
 
 #include "memory/allocation.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/ticks.hpp"
 
-class JvmtiEnv;
-class outputStream;
+class JvmtiAgentManager;
+class JvmtiAgentLibrary;
 
-// Represents an agent launched on the command-line by -agentlib, -agentpath or -Xrun.
-// Also agents loaded dynamically during runtime, for example using the Attach API.
 class JvmtiAgent : public CHeapObj<mtServiceability> {
-  friend class JvmtiAgentList;
+  friend class JvmtiAgentManager;
+  NONCOPYABLE(JvmtiAgent);
+
+  // Startup state : invocation of the startup function.
+  enum class Startup : int8_t { NotEntered, Executing, Returned };
+  // Jvmti environment state : association of a jvmtiEnv.
+  enum class EnvAssociation : int8_t { None, Associated, Disposed };
+  // Timing state : progression of the timing record, safe to read only when Finalized.
+  enum class TimingState : int8_t { Pending, Measuring, Finalized };
+
  private:
-  Ticks _initialization_time;
-  Tickspan _initialization_duration;
-  JvmtiAgent* _next;
-  const char* _name;
-  const char* _options;
-  void* _os_lib;
-  const char* _os_lib_path;
-  const void* _jplis;
-  bool _loaded;
-  bool _absolute_path;
-  bool _static_lib;
-  bool _instrument_lib;
-  bool _dynamic;
+  const char* const _name;
+  const char* const _options;
+  const bool _is_absolute_path;
+  const bool _instrument_lib;
+  const bool _dynamic;
   bool _xrun;
 
-  JvmtiAgent* next() const;
-  void convert_xrun_agent();
-  void set_xrun();
+  JvmtiAgentLibrary* _library;
+  Startup _startup;
+
+  JvmtiAgent* _next;
+  bool _registered;
+
+  EnvAssociation _association;
+
+  TimingState _timing;
+  // Unavailable timing starts as min_jlong.
+  Ticks _initialization_time;
+  Tickspan _initialization_duration;
+
+  JvmtiAgent(const char* name, const char* options, bool is_absolute_path, bool xrun = false);
+
+  void mark_registered() NOT_JVMTI_RETURN;
+  void mark_env_associated() NOT_JVMTI_RETURN;
+  void mark_env_disposed() NOT_JVMTI_RETURN;
+
+  bool is_timing_pending() const NOT_JVMTI_RETURN_(false);
+  bool is_timing_measuring() const NOT_JVMTI_RETURN_(false);
+  void prepare_initialization_timing() NOT_JVMTI_RETURN;
+  void end_initialization_timing(const Ticks& start, const Ticks& end) NOT_JVMTI_RETURN;
+  void cancel_initialization_timing() NOT_JVMTI_RETURN;
+  void finalize_timing() NOT_JVMTI_RETURN;
+  void finalize_unavailable_timing() NOT_JVMTI_RETURN;
+  void finalize_timing_without_vm_init_callback() NOT_JVMTI_RETURN;
 
  public:
-  JvmtiAgent(const char* name, const char* options, bool is_absolute_path, bool dynamic = false);
   ~JvmtiAgent();
-  NONCOPYABLE(JvmtiAgent);
-  const char* name() const NOT_JVMTI_RETURN_(nullptr);
-  const char* options() const;
-  bool is_absolute_path() const NOT_JVMTI_RETURN_(false);
-  void* os_lib() const NOT_JVMTI_RETURN_(nullptr);
-  void set_os_lib(void* os_lib) NOT_JVMTI_RETURN;
-  const char* os_lib_path() const;
-  void set_os_lib_path(const char* path) NOT_JVMTI_RETURN;
-  bool is_static_lib() const NOT_JVMTI_RETURN_(false);
-  void set_static_lib() NOT_JVMTI_RETURN;
-  bool is_dynamic() const;
-  bool is_xrun() const;
-  bool is_instrument_lib() const;
-  bool is_loaded() const NOT_JVMTI_RETURN_(false);
-  void set_loaded() NOT_JVMTI_RETURN;
-  bool is_jplis() const;
-  bool is_jplis(JvmtiEnv* env) const;
-  void set_jplis(const void* jplis);
-  bool is_initialized() const;
-  void initialization_begin();
-  void initialization_end();
-  const Ticks& initialization_time() const;
-  const Tickspan& initialization_duration() const;
 
-  bool load(outputStream* st = nullptr);
-  void unload();
+  const char* name() const NOT_JVMTI_RETURN_(nullptr);
+  const char* options() const NOT_JVMTI_RETURN_(nullptr);
+  bool is_absolute_path() const NOT_JVMTI_RETURN_(false);
+  bool is_dynamic() const NOT_JVMTI_RETURN_(false);
+  bool is_instrument_lib() const NOT_JVMTI_RETURN_(false);
+  bool is_java_agent() const NOT_JVMTI_RETURN_(false);
+  bool is_xrun() const NOT_JVMTI_RETURN_(false);
+  void convert_from_xrun() NOT_JVMTI_RETURN;
+
+  JvmtiAgentLibrary* library() const NOT_JVMTI_RETURN_(nullptr);
+  void set_library(JvmtiAgentLibrary* library) NOT_JVMTI_RETURN;
+  bool has_library() const NOT_JVMTI_RETURN_(false);
+
+  void begin_startup() NOT_JVMTI_RETURN;
+  void end_startup() NOT_JVMTI_RETURN;
+  bool has_startup_returned() const NOT_JVMTI_RETURN_(false);
+
+  bool is_registered() const NOT_JVMTI_RETURN_(false);
+  JvmtiAgent* next() const NOT_JVMTI_RETURN_(nullptr);
+
+  bool can_associate_env() const NOT_JVMTI_RETURN_(false);
+  bool is_env_associated() const NOT_JVMTI_RETURN_(false);
+  bool is_env_disposed() const NOT_JVMTI_RETURN_(false);
+
+  void begin_initialization_timing() NOT_JVMTI_RETURN;
+  void end_initialization_timing() NOT_JVMTI_RETURN;
+
+  // Readers must observe is_timing_finalized() before accessing timing fields.
+  bool is_timing_finalized() const NOT_JVMTI_RETURN_(false);
+  bool has_initialization_time() const NOT_JVMTI_RETURN_(false);
+  const Ticks& initialization_time() const NOT_JVMTI({ return _initialization_time; });
+  const Tickspan& initialization_duration() const NOT_JVMTI({ return _initialization_duration; });
 };
 
 #endif // SHARE_PRIMS_JVMTIAGENT_HPP

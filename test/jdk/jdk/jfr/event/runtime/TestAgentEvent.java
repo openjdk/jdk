@@ -32,20 +32,16 @@ import java.util.List;
 import com.sun.tools.attach.VirtualMachine;
 
 import jdk.jfr.Recording;
-import jdk.jfr.consumer.RecordedClass;
-import jdk.jfr.consumer.RecordedClassLoader;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.Event;
 import jdk.jfr.StackTrace;
-import jdk.test.lib.Asserts;
 import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.Events;
-import jdk.test.lib.jfr.TestClassLoader;
 
 /**
  * @test
  * @requires vm.flagless
- * @summary Tests Agent Loaded event by starting native and Java agents
+ * @summary Tests native and Java agent events.
  * @requires vm.hasJFR & vm.jvmti
  *
  * @library /test/lib
@@ -59,21 +55,21 @@ import jdk.test.lib.jfr.TestClassLoader;
  *
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:-UseFastUnorderedTimeStamps -javaagent:JavaAgent.jar=foo=bar
  *      jdk.jfr.event.runtime.TestAgentEvent
- *      testJavaStatic
+ *      testCommandLineJavaAgent
  *
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:-UseFastUnorderedTimeStamps -XX:+EnableDynamicAgentLoading -Djdk.attach.allowAttachSelf=true
  *      jdk.jfr.event.runtime.TestAgentEvent
- *      testJavaDynamic
+ *      testDynamicJavaAgent
  *
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:-UseFastUnorderedTimeStamps -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=0
  *      jdk.jfr.event.runtime.TestAgentEvent
- *      testNativeStatic
+ *      testCommandLineNativeAgent
  *
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:-UseFastUnorderedTimeStamps
  *                   -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=0
  *                   -javaagent:JavaAgent.jar=foo=bar
  *      jdk.jfr.event.runtime.TestAgentEvent
- *      testMultipleAgents
+ *      testCommandLineMultipleMixedAgents
  */
 public final class TestAgentEvent {
     @StackTrace(false)
@@ -90,31 +86,33 @@ public final class TestAgentEvent {
         m.invoke(null, new Object[0]);
     }
 
-    private static void testJavaStatic() throws Throwable {
+    private static void testCommandLineJavaAgent() throws Throwable {
         try (Recording r = new Recording()) {
             r.enable(EventNames.JavaAgent).with("period", "endChunk");
+            r.enable(EventNames.NativeAgent).with("period", "endChunk");
             r.start();
             RecordingInterval intervalEvent = new RecordingInterval();
             intervalEvent.commit();
             r.stop();
             List<RecordedEvent> events = Events.fromRecording(r);
-            events.sort(Comparator.comparing(RecordedEvent::getEndTime));
-            RecordedEvent interval = events.getFirst();
+            Events.hasEvent(events, EventNames.JavaAgent);
+            Events.hasNotEvent(events, EventNames.NativeAgent);
+            RecordedEvent interval = singleEvent(events, RecordingInterval.class.getName());
             System.out.println(interval);
-            RecordedEvent e = events.get(1);
+            RecordedEvent e = singleEvent(events, EventNames.JavaAgent);
             System.out.println(e);
             Events.assertField(e, "name").equal(JAVA_AGENT_JAR);
             Events.assertField(e, "options").equal("foo=bar");
             Events.assertField(e, "dynamic").equal(false);
             Instant initializationTime = e.getInstant("initializationTime");
             if (initializationTime.isAfter(interval.getStartTime())) {
-                throw new Exception("Expected a static JavaAgent to be initialized before recording start");
+                throw new Exception("Expected a JavaAgent to be initialized before recording start");
             }
             Events.assertField(e, "initializationDuration").atLeast(0L);
         }
     }
 
-    private static void testNativeStatic() throws Throwable {
+    private static void testCommandLineNativeAgent() throws Throwable {
         try (Recording r = new Recording()) {
             r.enable(EventNames.NativeAgent).with("period", "endChunk");
             r.start();
@@ -122,10 +120,9 @@ public final class TestAgentEvent {
             intervalEvent.commit();
             r.stop();
             List<RecordedEvent> events = Events.fromRecording(r);
-            events.sort(Comparator.comparing(RecordedEvent::getEndTime));
-            RecordedEvent interval = events.getFirst();
+            RecordedEvent interval = singleEvent(events, RecordingInterval.class.getName());
             System.out.println(interval);
-            RecordedEvent e = events.get(1);
+            RecordedEvent e = singleEvent(events, EventNames.NativeAgent);
             System.out.println(e);
             Events.assertField(e, "name").equal("jdwp");
             Events.assertField(e, "options").equal("transport=dt_socket,server=y,suspend=n,address=0");
@@ -138,9 +135,10 @@ public final class TestAgentEvent {
         }
     }
 
-    private static void testJavaDynamic() throws Throwable {
+    private static void testDynamicJavaAgent() throws Throwable {
         try (Recording r = new Recording()) {
             r.enable(EventNames.JavaAgent).with("period", "endChunk");
+            r.enable(EventNames.NativeAgent).with("period", "endChunk");
             r.start();
             RecordingInterval intervalEvent = new RecordingInterval();
             intervalEvent.begin();
@@ -158,10 +156,17 @@ public final class TestAgentEvent {
             intervalEvent.commit();
             r.stop();
             List<RecordedEvent> events = Events.fromRecording(r);
-            events.sort(Comparator.comparing(RecordedEvent::getEndTime));
-            RecordedEvent interval = events.getFirst();
+            Events.hasEvent(events, EventNames.JavaAgent);
+            Events.hasNotEvent(events, EventNames.NativeAgent);
+            RecordedEvent interval = singleEvent(events, RecordingInterval.class.getName());
             System.out.println(interval);
-            for (RecordedEvent e : events.subList(1, events.size())) {
+            List<RecordedEvent> agentEvents = eventsOfType(events, EventNames.JavaAgent).stream()
+                .sorted(Comparator.comparing(event -> event.getInstant("initializationTime")))
+                .toList();
+            if (agentEvents.size() != 4) {
+                throw new Exception("Expected four dynamic JavaAgents to be initialized");
+            }
+            for (RecordedEvent e : agentEvents) {
                 System.out.println(e);
                 Instant initializationTime = e.getInstant("initializationTime");
                 if (initializationTime.isBefore(interval.getStartTime())) {
@@ -172,21 +177,35 @@ public final class TestAgentEvent {
                 }
                 Duration initializationDuration = e.getDuration("initializationDuration");
                 if (initializationDuration.isNegative()) {
-                    throw new Exception("Expected initalizationDuration to be positive value");
+                    throw new Exception("Expected initializationDuration to be positive value");
                 }
                 if (initializationDuration.toSeconds() > 3600) {
                     throw new Exception("Expected initializationDuration to be less than 1 hour");
                 }
                 Events.assertField(e, "name").equal(JAVA_AGENT_JAR);
             }
-            Events.assertField(events.get(1), "options").equal("bar=baz");
-            Events.assertField(events.get(2), "options").equal(null);
-            Events.assertField(events.get(3), "options").equal("");
-            Events.assertField(events.get(4), "options").equal("=");
+            Events.assertField(agentEvents.get(0), "options").equal("bar=baz");
+            Events.assertField(agentEvents.get(1), "options").equal(null);
+            Events.assertField(agentEvents.get(2), "options").equal("");
+            Events.assertField(agentEvents.get(3), "options").equal("=");
         }
     }
 
-    private static void testMultipleAgents() throws Exception {
+    private static List<RecordedEvent> eventsOfType(List<RecordedEvent> events, String eventType) {
+        return events.stream()
+            .filter(event -> event.getEventType().getName().equals(eventType))
+            .toList();
+    }
+
+    private static RecordedEvent singleEvent(List<RecordedEvent> events, String eventType) throws Exception {
+        List<RecordedEvent> matchingEvents = eventsOfType(events, eventType);
+        if (matchingEvents.size() != 1) {
+            throw new Exception("Expected one " + eventType + " event, found " + matchingEvents.size());
+        }
+        return matchingEvents.getFirst();
+    }
+
+    private static void testCommandLineMultipleMixedAgents() throws Exception {
         try (Recording r = new Recording()) {
             r.enable(EventNames.NativeAgent).with("period", "endChunk");
             r.enable(EventNames.JavaAgent).with("period", "endChunk");
@@ -196,6 +215,8 @@ public final class TestAgentEvent {
             if (events.size() != 2) {
                 throw new Exception("Expected two agents");
             }
+            Events.hasEvent(events, EventNames.NativeAgent);
+            Events.hasEvent(events, EventNames.JavaAgent);
             Instant timestamp = events.getFirst().getStartTime();
             for (RecordedEvent event : events) {
                 if (!event.getStartTime().equals(timestamp) ||

@@ -37,6 +37,7 @@
 #include "oops/oop.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
 #include "prims/downcallLinker.hpp"
+#include "prims/jvmtiAgentManager.hpp"
 #include "prims/jvmtiEnvBase.hpp"
 #include "prims/jvmtiEventController.inline.hpp"
 #include "prims/jvmtiExtensions.hpp"
@@ -209,6 +210,7 @@ JvmtiEnvBase::JvmtiEnvBase(jint version) : _env_event_enable() {
   _native_method_prefixes = nullptr;
   _next = nullptr;
   _class_file_load_hook_ever_enabled = false;
+  _agent = nullptr;
 
   // Moot since ClassFileLoadHook not yet enabled.
   // But "true" will give a more predictable ClassFileLoadHook behavior
@@ -273,6 +275,12 @@ JvmtiEnvBase::env_dispose() {
   // the destructor runs.
   if (tag_map_to_clear != nullptr) {
     tag_map_to_clear->clear();
+  }
+
+  JvmtiAgent* const agent = _agent;
+  if (agent != nullptr) {
+    _agent = nullptr;
+    JvmtiAgentManager::on_env_disposal(agent);
   }
 
   _needs_clean_up = true;

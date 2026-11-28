@@ -37,7 +37,6 @@
 #endif
 
 class frame;
-class JvmtiAgent;
 
 // Rules for using and implementing methods declared in the "os" class
 // ===================================================================
@@ -854,12 +853,6 @@ class os: AllStatic {
   // Return the handle of this process
   static void* get_default_process_handle();
 
-  // Check for static linked agent library
-  static bool find_builtin_agent(JvmtiAgent* agent_lib, const char* sym);
-
-  // Find agent entry point
-  static void* find_agent_function(JvmtiAgent* agent_lib, bool check_lib, const char* sym);
-
   // Provide wrapper versions of these functions to guarantee NUL-termination
   // in all cases.
 
@@ -889,7 +882,6 @@ class os: AllStatic {
   static void print_summary_info(outputStream* st, char* buf, size_t buflen);
   static void print_memory_info(outputStream* st);
   static void print_dll_info(outputStream* st);
-  static void print_jvmti_agent_info(outputStream* st);
   static void print_environment_variables(outputStream* st, const char** env_list);
   static void print_context(outputStream* st, const void* context);
   static void print_tos_pc(outputStream* st, const void* context);
@@ -1137,11 +1129,6 @@ class os: AllStatic {
   // (for Unix, that stimulus is a signal, for Windows, an external
   // ResumeThread call)
   static void pause();
-
-  // Builds a platform dependent Agent_OnLoad_<libname> function name
-  // which is used to find statically linked in agents.
-  static char*  build_agent_function_name(const char *sym, const char *cname,
-                                          bool is_absolute_path);
 
 #ifdef MACOS_AARCH64
   // Enables write or execute access to writeable and executable pages.

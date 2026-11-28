@@ -46,6 +46,9 @@
 #include "runtime/java.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/safepoint.hpp"
+#if INCLUDE_JVMTI
+#include "jfr/periodic/jfrJvmtiAgentEvent.hpp"
+#endif
 
 bool Jfr::is_enabled() {
   return JfrRecorder::is_enabled();
@@ -196,6 +199,12 @@ void Jfr::on_deallocation(const Klass* k) {
     JfrKlassUnloading::add_to_unloaded_set(k);
   }
 }
+
+#if INCLUDE_JVMTI
+void Jfr::on_jvmti_agent_disposal(const JvmtiAgent* agent) {
+  JfrJvmtiAgentEvent::generate_event_on_agent_disposal(agent);
+}
+#endif
 
 #if INCLUDE_CDS
 void Jfr::on_restoration(const Klass* k, JavaThread* jt) {

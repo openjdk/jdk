@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -188,6 +188,8 @@ template <template <typename> class Rep, typename TimeSource>
 class TimeInterval : public Rep<TimeSource> {
   template <template <typename> class, typename>
   friend class TimeInstant;
+  friend class JvmtiAgent;
+  TimeInterval(jlong ticks) : Rep<TimeSource>(ticks) {}
   TimeInterval(const TimeInstant<Rep, TimeSource>& end, const TimeInstant<Rep, TimeSource>& start) : Rep<TimeSource>(end, start) {}
  public:
   TimeInterval() : Rep<TimeSource>() {}
@@ -228,6 +230,7 @@ class TimeInstant : public Rep<TimeSource> {
   }
  private:
   TimeInstant(jlong ticks) : Rep<TimeSource>(ticks) {}
+  friend class JvmtiAgent;
   friend class GranularTimer;
   friend class ObjectSample;
   friend class EventEmitter;

@@ -44,7 +44,7 @@
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
-#include "prims/jvmtiAgentList.hpp"
+#include "prims/jvmtiAgentManager.hpp"
 #include "prims/jvmtiCodeBlobEvents.hpp"
 #include "prims/jvmtiEventController.inline.hpp"
 #include "prims/jvmtiExport.hpp"
@@ -74,6 +74,7 @@
 #include "runtime/vm_version.hpp"
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/ticks.hpp"
 
 #ifdef JVMTI_TRACE
 #define EVT_TRACE(evt,out) if ((JvmtiTrace::event_trace_flags(evt) & JvmtiTrace::SHOW_EVENT_SENT) != 0) { SafeResourceMark rm; log_trace(jvmti) out; }
@@ -419,6 +420,7 @@ JvmtiExport::get_jvmti_interface(JavaVM *jvm, void **penv, jint version) {
         JvmtiEnvBase::enable_virtual_threads_notify_jvmti();
       }
     }
+    JvmtiAgentManager::on_env_creation(current_thread, jvmti_env);
     return JNI_OK;
 
   } else if (JvmtiEnv::get_phase() == JVMTI_PHASE_ONLOAD) {
@@ -431,6 +433,7 @@ JvmtiExport::get_jvmti_interface(JavaVM *jvm, void **penv, jint version) {
       // There is a performance impact when VTMS transitions are enabled.
       MountUnmountDisabler::set_notify_jvmti_events(true, true /*is_onload*/);
     }
+    JvmtiAgentManager::on_env_creation(nullptr, jvmti_env);
     return JNI_OK;
 
   } else {
@@ -751,12 +754,36 @@ void JvmtiExport::initialize_oop_storage() {
   _weak_tag_storage->register_num_dead_callback(&JvmtiTagMap::gc_notification);
 }
 
-// Lookup an agent from an JvmtiEnv. Return agent only if it is not yet initialized.
-// An agent can create multiple JvmtiEnvs, but for agent initialization, we are only interested in the initial one.
-static JvmtiAgent* lookup_uninitialized_agent(JvmtiEnv* env, void* callback) {
-  JvmtiAgent* const agent = JvmtiAgentList::lookup(env, callback);
-  return agent == nullptr || agent->is_initialized() ? nullptr : agent;
-}
+class VMInitTimingScope : StackObj {
+  JvmtiAgent* const _agent;
+  Ticks _start;
+  Ticks _end;
+  bool _callback_completed = false;
+
+  NONCOPYABLE(VMInitTimingScope);
+
+ public:
+  VMInitTimingScope(JvmtiAgent* agent) : _agent(agent) {}
+
+  ~VMInitTimingScope() {
+    if (_agent != nullptr) {
+      JvmtiAgentManager::finish_vm_init_timing(_agent, _callback_completed, _start, _end);
+    }
+  }
+
+  void capture_start() {
+    if (_agent != nullptr) {
+      _start = Ticks::now();
+    }
+  }
+
+  void capture_end() {
+    if (_agent != nullptr) {
+      _end = Ticks::now();
+      _callback_completed = true;
+    }
+  }
+};
 
 void JvmtiExport::post_vm_initialized() {
   EVT_TRIG_TRACE(JVMTI_EVENT_VM_INIT, ("Trg VM init event triggered" ));
@@ -764,34 +791,43 @@ void JvmtiExport::post_vm_initialized() {
   // can now enable events
   JvmtiEventController::vm_init();
 
+  JavaThread* const thread = JavaThread::current();
+  assert(thread != nullptr, "invariant");
+  assert(thread->thread_state() == _thread_in_vm, "invariant");
+
   JvmtiEnvIterator it;
   for (JvmtiEnv* env = it.first(); env != nullptr; env = it.next(env)) {
     if (env->is_enabled(JVMTI_EVENT_VM_INIT)) {
-      EVT_TRACE(JVMTI_EVENT_VM_INIT, ("Evt VM init event sent" ));
-
-      JavaThread *thread  = JavaThread::current();
-      JvmtiThreadEventMark jem(thread);
-      JVMTI_JAVA_THREAD_EVENT_CALLBACK_BLOCK(thread)
       jvmtiEventVMInit callback = env->callbacks()->VMInit;
-      if (callback != nullptr) {
-        // We map the JvmtiEnv to its Agent to measure when and for how long
-        // it took to initialize so that JFR can report this information.
-        JvmtiAgent* const agent = lookup_uninitialized_agent(env, reinterpret_cast<void*>(callback));
-        if (agent != nullptr) {
-          agent->initialization_begin();
-        }
-        (*callback)(env->jvmti_external(), jem.jni_env(), jem.jni_thread());
-        if (agent != nullptr) {
-          agent->initialization_end();
+      if (callback == nullptr) {
+        continue;
+      }
+
+      JvmtiAgent* const agent = JvmtiAgentManager::prepare_vm_init_timing(env);
+      JvmtiThreadEventMark jem(thread);
+
+      // Finalize timing after returning to VM state, including when the
+      // callback macro returns before invoking the callback.
+      {
+        VMInitTimingScope timing(agent);
+        {
+          JVMTI_JAVA_THREAD_EVENT_CALLBACK_BLOCK(thread)
+          assert(thread->thread_state() == _thread_in_native, "invariant");
+          timing.capture_start();
+          (*callback)(env->jvmti_external(), jem.jni_env(), jem.jni_thread());
+          timing.capture_end();
         }
       }
+
+      assert(thread->thread_state() == _thread_in_vm, "invariant");
+      EVT_TRACE(JVMTI_EVENT_VM_INIT, ("Evt VM init event sent"));
     }
   }
 
   // Agents are initialized as part of posting the VMInit event above.
   // For -Xrun agents and agents with no VMInit callback, we explicitly ensure they are also initialized.
   // JVM_OnLoad and Agent_OnLoad callouts are performed too early for the proper timestamp logic.
-  JvmtiAgentList::initialize();
+  JvmtiAgentManager::finalize_pending_initialization_timing();
 }
 
 void JvmtiExport::post_vm_death() {

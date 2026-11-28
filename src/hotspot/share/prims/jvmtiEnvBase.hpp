@@ -42,6 +42,7 @@
 // Forward Declarations
 //
 
+class JvmtiAgent;
 class JvmtiEnv;
 class JvmtiThreadState;
 class JvmtiRawMonitor; // for jvmtiEnv.hpp
@@ -126,6 +127,7 @@ class JvmtiEnvBase : public CHeapObj<mtServiceability> {
   static volatile bool _needs_clean_up;
   char** _native_method_prefixes;
   int    _native_method_prefix_count;
+  JvmtiAgent* _agent;
 
  protected:
   JvmtiEnvBase(jint version);
@@ -169,6 +171,14 @@ class JvmtiEnvBase : public CHeapObj<mtServiceability> {
   bool is_retransformable()                        { return _is_retransformable; }
 
   const void* get_env_local_storage() { return _env_local_storage; }
+
+  JvmtiAgent* agent() const { return _agent; }
+
+  void set_agent(JvmtiAgent* agent) {
+    assert(agent != nullptr, "invariant");
+    assert(_agent == nullptr, "invariant");
+    _agent = agent;
+  }
 
   static ByteSize jvmti_external_offset() {
     return byte_offset_of(JvmtiEnvBase, _jvmti_external);

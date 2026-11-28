@@ -37,7 +37,7 @@
 #include "include/jvm_io.h"
 #include "logging/log.hpp"
 #include "memory/universe.hpp"
-#include "prims/jvmtiAgentList.hpp"
+#include "prims/jvmtiAgentManager.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/globals.hpp"
@@ -661,7 +661,7 @@ void CDSConfig::check_aotmode_create() {
   // Since application is not executed in the assembly phase, there's no need to load
   // the agents anyway -- no one will notice that the agents are not loaded.
   log_info(aot)("Disabled all JVMTI agents during -XX:AOTMode=create");
-  JvmtiAgentList::disable_agent_list();
+  JvmtiAgentManager::disable_agent_list();
 }
 
 void CDSConfig::ergo_init_aot_paths() {

@@ -39,6 +39,7 @@ class GraphBuilder;
 class InstanceKlass;
 class JavaThread;
 struct JavaVMOption;
+class JvmtiAgent;
 class Klass;
 class outputStream;
 class Parse;
@@ -82,6 +83,7 @@ class Jfr : AllStatic {
   static void on_report_java_out_of_memory();
   static void on_definition(const InstanceKlass* ik, JavaThread* jt);
   static void on_deallocation(const Klass* k);
+  JVMTI_ONLY(static void on_jvmti_agent_disposal(const JvmtiAgent* agent);)
   CDS_ONLY(static void on_restoration(const Klass* k, JavaThread* jt);)
 };
 

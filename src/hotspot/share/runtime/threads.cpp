@@ -62,7 +62,7 @@
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
 #include "prims/jvm_misc.hpp"
-#include "prims/jvmtiAgentList.hpp"
+#include "prims/jvmtiAgentManager.hpp"
 #include "prims/jvmtiEnvBase.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
@@ -569,7 +569,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   ostream_init_log();
 
   // Launch -agentlib/-agentpath and converted -Xrun agents
-  JvmtiAgentList::load_agents();
+  JvmtiAgentManager::start_agents();
 
   // Initialize Threads state
   _number_of_threads = 0;
@@ -706,7 +706,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   // Launch -Xrun agents early if EagerXrunInit is set
   if (EagerXrunInit) {
-    JvmtiAgentList::load_xrun_agents();
+    JvmtiAgentManager::start_xrun_agents();
   }
 
   initialize_java_lang_classes(main_thread, CHECK_JNI_ERR);
@@ -758,7 +758,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   // Launch -Xrun agents if EagerXrunInit is not set.
   if (!EagerXrunInit) {
-    JvmtiAgentList::load_xrun_agents();
+    JvmtiAgentManager::start_xrun_agents();
   }
 
   Arena::start_chunk_pool_cleaner_task();
