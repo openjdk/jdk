@@ -884,7 +884,9 @@ Node* PhaseMacroExpand::generate_arraycopy(ArrayCopyNode *ac, AllocateArrayNode*
   assert((*ctrl)->in(0)->isa_MemBar(), "MemBar node");
   (*ctrl)->in(0)->isa_MemBar()->set_trailing_expanded_array_copy();
 
-  _igvn.replace_node(_callprojs->fallthrough_memproj, out_mem);
+  if (_callprojs->fallthrough_memproj != nullptr) {
+    _igvn.replace_node(_callprojs->fallthrough_memproj, out_mem);
+  }
   if (_callprojs->fallthrough_ioproj != nullptr) {
     _igvn.replace_node(_callprojs->fallthrough_ioproj, *io);
   }
@@ -1147,7 +1149,16 @@ MergeMemNode* PhaseMacroExpand::generate_slow_arraycopy(ArrayCopyNode *ac,
   *ctrl = _callprojs->fallthrough_catchproj->clone();
   transform_later(*ctrl);
 
-  Node* m = _callprojs->fallthrough_memproj->clone();
+  // When the code after the arraycopy is found to be dead by the compiler,
+  // the fallthrough memory projection can already be gone, so
+  // _callprojs->fallthrough_memproj could be nullptr. There is nothing to
+  // clone then: create a new memory projection for the call instead.
+  Node* m = nullptr;
+  if (_callprojs->fallthrough_memproj != nullptr) {
+    m = _callprojs->fallthrough_memproj->clone();
+  } else {
+    m = new ProjNode(call, TypeFunc::Memory);
+  }
   transform_later(m);
 
   uint alias_idx = C->get_alias_index(adr_type);

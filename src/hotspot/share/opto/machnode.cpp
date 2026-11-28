@@ -365,7 +365,7 @@ const TypePtr* MachNode::out_adr_type_impl() const {
       assert(res != nullptr, "must declare an out_adr_type");
       verify_adr_type(res, compute_adr_type_from_inputs());
     } else {
-      assert(res == nullptr, "unexpected memory producer");
+      assert(res == nullptr || is_MachCall() || is_MachMemBar(), "unexpected memory producer");
     }
 #endif // ASSERT
     return res;
