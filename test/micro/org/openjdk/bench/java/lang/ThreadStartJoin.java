@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,16 @@ package org.openjdk.bench.java.lang;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
+import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Scope;
+import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Warmup;
+import org.openjdk.jmh.infra.BenchmarkParams;
 
 import java.util.concurrent.TimeUnit;
 
@@ -49,6 +52,14 @@ public class ThreadStartJoin {
     private static final int THREADS = Runtime.getRuntime().availableProcessors();
 
     private Thread[] ts;
+
+    @Setup(Level.Trial)
+    public void setup(BenchmarkParams params) {
+        if (params.getThreads() != 1) {
+            throw new IllegalArgumentException(
+                    "ThreadStartJoin requires exactly one JMH worker; use -t 1");
+        }
+    }
 
     @Benchmark
     public void test() throws InterruptedException {
