@@ -115,6 +115,11 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseVectorizedMismatchIntrinsic, false);
   }
 
+  if (Use16ByteAtomicFlattening) {
+    warning("Use16ByteAtomicFlattening not supported on this CPU");
+    FLAG_SET_DEFAULT(Use16ByteAtomicFlattening, false);
+  }
+
   // Enable error context decoding on known platforms
 #if defined(AMD64) || defined(ARM) || defined(AARCH64) || \
     defined(PPC) || defined(RISCV) || defined(S390)

@@ -456,12 +456,7 @@ void value_primitive_and_oop_iterate(ValueKlass* klass,
                                      size_t payload_size,
                                      PrimitiveFunction primitive_function,
                                      OopFunction oop_function) {
-  if (!klass->contains_oops()) {
-    // Only primitive fields
-    primitive_function(0, payload_size);
-    return;
-  }
-
+  assert(klass->contains_oops(), "should be handled in the caller");
   size_t visited = 0;
 
   // Visit primitive and oop fields up until and including the last oop field
@@ -496,6 +491,10 @@ inline void ZBarrierSet::AccessBarrier<decorators, BarrierSetT>::value_copy_in_h
   precond(src.klass() == dst.klass());
 
   ValueKlass* const klass = src.klass();
+  if (!klass->contains_oops()) {
+    Raw::value_copy_in_heap(src, dst);
+    return;
+  }
 
   const size_t payload_size = ValuePayload::copy_size_in_bytes(src, dst);
 
@@ -504,7 +503,8 @@ inline void ZBarrierSet::AccessBarrier<decorators, BarrierSetT>::value_copy_in_h
   const address dst_payload = dst.addr();
 
   auto primitive_function = [&](size_t offset, size_t size) {
-    Copy::copy_value_content(src_payload + offset, dst_payload + offset, size);
+    static_assert(sizeof(zpointer) == sizeof(jlong));
+    Copy::copy_object_payload_partial<sizeof(jlong)>(src_payload + offset, dst_payload + offset, size);
   };
 
   auto oop_function = [&](size_t offset) {
@@ -540,7 +540,8 @@ inline void ZBarrierSet::AccessBarrier<decorators, BarrierSetT>::value_store_nul
   const address dst_payload = dst.addr();
 
   auto primitive_function = [&](size_t offset, size_t size) {
-    Copy::clear_value_content(dst_payload + offset, size);
+    static_assert(sizeof(zpointer) == sizeof(jlong));
+    Copy::clear_object_payload_partial<sizeof(jlong)>(dst_payload + offset, size);
   };
 
   auto oop_function = [&](size_t offset) {

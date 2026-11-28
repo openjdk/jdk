@@ -794,6 +794,11 @@ void VM_Version::initialize() {
     vm_exit_during_initialization("UseSingleICacheInvalidation is set but neither IDC nor DIC nor NeoverseN1ICacheErratumMitigation is enabled");
   }
 
+  if (Use16ByteAtomicFlattening) {
+    warning("Use16ByteAtomicFlattening not supported on this CPU");
+    FLAG_SET_DEFAULT(Use16ByteAtomicFlattening, false);
+  }
+
   // Construct the "features" string
   stringStream ss(512);
   ss.print("0x%02x:0x%x:0x%03x:%d", _cpu, _variant, _model, _revision);

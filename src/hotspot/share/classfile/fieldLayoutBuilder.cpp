@@ -36,7 +36,10 @@
 #include "oops/layoutKind.hpp"
 #include "oops/valueKlass.inline.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
+#include "runtime/globals.hpp"
+#include "runtime/vm_version.hpp"
 #include "utilities/align.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 static OptionalFlatLayout flat_layout_selection(FieldInfo field_info, Array<ValueFieldInfo>* value_field_info_array,
@@ -482,7 +485,7 @@ LayoutRawBlock* FieldLayout::insert_field_block(LayoutRawBlock* slot, LayoutRawB
 void FieldLayout::reconstruct_layout(const InstanceKlass* ik, bool& has_nonstatic_fields, bool& ends_with_oop) {
   has_nonstatic_fields = ends_with_oop = false;
   if (ik->is_abstract() && !ik->is_identity_class()) {
-    _super_alignment = type2aelembytes(BasicType::T_LONG);
+    _super_alignment = abstract_value_class_payload_alignment();
   }
   GrowableArray<LayoutRawBlock*>* all_fields = new GrowableArray<LayoutRawBlock*>(32);
   BasicType last_type;
@@ -689,6 +692,19 @@ void FieldLayout::remove_null_marker() {
     b = b->next_block();
   }
   ShouldNotReachHere(); // if we reach this point, the null marker was not found!
+}
+
+int FieldLayout::max_atomic_flat_size_in_bytes() {
+  if (Use16ByteAtomicFlattening) {
+    return 16;
+  } else {
+    return 8;
+  }
+}
+
+int FieldLayout::abstract_value_class_payload_alignment() {
+  assert(max_atomic_flat_size_in_bytes() >= type2aelembytes(T_LONG), "invalid max_atomic_op_size value %d", max_atomic_flat_size_in_bytes());
+  return max_atomic_flat_size_in_bytes();
 }
 
 void FieldLayout::print(outputStream* output, bool is_static, const InstanceKlass* super, Array<ValueFieldInfo>* value_fields, bool dummy_field_is_reused_as_null_marker) {
@@ -1116,9 +1132,9 @@ void FieldLayoutBuilder::compute_value_class_layout() {
     if (_is_abstract_value && _has_nonstatic_fields) {
       // Non-static fields of the abstract class must be laid out without knowing
       // the alignment constraints of the fields of the sub-classes, so the worst
-      // case scenario is assumed, which is currently the alignment of T_LONG.
+      // case scenario is assumed.
       // PADDING is added if needed to ensure the payload will respect this alignment.
-      _payload_alignment = type2aelembytes(BasicType::T_LONG);
+      _payload_alignment = FieldLayout::abstract_value_class_payload_alignment();
     }
     assert(_layout->start()->next_block()->block_kind() == LayoutRawBlock::EMPTY, "Unexpected");
     LayoutRawBlock* first_empty = _layout->start()->next_block();
@@ -1156,7 +1172,7 @@ void FieldLayoutBuilder::compute_value_class_layout() {
       // Abstract value class inheriting fields, restore the pessimistic alignment
       // constraint (see comment above) and ensure no field will be inserted before
       // the first inherited field.
-      _payload_alignment = type2aelembytes(BasicType::T_LONG);
+      _payload_alignment = FieldLayout::abstract_value_class_payload_alignment();
       _layout->set_start(_layout->first_field_block());
     }
   }
@@ -1212,7 +1228,7 @@ void FieldLayoutBuilder::compute_value_class_layout() {
     // Next step is to compute the characteristics for a layout enabling atomic updates
     if (UseNullFreeAtomicValueFlattening) {
       int atomic_size = _payload_size_in_bytes == 0 ? 0 : round_up_power_of_2(_payload_size_in_bytes);
-      if (atomic_size <= (int)MAX_ATOMIC_OP_SIZE) {
+      if (can_have_atomic_layout(atomic_size)) {
         _null_free_atomic_layout_size_in_bytes = atomic_size;
       }
     }
@@ -1265,7 +1281,7 @@ void FieldLayoutBuilder::compute_value_class_layout() {
       if (UseNullableAtomicValueFlattening) {
         // For the nullable atomic layout, the size must be compatible with the platform capabilities
         int nullable_atomic_size = round_up_power_of_2(new_raw_size);
-        if (nullable_atomic_size <= (int)MAX_ATOMIC_OP_SIZE) {
+        if (can_have_atomic_layout(nullable_atomic_size)) {
           _nullable_atomic_layout_size_in_bytes = nullable_atomic_size;
           _null_marker_offset = null_marker_offset;
         }
@@ -1339,6 +1355,15 @@ void FieldLayoutBuilder::compute_value_class_layout() {
 
   generate_acmp_maps();
   epilogue();
+}
+
+bool FieldLayoutBuilder::can_have_atomic_layout(int atomic_size) const {
+  // If the layout included oops, accesses need GC barriers, this is not yet implemented for
+  // 16-byte accesses
+  if (atomic_size > type2aelembytes(T_LONG) && _nonstatic_oopmap_count > 0) {
+    return false;
+  }
+  return atomic_size <= FieldLayout::max_atomic_flat_size_in_bytes();
 }
 
 void FieldLayoutBuilder::add_flat_field_oopmap(OopMapBlocksBuilder* nonstatic_oop_maps, ValueKlass* vklass, int offset) {

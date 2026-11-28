@@ -18319,6 +18319,38 @@ instruct storeV(memory mem, vec src) %{
   ins_pipe( pipe_slow );
 %}
 
+instruct loadVAtomic(vec dst, memory mem)
+%{
+  match(Set dst (LoadVectorAtomic mem));
+
+  ins_cost(125);
+  format %{ "vmovdqa $dst, $mem" %}
+
+  ins_encode %{
+    int vlen_in_bytes = Matcher::vector_length_in_bytes(this);
+    assert(vlen_in_bytes == 16, "unexpected vector atomic load with length %d", vlen_in_bytes);
+    assert(VM_Version::supports_fast_16byte_atomic_access(), "not supported");
+    __ movdqa($dst$$XMMRegister, $mem$$Address);
+  %}
+
+  ins_pipe(ialu_reg_mem);
+%}
+
+instruct storeVAtomic(memory mem, vec src)
+%{
+  match(Set mem (StoreVectorAtomic mem src));
+
+  ins_cost(125);
+  format %{ "vmovdqa $mem, $src" %}
+  ins_encode %{
+    int vlen_in_bytes = Matcher::vector_length_in_bytes(this, $src);
+    assert(vlen_in_bytes == 16, "unexpected vector atomic load with length %d", vlen_in_bytes);
+    assert(VM_Version::supports_fast_16byte_atomic_access(), "not supported");
+    __ movdqa($mem$$Address, $src$$XMMRegister);
+  %}
+  ins_pipe(ialu_mem_reg);
+%}
+
 // ---------------------------------------- Gather ------------------------------------
 
 // Gather INT, LONG, FLOAT, DOUBLE

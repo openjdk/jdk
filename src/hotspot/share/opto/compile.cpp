@@ -4269,6 +4269,8 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
   case Op_LoadN:
   case Op_LoadRange:
   case Op_LoadS:
+  case Op_LoadVectorAtomic:
+  case Op_StoreVectorAtomic:
   case Op_LoadVectorGather:
   case Op_StoreVectorScatter:
   case Op_LoadVectorGatherMasked:

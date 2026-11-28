@@ -337,6 +337,10 @@ void VM_Version::initialize() {
     warning("ValueTypeReturnedAsFields not supported on this CPU.");
     FLAG_SET_DEFAULT(ValueTypeReturnedAsFields, false);
   }
+  if (Use16ByteAtomicFlattening) {
+    warning("Use16ByteAtomicFlattening not supported on this CPU");
+    FLAG_SET_DEFAULT(Use16ByteAtomicFlattening, false);
+  }
 }
 
 

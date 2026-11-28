@@ -30,6 +30,10 @@
 #include "utilities/macros.hpp"
 #include "utilities/sizes.hpp"
 
+#ifdef COMPILER2
+#include "opto/c2_globals.hpp"
+#endif // COMPILER2
+
 class stringStream;
 
 class VM_Version : public Abstract_VM_Version {
@@ -1095,6 +1099,27 @@ public:
     return supports_fast_2op_lea() &&
            ((is_intel() && supports_clwb() && !is_intel_skylake()) || // Icelake and above
             is_amd());
+  }
+
+  // Whether the machine can perform a 16-byte atomic load/store that has comparable performance to
+  // doing 2 separate jlong loads/stores. For example, on x86, fast 16-byte atomic load/store is
+  // implemented using vmovdqa.
+  static bool supports_fast_16byte_atomic_access() {
+#ifdef LINUX
+    // Intel guarantees atomicity of 16-byte vmovdqa, AMD does not
+    if (!is_intel() || !supports_avx()) {
+      return false;
+    }
+#ifdef COMPILER2
+    if (MaxVectorSize < 16) {
+      return false;
+    }
+#endif // COMPILER2
+    return true;
+
+#else // LINUX
+    return false;
+#endif // LINUX
   }
 
 #ifdef __APPLE__

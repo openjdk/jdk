@@ -217,7 +217,7 @@ private:
   static void collect_field_types(ciValueKlass* vk, const Type** field_types, int idx, int limit, bool null_free, bool trust_null_free_oop);
   ValueTypeNode* collect_projs(GraphKit* kit, ciValueKlass* vk, int proj_con, bool null_free);
   void expand_projs_atomic(PhaseIterGVN& gvn, Node* ctrl, Node* payload) const;
-  static Node* get_payload_value(PhaseIterGVN& igvn, Node* ctrl, BasicType payload_bt, Node* payload, const Type* value_type, BasicType value_bt, int offset);
+  static Node* get_payload_value(PhaseIterGVN& igvn, Node* ctrl, int payload_size, Node* payload, const Type* value_type, BasicType value_bt, int offset);
 };
 
 // Store an ValueTypeNode to a flat element, the store acts as if it is atomic. Similar to

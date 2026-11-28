@@ -1095,7 +1095,9 @@ void GraphBuilder::load_indexed(BasicType type) {
   LoadIndexed* load_indexed = nullptr;
   Instruction* result = nullptr;
   ciFlatArrayKlass* array_klass = array->as_loaded_flat_array_klass_or_null();
-  if (array_klass != nullptr) {
+  // No support for 16-byte atomic access, must ask runtime
+  bool can_load_flat_array = array_klass != nullptr && !(array_klass->is_elem_atomic() && array_klass->element_byte_size() > int(sizeof(jlong)));
+  if (can_load_flat_array) {
     ciValueKlass* elem_klass = array_klass->element_klass()->as_value_klass();
 
     bool can_delay_access = false;
@@ -1867,6 +1869,12 @@ Value GraphBuilder::load_null_reset_value(ciValueKlass* vk) {
 void GraphBuilder::access_field(Bytecodes::Code code) {
   bool will_link;
   ciField* field = stream()->get_field(will_link);
+  if (field->is_flat() && field->is_atomic() &&
+      field->type()->as_value_klass()->atomic_size(field->is_null_free()) > int(sizeof(jlong))) {
+    bailout("16-byte atomic access not supported");
+    return;
+  }
+
   ciInstanceKlass* holder = field->holder();
   BasicType field_basic_type = field->type()->basic_type();
   ValueType* type = as_ValueType(field_basic_type);

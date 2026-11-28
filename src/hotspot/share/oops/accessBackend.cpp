@@ -164,11 +164,11 @@ namespace AccessInternal {
   }
 
   void value_copy_internal(void* src, void* dst, size_t length) {
-    Copy::copy_value_content(src, dst, length);
+    Copy::copy_value_object_payload(src, dst, length);
   }
 
   void value_store_null(void* dst, size_t length) {
-    Copy::clear_value_content(dst, length);
+    Copy::clear_value_object_payload(dst, length);
   }
 
 #ifdef ASSERT

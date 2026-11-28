@@ -77,6 +77,7 @@ public:
   bool has_null_free_atomic_layout() const;
   bool has_nullable_atomic_layout() const;
   int null_marker_offset_in_payload() const;
+  int atomic_size(bool null_free) const;
   BasicType atomic_size_to_basic_type(bool null_free) const;
 
   bool is_naturally_atomic(bool null_free);

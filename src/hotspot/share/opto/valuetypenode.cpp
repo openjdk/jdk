@@ -46,6 +46,8 @@
 #include "opto/subnode.hpp"
 #include "opto/type.hpp"
 #include "opto/valuetypenode.hpp"
+#include "opto/vectornode.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/pair.hpp"
@@ -2184,25 +2186,36 @@ void LoadFlatNode::expand_atomic(PhaseIterGVN& igvn) const {
 
   bool has_oops = (oop_off_1 != -1);
 
-  // Epsilon: does not care about oop loads.
-  // Serial/Parallel: do not care about oop loads.
-  // G1: does not care about oop loads.
-  // Shenandoah: LBE, needs special handling.
-  // Z: does not produce flat atomics on this shape.
-  assert(!has_oops || !UseZGC, "ZGC does not have special loads with oops");
-  bool needs_special = has_oops && UseShenandoahGC;
-
-  BasicType payload_bt = _vk->atomic_size_to_basic_type(_null_free);
-  assert(!needs_special || payload_bt == T_LONG, "Unexpected payload type");
-
+  Node* payload;
   kit.insert_mem_bar(Op_MemBarCPUOrder);
-  Node* load = kit.access_load_at(base, ptr, TypeRawPtr::BOTTOM, Type::get_const_basic_type(payload_bt), payload_bt,
-                                  _decorators | C2_MISMATCHED | C2_CONTROL_DEPENDENT_LOAD | C2_UNKNOWN_CONTROL_LOAD | (needs_special ? C2_SPECIAL_ACCESS : 0),
-                                  kit.control());
-  if (needs_special) {
-    assert(load->Opcode() == Op_LoadLSpecial, "must be special");
-    Node* oop_offset_node = (oop_off_2 == -1) ? igvn.intcon(oop_off_1) : igvn.intcon(-1);
-    load->add_req(oop_offset_node);
+  if (int atomic_size = _vk->atomic_size(_null_free); atomic_size > int(sizeof(jlong))) {
+    assert(atomic_size == 16, "unexpected atomic_size %d", atomic_size);
+    assert(!has_oops, "not supported");
+    Node* mem = kit.reset_memory();
+    kit.set_all_memory(mem);
+    LoadNode* load = new LoadVectorAtomicNode(kit.control(), mem, ptr, igvn.type(ptr)->as_ptr(), TypeVect::make(T_BYTE, 16), MemNode::MemOrd::unordered);
+    load->set_mismatched_access();
+    payload = igvn.transform(load);
+    igvn.C->set_max_vector_size(MAX2<uint>(igvn.C->max_vector_size(), atomic_size));
+  } else {
+    // Epsilon: does not care about oop loads.
+    // Serial/Parallel: do not care about oop loads.
+    // G1: does not care about oop loads.
+    // Shenandoah: LBE, needs special handling.
+    // Z: does not produce flat atomics on this shape.
+    assert(!has_oops || !UseZGC, "ZGC does not have special loads with oops");
+    bool needs_special = has_oops && UseShenandoahGC;
+
+    BasicType payload_bt = _vk->atomic_size_to_basic_type(_null_free);
+    assert(!needs_special || payload_bt == T_LONG, "Unexpected payload type");
+    payload = kit.access_load_at(base, ptr, TypeRawPtr::BOTTOM, Type::get_const_basic_type(payload_bt), payload_bt,
+                                    _decorators | C2_MISMATCHED | C2_CONTROL_DEPENDENT_LOAD | C2_UNKNOWN_CONTROL_LOAD | (needs_special ? C2_SPECIAL_ACCESS : 0),
+                                    kit.control());
+    if (needs_special) {
+      assert(payload->Opcode() == Op_LoadLSpecial, "must be special");
+      Node* oop_offset_node = (oop_off_2 == -1) ? igvn.intcon(oop_off_1) : igvn.intcon(-1);
+      payload->add_req(oop_offset_node);
+    }
   }
   kit.insert_mem_bar(Op_MemBarCPUOrder);
 
@@ -2216,7 +2229,7 @@ void LoadFlatNode::expand_atomic(PhaseIterGVN& igvn) const {
     igvn.replace_node(old_mem, new_mem);
   }
 
-  expand_projs_atomic(igvn, kit.control(), load);
+  expand_projs_atomic(igvn, kit.control(), payload);
 }
 
 void LoadFlatNode::collect_oop_offsets(ciValueKlass* vk, int& oop_off_1, int& oop_off_2) {
@@ -2297,7 +2310,7 @@ ValueTypeNode* LoadFlatNode::collect_projs(GraphKit* kit, ciValueKlass* vk, int 
 
 // Extract the values of the flattened fields from the loaded payload
 void LoadFlatNode::expand_projs_atomic(PhaseIterGVN& igvn, Node* ctrl, Node* payload) const {
-  BasicType payload_bt = _vk->atomic_size_to_basic_type(_null_free);
+  int payload_size = _vk->atomic_size(_null_free);
   for (int i = 0; i < _vk->nof_nonstatic_fields(); i++) {
     ProjNode* proj_out = proj_out_or_null(TypeFunc::Parms + i);
     if (proj_out == nullptr) {
@@ -2307,7 +2320,7 @@ void LoadFlatNode::expand_projs_atomic(PhaseIterGVN& igvn, Node* ctrl, Node* pay
     ciField* field = _vk->nonstatic_field_at(i);
     int field_offset = field->offset_in_bytes() - _vk->payload_offset();
     const Type* field_type = igvn.type(proj_out);
-    Node* field_value = get_payload_value(igvn, ctrl, payload_bt, payload, field_type, field->type()->basic_type(), field_offset);
+    Node* field_value = get_payload_value(igvn, ctrl, payload_size, payload, field_type, field->type()->basic_type(), field_offset);
     igvn.replace_node(proj_out, field_value);
   }
 
@@ -2318,32 +2331,66 @@ void LoadFlatNode::expand_projs_atomic(PhaseIterGVN& igvn, Node* ctrl, Node* pay
     }
 
     int null_marker_offset = _vk->null_marker_offset_in_payload();
-    Node* null_marker_value = get_payload_value(igvn, ctrl, payload_bt, payload, TypeInt::BOOL, T_BOOLEAN, null_marker_offset);
+    Node* null_marker_value = get_payload_value(igvn, ctrl, payload_size, payload, TypeInt::BOOL, T_BOOLEAN, null_marker_offset);
     igvn.replace_node(proj_out, null_marker_value);
   }
 }
 
-Node* LoadFlatNode::get_payload_value(PhaseIterGVN& igvn, Node* ctrl, BasicType payload_bt, Node* payload, const Type* value_type, BasicType value_bt, int offset) {
-  assert((offset + type2aelembytes(value_bt)) <= type2aelembytes(payload_bt), "Value does not fit into payload");
-  Node* value = nullptr;
+Node* LoadFlatNode::get_payload_value(PhaseIterGVN& igvn, Node* ctrl, int payload_size, Node* payload, const Type* value_type, BasicType value_bt, int offset) {
+  int value_size = type2aelembytes(value_bt);
+  assert(offset + value_size <= payload_size, "Value does not fit into payload");
+  assert(offset % value_size == 0, "misaligned field");
   // Shift the field to the low-order bits of the payload.
 #ifdef VM_LITTLE_ENDIAN
   int shift = offset << LogBitsPerByte;
 #else
-  int shift = (type2aelembytes(payload_bt) - type2aelembytes(value_bt) - offset) << LogBitsPerByte;
+  int shift = (payload_size - type2aelembytes(value_bt) - offset) << LogBitsPerByte;
 #endif
-  Node* shift_val = igvn.intcon(shift);
-  if (payload_bt == T_LONG) {
+
+  Node* value;
+  BasicType current_bt;
+  if (payload_size == 16) {
+    // Lack support for 16-byte payload with embedded oops
+    assert(is_java_primitive(value_bt), "not support");
+    BasicType casted_vector_elem_bt = value_bt;
+    if (value_bt == T_BOOLEAN) {
+      casted_vector_elem_bt = T_BYTE;
+    } else if (value_bt == T_CHAR) {
+      casted_vector_elem_bt = T_SHORT;
+    }
+    const TypeVect* payload_vector_type = TypeVect::make(T_BYTE, 16);
+    const TypeVect* casted_vector_type = TypeVect::make(casted_vector_elem_bt, 16 / type2aelembytes(casted_vector_elem_bt));
+    value = igvn.transform(new VectorReinterpretNode(payload, payload_vector_type, casted_vector_type));
+    Node* idx = igvn.intcon(offset / value_size);
+    switch (value_bt) {
+      case T_BOOLEAN: // fall-through
+      case T_BYTE:   value = igvn.transform(new ExtractBNode(value, idx)); break;
+      case T_CHAR:   value = igvn.transform(new ExtractCNode(value, idx)); break;
+      case T_SHORT:  value = igvn.transform(new ExtractSNode(value, idx)); break;
+      case T_INT:    value = igvn.transform(new ExtractINode(value, idx)); break;
+      case T_LONG:   value = igvn.transform(new ExtractLNode(value, idx)); break;
+      case T_FLOAT:  value = igvn.transform(new ExtractFNode(value, idx)); break;
+      case T_DOUBLE: value = igvn.transform(new ExtractDNode(value, idx)); break;
+      default: ShouldNotReachHere();
+    }
+    current_bt = value_bt;
+  } else if (payload_size == int(sizeof(jlong))) {
+    assert(type2aelembytes(value_bt) < int(sizeof(jlong)), "naturally atomic");
+    Node* shift_val = igvn.intcon(shift);
     value = igvn.transform(new URShiftLNode(payload, shift_val));
     value = igvn.transform(new ConvL2INode(value));
+    current_bt = T_INT;
   } else {
+    Node* shift_val = igvn.intcon(shift);
     value = igvn.transform(new URShiftINode(payload, shift_val));
+    current_bt = T_INT;
   }
 
-  if (value_bt == T_INT) {
+  if (value_bt == current_bt) {
     return value;
   } else if (!is_java_primitive(value_bt)) {
-    assert(UseCompressedOops && payload_bt == T_LONG, "Naturally atomic");
+    // Lack support for 16-byte payload with embedded oops
+    assert(UseCompressedOops && payload_size == sizeof(jlong), "naturally atomic");
     value = igvn.transform(new CastI2NNode(ctrl, value, value_type->make_narrowoop()));
     value = igvn.transform(new DecodeNNode(value, value_type));
 
@@ -2354,6 +2401,7 @@ Node* LoadFlatNode::get_payload_value(PhaseIterGVN& igvn, Node* ctrl, BasicType 
     return value;
   } else {
     // Make sure to zero unused bits in the 32-bit value
+    assert(current_bt == T_INT, "impossible");
     return Compile::narrow_value(value_bt, value, value_type, &igvn, true);
   }
 }
@@ -2450,31 +2498,40 @@ void StoreFlatNode::expand_atomic(PhaseIterGVN& igvn) const {
 
   assert((oop_off_1 == -1) == oop_1->is_top(), "oop_off_1 == -1 iff. oop_1 is top, but oop_off_1=%d, is oop_1 top=%d", oop_off_1, oop_1->is_top());
   assert((oop_off_2 == -1) == oop_2->is_top(), "oop_off_2 == -1 iff. oop_2 is top, but oop_off_2=%d, is oop_2 top=%d", oop_off_2, oop_2->is_top());
-
   bool has_oops = (oop_off_1 != -1);
 
-  // Epsilon: does not care about oop stores.
-  // Serial/Parallel: handle it separately.
-  // G1: LBE, needs special handling.
-  // Shenandoah: LBE, needs special handling.
-  // Z: does not produce flat atomics on this shape.
-  assert(!has_oops || !UseZGC, "ZGC does not have special stores with oops");
-  bool needs_special = has_oops && (UseG1GC || UseShenandoahGC);
-
-  BasicType payload_bt = vk->atomic_size_to_basic_type(_null_free);
-  assert(!needs_special || payload_bt == T_LONG, "Unexpected payload type");
-
   kit.insert_mem_bar(Op_MemBarCPUOrder);
-  Node* store = kit.access_store_at(base, ptr, TypeRawPtr::BOTTOM, payload, Type::get_const_basic_type(payload_bt), payload_bt,
-                                    _decorators | C2_MISMATCHED | (needs_special ? C2_SPECIAL_ACCESS : 0),
-                                    true, value);
-  if (needs_special) {
-    assert(store->Opcode() == Op_StoreLSpecial, "must be special");
-    assert(!oop_1->is_top(), "if no oop, the store shouldn't be special");
-    Node* oop_offset_node = (oop_off_2 == -1) ? igvn.intcon(oop_off_1) : igvn.C->top();
-    store->add_req(oop_offset_node);
-    store->add_req(oop_1);
-    store->add_req(oop_2);
+  if (int atomic_size = vk->atomic_size(_null_free); atomic_size > int(sizeof(jlong))) {
+    assert(atomic_size == 16, "unexpected atomic_size %d", atomic_size);
+    assert(!has_oops, "not supported");
+    Node* mem = kit.reset_memory();
+    kit.set_all_memory(mem);
+    StoreNode* store = new StoreVectorAtomicNode(kit.control(), mem, ptr, igvn.type(ptr)->as_ptr(), payload);
+    store->set_mismatched_access();
+    kit.set_memory(igvn.transform(store), TypeRawPtr::BOTTOM);
+    igvn.C->set_max_vector_size(MAX2<uint>(igvn.C->max_vector_size(), atomic_size));
+  } else {
+    // Epsilon: does not care about oop stores.
+    // Serial/Parallel: handle it separately.
+    // G1: LBE, needs special handling.
+    // Shenandoah: LBE, needs special handling.
+    // Z: does not produce flat atomics on this shape.
+    assert(!has_oops || !UseZGC, "ZGC does not have special stores with oops");
+    bool needs_special = has_oops && (UseG1GC || UseShenandoahGC);
+    BasicType payload_bt = vk->atomic_size_to_basic_type(_null_free);
+    assert(!needs_special || payload_bt == T_LONG, "Unexpected payload type");
+
+    Node* store = kit.access_store_at(base, ptr, TypeRawPtr::BOTTOM, payload, Type::get_const_basic_type(payload_bt), payload_bt,
+                                      _decorators | C2_MISMATCHED | (needs_special ? C2_SPECIAL_ACCESS : 0),
+                                      true, value);
+    if (needs_special) {
+      assert(store->Opcode() == Op_StoreLSpecial, "must be special");
+      assert(!oop_1->is_top(), "if no oop, the store shouldn't be special");
+      Node* oop_offset_node = (oop_off_2 == -1) ? igvn.intcon(oop_off_1) : igvn.C->top();
+      store->add_req(oop_offset_node);
+      store->add_req(oop_1);
+      store->add_req(oop_2);
+    }
   }
   kit.insert_mem_bar(Op_MemBarCPUOrder);
 
@@ -2496,6 +2553,40 @@ Node* StoreFlatNode::convert_to_payload(PhaseIterGVN& igvn, Node* ctrl, ValueTyp
   oop_off_2 = -1;
   oop_2 = igvn.C->top();
   ciValueKlass* vk = igvn.type(value)->value_klass();
+  if (vk->atomic_size(null_free) > int(sizeof(jlong))) {
+    const TypeVect* payload_type = TypeVect::make(T_BYTE, 16);
+    Node* payload = igvn.transform(new ReplicateNode(igvn.intcon(0), payload_type));
+    for (int i = 0; i < vk->nof_nonstatic_fields(); i++) {
+      ciField* field = vk->nonstatic_field_at(i);
+      BasicType field_bt = field->type()->basic_type();
+      assert(is_java_primitive(field_bt), "not supported");
+      BasicType payload_elem_bt = field_bt;
+      if (field_bt == T_BOOLEAN) {
+        payload_elem_bt = T_BYTE;
+      } else if (field_bt == T_CHAR) {
+        payload_elem_bt = T_SHORT;
+      }
+      int field_size = type2aelembytes(field_bt);
+      const TypeVect* new_payload_type = TypeVect::make(payload_elem_bt, 16 / field_size);
+      payload = igvn.transform(new VectorReinterpretNode(payload, payload_type, new_payload_type));
+      payload_type = new_payload_type;
+      int field_offset_in_payload = field->offset_in_bytes() - vk->payload_offset();
+
+      Node* field_value = value->field_value_by_offset(field->offset_in_bytes(), true);
+      ConINode* idx = igvn.intcon(field_offset_in_payload / field_size)->as_ConI();
+      payload = igvn.transform(new VectorInsertNode(payload, field_value, idx, payload_type));
+    }
+
+    if (!null_free) {
+      const TypeVect* new_payload_type = TypeVect::make(T_BYTE, 16);
+      payload = igvn.transform(new VectorReinterpretNode(payload, payload_type, new_payload_type));
+      ConINode* idx = igvn.intcon(vk->null_marker_offset_in_payload())->as_ConI();
+      payload = igvn.transform(new VectorInsertNode(payload, value->get_null_marker(), idx, new_payload_type));
+    }
+
+    return payload;
+  }
+
   BasicType payload_bt = vk->atomic_size_to_basic_type(null_free);
   Node* payload = igvn.zerocon(payload_bt);
   if (!null_free) {

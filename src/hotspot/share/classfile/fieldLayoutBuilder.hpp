@@ -28,9 +28,9 @@
 #include "classfile/classFileParser.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "memory/allocation.hpp"
-#include "oops/fieldStreams.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/valueKlass.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
 
 // Classes below are used to compute the field layout of classes.
@@ -51,8 +51,6 @@
 //  next/prev pointers are included in the LayoutRawBlock class to narrow
 //  the number of allocation required during the computation of a layout.
 //
-
-#define MAX_ATOMIC_OP_SIZE sizeof(uint64_t)
 
 class LayoutRawBlock : public ResourceObj {
  public:
@@ -245,6 +243,10 @@ class FieldLayout : public ResourceObj {
   void shift_fields(int shift);
   LayoutRawBlock* find_null_marker();
   void remove_null_marker();
+
+  static int max_atomic_flat_size_in_bytes();
+  static int abstract_value_class_payload_alignment();
+
   void print(outputStream* output, bool is_static, const InstanceKlass* super, Array<ValueFieldInfo>* value_fields, bool dummy_field_is_reused_as_null_marker);
 };
 
@@ -339,6 +341,7 @@ class FieldLayoutBuilder : public ResourceObj {
   void build_layout();
   void compute_regular_layout();
   void compute_value_class_layout();
+  bool can_have_atomic_layout(int atomic_size) const;
   LayoutRawBlock* insert_contended_padding(LayoutRawBlock* slot);
 
  protected:

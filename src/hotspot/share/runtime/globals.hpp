@@ -842,6 +842,10 @@ const int ObjectAlignmentInBytes = 8;
           "Maximum size (in bytes) dedicated to flat fields in an instance")\
           range(0, 1024 * 1024)                                             \
                                                                             \
+  product(bool, Use16ByteAtomicFlattening, false, EXPERIMENTAL,             \
+          "Whether the VM should try to flatten 16-byte atomic fields "     \
+          "and array elements")                                             \
+                                                                            \
   develop(ccstrlist, PrintValueKlassFields, "",                             \
           "Print fields collected by ValueKlass::collect_fields")           \
                                                                             \

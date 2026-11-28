@@ -21,18 +21,13 @@
  * questions.
  */
 
-package compiler.valhalla.valuetypes;
+package compiler.valhalla.valuetypes.tearing;
 
 import java.lang.invoke.*;
-import java.lang.reflect.Field;
-
+import jdk.internal.value.ValueClass;
+import jdk.internal.vm.annotation.NullRestricted;
 import jdk.test.lib.Asserts;
 import jdk.test.whitebox.WhiteBox;
-
-import jdk.internal.misc.Unsafe;
-import jdk.internal.value.ValueClass;
-import jdk.internal.vm.annotation.LooselyConsistentValue;
-import jdk.internal.vm.annotation.NullRestricted;
 
 /*
  * @test id=no-flattening
@@ -46,6 +41,7 @@ import jdk.internal.vm.annotation.NullRestricted;
  *          java.base/jdk.internal.vm.annotation
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @compile MyValueTearingShorts.java
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:-UseFieldFlattening -XX:-UseArrayFlattening
  *                   -XX:+StressGCM -XX:+StressLCM
@@ -64,6 +60,7 @@ import jdk.internal.vm.annotation.NullRestricted;
  *          java.base/jdk.internal.vm.annotation
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @compile MyValueTearingShorts.java
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:-UseFieldFlattening -XX:-UseArrayFlattening
  *                   -XX:+StressGCM -XX:+StressLCM
@@ -83,6 +80,7 @@ import jdk.internal.vm.annotation.NullRestricted;
  *          java.base/jdk.internal.vm.annotation
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @compile MyValueTearingShorts.java
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:-UseFieldFlattening -XX:-UseArrayFlattening
  *                   -XX:CompileCommand=dontinline,*::incrementAndCheck*
@@ -102,6 +100,7 @@ import jdk.internal.vm.annotation.NullRestricted;
  *          java.base/jdk.internal.vm.annotation
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @compile MyValueTearingShorts.java
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:-UseFieldFlattening -XX:-UseArrayFlattening
  *                   -XX:CompileCommand=dontinline,*::incrementAndCheck*
@@ -122,6 +121,7 @@ import jdk.internal.vm.annotation.NullRestricted;
  *          java.base/jdk.internal.vm.annotation
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @compile MyValueTearingShorts.java
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *                   -XX:+WhiteBoxAPI -XX:+UseNullableAtomicValueFlattening -XX:+UseNullFreeAtomicValueFlattening -XX:+UseArrayFlattening
  *                   -Xcomp -XX:-TieredCompilation
@@ -129,7 +129,7 @@ import jdk.internal.vm.annotation.NullRestricted;
  */
 
 /*
- * @test id=flattening
+ * @test id=flattening-bytes
  * @key stress randomness
  * @requires vm.compMode != "Xint" & vm.flavor == "server"
  * @summary Detect tearing on flat accesses and buffering.
@@ -140,6 +140,7 @@ import jdk.internal.vm.annotation.NullRestricted;
  *          java.base/jdk.internal.vm.annotation
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @compile MyValueTearingBytes.java
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *                   -XX:+WhiteBoxAPI -XX:+UseNullableAtomicValueFlattening -XX:+UseNullFreeAtomicValueFlattening -XX:+UseArrayFlattening
  *                   -XX:+StressGCM -XX:+StressLCM
@@ -147,7 +148,7 @@ import jdk.internal.vm.annotation.NullRestricted;
  */
 
 /*
- * @test id=flattening-AII
+ * @test id=flattening-shorts
  * @key stress randomness
  * @requires vm.compMode != "Xint" & vm.flavor == "server"
  * @summary Detect tearing on flat accesses and buffering.
@@ -158,6 +159,46 @@ import jdk.internal.vm.annotation.NullRestricted;
  *          java.base/jdk.internal.vm.annotation
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @compile MyValueTearingShorts.java
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *                   -XX:+WhiteBoxAPI -XX:+UseNullableAtomicValueFlattening -XX:+UseNullFreeAtomicValueFlattening -XX:+UseArrayFlattening
+ *                   -XX:+StressGCM -XX:+StressLCM
+ *                   ${test.main.class}
+ */
+
+/*
+ * @test id=flattening-ints
+ * @key stress randomness
+ * @requires vm.compMode != "Xint" & vm.flavor == "server"
+ * @summary Detect tearing on flat accesses and buffering.
+ * @library /testlibrary /test/lib /
+ * @enablePreview
+ * @modules java.base/jdk.internal.misc
+ *          java.base/jdk.internal.value
+ *          java.base/jdk.internal.vm.annotation
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @compile MyValueTearingInts.java
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *                   -XX:+WhiteBoxAPI -XX:+UseNullableAtomicValueFlattening -XX:+UseNullFreeAtomicValueFlattening -XX:+UseArrayFlattening
+ *                   -XX:ObjectAlignmentInBytes=16 -XX:+Use16ByteAtomicFlattening
+ *                   -XX:+StressGCM -XX:+StressLCM
+ *                   ${test.main.class}
+ */
+
+/*
+ * @test id=flattening-AII-bytes
+ * @key stress randomness
+ * @requires vm.compMode != "Xint" & vm.flavor == "server"
+ * @summary Detect tearing on flat accesses and buffering.
+ * @library /testlibrary /test/lib /
+ * @enablePreview
+ * @modules java.base/jdk.internal.misc
+ *          java.base/jdk.internal.value
+ *          java.base/jdk.internal.vm.annotation
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @compile MyValueTearingBytes.java
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *                   -XX:+WhiteBoxAPI -XX:+UseNullableAtomicValueFlattening -XX:+UseNullFreeAtomicValueFlattening -XX:+UseArrayFlattening
  *                   -XX:+StressGCM -XX:+StressLCM
@@ -166,7 +207,7 @@ import jdk.internal.vm.annotation.NullRestricted;
  */
 
 /*
- * @test id=flattening-di
+ * @test id=flattening-AII-shorts
  * @key stress randomness
  * @requires vm.compMode != "Xint" & vm.flavor == "server"
  * @summary Detect tearing on flat accesses and buffering.
@@ -177,6 +218,48 @@ import jdk.internal.vm.annotation.NullRestricted;
  *          java.base/jdk.internal.vm.annotation
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @compile MyValueTearingShorts.java
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *                   -XX:+WhiteBoxAPI -XX:+UseNullableAtomicValueFlattening -XX:+UseNullFreeAtomicValueFlattening -XX:+UseArrayFlattening
+ *                   -XX:+StressGCM -XX:+StressLCM
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:+AlwaysIncrementalInline
+ *                   ${test.main.class}
+ */
+
+/*
+ * @test id=flattening-AII-ints
+ * @key stress randomness
+ * @requires vm.compMode != "Xint" & vm.flavor == "server"
+ * @summary Detect tearing on flat accesses and buffering.
+ * @library /testlibrary /test/lib /
+ * @enablePreview
+ * @modules java.base/jdk.internal.misc
+ *          java.base/jdk.internal.value
+ *          java.base/jdk.internal.vm.annotation
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @compile MyValueTearingInts.java
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *                   -XX:+WhiteBoxAPI -XX:+UseNullableAtomicValueFlattening -XX:+UseNullFreeAtomicValueFlattening -XX:+UseArrayFlattening
+ *                   -XX:ObjectAlignmentInBytes=16 -XX:+Use16ByteAtomicFlattening
+ *                   -XX:+StressGCM -XX:+StressLCM
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:+AlwaysIncrementalInline
+ *                   ${test.main.class}
+ */
+
+/*
+ * @test id=flattening-di-bytes
+ * @key stress randomness
+ * @requires vm.compMode != "Xint" & vm.flavor == "server"
+ * @summary Detect tearing on flat accesses and buffering.
+ * @library /testlibrary /test/lib /
+ * @enablePreview
+ * @modules java.base/jdk.internal.misc
+ *          java.base/jdk.internal.value
+ *          java.base/jdk.internal.vm.annotation
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @compile MyValueTearingBytes.java
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *                   -XX:+WhiteBoxAPI -XX:+UseNullableAtomicValueFlattening -XX:+UseNullFreeAtomicValueFlattening -XX:+UseArrayFlattening
  *                   -XX:CompileCommand=dontinline,*::incrementAndCheck*
@@ -185,7 +268,7 @@ import jdk.internal.vm.annotation.NullRestricted;
  */
 
 /*
- * @test id=flattening-di-AII
+ * @test id=flattening-di-shorts
  * @key stress randomness
  * @requires vm.compMode != "Xint" & vm.flavor == "server"
  * @summary Detect tearing on flat accesses and buffering.
@@ -196,6 +279,48 @@ import jdk.internal.vm.annotation.NullRestricted;
  *          java.base/jdk.internal.vm.annotation
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @compile MyValueTearingShorts.java
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *                   -XX:+WhiteBoxAPI -XX:+UseNullableAtomicValueFlattening -XX:+UseNullFreeAtomicValueFlattening -XX:+UseArrayFlattening
+ *                   -XX:CompileCommand=dontinline,*::incrementAndCheck*
+ *                   -XX:+StressGCM -XX:+StressLCM
+ *                   ${test.main.class}
+ */
+
+/*
+ * @test id=flattening-di-ints
+ * @key stress randomness
+ * @requires vm.compMode != "Xint" & vm.flavor == "server"
+ * @summary Detect tearing on flat accesses and buffering.
+ * @library /testlibrary /test/lib /
+ * @enablePreview
+ * @modules java.base/jdk.internal.misc
+ *          java.base/jdk.internal.value
+ *          java.base/jdk.internal.vm.annotation
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @compile MyValueTearingInts.java
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *                   -XX:+WhiteBoxAPI -XX:+UseNullableAtomicValueFlattening -XX:+UseNullFreeAtomicValueFlattening -XX:+UseArrayFlattening
+ *                   -XX:ObjectAlignmentInBytes=16 -XX:+Use16ByteAtomicFlattening
+ *                   -XX:CompileCommand=dontinline,*::incrementAndCheck*
+ *                   -XX:+StressGCM -XX:+StressLCM
+ *                   ${test.main.class}
+ */
+
+/*
+ * @test id=flattening-di-AII-bytes
+ * @key stress randomness
+ * @requires vm.compMode != "Xint" & vm.flavor == "server"
+ * @summary Detect tearing on flat accesses and buffering.
+ * @library /testlibrary /test/lib /
+ * @enablePreview
+ * @modules java.base/jdk.internal.misc
+ *          java.base/jdk.internal.value
+ *          java.base/jdk.internal.vm.annotation
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @compile MyValueTearingBytes.java
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *                   -XX:+WhiteBoxAPI -XX:+UseNullableAtomicValueFlattening -XX:+UseNullFreeAtomicValueFlattening -XX:+UseArrayFlattening
  *                   -XX:CompileCommand=dontinline,*::incrementAndCheck*
@@ -204,48 +329,48 @@ import jdk.internal.vm.annotation.NullRestricted;
  *                   ${test.main.class}
  */
 
-@LooselyConsistentValue
-value class MyValueTearing {
-    // Make sure the payload size is <= 64-bit to enable atomic flattening
-    short x;
-    short y;
+/*
+ * @test id=flattening-di-AII-shorts
+ * @key stress randomness
+ * @requires vm.compMode != "Xint" & vm.flavor == "server"
+ * @summary Detect tearing on flat accesses and buffering.
+ * @library /testlibrary /test/lib /
+ * @enablePreview
+ * @modules java.base/jdk.internal.misc
+ *          java.base/jdk.internal.value
+ *          java.base/jdk.internal.vm.annotation
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @compile MyValueTearingShorts.java
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *                   -XX:+WhiteBoxAPI -XX:+UseNullableAtomicValueFlattening -XX:+UseNullFreeAtomicValueFlattening -XX:+UseArrayFlattening
+ *                   -XX:CompileCommand=dontinline,*::incrementAndCheck*
+ *                   -XX:+StressGCM -XX:+StressLCM
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:+AlwaysIncrementalInline
+ *                   ${test.main.class}
+ */
 
-    private static final Unsafe U = Unsafe.getUnsafe();
-    private static final long X_OFFSET;
-    private static final long Y_OFFSET;
-    static {
-        try {
-            Field xField = MyValueTearing.class.getDeclaredField("x");
-            X_OFFSET = U.objectFieldOffset(xField);
-            Field yField = MyValueTearing.class.getDeclaredField("y");
-            Y_OFFSET = U.objectFieldOffset(yField);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    static final MyValueTearing DEFAULT = new MyValueTearing((short)0, (short)0);
-
-    MyValueTearing(short x, short y) {
-        this.x = x;
-        this.y = y;
-    }
-
-    MyValueTearing incrementAndCheck() {
-        Asserts.assertEQ(x, y, "Inconsistent field values");
-        return new MyValueTearing((short)(x + 1), (short)(y + 1));
-    }
-
-    MyValueTearing incrementAndCheckUnsafe() {
-        Asserts.assertEQ(x, y, "Inconsistent field values");
-        MyValueTearing[] vt = (MyValueTearing[]) ValueClass.newNullRestrictedAtomicArray(MyValueTearing.class, 1, this);
-        long baseOffset = U.arrayInstanceBaseOffset(vt) - U.valueHeaderSize(MyValueTearing.class);
-        U.putShort(vt, baseOffset + X_OFFSET, (short)(x + 1));
-        U.putShort(vt, baseOffset + Y_OFFSET, (short)(y + 1));
-        return vt[0];
-    }
-}
-
+/*
+ * @test id=flattening-di-AII-ints
+ * @key stress randomness
+ * @requires vm.compMode != "Xint" & vm.flavor == "server"
+ * @summary Detect tearing on flat accesses and buffering.
+ * @library /testlibrary /test/lib /
+ * @enablePreview
+ * @modules java.base/jdk.internal.misc
+ *          java.base/jdk.internal.value
+ *          java.base/jdk.internal.vm.annotation
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @compile MyValueTearingInts.java
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *                   -XX:+WhiteBoxAPI -XX:+UseNullableAtomicValueFlattening -XX:+UseNullFreeAtomicValueFlattening -XX:+UseArrayFlattening
+ *                   -XX:ObjectAlignmentInBytes=16 -XX:+Use16ByteAtomicFlattening
+ *                   -XX:CompileCommand=dontinline,*::incrementAndCheck*
+ *                   -XX:+StressGCM -XX:+StressLCM
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:+AlwaysIncrementalInline
+ *                   ${test.main.class}
+ */
 public class TestTearing {
     private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
     private static final boolean SLOW_CONFIGURATION =
@@ -265,40 +390,40 @@ public class TestTearing {
     volatile MyValueTearing field2;
 
     // Nullable fields are always atomic
-    static MyValueTearing field3 = new MyValueTearing((short)0, (short)0);
-    MyValueTearing field4 = new MyValueTearing((short)0, (short)0);
+    static MyValueTearing field3 = MyValueTearing.DEFAULT;
+    MyValueTearing field4 = MyValueTearing.DEFAULT;
 
     // Final arrays
     static final MyValueTearing[] array1 = (MyValueTearing[])ValueClass.newNullRestrictedAtomicArray(MyValueTearing.class, 1, MyValueTearing.DEFAULT);
     static final MyValueTearing[] array2 = (MyValueTearing[])ValueClass.newNullableAtomicArray(MyValueTearing.class, 1);
     static {
-        array2[0] = new MyValueTearing((short)0, (short)0);
+        array2[0] = MyValueTearing.DEFAULT;
     }
-    static final MyValueTearing[] array3 = new MyValueTearing[] { new MyValueTearing((short)0, (short)0) };
+    static final MyValueTearing[] array3 = new MyValueTearing[] { MyValueTearing.DEFAULT };
 
     // Non-final arrays
     static MyValueTearing[] array4 = (MyValueTearing[])ValueClass.newNullRestrictedAtomicArray(MyValueTearing.class, 1, MyValueTearing.DEFAULT);
     static MyValueTearing[] array5 = (MyValueTearing[])ValueClass.newNullableAtomicArray(MyValueTearing.class, 1);
     static {
-        array5[0] = new MyValueTearing((short)0, (short)0);
+        array5[0] = MyValueTearing.DEFAULT;
     }
-    static MyValueTearing[] array6 = new MyValueTearing[] { new MyValueTearing((short)0, (short)0) };
+    static MyValueTearing[] array6 = new MyValueTearing[] { MyValueTearing.DEFAULT };
 
     // Object arrays
     static Object[] array7 = (MyValueTearing[])ValueClass.newNullRestrictedAtomicArray(MyValueTearing.class, 1, MyValueTearing.DEFAULT);
     static Object[] array8 = (MyValueTearing[])ValueClass.newNullableAtomicArray(MyValueTearing.class, 1);
     static {
-        array8[0] = new MyValueTearing((short)0, (short)0);
+        array8[0] = MyValueTearing.DEFAULT;
     }
-    static Object[] array9 = new MyValueTearing[] { new MyValueTearing((short)0, (short)0) };
+    static Object[] array9 = new MyValueTearing[] { MyValueTearing.DEFAULT };
 
     // Object arrays stored in volatile fields (for safe publication)
     static volatile Object[] array10 = (MyValueTearing[])ValueClass.newNullRestrictedAtomicArray(MyValueTearing.class, 1, MyValueTearing.DEFAULT);
     static volatile Object[] array11 = (MyValueTearing[])ValueClass.newNullableAtomicArray(MyValueTearing.class, 1);
     static {
-        array11[0] = new MyValueTearing((short)0, (short)0);
+        array11[0] = MyValueTearing.DEFAULT;
     }
-    static volatile Object[] array12 = new MyValueTearing[] { new MyValueTearing((short)0, (short)0) };
+    static volatile Object[] array12 = new MyValueTearing[] { MyValueTearing.DEFAULT };
 
     static final MethodHandle incrementAndCheck_mh;
 
@@ -334,8 +459,8 @@ public class TestTearing {
                 // Create "local" arrays so that C2 has full type info
                 MyValueTearing[] localArray1 = (MyValueTearing[])ValueClass.newNullRestrictedAtomicArray(MyValueTearing.class, 1, MyValueTearing.DEFAULT);
                 MyValueTearing[] localArray2 = (MyValueTearing[])ValueClass.newNullableAtomicArray(MyValueTearing.class, 1);
-                localArray2[0] = new MyValueTearing((short)0, (short)0);
-                MyValueTearing[] localArray3 = new MyValueTearing[] { new MyValueTearing((short)0, (short)0) };
+                localArray2[0] = new MyValueTearing(0, 0);
+                MyValueTearing[] localArray3 = new MyValueTearing[] { new MyValueTearing(0, 0) };
 
                 Asserts.assertTrue(ValueClass.isAtomicArray(localArray1));
                 Asserts.assertTrue(ValueClass.isAtomicArray(localArray2));

@@ -1288,8 +1288,7 @@ public:
   void movapd(XMMRegister dst, AddressLiteral src, Register rscratch = noreg);
 
   // Move Aligned Double Quadword
-  void movdqa(XMMRegister dst, XMMRegister    src) { Assembler::movdqa(dst, src); }
-  void movdqa(XMMRegister dst, Address        src) { Assembler::movdqa(dst, src); }
+  using Assembler::movdqa;
   void movdqa(XMMRegister dst, AddressLiteral src, Register rscratch = noreg);
 
   void movsd(Address     dst, XMMRegister    src) { Assembler::movsd(dst, src); }

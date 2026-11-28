@@ -2019,7 +2019,9 @@ void LIRGenerator::do_StoreIndexed(StoreIndexed* x) {
     }
   }
 
-  if (is_loaded_flat_array) {
+  // 16-byte atomic access not supported
+  bool can_store_flat_array = is_loaded_flat_array && !(array_klass->is_elem_atomic() && array_klass->element_byte_size() > int(sizeof(jlong)));
+  if (can_store_flat_array) {
     ciValueKlass* elem_klass = array_klass->element_klass()->as_value_klass();
     bool null_free = array_klass->is_elem_null_free();
     if (null_free && !x->value()->is_null_free()) {
@@ -2416,7 +2418,8 @@ void LIRGenerator::do_LoadIndexed(LoadIndexed* x) {
 
   ciFlatArrayKlass* flat_array_klass = x->array()->as_loaded_flat_array_klass_or_null();
   bool assert_null = flat_array_klass != nullptr && !flat_array_klass->is_elem_null_free() &&
-                     !flat_array_klass->element_klass()->as_value_klass()->is_initialized();
+                     !flat_array_klass->element_klass()->as_value_klass()->is_initialized() &&
+                     !(flat_array_klass->is_elem_atomic() && flat_array_klass->element_byte_size() > int(sizeof(jlong)));
   if (assert_null) {
     // Deoptimize on non-null because buffering requires the value class to be initialized
     assert(x->buffer() == nullptr && x->delayed() == nullptr, "null assertion should not buffer");

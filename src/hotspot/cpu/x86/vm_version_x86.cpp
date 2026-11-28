@@ -32,6 +32,7 @@
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/icache.hpp"
 #include "runtime/java.hpp"
@@ -39,6 +40,7 @@
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/checkedCast.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/virtualizationSupport.hpp"
@@ -2007,6 +2009,17 @@ void VM_Version::get_processor_features() {
       FLAG_SET_DEFAULT(CopyAVX3Threshold, 0);
     } else {
       FLAG_SET_DEFAULT(CopyAVX3Threshold, AVX3Threshold);
+    }
+  }
+
+  if (Use16ByteAtomicFlattening) {
+    if (!supports_fast_16byte_atomic_access()) {
+      warning("Use16ByteAtomicFlattening not supported on this CPU");
+      FLAG_SET_DEFAULT(Use16ByteAtomicFlattening, false);
+    }
+    if (ObjectAlignmentInBytes < 16) {
+      warning("Use16ByteAtomicFlattening requires 16-byte object alignment");
+      FLAG_SET_DEFAULT(Use16ByteAtomicFlattening, false);
     }
   }
 }

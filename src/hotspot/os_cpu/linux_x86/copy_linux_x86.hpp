@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,14 @@
 #ifndef OS_CPU_LINUX_X86_COPY_LINUX_X86_HPP
 #define OS_CPU_LINUX_X86_COPY_LINUX_X86_HPP
 
-// Empty for build system
+static void pd_copy16_atomic(void* dst, const void* src) {
+  __asm__ volatile (
+    "movdqa (%1), %%xmm0\n\t"
+    "movdqa %%xmm0, (%0)"
+    :
+    : "r" (dst), "r" (src)
+    : "xmm0", "memory"
+  );
+}
 
 #endif // OS_CPU_LINUX_X86_COPY_LINUX_X86_HPP

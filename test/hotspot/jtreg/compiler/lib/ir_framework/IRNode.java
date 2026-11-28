@@ -1247,6 +1247,11 @@ public class IRNode {
         vectorNode(LOAD_VECTOR_Z, "LoadVector", TYPE_BOOLEAN);
     }
 
+    public static final String LOAD_VECTOR_ATOMIC = PREFIX + "LOAD_VECTOR_ATOMIC" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(LOAD_VECTOR_ATOMIC, "LoadVectorAtomic");
+    }
+
     public static final String LOAD_VECTOR_GATHER = PREFIX + "LOAD_VECTOR_GATHER" + POSTFIX;
     static {
         beforeMatchingNameRegex(LOAD_VECTOR_GATHER, "LoadVectorGather");
@@ -2306,6 +2311,11 @@ public class IRNode {
     public static final String STORE_VECTOR = PREFIX + "STORE_VECTOR" + POSTFIX;
     static {
         beforeMatchingNameRegex(STORE_VECTOR, "StoreVector");
+    }
+
+    public static final String STORE_VECTOR_ATOMIC = PREFIX + "STORE_VECTOR_ATOMIC" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(STORE_VECTOR_ATOMIC, "StoreVectorAtomic");
     }
 
     public static final String STORE_VECTOR_SCATTER = PREFIX + "STORE_VECTOR_SCATTER" + POSTFIX;
@@ -3509,6 +3519,16 @@ public class IRNode {
     public static final String X86_CMOVEL_IMM01UCF = PREFIX + "X86_CMOVEL_IMM01UCF" + POSTFIX;
     static {
         machOnlyNameRegex(X86_CMOVEL_IMM01UCF, "cmovL_imm_01UCF");
+    }
+
+    public static final String X86_LOAD_VECTOR_ATOMIC = PREFIX + "X86_LOAD_VECTOR_ATOMIC" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_LOAD_VECTOR_ATOMIC, "loadVAtomic");
+    }
+
+    public static final String X86_STORE_VECTOR_ATOMIC = PREFIX + "X86_STORE_VECTOR_ATOMIC" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_STORE_VECTOR_ATOMIC, "storeVAtomic");
     }
 
     public static final String X86_VECTOR_SLICE_CONST_ORIGIN_16_16B_AVX = PREFIX + "X86_VECTOR_SLICE_CONST_ORIGIN_16_16B_AVX" + POSTFIX;
