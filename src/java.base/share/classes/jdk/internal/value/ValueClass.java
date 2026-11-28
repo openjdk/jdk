@@ -232,7 +232,7 @@ public final class ValueClass {
 
         @Override
         protected Boolean computeValue(Class<?> type) {
-            if (!isClassOrInterface(type)) {
+            if (!type.isClassOrInterface()) {
                 return false;
             }
             for (var field : type.getDeclaredFields()) {
@@ -248,19 +248,11 @@ public final class ValueClass {
     /// Returns whether a class or interface declares strict instance fields.
     /// This does not include inherited instance fields.
     public static boolean hasStrictInstanceField(Class<?> cl) {
-        if (!isClassOrInterface(cl)) {
+        if (!cl.isClassOrInterface()) {
             // Not class or interface
             return false;
         }
         return StrictInstanceFieldClassValue.INSTANCE.get(cl);
     }
 
-    // Only primitive and array types have both ABSTRACT and FINAL flags set
-    private static final int NON_CLASS_COMMON_MODIFIERS = Modifier.ABSTRACT | Modifier.FINAL;
-
-    /// Returns if a Class object represents a class or interface instead of a
-    /// primitive type or an array type.
-    private static boolean isClassOrInterface(Class<?> cl) {
-        return (cl.getModifiers() & NON_CLASS_COMMON_MODIFIERS) != NON_CLASS_COMMON_MODIFIERS;
-    }
 }
