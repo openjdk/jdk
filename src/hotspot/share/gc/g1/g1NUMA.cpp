@@ -149,6 +149,13 @@ uint G1NUMA::index_of_current_thread() const {
   return index_of_node_id(os::numa_get_group_id());
 }
 
+uint G1NUMA::index_for_numa_id(int numa_id) const {
+  if (!is_enabled()) {
+    return 0;
+  }
+  return index_of_node_id(checked_cast<uint>(numa_id));
+}
+
 uint G1NUMA::preferred_node_index_for_index(uint region_index) const {
   if (region_size() >= page_size()) {
     // Simple case, pages are smaller than the region so we
