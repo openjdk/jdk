@@ -30,6 +30,7 @@
 #include "memory/resourceArea.hpp"
 #include "metaprogramming/enableIf.hpp"
 #include "runtime/orderAccess.hpp"
+#include "runtime/vm_version.hpp"
 #include "threadHelper.inline.hpp"
 #include "unittest.hpp"
 
@@ -834,6 +835,133 @@ TEST_VM(RiscV, weak_cmpxchg_int8_concurrent_maybe_zacas_zabha) {
     run_concurrent_weak_cmpxchg_tests<int8_t, Assembler::int8>();
     run_concurrent_alt_weak_cmpxchg_tests<int8_t, Assembler::int8>();
   }
+}
+
+// ------------------------------ Zibi ---------------------------------------
+
+// Decode the B-immediate (in bytes) out of an already-emitted beqi/bnei word.
+static int64_t zibi_decode_offset(uint32_t insn) {
+  int64_t offset = 0;
+  offset |= (int64_t)((insn >> 31) & 0x1)  << 12; // imm[12]
+  offset |= (int64_t)((insn >> 7)  & 0x1)  << 11; // imm[11]
+  offset |= (int64_t)((insn >> 25) & 0x3f) << 5;  // imm[10:5]
+  offset |= (int64_t)((insn >> 8)  & 0xf)  << 1;  // imm[4:1]
+  // Sign-extend the 13-bit signed offset.
+  offset = (offset << 51) >> 51;
+  return offset;
+}
+
+// Verify that beqi/bnei encode exactly as the Zibi spec prescribes:
+//  opcode = 0b1100011, funct3 = 010 (beqi) / 011 (bnei), rs1 in [19:15],
+//  cimm in [24:20], and the standard B-type immediate scatter.
+static void check_zibi_encoding(bool is_beqi, Register rs1, uint32_t cimm, int64_t offset) {
+  BufferBlob* bb = BufferBlob::create("zibiEnc", 128);
+  CodeBuffer code(bb);
+  MacroAssembler _masm(&code);
+  address entry = _masm.pc();
+  if (is_beqi) {
+    _masm.beqi(rs1, cimm, entry + offset);
+  } else {
+    _masm.bnei(rs1, cimm, entry + offset);
+  }
+  _masm.flush();
+
+  uint32_t insn = Assembler::ld_instr(entry);
+  EXPECT_EQ(insn & 0x7f, (uint32_t)0b1100011)           << "opcode";
+  EXPECT_EQ((insn >> 12) & 0x7, is_beqi ? 0b010u : 0b011u) << "funct3";
+  EXPECT_EQ((insn >> 15) & 0x1f, (uint32_t)rs1->encoding()) << "rs1";
+  EXPECT_EQ((insn >> 20) & 0x1f, cimm)                  << "cimm";
+  EXPECT_EQ(zibi_decode_offset(insn), offset)           << "offset";
+
+  BufferBlob::free(bb);
+}
+
+TEST_VM(RiscV, zibi_encoding) {
+  // cimm covers the full 5-bit range: 0 (encodes value -1) through 31.
+  for (uint32_t cimm = 0; cimm <= 31; cimm++) {
+    check_zibi_encoding(true,  x5,  cimm, 4);
+    check_zibi_encoding(false, x5,  cimm, 4);
+  }
+  // Exercise different source registers.
+  check_zibi_encoding(true,  x0,  1, 8);
+  check_zibi_encoding(true,  x31, 7, 16);
+  check_zibi_encoding(false, x1,  31, 2);
+  // Exercise the full B-immediate bit scatter, forward and backward.
+  check_zibi_encoding(true,  x10, 5, 4094);
+  check_zibi_encoding(true,  x10, 5, -4096);
+  check_zibi_encoding(false, x10, 5, 2048);
+  check_zibi_encoding(false, x10, 5, -2048);
+  check_zibi_encoding(true,  x10, 5, 42);
+}
+
+// The comparison constant maps to the cimm field as: -1 -> 0, 1..31 -> 1..31.
+TEST_VM(RiscV, zibi_encode_cimm) {
+  EXPECT_TRUE(Assembler::is_zibi_cimm(-1));
+  EXPECT_TRUE(Assembler::is_zibi_cimm(1));
+  EXPECT_TRUE(Assembler::is_zibi_cimm(31));
+  EXPECT_FALSE(Assembler::is_zibi_cimm(0));
+  EXPECT_FALSE(Assembler::is_zibi_cimm(32));
+  EXPECT_FALSE(Assembler::is_zibi_cimm(-2));
+
+  EXPECT_EQ(Assembler::encode_zibi_cimm(-1), 0u);
+  EXPECT_EQ(Assembler::encode_zibi_cimm(1), 1u);
+  EXPECT_EQ(Assembler::encode_zibi_cimm(31), 31u);
+}
+
+typedef int64_t (*zibi_func)(int64_t arg);
+
+// Emit: <branch> arg, cimm, taken; mv a0, not_taken_val; ret; taken: mv a0, taken_val; ret;
+static int64_t run_zibi_branch(bool is_beqi, uint32_t cimm, int64_t arg) {
+  const int64_t taken_val = 1;
+  const int64_t not_taken_val = 0;
+  BufferBlob* bb = BufferBlob::create("zibiRun", 256);
+  CodeBuffer code(bb);
+  MacroAssembler _masm(&code);
+  address entry = _masm.pc();
+  {
+    Label taken;
+    if (is_beqi) {
+      _masm.beqi(c_rarg0, cimm, taken);
+    } else {
+      _masm.bnei(c_rarg0, cimm, taken);
+    }
+    _masm.mv(c_rarg0, not_taken_val);
+    _masm.ret();
+    _masm.bind(taken);
+    _masm.mv(c_rarg0, taken_val);
+    _masm.ret();
+  }
+  _masm.flush();
+  int64_t ret = ((zibi_func)entry)(arg);
+  BufferBlob::free(bb);
+  return ret;
+}
+
+TEST_VM(RiscV, zibi_execution) {
+  // Only run if the current CPU actually implements Zibi. UseZibi alone is not
+  // sufficient: a user can request -XX:+UseZibi on hardware without the
+  // extension, and executing beqi/bnei there would SIGILL. supports_Zibi()
+  // reflects detected hardware capability, so require both.
+  if (!UseZibi || !VM_Version::supports_Zibi()) {
+    return;
+  }
+  // cimm == 0 decodes to the comparison value -1.
+  EXPECT_EQ(run_zibi_branch(true, 0, -1), 1); // beqi: -1 == -1 -> taken
+  EXPECT_EQ(run_zibi_branch(true, 0, 0), 0);  // beqi: 0 == -1 -> not taken
+  EXPECT_EQ(run_zibi_branch(false, 0, -1), 0); // bnei: -1 != -1 -> not taken
+  EXPECT_EQ(run_zibi_branch(false, 0, 0), 1);  // bnei: 0 != -1 -> taken
+
+  // cimm in [1, 31] decodes to the corresponding positive value.
+  EXPECT_EQ(run_zibi_branch(true, 1, 1), 1);
+  EXPECT_EQ(run_zibi_branch(true, 1, 2), 0);
+  EXPECT_EQ(run_zibi_branch(true, 31, 31), 1);
+  EXPECT_EQ(run_zibi_branch(true, 31, 30), 0);
+  EXPECT_EQ(run_zibi_branch(false, 7, 7), 0);
+  EXPECT_EQ(run_zibi_branch(false, 7, 8), 1);
+  // Comparison constant is zero-extended to XLEN, so a negative arg never
+  // equals a positive cimm.
+  EXPECT_EQ(run_zibi_branch(true, 5, -5), 0);
+  EXPECT_EQ(run_zibi_branch(false, 5, -5), 1);
 }
 
 #endif  // RISCV

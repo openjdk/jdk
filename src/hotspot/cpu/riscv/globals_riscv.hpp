@@ -117,6 +117,8 @@ define_pd_global(bool, ValueTypeReturnedAsFields, false);
   product(bool, UseZiccid, false, EXPERIMENTAL,                                  \
           "Use Ziccid to omit icache flushes for atomic call patching")          \
   product(bool, UseZicond, false, DIAGNOSTIC, "Use Zicond instructions")         \
+  product(bool, UseZibi, false, EXPERIMENTAL,                                    \
+          "Use Zibi (branch with immediate) instructions")                       \
   product(bool, UseZihintpause, false, EXPERIMENTAL,                             \
           "Use Zihintpause instructions")                                        \
   product(bool, UseZtso, false, EXPERIMENTAL, "Assume Ztso memory model")        \

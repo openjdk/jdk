@@ -205,6 +205,8 @@ class VM_Version : public Abstract_VM_Version {
   decl(Zicntr      ,  RV_NO_FLAG_BIT,  true , INVALID_JVMFlagsEnum,            nullptr)                      \
   /* Zicond Conditional operations */                                                                        \
   decl(Zicond      ,  RV_NO_FLAG_BIT,  true , FLAG_MEMBER_ENUM(UseZicond),     nullptr)                      \
+  /* Zibi Branch with immediate */                                                                           \
+  decl(Zibi        ,  RV_NO_FLAG_BIT,  true , FLAG_MEMBER_ENUM(UseZibi),       nullptr)                      \
   /* Zicsr Control and Status Register (CSR) Instructions */                                                 \
   decl(Zicsr       ,  RV_NO_FLAG_BIT,  true , INVALID_JVMFlagsEnum,            nullptr)                      \
   /* Zifencei Instruction-Fetch Fence */                                                                     \
@@ -499,6 +501,12 @@ private:
   // RISCV64 supports fast class initialization checks
   static bool supports_fast_class_init_checks() { return true; }
   static bool supports_fencei_barrier() { return ext_Zifencei.feature_enabled(); }
+
+  // Whether the current CPU actually implements the Zibi branch-with-immediate
+  // extension. Distinct from the UseZibi flag: UseZibi merely requests codegen,
+  // while this reflects detected hardware capability. Used to guard tests that
+  // execute beqi/bnei so they do not SIGILL on hardware without Zibi.
+  static bool supports_Zibi() { return ext_Zibi.feature_enabled(); }
 
   // Zfhmin only provides half-precision load/store/convert instructions,
   // Zfh additionally provides half-precision arithmetic. Either one is
