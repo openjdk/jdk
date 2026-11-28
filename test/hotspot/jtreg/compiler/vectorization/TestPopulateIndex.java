@@ -27,15 +27,18 @@
 * @summary Test vectorization of loop induction variable usage in the loop
 * @requires vm.compiler2.enabled
 * @requires (os.simpleArch == "x64" & vm.cpu.features ~= ".*avx2.*") |
-*           (os.simpleArch == "aarch64" & vm.cpu.features ~= ".*sve.*") |
+*           (os.simpleArch == "aarch64" & vm.cpu.features ~= ".*asimd.*") |
 *           (os.simpleArch == "riscv64" & vm.cpu.features ~= ".*rvv.*")
 * @library /test/lib /
-* @run driver compiler.vectorization.TestPopulateIndex
+* @build jdk.test.whitebox.WhiteBox
+* @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+* @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI compiler.vectorization.TestPopulateIndex
 */
 
 package compiler.vectorization;
 import compiler.lib.ir_framework.*;
 import java.util.Random;
+import jdk.test.whitebox.cpuinfo.CPUInfo;
 
 public class TestPopulateIndex {
     private static final int count = 10000;
@@ -46,6 +49,10 @@ public class TestPopulateIndex {
     private float[] f;
 
     public static void main(String args[]) {
+        if (CPUInfo.hasFeature("sve")) {
+            // If AArch64 SVE is available, we want to force a run with it disabled, using NEON as a fallback
+            TestFramework.runWithFlags("-XX:UseSVE=0");
+        }
         TestFramework.run(TestPopulateIndex.class);
     }
 
