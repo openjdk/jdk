@@ -35,7 +35,6 @@
 #include "oops/instanceKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
-#include "runtime/globals.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
@@ -49,7 +48,6 @@ static int max_pos_offset = invalid_offset;
 static int excluded_offset = invalid_offset;
 static int thread_id_offset = invalid_offset;
 static int valid_offset = invalid_offset;
-static int pin_offset = invalid_offset;
 
 static bool setup_event_writer_offsets(TRAPS) {
   const char class_name[] = "jdk/jfr/internal/event/EventWriter";
@@ -100,12 +98,6 @@ static bool setup_event_writer_offsets(TRAPS) {
   JfrJavaSupport::compute_field_offset(valid_offset, klass, valid_sym, vmSymbols::bool_signature());
   assert(valid_offset != invalid_offset, "invariant");
 
-  const char pin_name[] = "pinVirtualThread";
-  Symbol* const pin_sym = SymbolTable::new_symbol(pin_name);
-  assert(pin_sym != nullptr, "invariant");
-  assert(invalid_offset == pin_offset, "invariant");
-  JfrJavaSupport::compute_field_offset(pin_offset, klass, pin_sym, vmSymbols::bool_signature());
-  assert(pin_offset != invalid_offset, "invariant");
   return true;
 }
 
@@ -226,18 +218,13 @@ void JfrJavaEventWriter::notify(JavaThread* jt) {
   }
 }
 
-static inline bool pin_virtual(const JavaThread* jt) {
-  assert(jt != nullptr, "invariant");
-  return JfrThreadLocal::is_vthread(jt) && VMContinuations;
-}
-
 static jobject create_new_event_writer(JfrBuffer* buffer, JfrThreadLocal* tl, TRAPS) {
   assert(buffer != nullptr, "invariant");
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(THREAD));
   HandleMark hm(THREAD);
   static const char klass[] = "jdk/jfr/internal/event/EventWriter";
   static const char method[] = "<init>";
-  static const char signature[] = "(JJJZZZ)V";
+  static const char signature[] = "(JJJZZ)V";
   JavaValue result(T_OBJECT);
   JfrJavaArguments args(&result, klass, method, signature, CHECK_NULL);
 
@@ -246,7 +233,6 @@ static jobject create_new_event_writer(JfrBuffer* buffer, JfrThreadLocal* tl, TR
   args.push_long((jlong)buffer->end());
   args.push_long((jlong)JfrThreadLocal::thread_id(THREAD));
   args.push_int((jint)JNI_TRUE); // valid
-  args.push_int(pin_virtual(THREAD) ? (jint)JNI_TRUE : (jint)JNI_FALSE);
   args.push_int(tl->is_excluded() ? (jint)JNI_TRUE : (jint)JNI_FALSE); // excluded
   JfrJavaSupport::new_object_global_ref(&args, CHECK_NULL);
   return result.get_jobject();
@@ -265,9 +251,6 @@ jobject JfrJavaEventWriter::event_writer(JavaThread* jt) {
       writer->long_field_put(thread_id_offset, current_tid);
       const bool excluded = tl->is_excluded();
       writer->bool_field_put(excluded_offset, excluded);
-      if (!excluded) {
-        writer->bool_field_put(pin_offset, pin_virtual(jt));
-      }
     }
   }
   return h_writer;

@@ -26,7 +26,6 @@ package jdk.jfr.internal;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
-import jdk.internal.vm.Continuation;
 
 public final class StringPool {
     public static final int MIN_LIMIT = 16;
@@ -72,49 +71,36 @@ public final class StringPool {
         return internalSid >> 16;
     }
 
-    /* Explicitly pin a virtual thread before acquiring the string pool monitor
-     * because migrating the EventWriter onto another carrier thread is impossible.
-     */
-    private static long storeString(String s, boolean pinVirtualThread) {
-        if (pinVirtualThread) {
-            assert(Thread.currentThread().isVirtual());
-            Continuation.pin();
-        }
-        try {
-            /* synchronized because of writing the string to the JVM. */
-            synchronized (StringPool.class) {
-                Long lsid = cache.get(s);
-                long internalSid;
-                if (lsid != null) {
-                    internalSid = lsid.longValue();
-                    if (isCurrentGeneration(internalSid)) {
-                        // Someone already updated the cache.
-                        return externalSid(internalSid);
-                    }
-                    internalSid = updateInternalSid(internalSid);
-                } else {
-                    // Not yet added or the cache was cleared.
-                    internalSid = nextInternalSid();
-                    currentSizeUTF16 += s.length();
+    // Generated commit methods pin virtual threads while using the carrier-local writer.
+    private static long storeString(String s) {
+        /* synchronized because of writing the string to the JVM. */
+        synchronized (StringPool.class) {
+            Long lsid = cache.get(s);
+            long internalSid;
+            if (lsid != null) {
+                internalSid = lsid.longValue();
+                if (isCurrentGeneration(internalSid)) {
+                    // Someone already updated the cache.
+                    return externalSid(internalSid);
                 }
-                long extSid = externalSid(internalSid);
-                // Write the string to the JVM before publishing to the cache.
-                JVM.addStringConstant(extSid, s);
-                cache.put(s, internalSid);
-                return extSid;
+                internalSid = updateInternalSid(internalSid);
+            } else {
+                // Not yet added or the cache was cleared.
+                internalSid = nextInternalSid();
+                currentSizeUTF16 += s.length();
             }
-        } finally {
-            if (pinVirtualThread) {
-                assert(Thread.currentThread().isVirtual());
-                Continuation.unpin();
-            }
+            long extSid = externalSid(internalSid);
+            // Write the string to the JVM before publishing to the cache.
+            JVM.addStringConstant(extSid, s);
+            cache.put(s, internalSid);
+            return extSid;
         }
     }
 
     /* a string fetched from the string pool must be of the current generation */
-    private static long ensureCurrentGeneration(String s, Long lsid, boolean pinVirtualThread) {
+    private static long ensureCurrentGeneration(String s, Long lsid) {
         long internalSid = lsid.longValue();
-        return isCurrentGeneration(internalSid) ? externalSid(internalSid) : storeString(s, pinVirtualThread);
+        return isCurrentGeneration(internalSid) ? externalSid(internalSid) : storeString(s);
     }
 
     /*
@@ -126,10 +112,10 @@ public final class StringPool {
      * effectively invalidating the fetched string id. The event restart mechanism
      * of the EventWriter ensures that committed strings are in the correct generation.
      */
-    public static long addString(String s, boolean pinVirtualThread) {
+    public static long addString(String s) {
         Long lsid = cache.get(s);
         if (lsid != null) {
-            return ensureCurrentGeneration(s, lsid, pinVirtualThread);
+            return ensureCurrentGeneration(s, lsid);
         }
         if (s.length() <= PRECACHE_THRESHOLD && !preCache(s)) {
             /* we should not pool this string */
@@ -137,9 +123,9 @@ public final class StringPool {
         }
         if (cache.size() > MAX_SIZE || currentSizeUTF16 > MAX_SIZE_UTF16) {
             /* pool was full */
-            reset(pinVirtualThread);
+            reset();
         }
-        return storeString(s, pinVirtualThread);
+        return storeString(s);
     }
 
     private static boolean preCache(String s) {
@@ -160,21 +146,10 @@ public final class StringPool {
         return false;
     }
 
-    private static void reset(boolean pinVirtualThread) {
-        if (pinVirtualThread) {
-            assert(Thread.currentThread().isVirtual());
-            Continuation.pin();
-        }
-        try {
-            synchronized (StringPool.class) {
-                cache.clear();
-                currentSizeUTF16 = 0;
-            }
-        } finally {
-            if (pinVirtualThread) {
-                assert(Thread.currentThread().isVirtual());
-                Continuation.unpin();
-            }
+    private static void reset() {
+        synchronized (StringPool.class) {
+            cache.clear();
+            currentSizeUTF16 = 0;
         }
     }
 }

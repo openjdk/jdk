@@ -26,6 +26,7 @@
 package jdk.jfr.internal.event;
 
 import jdk.internal.misc.Unsafe;
+import jdk.internal.vm.Continuation;
 import jdk.jfr.internal.Bits;
 import jdk.jfr.internal.StringPool;
 import jdk.jfr.internal.JVM;
@@ -51,11 +52,24 @@ public final class EventWriter {
     private long currentPosition;
     private long maxPosition;
     private boolean valid;
-    private boolean pinVirtualThread;
     boolean excluded;
 
     private PlatformEventType eventType;
     private boolean largeSize = false;
+
+    // Called by generated commit methods before writer checkout and after
+    // the last writer access, including exceptional cleanup.
+    public static void pin() {
+        if (Thread.currentThread().isVirtual()) {
+            Continuation.pin();
+        }
+    }
+
+    public static void unpin() {
+        if (Thread.currentThread().isVirtual()) {
+            Continuation.unpin();
+        }
+    }
 
     public static EventWriter getEventWriter() {
         EventWriter ew = JVM.getEventWriter();
@@ -139,7 +153,7 @@ public final class EventWriter {
             return;
         }
         if (length > StringPool.MIN_LIMIT && length < StringPool.MAX_LIMIT) {
-            long l = StringPool.addString(s, pinVirtualThread);
+            long l = StringPool.addString(s);
             if (l > 0) {
                 putByte(StringParser.Encoding.CONSTANT_POOL.byteValue());
                 putLong(l);
@@ -296,12 +310,11 @@ public final class EventWriter {
         return false;
     }
 
-    private EventWriter(long startPos, long maxPos, long threadID, boolean valid, boolean pinVirtualThread, boolean excluded) {
+    private EventWriter(long startPos, long maxPos, long threadID, boolean valid, boolean excluded) {
         startPosition = currentPosition = startPos;
         maxPosition = maxPos;
         this.threadID = threadID;
         this.valid = valid;
-        this.pinVirtualThread = pinVirtualThread;
         this.excluded = excluded;
     }
 
