@@ -252,6 +252,9 @@ bool read_frame(const char* section, int fd, frame_info* frame) {
       frame->data = read_section_data(fd, &ehdr, sh);
       frame->size = sh->sh_size;
       frame->is_debug_frame = strcmp(section, ".debug_frame") == 0;
+      if (frame->data != NULL && frame->is_debug_frame) {
+        frame->tried_debug_frame = true;
+      }
       break;
     }
   }
@@ -305,6 +308,9 @@ lib_info* add_lib_info_fd(struct ps_prochandle* ph, const char* libname, int fd,
    if (fill_addr_info(newlib)) {
      if (!read_frame(".eh_frame", newlib->fd, &newlib->frame)) {
        print_debug("Could not find .eh_frame section in %s\n", newlib->name);
+       if (!read_frame(".debug_frame", newlib->fd, &newlib->frame)) {
+         print_debug("Could not find .debug_frame section in %s\n", newlib->name);
+       }
      }
    } else {
       print_debug("Could not find executable section in %s\n", newlib->name);
