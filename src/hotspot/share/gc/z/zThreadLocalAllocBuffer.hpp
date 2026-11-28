@@ -25,6 +25,7 @@
 #define SHARE_GC_Z_ZTHREADLOCALALLOCBUFFER_HPP
 
 #include "gc/shared/threadLocalAllocBuffer.hpp"
+#include "gc/z/zGenerationId.hpp"
 #include "gc/z/zValue.hpp"
 #include "memory/allStatic.hpp"
 
@@ -32,16 +33,16 @@ class JavaThread;
 
 class ZThreadLocalAllocBuffer : public AllStatic {
 private:
-  static ZPerWorker<ThreadLocalAllocStats>* _stats;
+  static ZPerWorker<ThreadLocalAllocStats>* _stats[2];
 
 public:
   static void initialize();
 
-  static void reset_statistics();
-  static void publish_statistics();
+  static void reset_statistics(ZGenerationId id);
+  static void publish_statistics(ZGenerationId id);
 
   static void retire(JavaThread* thread, ThreadLocalAllocStats* stats);
-  static void update_stats(JavaThread* thread);
+  static void update_stats(ZGenerationId id, JavaThread* thread);
 };
 
 #endif // SHARE_GC_Z_ZTHREADLOCALALLOCBUFFER_HPP
