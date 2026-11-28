@@ -278,7 +278,7 @@ private:
   HeapWord* _top_before_promoted;
   HeapWord* _top_at_evac_start;
 
-  double _empty_time;
+  Atomic<double> _uncommit_time;
 
   size_t _mixed_candidate_garbage_words;
 
@@ -314,8 +314,12 @@ public:
   // Return adjusted max heap size
   static size_t setup_sizes(size_t max_heap_size);
 
-  double empty_time() {
-    return _empty_time;
+  double uncommit_time() {
+    return _uncommit_time.load_relaxed();
+  }
+
+  void set_uncommit_time(double time) {
+    _uncommit_time.store_relaxed(time);
   }
 
   inline static size_t required_regions(size_t bytes) {

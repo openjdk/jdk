@@ -70,7 +70,7 @@ ShenandoahHeapRegion::ShenandoahHeapRegion(HeapWord* start, size_t index, bool c
   _new_top(nullptr),
   _top_before_promoted(nullptr),
   _top_at_evac_start(start),
-  _empty_time(os::elapsedTime()),
+  _uncommit_time(DBL_MAX),
   _mixed_candidate_garbage_words(0),
   _coalesce_and_fill_boundary(start),
   _critical_pins(0),
@@ -345,7 +345,7 @@ void ShenandoahHeapRegion::make_empty() {
   reset_age();
   switch (state()) {
     case _trash:
-      _empty_time = os::elapsedTime();
+      set_uncommit_time(DBL_MAX);
       set_state(_empty_committed);
       return;
     default:
@@ -372,6 +372,7 @@ void ShenandoahHeapRegion::make_committed_bypass() {
   switch (state()) {
     case _empty_uncommitted:
       do_commit();
+      set_uncommit_time(DBL_MAX);
       set_state(_empty_committed);
       return;
     default:

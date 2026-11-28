@@ -179,12 +179,8 @@ void ShenandoahControlThread::run_service() {
 
     // Check if we have seen a new target for soft max heap size or if a gc was requested.
     // Either of these conditions will attempt to uncommit regions.
-    if (ShenandoahUncommit) {
-      if (heap->check_soft_max_changed()) {
-        heap->notify_soft_max_changed();
-      } else if (ShenandoahCollectorPolicy::is_explicit_gc(cause)) {
-        heap->notify_explicit_gc_requested();
-      }
+    if (ShenandoahUncommit && (heap->check_soft_max_changed() || ShenandoahCollectorPolicy::is_explicit_gc(cause))) {
+      heap->request_prompt_uncommit();
     }
 
     // Wait before performing the next action. If allocation happened during this wait,

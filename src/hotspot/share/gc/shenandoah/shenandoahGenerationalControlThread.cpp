@@ -323,12 +323,8 @@ void ShenandoahGenerationalControlThread::run_gc_cycle(const ShenandoahGCRequest
 
   // Check if we have seen a new target for soft max heap size or if a gc was requested.
   // Either of these conditions will attempt to uncommit regions.
-  if (ShenandoahUncommit) {
-    if (_heap->check_soft_max_changed()) {
-      _heap->notify_soft_max_changed();
-    } else if (ShenandoahCollectorPolicy::is_explicit_gc(request.cause)) {
-      _heap->notify_explicit_gc_requested();
-    }
+  if (ShenandoahUncommit && (_heap->check_soft_max_changed() || ShenandoahCollectorPolicy::is_explicit_gc(request.cause))) {
+    _heap->request_prompt_uncommit();
   }
 
   log_debug(gc, thread)("Completed GC (%s): %s, %s, cancelled: %s",

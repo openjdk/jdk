@@ -525,11 +525,7 @@ public:
   void notify_gc_no_progress();
   size_t get_gc_no_progress_count() const;
 
-  // The uncommit thread targets soft max heap, notify this thread when that value has changed.
-  void notify_soft_max_changed();
-
-  // An explicit GC request may have freed regions, notify the uncommit thread.
-  void notify_explicit_gc_requested();
+  void request_prompt_uncommit();
 
 private:
   ShenandoahGeneration*  _global_generation;
