@@ -2900,7 +2900,10 @@ encode %{
 
   // BEGIN Non-volatile memory access
 
-  // This encoding class is generated automatically from ad_encode.m4.
+// BEGIN Section generated automatically from encode_ad.m4. Do not edit ----------------
+
+
+  // This encoding class is generated automatically from encode_ad.m4.
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
   enc_class aarch64_enc_ldrsbw(iRegI dst, memory1 mem) %{
     Register dst_reg = as_Register($dst$$reg);
@@ -2908,7 +2911,7 @@ encode %{
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 1);
   %}
 
-  // This encoding class is generated automatically from ad_encode.m4.
+  // This encoding class is generated automatically from encode_ad.m4.
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
   enc_class aarch64_enc_ldrsb(iRegI dst, memory1 mem) %{
     Register dst_reg = as_Register($dst$$reg);
@@ -2916,7 +2919,7 @@ encode %{
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 1);
   %}
 
-  // This encoding class is generated automatically from ad_encode.m4.
+  // This encoding class is generated automatically from encode_ad.m4.
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
   enc_class aarch64_enc_ldrb(iRegI dst, memory1 mem) %{
     Register dst_reg = as_Register($dst$$reg);
@@ -2924,7 +2927,7 @@ encode %{
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 1);
   %}
 
-  // This encoding class is generated automatically from ad_encode.m4.
+  // This encoding class is generated automatically from encode_ad.m4.
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
   enc_class aarch64_enc_ldrb(iRegL dst, memory1 mem) %{
     Register dst_reg = as_Register($dst$$reg);
@@ -2932,7 +2935,7 @@ encode %{
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 1);
   %}
 
-  // This encoding class is generated automatically from ad_encode.m4.
+  // This encoding class is generated automatically from encode_ad.m4.
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
   enc_class aarch64_enc_ldrshw(iRegI dst, memory2 mem) %{
     Register dst_reg = as_Register($dst$$reg);
@@ -2940,7 +2943,7 @@ encode %{
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 2);
   %}
 
-  // This encoding class is generated automatically from ad_encode.m4.
+  // This encoding class is generated automatically from encode_ad.m4.
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
   enc_class aarch64_enc_ldrsh(iRegI dst, memory2 mem) %{
     Register dst_reg = as_Register($dst$$reg);
@@ -2948,7 +2951,7 @@ encode %{
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 2);
   %}
 
-  // This encoding class is generated automatically from ad_encode.m4.
+  // This encoding class is generated automatically from encode_ad.m4.
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
   enc_class aarch64_enc_ldrh(iRegI dst, memory2 mem) %{
     Register dst_reg = as_Register($dst$$reg);
@@ -2956,7 +2959,7 @@ encode %{
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 2);
   %}
 
-  // This encoding class is generated automatically from ad_encode.m4.
+  // This encoding class is generated automatically from encode_ad.m4.
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
   enc_class aarch64_enc_ldrh(iRegL dst, memory2 mem) %{
     Register dst_reg = as_Register($dst$$reg);
@@ -2964,7 +2967,7 @@ encode %{
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 2);
   %}
 
-  // This encoding class is generated automatically from ad_encode.m4.
+  // This encoding class is generated automatically from encode_ad.m4.
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
   enc_class aarch64_enc_ldrw(iRegI dst, memory4 mem) %{
     Register dst_reg = as_Register($dst$$reg);
@@ -2972,7 +2975,7 @@ encode %{
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 4);
   %}
 
-  // This encoding class is generated automatically from ad_encode.m4.
+  // This encoding class is generated automatically from encode_ad.m4.
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
   enc_class aarch64_enc_ldrw(iRegL dst, memory4 mem) %{
     Register dst_reg = as_Register($dst$$reg);
@@ -2980,7 +2983,7 @@ encode %{
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 4);
   %}
 
-  // This encoding class is generated automatically from ad_encode.m4.
+  // This encoding class is generated automatically from encode_ad.m4.
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
   enc_class aarch64_enc_ldrsw(iRegL dst, memory4 mem) %{
     Register dst_reg = as_Register($dst$$reg);
@@ -2988,7 +2991,7 @@ encode %{
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 4);
   %}
 
-  // This encoding class is generated automatically from ad_encode.m4.
+  // This encoding class is generated automatically from encode_ad.m4.
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
   enc_class aarch64_enc_ldr(iRegL dst, memory8 mem) %{
     Register dst_reg = as_Register($dst$$reg);
@@ -2996,7 +2999,7 @@ encode %{
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 8);
   %}
 
-  // This encoding class is generated automatically from ad_encode.m4.
+  // This encoding class is generated automatically from encode_ad.m4.
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
   enc_class aarch64_enc_ldrs(vRegF dst, memory4 mem) %{
     FloatRegister dst_reg = as_FloatRegister($dst$$reg);
@@ -3004,7 +3007,7 @@ encode %{
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 4);
   %}
 
-  // This encoding class is generated automatically from ad_encode.m4.
+  // This encoding class is generated automatically from encode_ad.m4.
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
   enc_class aarch64_enc_ldrd(vRegD dst, memory8 mem) %{
     FloatRegister dst_reg = as_FloatRegister($dst$$reg);
@@ -3012,7 +3015,7 @@ encode %{
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 8);
   %}
 
-  // This encoding class is generated automatically from ad_encode.m4.
+  // This encoding class is generated automatically from encode_ad.m4.
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
   enc_class aarch64_enc_strb(iRegI src, memory1 mem) %{
     Register src_reg = as_Register($src$$reg);
@@ -3020,14 +3023,14 @@ encode %{
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 1);
   %}
 
-  // This encoding class is generated automatically from ad_encode.m4.
+  // This encoding class is generated automatically from encode_ad.m4.
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
   enc_class aarch64_enc_strb0(memory1 mem) %{
     loadStore(masm, &MacroAssembler::strb, zr, $mem->opcode(),
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 1);
   %}
 
-  // This encoding class is generated automatically from ad_encode.m4.
+  // This encoding class is generated automatically from encode_ad.m4.
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
   enc_class aarch64_enc_strh(iRegI src, memory2 mem) %{
     Register src_reg = as_Register($src$$reg);
@@ -3035,14 +3038,14 @@ encode %{
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 2);
   %}
 
-  // This encoding class is generated automatically from ad_encode.m4.
+  // This encoding class is generated automatically from encode_ad.m4.
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
   enc_class aarch64_enc_strh0(memory2 mem) %{
     loadStore(masm, &MacroAssembler::strh, zr, $mem->opcode(),
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 2);
   %}
 
-  // This encoding class is generated automatically from ad_encode.m4.
+  // This encoding class is generated automatically from encode_ad.m4.
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
   enc_class aarch64_enc_strw(iRegI src, memory4 mem) %{
     Register src_reg = as_Register($src$$reg);
@@ -3050,14 +3053,14 @@ encode %{
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 4);
   %}
 
-  // This encoding class is generated automatically from ad_encode.m4.
+  // This encoding class is generated automatically from encode_ad.m4.
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
   enc_class aarch64_enc_strw0(memory4 mem) %{
     loadStore(masm, &MacroAssembler::strw, zr, $mem->opcode(),
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 4);
   %}
 
-  // This encoding class is generated automatically from ad_encode.m4.
+  // This encoding class is generated automatically from encode_ad.m4.
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
   enc_class aarch64_enc_str(iRegL src, memory8 mem) %{
     Register src_reg = as_Register($src$$reg);
@@ -3072,14 +3075,14 @@ encode %{
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 8);
   %}
 
-  // This encoding class is generated automatically from ad_encode.m4.
+  // This encoding class is generated automatically from encode_ad.m4.
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
   enc_class aarch64_enc_str0(memory8 mem) %{
     loadStore(masm, &MacroAssembler::str, zr, $mem->opcode(),
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 8);
   %}
 
-  // This encoding class is generated automatically from ad_encode.m4.
+  // This encoding class is generated automatically from encode_ad.m4.
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
   enc_class aarch64_enc_strs(vRegF src, memory4 mem) %{
     FloatRegister src_reg = as_FloatRegister($src$$reg);
@@ -3087,7 +3090,7 @@ encode %{
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 4);
   %}
 
-  // This encoding class is generated automatically from ad_encode.m4.
+  // This encoding class is generated automatically from encode_ad.m4.
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
   enc_class aarch64_enc_strd(vRegD src, memory8 mem) %{
     FloatRegister src_reg = as_FloatRegister($src$$reg);
@@ -3095,13 +3098,15 @@ encode %{
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 8);
   %}
 
-  // This encoding class is generated automatically from ad_encode.m4.
+  // This encoding class is generated automatically from encode_ad.m4.
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
   enc_class aarch64_enc_strb0_ordered(memory4 mem) %{
       __ membar(Assembler::StoreStore);
       loadStore(masm, &MacroAssembler::strb, zr, $mem->opcode(),
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 1);
   %}
+
+// END Section generated automatically from encode_ad.m4. Do not edit ------------------
 
   // END Non-volatile memory access
 
@@ -9971,8 +9976,7 @@ instruct rShiftL_reg_imm(iRegLNoSp dst, iRegL src1, immI src2) %{
   ins_pipe(ialu_reg_shift);
 %}
 
-// BEGIN This section of the file is automatically generated. Do not edit --------------
-// This section is generated from aarch64_ad.m4
+// BEGIN Section generated automatically from aarch64_ad.m4. Do not edit ---------------
 
 // This pattern is automatically generated from aarch64_ad.m4
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
@@ -12895,8 +12899,7 @@ instruct bits_reverse_L(iRegLNoSp dst, iRegL src)
 %}
 
 
-// END This section of the file is automatically generated. Do not edit --------------
-
+// END Section generated automatically from aarch64_ad.m4. Do not edit -----------------
 
 // ============================================================================
 // Floating Point Arithmetic Instructions

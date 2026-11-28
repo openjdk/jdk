@@ -212,7 +212,17 @@ ifeq ($(call check-jvm-feature, compiler2), true)
         print \
       }'
 
+  AD_FILE_TOOL := $(TOPDIR)/make/scripts/AdFileTool.sh
+
   $(SINGLE_AD_SRCFILE): $(AD_SRC_FILES)
+	$(call LogInfo, Verifying generated AD files against M4 files)
+
+	@$(BASH) $(AD_FILE_TOOL) --m4 "$(M4)" verify $(AD_SRC_FILES) || { \
+		echo "Verification failed. To regenerate AD files run:" >&2; \
+		echo "  $(BASH) $(AD_FILE_TOOL) regenerate $(AD_SRC_FILES)" >&2; \
+		exit 1; \
+	}
+
 	$(call LogInfo, Preprocessing adlc files $(^F))
 	$(call MakeDir, $(@D))
 	$(AWK) $(INSERT_FILENAME_AWK_SCRIPT) $^ > $@

@@ -19,9 +19,8 @@ dnl Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
 dnl or visit www.oracle.com if you need additional information or have any
 dnl questions.
 dnl
-// BEGIN This section of the file is automatically generated. Do not edit --------------
 
-// This section is generated from g1_aarch64.m4
+// BEGIN Section generated automatically from g1_aarch64_ad.m4. Do not edit ------------
 
 define(`STOREP_INSN',
 `
@@ -377,4 +376,4 @@ instruct g1LoadN(iRegNNoSp dst, indirect mem, iRegPNoSp tmp1, iRegPNoSp tmp2, iR
   ins_pipe(iload_reg_mem);
 %}
 
-// END This section of the file is automatically generated. Do not edit --------------
+// END Section generated automatically from g1_aarch64_ad.m4. Do not edit --------------
