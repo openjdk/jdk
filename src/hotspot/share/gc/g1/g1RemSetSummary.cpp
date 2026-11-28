@@ -122,91 +122,90 @@ void G1RemSetSummary::subtract_from(G1RemSetSummary* other) {
 }
 
 class G1PerRegionTypeRemSetCounters {
-private:
   const char* _name;
 
-  size_t _rs_unused_mem_size;
-  size_t _rs_mem_size;
-  size_t _cards_occupied;
-  size_t _amount;
-  size_t _amount_tracked;
+  size_t _card_set_unused_bytes;
+  size_t _card_set_bytes;
+  size_t _card_set_num_cards;
 
-  size_t _code_root_mem_size;
-  size_t _code_root_elems;
+  size_t _num_regions;
+  size_t _num_tracked_regions;
 
-  double rs_mem_size_percent_of(size_t total) {
-    return percent_of(_rs_mem_size, total);
-  }
+  size_t _hrrs_bytes;
 
-  double cards_occupied_percent_of(size_t total) {
-    return percent_of(_cards_occupied, total);
-  }
+  size_t _code_roots_bytes;
+  size_t _code_roots_length;
 
-  double code_root_mem_size_percent_of(size_t total) {
-    return percent_of(_code_root_mem_size, total);
-  }
-
-  double code_root_elems_percent_of(size_t total) {
-    return percent_of(_code_root_elems, total);
-  }
-
-  size_t amount() const { return _amount; }
-  size_t amount_tracked() const { return _amount_tracked; }
+  size_t num_regions() const { return _num_regions; }
+  size_t num_tracked_regions() const { return _num_tracked_regions; }
 
 public:
+  G1PerRegionTypeRemSetCounters(const char* name) :
+    _name(name),
+    _card_set_unused_bytes(0),
+    _card_set_bytes(0),
+    _card_set_num_cards(0),
+    _num_regions(0),
+    _num_tracked_regions(0),
+    _hrrs_bytes(0),
+    _code_roots_bytes(0),
+    _code_roots_length(0)
+  { }
 
-  G1PerRegionTypeRemSetCounters(const char* name) : _name(name), _rs_unused_mem_size(0), _rs_mem_size(0), _cards_occupied(0),
-    _amount(0), _amount_tracked(0), _code_root_mem_size(0), _code_root_elems(0) { }
-
-  void add_hrrs_stats(size_t hrrs_mem_size, size_t code_root_mem_size, size_t code_root_elems, bool tracked) {
-    _rs_mem_size += hrrs_mem_size;
-    _code_root_mem_size += code_root_mem_size;
-    _code_root_elems += code_root_elems;
-    _amount++;
-    _amount_tracked += tracked ? 1 : 0;
+  void add_hrrs_stats(size_t hrrs_bytes, size_t code_roots_bytes, size_t code_roots_length, bool tracked) {
+    _hrrs_bytes += hrrs_bytes;
+    _code_roots_bytes += code_roots_bytes;
+    _code_roots_length += code_roots_length;
+    _num_regions++;
+    _num_tracked_regions += tracked ? 1 : 0;
   }
 
-  void add_card_set_group_stats(size_t rs_unused_mem_size, size_t rs_mem_size, size_t cards_occupied) {
-    _rs_unused_mem_size += rs_unused_mem_size;
-    _rs_mem_size += rs_mem_size;
-    _cards_occupied += cards_occupied;
+  void add_card_set_stats(size_t card_set_unused_bytes,
+                          size_t card_set_bytes,
+                          size_t card_set_num_cards) {
+    _card_set_unused_bytes += card_set_unused_bytes;
+    _card_set_bytes += card_set_bytes;
+    _card_set_num_cards += card_set_num_cards;
   }
 
-  size_t rs_unused_mem_size() const { return _rs_unused_mem_size; }
-  size_t rs_mem_size() const { return _rs_mem_size; }
-  size_t cards_occupied() const { return _cards_occupied; }
+  size_t card_set_unused_bytes() const { return _card_set_unused_bytes; }
+  size_t card_set_bytes() const { return _card_set_bytes; }
+  size_t cards_occupied() const { return _card_set_num_cards; }
 
-  size_t code_root_mem_size() const { return _code_root_mem_size; }
-  size_t code_root_elems() const { return _code_root_elems; }
+  size_t hrrs_bytes() const { return _hrrs_bytes; }
 
-  void print_rs_mem_info_on(outputStream * out, size_t total) {
-    out->print_cr("    %8zu (%5.1f%%) by %zu "
-                  "(%zu) %s regions unused %zu",
-                  rs_mem_size(), rs_mem_size_percent_of(total),
-                  amount_tracked(), amount(),
-                  _name, rs_unused_mem_size());
+  size_t code_roots_bytes() const { return _code_roots_bytes; }
+  size_t code_roots_length() const { return _code_roots_length; }
+
+  void print_card_set_memory_usage_on(outputStream * out, size_t total) {
+    out->print_cr("    %8zu (%5.1f%%) by %zu (%zu) %s regions unused %zu",
+                  card_set_bytes(), percent_of(card_set_bytes(), total),
+                  num_tracked_regions(), num_regions(),
+                  _name, card_set_unused_bytes());
   }
 
-  void print_cards_occupied_info_on(outputStream * out, size_t total) {
-    out->print_cr("     %8zu (%5.1f%%) entries by %zu "
-                  "(%zu) %s regions",
-                  cards_occupied(), cards_occupied_percent_of(total),
-                  amount_tracked(), amount(), _name);
+  void print_card_set_cards_occupied_on(outputStream * out, size_t total) {
+    out->print_cr("     %8zu (%5.1f%%) entries by %zu (%zu) %s regions",
+                  cards_occupied(), percent_of(cards_occupied(), total),
+                  num_tracked_regions(), num_regions(), _name);
   }
 
-  void print_code_root_mem_info_on(outputStream * out, size_t total) {
-    out->print_cr("    %8zu%s (%5.1f%%) by %zu %s regions",
-        byte_size_in_proper_unit(code_root_mem_size()),
-        proper_unit_for_byte_size(code_root_mem_size()),
-        code_root_mem_size_percent_of(total), amount(), _name);
+  void print_hrrs_memory_usage_on(outputStream * out, size_t total_hrrs_bytes, size_t total_code_roots_bytes) {
+    out->print_cr("    %8zu%s (%5.1f%%) (Code roots %8zu%s (%5.1f%%)) by %zu %s regions",
+        byte_size_in_proper_unit(hrrs_bytes()),
+        proper_unit_for_byte_size(hrrs_bytes()),
+        percent_of(hrrs_bytes(), total_hrrs_bytes),
+        byte_size_in_proper_unit(code_roots_bytes()),
+        proper_unit_for_byte_size(code_roots_bytes()),
+        percent_of(code_roots_bytes(), total_code_roots_bytes),
+        num_regions(), _name);
   }
 
-  void print_code_root_elems_info_on(outputStream * out, size_t total) {
+  void print_code_roots_length_on(outputStream * out, size_t total_code_roots_length) {
     out->print_cr("     %8zu (%5.1f%%) elements by %zu %s regions",
-        code_root_elems(), code_root_elems_percent_of(total), amount(), _name);
+        code_roots_length(), percent_of(code_roots_length(), total_code_roots_length), num_regions(), _name);
   }
 };
-
 
 class G1HeapRegionStatsClosure: public G1HeapRegionClosure {
   G1PerRegionTypeRemSetCounters _young;
@@ -215,55 +214,58 @@ class G1HeapRegionStatsClosure: public G1HeapRegionClosure {
   G1PerRegionTypeRemSetCounters _old;
   G1PerRegionTypeRemSetCounters _all;
 
-  size_t _max_rs_mem_sz;
-  G1HeapRegion* _max_rs_mem_sz_region;
+  G1HeapRegion* _max_hrrs_bytes_region;
 
-  size_t _max_code_root_mem_sz;
-  G1HeapRegion* _max_code_root_mem_sz_region;
+  G1CardSetGroup* _max_card_set_bytes_group;
 
-  size_t _max_group_card_set_mem_sz;
-  G1CardSetGroup* _max_card_set_mem_sz_group;
+  size_t total_card_set_unused_bytes() const     { return _all.card_set_unused_bytes(); }
+  size_t total_card_set_bytes() const            { return _all.card_set_bytes(); }
+  size_t total_cards_occupied() const                  { return _all.cards_occupied(); }
 
-  size_t total_rs_unused_mem_sz() const     { return _all.rs_unused_mem_size(); }
-  size_t total_rs_mem_sz() const            { return _all.rs_mem_size(); }
-  size_t total_cards_occupied() const       { return _all.cards_occupied(); }
+  size_t max_card_set_bytes() const {
+    G1CardSetGroup* gr = max_card_set_bytes_group();
+    return gr != nullptr ? gr->card_set()->mem_size() : 0;
+  }
+  G1CardSetGroup* max_card_set_bytes_group() const { return _max_card_set_bytes_group; }
 
-  size_t max_rs_mem_sz() const              { return _max_rs_mem_sz; }
-  G1HeapRegion* max_rs_mem_sz_region() const  { return _max_rs_mem_sz_region; }
+  size_t max_hrrs_bytes() const {
+    G1HeapRegion* r = max_hrrs_bytes_region();
+    return r != nullptr ? r->rem_set()->mem_size() : 0;
+  }
+  G1HeapRegion* max_hrrs_bytes_region() const { return _max_hrrs_bytes_region; }
 
-  size_t max_group_card_set_mem_sz() const                 { return _max_group_card_set_mem_sz; }
-  G1CardSetGroup* max_card_set_mem_sz_group() const  { return _max_card_set_mem_sz_group; }
+  size_t max_code_roots_bytes() const {
+    G1HeapRegion* r = max_hrrs_bytes_region();
+    return r != nullptr ? r->rem_set()->code_roots_mem_size() : 0;
+  }
 
-  size_t total_code_root_mem_sz() const     { return _all.code_root_mem_size(); }
-  size_t total_code_root_elems() const      { return _all.code_root_elems(); }
-
-  size_t max_code_root_mem_sz() const       { return _max_code_root_mem_sz; }
-  G1HeapRegion* max_code_root_mem_sz_region() const { return _max_code_root_mem_sz_region; }
+  size_t total_hrrs_bytes() const             { return _all.hrrs_bytes(); }
+  size_t total_code_roots_bytes() const       { return _all.code_roots_bytes(); }
+  size_t total_code_roots_length() const      { return _all.code_roots_length(); }
 
 public:
-  G1HeapRegionStatsClosure() : _young("Young"), _humongous("Humongous"),
-    _free("Free"), _old("Old"), _all("All"),
-    _max_rs_mem_sz(0), _max_rs_mem_sz_region(nullptr),
-    _max_code_root_mem_sz(0), _max_code_root_mem_sz_region(nullptr),
-    _max_group_card_set_mem_sz(0), _max_card_set_mem_sz_group(nullptr)
-  {}
+  G1HeapRegionStatsClosure() :
+    _young("Young"),
+    _humongous("Humongous"),
+    _free("Free"),
+    _old("Old"),
+    _all("All"),
+    _max_hrrs_bytes_region(nullptr),
+    _max_card_set_bytes_group(nullptr)
+  {
+    do_card_set_groups();
+  }
 
   bool do_heap_region(G1HeapRegion* r) {
     G1HeapRegionRemSet* hrrs = r->rem_set();
 
-    size_t rs_mem_sz = hrrs->mem_size();
-
-    if (rs_mem_sz > _max_rs_mem_sz) {
-      _max_rs_mem_sz = rs_mem_sz;
-      _max_rs_mem_sz_region = r;
+    size_t hrrs_bytes = hrrs->mem_size();
+    if (hrrs_bytes > max_hrrs_bytes()) {
+      _max_hrrs_bytes_region = r;
     }
 
-    size_t code_root_mem_sz = hrrs->code_roots_mem_size();
-    if (code_root_mem_sz > max_code_root_mem_sz()) {
-      _max_code_root_mem_sz = code_root_mem_sz;
-      _max_code_root_mem_sz_region = r;
-    }
-    size_t code_root_elems = hrrs->code_roots_length();
+    size_t code_roots_bytes = hrrs->code_roots_mem_size();
+    size_t code_roots_length = hrrs->code_roots_length();
 
     G1PerRegionTypeRemSetCounters* current = nullptr;
     if (r->is_free()) {
@@ -277,113 +279,113 @@ public:
     } else {
       ShouldNotReachHere();
     }
-    current->add_hrrs_stats(rs_mem_sz, code_root_mem_sz, code_root_elems, r->rem_set()->is_tracked());
-    _all.add_hrrs_stats(rs_mem_sz, code_root_mem_sz, code_root_elems, r->rem_set()->is_tracked());
+    current->add_hrrs_stats(hrrs_bytes, code_roots_bytes, code_roots_length, r->rem_set()->is_tracked());
+    _all.add_hrrs_stats(hrrs_bytes, code_roots_bytes, code_roots_length, r->rem_set()->is_tracked());
 
     return false;
   }
 
-  void accumulate_stats_for_group(G1CardSetGroup* group, G1PerRegionTypeRemSetCounters* gen_counter) {
-    G1CardSet* card_set = group->card_set();
+  void add_group_stats(G1CardSetGroup* gr, G1PerRegionTypeRemSetCounters* gen_counter) {
+    G1CardSet* card_set = gr->card_set();
+    size_t card_set_bytes = card_set->mem_size();
+    size_t card_set_unused_bytes = card_set->unused_mem_size();
+    size_t card_set_num_cards = card_set->occupied();
 
-    size_t group_mem_sz = card_set->mem_size();
-    size_t rs_unused_mem_sz = card_set->unused_mem_size();
-    size_t occupied_cards = card_set->occupied();
-
-    if (group_mem_sz > _max_group_card_set_mem_sz) {
-      _max_group_card_set_mem_sz = group_mem_sz;
-      _max_card_set_mem_sz_group = group;
+    if (card_set_bytes > max_card_set_bytes()) {
+      _max_card_set_bytes_group = gr;
     }
 
-    gen_counter->add_card_set_group_stats(rs_unused_mem_sz, group_mem_sz, occupied_cards);
-    _all.add_card_set_group_stats(rs_unused_mem_sz, group_mem_sz, occupied_cards);
+    gen_counter->add_card_set_stats(card_set_unused_bytes,
+                                    card_set_bytes,
+                                    card_set_num_cards);
+    _all.add_card_set_stats(card_set_unused_bytes,
+                            card_set_bytes,
+                            card_set_num_cards);
   }
 
   void do_card_set_groups() {
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
-    accumulate_stats_for_group(g1h->collection_set()->young_regions_card_set_group(), &_young);
+    add_group_stats(g1h->collection_set()->young_regions_card_set_group(), &_young);
 
     G1CollectionSetCandidates* candidates = g1h->collection_set_candidates();
-    for (G1CardSetGroup* group : candidates->from_marking_groups()) {
-      accumulate_stats_for_group(group, &_old);
+    for (G1CardSetGroup* gr : candidates->from_marking_groups()) {
+      add_group_stats(gr, &_old);
     }
-    for (G1CardSetGroup* group : candidates->retained_groups()) {
-      accumulate_stats_for_group(group, &_old);
+    for (G1CardSetGroup* gr : candidates->retained_groups()) {
+      add_group_stats(gr, &_old);
     }
 
-    g1h->humongous_card_set_groups()->iterate([&] (G1CardSetGroup* group) {
-                                                accumulate_stats_for_group(group, &_humongous);
+    g1h->humongous_card_set_groups()->iterate([&] (G1CardSetGroup* gr) {
+                                                add_group_stats(gr, &_humongous);
                                               });
   }
 
   void print_summary_on(outputStream* out) {
     G1PerRegionTypeRemSetCounters* counters[] = { &_young, &_humongous, &_free, &_old, nullptr };
 
-    out->print_cr(" Current rem set statistics");
-    out->print_cr("  Total heap region rem set and card set sizes = %zu"
-                  " Max card set = %zu unused card set = %zu",
-                  total_rs_mem_sz(),
-                  max_group_card_set_mem_sz(),
-                  total_rs_unused_mem_sz());
+    out->print_cr(" Current heap region remembered set statistics");
+    out->print_cr("  Total card set memory usage = %zu unused = %zu Max individual = %zu (%u)",
+                  total_card_set_bytes(),
+                  total_card_set_unused_bytes(),
+                  max_card_set_bytes(),
+                  max_card_set_bytes_group() != nullptr ? max_card_set_bytes_group()->group_id() : G1CardSetGroup::NoGroupId
+                  );
     for (G1PerRegionTypeRemSetCounters** current = &counters[0]; *current != nullptr; current++) {
-      (*current)->print_rs_mem_info_on(out, total_rs_mem_sz());
+      (*current)->print_card_set_memory_usage_on(out, total_card_set_bytes());
     }
 
-    out->print_cr("    %zu occupied cards represented.",
+    out->print_cr("    %zu occupied cards.",
                   total_cards_occupied());
     for (G1PerRegionTypeRemSetCounters** current = &counters[0]; *current != nullptr; current++) {
-      (*current)->print_cards_occupied_info_on(out, total_cards_occupied());
+      (*current)->print_card_set_cards_occupied_on(out, total_cards_occupied());
     }
 
-    // Largest sized single region rem set statistics
-    if (max_rs_mem_sz_region() != nullptr) {
-      G1HeapRegionRemSet* rem_set = max_rs_mem_sz_region()->rem_set();
-      out->print_cr("    Region with largest rem set = " HR_FORMAT ", "
-                    "size = %zu group occupied = %zu group id = %u",
-                    HR_FORMAT_PARAMS(max_rs_mem_sz_region()),
+    // Largest single region HRRS statistics
+    if (max_hrrs_bytes_region() != nullptr) {
+      G1HeapRegionRemSet* rem_set = max_hrrs_bytes_region()->rem_set();
+      out->print_cr("    Region with largest memory usage = " HR_FORMAT ", "
+                    "size = %zu code roots length = %zu code root size = %zu",
+                    HR_FORMAT_PARAMS(max_hrrs_bytes_region()),
                     rem_set->mem_size(),
-                    rem_set->occupied(),
-                    rem_set->has_card_set_group() ? rem_set->card_set_group_id() : G1CardSetGroup::NoGroupId);
+                    rem_set->code_roots_length(),
+                    rem_set->code_roots_mem_size());
     }
 
-    if (max_card_set_mem_sz_group() != nullptr) {
-      G1CardSetGroup* card_set_group = max_card_set_mem_sz_group();
+    if (max_card_set_bytes_group() != nullptr) {
+      G1CardSetGroup* gr = max_card_set_bytes_group();
       out->print_cr("    Card Set Group with largest card set = %u:(%u regions), "
                     "size = %zu occupied = %zu",
-                    card_set_group->group_id(), card_set_group->num_regions(),
-                    card_set_group->card_set()->mem_size(),
-                    card_set_group->card_set()->occupied());
+                    gr->group_id(), gr->num_regions(),
+                    max_card_set_bytes(),
+                    gr->card_set()->occupied());
     }
 
     G1HeapRegionRemSet::print_static_mem_size(out);
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
     g1h->card_set_freelist_pool()->print_on(out);
 
-    // Code root statistics
-    G1HeapRegionRemSet* max_code_root_rem_set = max_code_root_mem_sz_region()->rem_set();
-    out->print_cr("  Total heap region code root sets sizes = %zu%s."
-                  "  Max = %zu%s.",
-                  byte_size_in_proper_unit(total_code_root_mem_sz()),
-                  proper_unit_for_byte_size(total_code_root_mem_sz()),
-                  byte_size_in_proper_unit(max_code_root_rem_set->code_roots_mem_size()),
-                  proper_unit_for_byte_size(max_code_root_rem_set->code_roots_mem_size()));
+    // Overall root statistics
+    out->print_cr("  Total heap region rem set sizes = %zu%s."
+                  "  Max = %zu%s (Code roots %zu%s Max = %zu%s).",
+                  byte_size_in_proper_unit(total_hrrs_bytes()),
+                  proper_unit_for_byte_size(total_hrrs_bytes()),
+                  byte_size_in_proper_unit(max_hrrs_bytes()),
+                  proper_unit_for_byte_size(max_hrrs_bytes()),
+                  byte_size_in_proper_unit(total_code_roots_bytes()),
+                  proper_unit_for_byte_size(total_code_roots_bytes()),
+                  byte_size_in_proper_unit(max_code_roots_bytes()),
+                  proper_unit_for_byte_size(max_code_roots_bytes()));
+
     for (G1PerRegionTypeRemSetCounters** current = &counters[0]; *current != nullptr; current++) {
-      (*current)->print_code_root_mem_info_on(out, total_code_root_mem_sz());
+      (*current)->print_hrrs_memory_usage_on(out, total_hrrs_bytes(), total_code_roots_bytes());
     }
 
     out->print_cr("    %zu code roots represented.",
-                  total_code_root_elems());
+                  total_code_roots_length());
     for (G1PerRegionTypeRemSetCounters** current = &counters[0]; *current != nullptr; current++) {
-      (*current)->print_code_root_elems_info_on(out, total_code_root_elems());
+      (*current)->print_code_roots_length_on(out, total_code_roots_length());
     }
-
-    out->print_cr("    Region with largest amount of code roots = " HR_FORMAT ", "
-                  "size = %zu%s, num_slots = %zu.",
-                  HR_FORMAT_PARAMS(max_code_root_mem_sz_region()),
-                  byte_size_in_proper_unit(max_code_root_rem_set->code_roots_mem_size()),
-                  proper_unit_for_byte_size(max_code_root_rem_set->code_roots_mem_size()),
-                  max_code_root_rem_set->code_roots_length());
   }
 };
 
@@ -399,6 +401,5 @@ void G1RemSetSummary::print_on(outputStream* out, bool show_thread_times) {
   }
   G1HeapRegionStatsClosure blk;
   G1CollectedHeap::heap()->heap_region_iterate(&blk);
-  blk.do_card_set_groups();
   blk.print_summary_on(out);
 }
