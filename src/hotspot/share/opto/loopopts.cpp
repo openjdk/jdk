@@ -4703,6 +4703,253 @@ bool PhaseIdealLoop::duplicate_loop_backedge(IdealLoopTree* loop, Node_List<Node
   return true;
 }
 
+
+// Helper class that reassociates latency-bound reduction chains inside a single loop.
+//
+// A "reduction chain" is a linear sequence of associative operations (Op_MinL / Op_MaxL)
+// where one end of the chain feeds the loop's reduction Phi node.  Because the Phi
+// carries the loop-carried value, every iteration must wait for the full chain to
+// complete before the next iteration can start -- the chain sits entirely on the
+// critical (latency) path.
+//
+// Transformation -- before (chain of length 3, Phi at the innermost position):
+//
+//        chain_head
+//            OP(A, ─────────────────────────── chain_head−1
+//                       OP(B, ──────────────── chain_head−2
+//                                 OP(C, Phi)))
+//                                      │
+//                                (back-edge carries
+//                                 the previous result)
+//
+//   Critical path per iteration: Phi → OP(C,Phi) → OP(B,…) → OP(A,…) → new Phi
+//   Depth = chain_length operations, fully serial.
+//
+// Transformation -- after (Phi moved to the outermost position):
+//
+//       new_chain_head
+//            OP(Phi, ─────────────────────────── inner_head
+//             │            OP(A, ─────────────── inner_head−1
+//        (back-edge)                 OP(B, C)))
+//
+//   Critical path per iteration: Phi → OP(Phi, inner) → new Phi
+//   Depth = 1 operation from Phi; the sub-chain OP(A, OP(B, C)) is
+//   independent of the previous Phi value and can execute in parallel.
+//
+// The transformation is semantics-preserving because MinL/MaxL are both associative
+// and commutative over their operands.
+//
+// Register pressure caveat:
+//   Moving inputs around can keep more intermediate values live simultaneously,
+//   raising register pressure.  This is why the optimization is intentionally
+//   restricted to Op_MinL / Op_MaxL, the operations most likely to pay off the
+//   latency improvement.  Any extension to other AddNode subclasses must
+//   carefully weigh that trade-off.
+class ReassociateReductionChains : public StackObj {
+public:
+  ReassociateReductionChains(IdealLoopTree* loop, PhaseIdealLoop* phase) : _loop(loop), _phase(phase) {
+  }
+
+  // Entry point: discovers reduction Phi nodes and attempts to reassociate
+  // any eligible chain rooted at each one.
+  //
+  // Every Phi node that is a direct use of the loop head is a candidate
+  // reduction Phi (it carries the loop-carried accumulator value).  For
+  // each such Phi, every downstream user is examined as a potential chain
+  // root via try_reassociate_chain().  The inner iterator (DUIterator, not
+  // the fast variant) is used deliberately because try_reassociate_chain()
+  // may insert new nodes -- the safe iterator handles that correctly.
+  void reassociate_chains() {
+    Node* loop_head = _loop->head();
+    for (DUIterator_Fast imax, i = loop_head->fast_outs(imax); i < imax; i++) {
+      Node* loop_head_use = loop_head->fast_out(i);
+      if (loop_head_use->is_Phi()) {
+        PhiNode* phi = loop_head_use->as_Phi();
+        for (DUIterator j = phi->outs(); phi->has_out(j); j++) {
+          try_reassociate_chain(phi->out(j), phi);
+        }
+      }
+    }
+  }
+
+private:
+  IdealLoopTree* _loop;
+  PhaseIdealLoop* _phase;
+
+  static bool is_associative(Node* n) {
+    return n->Opcode() == Op_MinL || n->Opcode() == Op_MaxL;
+  }
+
+  // Detects a linear reduction chain starting at 'n' (a direct use of 'phi')
+  // and, if the chain is eligible, delegates to do_reassociate_chain() and
+  // splices the result into the graph.
+  //
+  // Chain detection walks upward through single-use nodes of the same opcode:
+  //
+  //   phi → n (chain_head−2) → chain_head−1 → chain_head
+  //         └── all same opcode, each with exactly one use ──┘
+  //
+  // The walk terminates when the unique out is not the same opcode (the node
+  // has exited the chain) or when a node has more than one use (the chain
+  // branches and the shape becomes a DAG, not a simple chain).
+  //
+  // Bail-out conditions (chain is left untouched if any hold):
+  //   - 'n' does not have an associative opcode (is_associative() is false)
+  //   - A chain node's single use lies outside the loop -- transforming such
+  //     a chain could lengthen the path from the Phi to a consumer outside
+  //     the loop, negating the benefit.
+  //   - A chain node's use has two inputs both sharing the same opcode,
+  //     meaning the chain forks into two independent sub-chains.
+  //   - The detected chain length is less than 2.  A single-node "chain" has
+  //     no reordering opportunity.
+  //
+  // On success, the original chain_head is replaced in all its uses by the
+  // new chain head returned by do_reassociate_chain(), and the old chain_head
+  // is pushed onto the IGVN worklist so dead-code elimination can remove it.
+  void try_reassociate_chain(Node* n, PhiNode* phi) {
+    if (!is_associative(n)) {
+      return;
+    }
+
+    Node* chain_head = nullptr;
+    Node* current = n;
+    int opcode = current->Opcode();
+
+    uint chain_length = 1;
+    while (current != nullptr) {
+      if (current->outcnt() != 1) {
+        break;
+      }
+
+      Node* use = nullptr;
+      Node* out = current->unique_out();
+      if (out->Opcode() == opcode) {
+        use = out;
+      }
+
+      if (use != nullptr) {
+        if (!_phase->ctrl_is_member(_loop, use)) {
+          // Only interested in commutative add nodes that are in use in the loop
+          return;
+        }
+        if (use->in(1)->Opcode() == opcode && use->in(2)->Opcode() == opcode) {
+          // A chain to reassociate cannot be constructed
+          // when the chain can have multiple paths
+          return;
+        }
+
+        chain_length++;
+        chain_head = use;
+      }
+
+      current = use;
+    }
+
+    if (chain_length < 2) {
+      // Only reassociate long enough chains
+      return;
+    }
+
+    Node* new_chain_head = do_reassociate_chain(chain_head, opcode, phi, chain_length);
+    _phase->igvn().replace_in_uses(chain_head, new_chain_head);
+    _phase->igvn()._worklist.push(chain_head);
+  }
+
+  // Performs the actual reassociation of a validated reduction chain of
+  // length 'chain_length', moving 'phi' from the innermost position to the
+  // outermost position of a freshly built chain.
+  //
+  // The algorithm works in two phases:
+  //
+  // --- Phase 1: Collect inputs ---
+  // Walk from 'node' (chain_head, outermost) inward toward phi, visiting
+  // exactly 'chain_length' nodes.  At each node n the "chain direction"
+  // is in(1) when in(1) carries the same opcode or IS phi; otherwise it
+  // is in(2).  The other side is the "data" input and is recorded:
+  //
+  //   node (chain_head)      node−1              innermost
+  //   OP( ─chain─ , A )   OP( ─chain─ , B )   OP( C , Phi )
+  //                ↓                   ↓             ↓
+  //          input_nodes[0]=A   input_nodes[1]=B   input_nodes[2]=C
+  //
+  // After the walk input_nodes holds data values ordered outermost-first.
+  // Note: the chain-direction taken in the final step (at the innermost
+  // node) is irrelevant because the loop ends immediately afterward.
+  //
+  // --- Phase 2: Rewire ---
+  // Build 'chain_length' fresh nodes (all cloned from 'node') and wire
+  // them up so that phi sits at in(2) of the new head and the data inputs
+  // are threaded inward via in(1) links.  For chain_length == 3:
+  //
+  //   head    = OP( clone_0 , phi )   ← phi pinned at in(2)
+  //   clone_0 = OP( clone_1 , A   )   ← input_nodes[0] at in(2)
+  //   clone_1 = OP( C       , B   )   ← input_nodes[2] at in(1),
+  //                                       input_nodes[1] at in(2)
+  //
+  // The resulting chain OP(OP(OP(C, B), A), phi) is semantically
+  // equivalent to OP(phi, OP(A, OP(B, C))) because MinL/MaxL are
+  // associative and commutative; the critical change is that phi now
+  // sits at depth 1 from the top rather than depth chain_length.
+  //
+  // Each newly built node is registered under the loop head's control as
+  // soon as its in(1) is finalized: 'prev' is registered inside the loop
+  // body immediately after prev->set_req(1, ...) is called, and the last
+  // clone is registered after the loop.
+  //
+  // The new head is returned to the caller, which splices it in via
+  // replace_in_uses().
+  //
+  // Restriction: 'node' must be chain_head (the outermost node of the
+  // validated chain).  Following the chain direction from 'node' must
+  // reach 'phi' in exactly 'chain_length' steps; a mismatch causes
+  // input_nodes to be populated with wrong values and produces an
+  // incorrectly wired result.
+  Node* do_reassociate_chain(Node* node, int opcode, PhiNode* phi, uint chain_length) {
+    // Accumulate inputs
+    Unique_Node_List<Node> input_nodes;
+    Node* n = node;
+    for (uint i = 0; i < chain_length; i++) {
+      Node* left = n->in(1);
+      Node* input = left->Opcode() == opcode || left == phi ? n->in(2) : left;
+      input_nodes.push(input);
+      n = n->in(left->Opcode() == opcode ? 1 : 2);
+    }
+
+    // Rewire
+    Node* head = node->clone();
+    head->set_req(2, phi);
+    Node* prev = head;
+    for (uint i = 0; i < chain_length - 1; i++) {
+      Node* input = input_nodes.at(i);
+      Node* cloned = node->clone();
+      cloned->set_req(2, input);
+      prev->set_req(1, cloned);
+      _phase->register_new_node(prev, _loop->head());
+      prev = cloned;
+    }
+    prev->set_req(1, input_nodes.at(chain_length - 1));
+    _phase->register_new_node(prev, _loop->head());
+
+    return head;
+  }
+};
+
+// Drives reduction-chain reassociation across all innermost loops in the
+// compiled method.
+//
+// The pass iterates the loop tree via LoopTreeIterator, which performs a
+// pre-order traversal of _ltree_root.  Only innermost loops (loops with no
+// child loops) are processed.  Outer loops are intentionally skipped.
+void PhaseIdealLoop::reassociate_reduction_chains() {
+  for (LoopTreeIterator iter(_ltree_root); !iter.done(); iter.next()) {
+    IdealLoopTree* loop = iter.current();
+    if (loop->is_innermost()) {
+      ReassociateReductionChains rrc(loop, this);
+      rrc.reassociate_chains();
+    }
+  }
+}
+
 // AutoVectorize the loop: replace scalar ops with vector ops.
 PhaseIdealLoop::AutoVectorizeStatus
 PhaseIdealLoop::auto_vectorize(IdealLoopTree* lpt, VSharedData &vshared) {
