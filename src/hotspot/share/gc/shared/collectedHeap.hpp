@@ -472,6 +472,9 @@ protected:
   void trace_heap_before_gc(const GCTracer* gc_tracer);
   void trace_heap_after_gc(const GCTracer* gc_tracer);
 
+  void safepoint_and_oom_during_initialization();
+  void oom_at_safepoint_during_initialization();
+
   // Heap verification
   virtual void verify(VerifyOption option) = 0;
 

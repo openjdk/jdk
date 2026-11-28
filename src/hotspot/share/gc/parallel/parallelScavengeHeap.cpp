@@ -295,7 +295,13 @@ HeapWord* ParallelScavengeHeap::mem_allocate(size_t size) {
   assert(!Heap_lock->owned_by_self(), "this thread should not own the Heap_lock");
 
   bool is_tlab = false;
-  return mem_allocate_work(size, is_tlab);
+  HeapWord* result = mem_allocate_work(size, is_tlab);
+
+  if (result == nullptr && !is_vm_created()) {
+    safepoint_and_oom_during_initialization();
+  }
+
+  return result;
 }
 
 HeapWord* ParallelScavengeHeap::mem_allocate_cas_noexpand(size_t size, bool is_tlab) {

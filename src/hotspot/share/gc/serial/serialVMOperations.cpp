@@ -24,12 +24,17 @@
 
 #include "gc/serial/serialVMOperations.hpp"
 #include "gc/shared/gcLocker.hpp"
+#include "runtime/java.hpp"
 
 void VM_SerialCollectForAllocation::doit() {
   SerialHeap* gch = SerialHeap::heap();
   GCCauseSetter gccs(gch, _gc_cause);
   _result = gch->satisfy_failed_allocation(_word_size, _tlab);
   assert(_result == nullptr || gch->is_in_reserved(_result), "result not in heap");
+
+  if (_result == nullptr && !_tlab && !is_vm_created()) {
+    gch->oom_at_safepoint_during_initialization();
+  }
 }
 
 void VM_SerialGCCollect::doit() {

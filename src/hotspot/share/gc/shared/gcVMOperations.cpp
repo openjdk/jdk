@@ -286,3 +286,7 @@ VM_CollectForAllocation::VM_CollectForAllocation(size_t word_size, uint gc_count
     AllocTracer::send_allocation_requiring_gc_event(_word_size * HeapWordSize, GCId::peek());
   }
 }
+
+void VM_OOMDuringInitialization::doit() {
+  Universe::heap()->oom_at_safepoint_during_initialization();
+}

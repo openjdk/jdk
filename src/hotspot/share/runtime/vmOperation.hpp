@@ -93,6 +93,7 @@
   template(ShenandoahInitUpdateRefs)              \
   template(ShenandoahFinalUpdateRefs)             \
   template(ShenandoahFinalVerify)                 \
+  template(OOMDuringInitialization)               \
   template(Exit)                                  \
   template(LinuxDllLoad)                          \
   template(WhiteBoxOperation)                     \

@@ -28,6 +28,7 @@
 #include "gc/z/zAddress.hpp"
 #include "gc/z/zAllocationFlags.hpp"
 #include "gc/z/zArray.inline.hpp"
+#include "gc/z/zCollectedHeap.hpp"
 #include "gc/z/zDriver.hpp"
 #include "gc/z/zFuture.inline.hpp"
 #include "gc/z/zGeneration.inline.hpp"
@@ -2920,6 +2921,11 @@ void ZPageAllocator::notify_out_of_memory() {
     if (!has_alloc_seen_old(allocation)) {
       // Not out of memory, keep remaining allocation requests enqueued
       return;
+    }
+
+    if (!is_vm_created()) {
+      ZUnlocker<ZLock> unlocker(&_lock);
+      ZCollectedHeap::heap()->safepoint_and_oom_during_initialization();
     }
 
     // Out of memory, dequeue and fail allocation request

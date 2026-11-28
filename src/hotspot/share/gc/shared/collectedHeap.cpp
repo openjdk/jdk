@@ -52,6 +52,7 @@
 #include "runtime/init.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/perfData.hpp"
+#include "runtime/safepoint.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vmThread.hpp"
 #include "services/heapDumper.hpp"
@@ -229,6 +230,18 @@ void CollectedHeap::trace_heap_before_gc(const GCTracer* gc_tracer) {
 
 void CollectedHeap::trace_heap_after_gc(const GCTracer* gc_tracer) {
   trace_heap(GCWhen::AfterGC, gc_tracer);
+}
+
+void CollectedHeap::safepoint_and_oom_during_initialization() {
+  assert(!SafepointSynchronize::is_at_safepoint(), "should not be at a safepoint");
+  VM_OOMDuringInitialization op;
+  VMThread::execute(&op);
+  ShouldNotReachHere();
+}
+
+void CollectedHeap::oom_at_safepoint_during_initialization() {
+  assert(SafepointSynchronize::is_at_safepoint(), "should be at a safepoint");
+  vm_exit_during_initialization("java.lang.OutOfMemoryError", "Java heap space");
 }
 
 // Default implementation, for collectors that don't support the feature.
