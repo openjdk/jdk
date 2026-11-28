@@ -23,7 +23,7 @@
 
 /*
  * @test id=vanilla
- * @bug 8324751
+ * @bug 8324751 8336759
  * @summary Test Speculative Aliasing checks in SuperWord
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
@@ -35,7 +35,7 @@
 
 /*
  * @test id=random-flags
- * @bug 8324751
+ * @bug 8324751 8336759
  * @summary Test Speculative Aliasing checks in SuperWord
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
@@ -93,6 +93,8 @@ import compiler.lib.template_framework.library.TestFrameworkClass;
  *   - type of index, invars, and bounds (see isLongIvType)
  *     - int: for array and MemorySegment
  *     - long: for MemorySegment
+ *     - int-iv with long-limit: the long exit test is speculatively narrowed to an int exit test,
+ *       making the loop an int counted loop, so that it can be unrolled and auto-vectorized.
  * - IR rules:
  *   - Verify that verification does (not) happen as expected.
  *   - Verify that we do not use multiversioning when no aliasing is expected at runtime.
@@ -481,6 +483,12 @@ public class TestAliasingFuzzer {
         int ivStrideAbs,
         boolean isLongIvType,
 
+        // JDK-8336759: with an int-iv and a forward loop, we can have a long loop limit, which is
+        // speculatively narrowed to an int limit, making the loop an int counted loop, and,
+        // therefore, opens up more loop optimizations opportunities (namely, RCE and
+        // auto-vectorization)
+        boolean isLongLimit,
+
         // For all index forms: number of invariants in the rest, i.e. the [err] term.
         int numInvarRest,
 
@@ -521,6 +529,7 @@ public class TestAliasingFuzzer {
                 loopForward,
                 ivStrideAbs,
                 isLongIvType,
+                false, // int limit: array lengths are always int
                 numInvarRest,
                 new IndexForm[] {form0, form1},
                 new MyType[]    {type,   type},
@@ -577,6 +586,7 @@ public class TestAliasingFuzzer {
             boolean withAbsOneIvScale = containerKind == ContainerKind.MEMORY_SEGMENT_LONG_ADR_STRIDE;
             int ivStrideAbs = containerKind == ContainerKind.MEMORY_SEGMENT_LONG_ADR_STRIDE ? minAccessSize : 1;
             boolean isLongIvType = RANDOM.nextBoolean();
+            boolean isLongLimit = !isLongIvType && loopForward && RANDOM.nextBoolean();
             var form0 = IndexForm.random(numInvarRest, indexSize0, ivStrideAbs);
             var form1 = IndexForm.random(numInvarRest, indexSize1, ivStrideAbs);
 
@@ -588,6 +598,7 @@ public class TestAliasingFuzzer {
                 loopForward,
                 ivStrideAbs,
                 isLongIvType,
+                isLongLimit,
                 numInvarRest,
                 new IndexForm[] {form0, form1},
                 new MyType[]    {accessType0, accessType1},
@@ -1170,6 +1181,7 @@ public class TestAliasingFuzzer {
                 let("containerElementType", containerElementType),
                 let("ivStrideAbs", ivStrideAbs),
                 let("ivType", isLongIvType ? "long" : "int"),
+                let("limitType", (isLongIvType || isLongLimit) ? "long" : "int"),
                 // Method head / signature.
                 "public static Object #methodName(",
                 IntStream.range(0, numContainers).mapToObj(i ->
@@ -1182,7 +1194,7 @@ public class TestAliasingFuzzer {
                             List.of("MemorySegment container_", i, ", #ivType invar0_", i, ", ");
                     }
                 ).toList(),
-                "#ivType ivLo, #ivType ivHi) {\n",
+                "#ivType ivLo, #limitType ivHi) {\n",
                 // Method loop body.
                 (loopForward
                  ?  "for (#ivType i = ivLo; i < ivHi; i+=#ivStrideAbs) {\n"
