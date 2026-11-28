@@ -1507,6 +1507,14 @@ public class IntVector128Tests extends AbstractVectorTest {
         return Integer.numberOfLeadingZeros(a);
     }
 
+    static int compress(int a, int b) {
+        return Integer.compress(a, b);
+    }
+
+    static int expand(int a, int b) {
+        return Integer.expand(a, b);
+    }
+
     static int REVERSE_scalar(int a) {
         return Integer.reverse(a);
     }
@@ -2284,7 +2292,7 @@ public class IntVector128Tests extends AbstractVectorTest {
     }
 
     static int COMPRESS_BITS(int a, int b) {
-        return (int)(Integer.compress(a, b));
+        return (int)(compress(a, b));
     }
 
     @Test(dataProvider = "intBinaryOpProvider")
@@ -2325,7 +2333,7 @@ public class IntVector128Tests extends AbstractVectorTest {
     }
 
     static int EXPAND_BITS(int a, int b) {
-        return (int)(Integer.expand(a, b));
+        return (int)(expand(a, b));
     }
 
     @Test(dataProvider = "intBinaryOpProvider")
