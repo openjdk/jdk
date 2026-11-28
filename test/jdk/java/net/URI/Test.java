@@ -1148,6 +1148,18 @@ public class Test {
             norm().p("b");
         test("a/../b:c").p("a/../b:c").z()
             .norm().p("./b:c").z();
+        test("a//../b").p("a//../b")
+                .norm().p("b").z();
+        test("a/../../b").p("a/../../b")
+                .norm().p("../b").z();
+        test("/a/b/../../..").p("/a/b/../../..")
+                .norm().p("/..").z();
+        test("a/.").p("a/.")
+                .norm().p("a/").z();
+        test("a/..").p("a/..")
+                .norm().p("").z();
+        test("a/b/../../c:d").p("a/b/../../c:d")
+                .norm().p("./c:d").z();
 
         // Relative URI empty path segment normalization
         String[] slashes = {"/", "//", "///", "////"};

@@ -27,6 +27,9 @@ package sun.net.www.protocol.jar;
 
 import java.io.IOException;
 import java.net.*;
+
+import jdk.internal.access.SharedSecrets;
+
 import static jdk.internal.util.Exceptions.filterJarName;
 import static jdk.internal.util.Exceptions.formatMsg;
 
@@ -34,6 +37,12 @@ import static jdk.internal.util.Exceptions.formatMsg;
  * Jar URL Handler
  */
 public class Handler extends java.net.URLStreamHandler {
+
+    private static final boolean USE_LEGACY_NORMALIZATION;
+    static {
+        USE_LEGACY_NORMALIZATION =
+                Boolean.getBoolean("jdk.net.url.useLegacyNormalization");
+    }
 
     private static final String separator = "!/";
 
@@ -229,7 +238,7 @@ public class Handler extends java.net.URLStreamHandler {
             // Defer substring and concat until canonicalization is required
             String before = file.substring(0, off);
             String after = file.substring(off);
-            return before + doCanonicalize(after);
+            return before + doNormalize(after);
         }
     }
 
@@ -262,6 +271,26 @@ public class Handler extends java.net.URLStreamHandler {
             file = file.substring(0, file.length() -1);
 
         return file;
+    }
+
+    static String doNormalize(String file) {
+        if (USE_LEGACY_NORMALIZATION) {
+            return doCanonicalize(file);
+        }
+
+        String normalizedPath = SharedSecrets.getJavaNetURLAccess().normalize(file);
+        // jar long-standing behaviour:
+        //   leading /../ are removed
+        int index = normalizedPath.lastIndexOf("/../");
+        if (index > -1) {
+            normalizedPath = normalizedPath.substring(index + 3);
+        }
+        // jar long-standing behavior:
+        //   trailing /.. is removed
+        if (normalizedPath.endsWith("/..")) {
+            normalizedPath = normalizedPath.substring(0, normalizedPath.length() - 3);
+        }
+        return normalizedPath.isEmpty() ? "/" : normalizedPath;
     }
 
     @SuppressWarnings("deprecation")

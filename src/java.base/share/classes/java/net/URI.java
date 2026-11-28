@@ -2309,13 +2309,13 @@ public final class URI
     // string object for each segment, as well as the use of a string buffer to
     // compute the final result, by using a single char array and editing it in
     // place.  The array is first split into segments, replacing each slash
-    // with '\0' and creating a segment-index array, each element of which is
+    // with SEG_MARKER and creating a segment-index array, each element of which is
     // the index of the first char in the corresponding segment.  We then walk
     // through both arrays, removing ".", "..", and other segments as necessary
     // by setting their entries in the index array to -1.  Finally, the two
     // arrays are used to rejoin the segments and compute the final result.
     //
-    // This code is based upon src/solaris/native/java/io/canonicalize_md.c
+    // This code was originally based upon src/solaris/native/java/io/canonicalize_md.c
 
 
     // Check the given path to see if it might need normalization.  A path
@@ -2326,7 +2326,7 @@ public final class URI
     // This method takes a string argument rather than a char array so that
     // this test can be performed without invoking path.toCharArray().
     //
-    private static int needsNormalization(String path) {
+    private static int needsNormalization(String path, boolean allowEmptySegments) {
         boolean normal = true;
         int ns = 0;                     // Number of segments
         int end = path.length() - 1;    // Index of last char in path
@@ -2337,18 +2337,19 @@ public final class URI
             if (path.charAt(p) != '/') break;
             p++;
         }
-        if (p > 1) normal = false;
+        if (p > 1 && !allowEmptySegments) normal = false;
+        if (allowEmptySegments && p > 0) ns = p - 1;
 
         // Scan segments
         while (p <= end) {
 
             // Looking at "." or ".." ?
             if ((path.charAt(p) == '.')
-                && ((p == end)
+                    && ((p == end)
                     || ((path.charAt(p + 1) == '/')
-                        || ((path.charAt(p + 1) == '.')
-                            && ((p + 1 == end)
-                                || (path.charAt(p + 2) == '/')))))) {
+                    || ((path.charAt(p + 1) == '.')
+                    && ((p + 1 == end)
+                    || (path.charAt(p + 2) == '/')))))) {
                 normal = false;
             }
             ns++;
@@ -2361,7 +2362,8 @@ public final class URI
                 // Skip redundant slashes
                 while (p <= end) {
                     if (path.charAt(p) != '/') break;
-                    normal = false;
+                    if (!allowEmptySegments) normal = false;
+                    else ns++;
                     p++;
                 }
 
@@ -2373,17 +2375,17 @@ public final class URI
     }
 
 
-    // Split the given path into segments, replacing slashes with nulls and
+    // Split the given path into segments, replacing slashes with SEG_MARKER and
     // filling in the given segment-index array.
     //
     // Preconditions:
     //   segs.length == Number of segments in path
     //
     // Postconditions:
-    //   All slashes in path replaced by '\0'
+    //   All slashes in path replaced by SEG_MARKER
     //   segs[i] == Index of first char in segment i (0 <= i < segs.length)
     //
-    private static void split(char[] path, int[] segs) {
+    private static void split(char[] path, int[] segs, char SEG_MARKER, boolean allowEmptySegments) {
         int end = path.length - 1;      // Index of last char in path
         int p = 0;                      // Index of next char in path
         int i = 0;                      // Index of current segment
@@ -2391,7 +2393,8 @@ public final class URI
         // Skip initial slashes
         while (p <= end) {
             if (path[p] != '/') break;
-            path[p] = '\0';
+            path[p] = SEG_MARKER;
+            if (allowEmptySegments && p > 0) segs[i++] = p;
             p++;
         }
 
@@ -2404,12 +2407,13 @@ public final class URI
             while (p <= end) {
                 if (path[p++] != '/')
                     continue;
-                path[p - 1] = '\0';
+                path[p - 1] = SEG_MARKER;
 
                 // Skip redundant slashes
                 while (p <= end) {
                     if (path[p] != '/') break;
-                    path[p++] = '\0';
+                    if (allowEmptySegments) segs[i++] = p;
+                    path[p++] = SEG_MARKER;
                 }
                 break;
             }
@@ -2421,36 +2425,36 @@ public final class URI
 
 
     // Join the segments in the given path according to the given segment-index
-    // array, ignoring those segments whose index entries have been set to -1,
+    // array, ignoring those segments whose index entries are negative,
     // and inserting slashes as needed.  Return the length of the resulting
     // path.
     //
     // Preconditions:
-    //   segs[i] == -1 implies segment i is to be ignored
-    //   path computed by split, as above, with '\0' having replaced '/'
+    //   segs[i] < 0 implies segment i is to be ignored
+    //   path computed by split, as above, with SEG_MARKER having replaced '/'
     //
     // Postconditions:
     //   path[0] .. path[return value] == Resulting path
     //
-    private static int join(char[] path, int[] segs) {
+    private static int join(char[] path, int[] segs, char SEG_MARKER) {
         int ns = segs.length;           // Number of segments
         int end = path.length - 1;      // Index of last char in path
         int p = 0;                      // Index of next path char to write
 
-        if (path[p] == '\0') {
+        if (path[p] == SEG_MARKER) {
             // Restore initial slash for absolute paths
             path[p++] = '/';
         }
 
         for (int i = 0; i < ns; i++) {
             int q = segs[i];            // Current segment
-            if (q == -1)
+            if (q < 0)
                 // Ignore this segment
                 continue;
 
             if (p == q) {
                 // We're already at this segment, so just skip to its end
-                while ((p <= end) && (path[p] != '\0'))
+                while ((p <= end) && (path[p] != SEG_MARKER))
                     p++;
                 if (p <= end) {
                     // Preserve trailing slash
@@ -2458,7 +2462,7 @@ public final class URI
                 }
             } else if (p < q) {
                 // Copy q down to p
-                while ((q <= end) && (path[q] != '\0'))
+                while ((q <= end) && (path[q] != SEG_MARKER))
                     path[p++] = path[q++];
                 if (q <= end) {
                     // Preserve trailing slash
@@ -2475,9 +2479,12 @@ public final class URI
     // Remove "." segments from the given path, and remove segment pairs
     // consisting of a non-".." segment followed by a ".." segment.
     //
-    private static void removeDots(char[] path, int[] segs) {
+    private static void removeDots(char[] path, int[] segs, char SEG_MARKER) {
         int ns = segs.length;
         int end = path.length - 1;
+        // last holds the index of the preceding segment,
+        // to inspect when encountering "..", -1 for none.
+        int last = -1;
 
         for (int i = 0; i < ns; i++) {
             int dots = 0;               // Number of dots found (0, 1, or 2)
@@ -2489,40 +2496,61 @@ public final class URI
                     if (p == end) {
                         dots = 1;
                         break;
-                    } else if (path[p + 1] == '\0') {
+                    } else if (path[p + 1] == SEG_MARKER) {
                         dots = 1;
                         break;
                     } else if ((path[p + 1] == '.')
-                               && ((p + 1 == end)
-                                   || (path[p + 2] == '\0'))) {
+                            && ((p + 1 == end)
+                            || (path[p + 2] == SEG_MARKER))) {
                         dots = 2;
                         break;
                     }
                 }
-                i++;
+                last = i++;
             } while (i < ns);
             if ((i > ns) || (dots == 0))
                 break;
 
             if (dots == 1) {
-                // Remove this occurrence of "."
-                segs[i] = -1;
+                // Remove this occurrence of ".", and store the index of the
+                // preceding non-empty segment:
+                // - we store -1 if there is no non-empty preceding segment,
+                // - or (-last -2) if last >= 0 (where last points to the preceding
+                //   non-empty segment)
+                segs[i] = (last < 0 ? last : -last - 2);
             } else {
                 // If there is a preceding non-".." segment, remove both that
                 // segment and this occurrence of ".."; otherwise, leave this
                 // ".." segment as-is.
-                int j;
-                for (j = i - 1; j >= 0; j--) {
-                    if (segs[j] != -1) break;
-                }
+                int j = last;
                 if (j >= 0) {
                     int q = segs[j];
-                    if (!((path[q] == '.')
-                          && (path[q + 1] == '.')
-                          && (path[q + 2] == '\0'))) {
-                        segs[i] = -1;
-                        segs[j] = -1;
-                    }
+                    // if q < -1, it is -index-2 where index is the preceding
+                    // non-empty segment
+                    if (q < -1) q = segs[j = -q - 2];
+                    // if q is -1, there is no preceding non-empty segment.
+                    // Otherwise, if the preceding non-empty segment is ".." then we
+                    // have leading ".." all the way up, and we can't backtrack
+                    // further.
+                    if (q > -1 && !((path[q] == '.')
+                            && (path[q + 1] == '.')
+                            && (path[q + 2] == SEG_MARKER))) {
+                        // segs[j] is not empty and is not "..": look at preceding segment at j-1
+                        // if segs[j-1] is < -1 it contains -index-2 where index is the
+                        // preceding non-empty segment; If it is -1 there is no preceding
+                        // non-empty segment. Otherwise, it is already the preceding
+                        // non-empty segment. Store the index of the preceding non-empty
+                        // segment in last, or -1 if none was found.
+                        int prev = j > 0 ? segs[j - 1] : -1;
+                        if (prev > -1) {
+                            last = j - 1;
+                        } else if (prev < -1) {
+                            last = -prev - 2;
+                        } else last = -1;
+                        // record the index of the preceding non-empty segment in segs[i]
+                        // and segs[j] as -last -2, or -1 if none;
+                        segs[i] = segs[j] = last > -1 ? -last - 2 : -1;
+                    } else last = -1; // no preceding non-empty segment that is not ".."
                 }
             }
         }
@@ -2532,9 +2560,9 @@ public final class URI
     // DEVIATION: If the normalized path is relative, and if the first
     // segment could be parsed as a scheme name, then prepend a "." segment
     //
-    private static void maybeAddLeadingDot(char[] path, int[] segs) {
+    private static void maybeAddLeadingDot(char[] path, int[] segs, char SEG_MARKER, boolean allowEmptySegments) {
 
-        if (path[0] == '\0')
+        if (path[0] == SEG_MARKER)
             // The path is absolute
             return;
 
@@ -2551,15 +2579,27 @@ public final class URI
             return;
 
         int p = segs[f];
-        while ((p < path.length) && (path[p] != ':') && (path[p] != '\0')) p++;
-        if (p >= path.length || path[p] == '\0')
-            // No colon in first segment, so no "." needed
-            return;
+        if (path[p] != SEG_MARKER) {
+            // deviation from java.net.URL, which is the case where
+            // empty segments are allowed. If we wanted to not prepend
+            // ./ when the original first segment was not preserved and
+            // the new remaining first segment contains ":", in order
+            // to preserve URL behaviour, we would just have to do:
+            // if (allowEmptySegments) return;
+            // (allowEmptySegment is only true for the URL-style normalization)
+            while ((p < path.length) && (path[p] != ':') && (path[p] != SEG_MARKER)) p++;
+            if (p >= path.length || path[p] == SEG_MARKER)
+                // No colon in first segment, so no "." needed
+                return;
+        } else {
+            // the path starts with an empty segment
+            assert allowEmptySegments;
+        }
 
         // At this point we know that the first segment is unused,
         // hence we can insert a "." segment at that position
         path[0] = '.';
-        path[1] = '\0';
+        path[1] = SEG_MARKER;
         segs[0] = 0;
     }
 
@@ -2571,9 +2611,13 @@ public final class URI
     // always retain trailing slashes.
     //
     private static String normalize(String ps) {
+        return normalize(ps, '\0', false);
+    }
+
+    static String normalize(String ps, char SEG_MARKER, boolean allowEmptySegments) {
 
         // Does this path need normalization?
-        int ns = needsNormalization(ps);        // Number of segments
+        int ns = needsNormalization(ps, allowEmptySegments);        // Number of segments
         if (ns < 0)
             // Nope -- just return it
             return ps;
@@ -2582,16 +2626,16 @@ public final class URI
 
         // Split path into segments
         int[] segs = new int[ns];               // Segment-index array
-        split(path, segs);
+        split(path, segs, SEG_MARKER, allowEmptySegments);
 
         // Remove dots
-        removeDots(path, segs);
+        removeDots(path, segs, SEG_MARKER);
 
         // Prevent scheme-name confusion
-        maybeAddLeadingDot(path, segs);
+        maybeAddLeadingDot(path, segs, SEG_MARKER, allowEmptySegments);
 
         // Join the remaining segments and return the result
-        String s = new String(path, 0, join(path, segs));
+        String s = new String(path, 0, join(path, segs, SEG_MARKER));
         if (s.equals(ps)) {
             // string was already normalized
             return ps;
