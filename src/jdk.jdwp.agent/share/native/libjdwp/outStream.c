@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -202,8 +202,8 @@ outStream_writeModuleRef(JNIEnv *env, PacketOutputStream *stream, jobject val)
     return outStream_writeObjectRef(env, stream, val);
 }
 
-jdwpError
-outStream_writeObjectRef(JNIEnv *env, PacketOutputStream *stream, jobject val)
+static jdwpError
+outStream_writeObjectRefCommon(JNIEnv *env, PacketOutputStream *stream, jobject val, jboolean pin)
 {
     jlong id;
     jlong *idPtr;
@@ -222,6 +222,17 @@ outStream_writeObjectRef(JNIEnv *env, PacketOutputStream *stream, jobject val)
             return stream->error;
         }
 
+        /* Pin if requested */
+        if (pin) {
+            //tty_message("pinning: %ld", id);
+            jvmtiError error = commonRef_pin(id);
+            if (error != JVMTI_ERROR_NONE) {
+                commonRef_release(env, id);
+                outStream_setError(stream, map2jdwpError(error));
+                return stream->error;
+            }
+        }
+
         /* Track the common ref in case we need to release it on a future error */
         idPtr = bagAdd(stream->ids);
         if (idPtr == NULL) {
@@ -237,6 +248,18 @@ outStream_writeObjectRef(JNIEnv *env, PacketOutputStream *stream, jobject val)
     }
 
     return writeBytes(stream, &id, sizeof(id));
+}
+
+jdwpError
+outStream_writeObjectRef(JNIEnv *env, PacketOutputStream *stream, jobject val)
+{
+    return outStream_writeObjectRefCommon(env, stream, val, JNI_FALSE);
+}
+
+jdwpError
+outStream_writeObjectRefPin(JNIEnv *env, PacketOutputStream *stream, jobject val)
+{
+    return outStream_writeObjectRefCommon(env, stream, val, JNI_TRUE);
 }
 
 jdwpError
