@@ -42,6 +42,10 @@
 #include "nio_util.h"
 #include "nio.h"
 
+#ifdef _AIX
+#include <unistd.h>
+#endif
+
 /**
  * IP_MULTICAST_ALL supported since 2.6.31 but may not be available at
  * build time.
@@ -638,10 +642,13 @@ Java_sun_nio_ch_Net_joinOrDrop4(JNIEnv *env, jobject this, jboolean join, jobjec
 #ifdef _AIX
     // workaround AIX bug where IP_ADD_MEMBERSHIP fails intermittently
     if (n < 0 && errno == EAGAIN) {
-        int countdown = 3;
-        while (n < 0 && errno == EAGAIN && countdown > 0) {
+        int retries = 6;
+        useconds_t next_delay = 1000;
+        while (n < 0 && errno == EAGAIN && retries > 0) {
+            usleep(next_delay);
+            next_delay *= 2;
             n = setsockopt(fdval(env,fdo), IPPROTO_IP, opt, optval, optlen);
-            countdown--;
+            retries--;
         }
     }
 #endif
