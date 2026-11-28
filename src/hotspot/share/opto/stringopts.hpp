@@ -55,6 +55,7 @@ class PhaseStringOpts : public Phase {
 
   // Replace all the SB calls in concat with an optimization String allocation
   void replace_string_concat(StringConcat* concat);
+  bool bailout_if_node_limit_reached();
 
   // Compute the number of characters required to represent the int value
   Node* int_stringSize(GraphKit& kit, Node* value);
