@@ -567,9 +567,14 @@ class methodHandle;
   do_class(sun_security_util_math_intpoly_IntegerPolynomial25519, "sun/security/util/math/intpoly/IntegerPolynomial25519") \
   do_intrinsic(_intpoly_mult_25519, sun_security_util_math_intpoly_IntegerPolynomial25519, intPolyMult_name, intPolyMult_signature, F_R) \
   do_intrinsic(_intpoly_square_25519, sun_security_util_math_intpoly_IntegerPolynomial25519, intPolySquare_name, intPolySquare_signature, F_R) \
-  do_name(intPolySquare_name, "square")                                                                                  \
-  do_signature(intPolySquare_signature, "([J[J)V")                                                                       \
-                                                                                                                         \
+  do_name(intPolySquare_name, "square")                                                                                 \
+  do_signature(intPolySquare_signature, "([J[J)V")                                                                      \
+                                                                                                                        \
+  /* support for sun.security.util.math.intpoly.IntegerPolynomialP384 */                                                \
+  do_class(sun_security_util_math_intpoly_IntegerPolynomialP384, "sun/security/util/math/intpoly/IntegerPolynomialP384") \
+  do_intrinsic(_intpoly_mult_P384, sun_security_util_math_intpoly_IntegerPolynomialP384, intPolyMult_name, intPolyMult_signature, F_R) \
+  do_intrinsic(_intpoly_square_P384, sun_security_util_math_intpoly_IntegerPolynomialP384, intPolySquare_name, intPolySquare_signature, F_R) \
+                                                                                                                        \
   /* support for java.util.Base64.Encoder*/                                                                             \
   do_class(java_util_Base64_Encoder, "java/util/Base64$Encoder")                                                        \
   do_intrinsic(_base64_encodeBlock, java_util_Base64_Encoder, encodeBlock_name, encodeBlock_signature, F_R)             \

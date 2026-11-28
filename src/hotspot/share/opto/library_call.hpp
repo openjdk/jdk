@@ -384,6 +384,8 @@ private:
   bool inline_intpoly_assign();
   bool inline_intpoly_mult_25519();
   bool inline_intpoly_square_25519();
+  bool inline_intpoly_mult_P384();
+  bool inline_intpoly_square_P384();
   bool inline_digestBase_implCompress(vmIntrinsics::ID id);
   bool inline_keccak(vmIntrinsics::ID id);
   bool inline_digestBase_implCompressMB(int predicate);

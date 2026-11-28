@@ -820,6 +820,12 @@
   do_stub(compiler, intpoly_square_25519)                               \
   do_entry(compiler, intpoly_square_25519,                              \
            intpoly_square_25519, intpoly_square_25519)                  \
+  do_stub(compiler, intpoly_mult_P384)                                  \
+  do_entry(compiler, intpoly_mult_P384,                                 \
+           intpoly_mult_P384, intpoly_mult_P384)                        \
+  do_stub(compiler, intpoly_square_P384)                                \
+  do_entry(compiler, intpoly_square_P384,                               \
+           intpoly_square_P384, intpoly_square_P384)                    \
   do_stub(compiler, md5_implCompress)                                   \
   do_entry(compiler, md5_implCompress, md5_implCompress,                \
            md5_implCompress)                                            \
