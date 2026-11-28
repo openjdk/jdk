@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -175,7 +175,7 @@ class CodeFrame {
     void addHook(Hook hook) {
         if (hasHook(hook)) {
             // This should never happen, as we add a dedicated CodeFrame for each hook.
-            throw new RuntimeException("Internal error: Duplicate Hook in CodeFrame: " + hook.name());
+            throw new InternalTemplateFrameworkException("Duplicate Hook in CodeFrame: " + hook.name());
         }
         hookCodeLists.put(hook, new Code.CodeList(new ArrayList<>()));
     }

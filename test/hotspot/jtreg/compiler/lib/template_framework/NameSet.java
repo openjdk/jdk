@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,7 +87,7 @@ class NameSet {
         if (w <= 0) {
             // Negative weight should never happen, as all names have positive weight.
             if (w < 0) {
-                throw new RuntimeException("Negative weight not allowed: " + w);
+                throw new InternalTemplateFrameworkException("Negative weight not allowed: " + w);
             }
             // If the weight is zero, there is no matching Name available.
             // Return null, and let the caller handle the situation, e.g.
@@ -145,7 +145,7 @@ class NameSet {
     public void add(Name name) {
         Name other = find(name.name());
         if (other != null) {
-            throw new RendererException("Duplicate name: " + name + ", previously: " + other);
+            throw new TemplateFrameworkException("Duplicate name: " + name + ", previously: " + other);
         }
         names.add(name);
     }
