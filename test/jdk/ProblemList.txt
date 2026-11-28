@@ -574,7 +574,6 @@ jdk/jfr/event/oldobject/TestEmergencyDumpAtOOM.java             8385942 linux-al
 
 # jdk_internal
 
-jdk/internal/platform/docker/TestLimitsUpdating.java 8390823 linux-all
 
 ############################################################################
 
