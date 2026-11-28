@@ -21,7 +21,7 @@
  * questions.
  */
 
-public identity class LateOrdinaryStrictFrame version 72:65535
+public identity class LateOrdinaryStrictFrame version 73:65535
 {
   strict Field x:I;
 

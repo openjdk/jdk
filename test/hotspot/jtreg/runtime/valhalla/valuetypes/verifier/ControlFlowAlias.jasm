@@ -34,7 +34,7 @@ class ControlFlowAlias extends Parent {
 }
 */
 
-identity class ControlFlowAlias extends Parent version 72:65535
+identity class ControlFlowAlias extends Parent version 73:65535
 {
   strict Field x:I;
 

@@ -36,7 +36,7 @@ value class HasStrictField {
 }
 */
 
-final class HasStrictField version 72:65535
+final class HasStrictField version 73:65535
 {
   final strict Field sf:"Ljava/lang/Integer;";
 

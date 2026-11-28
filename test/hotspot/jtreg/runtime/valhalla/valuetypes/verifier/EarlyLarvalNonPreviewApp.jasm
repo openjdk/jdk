@@ -21,7 +21,7 @@
  * questions.
  */
 
-final identity class EarlyLarvalNonPreviewApp extends java/lang/Record version 72:0
+final identity class EarlyLarvalNonPreviewApp extends java/lang/Record version 73:0
 {
   public final Field x:I;
   public final Field y:I;

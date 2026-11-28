@@ -107,15 +107,15 @@ public class SourceLevelChecks {
         }
         String currentVersion = Integer.toString(Runtime.version().feature());
         List<String> expectedValueWarnings = new ArrayList<>(List.of(
-             "Test.java:2:5: compiler.warn.restricted.type.not.allowed.preview: value, 28",
-             "Test.java:3:5: compiler.warn.restricted.type.not.allowed.preview: value, 28",
-             "Test.java:4:5: compiler.warn.restricted.type.not.allowed.preview: value, 28",
-             "Test.java:5:5: compiler.warn.restricted.type.not.allowed.preview: value, 28",
-             "Test.java:6:5: compiler.warn.restricted.type.not.allowed.preview: value, 28",
-             "Test.java:7:5: compiler.warn.restricted.type.not.allowed.preview: value, 28",
-             "Test.java:8:5: compiler.warn.restricted.type.not.allowed.preview: value, 28",
-             "Test.java:9:5: compiler.warn.restricted.type.not.allowed.preview: value, 28",
-             "Test.java:10:5: compiler.warn.restricted.type.not.allowed.preview: value, 28"
+             "Test.java:2:5: compiler.warn.restricted.type.not.allowed.preview: value, 29",
+             "Test.java:3:5: compiler.warn.restricted.type.not.allowed.preview: value, 29",
+             "Test.java:4:5: compiler.warn.restricted.type.not.allowed.preview: value, 29",
+             "Test.java:5:5: compiler.warn.restricted.type.not.allowed.preview: value, 29",
+             "Test.java:6:5: compiler.warn.restricted.type.not.allowed.preview: value, 29",
+             "Test.java:7:5: compiler.warn.restricted.type.not.allowed.preview: value, 29",
+             "Test.java:8:5: compiler.warn.restricted.type.not.allowed.preview: value, 29",
+             "Test.java:9:5: compiler.warn.restricted.type.not.allowed.preview: value, 29",
+             "Test.java:10:5: compiler.warn.restricted.type.not.allowed.preview: value, 29"
         ));
 
         TestCase[] testCases = new TestCase[] {
