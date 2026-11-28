@@ -383,25 +383,25 @@ static void drain_enqueued_cpu_time_requests(const JfrTicks& now, JfrThreadLocal
   assert(current != nullptr, "invariant");
 #ifdef LINUX
   tl->set_do_async_processing_of_cpu_time_jfr_requests(false);
-  JfrCPUTimeTraceQueue& queue = tl->cpu_time_jfr_queue();
+  JfrCPUSamplerState& css = tl->cpu_sampler_state();
   if (lock) {
-    queue.acquire_dequeue_lock();
+    css.acquire_dequeue_lock();
   }
-  for (u4 i = 0; i < queue.size(); i++) {
-    record_cpu_time_thread(queue.at(i), now, tl, jt, current);
+  for (u4 i = 0; i < css.request_count(); i++) {
+    record_cpu_time_thread(css.request_at(i), now, tl, jt, current);
   }
-  queue.clear();
+  css.clear();
   tl->set_has_cpu_time_jfr_requests(false);
-  if (queue.lost_samples() > 0) {
+  if (css.lost_samples() > 0) {
     // Lost samples belong to the platform thread that owns the queue.
     const traceid tid = JfrThreadLocal::jvm_thread_id(jt);
     JfrThreadLocal::impersonate(current, tid);
     assert(JfrThreadLocal::thread_id(current) == tid, "invariant");
-    JfrCPUTimeThreadSampling::send_lost_event(now, queue.get_and_reset_lost_samples());
-    queue.resize_if_needed();
+    JfrCPUTimeThreadSampling::send_lost_event(now, css.get_and_reset_lost_samples());
+    css.resize_if_needed();
   }
   if (lock) {
-    queue.release_lock();
+    css.release_lock();
   }
 #endif
 }

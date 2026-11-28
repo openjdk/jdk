@@ -42,13 +42,14 @@ struct JfrCPUTimeSampleRequest {
   JfrCPUTimeSampleRequest() {}
 };
 
-// Fixed size async-signal-safe SPSC linear queue backed by an array.
-// All accesses to the queue, with the exception of the atomic
+// Per-thread state of the CPU-Time sampler. Includes a CPU timer
+// and an async-signal-safe SPSC request queue backed by an array.
+// All accesses to the state, with the exception of the atomic
 // lost-samples counters, are guarded by a tri-state lock:
 // - ENQUEUE: locked for enqueuing by a signal handler
-// - DEQUEUE: locked for dequeuing, initialization, or deallocation
+// - DEQUEUE: locked for dequeuing, queue reallocation, or timer configuration
 // - UNLOCKED: no lock held
-class JfrCPUTimeTraceQueue {
+class JfrCPUSamplerState {
  private:
   enum LockState {
     UNLOCKED,
@@ -57,7 +58,11 @@ class JfrCPUTimeTraceQueue {
   };
 
   volatile LockState _lock;
-  JfrCPUTimeSampleRequest* _data;
+
+  bool _has_cpu_timer;
+  timer_t _cpu_timer;
+
+  JfrCPUTimeSampleRequest* _queue;
   u4 _capacity;
   // next unfilled index
   u4 _head;
@@ -71,16 +76,16 @@ class JfrCPUTimeTraceQueue {
   LockState lock_state() const;
 
  public:
-  JfrCPUTimeTraceQueue(u4 capacity);
+  JfrCPUSamplerState();
 
-  ~JfrCPUTimeTraceQueue();
+  ~JfrCPUSamplerState();
 
   // signal safe, but can't be interleaved with dequeue
-  bool enqueue(JfrCPUTimeSampleRequest& trace);
+  bool enqueue(JfrCPUTimeSampleRequest& request);
 
-  JfrCPUTimeSampleRequest& at(u4 index);
+  JfrCPUTimeSampleRequest& request_at(u4 index);
 
-  u4 size() const;
+  u4 request_count() const;
 
   // deletes all samples in the queue
   void set_capacity(u4 capacity);
@@ -98,10 +103,14 @@ class JfrCPUTimeTraceQueue {
 
   void resize_if_needed();
 
-  // init the queue capacity
-  void init();
+  bool has_cpu_timer() const;
+
+  // arms the timer and allocates the request queue
+  void init(timer_t timer, int64_t period_nanos);
 
   void deallocate();
+
+  void update_timer_period(int64_t period_nanos);
 
   void clear();
 
