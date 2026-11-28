@@ -1579,10 +1579,6 @@ public:
   uint        _del_tick;               // Bumped when a deletion happens..
   #endif
 #endif
-  void make_paths_from_here_dead(PhaseIterGVN* igvn, PhaseIdealLoop* loop, const char* phase_str);
-
-  static void create_halt_path(PhaseIterGVN* igvn, Node* c, PhaseIdealLoop* loop, const char* phase_str);
-  void make_path_dead(PhaseIterGVN* igvn, PhaseIdealLoop* loop, Node* ctrl_use, uint j, const char* phase_str);
 };
 
 template <typename T>

@@ -2065,6 +2065,25 @@ void PhaseIterGVN::make_dependent_paths_dead_if_top(Node* dead_node, const Type*
     if (n->is_CFG()) {
       Node* control_input = n->in(0);
       if (control_input != nullptr && !control_input->is_top()) {
+        // If the dead node is the safepoint of an outer strip mined loop, it causes the outer strip mined loop's
+        // backedge to be removed while the inner loop remains marked as strip mined. The safepoint captures the state
+        // at the end of a single java loop from which the inner and outer loops were created. If the safepoint is dead,
+        // the tail of the java loop is unreachable and so are the tails of both the inner and outer loops: it's safe to
+        // remove the backedge of the inner loop as well.
+        // Do this before the control input of the safepoint is made top so it's feasible to find the inner loop and
+        // verify that the safepoint indeed belongs to the outer strip mined loop for that inner loop.
+        if (n->is_SafePoint()) {
+          if (n->in(0) != nullptr && n->in(0)->in(0) != nullptr && n->in(0)->in(0)->is_CountedLoopEnd()) {
+            CountedLoopEndNode* cle = n->in(0)->in(0)->as_CountedLoopEnd();
+            CountedLoopNode* cl = cle->loopnode();
+            if (cl != nullptr && cl->is_strip_mined()) {
+              SafePointNode* sfpt = cl->outer_safepoint();
+              if (sfpt == n) {
+                replace_input_of(cle, 1, intcon(0));
+              }
+            }
+          }
+        }
         // record it in dead path to later insert a Halt node, if it doesn't die in the meantime
         dead_path()->add_req(control_input);
         _worklist.push(dead_path());
@@ -3597,10 +3616,7 @@ Node *PhaseCCP::transform( Node *n ) {
   if (KillPathsReachableByDeadDataNode) {
     for (uint i = 0; i < _maybe_top_type_or_div_mod_nodes.size(); ++i) {
       Node* data_node = _maybe_top_type_or_div_mod_nodes.at(i);
-      if (type(data_node) == Type::TOP) {
-        ResourceMark rm;
-        data_node->make_paths_from_here_dead(this, nullptr, "ccp");
-      }
+      make_dependent_paths_dead_if_top(data_node, type(data_node));
     }
   } else {
     assert(_maybe_top_type_or_div_mod_nodes.size() == 0, "we don't need type nodes");
