@@ -131,11 +131,23 @@ void AOTStreamedHeapWriter::order_source_objs(GrowableArrayCHeap<oop, mtClassSha
 
   int dfs_order = 0;
 
+  // For each interned string, record the string of each corresponding value
+  ResizeableHashTable<oop, oop, AnyObj::C_HEAP, mtClassShared,
+                     AOTHeap::oop_address_hash> interned_string_values(8, max_table_capacity);
+  for (int i = 0; i < _source_objs->length(); ++i) {
+    oop obj = _source_objs->at(i);
+    if (AOTHeap::is_interned_string(obj)) {
+      oop value = java_lang_String::value(obj);
+      interned_string_values.put(value, obj);
+    }
+  }
+
   for (int i = 0; i < roots->length(); ++i) {
     oop root = roots->at(i);
 
     if (root == nullptr) {
       log_info(aot, heap)("null root at %d", i);
+      _roots_highest_dfs[i] = dfs_order;
       continue;
     }
 
@@ -150,7 +162,23 @@ void AOTStreamedHeapWriter::order_source_objs(GrowableArrayCHeap<oop, mtClassSha
         // Already visited in the traversal
         continue;
       }
+
+      oop* interned_string = interned_string_values.get(obj);
+      if (interned_string != nullptr) {
+        // We are sharing a reference to the value of an interned string. Make sure
+        // the interned String is processed in the same batch by iterative materialization.
+        // We don't need to push the value; it will get pushed by the interned string.
+        dfs_stack.push(*interned_string);
+        continue;
+      }
+
       _dfs_order_table->put(cast_from_oop<void*>(obj), ++dfs_order);
+
+      if (AOTHeap::is_interned_string(obj)) {
+        // Always place interned string adjacent to their value object
+        oop value = java_lang_String::value(obj);
+        _dfs_order_table->put(cast_from_oop<void*>(value), ++dfs_order);
+      }
 
       FollowOopIterateClosure cl(&dfs_stack, obj, AOTReferenceObjSupport::check_if_ref_obj(obj));
       obj->oop_iterate(&cl);
@@ -159,6 +187,7 @@ void AOTStreamedHeapWriter::order_source_objs(GrowableArrayCHeap<oop, mtClassSha
     _roots_highest_dfs[i] = dfs_order;
   }
 
+  assert(dfs_order == _source_objs->length(), "all archived objects must be visited");
   _source_objs->sort(cmp_dfs_order);
 }
 

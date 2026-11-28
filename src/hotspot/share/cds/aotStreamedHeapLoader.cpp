@@ -435,7 +435,8 @@ oop AOTStreamedHeapLoader::TracingObjectLoader::materialize_object_inner(int obj
   oop heap_object;
 
   if (string_intern) {
-    int value_object_index = archived_string_value_object_index(archive_object);
+    int value_object_index = object_index + 1;
+    assert(archived_string_value_object_index(archive_object) == value_object_index, "interned string value must be adjacent");
 
     // Materialize the value object.
     (void)materialize_object(value_object_index, dfs_stack, CHECK_NULL);
@@ -548,12 +549,11 @@ void AOTStreamedHeapLoader::IterativeObjectLoader::initialize_range(int first_ob
     markWord mark = archive_object->mark();
     bool string_intern = mark.is_marked();
     if (string_intern) {
-      int value_object_index = archived_string_value_object_index(archive_object);
-      if (value_object_index == i + 1) {
-        // Interned strings are eagerly materialized in the allocation phase, so there is
-        // nothing else to do for interned strings here for the string nor its value array.
-        i++;
-      }
+      assert(archived_string_value_object_index(archive_object) == i + 1,
+             "interned string value must be adjacent from dump time");
+      // Interned strings are eagerly materialized in the allocation phase, so there is
+      // nothing else to do for interned strings here for the string nor its value array.
+      i++;
       continue;
     }
     size_t size = archive_object_size(archive_object);
@@ -587,7 +587,7 @@ size_t AOTStreamedHeapLoader::IterativeObjectLoader::materialize_range(int first
     }
 
     if (!string_intern) {
-     // The normal case; no lazy loading have loaded the object yet
+      // The normal case; no lazy loading have loaded the object yet
       heap_object = allocate_object(archive_object, mark, size, CHECK_0);
       set_heap_object_for_object_index(i, heap_object);
       continue;
@@ -595,35 +595,18 @@ size_t AOTStreamedHeapLoader::IterativeObjectLoader::materialize_range(int first
 
     // Eagerly materialize interned strings to ensure that objects earlier than the string
     // in a batch get linked to the intended interned string, and not a copy.
-    int value_object_index = archived_string_value_object_index(archive_object);
+    int value_object_index = i + 1;
+    assert(archived_string_value_object_index(archive_object) == value_object_index,
+           "interned string value must be adjacent from dump time");
+    assert(value_object_index <= last_object_index, "Must be within this batch");
 
-    bool is_normal_interned_string = value_object_index == i + 1;
-
-    if (value_object_index < first_object_index) {
-      // If materialized in a previous batch, the value should already be allocated and initialized.
-      assert(heap_object_for_object_index(value_object_index) != nullptr, "should be materialized");
-    } else {
-      // Materialize the value object.
+    oop value_heap_object = heap_object_for_object_index(value_object_index);
+    if (value_heap_object == nullptr) {
       oopDesc* archive_value_object = archive_object_for_object_index(value_object_index);
-      markWord value_mark = archive_value_object->mark();
       size_t value_size = archive_object_size(archive_value_object);
-      oop value_heap_object;
-
-      if (is_normal_interned_string) {
-        // The common case: the value is next to the string. This happens when only the interned
-        // string points to its value character array.
-        assert(value_object_index <= last_object_index, "Must be within this batch: %d <= %d", value_object_index, last_object_index);
-        value_heap_object = allocate_object(archive_value_object, value_mark, value_size, CHECK_0);
-        set_heap_object_for_object_index(value_object_index, value_heap_object);
-        materialized_words += value_size;
-      } else {
-        // In the uncommon case, multiple strings point to the value of an interned string.
-        // The string can then be earlier in the batch.
-        assert(value_object_index < i, "surprising index");
-        value_heap_object = heap_object_for_object_index(value_object_index);
-      }
-
+      value_heap_object = allocate_object(archive_value_object, archive_value_object->mark(), value_size, CHECK_0);
       copy_object_eager_linking(archive_value_object, value_heap_object, value_size);
+      set_heap_object_for_object_index(value_object_index, value_heap_object);
     }
     // Allocate and link the string.
     heap_object = allocate_object(archive_object, mark, size, CHECK_0);
@@ -635,10 +618,9 @@ size_t AOTStreamedHeapLoader::IterativeObjectLoader::materialize_range(int first
     heap_object = StringTable::intern(heap_object, CHECK_0);
     set_heap_object_for_object_index(i, heap_object);
 
-    if (is_normal_interned_string) {
-      // Skip over the string value, already materialized
-      i++;
-    }
+    // Skip over the string value, already materialized
+    materialized_words += archive_object_size(archive_object_for_object_index(value_object_index));
+    i++;
   }
 
   if (lazy_object_indices.is_empty()) {
