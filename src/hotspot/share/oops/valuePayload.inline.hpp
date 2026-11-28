@@ -444,7 +444,7 @@ inline void FlatValuePayload::copy_to(const FlatValuePayload& dst) {
 }
 
 inline valueOop FlatValuePayload::read(TRAPS) {
-  if (is_payload_null()) {
+  if (is_payload_null() || klass()->is_not_initialized()) {
     return nullptr;
   }
 
