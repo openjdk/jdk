@@ -49,6 +49,7 @@ public class TestJcmdConfigure {
 
     private static final String DUMPPATH = "dumppath";
     private static final String STACK_DEPTH = "stackdepth";
+    private static final String NATIVE_STACK_DEPTH = "nativestackdepth";
     private static final String GLOBAL_BUFFER_COUNT = "globalbuffercount";
     private static final String GLOBAL_BUFFER_SIZE = "globalbuffersize";
     private static final String THREAD_BUFFER_SIZE = "thread_buffer_size";
@@ -76,6 +77,7 @@ public class TestJcmdConfigure {
 
         test(DUMPPATH, dumpPath);
         test(STACK_DEPTH, 15);
+        test(NATIVE_STACK_DEPTH, 8);
         test(GLOBAL_BUFFER_COUNT, 7);
         test(GLOBAL_BUFFER_SIZE, 6);
         test(THREAD_BUFFER_SIZE, 5);
@@ -119,6 +121,7 @@ public class TestJcmdConfigure {
         switch (name) {
             case DUMPPATH: return Options.getDumpPath().toString();
             case STACK_DEPTH: return Options.getStackDepth();
+            case NATIVE_STACK_DEPTH: return Options.getNativeStackDepth();
             case GLOBAL_BUFFER_COUNT: return Options.getGlobalBufferCount();
             case GLOBAL_BUFFER_SIZE: return Options.getGlobalBufferSize();
             case THREAD_BUFFER_SIZE: return Options.getThreadBufferSize();
