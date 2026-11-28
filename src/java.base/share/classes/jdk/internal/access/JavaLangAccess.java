@@ -55,6 +55,7 @@ import jdk.internal.vm.Continuation;
 import jdk.internal.vm.ContinuationScope;
 import jdk.internal.vm.StackableScope;
 import jdk.internal.vm.ThreadContainer;
+import jdk.internal.vm.vector.VectorSupport;
 import sun.reflect.annotation.AnnotationType;
 import sun.nio.ch.Interruptible;
 
@@ -502,6 +503,18 @@ public interface JavaLangAccess {
      * Get the Coder of String, which is used by StringConcatFactory to calculate the initCoder of constants
      */
     byte stringCoder(String str);
+
+    /**
+     * The code unit size of the String, in bytes.
+     */
+    int stringCodeUnitSize(String s);
+
+    /**
+     * Loads the string's code units into a vector.
+     */
+    <VM extends VectorSupport.VectorPayload, E, S extends VectorSupport.VectorSpecies<E>>
+    VM loadStringCodeUnits(String s, int unitSize, Class<? extends VM> vmClass, int byteLanes, int index,
+                           S species, VectorSupport.LoadOperation<String, VM, S> fallback);
 
     /**
      * Join strings

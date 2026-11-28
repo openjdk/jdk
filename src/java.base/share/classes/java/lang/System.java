@@ -80,8 +80,10 @@ import jdk.internal.vm.Continuation;
 import jdk.internal.vm.ContinuationScope;
 import jdk.internal.vm.StackableScope;
 import jdk.internal.vm.ThreadContainer;
+import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.Stable;
+import jdk.internal.vm.vector.VectorSupport;
 import sun.reflect.annotation.AnnotationType;
 import sun.nio.ch.Interruptible;
 import sun.nio.cs.UTF_8;
@@ -2228,6 +2230,18 @@ public final class System {
 
             public byte stringCoder(String str) {
                 return str.coder();
+            }
+
+            @ForceInline
+            public int stringCodeUnitSize(String s) {
+                return String.codeUnitSize(s);
+            }
+
+            @ForceInline
+            public <VM extends VectorSupport.VectorPayload, E, S extends VectorSupport.VectorSpecies<E>>
+                VM loadStringCodeUnits(String s, int unitSize, Class<? extends VM> vmClass, int byteLanes, int index,
+                S species, VectorSupport.LoadOperation<String, VM, S> fallback) {
+                return String.loadCodeUnits(s, unitSize, vmClass, byteLanes, index, species, fallback);
             }
 
             public String join(String prefix, String suffix, String delimiter, String[] elements, int size) {

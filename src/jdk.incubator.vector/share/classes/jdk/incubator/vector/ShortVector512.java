@@ -1050,6 +1050,20 @@ final class ShortVector512 extends ShortVector {
         return super.fromCharArray0Template(ShortMask512.class, a, offset, (ShortMask512) m, offsetInRange);  // specialize
     }
 
+    @ForceInline
+    @Override
+    final
+    ShortVector fromString0(String s, int offset) {
+        return super.fromString0Template(ByteVector512.VSPECIES, s, offset); // specialize
+    }
+
+    @ForceInline
+    @Override
+    final
+    ShortVector fromStringLatin1_0(String s, int offset) {
+        return super.fromStringLatin1Template(ByteVector256.VSPECIES, s, offset); // specialize
+    }
+
 
     @ForceInline
     @Override

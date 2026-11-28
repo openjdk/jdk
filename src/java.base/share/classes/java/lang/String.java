@@ -58,12 +58,15 @@ import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.Stable;
+import jdk.internal.vm.vector.VectorSupport;
 import sun.nio.cs.ArrayDecoder;
 import sun.nio.cs.ArrayEncoder;
 
 import sun.nio.cs.ISO_8859_1;
 import sun.nio.cs.US_ASCII;
 import sun.nio.cs.UTF_8;
+
+import static jdk.internal.misc.Unsafe.ARRAY_BYTE_BASE_OFFSET;
 
 /**
  * The {@code String} class represents character strings. All
@@ -5267,6 +5270,39 @@ public final class String
 
     byte[] value() {
         return value;
+    }
+
+    @ForceInline
+    static int codeUnitSize(String s) {
+        return (COMPACT_STRINGS && s.coder == LATIN1) ? 1 : 2;
+    }
+
+    @ForceInline
+    static <VM extends VectorSupport.VectorPayload, E, S extends VectorSupport.VectorSpecies<E>>
+    VM loadCodeUnits(String s, int unitSize, Class<? extends VM> vmClass, int byteLanes, int index,
+                     S species, VectorSupport.LoadOperation<String, VM, S> fallback) {
+        byte expectedCoder;
+        if (unitSize == 1) {
+            expectedCoder = LATIN1;
+        } else if (unitSize == 2) {
+            expectedCoder = UTF16;
+        } else {
+            throw new IllegalArgumentException("unexpected code unit size");
+        }
+        byte coder = COMPACT_STRINGS ? s.coder : UTF16;
+        if (coder != expectedCoder) {
+            throw new IllegalArgumentException("unexpected code unit size");
+        }
+        if (byteLanes <= 0 || (byteLanes & expectedCoder) != 0) {
+            throw new IllegalArgumentException("invalid byte lane count");
+        }
+        byte[] value = s.value;
+        int len = value.length >> expectedCoder;
+        int lanes = byteLanes >> expectedCoder;
+        index = Objects.checkIndex(index, len - (lanes - 1));
+        long offset = ARRAY_BYTE_BASE_OFFSET + ((long) index << expectedCoder);
+        return VectorSupport.load(vmClass, VectorSupport.LT_BYTE, byteLanes, value, offset, /* fromSegment */ false,
+                s, index, species, fallback);
     }
 
     boolean isLatin1() {
