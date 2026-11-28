@@ -306,7 +306,7 @@ public class TestVolatiles {
             matches = new String[] {
                 "#@unnecessary_membar_release_rvwmo",
                 "sw\\.rl",
-                "#@unnecessary_membar_volatile_rvwmo",
+                "#@unnecessary_membar_volatile",
                 "#@Ret"
             };
             forbidden = new String[] { "#@membar_release_rvwmo", "#@membar_volatile_rvwmo" };
@@ -315,7 +315,7 @@ public class TestVolatiles {
             matches = new String[] {
                 "#@unnecessary_membar_release_rvwmo",
                 useCompressedOops ? "sw\\.rl" : "sd\\.rl",
-                "#@unnecessary_membar_volatile_rvwmo",
+                "#@unnecessary_membar_volatile",
                 "#@Ret"
             };
             checkCompile(lines, iter, "testObj", matches, forbidden, output);
