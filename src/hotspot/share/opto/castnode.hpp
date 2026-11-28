@@ -384,4 +384,18 @@ private:
   virtual bool depends_only_on_test_impl() const { return false; }
 };
 
+// Node::Ideal wants us to return a new node, so sometimes we must abort Ideal and let Identity
+// handle the transformation, and sometimes, for example in LoadNode, we needed to modify the
+// inputs in Ideal, then let Identity returns the folded result. This dance was awkward, so
+// IdentityNode was created for cases when Ideal wants to return an old node.
+class IdentityNode final : public Node {
+public:
+  IdentityNode(Node* n) : Node(nullptr, n) {}
+  int Opcode() const final;
+  const Type* Value(PhaseGVN* phase) const final;
+  Node* Ideal(PhaseGVN* phase, bool can_reshape) final { return nullptr; }
+  Node* Identity(PhaseGVN* phase) final { return in(1); }
+  const Type* bottom_type() const final { return in(1)->bottom_type(); }
+};
+
 #endif // SHARE_OPTO_CASTNODE_HPP
