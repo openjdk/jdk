@@ -22,14 +22,26 @@
  */
 
 package compiler.valhalla.valuetypes;
+import java.util.Random;
+import jdk.test.lib.Utils;
+import jdk.test.whitebox.WhiteBox;
+import jdk.internal.vm.annotation.LooselyConsistentValue;
+import jdk.internal.vm.annotation.NullRestricted;
+import jdk.test.lib.Asserts;
 
 /*
  * @test
- * @bug 8395610
+ * @bug 8395610 8396567
  * @summary native method calls are not scalarized and cause mismatches
  * @enablePreview
- * @run main/othervm -XX:-TieredCompilation ${test.main.class}
- * @run main ${test.main.class}
+ * @library /test/lib
+ * @modules java.base/jdk.internal.vm.annotation
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ *
+ * @run main/othervm -Xbatch -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI ${test.main.class}
+ * @run main/othervm -Xbatch -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:ThrowOOMEAtC2iC1NativeEntryPoints=3 ${test.main.class}
  */
 
 
@@ -38,44 +50,41 @@ public class TestCCMismatchNativeMethods {
         System.loadLibrary("TestCCMismatchNativeMethods");
     }
 
-    value record V1(int x) { }
+    private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
 
-    static class A1 {
-        int m1(V1 v1, V1 v2) {
-            return v1.x;
-        }
+    static public int test1(A1 a) {
+        return a.m1(myObject.v1, myObject.v1);
     }
 
-    static class B1 extends A1 {
-        native int m1(V1 v1, V1 v2);
-    }
-
-    static class C1 extends A1 {
-    }
-
-    static class A2 {
-        int m1(V1 v1, V1 v2) {
-            return v1.x;
-        }
-    }
-
-    static class B2 extends A2 {
-    }
-
-    static class C2 extends A2 {
-    }
-
-    static class D2 extends A2 {
-        native int m1(V1 v1, V1 v2);
-    }
-
-    static int test1(A1 a, V1 v) {
+    static public int test2(A2 a, V1 v) {
         return a.m1(v, v);
     }
 
-    static int test2(A2 a, V1 v) {
-        return a.m1(v, v);
+    static public int test3(A1 a) {
+        return a.m2().sum();
     }
+
+    static public int test4(A2 a) {
+        return a.m2().sum();
+    }
+
+    static public int test5(I i, V1 v1) {
+        return i.add(v1);
+    }
+
+    static final Random RAND = Utils.getRandomInstance();
+
+    static class MyClass {
+        @NullRestricted
+        public V1 v1;
+
+        MyClass() {
+            v1 = new V1(RAND.nextInt(), RAND.nextInt(), RAND.nextInt(), RAND.nextInt(), RAND.nextInt(), RAND.nextInt());
+            super();
+        }
+    }
+
+    static MyClass myObject = new MyClass();
 
     public static void main(String[] args) {
         A1 a1 = new A1();
@@ -84,20 +93,140 @@ public class TestCCMismatchNativeMethods {
         A2 a2 = new A2();
         B2 b2 = new B2();
         C2 c2 = new C2();
-        for (int i = 0; i < 20_000; i++) {
-            test1(a1, new V1(42));
-            test1(b1, new V1(42));
-            test1(c1, new V1(42));
-            test2(a2, new V1(42));
-            test2(b2, new V1(42));
-            test2(c2, new V1(42));
+        boolean oom = false;
+        V1 v1 = myObject.v1;
+        try {
+            for (int i = 0; i < 20_000; i++) {
+                Asserts.assertEQ(test1(a1), v1.sum());
+                Asserts.assertEQ(test1(b1), v1.sum());
+                Asserts.assertEQ(test1(c1), v1.sum());
+                Asserts.assertEQ(test2(a2, v1), v1.sum());
+                Asserts.assertEQ(test2(b2, v1), v1.sum());
+                Asserts.assertEQ(test2(c2, v1), v1.sum());
+                Asserts.assertEQ(test3(a1), v1.sum());
+                Asserts.assertEQ(test3(b1), v1.sum());
+                Asserts.assertEQ(test3(c1), v1.sum());
+                Asserts.assertEQ(test4(a2), v1.sum());
+                Asserts.assertEQ(test4(b2), v1.sum());
+                Asserts.assertEQ(test4(c2), v1.sum());
+                Asserts.assertEQ(test5(v1, v1), v1.sum() * 2);
+                Asserts.assertEQ(test5(new A3(), v1), v1.sum() * 2);
+                Asserts.assertEQ(test5(new A4(), v1), v1.sum() * 2);
+            }
+            UnloadedClass.loadClassAndRerun();
+        } catch (OutOfMemoryError oome) { // OOME triggered by ThrowOOMEAtC2iC1NativeEntryPoints expected here
+            oom = true;
         }
+        boolean passFields = WHITE_BOX.getBooleanVMFlag("ValueTypePassFieldsAsArgs");
+        if (passFields && oom != (WHITE_BOX.getIntVMFlag("ThrowOOMEAtC2iC1NativeEntryPoints").intValue() == 3)) {
+            throw new RuntimeException(oom ? "unexpected OOME" : "no OOME");
+        }
+    }
+}
+
+class UnloadedClass {
+    public static void loadClassAndRerun() {
+        A1 a1 = new A1();
+        B1 b1 = new B1();
+        C1 c1 = new C1();
+        A2 a2 = new A2();
+        B2 b2 = new B2();
+        C2 c2 = new C2();
         D2 d2 = new D2();
+        V1 v1 = TestCCMismatchNativeMethods.myObject.v1;
         for (int i = 0; i < 20_000; i++) {
-            test2(a2, new V1(42));
-            test2(b2, new V1(42));
-            test2(c2, new V1(42));
-            test2(d2, new V1(42));
+            Asserts.assertEQ(TestCCMismatchNativeMethods.test2(a2, v1), v1.sum());
+            Asserts.assertEQ(TestCCMismatchNativeMethods.test2(b2, v1), v1.sum());
+            Asserts.assertEQ(TestCCMismatchNativeMethods.test2(c2, v1), v1.sum());
+            Asserts.assertEQ(TestCCMismatchNativeMethods.test2(d2, v1), v1.sum());
+            Asserts.assertEQ(TestCCMismatchNativeMethods.test4(a2), v1.sum());
+            Asserts.assertEQ(TestCCMismatchNativeMethods.test4(b2), v1.sum());
+            Asserts.assertEQ(TestCCMismatchNativeMethods.test4(c2), v1.sum());
+            Asserts.assertEQ(TestCCMismatchNativeMethods.test4(d2), v1.sum());
         }
+    }
+}
+
+interface I {
+    int add(V1 v1);
+}
+
+@LooselyConsistentValue
+value class V1 implements I {
+    int x0;
+    int x1;
+    int x2;
+    int x3;
+    int x4;
+    int x5;
+
+    V1(int x0, int x1, int x2, int x3, int x4, int x5) {
+        this.x0 = x0;
+        this.x1 = x1;
+        this.x2 = x2;
+        this.x3 = x3;
+        this.x4 = x4;
+        this.x5 = x5;
+    }
+
+    public int sum() {
+        return x0 + x1 + x2 + x3 + x4 + x5;
+    }
+
+    public native int add(V1 v1);
+}
+
+class A1 {
+    static V1 fieldV1 = TestCCMismatchNativeMethods.myObject.v1;
+
+    int m1(V1 v1, V1 v2) {
+        return v1.sum();
+    }
+
+    V1 m2() {
+        return fieldV1;
+    }
+}
+
+class B1 extends A1 {
+    native int m1(V1 v1, V1 v2);
+    native V1 m2();
+}
+
+class C1 extends A1 {
+}
+
+class A2 {
+    static V1 fieldV1 = TestCCMismatchNativeMethods.myObject.v1;
+
+    int m1(V1 v1, V1 v2) {
+        return v1.sum();
+    }
+
+    V1 m2() {
+        return fieldV1;
+    }
+}
+
+class B2 extends A2 {
+}
+
+class C2 extends A2 {
+}
+
+class D2 extends A2 {
+    native int m1(V1 v1, V1 v2);
+    native V1 m2();
+}
+
+class A3 implements I {
+    public int add(V1 v1) {
+        return TestCCMismatchNativeMethods.myObject.v1.sum() + TestCCMismatchNativeMethods.myObject.v1.sum();
+    }
+}
+
+class A4 implements I {
+    public int add(V1 v1) {
+        return TestCCMismatchNativeMethods.myObject.v1.sum() + TestCCMismatchNativeMethods.myObject.v1.sum();
     }
 }

@@ -126,6 +126,12 @@ void SharedRuntime::generate_initial_stubs() {
     _store_value_type_fields_to_buf_blob =
       generate_return_value_stub(CAST_FROM_FN_PTR(address, SharedRuntime::store_value_type_fields_to_buf));
   }
+  if (ValueTypePassFieldsAsArgs) {
+    _buffer_value_args_blob =
+      generate_buffer_value_args_stub(CAST_FROM_FN_PTR(address, SharedRuntime::allocate_value_types), true);
+    _buffer_value_args_no_receiver_blob =
+      generate_buffer_value_args_stub(CAST_FROM_FN_PTR(address, SharedRuntime::allocate_value_types), false);
+  }
 }
 
 void SharedRuntime::generate_stubs() {
@@ -248,6 +254,8 @@ uint SharedRuntime::_slow_array_copy_ctr=0;
 uint SharedRuntime::_find_handler_ctr=0;
 uint SharedRuntime::_rethrow_ctr=0;
 uint SharedRuntime::_unsafe_set_memory_ctr=0;
+uint SharedRuntime::_buffer_value_args_slowcase_cnt = 0;
+uint SharedRuntime::_buffer_value_args_no_receiver_slowcase_cnt = 0;
 
 int     SharedRuntime::_ICmiss_index                    = 0;
 int     SharedRuntime::_ICmiss_count[SharedRuntime::maxICmiss_count];
@@ -588,7 +596,6 @@ address SharedRuntime::raw_exception_handler_for_return_address(JavaThread* curr
   nmethod* nm = (blob != nullptr) ? blob->as_nmethod_or_null() : nullptr;
   if (nm != nullptr) {
     // native nmethods don't have exception handlers
-    assert(!nm->is_native_method() || nm->method()->is_continuation_enter_intrinsic(), "no exception handler");
     assert(nm->header_begin() != nm->exception_begin(), "no exception handler");
     // For platform threads, checking the return pc already covers the case
     // where only this compiled frame was deoptimized, as well as the case
@@ -2162,6 +2169,8 @@ void SharedRuntime::print_statistics() {
   if (_find_handler_ctr) tty->print_cr("%5u find exception handler", _find_handler_ctr);
   if (_rethrow_ctr) tty->print_cr("%5u rethrow handler", _rethrow_ctr);
   if (_unsafe_set_memory_ctr) tty->print_cr("%5u unsafe set memorys", _unsafe_set_memory_ctr);
+  if (_buffer_value_args_no_receiver_slowcase_cnt) tty->print_cr("%5u buffer value args no receiver slow case", _buffer_value_args_no_receiver_slowcase_cnt);
+  if (_buffer_value_args_slowcase_cnt) tty->print_cr("%5u buffer value args slow case", _buffer_value_args_slowcase_cnt);
 
   AdapterHandlerLibrary::print_statistics();
 
@@ -2778,7 +2787,7 @@ CompiledEntrySignature::CompiledEntrySignature(Method* method) :
 
 // See if we can save space by sharing the same entry for VIEP and VIEP(RO),
 // or the same entry for VEP and VIEP(RO).
-CodeOffsets::Entries CompiledEntrySignature::c1_value_ro_entry_type() const {
+CodeOffsets::Entries CompiledEntrySignature::c1_native_value_ro_entry_type() const {
   if (!has_scalarized_args()) {
     // VEP/VIEP/VIEP(RO) all share the same entry. There's no packing.
     return CodeOffsets::Verified_Entry;
@@ -2865,7 +2874,7 @@ bool CompiledEntrySignature::check_supers_and_deoptimize(int arg_num) {
   assert(JavaThread::current()->thread_state() == _thread_in_vm, "must be in vm state");
 
   bool scalar_super = false;
-  bool non_scalar = _method->is_native();
+  bool non_scalar_super = false;
 
   GrowableArray<Method*>* supers = get_supers();
   for (int i = 0; i < supers->length(); ++i) {
@@ -2873,20 +2882,20 @@ bool CompiledEntrySignature::check_supers_and_deoptimize(int arg_num) {
     if (super_method->is_scalarized_arg(arg_num)) {
       scalar_super = true;
     } else {
-      non_scalar = true;
+      non_scalar_super = true;
     }
   }
 #ifdef ASSERT
   // Randomly enable below code paths for stress testing
   bool stress = StressCallingConvention;
   if (stress && (os::random() & 1) == 1) {
-    non_scalar = true;
+    non_scalar_super = true;
     if ((os::random() & 1) == 1) {
       scalar_super = true;
     }
   }
 #endif
-  if (non_scalar) {
+  if (non_scalar_super) {
     // Found a super method with a non-scalarized argument. Fall back to the non-scalarized calling convention.
     if (scalar_super) {
       // Found non-scalar *and* scalar super methods. We can't handle both.
@@ -2911,7 +2920,7 @@ bool CompiledEntrySignature::check_supers_and_deoptimize(int arg_num) {
     }
   }
 
-  return non_scalar;
+  return non_scalar_super;
 }
 
 // Iterate over arguments and compute scalarized and non-scalarized signatures
@@ -2982,7 +2991,7 @@ void CompiledEntrySignature::compute_calling_conventions(bool link_time) {
   _args_on_stack = SharedRuntime::java_calling_convention(_sig, _regs);
 
   // Compute the scalarized calling conventions if there are scalarized value types in the signature
-  if (has_scalarized && !_method->is_native()) {
+  if (has_scalarized) {
     _regs_cc = NEW_RESOURCE_ARRAY(VMRegPair, _sig_cc->length());
     _args_on_stack_cc = SharedRuntime::java_calling_convention(_sig_cc, _regs_cc);
 
@@ -4061,7 +4070,7 @@ void SharedRuntime::on_slowpath_allocation_exit(JavaThread* current) {
 // buffers for all value type arguments. Allocate an object array to
 // hold them (convenient because once we're done with it we don't have
 // to worry about freeing it).
-oop SharedRuntime::allocate_value_types_impl(JavaThread* current, methodHandle callee, bool allocate_receiver, bool from_c1, TRAPS) {
+oop SharedRuntime::allocate_value_types_impl(JavaThread* current, methodHandle callee, bool allocate_receiver, TRAPS) {
   assert(ValueTypePassFieldsAsArgs, "no reason to call this");
   ResourceMark rm;
 
@@ -4072,8 +4081,20 @@ oop SharedRuntime::allocate_value_types_impl(JavaThread* current, methodHandle c
                        RegisterMap::WalkContinuation::skip);
   frame stubFrame = THREAD->last_frame();
   frame callerFrame = stubFrame.sender(&reg_map2);
-  if (from_c1) {
+  assert(stubFrame.cb() != nullptr, "called from c2i or c1/native method through runtime stub");
+  if (!stubFrame.cb()->is_adapter_blob()) {
+    if (ThrowOOMEAtC2iC1NativeEntryPoints == 2 && callerFrame.cb()->as_nmethod()->is_compiled_by_c1()) {
+      THROW_MSG_NULL(vmSymbols::java_lang_OutOfMemoryError(), "ThrowOOEMAtC2iC1NativeEntryPooints OOME");
+    }
+    if (ThrowOOMEAtC2iC1NativeEntryPoints == 3 && callerFrame.cb()->as_nmethod()->is_native_method()) {
+      THROW_MSG_NULL(vmSymbols::java_lang_OutOfMemoryError(), "ThrowOOEMAtC2iC1NativeEntryPooints OOME");
+    }
+    assert(callerFrame.cb()->as_nmethod()->is_compiled_by_c1() || callerFrame.cb()->as_nmethod()->is_native_method(), "");
     callerFrame = callerFrame.sender(&reg_map2);
+  } else {
+    if (ThrowOOMEAtC2iC1NativeEntryPoints == 1) {
+      THROW_MSG_NULL(vmSymbols::java_lang_OutOfMemoryError(), "ThrowOOEMAtC2iC1NativeEntryPooints OOME");
+    }
   }
   int arg_size;
   const GrowableArray<SigEntry>* sig = allocate_receiver ? callee->adapter()->get_sig_cc() : callee->adapter()->get_sig_cc_ro();
@@ -4179,7 +4200,14 @@ oop SharedRuntime::allocate_value_types_impl(JavaThread* current, methodHandle c
 
 JRT_ENTRY(void, SharedRuntime::allocate_value_types(JavaThread* current, Method* callee_method, bool allocate_receiver))
   methodHandle callee(current, callee_method);
-  oop array = SharedRuntime::allocate_value_types_impl(current, callee, allocate_receiver, false, CHECK);
+#ifndef PRODUCT
+  if (allocate_receiver) {
+    _buffer_value_args_slowcase_cnt++;
+  } else {
+    _buffer_value_args_no_receiver_slowcase_cnt++;
+  }
+#endif
+  oop array = allocate_value_types_impl(current, callee, allocate_receiver, CHECK);
   current->set_vm_result_oop(array);
 JRT_END
 

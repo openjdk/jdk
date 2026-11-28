@@ -763,13 +763,18 @@ int Method::extra_stack_words() {
 // locations the GC is unaware of.
 ValueKlass* Method::returns_value_type() const {
   assert(ValueTypeReturnedAsFields, "Value types should never be returned as fields");
-  if (is_native()) {
-    return nullptr;
-  }
   NoSafepointVerifier nsv;
   SignatureStream ss(signature());
   ss.skip_to_return_type();
   return ss.as_value_klass(method_holder());
+}
+
+bool Method::may_return_value_type() const {
+  assert(ValueTypeReturnedAsFields, "Value types should never be returned as fields");
+  NoSafepointVerifier nsv;
+  SignatureStream ss(signature());
+  ss.skip_to_return_type();
+  return ss.maybe_value_klass(method_holder());
 }
 
 bool Method::compute_has_loops_flag() {

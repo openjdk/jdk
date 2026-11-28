@@ -852,11 +852,13 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     int frame_complete = ((intptr_t)__ pc()) - start;  // not complete, period
     __ invalidate_icache();
     int stack_slots = SharedRuntime::out_preserve_stack_slots();  // no out slots at all, actually
+    CodeOffsets offsets;
+    offsets.set_value(CodeOffsets::Verified_Entry, vep_offset);
+    offsets.set_value(CodeOffsets::Frame_Complete, frame_complete);
     return nmethod::new_native_nmethod(method,
                                        compile_id,
                                        masm->code(),
-                                       vep_offset,
-                                       frame_complete,
+                                       offsets,
                                        stack_slots / VMRegImpl::slots_per_word,
                                        in_ByteSize(-1),
                                        in_ByteSize(-1),
@@ -1384,11 +1386,13 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   }
 
   __ invalidate_icache();
+  CodeOffsets offsets;
+  offsets.set_value(CodeOffsets::Verified_Entry, vep_offset);
+  offsets.set_value(CodeOffsets::Frame_Complete, frame_complete);
   return nmethod::new_native_nmethod(method,
                                      compile_id,
                                      masm->code(),
-                                     vep_offset,
-                                     frame_complete,
+                                     offsets,
                                      stack_slots / VMRegImpl::slots_per_word,
                                      in_ByteSize(method_is_static ? klass_offset : receiver_offset),
                                      in_ByteSize(lock_slot_offset * VMRegImpl::stack_slot_size),
@@ -1951,6 +1955,11 @@ BufferedValueTypeBlob* SharedRuntime::generate_buffered_value_type_adapter(const
 // Call here from the interpreter or compiled code to store returned
 // values to a newly allocated value type instance.
 RuntimeStub* SharedRuntime::generate_return_value_stub(address destination) {
+  Unimplemented();
+  return nullptr;
+}
+
+RuntimeStub* SharedRuntime::generate_buffer_value_args_stub(address destination, bool allocate_receiver) {
   Unimplemented();
   return nullptr;
 }

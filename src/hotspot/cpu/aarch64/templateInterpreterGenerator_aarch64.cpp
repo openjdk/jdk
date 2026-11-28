@@ -578,6 +578,11 @@ address TemplateInterpreterGenerator::generate_result_handler_for(
     __ ldr(r0, Address(rfp, frame::interpreter_frame_oop_temp_offset*wordSize));
     // and verify it
     __ verify_oop(r0);
+    if (ValueTypeReturnedAsFields) {
+      __ mov(esp, lr);
+      __ return_value_as_fields();
+      __ mov(lr, esp);
+    }
     break;
   default       : ShouldNotReachHere();
   }

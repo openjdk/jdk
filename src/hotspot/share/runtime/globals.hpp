@@ -1957,14 +1957,20 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, UseFastUnorderedTimeStamps, false, EXPERIMENTAL,            \
           "Use platform unstable time where supported for timestamps only") \
                                                                             \
-  product_pd(bool, ValueTypePassFieldsAsArgs, DIAGNOSTIC,                  \
-          "Pass each value type field as an argument at calls")            \
+  product_pd(bool, ValueTypePassFieldsAsArgs, DIAGNOSTIC,                   \
+             "Pass each value type field as an argument at calls")          \
                                                                             \
-  product_pd(bool, ValueTypeReturnedAsFields, DIAGNOSTIC,                  \
-          "Return fields instead of a value type reference")              \
+  product_pd(bool, ValueTypeReturnedAsFields, DIAGNOSTIC,                   \
+             "Return fields instead of a value type reference")             \
                                                                             \
   develop(bool, StressCallingConvention, false,                             \
           "Stress the scalarized calling convention.")                      \
+                                                                            \
+  develop(int, ThrowOOMEAtC2iC1NativeEntryPoints, 0,                        \
+          "Throw an OOME on method entry when buffering incoming values"    \
+          "c2i, C1 and native nmethods only"                                \
+          "1: c2i, 2: c1, 3: native")                                       \
+          range(0, 3)                                                       \
                                                                             \
   develop(bool, PreloadClasses, true,                                       \
           "Preloading all classes from the LoadableDescriptors attribute")  \

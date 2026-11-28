@@ -2021,17 +2021,19 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     assert(vep_offset != -1,        "Must be set");
 #endif
 
+    CodeOffsets offsets;
+    offsets.set_value(CodeOffsets::Verified_Entry, vep_offset);
+    offsets.set_value(CodeOffsets::Frame_Complete, frame_complete);
+    offsets.set_value(CodeOffsets::Exceptions, exception_offset);
     // Code will be copied. No ICache sync required.
     nmethod* nm = nmethod::new_native_nmethod(method,
                                               compile_id,
                                               masm->code(),
-                                              vep_offset,
-                                              frame_complete,
+                                              offsets,
                                               stack_slots,
                                               in_ByteSize(-1),
                                               in_ByteSize(-1),
-                                              oop_maps,
-                                              exception_offset);
+                                              oop_maps);
     if (nm == nullptr) return nm;
     if (method->is_continuation_enter_intrinsic()) {
       ContinuationEntry::set_enter_code(nm, interpreted_entry_offset);
@@ -2042,7 +2044,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   }
 
   if (method->is_method_handle_intrinsic()) {
-    vmIntrinsics::ID iid = method->intrinsic_id();
     intptr_t start = (intptr_t)__ pc();
     int vep_offset = ((intptr_t)__ pc()) - start;
     gen_special_dispatch(masm,
@@ -2052,11 +2053,14 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     int frame_complete = ((intptr_t)__ pc()) - start;  // not complete, period
     // Code will be copied. No ICache sync required.
     int stack_slots = SharedRuntime::out_preserve_stack_slots();  // no out slots at all, actually
+    CodeOffsets offsets;
+    offsets.set_value(CodeOffsets::Verified_Entry, vep_offset);
+    offsets.set_value(CodeOffsets::Frame_Complete, frame_complete);
+
     return nmethod::new_native_nmethod(method,
                                        compile_id,
                                        masm->code(),
-                                       vep_offset,
-                                       frame_complete,
+                                       offsets,
                                        stack_slots / VMRegImpl::slots_per_word,
                                        in_ByteSize(-1),
                                        in_ByteSize(-1),
@@ -2171,14 +2175,13 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   // as far as the interpreter and the compiler(s) are concerned.
 
   const Register receiver = j_rarg0;
+  assert_different_registers(receiver, rscratch1, rscratch2);
 
   Label exception_pending;
 
-  assert_different_registers(receiver, rscratch1, rscratch2);
-  __ verify_oop(receiver);
-  __ ic_check(8 /* end_alignment */);
-
-  int vep_offset = ((intptr_t)__ pc()) - start;
+  Label verified_value_entry;
+  CodeOffsets offsets;
+  emit_std_entries(masm, method, oop_maps, stack_size, receiver, verified_value_entry, offsets);
 
   if (method->needs_clinit_barrier()) {
     assert(VM_Version::supports_fast_class_init_checks(), "sanity");
@@ -2214,6 +2217,8 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
   // native wrapper is not hot enough to micro optimize the nmethod entry barrier with an out-of-line stub
   bs->nmethod_entry_barrier(masm, nullptr /* slow_path */, nullptr /* continuation */);
+
+  __ bind(verified_value_entry);
 
   // Frame is now completed as far as size and linkage.
   int frame_complete = ((intptr_t)__ pc()) - start;
@@ -2570,6 +2575,17 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   __ movptr(rcx, Address(r15_thread, JavaThread::active_handles_offset()));
   __ movl(Address(rcx, JNIHandleBlock::top_offset()), NULL_WORD);
 
+  if (ValueTypeReturnedAsFields) {
+    ValueKlass* vk = method->returns_value_type();
+    if (vk != nullptr && vk->can_be_returned_as_fields()) {
+      address unpack_handler = vk->unpack_handler();
+      assert(unpack_handler != nullptr, "must be");
+      __ call(RuntimeAddress(unpack_handler));
+    } else if (method->is_returning_oop() && (method->may_return_value_type() || StressCallingConvention)) {
+      __ maybe_return_value_as_fields();
+    }
+  }
+
   // pop our frame
 
   __ leave();
@@ -2708,21 +2724,108 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   // and continue
   __ jmp(reguard_done);
 
-
+  if (method()->has_scalarized_args() && ValueTypePassFieldsAsArgs) {
+    offsets.set_value(CodeOffsets::Exceptions, __ offset());
+    __ leave();
+    __ movptr(Address(r15_thread, in_bytes(Thread::pending_exception_offset())), rax);
+    __ jump(RuntimeAddress(StubRoutines::forward_exception_entry()));
+  }
 
   // Code will be copied. No ICache sync required.
-
+  offsets.set_value(CodeOffsets::Frame_Complete, frame_complete);
   nmethod *nm = nmethod::new_native_nmethod(method,
                                             compile_id,
                                             masm->code(),
-                                            vep_offset,
-                                            frame_complete,
+                                            offsets,
                                             stack_slots / VMRegImpl::slots_per_word,
                                             (is_static ? in_ByteSize(klass_offset) : in_ByteSize(receiver_offset)),
                                             in_ByteSize(lock_slot_offset*VMRegImpl::stack_slot_size),
                                             oop_maps);
 
   return nm;
+}
+
+void SharedRuntime::emit_std_entries(MacroAssembler* masm, const methodHandle& method, OopMapSet* oop_maps, int stack_size, Register receiver, Label& verified_value_entry, CodeOffsets& offsets) {
+  if (method()->has_scalarized_args()) {
+    assert(ValueTypePassFieldsAsArgs, "must be");
+    CompiledEntrySignature ces(method());
+    ces.compute_calling_conventions(false);
+    CodeOffsets::Entries ro_entry_type = ces.c1_native_value_ro_entry_type();
+
+    __ align(CodeEntryAlignment);
+    // UEP: check icache and fall-through
+    if (ro_entry_type != CodeOffsets::Verified_Value_Entry) {
+      offsets.set_value(CodeOffsets::Entry, __ offset());
+      if (!method->is_static()) {
+        __ verify_oop(receiver);
+        __ ic_check(8 /* end_alignment */);
+      }
+    }
+
+    // VIEP_RO: pack all value parameters, except the receiver
+    if (ro_entry_type == CodeOffsets::Verified_Value_Entry_RO) {
+      offsets.set_value(CodeOffsets::Verified_Value_Entry_RO, __ offset());
+      assert(!(VM_Version::supports_fast_class_init_checks() && method->needs_clinit_barrier()), "");
+      int offset = __ scalarized_entry(&ces, stack_size, stack_size, -1, verified_value_entry, true, true);
+      OopMap* oop_map = new OopMap(0, 0);
+      oop_maps->add_gc_map(offset, oop_map);
+    }
+    // VEP: pack all value parameters
+    __ align(CodeEntryAlignment);
+    offsets.set_value(CodeOffsets::Verified_Entry, __ offset());
+    if (method->needs_clinit_barrier()) {
+      assert(VM_Version::supports_fast_class_init_checks(), "sanity");
+      Label L_skip_barrier;
+      Register klass = r10;
+      __ mov_metadata(klass, method->method_holder()); // InstanceKlass*
+      __ clinit_barrier(klass, &L_skip_barrier /*L_fast_path*/);
+
+      __ jump(RuntimeAddress(SharedRuntime::get_handle_wrong_method_stub())); // slow path
+
+      __ bind(L_skip_barrier);
+    }
+    int offset = __ scalarized_entry(&ces, stack_size, stack_size, -1, verified_value_entry, false, true);
+    OopMap* oop_map = new OopMap(0, 0);
+    oop_maps->add_gc_map(offset, oop_map);
+
+    // UIEP: check icache and fall-through
+    __ align(CodeEntryAlignment);
+    offsets.set_value(CodeOffsets::Value_Entry, __ offset());
+    if (ro_entry_type == CodeOffsets::Verified_Value_Entry) {
+      // Special case if we have VIEP == VIEP(RO):
+      // this means UIEP (called by C1) == UEP (called by C2).
+      offsets.set_value(CodeOffsets::Entry, __ offset());
+    }
+    if (!method->is_static()) {
+      __ verify_oop(receiver);
+      __ ic_check(8 /* end_alignment */);
+    }
+
+    // VIEP: all value parameters are passed as refs - no packing.
+    __ align(CodeEntryAlignment);
+    offsets.set_value(CodeOffsets::Verified_Value_Entry, __ offset());
+
+
+    if (ro_entry_type != CodeOffsets::Verified_Value_Entry_RO) {
+      // The VIEP(RO) is the same as VEP or VIEP
+      assert(ro_entry_type == CodeOffsets::Verified_Entry ||
+             ro_entry_type == CodeOffsets::Verified_Value_Entry, "must be");
+      offsets.set_value(CodeOffsets::Verified_Value_Entry_RO,
+                        offsets.value(ro_entry_type));
+    }
+  } else {
+    offsets.set_value(CodeOffsets::Entry, __ offset());
+    offsets.set_value(CodeOffsets::Value_Entry, __ offset());
+
+    if (!method->is_static()) {
+      __ verify_oop(receiver);
+      __ ic_check(8 /* end_alignment */);
+    }
+
+    offsets.set_value(CodeOffsets::Verified_Entry, __ offset());
+    offsets.set_value(CodeOffsets::Verified_Value_Entry_RO, __ offset());
+    offsets.set_value(CodeOffsets::Verified_Value_Entry, __ offset());
+  }
 }
 
 // this function returns the adjust size (in number of words) to a c2i adapter
@@ -4020,6 +4123,63 @@ RuntimeStub* SharedRuntime::generate_return_value_stub(address destination) {
   RuntimeStub* stub = RuntimeStub::new_runtime_stub(name, &buffer, frame_complete, frame_size_in_words, oop_maps, false);
   AOTCodeCache::store_code_blob(*stub, AOTCodeEntry::SharedBlob, StubInfo::blob(id));
   return stub;
+}
+
+RuntimeStub* SharedRuntime::generate_buffer_value_args_stub(address destination, bool allocate_receiver) {
+  StubId id = allocate_receiver ? StubId::shared_buffer_value_args_id : StubId::shared_buffer_value_args_no_receiver_id;
+
+  const char* name = SharedRuntime::stub_name(id);
+  CodeBlob* blob = AOTCodeCache::load_code_blob(AOTCodeEntry::SharedBlob, StubInfo::blob(id));
+  if (blob != nullptr) {
+    return blob->as_runtime_stub();
+  }
+
+  ResourceMark rm;
+  CodeBuffer buffer(name, 1552, 512);
+  MacroAssembler* masm = new MacroAssembler(&buffer);
+
+  int frame_size_in_words;
+
+  OopMapSet *oop_maps = new OopMapSet();
+  OopMap* map = nullptr;
+
+  int start = __ offset();
+
+  // No need to save vector registers since they are caller-saved anyway.
+  map = RegisterSaver::save_live_registers(masm, 0, &frame_size_in_words, /*save_wide_vectors*/ false);
+
+  int frame_complete = __ offset();
+
+  __ set_last_Java_frame(noreg, noreg, nullptr, rscratch1);
+
+  __ mov(c_rarg0, r15_thread);
+  __ mov(c_rarg1, rbx);
+  __ movl(c_rarg2, allocate_receiver);
+  __ call(RuntimeAddress(destination));
+  oop_maps->add_gc_map( __ offset() - start, map);
+
+  __ reset_last_Java_frame(false);
+
+  RegisterSaver::restore_live_registers(masm);
+
+  Label no_exception;
+  __ cmpptr(Address(r15_thread, Thread::pending_exception_offset()), NULL_WORD);
+  __ jcc(Assembler::equal, no_exception);
+
+  __ movptr(Address(r15_thread, JavaThread::vm_result_oop_offset()), NULL_WORD);
+  __ movptr(rax, Address(r15_thread, Thread::pending_exception_offset()));
+  __ jump(RuntimeAddress(StubRoutines::forward_exception_entry()));
+
+  __ bind(no_exception);
+
+  __ get_vm_result_oop(rax);
+  __ verify_oop(rax);  // rax: an array of buffered value objects
+  __ ret(0);
+
+  RuntimeStub* rs_blob = RuntimeStub::new_runtime_stub(name, &buffer, frame_complete, frame_size_in_words, oop_maps, false);
+
+  AOTCodeCache::store_code_blob(*rs_blob, AOTCodeEntry::SharedBlob, StubInfo::blob(id));
+  return rs_blob;
 }
 
 #if INCLUDE_JFR

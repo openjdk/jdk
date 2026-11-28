@@ -109,6 +109,8 @@
   do_blob(throw_delayed_StackOverflowError, RuntimeStub)               \
   /* value types stub */                                               \
   do_blob(store_value_type_fields_to_buf, RuntimeStub)                 \
+  do_blob(buffer_value_args, RuntimeStub)                              \
+  do_blob(buffer_value_args_no_receiver, RuntimeStub)                  \
   /* other stubs */                                                    \
   SHARED_JFR_STUBS_DO(do_blob)                                         \
 
@@ -142,8 +144,6 @@
   do_blob(load_flat_array)                                             \
   do_blob(store_flat_array)                                            \
   do_blob(substitutability_check)                                      \
-  do_blob(buffer_value_args)                                           \
-  do_blob(buffer_value_args_no_receiver)                               \
   do_blob(handle_exception_nofpu)         /* optimized version that does not preserve fpu registers */ \
   do_blob(handle_exception)                                            \
   do_blob(handle_exception_from_callee)                                \

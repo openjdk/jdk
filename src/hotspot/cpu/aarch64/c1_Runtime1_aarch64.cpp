@@ -833,32 +833,6 @@ OopMapSet* Runtime1::generate_code_for(StubId id, StubAssembler* sasm) {
       }
       break;
 
-    case StubId::c1_buffer_value_args_id:
-    case StubId::c1_buffer_value_args_no_receiver_id:
-      {
-        const char* name = (id == StubId::c1_buffer_value_args_id) ?
-          "buffer_value_args" : "buffer_value_args_no_receiver";
-        StubFrame f(sasm, name, dont_gc_arguments);
-        OopMap* map = save_live_registers(sasm);
-        Register method = r19;   // Incoming
-        address entry = (id == StubId::c1_buffer_value_args_id) ?
-          CAST_FROM_FN_PTR(address, buffer_value_args) :
-          CAST_FROM_FN_PTR(address, buffer_value_args_no_receiver);
-        // This is called from a C1 method's scalarized entry point
-        // where r0-r7 may be holding live argument values so we can't
-        // return the result in r0 as the other stubs do. LR is used as
-        // a temporary below to avoid the result being clobbered by
-        // restore_live_registers. It's saved and restored by
-        // StubAssembler::prologue and epilogue anyway.
-        int call_offset = __ call_RT(lr, noreg, entry, method);
-        oop_maps = new OopMapSet();
-        oop_maps->add_gc_map(call_offset, map);
-        restore_live_registers(sasm);
-        __ mov(r20, lr);
-        __ verify_oop(r20);  // r20: an array of buffered value objects
-     }
-     break;
-
     case StubId::c1_load_flat_array_id:
       {
         StubFrame f(sasm, "load_flat_array", dont_gc_arguments);

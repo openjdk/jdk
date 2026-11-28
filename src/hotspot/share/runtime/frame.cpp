@@ -377,8 +377,8 @@ void frame::deoptimize(JavaThread* thread) {
 #if defined ASSERT && !defined AARCH64   // Stub call site does not look like NativeCall on AArch64
     NativeCall* call = nativeCall_before(this->pc());
     address dest = call->destination();
-    assert(dest == Runtime1::entry_for(StubId::c1_buffer_value_args_no_receiver_id) ||
-           dest == Runtime1::entry_for(StubId::c1_buffer_value_args_id), "unexpected safepoint in entry point");
+    assert(dest == SharedRuntime::buffer_value_args_entry() ||
+           dest == SharedRuntime::buffer_value_args_no_receiver_entry(), "unexpected safepoint in entry point");
 #endif
     return;
   }

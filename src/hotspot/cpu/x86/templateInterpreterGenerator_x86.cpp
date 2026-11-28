@@ -282,6 +282,10 @@ address TemplateInterpreterGenerator::generate_result_handler_for(
     __ movptr(rax, Address(rbp, frame::interpreter_frame_oop_temp_offset*wordSize));
     // and verify it
     __ verify_oop(rax);
+    if (ValueTypeReturnedAsFields) {
+      __ return_value_as_fields();
+    }
+
     break;
   default       : ShouldNotReachHere();
   }
@@ -1181,10 +1185,10 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
   JFR_ONLY(__ leave_jfr_critical_section();)
 
-  __ pop(rdi);                               // get return address
+  __ pop(rbcp);                               // get return address
   __ mov(rsp, t);                            // set sp to sender sp
 
-  __ jmp(rdi);
+  __ jmp(rbcp);
 
   if (inc_counter) {
     // Handle overflow of counter and compile method

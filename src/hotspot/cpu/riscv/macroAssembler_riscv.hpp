@@ -38,6 +38,7 @@
 #include "runtime/signature.hpp"
 
 class ciValueKlass;
+class CompiledEntrySignature;
 
 // MacroAssembler extends Assembler by frequently used macros.
 //

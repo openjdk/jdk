@@ -125,8 +125,6 @@ uint Runtime1::_new_multi_array_slowcase_cnt = 0;
 uint Runtime1::_load_flat_array_slowcase_cnt = 0;
 uint Runtime1::_store_flat_array_slowcase_cnt = 0;
 uint Runtime1::_substitutability_check_slowcase_cnt = 0;
-uint Runtime1::_buffer_value_args_slowcase_cnt = 0;
-uint Runtime1::_buffer_value_args_no_receiver_slowcase_cnt = 0;
 uint Runtime1::_monitorenter_slowcase_cnt = 0;
 uint Runtime1::_monitorexit_slowcase_cnt = 0;
 uint Runtime1::_patch_code_slowcase_cnt = 0;
@@ -187,8 +185,6 @@ void Runtime1::init_AOTAddressTable(GrowableArray<address>& external_addresses) 
   ADD(_load_flat_array_slowcase_cnt);
   ADD(_store_flat_array_slowcase_cnt);
   ADD(_substitutability_check_slowcase_cnt);
-  ADD(_buffer_value_args_slowcase_cnt);
-  ADD(_buffer_value_args_no_receiver_slowcase_cnt);
   ADD(_monitorenter_slowcase_cnt);
   ADD(_monitorexit_slowcase_cnt);
   ADD(_patch_code_slowcase_cnt);
@@ -624,23 +620,6 @@ JRT_ENTRY(int, Runtime1::substitutability_check(JavaThread* current, oopDesc* le
   methodHandle method(current, Universe::is_substitutable_method());
   JavaCalls::call(&result, method, &args, CHECK_0);
   return result.get_jboolean() ? 1 : 0;
-JRT_END
-
-void Runtime1::buffer_value_args_impl(JavaThread* current, Method* m, bool allocate_receiver) {
-  JavaThread* THREAD = current;
-  methodHandle method(current, m); // We are inside the verified_entry or verified_value_ro_entry of this method.
-  oop obj = SharedRuntime::allocate_value_types_impl(current, method, allocate_receiver, true, CHECK);
-  current->set_vm_result_oop(obj);
-}
-
-JRT_ENTRY(void, Runtime1::buffer_value_args(JavaThread* current, Method* method))
-  NOT_PRODUCT(_buffer_value_args_slowcase_cnt++;)
-  buffer_value_args_impl(current, method, true);
-JRT_END
-
-JRT_ENTRY(void, Runtime1::buffer_value_args_no_receiver(JavaThread* current, Method* method))
-  NOT_PRODUCT(_buffer_value_args_no_receiver_slowcase_cnt++;)
-  buffer_value_args_impl(current, method, false);
 JRT_END
 
 JRT_ENTRY(void, Runtime1::unimplemented_entry(JavaThread* current, StubId id))
@@ -1772,8 +1751,6 @@ void Runtime1::print_statistics() {
   tty->print_cr(" _load_flat_array_slowcase_cnt:   %u", _load_flat_array_slowcase_cnt);
   tty->print_cr(" _store_flat_array_slowcase_cnt:  %u", _store_flat_array_slowcase_cnt);
   tty->print_cr(" _substitutability_check_slowcase_cnt: %u", _substitutability_check_slowcase_cnt);
-  tty->print_cr(" _buffer_value_args_slowcase_cnt:%u", _buffer_value_args_slowcase_cnt);
-  tty->print_cr(" _buffer_value_args_no_receiver_slowcase_cnt:%u", _buffer_value_args_no_receiver_slowcase_cnt);
 
   tty->print_cr(" _monitorenter_slowcase_cnt:      %u", _monitorenter_slowcase_cnt);
   tty->print_cr(" _monitorexit_slowcase_cnt:       %u", _monitorexit_slowcase_cnt);

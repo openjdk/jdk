@@ -508,33 +508,7 @@ void LIR_Assembler::return_op(LIR_Opr result, C1SafepointPollStub* code_stub) {
         }
       }
     } else if (return_type->is_instance_klass() && (!return_type->is_loaded() || StressCallingConvention)) {
-      Label skip;
-      Label not_null;
-      __ cbnz(r0, not_null);
-      // Returned value is null, zero all return registers because they may belong to oop fields
-      __ mov(j_rarg0, zr);
-      __ mov(j_rarg1, zr);
-      __ mov(j_rarg2, zr);
-      __ mov(j_rarg3, zr);
-      __ mov(j_rarg4, zr);
-      __ mov(j_rarg5, zr);
-      __ mov(j_rarg6, zr);
-      __ mov(j_rarg7, zr);
-      __ b(skip);
-      __ bind(not_null);
-
-      // Check if we are returning a non-null value type and load its fields into registers
-      __ test_oop_is_not_value_type(r0, rscratch2, skip, /* can_be_null= */ false);
-
-      // Load fields from a buffered value with a value class specific handler
-      __ load_klass(rscratch1 /*dst*/, r0 /*src*/, rscratch2 /*tmp*/);
-      __ ldr(rscratch1, Address(rscratch1, ValueKlass::adr_members_offset()));
-      __ ldr(rscratch1, Address(rscratch1, ValueKlass::unpack_handler_offset()));
-      // Unpack handler can be null if value type is not scalarizable in returns
-      __ cbz(rscratch1, skip);
-      __ blr(rscratch1);
-
-      __ bind(skip);
+      __ maybe_return_value_as_fields();
     }
     // At this point, r0 points to the value object (for interpreter or C1 caller).
     // The fields of the object are copied into registers (for C2 caller).
