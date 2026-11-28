@@ -25,6 +25,7 @@
 package jdk.internal.vm;
 
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.logger.dynamic.DormantLogger;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -87,6 +88,10 @@ public class VMSupport {
 
     public static byte[] serializeAgentPropertiesToByteArray() throws IOException {
         return serializePropertiesToByteArray(onlyStrings(getAgentProperties()));
+    }
+
+    private static String setLogLevel(String logger, String level, String output) {
+        return DormantLogger.setDormantLoggerLevel(logger, level, output);
     }
 
     /*
