@@ -228,7 +228,7 @@ public:
   // List of IfFalse or IfTrue Nodes that indicate a taken null test.
   // List is valid in the post-matching space.
   Node_List<Node> _null_check_tests;
-  void collect_null_checks( Node *proj, Node *orig_proj );
+  void collect_null_checks( Node *proj );
   void validate_null_checks( );
 
   Matcher();
@@ -467,11 +467,10 @@ public:
   // [R12 + narrow_oop_reg<<3 + offset] // fold into address expression
   // NullCheck narrow_oop_reg
   //
-  // When narrow oops can't fold into address expression (Sparc) and
-  // base is not null use decode_not_null and normal implicit null check.
-  // Note, decode_not_null node can be used here since it is referenced
-  // only on non null path but it requires special handling, see
-  // collect_null_checks():
+  // When narrow oops can't fold into address expression and base is not
+  // null use decode_not_null and normal implicit null check. The decode is
+  // not pinned; PhaseCFG::implicit_null_check() finds it from the narrow oop
+  // compared against null:
   //
   // decode_not_null narrow_oop_reg, oop_reg // 'shift' and 'add base'
   // [oop_reg + offset]
