@@ -38,7 +38,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 /**
  * @test
- * @bug 8253050
+ * @bug 8253050 8394396
  * @summary Test jfr split
  * @requires vm.flagless
  * @requires vm.hasJFR
@@ -79,6 +79,9 @@ public class TestDisassemble {
 
         output = ExecuteHelper.jfr("disassemble", "--max-chunks", "-3", fileAText);
         output.shouldContain("max chunks must be at least 1");
+
+        output = ExecuteHelper.jfr("disassemble", "--max-chunks", "invalid", fileAText);
+        output.shouldContain("not a valid value for --max-chunks");
 
         output = ExecuteHelper.jfr("disassemble", "--max-chunks", "1000", fileAText);
         output.shouldContain("number of chunks in recording");
