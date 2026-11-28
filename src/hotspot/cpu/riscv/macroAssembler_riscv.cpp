@@ -5453,11 +5453,12 @@ void MacroAssembler::lookup_secondary_supers_table_var(Register r_sub_klass,
 
   // This next instruction is equivalent to:
   // mv(tmp_reg, (u1)(Klass::SECONDARY_SUPERS_TABLE_SIZE - 1));
-  // sub(r_array_index, slot, tmp_reg);
+  // sub(r_array_index, tmp_reg, slot);
+  static_assert(Klass::SECONDARY_SUPERS_TABLE_SIZE == 64, "bgez requires a 64-bit bitmap");
   xori(r_array_index, slot, (u1)(Klass::SECONDARY_SUPERS_TABLE_SIZE - 1));
   sll(r_array_index, r_bitmap, r_array_index);
-  test_bit(t0, r_array_index, Klass::SECONDARY_SUPERS_TABLE_SIZE - 1);
-  beqz(t0, L_fallthrough);
+  // The tested bit is now the sign bit, so nonnegative means it was clear.
+  bgez(r_array_index, L_fallthrough);
 
   // Get the first array index that can contain super_klass into r_array_index.
   population_count(r_array_index, r_array_index, tmp1, tmp2);
