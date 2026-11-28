@@ -240,4 +240,7 @@
            (byte_origin & 3) != 0;
   }
 
+  // Return true if the stubs preserve the given register.
+  static bool is_reg_preserved_by_stub(OptoReg::Name reg);
+
 #endif // CPU_X86_MATCHER_X86_HPP
