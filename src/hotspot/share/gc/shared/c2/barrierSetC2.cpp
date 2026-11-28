@@ -988,13 +988,18 @@ static const Node* get_base_and_offset(const MachNode* mach, intptr_t& offset) {
     return nullptr;
   }
 
-  if (offset == 0 && base->is_Mach() && base->as_Mach()->ideal_Opcode() == Op_AddP) {
-    // The memory address is computed by 'base' and fed to 'mach' via an
-    // indirect memory operand (indicated by offset == 0). The ultimate base and
-    // offset can be fetched directly from the inputs and Ideal type of 'base'.
+  if (base->is_Mach() && base->as_Mach()->ideal_Opcode() == Op_AddP) {
+    // The memory address is computed by 'base' and fed to 'mach'.
+    // If memory operands have no index register, the full address is
+    // pre-computed by an AddP node. The ultimate base and offset can
+    // be fetched directly from the inputs and Ideal type of 'base'.
     const TypeOopPtr* oopptr = base->bottom_type()->isa_oopptr();
     if (oopptr == nullptr) return nullptr;
-    offset = oopptr->offset();
+    intptr_t addp_offset = oopptr->offset();
+    if (is_undefined(addp_offset)) return nullptr;
+    // If the AddP offset is unknown (e.g. array access with unknown index),
+    // the total access offset is unknown regardless of the outer displacement.
+    offset = is_unknown(addp_offset) ? addp_offset : addp_offset + offset;
     // Even if 'base' is not an Ideal AddP node anymore, Matcher::ReduceInst()
     // guarantees that the base address is still available at the same slot.
     base = base->in(AddPNode::Base);
