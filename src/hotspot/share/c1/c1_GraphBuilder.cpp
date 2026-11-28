@@ -1430,7 +1430,10 @@ void GraphBuilder::if_node(Value x, If::Condition cond, Value y, ValueStack* sta
         // Successors can be rotated by the canonicalizer, check for this case.
         if_node->set_profiled_method(method());
         if_node->set_should_profile(true);
-        if (if_node->tsux() == fsux) {
+        // If both branches of an if go to the same block (and bci) they were
+        // not swapped. So we need to check that tsux and fsux are swapped,
+        // but not the same.
+        if (tsux != fsux && if_node->tsux() == fsux && if_node->fsux() == tsux) {
           if_node->set_swapped(true);
         }
       }
