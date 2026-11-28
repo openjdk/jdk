@@ -553,20 +553,22 @@ AwtComponent::CreateHWnd(JNIEnv *env, LPCWSTR title,
         }
         else
         {
-            TCHAR *buf;
-            FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM,
-                NULL, dw, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                (LPTSTR)&buf, 0, NULL);
-            jstring s = JNU_NewStringPlatform(env, buf);
-            if (s == NULL || env->ExceptionCheck()) {
-                env->ExceptionClear();
-                createError = JNU_NewObjectByName(env, "java/lang/InternalError", "()V");
-            } else {
-                createError = JNU_NewObjectByName(env, "java/lang/InternalError",
-                                                                  "(Ljava/lang/String;)V", s);
-                env->DeleteLocalRef(s);
+            TCHAR *buf = NULL;
+            DWORD fret = FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                                       NULL, dw, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+                                       (LPTSTR)&buf, 0, NULL);
+            if (fret != 0) {
+                jstring s = JNU_NewStringPlatform(env, buf);
+                if (s == NULL || env->ExceptionCheck()) {
+                    env->ExceptionClear();
+                    createError = JNU_NewObjectByName(env, "java/lang/InternalError", "()V");
+                } else {
+                    createError = JNU_NewObjectByName(env, "java/lang/InternalError",
+                                                                      "(Ljava/lang/String;)V", s);
+                    env->DeleteLocalRef(s);
+                }
+                LocalFree(buf);
             }
-            LocalFree(buf);
         }
         if (createError != NULL) {
             env->SetObjectField(peer, AwtObject::createErrorID, createError);
