@@ -123,7 +123,6 @@ public class ExhaustivenessComputer {
     private ExhaustivenessResult doExhausts(JCExpression selector, List<JCCase> cases) {
         Set<PatternDescription> patternSet = new LinkedHashSet<>();
         Map<Symbol, Set<Symbol>> enum2Constants = new LinkedHashMap<>();
-        Set<Object> booleanLiterals = new LinkedHashSet<>(Set.of(0, 1));
         for (JCCase c : cases) {
             if (!TreeInfo.unguardedCase(c))
                 continue;
@@ -134,27 +133,18 @@ public class ExhaustivenessComputer {
                         patternSet.add(makePatternDescription(component, patternLabel.pat));
                     }
                 } else if (l instanceof JCConstantCaseLabel constantLabel) {
-                    if (types.unboxedTypeOrType(selector.type).hasTag(TypeTag.BOOLEAN)) {
-                        Object value = constantLabel.expr.type.constValue();
-                        booleanLiterals.remove(value);
-                    } else {
-                        Symbol s = TreeInfo.symbol(constantLabel.expr);
-                        if (s != null && s.isEnum()) {
-                            enum2Constants.computeIfAbsent(s.owner, x -> {
-                                Set<Symbol> result = new LinkedHashSet<>();
-                                s.owner.members()
-                                        .getSymbols(sym -> sym.kind == Kind.VAR && sym.isEnum())
-                                        .forEach(result::add);
-                                return result;
-                            }).remove(s);
-                        }
+                    Symbol s = TreeInfo.symbol(constantLabel.expr);
+                    if (s != null && s.isEnum()) {
+                        enum2Constants.computeIfAbsent(s.owner, x -> {
+                            Set<Symbol> result = new LinkedHashSet<>();
+                            s.owner.members()
+                                    .getSymbols(sym -> sym.kind == Kind.VAR && sym.isEnum())
+                                    .forEach(result::add);
+                            return result;
+                        }).remove(s);
                     }
                 }
             }
-        }
-
-        if (types.unboxedTypeOrType(selector.type).hasTag(TypeTag.BOOLEAN) && booleanLiterals.isEmpty()) {
-            return ExhaustivenessResult.ofExhaustive();
         }
 
         for (Entry<Symbol, Set<Symbol>> e : enum2Constants.entrySet()) {
@@ -722,9 +712,7 @@ public class ExhaustivenessComputer {
             Type seltype = types.erasure(componentType);
             Type pattype = types.erasure(bp.type);
 
-            return seltype.isPrimitive() ?
-                    types.isUnconditionallyExactTypeBased(seltype, pattype) :
-                    (bp.type.isPrimitive() && types.isUnconditionallyExactTypeBased(types.unboxedType(seltype), bp.type)) || types.isSubtype(seltype, pattype);
+            return types.isTypePatternUnconditional(pattype, seltype);
         }
         return false;
     }
@@ -980,7 +968,7 @@ public class ExhaustivenessComputer {
     private boolean patternDominated(PatternDescription existingPattern, PatternDescription currentPattern) {
         Type existingPatternType = types.erasure(existingPattern.type());
         Type currentPatternType = types.erasure(currentPattern.type());
-        if (!types.isUnconditionallyExactTypeBased(currentPatternType, existingPatternType)) {
+        if (!types.isTypePatternUnconditional(existingPatternType, currentPatternType)) {
             return false;
         }
         if (currentPattern instanceof BindingPattern) {

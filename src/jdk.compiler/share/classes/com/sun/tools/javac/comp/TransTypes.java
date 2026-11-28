@@ -1071,13 +1071,7 @@ public class TransTypes extends TreeTranslator {
 
     public void visitTypeTest(JCInstanceOf tree) {
         tree.pattern = translate(tree.pattern, null);
-        if (tree.pattern.type.isPrimitive()) {
-            tree.erasedExprOriginalType = erasure(tree.expr.type);
-            tree.expr = translate(tree.expr, null);
-        }
-        else {
-            tree.expr = translate(tree.expr, null);
-        }
+        tree.expr = translate(tree.expr, null);
         result = tree;
     }
 

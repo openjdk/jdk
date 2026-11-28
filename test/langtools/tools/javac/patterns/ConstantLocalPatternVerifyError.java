@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,16 +21,23 @@
  * questions.
  */
 
-// key: compiler.err.unconditional.pattern.and.both.boolean.values
-// key: compiler.note.preview.filename
-// key: compiler.note.preview.recompile
-// options: --enable-preview --source ${jdk.version}
-public class UnconditionalPatternAndBothBoolean {
-    private int test(boolean sel) {
-        return switch (sel) {
-            case true -> 1;
-            case false -> 2;
-            case boolean b -> 3;
-        };
+/*
+ * @test
+ * @summary Verify constant locals used in binding patterns are materialized in temps
+ * @compile ConstantLocalPatternVerifyError.java
+ * @compile -g:none ConstantLocalPatternVerifyError.java
+ * @run main ConstantLocalPatternVerifyError
+ */
+
+public class ConstantLocalPatternVerifyError {
+    void run() {
+        final String s = "hi";
+        if (!(s instanceof CharSequence cs) || !cs.toString().equals("hi")) {
+            throw new AssertionError("reference pattern failed");
+        }
+    }
+
+    public static void main(String[] args) {
+        new ConstantLocalPatternVerifyError().run();
     }
 }

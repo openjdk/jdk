@@ -1725,7 +1725,6 @@ public class Attr extends JCTree.Visitor {
                               List<JCCase> cases,
                               BiConsumer<JCCase, Env<AttrContext>> attribCase) {
         Type seltype = attribExpr(selector, env);
-        Type seltypeUnboxed = types.unboxedTypeOrType(seltype);
 
         Env<AttrContext> switchEnv =
             env.dup(switchTree, env.info.dup(env.info.scope.dup()));
@@ -1733,19 +1732,18 @@ public class Attr extends JCTree.Visitor {
         try {
             boolean enumSwitch = (seltype.tsym.flags() & Flags.ENUM) != 0;
             boolean stringSwitch = types.isSameType(seltype, syms.stringType);
-            boolean booleanSwitch = types.isSameType(seltypeUnboxed, syms.booleanType);
             boolean errorEnumSwitch = TreeInfo.isErrorEnumSwitch(selector, cases);
             boolean intSwitch = types.isAssignable(seltype, syms.intType);
+            boolean errorPrimitiveSwitch = seltype.isPrimitive() && !intSwitch;
             boolean patternSwitch;
-            if (seltype.isPrimitive() && !intSwitch) {
-                preview.checkSourceLevel(selector.pos(), Feature.PRIMITIVE_PATTERNS);
-                patternSwitch = true;
-            }
             if (!enumSwitch && !stringSwitch && !errorEnumSwitch &&
-                !intSwitch) {
+                !intSwitch && !errorPrimitiveSwitch) {
                 preview.checkSourceLevel(selector.pos(), Feature.PATTERN_SWITCH);
                 patternSwitch = true;
             } else {
+                if (errorPrimitiveSwitch) {
+                    log.error(selector.pos(), Errors.SelectorTypeNotAllowed(seltype));
+                }
                 patternSwitch = cases.stream()
                                      .flatMap(c -> c.labels.stream())
                                      .anyMatch(l -> l.hasTag(PATTERNCASELABEL) ||
@@ -1761,7 +1759,6 @@ public class Attr extends JCTree.Visitor {
             boolean hasNullPattern = false;       // Is there a null pattern?
             CaseTree.CaseKind caseKind = null;
             boolean wasError = false;
-            JCCaseLabel unconditionalCaseLabel = null;
             for (List<JCCase> l = cases; l.nonEmpty(); l = l.tail) {
                 JCCase c = l.head;
                 if (caseKind == null) {
@@ -1831,12 +1828,7 @@ public class Attr extends JCTree.Visitor {
                                     }
                                 }
                                 else {
-                                    boolean isLongFloatDoubleOrBooleanConstant =
-                                            pattype.getTag().isInSuperClassesOf(LONG) || pattype.getTag().equals(BOOLEAN);
-                                    if (isLongFloatDoubleOrBooleanConstant) {
-                                        preview.checkSourceLevel(label.pos(), Feature.PRIMITIVE_PATTERNS);
-                                    }
-                                    if (!stringSwitch && !intSwitch && !(isLongFloatDoubleOrBooleanConstant && types.isSameType(seltypeUnboxed, pattype))) {
+                                    if (!stringSwitch && !intSwitch && !errorPrimitiveSwitch) {
                                         log.error(label.pos(), Errors.ConstantLabelNotCompatible(pattype, seltype));
                                     } else if (!constants.add(pattype.constValue())) {
                                         log.error(c.pos(), Errors.DuplicateCaseLabel);
@@ -1849,8 +1841,6 @@ public class Attr extends JCTree.Visitor {
                             log.error(label.pos(), Errors.DuplicateDefaultLabel);
                         } else if (hasUnconditionalPattern) {
                             log.error(label.pos(), Errors.UnconditionalPatternAndDefault);
-                        }  else if (booleanSwitch && constants.containsAll(Set.of(0, 1))) {
-                            log.error(label.pos(), Errors.DefaultAndBothBooleanValues);
                         }
                         hasDefault = true;
                         matchBindings = MatchBindingsComputer.EMPTY;
@@ -1860,12 +1850,12 @@ public class Attr extends JCTree.Visitor {
                         attribExpr(pat, switchEnv, seltype);
                         Type primaryType = TreeInfo.primaryPatternType(pat);
 
-                        if (primaryType.isPrimitive()) {
-                            preview.checkSourceLevel(pat.pos(), Feature.PRIMITIVE_PATTERNS);
-                        } else if (!primaryType.hasTag(TYPEVAR)) {
+                        if (!primaryType.hasTag(TYPEVAR)) {
                             primaryType = chk.checkClassOrArrayType(pat.pos(), primaryType);
                         }
-                        checkCastablePattern(pat.pos(), seltype, primaryType);
+                        if (!errorPrimitiveSwitch) {
+                            checkCastablePattern(pat.pos(), seltype, primaryType);
+                        }
                         Type patternType = types.erasure(primaryType);
                         JCExpression guard = c.guard;
                         if (guardBindings == null && guard != null) {
@@ -1888,17 +1878,16 @@ public class Attr extends JCTree.Visitor {
                         boolean unconditional =
                                 unguarded &&
                                 !patternType.isErroneous() &&
-                                types.isUnconditionallyExactTypeBased(seltype, patternType);
+                                types.isTypePatternUnconditional(
+                                        patternType,
+                                        types.boxedTypeOrType(types.erasure(seltype)));
                         if (unconditional) {
                             if (hasUnconditionalPattern) {
                                 log.error(pat.pos(), Errors.DuplicateUnconditionalPattern);
                             } else if (hasDefault) {
                                 log.error(pat.pos(), Errors.UnconditionalPatternAndDefault);
-                            } else if (booleanSwitch && constants.containsAll(Set.of(0, 1))) {
-                                log.error(pat.pos(), Errors.UnconditionalPatternAndBothBooleanValues);
                             }
                             hasUnconditionalPattern = true;
-                            unconditionalCaseLabel = label;
                         }
                         lastPatternErroneous = patternType.isErroneous();
                     } else {
@@ -1925,7 +1914,7 @@ public class Attr extends JCTree.Visitor {
             }
             if (patternSwitch) {
                 chk.checkSwitchCaseStructure(cases);
-                chk.checkSwitchCaseLabelDominated(unconditionalCaseLabel, cases);
+                chk.checkSwitchCaseLabelDominated(cases);
             }
             if (switchTree.hasTag(SWITCH)) {
                 ((JCSwitch) switchTree).hasUnconditionalPattern =
@@ -4168,13 +4157,8 @@ public class Attr extends JCTree.Visitor {
     }
 
     public void visitTypeTest(JCInstanceOf tree) {
-        Type exprtype = attribExpr(tree.expr, env);
-        if (exprtype.isPrimitive()) {
-            preview.checkSourceLevel(tree.expr.pos(), Feature.PRIMITIVE_PATTERNS);
-        } else {
-            exprtype = chk.checkNullOrRefType(
-                    tree.expr.pos(), exprtype);
-        }
+        Type exprtype = chk.checkNullOrRefType(
+                tree.expr.pos(), attribExpr(tree.expr, env));
         Type clazztype;
         JCTree typeTree;
         if (tree.pattern.getTag() == BINDINGPATTERN ||
@@ -4194,23 +4178,19 @@ public class Attr extends JCTree.Visitor {
             typeTree = tree.pattern;
             chk.validate(typeTree, env, false);
         }
-        if (clazztype.isPrimitive()) {
-            preview.checkSourceLevel(tree.pattern.pos(), Feature.PRIMITIVE_PATTERNS);
-        } else {
-            if (!clazztype.hasTag(TYPEVAR)) {
-                clazztype = chk.checkClassOrArrayType(typeTree.pos(), clazztype);
+        if (!clazztype.hasTag(TYPEVAR)) {
+            clazztype = chk.checkClassOrArrayType(typeTree.pos(), clazztype);
+        }
+        if (!clazztype.isErroneous() && !types.isReifiable(clazztype)) {
+            boolean valid = false;
+            if (allowReifiableTypesInInstanceof) {
+                valid = checkCastablePattern(tree.expr.pos(), exprtype, clazztype);
+            } else {
+                log.error(tree.pos(), Feature.REIFIABLE_TYPES_INSTANCEOF.error(this.sourceName));
+                allowReifiableTypesInInstanceof = true;
             }
-            if (!clazztype.isErroneous() && !types.isReifiable(clazztype)) {
-                boolean valid = false;
-                if (allowReifiableTypesInInstanceof) {
-                    valid = checkCastablePattern(tree.expr.pos(), exprtype, clazztype);
-                } else {
-                    log.error(tree.pos(), Feature.REIFIABLE_TYPES_INSTANCEOF.error(this.sourceName));
-                    allowReifiableTypesInInstanceof = true;
-                }
-                if (!valid) {
-                    clazztype = types.createErrorType(clazztype);
-                }
+            if (!valid) {
+                clazztype = types.createErrorType(clazztype);
             }
         }
         chk.checkCastable(tree.expr.pos(), exprtype, clazztype);
@@ -4231,8 +4211,9 @@ public class Attr extends JCTree.Visitor {
             return false;
         } else if ((exprType.isPrimitive() || pattType.isPrimitive()) &&
                 (!exprType.isPrimitive() || !pattType.isPrimitive() || !types.isSameType(exprType, pattType))) {
-            preview.checkSourceLevel(pos, Feature.PRIMITIVE_PATTERNS);
-            return true;
+            chk.basicHandler.report(pos,
+                    diags.fragment(Fragments.NotApplicableTypes(exprType, pattType)));
+            return false;
         } else if (warner.hasLint(LintCategory.UNCHECKED)) {
             log.error(pos,
                     Errors.InstanceofReifiableNotSafe(exprType, pattType));

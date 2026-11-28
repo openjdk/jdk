@@ -30,7 +30,6 @@ import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.attribute.StackMapFrameInfo;
 import java.lang.classfile.attribute.StackMapTableAttribute;
 import java.lang.constant.ClassDesc;
-import java.lang.constant.ConstantDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.CallSite;
 import java.lang.invoke.ConstantCallSite;
@@ -55,7 +54,6 @@ import jdk.internal.classfile.impl.DirectCodeBuilder;
 import jdk.internal.constant.ClassOrInterfaceDescImpl;
 import jdk.internal.constant.ConstantUtils;
 import jdk.internal.constant.MethodTypeDescImpl;
-import jdk.internal.misc.PreviewFeatures;
 import jdk.internal.vm.annotation.Stable;
 
 import static java.lang.constant.ConstantDescs.*;
@@ -86,7 +84,6 @@ public final class SwitchBootstraps {
 
     private static final Object SENTINEL = new Object();
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
-    private static final boolean previewEnabled = PreviewFeatures.isEnabled();
 
     private static final ClassDesc CD_BiPredicate = ClassOrInterfaceDescImpl.ofValidated("Ljava/util/function/BiPredicate;");
     private static final ClassDesc CD_Objects = ClassOrInterfaceDescImpl.ofValidated("Ljava/util/Objects;");
@@ -137,8 +134,6 @@ public final class SwitchBootstraps {
      * implements a {@code switch} over a target value. The static arguments
      * {@code labels} are an array of case labels which must be non-null and of
      * type {@code String}, {@code Integer}, {@code Class}, or {@code EnumDesc}.
-     * In addition, when preview features are enabled, {@code Long}, {@code Float},
-     * {@code Double}, and {@code Boolean} labels are also permitted.
      * <p>
      * The type of the returned {@code CallSite}'s method handle will have
      * a return type of {@code int}.   It has two parameters: the first argument
@@ -157,10 +152,6 @@ public final class SwitchBootstraps {
      *   <li>the element is of type {@code String} and {@code equals} to the target</li>
      *   <li>the element is of type {@code Integer} and {@code ==} to the target after
      *       unboxing if necessary</li>
-     *   <li>(Preview) the element is of type {@code Long} or {@code Boolean}
-     *       and {@code ==} to the target after unboxing if necessary</li>
-     *   <li>(Preview) the element is of type {@code Float} or {@code Double}
-     *       and {@code equals} to the target after boxing if necessary</li>
      *   <li>the element is of type {@code EnumDesc}, that describes an enum constant
      *       that is {@code ==} to the target</li>
      * </ul>
@@ -177,16 +168,15 @@ public final class SwitchBootstraps {
      * @param invocationType The invocation type of the {@code CallSite} with two parameters,
      *                       a target type, an {@code int}, and {@code int} as a return type.
      * @param labels case labels as described above
-     * @return a {@code CallSite} returning the first matching element as described above
+     * @return a {@code CallSite} whose target returns the index of the first
+     *         matching label, the number of labels if none matches, or
+     *         {@code -1} if the target value is {@code null}
      *
      * @throws IllegalArgumentException if any element in the labels array is null
      * @throws IllegalArgumentException if the invocation type is not a method type of first parameter of a target type,
      *                                  second parameter of type {@code int} and with {@code int} as its return type
      * @throws IllegalArgumentException if {@code labels} contains an element that is not of type {@code String},
-     *                                  {@code Integer}, {@code Long}, {@code Float}, {@code Double}, {@code Boolean},
-     *                                  {@code Class} or {@code EnumDesc}
-     * @throws IllegalArgumentException if preview features are disabled and if {@code labels} contains an element
-     *                                  that is of type {@code Long}, {@code Float}, {@code Double}, or {@code Boolean}
+     *                                  {@code Integer}, {@code Class} or {@code EnumDesc}
      * @jvms 4.4.6 The CONSTANT_NameAndType_info Structure
      * @jvms 4.4.10 The CONSTANT_Dynamic_info and CONSTANT_InvokeDynamic_info Structures
      */
@@ -207,8 +197,8 @@ public final class SwitchBootstraps {
             || !invocationType.parameterType(1).equals(int.class))
             throw new IllegalArgumentException("Illegal invocation type " + invocationType);
 
-        for (Object l : labels) {
-            verifyLabel(l, selectorType);
+        for (Object label : labels) {
+            verifyLabel(label);
         }
 
         MethodHandle target = generateTypeSwitch(lookup, selectorType, labels);
@@ -216,22 +206,14 @@ public final class SwitchBootstraps {
         return new ConstantCallSite(target);
     }
 
-    private static void verifyLabel(Object label, Class<?> selectorType) {
+    private static void verifyLabel(Object label) {
         if (label == null) {
             throw new IllegalArgumentException("null label found");
         }
         Class<?> labelClass = label.getClass();
-
         if (labelClass != Class.class &&
             labelClass != String.class &&
             labelClass != Integer.class &&
-
-            ((labelClass != Float.class &&
-              labelClass != Long.class &&
-              labelClass != Double.class &&
-              labelClass != Boolean.class) ||
-             !previewEnabled) &&
-
             labelClass != EnumDesc.class) {
             throw new IllegalArgumentException("label with illegal type found: " + label.getClass());
         }
@@ -708,26 +690,6 @@ public final class SwitchBootstraps {
                     stackMapFrames.add(StackMapFrameInfo.of(compare, locals, List.of(StackMapFrameInfo.SimpleVerificationTypeInfo.INTEGER)));
                     cb.loadConstant(integerLabel)
                       .if_icmpne(next);
-                } else if ((caseLabel instanceof Long ||
-                        caseLabel instanceof Float ||
-                        caseLabel instanceof Double ||
-                        caseLabel instanceof Boolean)) {
-                    if (caseLabel instanceof Boolean c) {
-                        cb.loadConstant(c ? 1 : 0);
-                    } else {
-                        cb.loadConstant((ConstantDesc) caseLabel);
-                    }
-                    var caseLabelWrapper = Wrapper.forWrapperType(caseLabel.getClass());
-                    cb.invokestatic(caseLabelWrapper.wrapperClassDescriptor(),
-                            "valueOf",
-                            MethodTypeDesc.of(caseLabelWrapper.wrapperClassDescriptor(),
-                                    caseLabelWrapper.basicClassDescriptor()))
-                      .aload(SELECTOR_OBJ)
-                      .invokevirtual(CD_Object,
-                            "equals",
-                            MethodTypeDesc.of(CD_boolean,
-                                    CD_Object))
-                      .ifeq(next);
                 } else {
                     throw new InternalError("Unsupported label type: " +
                             caseLabel.getClass());
@@ -796,7 +758,6 @@ public final class SwitchBootstraps {
         return name + "$$TypeSwitch";
     }
 
-    // this method should be in sync with com.sun.tools.javac.code.Types.isUnconditionallyExactTypeBased
     private static boolean unconditionalExactnessCheck(Class<?> selectorType, Class<?> targetType) {
         Wrapper selectorWrapper = Wrapper.forBasicType(selectorType);
         Wrapper targetWrapper   = Wrapper.forBasicType(targetType);
@@ -812,7 +773,6 @@ public final class SwitchBootstraps {
         return false;
     }
 
-    // TypePairs should be in sync with the corresponding record in Lower
     record TypePairs(Class<?> from, Class<?> to) {
 
         private static final Map<TypePairs, String> typePairToName = initialize();

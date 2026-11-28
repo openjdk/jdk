@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 /*
  * @test
  * @bug 8372635
- * @enablePreview
  * @summary Verify temporary variables created for pattern matching are
  *          marked as synthetic.
  * @compile -g SyntheticVariables.java
@@ -51,8 +50,8 @@ public class SyntheticVariables {
         try (InputStream in = Test.class.getClassLoader().getResource(Test.class.getName().replace('.', '/') + ".class").openStream()) {
             ClassModel model = ClassFile.of().parse(in.readAllBytes());
             Map<String, MethodModel> name2Method = model.methods().stream().collect(Collectors.toMap(m -> m.methodName().stringValue(), m -> m));
-            assertEquals(Set.of("str", "b", "b2", "this", "l", "o"), localVars(name2Method.get("testInMethod")));
-            assertEquals(Set.of("str", "b", "b2", "l", "o"), localVars(name2Method.get("lambda$testInLambda$0")));
+            assertEquals(Set.of("str", "b", "this", "o"), localVars(name2Method.get("testInMethod")));
+            assertEquals(Set.of("str", "b", "o"), localVars(name2Method.get("lambda$testInLambda$0")));
         }
     }
 
@@ -89,14 +88,6 @@ public class SyntheticVariables {
                 case Test(Test(String str)) -> System.err.println(2);
                 default -> System.err.println(2);
             }
-
-            List<Integer> l = List.of(0);
-
-            //synthetic variable for case where the static and dynamic types
-            //don't match for primitive patterns:
-            boolean b2 = l.get(0) instanceof int;
-
-            System.err.println(b2);
         }
 
         private void testInLambda() {
@@ -116,14 +107,6 @@ public class SyntheticVariables {
                     case Test(Test(String str)) -> System.err.println(2);
                     default -> System.err.println(2);
                 }
-
-                List<Integer> l = List.of(0);
-
-                //synthetic variable for case where the static and dynamic types
-                //don't match for primitive patterns:
-                boolean b2 = l.get(0) instanceof int;
-
-                System.err.println(b2);
             };
         }
         private static String val = "v";
