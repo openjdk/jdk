@@ -130,7 +130,7 @@ public class X500Name implements GeneralNameInterface, Principal {
     private String rfc2253Dn; // RFC 2253 DN, or null
     private String canonicalDn; // canonical RFC 2253 DN or null
     private RDN[] names;        // RDNs (never null)
-    private X500Principal x500Principal;
+    private volatile X500Principal x500Principal;
     private byte[] encoded;
 
     // cached immutable list of the RDNs and all the AVAs
@@ -1273,11 +1273,13 @@ public class X500Name implements GeneralNameInterface, Principal {
      * Get an X500Principal backed by this X500Name.
      */
     public X500Principal asX500Principal() {
-        if (x500Principal == null) {
-            x500Principal =
-                SharedSecrets.getJavaxSecurityAccess().asX500Principal(this);
+        X500Principal p = x500Principal;
+        if (p == null) {
+            // benign race: concurrent callers may each create an equal instance
+            p = SharedSecrets.getJavaxSecurityAccess().asX500Principal(this);
+            x500Principal = p;
         }
-        return x500Principal;
+        return p;
     }
 
     /**
