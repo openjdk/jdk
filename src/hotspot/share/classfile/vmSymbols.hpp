@@ -523,6 +523,7 @@ class SerializeClosure;
   template(module_entry_name,                         "module_entry")                             \
   template(resolved_references_name,                  "<resolved_references>")                    \
   template(init_lock_name,                            "<init_lock>")                              \
+  template(classes_name,                              "<classes>")                                \
   template(null_reset_value_name,                     ".null_reset")                              \
   template(acmp_maps_name,                            ".acmp_maps")                               \
   template(empty_marker_name,                         ".empty")                                   \
