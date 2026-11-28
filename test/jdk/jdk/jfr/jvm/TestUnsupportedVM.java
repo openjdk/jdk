@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,6 +77,7 @@ import jdk.test.lib.Utils;
  * @library /test/lib
  * @run main/othervm -Dprepare-recording=true jdk.jfr.jvm.TestUnsupportedVM
  * @run main/othervm -Djfr.unsupported.vm=true jdk.jfr.jvm.TestUnsupportedVM
+ * @run main/othervm -XX:-FlightRecorder jdk.jfr.jvm.TestUnsupportedVM
  */
 public class TestUnsupportedVM {
 
@@ -249,10 +250,11 @@ public class TestUnsupportedVM {
         try {
             r.run();
         } catch (IllegalStateException ise) {
-            if (!ise.getMessage().equals("Flight Recorder is not supported on this VM")) {
-                throw new AssertionError("Expected 'Flight Recorder is not supported on this VM'");
+            if (ise.getMessage().equals("Flight Recorder is not supported on this VM")) {
+                return;
             }
         }
+        throw new AssertionError("Expected 'Flight Recorder is not supported on this VM'");
     }
 
     private static void assertSwallow(Runnable r) throws Exception {
