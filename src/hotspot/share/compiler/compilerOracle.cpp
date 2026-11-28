@@ -597,7 +597,11 @@ static CompileCommandEnum match_option_name(const char* line, int* bytes_read, c
   *bytes_read = 0;
   char option_buf[256];
   int matches = sscanf(line, "%255[a-zA-Z0-9]%n", option_buf, bytes_read);
-  if (matches > 0 && strcasecmp(option_buf, "unknown") != 0) {
+  if (matches != 1) {
+    jio_snprintf(errorbuf, bufsize, "Option name should be alphanumeric");
+    return CompileCommandEnum::Unknown;
+  }
+  if (strcasecmp(option_buf, "unknown") != 0) {
     for (uint i = 0; i < ARRAY_SIZE(option_names); i++) {
       if (strcasecmp(option_buf, option_names[i]) == 0) {
         return static_cast<CompileCommandEnum>(i);
