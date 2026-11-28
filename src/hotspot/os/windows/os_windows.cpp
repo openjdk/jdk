@@ -40,6 +40,7 @@
 #include "nmt/memTracker.hpp"
 #include "oops/oop.inline.hpp"
 #include "os_windows.inline.hpp"
+#include "pdh_interface.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
@@ -864,6 +865,79 @@ static jlong initial_performance_count;
 static jlong performance_frequency;
 static double nanos_per_count; // NANOSECS_PER_SEC / performance_frequency
 
+static PlatformMutex* file_cache_lock = nullptr;
+static HQUERY file_cache_query = nullptr;
+static HCOUNTER file_cache_counter = nullptr;
+
+static void initialize_file_cache_query() {
+  if (PdhDll::PdhAttach()) {
+    HQUERY query = nullptr;
+    HCOUNTER counter = nullptr;
+    if (PdhDll::PdhOpenQuery(nullptr, 0, &query) == ERROR_SUCCESS &&
+        PdhDll::PdhAddEnglishCounterW(query, L"\\Memory\\System Cache Resident Bytes",
+                                     0, &counter) == ERROR_SUCCESS) {
+      file_cache_query = query;
+      file_cache_counter = counter;
+    } else {
+      if (query != nullptr) {
+        PdhDll::PdhCloseQuery(query);
+      }
+    }
+  }
+}
+
+static void close_file_cache_query() {
+  PlatformMutex* const lock = file_cache_lock;
+  if (VMError::is_error_reported() || lock == nullptr || !lock->try_lock()) {
+    return;
+  }
+  if (file_cache_query != nullptr) {
+    PdhDll::PdhCloseQuery(file_cache_query);
+    file_cache_query = nullptr;
+    file_cache_counter = nullptr;
+  }
+  lock->unlock();
+}
+
+static size_t reclaimable_file_cache(uint64_t total_physical) {
+  PlatformMutex* const lock = file_cache_lock;
+
+  if (VMError::is_error_reported() || lock == nullptr) {
+    return 0;
+  }
+
+  lock->lock();
+
+  if (file_cache_query == nullptr) {
+    initialize_file_cache_query();
+  }
+
+  PDH_RAW_COUNTER cache = {};
+  DWORD type = 0;
+  const bool valid = file_cache_query != nullptr &&
+      PdhDll::PdhCollectQueryData(file_cache_query) == ERROR_SUCCESS &&
+      PdhDll::PdhGetRawCounterValue(file_cache_counter, &type, &cache) == ERROR_SUCCESS;
+
+  lock->unlock();
+
+  if (!valid || (cache.CStatus != PDH_CSTATUS_VALID_DATA && cache.CStatus != PDH_CSTATUS_NEW_DATA) ||
+      (type != PERF_COUNTER_LARGE_RAWCOUNT && type != PERF_COUNTER_RAWCOUNT) || cache.FirstValue < 0 ||
+      static_cast<uint64_t>(cache.FirstValue) > total_physical) {
+    return 0;
+  }
+
+  SIZE_T minimum = 0;
+  SIZE_T maximum = 0;
+  DWORD flags = 0;
+  if (!GetSystemFileCacheSize(&minimum, &maximum, &flags)) {
+    return 0;
+  }
+  const size_t resident = static_cast<size_t>(cache.FirstValue);
+  const size_t protected_size = (flags & FILE_CACHE_MIN_HARD_ENABLE) != 0 ? minimum : 0;
+
+  return resident > protected_size ? resident - protected_size : 0;
+}
+
 jlong os::elapsed_counter() {
   LARGE_INTEGER count;
   QueryPerformanceCounter(&count);
@@ -885,16 +959,30 @@ bool os::Machine::available_memory(physical_memory_size_type& value) {
 }
 
 bool os::free_memory(physical_memory_size_type& value) {
-  return win32::available_memory(value);
+  return win32::free_memory(value);
 }
 
 bool os::Machine::free_memory(physical_memory_size_type& value) {
-  return win32::available_memory(value);
+  return win32::free_memory(value);
 }
 
 bool os::win32::available_memory(physical_memory_size_type& value) {
+  if (!free_memory(value)) {
+    return false;
+  }
+
+  const physical_memory_size_type total = physical_memory();
+  const physical_memory_size_type cache = reclaimable_file_cache(total);
+  if (value <= total) {
+    value += MIN2(cache, total - value);
+  }
+  return true;
+}
+
+bool os::win32::free_memory(physical_memory_size_type& value) {
   // Use GlobalMemoryStatusEx() because GlobalMemoryStatus() may return incorrect
   // value if total memory is larger than 4GB
+
   MEMORYSTATUSEX ms;
   ms.dwLength = sizeof(ms);
   BOOL res = GlobalMemoryStatusEx(&ms);
@@ -902,7 +990,7 @@ bool os::win32::available_memory(physical_memory_size_type& value) {
     value = static_cast<physical_memory_size_type>(ms.ullAvailPhys);
     return true;
   } else {
-    assert(false, "GlobalMemoryStatusEx failed in os::win32::available_memory(): %lu", ::GetLastError());
+    assert(false, "GlobalMemoryStatusEx failed in os::win32::free_memory(): %lu", ::GetLastError());
     return false;
   }
 }
@@ -1370,6 +1458,8 @@ bool os::getTimesSecs(double* process_real_time,
 }
 
 void os::shutdown() {
+  close_file_cache_query();
+
   // allow PerfMemory to attempt cleanup of any persistent resources
   perfMemory_exit();
 
@@ -4775,6 +4865,8 @@ void os::init(void) {
   }
 
   _initial_pid = _getpid();
+
+  file_cache_lock = new PlatformMutex();
 
   win32::initialize_windows_version();
   win32::initialize_system_info();
