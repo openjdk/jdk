@@ -853,6 +853,13 @@ void PhaseOutput::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
 
       for (uint i = 1; i < smerge->req(); i++) {
         Node* obj_node = smerge->in(i);
+        ObjectValue* ov = sv_for_node_id(objs, obj_node->_idx);
+        if (ov != nullptr) {
+          // The object was already described, possibly as a root in an older
+          // JVMS (e.g. a local of the caller). Don't reset its root flag.
+          mv->possible_objects()->append(ov);
+          continue;
+        }
         int idx = mv->possible_objects()->length();
         (void)FillLocArray(idx, sfpt, obj_node, mv->possible_objects(), objs);
 
@@ -1196,6 +1203,13 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
 
           for (uint i = 1; i < smerge->req(); i++) {
             Node* obj_node = smerge->in(i);
+            ObjectValue* ov = sv_for_node_id(objs, obj_node->_idx);
+            if (ov != nullptr) {
+              // The object was already described, possibly as a root in an older
+              // JVMS (e.g. a local of the caller). Don't reset its root flag.
+              mv->possible_objects()->append(ov);
+              continue;
+            }
             int idx = mv->possible_objects()->length();
             (void)FillLocArray(idx, sfn, obj_node, mv->possible_objects(), objs);
 
