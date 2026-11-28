@@ -679,17 +679,17 @@ address StubGenerator::generate_intpoly_assign() {
   //   IntegerPolynomial1305:   5 = 4 + 1
   //   IntegerPolynomial25519:  5 = 4 + 1
   //   IntegerPolynomialP384:   7 = 4 + 2 + 1
+  //   IntegerPolynomial448:    8 = 8
   //   IntegerPolynomialP256:  10 = 8 + 2
   //   Curve25519OrderField:   10 = 8 + 2
   //   Curve25519OrderField:   10 = 8 + 2
   //   P256OrderField:         10 = 8 + 2
   //   P384OrderField:         14 = 8 + 4 + 2
-  //   IntegerPolynomial448:   16 = 8 + 8
   //   Curve448OrderField:     16 = 8 + 8
   //   Curve448OrderField:     16 = 8 + 8
   //   IntegerPolynomialP521:  19 = 8 + 8 + 2 + 1
   //   P521OrderField:         19 = 8 + 8 + 2 + 1
-  // Special Cases 5, 10, 14, 16, 19
+  // Special Cases 5, 7, 8, 10, 14, 16, 19
 
   StubId stub_id = StubId::stubgen_intpoly_assign_id;
   int entry_count = StubInfo::entry_count(stub_id);
@@ -716,7 +716,7 @@ address StubGenerator::generate_intpoly_assign() {
   XMMRegister B = xmm1;
   XMMRegister select = xmm2;
 
-  Label L_Length5, L_Length7, L_Length10, L_Length14, L_Length16, L_Length19, L_DefaultLoop, L_Done;
+  Label L_Length5, L_Length7, L_Length8, L_Length10, L_Length14, L_Length16, L_Length19, L_DefaultLoop, L_Done;
 
   __ negq(set);
   if (UseAVX > 2) {
@@ -733,6 +733,8 @@ address StubGenerator::generate_intpoly_assign() {
   __ jcc(Assembler::equal, L_Length5);
   __ cmpl(length, 7);
   __ jcc(Assembler::equal, L_Length7);
+  __ cmpl(length, 8);
+  __ jcc(Assembler::equal, L_Length8);
   __ cmpl(length, 10);
   __ jcc(Assembler::equal, L_Length10);
   __ cmpl(length, 14);
@@ -763,6 +765,10 @@ address StubGenerator::generate_intpoly_assign() {
   assign_scalar(aLimbs, bLimbs, 0, set, tmp, _masm);
   assign_avx(aLimbs, bLimbs, 8, select, A, B, Assembler::AVX_128bit, _masm);
   assign_avx(aLimbs, bLimbs, 24, select, A, B, Assembler::AVX_256bit, _masm);
+  __ jmp(L_Done);
+
+  __ bind(L_Length8); // 8
+  assign_avx(aLimbs, bLimbs, 0, select, A, B, Assembler::AVX_512bit, _masm);
   __ jmp(L_Done);
 
   __ bind(L_Length10); // 2 + 8
