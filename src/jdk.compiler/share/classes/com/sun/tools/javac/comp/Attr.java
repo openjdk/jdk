@@ -4302,6 +4302,7 @@ public class Attr extends JCTree.Visitor {
             tree.type = tree.deconstructor.type = type;
             site = types.capture(tree.type);
             chk.validate(tree.deconstructor, env, true);
+            chk.checkRequiresIdentity(tree, env.info.lint);
         }
 
         List<Type> expectedRecordTypes;
