@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,10 @@
 
 package com.sun.security.sasl;
 
+import java.lang.ref.Cleaner;
+import java.lang.ref.Reference;
 import javax.security.sasl.*;
+import sun.security.util.KeyUtil;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -39,6 +42,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 final class PlainClient implements SaslClient {
     private boolean completed = false;
     private byte[] pw;
+    private Cleaner.Cleanable cleanable;
     private String authorizationID;
     private String authenticationID;
     private static byte SEP = 0; // US-ASCII <NUL>
@@ -64,6 +68,7 @@ final class PlainClient implements SaslClient {
         this.authorizationID = authorizationID;
         this.authenticationID = authenticationID;
         this.pw = pw;  // caller should have already cloned
+        this.cleanable = KeyUtil.getCleanable(this, pw);
     }
 
     /**
@@ -72,14 +77,17 @@ final class PlainClient implements SaslClient {
      *
      * @return  The string "PLAIN".
      */
+    @Override
     public String getMechanismName() {
         return "PLAIN";
     }
 
+    @Override
     public boolean hasInitialResponse() {
         return true;
     }
 
+    @Override
     public void dispose() throws SaslException {
         clearPassword();
     }
@@ -93,35 +101,44 @@ final class PlainClient implements SaslClient {
      * @return A non-null byte array containing the response to be sent to the server.
      * @throws IllegalStateException if authentication already completed
      */
+    @Override
     public byte[] evaluateChallenge(byte[] challengeData) {
         if (completed) {
             throw new IllegalStateException(
-                "PLAIN authentication already completed");
+                    "PLAIN authentication already completed");
         }
-        completed = true;
-        byte[] authz = (authorizationID != null)
-            ? authorizationID.getBytes(UTF_8)
-            : null;
-        byte[] auth = authenticationID.getBytes(UTF_8);
-
-        byte[] answer = new byte[pw.length + auth.length + 2 +
-                (authz == null ? 0 : authz.length)];
-
-        int pos = 0;
-        if (authz != null) {
-            System.arraycopy(authz, 0, answer, 0, authz.length);
-            pos = authz.length;
+        if (pw == null) {
+            throw new IllegalStateException(
+                    "PLAIN authentication already disposed");
         }
-        answer[pos++] = SEP;
-        System.arraycopy(auth, 0, answer, pos, auth.length);
+        try {
+            completed = true;
+            byte[] authz = (authorizationID != null)
+                ? authorizationID.getBytes(UTF_8)
+                : null;
+            byte[] auth = authenticationID.getBytes(UTF_8);
 
-        pos += auth.length;
-        answer[pos++] = SEP;
+            byte[] answer = new byte[pw.length + auth.length + 2 +
+                    (authz == null ? 0 : authz.length)];
 
-        System.arraycopy(pw, 0, answer, pos, pw.length);
+            int pos = 0;
+            if (authz != null) {
+                System.arraycopy(authz, 0, answer, 0, authz.length);
+                pos = authz.length;
+            }
+            answer[pos++] = SEP;
+            System.arraycopy(auth, 0, answer, pos, auth.length);
 
-        clearPassword();
-        return answer;
+            pos += auth.length;
+            answer[pos++] = SEP;
+
+            System.arraycopy(pw, 0, answer, pos, pw.length);
+
+            return answer;
+        } finally {
+            clearPassword();
+            Reference.reachabilityFence(this);
+        }
     }
 
     /**
@@ -130,6 +147,7 @@ final class PlainClient implements SaslClient {
      *
      * @return true if has completed; false otherwise;
      */
+    @Override
     public boolean isComplete() {
         return completed;
     }
@@ -139,6 +157,7 @@ final class PlainClient implements SaslClient {
      *
      * @throws SaslException Not applicable to this mechanism.
      */
+    @Override
     public byte[] unwrap(byte[] incoming, int offset, int len)
         throws SaslException {
         if (completed) {
@@ -154,6 +173,7 @@ final class PlainClient implements SaslClient {
      *
      * @throws SaslException Not applicable to this mechanism.
      */
+    @Override
     public byte[] wrap(byte[] outgoing, int offset, int len) throws SaslException {
         if (completed) {
             throw new SaslException(
@@ -173,6 +193,7 @@ final class PlainClient implements SaslClient {
      * @exception IllegalStateException if this authentication exchange
      *     has not completed
      */
+    @Override
     public Object getNegotiatedProperty(String propName) {
         if (completed) {
             if (propName.equals(Sasl.QOP)) {
@@ -187,16 +208,8 @@ final class PlainClient implements SaslClient {
 
     private void clearPassword() {
         if (pw != null) {
-            // zero out password
-            for (int i = 0; i < pw.length; i++) {
-                pw[i] = (byte)0;
-            }
+            cleanable.clean();
             pw = null;
         }
-    }
-
-    @SuppressWarnings("removal")
-    protected void finalize() {
-        clearPassword();
     }
 }

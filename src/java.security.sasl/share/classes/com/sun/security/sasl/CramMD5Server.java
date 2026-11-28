@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,17 @@
 
 package com.sun.security.sasl;
 
-import sun.security.jca.JCAUtil;
-
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.Map;
 import javax.security.sasl.*;
 import javax.security.auth.callback.*;
+
+import sun.security.jca.JCAUtil;
+import sun.security.util.PBEUtil;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -96,6 +98,7 @@ final class CramMD5Server extends CramMD5Base implements SaslServer {
      *        the client for the first call; null when 2nd call is successful.
      * @throws SaslException If authentication fails.
      */
+    @Override
     public byte[] evaluateResponse(byte[] responseData)
         throws SaslException {
 
@@ -178,21 +181,20 @@ final class CramMD5Server extends CramMD5Base implements SaslServer {
                         "CRAM-MD5: username not found: " + username);
                 }
                 pcb.clearPassword();
-                String pwStr = new String(pwChars);
-                for (int i = 0; i < pwChars.length; i++) {
-                    pwChars[i] = 0;
+                byte[] pw = PBEUtil.encodePassword(pwChars);
+                String digest;
+                try {
+                    // Generate a keyed-MD5 digest from the user's password and
+                    // original challenge.
+                    digest = HMAC_MD5(pw, challengeData);
+
+                    logger.log(Level.FINE,
+                        "CRAMSRV04:Expecting digest: {0}", digest);
+                } finally {
+                    // clear pw when we no longer need it
+                    Arrays.fill(pwChars, '0');
+                    Arrays.fill(pw, (byte)0);
                 }
-                pw = pwStr.getBytes(UTF_8);
-
-                // Generate a keyed-MD5 digest from the user's password and
-                // original challenge.
-                String digest = HMAC_MD5(pw, challengeData);
-
-                logger.log(Level.FINE,
-                    "CRAMSRV04:Expecting digest: {0}", digest);
-
-                // clear pw when we no longer need it
-                clearPassword();
 
                 // Check whether digest is as expected
                 byte[] expectedDigest = digest.getBytes(UTF_8);
@@ -238,6 +240,7 @@ final class CramMD5Server extends CramMD5Base implements SaslServer {
         }
     }
 
+    @Override
     public String getAuthorizationID() {
         if (completed) {
             return authzid;
@@ -245,5 +248,9 @@ final class CramMD5Server extends CramMD5Base implements SaslServer {
             throw new IllegalStateException(
                 "CRAM-MD5 authentication not completed");
         }
+    }
+
+    @Override
+    public void dispose() throws SaslException {
     }
 }
