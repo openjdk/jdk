@@ -1498,7 +1498,9 @@ void PhaseMacroExpand::expand_arraycopy_node(ArrayCopyNode *ac) {
     Node* mem = ac->in(TypeFunc::Memory);
     merge_mem = generate_slow_arraycopy(ac, &ctrl, mem, &io, TypePtr::BOTTOM, src, src_offset, dest, dest_offset, length, false);
 
-    _igvn.replace_node(_callprojs->fallthrough_memproj, merge_mem);
+    if (_callprojs->fallthrough_memproj != nullptr) {
+      _igvn.replace_node(_callprojs->fallthrough_memproj, merge_mem);
+    }
     if (_callprojs->fallthrough_ioproj != nullptr) {
       _igvn.replace_node(_callprojs->fallthrough_ioproj, io);
     }
