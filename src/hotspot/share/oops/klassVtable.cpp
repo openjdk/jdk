@@ -65,7 +65,7 @@ bool klassVtable::is_preinitialized_vtable() {
 // treated as any other public method in C for method over-ride purposes.
 void klassVtable::compute_vtable_size_and_num_mirandas(
     int* vtable_length_ret, int* num_new_mirandas,
-    GrowableArray<Method*>* all_mirandas, const InstanceKlass* super,
+    ProtectedMethods* all_mirandas, const InstanceKlass* super,
     Array<Method*>* methods, AccessFlags class_flags, u2 major_version,
     Handle classloader, Symbol* classname, Array<InstanceKlass*>* local_interfaces) {
   NoSafepointVerifier nsv;
@@ -889,7 +889,7 @@ bool klassVtable::is_miranda(Method* m, Array<Method*>* class_methods,
 // all_mirandas will be the set of all mirandas applicable to this class
 // including all defined in superclasses.
 void klassVtable::add_new_mirandas_to_lists(
-    GrowableArray<Method*>* new_mirandas, GrowableArray<Method*>* all_mirandas,
+    GrowableArray<Method*>* new_mirandas, ProtectedMethods* all_mirandas,
     Array<Method*>* current_interface_methods, Array<Method*>* class_methods,
     Array<Method*>* default_methods, const InstanceKlass* super, bool is_interface) {
 
@@ -924,7 +924,7 @@ void klassVtable::add_new_mirandas_to_lists(
 }
 
 void klassVtable::get_mirandas(GrowableArray<Method*>* new_mirandas,
-                               GrowableArray<Method*>* all_mirandas,
+                               ProtectedMethods* all_mirandas,
                                const InstanceKlass* super,
                                Array<Method*>* class_methods,
                                Array<Method*>* default_methods,

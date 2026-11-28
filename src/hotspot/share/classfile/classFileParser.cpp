@@ -5722,7 +5722,7 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik,
   // that have a default implementation.  This is new with Java 8.
   if (_has_nonstatic_concrete_methods) {
     DefaultMethods::generate_default_methods(ik,
-                                             _all_mirandas,
+                                             _all_mirandas->methods(),
                                              CHECK);
   }
 
@@ -5828,6 +5828,7 @@ ClassFileParser::ClassFileParser(ClassFileStream* stream,
                                  Symbol* name,
                                  ClassLoaderData* loader_data,
                                  const ClassLoadInfo* cl_info,
+                                 ProtectedMethods* mirandas,
                                  Publicity pub_level,
                                  TRAPS) :
   _stream(stream),
@@ -5863,7 +5864,7 @@ ClassFileParser::ClassFileParser(ClassFileStream* stream,
   _value_field_info_array(nullptr),
   _temp_field_info(nullptr),
   _method_ordering(nullptr),
-  _all_mirandas(nullptr),
+  _all_mirandas(mirandas),
   _vtable_size(0),
   _itable_size(0),
   _num_miranda_methods(0),
@@ -6384,8 +6385,6 @@ void ClassFileParser::post_process_parsed_stream(const ClassFileStream* const st
 
   // sort methods
   _method_ordering = sort_methods(_methods);
-
-  _all_mirandas = new GrowableArray<Method*>(20);
 
   Handle loader(THREAD, _loader_data->class_loader());
   klassVtable::compute_vtable_size_and_num_mirandas(&_vtable_size,

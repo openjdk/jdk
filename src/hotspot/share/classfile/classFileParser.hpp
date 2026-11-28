@@ -25,6 +25,7 @@
 #ifndef SHARE_CLASSFILE_CLASSFILEPARSER_HPP
 #define SHARE_CLASSFILE_CLASSFILEPARSER_HPP
 
+#include "classfile/protectedMethods.hpp"
 #include "memory/referenceType.hpp"
 #include "oops/annotations.hpp"
 #include "oops/constantPool.hpp"
@@ -181,7 +182,7 @@ class ClassFileParser {
   Array<ValueFieldInfo>* _value_field_info_array;
   GrowableArray<FieldInfo>* _temp_field_info;
   const intArray* _method_ordering;
-  GrowableArray<Method*>* _all_mirandas;
+  ProtectedMethods* _all_mirandas;
 
   enum { fixed_buffer_size = 128 };
   u_char _linenumbertable_buffer[fixed_buffer_size];
@@ -551,6 +552,7 @@ class ClassFileParser {
                   Symbol* name,
                   ClassLoaderData* loader_data,
                   const ClassLoadInfo* cl_info,
+                  ProtectedMethods* mirandas,
                   Publicity pub_level,
                   TRAPS);
 

@@ -27,6 +27,7 @@
 #include "classfile/classLoadInfo.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/javaStackTraceClasses.hpp"
+#include "classfile/protectedMethods.hpp"
 #include "classfile/symbolTable.hpp"
 #include "jfr/instrumentation/jfrClassTransformer.hpp"
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceId.inline.hpp"
@@ -109,10 +110,12 @@ InstanceKlass* JfrClassTransformer::create_new_instance_klass(InstanceKlass* ik,
   Handle pd(THREAD, ik->protection_domain());
   Symbol* const class_name = ik->name();
   ClassLoadInfo cl_info(pd);
+  ProtectedMethods mirandas(THREAD);
   ClassFileParser new_parser(stream,
                              class_name,
                              cld,
                              &cl_info,
+                             &mirandas,
                              ClassFileParser::INTERNAL, // internal visibility
                              THREAD);
   if (HAS_PENDING_EXCEPTION) {
@@ -188,4 +191,3 @@ void JfrClassTransformer::rewrite_klass_pointer(InstanceKlass*& ik, InstanceKlas
   // Finally rewrite the original pointer to the newly created InstanceKlass.
   ik = new_ik;
 }
-
