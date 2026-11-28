@@ -68,7 +68,12 @@ public class TestVectorReinterpret {
                                         VectorSpecies.of(byte.class, t))))
         );
 
-        VectorReshapeHelper.runMainHelper(
+        // Every shape and type combination is handed to the framework. Whether a given
+        // combination is expected to be intrinsified here is expressed by the @IR
+        // preconditions in TestVectorRebracket rather than by filtering, so that a test
+        // method which verifies nothing on this machine still shows up in the output,
+        // together with the reason.
+        VectorReshapeHelper.runMainHelperUnfiltered(
                 TestVectorRebracket.class,
                 SHAPE_LIST.stream()
                         .flatMap(shape -> ETYPE_LIST.stream()
@@ -76,7 +81,6 @@ public class TestVectorReinterpret {
                                         .filter(ftype -> ftype != etype)
                                         .map(ftype -> VectorSpeciesPair.makePair(VectorSpecies.of(etype, shape),
                                                 VectorSpecies.of(ftype, shape)))))
-                        .filter(p -> p.isp().length() > 1 && p.osp().length() > 1)
         );
     }
 }

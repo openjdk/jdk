@@ -71,15 +71,32 @@ public class VectorReshapeHelper {
     public static final VectorSpecies<Float>   FSPEC512 =  FloatVector.SPECIES_512;
     public static final VectorSpecies<Double>  DSPEC512 = DoubleVector.SPECIES_512;
 
+    /**
+     * Prefer runMainHelperUnfiltered together with IR preconditions: the
+     * filtering below removes test methods from the run silently. It is hard to understand
+     * the reason for failure.
+     */
     public static void runMainHelper(Class<?> testClass, Stream<VectorSpeciesPair> testMethods, String... flags) {
+        runMainHelperUnfiltered(testClass,
+                testMethods
+                        .filter(p -> p.isp().length() <= VectorSpecies.ofLargestShape(p.isp().elementType()).length())
+                        .filter(p -> p.osp().length() <= VectorSpecies.ofLargestShape(p.osp().elementType()).length()),
+                flags);
+    }
+
+    /**
+     * Runs testClass for exactly the given pairs. Every test method is executed, and it
+     * is up to its IR preconditions to decide whether its rules are verified on this
+     * machine.
+     */
+    public static void runMainHelperUnfiltered(Class<?> testClass, Stream<VectorSpeciesPair> testMethods,
+                                               String... flags) {
         var test = new TestFramework(testClass);
         test.setDefaultWarmup(1);
         test.addHelperClasses(VectorReshapeHelper.class);
         test.addFlags("--add-modules=jdk.incubator.vector", "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED");
         test.addFlags(flags);
         String testMethodNames = testMethods
-                .filter(p -> p.isp().length() <= VectorSpecies.ofLargestShape(p.isp().elementType()).length())
-                .filter(p -> p.osp().length() <= VectorSpecies.ofLargestShape(p.osp().elementType()).length())
                 .map(VectorSpeciesPair::format)
                 .collect(Collectors.joining(","));
         test.addFlags("-DTest=" + testMethodNames);
