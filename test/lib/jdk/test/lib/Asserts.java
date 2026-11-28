@@ -164,48 +164,48 @@ public class Asserts {
     /**
      * Shorthand for {@link #assertEquals(Object, Object)}.
      *
-     * @param lhs The left hand side of the comparison.
-     * @param rhs The right hand side of the comparison.
+     * @param expected The expected value.
+     * @param actual The actual value.
      * @see #assertEquals(Object, Object)
      */
-    public static void assertEQ(Object lhs, Object rhs) {
-        assertEquals(lhs, rhs);
+    public static void assertEQ(Object expected, Object actual) {
+        assertEquals(expected, actual);
     }
 
     /**
      * Shorthand for {@link #assertEquals(Object, Object, String)}.
      *
-     * @param lhs The left hand side of the comparison.
-     * @param rhs The right hand side of the comparison.
+     * @param expected The expected value.
+     * @param actual The actual value.
      * @param msg A description of the assumption; {@code null} for a default message.
      * @see #assertEquals(Object, Object, String)
      */
-    public static void assertEQ(Object lhs, Object rhs, String msg) {
-        assertEquals(lhs, rhs, msg);
+    public static void assertEQ(Object expected, Object actual, String msg) {
+        assertEquals(expected, actual, msg);
     }
 
     /**
      * Calls {@link #assertEquals(java.lang.Object, java.lang.Object, java.lang.String)} with a default message.
      *
-     * @param lhs The left hand side of the comparison.
-     * @param rhs The right hand side of the comparison.
+     * @param expected The expected value.
+     * @param actual The actual value.
      * @see #assertEquals(Object, Object, String)
      */
-    public static void assertEquals(Object lhs, Object rhs) {
-        assertEquals(lhs, rhs, null);
+    public static void assertEquals(Object expected, Object actual) {
+        assertEquals(expected, actual, null);
     }
 
     /**
-     * Asserts that {@code lhs} is equal to {@code rhs}.
+     * Asserts that {@code expected} is equal to {@code actual}.
      *
-     * @param lhs The left hand side of the comparison.
-     * @param rhs The right hand side of the comparison.
+     * @param expected The expected value.
+     * @param actual The actual value.
      * @param msg A description of the assumption; {@code null} for a default message.
      * @throws RuntimeException if the assertion is not true.
      */
-    public static void assertEquals(Object lhs, Object rhs, String msg) {
-        if ((lhs != rhs) && ((lhs == null) || !(lhs.equals(rhs)))) {
-            fail((msg == null ? "assertEquals" : msg) + " expected: " + lhs + " but was: " + rhs);
+    public static void assertEquals(Object expected, Object actual, String msg) {
+        if ((expected != actual) && ((expected == null) || !(expected.equals(actual)))) {
+            fail((msg == null ? "assertEquals" : msg) + " expected: " + expected + " but was: " + actual);
         }
     }
 
