@@ -3279,39 +3279,72 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-  void cipherBlockChaining_decryptAESCrypt(int round, Register from, Register to, Register key,
-                                           Register rvec, Register input_len) {
-    const Register len = x29;
+  void aes_cbc_decrypt_loop(Register from, Register to, Register len, Register vl,
+                            Register batch_bytes, Register last_block, VectorRegister rk[],
+                            int first_key, Label& L_done) {
+    Label L_loop, L_decrypt;
+    __ bind(L_loop);
+    __ bgeu(len, batch_bytes, L_decrypt);
+    // Keep the tail AVL below VLMAX so VL is a whole number of AES blocks.
+    __ srli(vl, len, 2);
+    __ vsetvli(x0, vl, Assembler::e32, Assembler::m1);
+    __ mv(batch_bytes, len);
+    __ subi(last_block, vl, 4);
 
-    VectorRegister working_vregs[] = {
-      v1, v2, v3, v4, v5, v6, v7, v8,
-      v9, v10, v11, v12, v13, v14, v15
+    __ bind(L_decrypt);
+    __ vle32_v(v17, from);
+    // Form the feedback mask and save the last ciphertext before an in-place store.
+    __ vslideup_vi(v16, v17, 4);
+    __ vslidedown_vx(v18, v17, last_block);
+    aes_decrypt_bulk(v17, first_key, rk);
+    __ vxor_vv(v17, v17, v16);
+    __ vse32_v(v17, to);
+    __ vmv_v_v(v16, v18);
+    __ add(from, from, batch_bytes);
+    __ add(to, to, batch_bytes);
+    __ sub(len, len, batch_bytes);
+    __ bnez(len, L_loop);
+    __ j(L_done);
+  }
+
+  void cipherBlockChaining_decryptAESCrypt(Register from, Register to, Register key,
+                                           Register rvec, Register input_len) {
+    const Register keylen      = x28;
+    const Register len         = x29;
+    const Register vl          = x30;
+    const Register batch_bytes = t0;
+    const Register last_block  = t1;
+
+    VectorRegister rk[] = {
+      v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15
     };
 
-    const unsigned int BLOCK_SIZE = 16;
-
+    Label L_aes128, L_aes192, L_done, L_exit;
+    __ beqz(input_len, L_exit);
     __ mv(len, input_len);
-    // load init rvec
-    __ vsetivli(x0, 4, Assembler::e32, Assembler::m1);
+    __ lwu(keylen, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
+    aes_load_round_keys(key, keylen, rk);
     __ vle32_v(v16, rvec);
 
-    aes_load_keys(key, working_vregs, round);
-    Label L_dec_loop;
-    // Decrypt from source by block size
-    __ bind(L_dec_loop);
-      __ vle32_v(v17, from);
-      __ addi(from, from, BLOCK_SIZE);
-      __ vmv_v_v(v18, v17);
-      aes_decrypt(v17, working_vregs, round);
-      __ vxor_vv(v17, v17, v16);
-      __ vse32_v(v17, to);
-      __ vmv_v_v(v16, v18);
-      __ addi(to, to, BLOCK_SIZE);
-      __ subi(len, len, BLOCK_SIZE);
-      __ bnez(len, L_dec_loop);
+    __ vsetvli(vl, x0, Assembler::e32, Assembler::m1);
+    __ slli(batch_bytes, vl, 2);
+    __ subi(last_block, vl, 4);
 
-    // save current rvec and return
+    __ mv(t2, AES_192_KEYLEN_INTS);
+    __ bltu(keylen, t2, L_aes128);
+    __ beq(keylen, t2, L_aes192);
+    aes_cbc_decrypt_loop(from, to, len, vl, batch_bytes, last_block, rk, 0, L_done);
+
+    __ bind(L_aes192);
+    aes_cbc_decrypt_loop(from, to, len, vl, batch_bytes, last_block, rk, 2, L_done);
+
+    __ bind(L_aes128);
+    aes_cbc_decrypt_loop(from, to, len, vl, batch_bytes, last_block, rk, 4, L_done);
+
+    __ bind(L_done);
+    __ vsetivli(x0, 4, Assembler::e32, Assembler::m1);
     __ vse32_v(v16, rvec);
+    __ bind(L_exit);
     __ mv(x10, input_len);
     __ leave();
     __ ret();
@@ -3347,29 +3380,10 @@ class StubGenerator: public StubCodeGenerator {
     const Register rvec        = c_rarg3;
     const Register input_len   = c_rarg4;
 
-    const Register keylen      = x28;
-
     start = __ pc();
     __ enter();
 
-    Label L_aes128, L_aes192, L_aes128_loop, L_aes192_loop, L_aes256_loop;
-    // Compute #rounds for AES based on the length of the key array
-    __ lwu(keylen, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
-    __ mv(t0, 52);
-    __ bltu(keylen, t0, L_aes128);
-    __ beq(keylen, t0, L_aes192);
-    // Else we fallthrough to the biggest case (256-bit key size)
-
-    // Note: the following function performs key += 15*16
-    cipherBlockChaining_decryptAESCrypt(15, from, to, key, rvec, input_len);
-
-    // Note: the following function performs key += 11*16
-    __ bind(L_aes128);
-    cipherBlockChaining_decryptAESCrypt(11, from, to, key, rvec, input_len);
-
-    // Note: the following function performs key += 13*16
-    __ bind(L_aes192);
-    cipherBlockChaining_decryptAESCrypt(13, from, to, key, rvec, input_len);
+    cipherBlockChaining_decryptAESCrypt(from, to, key, rvec, input_len);
 
     // record the stub entry and end
     store_archive_data(stub_id, start, __ pc());
