@@ -1022,6 +1022,9 @@ public:
 
   static void add_delayed_compiled_method_load_event(nmethod* nm) NOT_CDS_RETURN;
 
+#ifdef ASSERT
+  void verify_post_call_nops();
+#endif
  public:
   // ScopeDesc retrieval operation
   PcDesc* pc_desc_at(address pc)   { return find_pc_desc(pc, false); }

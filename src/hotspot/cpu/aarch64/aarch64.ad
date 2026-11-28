@@ -2856,6 +2856,66 @@ typedef void (MacroAssembler::* mem_vector_insn)(FloatRegister Rt,
 
 %}
 
+source %{
+static void emit_post_call_nop_stub(C2_MacroAssembler& masm,
+                                    C2GeneralStub<int32_t, int32_t, int32_t>& stub_desc) {
+  int32_t nop_offset = stub_desc.data<0>();
+  int32_t oopmap_slot = stub_desc.data<1>();
+  int32_t cb_to_nop_offset = stub_desc.data<2>();
+
+  NativePostCallNop* nop = nativePostCallNop_at(masm.begin() + nop_offset);
+
+  address stub_slot = masm.pc();
+
+  uint32_t stub_slot_value;
+  if (nop->patch_stub(&stub_slot_value, oopmap_slot, cb_to_nop_offset, stub_slot)) {
+    masm.emit_int32(stub_slot_value);
+
+#ifdef ASSERT
+    nop->verify(cb_to_nop_offset, oopmap_slot);
+#endif
+  }
+}
+
+static void emit_post_call_nop(C2_MacroAssembler* masm, const MachCallNode* call_node) {
+  Compile* C = Compile::current();
+  const OopMap* oop_map = call_node->oop_map();
+
+  if (call_node->is_MachCallLeaf()) {
+    assert(oop_map == nullptr, "unexpected oopmap");
+    return;
+  }
+
+  if (C->stub_function() != nullptr) {
+    // Prepare the sequence and register a relocation.
+    __ post_call_nop();
+    return;
+  }
+
+  if (!Continuations::enabled()) {
+    return;
+  }
+
+  bool is_in_scratch_emit_size = C->output()->in_scratch_emit_size();
+
+  int32_t oopmap_slot = (oop_map != nullptr) ? oop_map->index() : -1;
+  assert(oopmap_slot != -1 || is_in_scratch_emit_size, "missing oopmap");
+
+  // No relocation - emit final values during compilation.
+  int32_t nop_offset = __ offset();
+
+  int32_t cb_offset = nop_offset + CodeBlob::align_code_offset(sizeof(nmethod));
+  cb_offset += __ code()->total_offset_of(__ code()->insts());
+
+  if (!__ post_call_nop(oopmap_slot, cb_offset)) {
+    if (is_in_scratch_emit_size) return;
+
+    // The metadata did not fit into the slot. Try storing at a 32-bit metadata stub.
+    C2CodeStub::make<int32_t, int32_t, int32_t>(
+      nop_offset, oopmap_slot, cb_offset, sizeof(uint32_t), emit_post_call_nop_stub);
+  }
+}
+%}
 
 
 //----------ENCODING BLOCK-----------------------------------------------------
@@ -3674,7 +3734,7 @@ encode %{
     if (is_trap) {
       __ emit_int32(trap_request);
     } else {
-      __ post_call_nop();
+      emit_post_call_nop(masm, this);
     }
 
     // Only non uncommon_trap calls need to reinitialize ptrue.
@@ -3690,7 +3750,9 @@ encode %{
       ciEnv::current()->record_failure("CodeCache is full");
       return;
     }
-    __ post_call_nop();
+
+    emit_post_call_nop(masm, this);
+
     if (Compile::current()->max_vector_size() > 0) {
       __ reinitialize_ptrue();
     }
@@ -3743,7 +3805,7 @@ encode %{
         ciEnv::current()->record_failure("CodeCache is full");
         return;
       }
-      __ post_call_nop();
+      emit_post_call_nop(masm, this);
     } else {
       Label retaddr;
       // Make the anchor frame walkable
@@ -3752,7 +3814,7 @@ encode %{
       __ lea(rscratch1, RuntimeAddress(entry));
       __ blr(rscratch1);
       __ bind(retaddr);
-      __ post_call_nop();
+      emit_post_call_nop(masm, this);
     }
     if (Compile::current()->max_vector_size() > 0) {
       __ reinitialize_ptrue();
