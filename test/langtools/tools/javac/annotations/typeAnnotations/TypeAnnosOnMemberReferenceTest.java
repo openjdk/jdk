@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8369489
+ * @bug 8369489 8392772
  * @summary Verify annotations on member references work reasonably.
  * @library /tools/lib /tools/javac/lib
  * @modules
@@ -43,6 +43,7 @@ import com.sun.source.util.Trees;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -55,7 +56,9 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.util.ElementFilter;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 
 import toolbox.JavacTask;
 import toolbox.Task;
@@ -63,10 +66,10 @@ import toolbox.ToolBox;
 
 public class TypeAnnosOnMemberReferenceTest {
     private ToolBox tb = new ToolBox();
+    private Path base;
 
-    @Test
+    @Test //JDK-8369489
     public void testAnnoOnMemberRef() throws Exception {
-        Path base = Paths.get(".");
         Path src = base.resolve("src");
         Path classes = base.resolve("classes");
 
@@ -102,6 +105,45 @@ public class TypeAnnosOnMemberReferenceTest {
                 .run(Task.Expect.SUCCESS);
     }
 
+    @Test //JDK-8392772
+    public void testBrokenMethodReference() throws Exception {
+        Path src = base.resolve("src");
+        Path classes = base.resolve("classes");
+
+        Files.createDirectories(classes);
+
+        tb.writeJavaFiles(src,
+                """
+                package p;
+
+                import java.util.function.Supplier;
+
+                class Test {
+                    Supplier<String> f1 = (Supplier<String> & Object) this::get;
+                    Supplier<String> f2 = (Supplier<String> & Object) new Test()::get;
+                    private String get() { return ""; }
+                }
+                """);
+
+        List<String> expected = List.of(
+            "Test.java:6:47: compiler.err.intf.expected.here",
+            "Test.java:7:47: compiler.err.intf.expected.here",
+            "2 errors"
+        );
+
+        List<String> log =
+            new JavacTask(tb)
+                .outdir(classes)
+                .options("-XDrawDiagnostics")
+                .files(tb.findJavaFiles(src))
+                .outdir(classes)
+                .run(Task.Expect.FAIL)
+                .writeAll()
+                .getOutputLines(Task.OutputKind.DIRECT);
+
+        tb.checkEqual(expected, log);
+    }
+
     public Path getClassDir() {
         String classes = ToolBox.testClasses;
         if (classes == null) {
@@ -109,6 +151,11 @@ public class TypeAnnosOnMemberReferenceTest {
         } else {
             return Paths.get(classes);
         }
+    }
+
+    @BeforeEach
+    void setBase(TestInfo testInfo) {
+        base = Path.of(testInfo.getTestMethod().orElseThrow().getName());
     }
 
     @SupportedAnnotationTypes("*")
@@ -125,36 +172,36 @@ public class TypeAnnosOnMemberReferenceTest {
             Trees trees = Trees.instance(processingEnv);
             TreePath iPath = trees.getPath(iElement);
             StringBuilder text = new StringBuilder();
-            new TreeScanner<>() {
-                int ident = 0;
-                @Override
-                public Object scan(Tree tree, Object p) {
-                    if (tree != null) {
-                        String indent =
-                                Stream.generate(() -> " ")
-                                      .limit(ident)
-                                      .collect(Collectors.joining());
+                new TreeScanner<>() {
+                    int ident = 0;
+                    @Override
+                    public Object scan(Tree tree, Object p) {
+                        if (tree != null) {
+                            String indent =
+                                    Stream.generate(() -> " ")
+                                          .limit(ident)
+                                          .collect(Collectors.joining());
 
-                        text.append("\n")
-                            .append(indent)
-                            .append("(")
-                            .append(tree.getKind());
-                        ident += 4;
-                        super.scan(tree, p);
-                        ident -= 4;
-                        text.append("\n")
-                            .append(indent)
-                            .append(")");
+                            text.append("\n")
+                                .append(indent)
+                                .append("(")
+                                .append(tree.getKind());
+                            ident += 4;
+                            super.scan(tree, p);
+                            ident -= 4;
+                            text.append("\n")
+                                .append(indent)
+                                .append(")");
+                        }
+                        return null;
                     }
-                    return null;
-                }
 
-                @Override
-                public Object visitIdentifier(IdentifierTree node, Object p) {
-                    text.append(" ").append(node.getName());
-                    return super.visitIdentifier(node, p);
-                }
-            }.scan(((VariableTree) iPath.getLeaf()).getInitializer(), null);
+                    @Override
+                    public Object visitIdentifier(IdentifierTree node, Object p) {
+                        text.append(" ").append(node.getName());
+                        return super.visitIdentifier(node, p);
+                    }
+                }.scan(((VariableTree) iPath.getLeaf()).getInitializer(), null);
             String expected =
                     """
 
