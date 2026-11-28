@@ -344,7 +344,7 @@ void VTransformApplyResult::trace(VTransformNode* vtnode) const {
 #endif
 
 void VTransform::apply_speculative_alignment_runtime_checks() {
-  if (VLoop::vectors_should_be_aligned()) {
+  if (VLoop::vectors_must_be_aligned()) {
 #ifdef ASSERT
     if (_trace._align_vector || _trace._speculative_runtime_checks) {
       tty->print_cr("\nVTransform::apply_speculative_alignment_runtime_checks: native memory alignment");
