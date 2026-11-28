@@ -133,6 +133,7 @@ public class DesktopProperty implements UIDefaults.ActiveValue {
      * UIManager.LazyValue method, returns the value from the desktop
      * or the fallback value if the desktop value is null.
      */
+    @Override
     public Object createValue(UIDefaults table) {
         if (value == null) {
             value = configureValue(getValueFromDesktop());
@@ -194,6 +195,7 @@ public class DesktopProperty implements UIDefaults.ActiveValue {
         if (!updatePending) {
             updatePending = true;
             Runnable uiUpdater = new Runnable() {
+                @Override
                 public void run() {
                     try {
                         updateAllUIs();
@@ -251,6 +253,7 @@ public class DesktopProperty implements UIDefaults.ActiveValue {
             this.laf = laf;
         }
 
+        @Override
         public void propertyChange(PropertyChangeEvent pce) {
             DesktopProperty property = get();
 

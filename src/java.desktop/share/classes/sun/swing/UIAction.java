@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,6 +68,7 @@ public abstract class UIAction implements Action {
         return name;
     }
 
+    @Override
     public Object getValue(String key) {
         if (key == NAME) {
             return name;
@@ -76,16 +77,19 @@ public abstract class UIAction implements Action {
     }
 
     // UIAction is not mutable, this does nothing.
+    @Override
     public void putValue(String key, Object value) {
     }
 
     // UIAction is not mutable, this does nothing.
+    @Override
     public void setEnabled(boolean b) {
     }
 
     /**
      * Cover method for <code>isEnabled(null)</code>.
      */
+    @Override
     public final boolean isEnabled() {
         return accept(null);
     }
@@ -102,10 +106,12 @@ public abstract class UIAction implements Action {
     }
 
     // UIAction is not mutable, this does nothing.
+    @Override
     public void addPropertyChangeListener(PropertyChangeListener listener) {
     }
 
     // UIAction is not mutable, this does nothing.
+    @Override
     public void removePropertyChangeListener(PropertyChangeListener listener) {
     }
 }

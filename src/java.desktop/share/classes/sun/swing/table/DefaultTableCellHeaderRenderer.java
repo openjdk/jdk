@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,11 +50,13 @@ public class DefaultTableCellHeaderRenderer extends DefaultTableCellRenderer
         setHorizontalAlignment(JLabel.CENTER);
     }
 
+    @Override
     public void setHorizontalTextPosition(int textPosition) {
         horizontalTextPositionSet = true;
         super.setHorizontalTextPosition(textPosition);
     }
 
+    @Override
     public Component getTableCellRendererComponent(JTable table, Object value,
             boolean isSelected, boolean hasFocus, int row, int column) {
         Icon sortIcon = null;
@@ -192,8 +194,11 @@ public class DefaultTableCellHeaderRenderer extends DefaultTableCellRenderer
     private static class EmptyIcon implements Icon, Serializable {
         int width = 0;
         int height = 0;
+        @Override
         public void paintIcon(Component c, Graphics g, int x, int y) {}
+        @Override
         public int getIconWidth() { return width; }
+        @Override
         public int getIconHeight() { return height; }
     }
 }
