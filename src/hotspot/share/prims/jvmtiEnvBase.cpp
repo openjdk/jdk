@@ -1165,49 +1165,16 @@ JvmtiEnvBase::get_stack_trace(javaVFrame *jvf,
   HandleMark hm(current_thread);
   int count = 0;
 
-  if (start_depth != 0) {
-    if (start_depth > 0) {
-      for (int j = 0; j < start_depth && jvf != nullptr; j++) {
-        jvf = jvf->java_sender();
-      }
-      if (jvf == nullptr) {
-        // start_depth is deeper than the stack depth.
-        return JVMTI_ERROR_ILLEGAL_ARGUMENT;
-      }
-    } else { // start_depth < 0
-      // We are referencing the starting depth based on the oldest
-      // part of the stack.
-      // Optimize to limit the number of times that java_sender() is called.
-      javaVFrame *jvf_cursor = jvf;
-      javaVFrame *jvf_prev = nullptr;
-      javaVFrame *jvf_prev_prev = nullptr;
-      int j = 0;
-      while (jvf_cursor != nullptr) {
-        jvf_prev_prev = jvf_prev;
-        jvf_prev = jvf_cursor;
-        for (j = 0; j > start_depth && jvf_cursor != nullptr; j--) {
-          jvf_cursor = jvf_cursor->java_sender();
-        }
-      }
-      if (j == start_depth) {
-        // Previous pointer is exactly where we want to start.
-        jvf = jvf_prev;
-      } else {
-        // We need to back up further to get to the right place.
-        if (jvf_prev_prev == nullptr) {
-          // The -start_depth is greater than the stack depth.
-          return JVMTI_ERROR_ILLEGAL_ARGUMENT;
-        }
-        // j is now the number of frames on the stack starting with
-        // jvf_prev, we start from jvf_prev_prev and move older on
-        // the stack that many, and the result is -start_depth frames
-        // remaining.
-        jvf = jvf_prev_prev;
-        for (; j < 0; j++) {
-          jvf = jvf->java_sender();
-        }
-      }
-    }
+  // The callers turn a negative start_depth into a positive one with a separate walk that
+  // counts the frames. This walk cannot do it: all its javaVFrames share one stack chunk
+  // handle, which is cleared when a walk reaches the end of a continuation.
+  assert(start_depth >= 0, "negative start_depth must be converted by the caller");
+  for (int j = 0; j < start_depth && jvf != nullptr; j++) {
+    jvf = jvf->java_sender();
+  }
+  if (jvf == nullptr && start_depth > 0) {
+    // start_depth is deeper than the stack depth.
+    return JVMTI_ERROR_ILLEGAL_ARGUMENT;
   }
   for (; count < max_count && jvf != nullptr; count++) {
     frame_buffer[count].method = jvf->method()->jmethod_id();
@@ -1216,6 +1183,16 @@ JvmtiEnvBase::get_stack_trace(javaVFrame *jvf,
   }
   *count_ptr = count;
   return JVMTI_ERROR_NONE;
+}
+
+// Returns the start depth from the top of the stack that is equivalent to a negative
+// start_depth, which counts from the bottom, or a negative value if -start_depth is greater
+// than the stack depth. The frames are counted with a walk of their own.
+template <typename T>
+static jint start_depth_from_top(JvmtiEnvBase* env, T thread, jint start_depth) {
+  jint frame_count = 0;
+  env->get_frame_count(thread, &frame_count);
+  return frame_count + start_depth;
 }
 
 jvmtiError
@@ -1230,6 +1207,12 @@ JvmtiEnvBase::get_stack_trace(JavaThread *java_thread,
   jvmtiError err = JVMTI_ERROR_NONE;
 
   if (java_thread->has_last_Java_frame()) {
+    if (start_depth < 0) {
+      start_depth = start_depth_from_top(this, java_thread, start_depth);
+      if (start_depth < 0) {
+        return JVMTI_ERROR_ILLEGAL_ARGUMENT; // -start_depth is greater than the stack depth
+      }
+    }
     RegisterMap reg_map(java_thread,
                         RegisterMap::UpdateMap::include,
                         RegisterMap::ProcessFrames::skip,
@@ -2745,9 +2728,17 @@ GetStackTraceClosure::do_vthread(Handle target_h) {
   Thread* current = Thread::current();
   ResourceMark rm(current);
 
+  jint start_depth = _start_depth;
+  if (start_depth < 0) {
+    start_depth = start_depth_from_top((JvmtiEnvBase *)_env, target_h(), start_depth);
+    if (start_depth < 0) {
+      _result = JVMTI_ERROR_ILLEGAL_ARGUMENT; // -start_depth is greater than the stack depth
+      return;
+    }
+  }
   javaVFrame *jvf = JvmtiEnvBase::get_vthread_jvf(target_h());
   _result = ((JvmtiEnvBase *)_env)->get_stack_trace(jvf,
-                                                    _start_depth, _max_count,
+                                                    start_depth, _max_count,
                                                     _frame_buffer, _count_ptr);
 }
 
