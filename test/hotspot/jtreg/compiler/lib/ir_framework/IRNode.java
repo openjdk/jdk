@@ -3142,6 +3142,31 @@ public class IRNode {
         machOnlyNameRegex(X86_VMULDQ_REG, "vmuldq_reg");
     }
 
+    public static final String X86_VCOUNT_TRAILING_ZEROS_POPCNT_EVEX = PREFIX + "X86_VCOUNT_TRAILING_ZEROS_POPCNT_EVEX" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_VCOUNT_TRAILING_ZEROS_POPCNT_EVEX, "vcount_trailing_zeros_popcnt_evex");
+    }
+
+    public static final String X86_VCOUNT_TRAILING_ZEROS_REG_EVEX = PREFIX + "X86_VCOUNT_TRAILING_ZEROS_REG_EVEX" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_VCOUNT_TRAILING_ZEROS_REG_EVEX, "vcount_trailing_zeros_reg_evex");
+    }
+
+    public static final String X86_VCOUNT_TRAILING_ZEROS_SHORT_REG_EVEX = PREFIX + "X86_VCOUNT_TRAILING_ZEROS_SHORT_REG_EVEX" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_VCOUNT_TRAILING_ZEROS_SHORT_REG_EVEX, "vcount_trailing_zeros_short_reg_evex");
+    }
+
+    public static final String X86_VCOUNT_TRAILING_ZEROS_BYTE_REG_EVEX = PREFIX + "X86_VCOUNT_TRAILING_ZEROS_BYTE_REG_EVEX" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_VCOUNT_TRAILING_ZEROS_BYTE_REG_EVEX, "vcount_trailing_zeros_byte_reg_evex");
+    }
+
+    public static final String X86_VCOUNT_TRAILING_ZEROS_REG_AVX = PREFIX + "X86_VCOUNT_TRAILING_ZEROS_REG_AVX" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_VCOUNT_TRAILING_ZEROS_REG_AVX, "vcount_trailing_zeros_reg_avx");
+    }
+
     public static final String X86_VSHIFT_B_GFNI = PREFIX + "X86_VSHIFT_B_GFNI" + POSTFIX;
     static {
         machOnlyNameRegex(X86_VSHIFT_B_GFNI, "vshiftB_gfni");
