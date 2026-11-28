@@ -666,6 +666,7 @@ public:
                                                Register r_array_base,
                                                Register r_array_index,
                                                Register r_bitmap,
+                                               Register r_sub_klass,
                                                Register temp1,
                                                Register temp2,
                                                Label* L_success,

@@ -4642,6 +4642,7 @@ void MacroAssembler::lookup_secondary_supers_table_var(Register r_sub_klass,
                                           r_array_base,
                                           r_array_index,
                                           r_bitmap,
+                                          r_sub_klass,
                                           /*temp1*/result,
                                           /*temp2*/slot,
                                           &L_success,
@@ -4692,6 +4693,7 @@ void MacroAssembler::lookup_secondary_supers_table_slow_path(Register r_super_kl
                                                              Register r_array_base,
                                                              Register r_array_index,
                                                              Register r_bitmap,
+                                                             Register r_sub_klass,
                                                              Register temp1,
                                                              Register temp2,
                                                              Label* L_success,
@@ -4700,7 +4702,6 @@ void MacroAssembler::lookup_secondary_supers_table_slow_path(Register r_super_kl
 
   const Register
     r_array_length = temp1,
-    r_sub_klass    = noreg,
     result         = noreg;
 
   Label L_fallthrough;
@@ -4758,14 +4759,36 @@ void MacroAssembler::lookup_secondary_supers_table_slow_path(Register r_super_kl
   }
 
   { // Degenerate case: more than 64 secondary supers.
-    // FIXME: We could do something smarter here, maybe a vectorized
-    // comparison or a binary search, but is that worth any added
-    // complexity?
     bind(L_huge);
-    xorl(r_array_index, r_array_index); // = 0
-    repne_scanq(r_array_base, r_super_klass, r_array_index, r_array_length,
-                L_success,
-                (&L_fallthrough != L_failure ? L_failure : nullptr));
+
+    assert_different_registers(temp2, r_array_index, r_array_length, r_super_klass, r_sub_klass, r_bitmap);
+
+    // Calculate an initial probe in the hash table.
+    movzwl(temp2, Address(r_super_klass, Klass::full_hash_offset()));
+    movl(r_array_index, r_array_length);
+    imull(r_array_index, temp2);
+    shrl(r_array_index, 16);
+
+    Label no_wrap;
+
+    // Check for array wraparound.
+    movzwl(temp2, Address(r_sub_klass, Klass::probe_length_offset()));
+    addl(temp2, r_array_index);     // temp2 = limit to scan
+    cmpl(temp2, r_array_length);
+    jccb(Assembler::lessEqual, no_wrap);
+    {
+      repne_scanq(r_array_base, r_super_klass, r_array_index, r_array_length, L_success);
+      subl(temp2, r_array_length);
+      jccb(Assembler::lessEqual, *L_failure);
+      // Start from the beginning of the array
+      xorl(r_array_index, r_array_index);
+    }
+
+    bind(no_wrap);
+    repne_scanq(r_array_base, r_super_klass, r_array_index, temp2, L_success);
+
+    if (&L_fallthrough != L_failure)
+      jmp(*L_failure);
 
     bind(L_fallthrough);
   }

@@ -1918,7 +1918,7 @@ GrowableArray<Klass*>* InstanceKlass::compute_secondary_supers(int num_extra_slo
   } else if (num_extra_slots == 0 && interfaces->length() <= 1) {
     // We will reuse the transitive interfaces list if we're certain
     // it's in hash order.
-    uintx bitmap = compute_secondary_supers_bitmap(interfaces);
+    uintx bitmap = compute_secondary_supers_bitmap(&interfaces);
     set_secondary_supers(interfaces, bitmap);
     return nullptr;
   }
@@ -4238,26 +4238,35 @@ void InstanceKlass::print_on(outputStream* st) const {
   st->print(" - local interfaces:  "); local_interfaces()->print_value_on(st);      st->cr();
   st->print(" - trans. interfaces: "); transitive_interfaces()->print_value_on(st); st->cr();
 
-  st->print(" - secondary supers:  "); secondary_supers()->print_value_on(st); st->cr();
+  st->print(" - secondary supers: "); secondary_supers()->print_value_on(st); st->cr();
+  st->print(" - probe length    :  %d", _probe_length);      st->cr();
 
-  st->print(" - hash_slot:         %d", hash_slot()); st->cr();
-  st->print(" - secondary bitmap:  " UINTX_FORMAT_X_0, _secondary_supers_bitmap); st->cr();
+  st->print(" - hash_slot:      %d", hash_slot()); st->cr();
+  st->print(" - full hash:      %d", _full_hash); st->cr();
+  st->print(" - sec. bitmap:    " UINTX_FORMAT_X_0, _secondary_supers_bitmap); st->cr();
 
   if (secondary_supers() != nullptr) {
     if (Verbose) {
       bool is_hashed = (_secondary_supers_bitmap != SECONDARY_SUPERS_BITMAP_FULL);
-      st->print_cr(" - ---- secondary supers (%d words):", _secondary_supers->length());
-      for (int i = 0; i < _secondary_supers->length(); i++) {
+      st->print_cr("---- secondary supers (%d words):", _secondary_supers->length());
+      const auto length = _secondary_supers->length();
+      double probes_sum = 0;
+      for (int i = 0; i < length; i++) {
         ResourceMark rm; // for external_name()
         Klass* secondary_super = _secondary_supers->at(i);
-        st->print(" - %2d:", i);
+        st->print("%2d:", i);
+        int home_slot = compute_home_slot(secondary_super, _secondary_supers_bitmap);
         if (is_hashed) {
-          int home_slot = compute_home_slot(secondary_super, _secondary_supers_bitmap);
           int distance = (i - home_slot) & SECONDARY_SUPERS_TABLE_MASK;
-          st->print(" dist:%02d:", distance);
+          probes_sum += distance;
+        } else {
+          int distance = (i - home_slot + length) % length;
+          probes_sum += distance;
         }
         st->print_cr(" %p %s", secondary_super, secondary_super->external_name());
       }
+      st->print("probe length    :  %d", _probe_length);      st->cr();
+      st->print("mean probe len  :  %g", probes_sum / length); st->cr();
     }
   }
   st->print(" - constants:         "); constants()->print_value_on(st);         st->cr();
