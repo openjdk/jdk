@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -542,4 +542,46 @@ public final class UCharacter
          * @stable ICU 2.1
          */
         public static final int RIGHT_TO_LEFT_ARABIC       = 13;
+
+    /**
+     * Joining Type constants.
+     * @see UProperty#JOINING_TYPE
+     * @stable ICU 2.4
+     */
+    public static interface JoiningType
+    {
+        /**
+         * @stable ICU 2.4
+         */
+        public static final int NON_JOINING = 0;
+        /**
+         * @stable ICU 2.4
+         */
+        public static final int JOIN_CAUSING = 1;
+        /**
+         * @stable ICU 2.4
+         */
+        public static final int DUAL_JOINING = 2;
+        /**
+         * @stable ICU 2.4
+         */
+        public static final int LEFT_JOINING = 3;
+        /**
+         * @stable ICU 2.4
+         */
+        public static final int RIGHT_JOINING = 4;
+        /**
+         * @stable ICU 2.4
+         */
+        public static final int TRANSPARENT = 5;
+        /**
+         * One more than the highest normal JoiningType value.
+         * The highest value is available via UCharacter.getIntPropertyMaxValue(UProperty.JOINING_TYPE).
+         *
+         * @deprecated ICU 58 The numeric value may change over time, see ICU ticket #12420.
+         */
+        @Deprecated
+        public static final int COUNT = 6;
+    }
+
 }
