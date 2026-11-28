@@ -986,7 +986,7 @@ bool StringConcat::validate_control_flow() {
   // safe to transform the graph as we would expect.
 
   // Check to see if this resulted in too many uncommon traps previously
-  if (Compile::current()->too_many_traps(_begin->jvms()->method(), _begin->jvms()->bci(),
+  if (Compile::current()->too_many_traps_or_recompiles(_begin->jvms()->method(), _begin->jvms()->bci(),
                         Deoptimization::Reason_intrinsic)) {
     return false;
   }
@@ -1931,7 +1931,7 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
           PreserveJVMState pjvms(&kit);
           kit.set_control(__ IfFalse(iff));
           kit.uncommon_trap(Deoptimization::Reason_intrinsic,
-                            Deoptimization::Action_maybe_recompile);
+                            Deoptimization::Action_maybe_recompile, nullptr, nullptr, false, /*keep_exact_action=*/false);
         }
         kit.set_control(__ IfTrue(iff));
         break;

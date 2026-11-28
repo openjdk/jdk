@@ -397,7 +397,7 @@ Node* Parse::prepare_array_addressing(BasicType type, int vals, const Type*& ele
 
     uncommon_trap(Deoptimization::Reason_unloaded,
                   Deoptimization::Action_reinterpret,
-                  klass, "!loaded array");
+                  klass, "!loaded array", false, /*keep_exact_action=*/false);
     return top();
   }
 
@@ -534,7 +534,7 @@ Node* Parse::cast_to_speculative_array_type(Node* const array, const TypeAryPtr*
     } else if (!slow_ctl->is_top()) {
       { PreserveJVMState pjvms(this);
         set_control(slow_ctl);
-        uncommon_trap_exact(reason, Deoptimization::Action_maybe_recompile);
+        uncommon_trap(reason, Deoptimization::Action_maybe_recompile);
       }
       replace_in_map(array, casted_array);
       array_type = _gvn.type(casted_array)->as_aryptr();
@@ -581,7 +581,7 @@ Node* Parse::speculate_non_null_free_array(Node* const array, const TypeAryPtr*&
   if (!null_free_array) {
     { // Deoptimize if null-free array
       BuildCutout unless(this, null_free_array_test(array, /* null_free = */ false), PROB_MAX);
-      uncommon_trap_exact(reason, Deoptimization::Action_maybe_recompile);
+      uncommon_trap(reason, Deoptimization::Action_maybe_recompile);
     }
     assert(!stopped(), "null-free array should have been caught earlier");
     Node* casted_array = _gvn.transform(new CheckCastPPNode(control(), array, array_type->cast_to_not_null_free()));
@@ -614,7 +614,7 @@ Node* Parse::speculate_non_flat_array(Node* const array, const TypeAryPtr* const
   if (!flat_array) {
     { // Deoptimize if flat array
       BuildCutout unless(this, flat_array_test(array, /* flat = */ false), PROB_MAX);
-      uncommon_trap_exact(reason, Deoptimization::Action_maybe_recompile);
+      uncommon_trap(reason, Deoptimization::Action_maybe_recompile);
     }
     assert(!stopped(), "flat array should have been caught earlier");
     Node* casted_array = _gvn.transform(new CheckCastPPNode(control(), array, array_type->cast_to_not_flat()));
@@ -844,7 +844,7 @@ void Parse::do_tableswitch() {
       profile = (ciMultiBranchData*)data;
     }
   }
-  bool trim_ranges = !C->too_many_traps(method(), bci(), Deoptimization::Reason_unstable_if);
+  bool trim_ranges = !C->too_many_traps_or_recompiles(method(), bci(), Deoptimization::Reason_unstable_if);
 
   // generate decision tree, using trichotomy when possible
   int rnum = len+2;
@@ -918,7 +918,7 @@ void Parse::do_lookupswitch() {
       profile = (ciMultiBranchData*)data;
     }
   }
-  bool trim_ranges = !C->too_many_traps(method(), bci(), Deoptimization::Reason_unstable_if);
+  bool trim_ranges = !C->too_many_traps_or_recompiles(method(), bci(), Deoptimization::Reason_unstable_if);
 
   // generate decision tree, using trichotomy when possible
   jint* table = NEW_RESOURCE_ARRAY(jint, len*3);
@@ -1166,7 +1166,7 @@ bool Parse::create_jump_tables(Node* key_val, SwitchRange* lo, SwitchRange* hi) 
   // Are jumptables supported
   if (!Matcher::has_match_rule(Op_Jump))  return false;
 
-  bool trim_ranges = !C->too_many_traps(method(), bci(), Deoptimization::Reason_unstable_if);
+  bool trim_ranges = !C->too_many_traps_or_recompiles(method(), bci(), Deoptimization::Reason_unstable_if);
 
   // Decide if a guard is needed to lop off big ranges at either (or
   // both) end(s) of the input set. We'll call this the default target
@@ -1321,7 +1321,7 @@ bool Parse::create_jump_tables(Node* key_val, SwitchRange* lo, SwitchRange* hi) 
 //----------------------------jump_switch_ranges-------------------------------
 void Parse::jump_switch_ranges(Node* key_val, SwitchRange *lo, SwitchRange *hi, int switch_depth) {
   Block* switch_block = block();
-  bool trim_ranges = !C->too_many_traps(method(), bci(), Deoptimization::Reason_unstable_if);
+  bool trim_ranges = !C->too_many_traps_or_recompiles(method(), bci(), Deoptimization::Reason_unstable_if);
 
   if (switch_depth == 0) {
     // Do special processing for the top-level call.
@@ -1822,7 +1822,7 @@ void Parse::do_ifnull(BoolTest::mask btest, Node *c) {
     repush_if_args(); // to gather stats on loop
     uncommon_trap(Deoptimization::Reason_unreached,
                   Deoptimization::Action_reinterpret,
-                  nullptr, "cold");
+                  nullptr, "cold", false, /*keep_exact_action=*/false);
     if (C->eliminate_boxing()) {
       // Mark the successor blocks as parsed
       branch_block->next_path_num();
@@ -1897,7 +1897,7 @@ void Parse::do_if(BoolTest::mask btest, Node* c, bool can_trap, bool new_path, N
     repush_if_args(); // to gather stats on loop
     uncommon_trap(Deoptimization::Reason_unreached,
                   Deoptimization::Action_reinterpret,
-                  nullptr, "cold");
+                  nullptr, "cold", false, /*keep_exact_action=*/false);
     if (C->eliminate_boxing()) {
       // Mark the successor blocks as parsed
       branch_block->next_path_num();
@@ -2070,7 +2070,7 @@ void Parse::acmp_type_check_or_trap(Node** non_null_input, ciKlass* input_type, 
     PreserveJVMState pjvms(this);
     inc_sp(2);
     set_control(slow_ctl);
-    uncommon_trap_exact(reason, Deoptimization::Action_maybe_recompile);
+    uncommon_trap(reason, Deoptimization::Action_maybe_recompile);
   }
 }
 
@@ -2091,7 +2091,7 @@ void Parse::acmp_type_check(Node* input, const TypeOopPtr* tinput, ProfilePtrKin
       // No specific type, check for value type
       BuildCutout unless(this, value_type_test(cast, /* is_value = */ false), PROB_MAX);
       inc_sp(2);
-      uncommon_trap_exact(Deoptimization::Reason_class_check, Deoptimization::Action_maybe_recompile);
+      uncommon_trap(Deoptimization::Reason_class_check, Deoptimization::Action_maybe_recompile);
     }
   }
 
@@ -2606,7 +2606,7 @@ bool Parse::path_is_suitable_for_uncommon_trap(float prob) const {
     return false;
   }
   return seems_never_taken(prob) &&
-         !C->too_many_traps(method(), bci(), Deoptimization::Reason_unstable_if);
+         !C->too_many_traps_or_recompiles(method(), bci(), Deoptimization::Reason_unstable_if);
 }
 
 void Parse::maybe_add_predicate_after_if(Block* path) {

@@ -527,7 +527,7 @@ static ValueTypeNode* do_flat_array_access(const FlatArrayAccessContext& ctx, bo
     ctx._kit->inc_sp(ctx._stack_adj);
     ctx._kit->uncommon_trap(Deoptimization::Reason_unloaded,
                             Deoptimization::Action_reinterpret,
-                            array_klass, "Flat array class meta-data unavailable");
+                            array_klass, "Flat array class meta-data unavailable", false, /*keep_exact_action=*/false);
     return nullptr;
   }
   ValueTypeNode* res = nullptr;
