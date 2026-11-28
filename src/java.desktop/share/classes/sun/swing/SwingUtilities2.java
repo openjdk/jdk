@@ -83,6 +83,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.UIDefaults;
 import javax.swing.UIManager;
 import javax.swing.event.TreeModelEvent;
+import javax.swing.plaf.ComponentUI;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumnModel;
 import javax.swing.text.DefaultCaret;
@@ -120,6 +121,73 @@ import static java.awt.geom.AffineTransform.TYPE_TRANSLATION;
  *
  */
 public class SwingUtilities2 {
+
+    // Records components undergoing UI installation, uninstallation, or
+    // keyboard-action refresh on this thread, including nested operations.
+    private static final ThreadLocal<UIDelegateContext> UI_DELEGATE_CONTEXT =
+            new ThreadLocal<>();
+
+    // Installs the UI delegate while preserving application key-map entries/bindings
+    // through SwingUtilities.replaceUIInputMap()/replaceUIActionMap()
+    public static void installUI(ComponentUI ui, JComponent component) {
+        changeUI(ui, component, true);
+    }
+
+    // Uninstalls the UI delegate while preserving application key-map entries/bindings
+    // through SwingUtilities.replaceUIInputMap()/replaceUIActionMap()
+    public static void uninstallUI(ComponentUI ui, JComponent component) {
+        changeUI(ui, component, false);
+    }
+
+    // Returns whether the component has an active UI-change operation.
+    public static boolean isChangingUI(JComponent component) {
+        for (UIDelegateContext frame = UI_DELEGATE_CONTEXT.get(); frame != null;
+             frame = frame.previous) {
+            if (frame.component == component) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static void changeUI(ComponentUI ui, JComponent component,
+                                 boolean install) {
+        runWithUIChange(component, () -> {
+            if (install) {
+                ui.installUI(component);
+            } else {
+                ui.uninstallUI(component);
+            }
+        });
+    }
+
+    // Runs a UI update while preserving application key bindings through
+    // SwingUtilities.replaceUIInputMap/replaceUIActionMap.
+    // Restores the previous context on completion.
+    public static void runWithUIChange(JComponent component, Runnable update) {
+        UIDelegateContext previous = UI_DELEGATE_CONTEXT.get();
+        UI_DELEGATE_CONTEXT.set(new UIDelegateContext(component, previous));
+        try {
+            update.run();
+        } finally {
+            if (previous == null) {
+                UI_DELEGATE_CONTEXT.remove();
+            } else {
+                UI_DELEGATE_CONTEXT.set(previous);
+            }
+        }
+    }
+
+    private static final class UIDelegateContext {
+        private final JComponent component;
+        private final UIDelegateContext previous;
+
+        private UIDelegateContext(JComponent component, UIDelegateContext previous) {
+            this.component = component;
+            this.previous = previous;
+        }
+    }
+
 
     // Maintain a cache of CACHE_SIZE fonts and the left side bearing
      // of the characters falling into the range MIN_CHAR_INDEX to

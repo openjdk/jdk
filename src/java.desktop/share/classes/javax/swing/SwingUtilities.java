@@ -1812,7 +1812,8 @@ public class SwingUtilities implements SwingConstants
 
         while (map != null) {
             InputMap parent = map.getParent();
-            if (uiInputMap == null) {
+            // Preserve application entries during UI delegate callbacks.
+            if (uiInputMap == null && !SwingUtilities2.isChangingUI(component)) {
                 map.clear();
             }
             if (parent == null || (parent instanceof UIResource)) {
@@ -1839,7 +1840,8 @@ public class SwingUtilities implements SwingConstants
 
         while (map != null) {
             ActionMap parent = map.getParent();
-            if (uiActionMap == null) {
+            // Preserve application entries during UI delegate callbacks.
+            if (uiActionMap == null && !SwingUtilities2.isChangingUI(component)) {
                 map.clear();
             }
             if (parent == null || (parent instanceof UIResource)) {

@@ -725,7 +725,7 @@ public abstract class JComponent extends Container implements Serializable,
         ComponentUI oldUI = ui;
         ui = newUI;
         if (ui != null) {
-            ui.installUI(this);
+            SwingUtilities2.installUI(ui, this);
         }
 
         firePropertyChange("UI", oldUI, newUI);
@@ -740,7 +740,7 @@ public abstract class JComponent extends Container implements Serializable,
      */
     private void uninstallUIAndProperties() {
         if (ui != null) {
-            ui.uninstallUI(this);
+            SwingUtilities2.uninstallUI(ui, this);
             //clean UIClientPropertyKeys from client properties
             if (clientProperties != null) {
                 synchronized(clientProperties) {
@@ -5619,7 +5619,7 @@ public abstract class JComponent extends Container implements Serializable,
             byte count = JComponent.getWriteObjCounter(this);
             JComponent.setWriteObjCounter(this, --count);
             if (count == 0 && ui != null) {
-                ui.installUI(this);
+                SwingUtilities2.installUI(ui, this);
             }
         }
         ArrayTable.writeArrayTable(s, clientProperties);
