@@ -27,29 +27,25 @@
  * @summary  Provide alternative way to generate preview API docs
  * @library  /tools/lib ../../lib
  * @modules  jdk.javadoc/jdk.javadoc.internal.tool
- * @build    toolbox.ToolBox javadoc.tester.* taglet.PreviewFeature taglet.PreviewNote
- * @run main TestPreviewTag
+ * @build    toolbox.ToolBox javadoc.tester.*
+ * @run main TestPreviewFeatureTag
  */
 
 import java.nio.file.Path;
 
 import javadoc.tester.JavadocTester;
 
-public class TestPreviewTag  extends JavadocTester {
+public class TestPreviewFeatureTag extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        var tester = new TestPreviewTag();
+        var tester = new TestPreviewFeatureTag();
         tester.runTests();
     }
 
     @Test
-    public void testPreviewTag(Path base) throws Exception {
+    public void testPreviewFeatureTag(Path base) throws Exception {
 
         javadoc("-d", base.resolve("out").toString(),
-                "-tagletpath", System.getProperty("test.classes"),
-                "-taglet", "taglet.PreviewFeature",
-                "-taglet", "taglet.PreviewNote",
-                "--preview-note-tag", "previewNote",
                 "--preview-feature-tag", "previewFeature",
                 "-sourcepath", testSrc,
                 "api");
@@ -57,8 +53,9 @@ public class TestPreviewTag  extends JavadocTester {
 
         checkOutput(Output.OUT, true,
                 """
-                        warning: Multiple preview notes in otherPreviewMethod.
-                            * @previewNote    Extra note tag triggers a warning""");
+                        warning: Multiple preview notes in otherPreviewMethod
+                            * @previewFeature Extra note tag triggers a warning
+                              ^""");
 
         checkOrder("api/package-summary.html",
                 """
@@ -87,9 +84,11 @@ public class TestPreviewTag  extends JavadocTester {
         checkOrder("preview-list.html",
                 """
                         <li><label for="feature-1"><input type="checkbox" id="feature-1" disabled checked onc\
-                        lick="toggleGlobal(this, '1', 3)"><span>First preview feature</span></label></li>
+                        lick="toggleGlobal(this, '1', 3)"><span><a href="https://example.org/first-preview-fe\
+                        ature">First preview feature</a></span></label></li>
                         <li><label for="feature-2"><input type="checkbox" id="feature-2" disabled checked onc\
-                        lick="toggleGlobal(this, '2', 3)"><span>Second preview feature</span></label></li>
+                        lick="toggleGlobal(this, '2', 3)"><span><a href="https://example.org/second-preview-f\
+                        eature">Second preview feature (new)</a></span></label></li>
                         <li><label for="feature-all"><input type="checkbox" id="feature-all" disabled checked\
                          onclick="toggleGlobal(this, 'all', 3)"><span>Toggle all</span></label></li>""",
                 """
