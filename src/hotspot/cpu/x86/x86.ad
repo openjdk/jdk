@@ -1470,6 +1470,7 @@ source_hpp %{
 #include "peephole_x86_64.hpp"
 
 bool castLL_is_imm32(const Node* n);
+bool is_fp_compare(Node* cmp);
 
 %}
 
@@ -2792,6 +2793,12 @@ const RegMask& Matcher::firstL_proj_mask() {
 // Register for the second projection of a long pair
 const RegMask& Matcher::secondL_proj_mask() {
   return LONG_RDX_REG_mask();
+}
+
+bool is_fp_compare(Node* cmp) {
+  assert(cmp->is_Cmp(), "%s", cmp->Name());
+  return (cmp->Opcode() == Op_CmpF) ||
+         (cmp->Opcode() == Op_CmpD);
 }
 
 %}
@@ -5568,6 +5575,7 @@ operand rFlagsReg()
 %{
   constraint(ALLOC_IN_RC(int_flags));
   match(RegFlags);
+  predicate(!is_fp_compare(n));
 
   format %{ "RFLAGS" %}
   interface(REG_INTER);
@@ -5578,6 +5586,7 @@ operand rFlagsRegU()
 %{
   constraint(ALLOC_IN_RC(int_flags));
   match(RegFlags);
+  predicate(is_fp_compare(n));
 
   format %{ "RFLAGS_U" %}
   interface(REG_INTER);
@@ -5586,7 +5595,7 @@ operand rFlagsRegU()
 operand rFlagsRegUCF() %{
   constraint(ALLOC_IN_RC(int_flags));
   match(RegFlags);
-  predicate(!UseAPX || !VM_Version::supports_avx10_2());
+  predicate(is_fp_compare(n) && (!UseAPX || !VM_Version::supports_avx10_2()));
 
   format %{ "RFLAGS_U_CF" %}
   interface(REG_INTER);
@@ -5595,7 +5604,7 @@ operand rFlagsRegUCF() %{
 operand rFlagsRegUCFE() %{
   constraint(ALLOC_IN_RC(int_flags));
   match(RegFlags);
-  predicate(UseAPX && VM_Version::supports_avx10_2());
+  predicate(is_fp_compare(n) && UseAPX && VM_Version::supports_avx10_2()));
 
   format %{ "RFLAGS_U_CFE" %}
   interface(REG_INTER);

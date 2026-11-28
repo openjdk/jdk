@@ -5280,6 +5280,10 @@ operand rFlagsReg()
 %{
   constraint(ALLOC_IN_RC(int_flags));
   match(RegFlags);
+  predicate(n->Opcode() != Op_CmpU &&
+            n->Opcode() != Op_CmpUL &&
+            n->Opcode() != Op_CmpP &&
+            n->Opcode() != Op_CmpN);
 
   op_cost(0);
   format %{ "RFLAGS" %}
@@ -5291,6 +5295,10 @@ operand rFlagsRegU()
 %{
   constraint(ALLOC_IN_RC(int_flags));
   match(RegFlags);
+  predicate(n->Opcode() == Op_CmpU ||
+            n->Opcode() == Op_CmpUL ||
+            n->Opcode() == Op_CmpP ||
+            n->Opcode() == Op_CmpN);
 
   op_cost(0);
   format %{ "RFLAGSU" %}
