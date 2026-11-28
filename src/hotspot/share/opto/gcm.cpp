@@ -1674,7 +1674,7 @@ void PhaseCFG::schedule_late(VectorSet& visited, Node_Stack<Node>& stack) {
     // Place temps in the block of their use.  This isn't a
     // requirement for correctness but it reduces useless
     // interference between temps and other nodes.
-    if (Node::is<MachTempNode>(mach)) {
+    if (Node::is<MachTempNode>(mach) || Node::is<MachKillNode>(mach)) {
       map_node_to_block(self, LCA);
       LCA->add_inst(self);
       continue;

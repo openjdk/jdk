@@ -458,6 +458,8 @@ class PhaseCFG : public Phase {
                intptr_t* recacl_pressure_nodes);
   void adjust_register_pressure(Node* n, Block* block, intptr_t *recalc_pressure_nodes, bool finalize_mode);
 
+  void push_node_or_killed_use(Node_List<Node> &worklist, GrowableArray<int> &ready_cnt, Node *m, int m_cnt);
+
   // Schedule a call next in the block
   uint sched_call(Block* block, uint node_cnt, Node_List<Node>& worklist, GrowableArray<int>& ready_cnt, MachCallNode* mcall, VectorSet& next_call);
 

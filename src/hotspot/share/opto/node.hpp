@@ -119,6 +119,7 @@ class MachCallStaticJavaNode;
 class MachConstantBaseNode;
 class MachConstantNode;
 class MachGotoNode;
+class MachKillNode;
 class MachIfNode;
 class MachJumpNode;
 class MachNode;
@@ -749,6 +750,7 @@ public:
       DEFINE_CLASS_ID(MachMemBar,       Mach, 7)
       DEFINE_CLASS_ID(MachProlog,       Mach, 8)
       DEFINE_CLASS_ID(MachVEP,          Mach, 9)
+      DEFINE_CLASS_ID(MachKill,         Mach, 10)
 
     DEFINE_CLASS_ID(Type,  Node, 2)
       DEFINE_CLASS_ID(Phi,   Type, 0)
@@ -1008,6 +1010,7 @@ public:
   do_node(MachGoto) \
   do_node(MachIf) \
   do_node(MachJump) \
+  do_node(MachKill) \
   do_node(MachNullCheck) \
   do_node(MachProj) \
   do_node(MachProlog) \
