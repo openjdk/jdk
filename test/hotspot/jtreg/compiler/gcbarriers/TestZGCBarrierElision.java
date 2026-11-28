@@ -43,7 +43,7 @@ import java.util.concurrent.ThreadLocalRandom;
  * @summary Test that the ZGC barrier elision optimization elides unnecessary
  *          barriers following simple allocation and domination rules.
  * @library /test/lib /
- * @requires vm.gc.Z & (vm.simpleArch == "x64" | vm.simpleArch == "aarch64")
+ * @requires vm.gc.Z & (vm.simpleArch == "x64" | vm.simpleArch == "aarch64" | vm.simpleArch == "ppc64le")
  * @run driver compiler.gcbarriers.TestZGCBarrierElision test-effectiveness
  */
 
@@ -252,7 +252,7 @@ class TestZGCEffectiveBarrierElision {
 
     @Test
     // C2 does not emit a field load during parsing, so it also does not emit any barriers.
-    @IR(failOn = { IRNode.Z_LOAD_P_WITH_BARRIER_FLAG, Common.ELIDED }, phase = CompilePhase.FINAL_CODE)
+    @IR(failOn = { IRNode.Z_LOAD_P_WITH_BARRIER_FLAG, Common.ELIDED }, applyIfPlatform = {"ppc", "false"}, phase = CompilePhase.FINAL_CODE)
     static void testAllocateThenLoad() {
         Outer o1 = new Outer();
         Common.blackhole(o1);
