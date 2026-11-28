@@ -199,7 +199,9 @@ public class TestSubwordTruncation {
     // Chars
 
     @Test
-    @IR(counts = { IRNode.STORE_VECTOR, "=0" })
+    @IR(counts = { IRNode.LOAD_VECTOR_C, IRNode.VECTOR_SIZE + "min(max_int, max_short)", "> 0",
+                  IRNode.VECTOR_UCAST_S2I, IRNode.VECTOR_SIZE + "min(max_short, max_int)", "> 0" },
+        applyIfCPUFeatureOr = { "avx2", "true", "asimd", "true" })
     @Arguments(setup = "setupCharArray")
     public Object[] testCharLeadingZeros(char[] in) {
         char[] res = new char[SIZE];
@@ -224,7 +226,9 @@ public class TestSubwordTruncation {
     }
 
     @Test
-    @IR(counts = { IRNode.STORE_VECTOR, "=0" })
+    @IR(counts = { IRNode.LOAD_VECTOR_C, IRNode.VECTOR_SIZE + "min(max_int, max_short)", "> 0",
+                  IRNode.VECTOR_UCAST_S2I, IRNode.VECTOR_SIZE + "min(max_short, max_int)", "> 0" },
+        applyIfCPUFeatureOr = { "avx2", "true", "asimd", "true" })
     @Arguments(setup = "setupCharArray")
     public Object[] testCharTrailingZeros(char[] in) {
         char[] res = new char[SIZE];
@@ -249,7 +253,9 @@ public class TestSubwordTruncation {
     }
 
     @Test
-    @IR(counts = { IRNode.STORE_VECTOR, "=0" })
+    @IR(counts = { IRNode.LOAD_VECTOR_C, IRNode.VECTOR_SIZE + "min(max_int, max_short)", "> 0",
+                  IRNode.VECTOR_UCAST_S2I, IRNode.VECTOR_SIZE + "min(max_short, max_int)", "> 0" },
+        applyIfCPUFeatureOr = { "avx2", "true", "asimd", "true" })
     @Arguments(setup = "setupCharArray")
     public Object[] testCharReverse(char[] in) {
         char[] res = new char[SIZE];
@@ -274,7 +280,9 @@ public class TestSubwordTruncation {
     }
 
     @Test
-    @IR(counts = { IRNode.STORE_VECTOR, "=0" })
+    @IR(counts = { IRNode.LOAD_VECTOR_C, IRNode.VECTOR_SIZE + "min(max_int, max_short)", "> 0",
+                  IRNode.VECTOR_UCAST_S2I, IRNode.VECTOR_SIZE + "min(max_short, max_int)", "> 0" },
+        applyIfCPUFeatureOr = { "avx2", "true", "asimd", "true" })
     @Arguments(setup = "setupCharArray")
     public Object[] testCharBitCount(char[] in) {
         char[] res = new char[SIZE];

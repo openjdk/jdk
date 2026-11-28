@@ -100,10 +100,11 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(failOn = {IRNode.STORE_VECTOR})
-    // Subword vector casts with char do not work currently, see JDK-8349562.
-    // Assert the vectorization failure so that we are reminded to update
-    // the test when this limitation is addressed in the future.
+    @IR(applyIfCPUFeature = { "avx", "true" },
+        applyIfOr = {"AlignVector", "false", "UseCompactObjectHeaders", "false"},
+        counts = { IRNode.VECTOR_UCAST_S2I, IRNode.VECTOR_SIZE + "min(max_int, max_short)", ">0" })
+    // Char widening now vectorizes via an inserted unsigned cast, so this
+    // asserts the unsigned cast instead of the previous vectorization failure.
     public int[] zeroExtension() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {

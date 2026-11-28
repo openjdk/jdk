@@ -2026,8 +2026,9 @@ class VectorCastNode : public VectorNode {
 
   static VectorNode* make(int vopc, Node* n1, BasicType bt, uint vlen);
   static int  opcode(int opc, BasicType bt, bool is_signed = true);
-  static bool implemented(int opc, uint vlen, BasicType src_type, BasicType dst_type);
+  static bool implemented(int opc, uint vlen, BasicType src_type, BasicType dst_type, bool is_signed = true);
   static bool is_supported_subword_cast(BasicType def_bt, BasicType use_bt, const uint pack_size);
+  static bool is_supported_unsigned_cast(BasicType def_bt, BasicType use_bt, const uint pack_size, int def_opc);
 
   virtual Node* Identity(PhaseGVN* phase);
 };
@@ -2113,7 +2114,10 @@ class VectorCastF2HFNode : public VectorCastNode {
 class VectorUCastB2XNode : public VectorCastNode {
  public:
   VectorUCastB2XNode(Node* in, const TypeVect* vt) : VectorCastNode(in, vt) {
-    assert(in->bottom_type()->as_vect()->element_basic_type() == T_BYTE, "must be byte");
+    // T_BOOLEAN accepted: LoadUB packs are boolean-typed (container_type,
+    // load-bearing for URShift lowering) holding 0-255 in 1-byte lanes.
+    assert(in->bottom_type()->as_vect()->element_basic_type() == T_BYTE ||
+           in->bottom_type()->as_vect()->element_basic_type() == T_BOOLEAN, "must be byte or boolean");
     assert(vt->element_basic_type() == T_SHORT ||
            vt->element_basic_type() == T_INT ||
            vt->element_basic_type() == T_LONG, "must be");
@@ -2126,7 +2130,10 @@ class VectorUCastB2XNode : public VectorCastNode {
 class VectorUCastS2XNode : public VectorCastNode {
  public:
   VectorUCastS2XNode(Node* in, const TypeVect* vt) : VectorCastNode(in, vt) {
-    assert(in->bottom_type()->as_vect()->element_basic_type() == T_SHORT, "must be short");
+    // T_CHAR accepted: LoadUS packs are char-typed (container_type,
+    // load-bearing for URShift lowering) holding 0-65535 in 2-byte lanes.
+    assert(in->bottom_type()->as_vect()->element_basic_type() == T_SHORT ||
+           in->bottom_type()->as_vect()->element_basic_type() == T_CHAR, "must be short or char");
     assert(vt->element_basic_type() == T_INT ||
            vt->element_basic_type() == T_LONG, "must be");
   }

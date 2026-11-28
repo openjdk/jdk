@@ -812,7 +812,14 @@ public class TestReductions {
 
     // ---------char***Simple ------------------------------------------------------------
     @Test
-    @IR(failOn = IRNode.LOAD_VECTOR_C) // does not vectorize for now, might in the future.
+    @IR(counts = {IRNode.LOAD_VECTOR_C, IRNode.VECTOR_SIZE + "min(max_int, max_short)", "> 0",
+                  IRNode.VECTOR_UCAST_S2I, IRNode.VECTOR_SIZE + "min(max_short, max_int)", "> 0",
+                  IRNode.AND_REDUCTION_V, "> 0",
+                  IRNode.AND_VI, "> 0"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
+    @IR(failOn = IRNode.LOAD_VECTOR_C,
+        applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
     private static char charAndSimple() {
         char acc = (char)0xFFFF; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -823,7 +830,14 @@ public class TestReductions {
     }
 
     @Test
-    @IR(failOn = IRNode.LOAD_VECTOR_C) // does not vectorize for now, might in the future.
+    @IR(counts = {IRNode.LOAD_VECTOR_C, IRNode.VECTOR_SIZE + "min(max_int, max_short)", "> 0",
+                  IRNode.VECTOR_UCAST_S2I, IRNode.VECTOR_SIZE + "min(max_short, max_int)", "> 0",
+                  IRNode.OR_REDUCTION_V, "> 0",
+                  IRNode.OR_VI, "> 0"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
+    @IR(failOn = IRNode.LOAD_VECTOR_C,
+        applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
     private static char charOrSimple() {
         char acc = 0; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -834,7 +848,14 @@ public class TestReductions {
     }
 
     @Test
-    @IR(failOn = IRNode.LOAD_VECTOR_C) // does not vectorize for now, might in the future.
+    @IR(counts = {IRNode.LOAD_VECTOR_C, IRNode.VECTOR_SIZE + "min(max_int, max_short)", "> 0",
+                  IRNode.VECTOR_UCAST_S2I, IRNode.VECTOR_SIZE + "min(max_short, max_int)", "> 0",
+                  IRNode.XOR_REDUCTION_V, "> 0",
+                  IRNode.XOR_VI, "> 0"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
+    @IR(failOn = IRNode.LOAD_VECTOR_C,
+        applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
     private static char charXorSimple() {
         char acc = 0; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -867,7 +888,14 @@ public class TestReductions {
     }
 
     @Test
-    @IR(failOn = IRNode.LOAD_VECTOR_C) // does not vectorize for now, might in the future.
+    @IR(counts = {IRNode.LOAD_VECTOR_C, IRNode.VECTOR_SIZE + "min(max_int, max_short)", "> 0",
+                  IRNode.VECTOR_UCAST_S2I, IRNode.VECTOR_SIZE + "min(max_short, max_int)", "> 0",
+                  IRNode.MIN_REDUCTION_V, "> 0",
+                  IRNode.MIN_VI, "> 0"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
+    @IR(failOn = IRNode.LOAD_VECTOR_C,
+        applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
     private static char charMinSimple() {
         char acc = Character.MAX_VALUE; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -878,7 +906,14 @@ public class TestReductions {
     }
 
     @Test
-    @IR(failOn = IRNode.LOAD_VECTOR_C) // does not vectorize for now, might in the future.
+    @IR(counts = {IRNode.LOAD_VECTOR_C, IRNode.VECTOR_SIZE + "min(max_int, max_short)", "> 0",
+                  IRNode.VECTOR_UCAST_S2I, IRNode.VECTOR_SIZE + "min(max_short, max_int)", "> 0",
+                  IRNode.MAX_REDUCTION_V, "> 0",
+                  IRNode.MAX_VI, "> 0"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
+    @IR(failOn = IRNode.LOAD_VECTOR_C,
+        applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
     private static char charMaxSimple() {
         char acc = Character.MIN_VALUE; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -890,7 +925,14 @@ public class TestReductions {
 
     // ---------char***DotProduct ------------------------------------------------------------
     @Test
-    @IR(failOn = IRNode.LOAD_VECTOR_C) // does not vectorize for now, might in the future.
+    @IR(counts = {IRNode.LOAD_VECTOR_C, IRNode.VECTOR_SIZE + "min(max_int, max_short)", "> 0",
+                  IRNode.VECTOR_UCAST_S2I, IRNode.VECTOR_SIZE + "min(max_short, max_int)", "> 0",
+                  IRNode.MUL_VI, "> 0",
+                  IRNode.AND_REDUCTION_V, "> 0"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
+    @IR(failOn = IRNode.LOAD_VECTOR_C,
+        applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
     private static char charAndDotProduct() {
         char acc = (char)0xFFFF; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -901,7 +943,14 @@ public class TestReductions {
     }
 
     @Test
-    @IR(failOn = IRNode.LOAD_VECTOR_C) // does not vectorize for now, might in the future.
+    @IR(counts = {IRNode.LOAD_VECTOR_C, IRNode.VECTOR_SIZE + "min(max_int, max_short)", "> 0",
+                  IRNode.VECTOR_UCAST_S2I, IRNode.VECTOR_SIZE + "min(max_short, max_int)", "> 0",
+                  IRNode.MUL_VI, "> 0",
+                  IRNode.OR_REDUCTION_V, "> 0"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
+    @IR(failOn = IRNode.LOAD_VECTOR_C,
+        applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
     private static char charOrDotProduct() {
         char acc = 0; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -912,7 +961,14 @@ public class TestReductions {
     }
 
     @Test
-    @IR(failOn = IRNode.LOAD_VECTOR_C) // does not vectorize for now, might in the future.
+    @IR(counts = {IRNode.LOAD_VECTOR_C, IRNode.VECTOR_SIZE + "min(max_int, max_short)", "> 0",
+                  IRNode.VECTOR_UCAST_S2I, IRNode.VECTOR_SIZE + "min(max_short, max_int)", "> 0",
+                  IRNode.MUL_VI, "> 0",
+                  IRNode.XOR_REDUCTION_V, "> 0"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
+    @IR(failOn = IRNode.LOAD_VECTOR_C,
+        applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
     private static char charXorDotProduct() {
         char acc = 0; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -945,7 +1001,15 @@ public class TestReductions {
     }
 
     @Test
-    @IR(failOn = IRNode.LOAD_VECTOR_C) // does not vectorize for now, might in the future.
+    @IR(counts = {IRNode.LOAD_VECTOR_C, IRNode.VECTOR_SIZE + "min(max_int, max_short)", "> 0",
+                  IRNode.VECTOR_UCAST_S2I, IRNode.VECTOR_SIZE + "min(max_short, max_int)", "> 0",
+                  IRNode.MUL_VI, "> 0",
+                  IRNode.MIN_REDUCTION_V, "> 0",
+                  IRNode.MIN_VI, "> 0"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
+    @IR(failOn = IRNode.LOAD_VECTOR_C,
+        applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
     private static char charMinDotProduct() {
         char acc = Character.MAX_VALUE; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -956,7 +1020,15 @@ public class TestReductions {
     }
 
     @Test
-    @IR(failOn = IRNode.LOAD_VECTOR_C) // does not vectorize for now, might in the future.
+    @IR(counts = {IRNode.LOAD_VECTOR_C, IRNode.VECTOR_SIZE + "min(max_int, max_short)", "> 0",
+                  IRNode.VECTOR_UCAST_S2I, IRNode.VECTOR_SIZE + "min(max_short, max_int)", "> 0",
+                  IRNode.MUL_VI, "> 0",
+                  IRNode.MAX_REDUCTION_V, "> 0",
+                  IRNode.MAX_VI, "> 0"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
+    @IR(failOn = IRNode.LOAD_VECTOR_C,
+        applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
     private static char charMaxDotProduct() {
         char acc = Character.MIN_VALUE; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -968,7 +1040,15 @@ public class TestReductions {
 
     // ---------char***Big ------------------------------------------------------------
     @Test
-    @IR(failOn = IRNode.LOAD_VECTOR_C) // does not vectorize for now, might in the future.
+    @IR(counts = {IRNode.LOAD_VECTOR_C, IRNode.VECTOR_SIZE + "min(max_int, max_short)", "> 0",
+                  IRNode.VECTOR_UCAST_S2I, IRNode.VECTOR_SIZE + "min(max_short, max_int)", "> 0",
+                  IRNode.MUL_VI, "> 0",
+                  IRNode.ADD_VI, "> 0",
+                  IRNode.AND_REDUCTION_V, "> 0"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
+    @IR(failOn = IRNode.LOAD_VECTOR_C,
+        applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
     private static char charAndBig() {
         char acc = (char)0xFFFF; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -979,7 +1059,15 @@ public class TestReductions {
     }
 
     @Test
-    @IR(failOn = IRNode.LOAD_VECTOR_C) // does not vectorize for now, might in the future.
+    @IR(counts = {IRNode.LOAD_VECTOR_C, IRNode.VECTOR_SIZE + "min(max_int, max_short)", "> 0",
+                  IRNode.VECTOR_UCAST_S2I, IRNode.VECTOR_SIZE + "min(max_short, max_int)", "> 0",
+                  IRNode.MUL_VI, "> 0",
+                  IRNode.ADD_VI, "> 0",
+                  IRNode.OR_REDUCTION_V, "> 0"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
+    @IR(failOn = IRNode.LOAD_VECTOR_C,
+        applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
     private static char charOrBig() {
         char acc = 0; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -990,7 +1078,15 @@ public class TestReductions {
     }
 
     @Test
-    @IR(failOn = IRNode.LOAD_VECTOR_C) // does not vectorize for now, might in the future.
+    @IR(counts = {IRNode.LOAD_VECTOR_C, IRNode.VECTOR_SIZE + "min(max_int, max_short)", "> 0",
+                  IRNode.VECTOR_UCAST_S2I, IRNode.VECTOR_SIZE + "min(max_short, max_int)", "> 0",
+                  IRNode.MUL_VI, "> 0",
+                  IRNode.ADD_VI, "> 0",
+                  IRNode.XOR_REDUCTION_V, "> 0"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
+    @IR(failOn = IRNode.LOAD_VECTOR_C,
+        applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
     private static char charXorBig() {
         char acc = 0; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -1023,7 +1119,16 @@ public class TestReductions {
     }
 
     @Test
-    @IR(failOn = IRNode.LOAD_VECTOR_C) // does not vectorize for now, might in the future.
+    @IR(counts = {IRNode.LOAD_VECTOR_C, IRNode.VECTOR_SIZE + "min(max_int, max_short)", "> 0",
+                  IRNode.VECTOR_UCAST_S2I, IRNode.VECTOR_SIZE + "min(max_short, max_int)", "> 0",
+                  IRNode.MUL_VI, "> 0",
+                  IRNode.ADD_VI, "> 0",
+                  IRNode.MIN_REDUCTION_V, "> 0",
+                  IRNode.MIN_VI, "> 0"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
+    @IR(failOn = IRNode.LOAD_VECTOR_C,
+        applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
     private static char charMinBig() {
         char acc = Character.MAX_VALUE; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -1034,7 +1139,16 @@ public class TestReductions {
     }
 
     @Test
-    @IR(failOn = IRNode.LOAD_VECTOR_C) // does not vectorize for now, might in the future.
+    @IR(counts = {IRNode.LOAD_VECTOR_C, IRNode.VECTOR_SIZE + "min(max_int, max_short)", "> 0",
+                  IRNode.VECTOR_UCAST_S2I, IRNode.VECTOR_SIZE + "min(max_short, max_int)", "> 0",
+                  IRNode.MUL_VI, "> 0",
+                  IRNode.ADD_VI, "> 0",
+                  IRNode.MAX_REDUCTION_V, "> 0",
+                  IRNode.MAX_VI, "> 0"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
+    @IR(failOn = IRNode.LOAD_VECTOR_C,
+        applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
     private static char charMaxBig() {
         char acc = Character.MIN_VALUE; // neutral element
         for (int i = 0; i < SIZE; i++) {
