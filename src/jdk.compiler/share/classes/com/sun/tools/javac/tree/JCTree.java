@@ -1394,6 +1394,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public final CaseKind caseKind;
         public List<JCCaseLabel> labels;
         public JCExpression guard;
+        public JCExpression fallThroughGuardBypass;
         public List<JCStatement> stats;
         public JCTree body;
         public boolean completesNormally;
