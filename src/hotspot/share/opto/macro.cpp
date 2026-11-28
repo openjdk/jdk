@@ -740,6 +740,21 @@ Node* PhaseMacroExpand::value_type_from_mem(ciValueKlass* vk, const TypeAryPtr* 
   return vt;
 }
 
+// Returns true if 'n' is the merge pointer of a SafePointScalarMergeNode used in 'sfpt'.
+static bool is_merge_pointer(const SafePointNode* sfpt, const Node* n) {
+  JVMState* jvms = sfpt->jvms();
+  if (jvms == nullptr) {
+    return false;
+  }
+  for (uint i = jvms->debug_start(); i < jvms->debug_end(); i++) {
+    const SafePointScalarMergeNode* smerge = Node::isa<SafePointScalarMergeNode>(sfpt->in(i));
+    if (smerge != nullptr && sfpt->in(smerge->merge_pointer_idx(jvms)) == n) {
+      return true;
+    }
+  }
+  return false;
+}
+
 // Check the possibility of scalar replacement.
 bool PhaseMacroExpand::can_eliminate_allocation(PhaseIterGVN* igvn, AllocateNode* alloc, Unique_Node_List<SafePointNode>* safepoints) {
   //  Scan the uses of the allocation to check for anything that would
@@ -838,6 +853,10 @@ bool PhaseMacroExpand::can_eliminate_allocation(PhaseIterGVN* igvn, AllocateNode
         } else if (sfpt->is_StoreFlat() && sfpt->as_StoreFlat()->has_non_debug_use(res) && sfpt->as_StoreFlat()->value() != res) {
           DEBUG_ONLY(disq_node = use;)
           NOT_PRODUCT(fail_eliminate = "Object is stored with StoreFlat";)
+          can_eliminate = false;
+        } else if (is_merge_pointer(sfpt, res)) {
+          DEBUG_ONLY(disq_node = use;)
+          NOT_PRODUCT(fail_eliminate = "Object is the merge pointer of a reduced allocation merge";)
           can_eliminate = false;
         }
 
