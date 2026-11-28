@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package sun.security.provider;
 import sun.security.pkcs.NamedPKCS8Key;
 import sun.security.x509.NamedX509Key;
 
-import java.io.ByteArrayOutputStream;
 import java.security.AlgorithmParameters;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
@@ -45,13 +44,13 @@ import java.security.spec.AlgorithmParameterSpec;
 /// configured with a named parameter set. See [NamedKeyPairGenerator]
 /// for more details.
 ///
-/// This class does not work with preHash signatures.
+/// This class does not work with pre-hash signatures.
 public abstract class NamedSignature extends SignatureSpi {
 
     private final String fname; // family name
     private final NamedKeyFactory fac;
 
-    private final ByteArrayOutputStream bout = new ByteArrayOutputStream();
+    protected SignatureMessageAccumulator accu;
 
     // init with...
     private String pname;
@@ -72,6 +71,7 @@ public abstract class NamedSignature extends SignatureSpi {
         }
         this.fname = fname;
         this.fac = fac;
+        this.accu = new SignatureMessageAccumulator.MemoryAccumulator();
     }
 
     @Override
@@ -82,7 +82,7 @@ public abstract class NamedSignature extends SignatureSpi {
         pubKey = nk.getRawBytes();
         pk2 = implCheckPublicKey(pname, pubKey);
         secKey = null;
-        bout.reset();
+        accu.reset();
     }
 
     @Override
@@ -93,24 +93,23 @@ public abstract class NamedSignature extends SignatureSpi {
         secKey = nk.getExpanded();
         sk2 = implCheckPrivateKey(pname, secKey);
         pubKey = null;
-        bout.reset();
+        accu.reset();
     }
 
     @Override
     protected void engineUpdate(byte b) throws SignatureException {
-        bout.write(b);
+        accu.add(b);
     }
 
     @Override
     protected void engineUpdate(byte[] b, int off, int len) throws SignatureException {
-        bout.write(b, off, len);
+        accu.add(b, off, len);
     }
 
     @Override
     protected byte[] engineSign() throws SignatureException {
         if (secKey != null) {
-            var msg = bout.toByteArray();
-            bout.reset();
+            var msg = accu.getMessage();
             return implSign(pname, secKey, sk2, msg, appRandom);
         } else {
             throw new SignatureException("No private key");
@@ -120,8 +119,7 @@ public abstract class NamedSignature extends SignatureSpi {
     @Override
     protected boolean engineVerify(byte[] sig) throws SignatureException {
         if (pubKey != null) {
-            var msg = bout.toByteArray();
-            bout.reset();
+            var msg = accu.getMessage();
             return implVerify(pname, pubKey, pk2, msg, sig);
         } else {
             throw new SignatureException("No public key");
@@ -144,9 +142,9 @@ public abstract class NamedSignature extends SignatureSpi {
     @Override
     protected void engineSetParameter(AlgorithmParameterSpec params)
             throws InvalidAlgorithmParameterException {
-        if (params != null) {
-            throw new InvalidAlgorithmParameterException(
-                    "The " + fname + " algorithm does not take any parameters");
+        if (accu.isOn()) {
+            throw new IllegalStateException(
+                    "Cannot set parameters during operations");
         }
     }
 
@@ -160,7 +158,7 @@ public abstract class NamedSignature extends SignatureSpi {
     /// @param pname parameter name
     /// @param sk private key in raw bytes
     /// @param sk2 parsed private key, `null` if none. See [#implCheckPrivateKey].
-    /// @param msg the message
+    /// @param msg the message; might be pre-hashed
     /// @param sr SecureRandom object, `null` if not initialized
     /// @return the signature
     /// @throws ProviderException if there is an internal error
@@ -173,7 +171,7 @@ public abstract class NamedSignature extends SignatureSpi {
     /// @param pname parameter name
     /// @param pk public key in raw bytes
     /// @param pk2 parsed public key, `null` if none. See [#implCheckPublicKey].
-    /// @param msg the message
+    /// @param msg the message; might be pre-hashed
     /// @param sig the signature
     /// @return true if verified
     /// @throws ProviderException if there is an internal error
