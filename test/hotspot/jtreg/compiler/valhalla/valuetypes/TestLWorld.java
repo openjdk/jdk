@@ -3271,7 +3271,7 @@ public class TestLWorld {
     // Test removal of allocations when value type instance is wrapped into box object
     @Test
     @IR(failOn = {ALLOC, MEMBAR},
-        counts = {PREDICATE_TRAP, "= 1"})
+        counts = {PREDICATE_TRAP, "= 0"})
     public long test109() {
         long res = 0;
         for (int i = 0; i < lArr.length; i++) {
@@ -3289,7 +3289,7 @@ public class TestLWorld {
 
     @Test
     @IR(failOn = {ALLOC, MEMBAR},
-        counts = {PREDICATE_TRAP, "= 1"})
+        counts = {PREDICATE_TRAP, "= 0"})
     @IR(failOn = {ALLOC, MEMBAR})
     public long test109_sharp() {
         long res = 0;
@@ -3309,7 +3309,7 @@ public class TestLWorld {
     // Same as test109 but with ObjectBox
     @Test
     @IR(failOn = {ALLOC, MEMBAR},
-        counts = {PREDICATE_TRAP, "= 1"})
+        counts = {PREDICATE_TRAP, "= 0"})
     public long test110() {
         long res = 0;
         for (int i = 0; i < lArr.length; i++) {
@@ -3327,7 +3327,7 @@ public class TestLWorld {
 
     @Test
     @IR(failOn = {ALLOC, MEMBAR},
-        counts = {PREDICATE_TRAP, "= 1"})
+        counts = {PREDICATE_TRAP, "= 0"})
     @IR(failOn = {ALLOC, MEMBAR})
     public long test110_sharp() {
         long res = 0;
@@ -3347,7 +3347,7 @@ public class TestLWorld {
     // Same as test109 but with RefBox
     @Test
     @IR(failOn = {ALLOC, MEMBAR},
-        counts = {PREDICATE_TRAP, "= 1"})
+        counts = {PREDICATE_TRAP, "= 0"})
     public long test111() {
         long res = 0;
         for (int i = 0; i < lArr.length; i++) {
@@ -3364,7 +3364,7 @@ public class TestLWorld {
 
     @Test
     @IR(failOn = {ALLOC, MEMBAR},
-        counts = {PREDICATE_TRAP, "= 1"})
+        counts = {PREDICATE_TRAP, "= 0"})
     public long test111_sharp() {
         long res = 0;
         for (int i = 0; i < lArr.length; i++) {
@@ -3382,7 +3382,7 @@ public class TestLWorld {
     // Same as test109 but with InlineBox
     @Test
     @IR(failOn = {ALLOC, MEMBAR},
-        counts = {PREDICATE_TRAP, "= 1"})
+        counts = {PREDICATE_TRAP, "= 0"})
     public long test112() {
         long res = 0;
         for (int i = 0; i < lArr.length; i++) {
@@ -3400,7 +3400,7 @@ public class TestLWorld {
     // Same as test109 but with GenericBox
     @Test
     @IR(failOn = {ALLOC, MEMBAR},
-        counts = {PREDICATE_TRAP, "= 1"})
+        counts = {PREDICATE_TRAP, "= 0"})
     public long test113() {
         long res = 0;
         for (int i = 0; i < lArr.length; i++) {
@@ -3418,7 +3418,7 @@ public class TestLWorld {
 
     @Test
     @IR(failOn = {ALLOC, MEMBAR},
-        counts = {PREDICATE_TRAP, "= 1"})
+        counts = {PREDICATE_TRAP, "= 0"})
     public long test113_sharp() {
         long res = 0;
         for (int i = 0; i < lArr.length; i++) {
@@ -3497,7 +3497,7 @@ public class TestLWorld {
     // Same as tests above but with ZERO hidden in field of another value type
     @Test
     @IR(failOn = {ALLOC, MEMBAR},
-        counts = {PREDICATE_TRAP, "= 1"})
+        counts = {PREDICATE_TRAP, "= 0"})
     public long test114() {
         long res = 0;
         for (int i = 0; i < lArr.length; i++) {
@@ -3516,7 +3516,7 @@ public class TestLWorld {
     // Same as test114 but with dynamic instead of constant ZERO field
     @Test
     @IR(failOn = {ALLOC, MEMBAR},
-        counts = {PREDICATE_TRAP, "= 1"})
+        counts = {PREDICATE_TRAP, "= 0"})
     public long test115() {
         long res = 0;
         for (int i = 0; i < lArr.length; i++) {
