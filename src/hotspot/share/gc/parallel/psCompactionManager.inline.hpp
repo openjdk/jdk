@@ -32,7 +32,7 @@
 #include "gc/parallel/parMarkBitMap.hpp"
 #include "gc/parallel/psParallelCompact.inline.hpp"
 #include "gc/parallel/psStringDedup.hpp"
-#include "gc/shared/partialArrayState.hpp"
+#include "gc/shared/partialArraySplitter.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/arrayOop.hpp"

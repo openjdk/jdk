@@ -28,12 +28,48 @@
 #include "gc/shared/partialArraySplitter.hpp"
 
 #include "gc/shared/partialArrayTaskStats.hpp"
-#include "gc/shared/partialArrayTaskStepper.inline.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
 #include "oops/oop.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
+
+inline uint PartialArraySplitter::continuation_tasks(size_t start, size_t length, size_t chunk_size) const {
+  precond(chunk_size > 0);
+  assert(start < length, "invariant: start %zu, length %zu", start, length);
+  assert(((length - start) % chunk_size) == 0,
+         "invariant: start %zu, length %zu, chunk size %zu",
+         start, length, chunk_size);
+
+  // Determine the number of new tasks to create.
+  // Zero-based index for this partial task.  The initial task isn't counted.
+  uint task_num = checked_cast<uint>(start / chunk_size);
+  // Number of tasks left to process, including this one.
+  uint remaining_tasks = checked_cast<uint>((length - start) / chunk_size);
+  assert(remaining_tasks > 0, "invariant");
+  // Compute number of pending tasks, including this one.  The maximum number
+  // of tasks is a function of task_num (N) and _task_fanout (F).
+  //   1    : current task
+  //   N    : number of preceding tasks
+  //   F*N  : maximum created for preceding tasks
+  // => F*N - N + 1 : maximum number of tasks
+  // => (F-1)*N + 1
+  assert(_task_limit > 0, "precondition");
+  assert(_task_fanout > 0, "precondition");
+  uint64_t max_pending = (uint64_t)(_task_fanout - 1) * task_num + 1;
+
+  // The actual pending may be less than that.  Bound by remaining_tasks to
+  // not overrun.  Also bound by _task_limit to avoid spawning an excessive
+  // number of tasks for a large array.  The +1 is to replace the current
+  // task with a new task when _task_limit limited.  The pending value may
+  // not be what's actually in the queues, because of concurrent task
+  // processing.  That's okay; we just need to determine the correct number
+  // of tasks to add for this task.
+  uint pending = (uint)MIN3<uint64_t>(max_pending, remaining_tasks, _task_limit);
+  uint ncreate = MIN2(_task_fanout, MIN2(remaining_tasks, _task_limit + 1) - pending);
+  return ncreate;
+}
 
 template<typename Queue>
 void PartialArraySplitter::enqueue(Queue* queue, PartialArrayState* state, uint count) {
@@ -53,8 +89,7 @@ PartialArraySplitter::start(Queue* queue,
   size_t end = length % chunk_size;
   if (end < length) {
     TASKQUEUE_STATS_ONLY(_stats.inc_split();)
-    PartialArrayState* state =
-      _allocator.allocate(array, end, length, chunk_size);
+    PartialArrayState* state = allocate_state(array, end, length, chunk_size);
     enqueue(queue, state, 1);
   }
   return Claim{array, 0, end};
@@ -70,14 +105,14 @@ PartialArraySplitter::claim(PartialArrayState* state, Queue* queue, bool stolen)
 
   size_t start = state->claim_next();
   size_t chunk_size = state->_chunk_size;
-  uint count = _stepper.continuation_tasks(start, state->_length, chunk_size);
+  uint count = continuation_tasks(start, state->_length, chunk_size);
   if (count > 0) {
     enqueue(queue, state, count);
   }
   Claim result{state->array(), start, start + chunk_size};
   // Capture everything needed for scanning before decrementing the state's
   // remaining chunk count.
-  _allocator.release(state);
+  release_state(state);
   return result;
 }
 
