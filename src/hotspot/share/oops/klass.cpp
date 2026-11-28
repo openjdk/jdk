@@ -22,6 +22,7 @@
  *
  */
 
+#include "cds/aotClassLocation.hpp"
 #include "cds/aotHeap.hpp"
 #include "cds/aotSystemDictionary.hpp"
 #include "cds/cdsConfig.hpp"
@@ -283,8 +284,9 @@ Klass::Klass() : _kind(UnknownKlassKind) {
 // which zeros out memory - calloc equivalent.
 // The constructor is also used from CppVtableCloner,
 // which doesn't zero out the memory before calling the constructor.
-Klass::Klass(KlassKind kind, markWord prototype_header) : _kind(kind),
-                               _shared_class_path_index(-1) {
+Klass::Klass(KlassKind kind, markWord prototype_header)
+  : _kind(kind), _aot_class_location_id(AOTClassLocationID::INVALID)
+{
   set_prototype_header(make_prototype_header(this, prototype_header));
   CDS_ONLY(_aot_class_flags = 0;)
   CDS_JAVA_HEAP_ONLY(_archived_mirror_index = -1;)

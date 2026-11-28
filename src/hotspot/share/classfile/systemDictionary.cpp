@@ -993,10 +993,8 @@ bool SystemDictionary::is_shared_class_visible_impl(Symbol* class_name,
                                                     InstanceKlass* ik,
                                                     PackageEntry* pkg_entry,
                                                     Handle class_loader) {
-  int scp_index = ik->shared_classpath_index();
   assert(!ik->defined_by_other_loaders(), "this function should be called for built-in classes only");
-  assert(scp_index >= 0, "must be");
-  const AOTClassLocation* cl = AOTClassLocationConfig::runtime()->class_location_at(scp_index);
+  const AOTClassLocation* cl = AOTClassLocationConfig::runtime()->class_location_not_null(ik);
   if (!Universe::is_module_initialized()) {
     assert(cl != nullptr, "must be");
     // At this point, no modules have been defined yet. KlassSubGraphInfo::check_allowed_klass()
@@ -1026,7 +1024,7 @@ bool SystemDictionary::is_shared_class_visible_impl(Symbol* class_name,
   if (was_archived_from_named_module) {
     if (should_be_in_named_module) {
       // Is the module loaded from the same location as during dump time?
-      visible = mod_entry->shared_path_index() == scp_index;
+      visible = mod_entry->aot_class_location_id() == ik->aot_class_location_id();
       if (visible) {
         assert(!mod_entry->is_patched(), "cannot load archived classes for patched module");
       }
@@ -1282,8 +1280,7 @@ void SystemDictionary::load_shared_class_misc(InstanceKlass* ik, ClassLoaderData
   // For boot loader, ensure that GetSystemPackage knows that a class in this
   // package was loaded.
   if (loader_data->is_the_null_class_loader_data()) {
-    s2 path_index = ik->shared_classpath_index();
-    ik->set_classpath_index(path_index);
+    PackageEntry::set_boot_classpath_index(ik, AOTClassLocationConfig::runtime()->get_boot_classpath_index(ik));
   }
 
   if (CDSConfig::is_dumping_with_input_archive()) {

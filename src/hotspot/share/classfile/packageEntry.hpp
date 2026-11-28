@@ -107,11 +107,10 @@ private:
   // Indicates if package is exported unqualifiedly or to all unnamed. Access to
   // this field is protected by the Module_lock.
   int _export_flags;
-  // Used to indicate for packages with classes loaded by the boot loader that
-  // a class in that package has been loaded.  And, for packages with classes
-  // loaded by the boot loader from -Xbootclasspath/a in an unnamed module, it
-  // indicates from which class path entry.
-  s2 _classpath_index;
+  // Used by ClassLoader::get_system_package() and PackageEntryTable::get_system_packages()
+  // to get the code source of a package in the boot loader. -1 means no boot class has
+  // ever been loaded into this package.
+  s2 _boot_classpath_index;
   bool _must_walk_exports;
   // Contains list of modules this package is qualifiedly exported to.  Access
   // to this list is protected by the Module_lock.
@@ -180,12 +179,9 @@ public:
 
   void set_is_exported_allUnnamed();
 
-  void set_classpath_index(s2 classpath_index) {
-    _classpath_index = classpath_index;
-  }
-  s2 classpath_index() const { return _classpath_index; }
-
-  bool has_loaded_class() const { return _classpath_index != -1; }
+  static void set_boot_classpath_index(InstanceKlass* ik, s2 index);
+  s2 boot_classpath_index() const;
+  bool has_loaded_boot_class() const { return _boot_classpath_index != -1; }
 
   // returns true if the package is defined in the unnamed module
   bool in_unnamed_module() const  { return !_module->is_named(); }

@@ -51,7 +51,7 @@ OopHandle CDSProtectionDomain::_shared_jar_manifests;
 // the given InstanceKlass.
 // Returns the ProtectionDomain for the InstanceKlass.
 Handle CDSProtectionDomain::init_security_info(Handle class_loader, InstanceKlass* ik, PackageEntry* pkg_entry, TRAPS) {
-  int index = ik->shared_classpath_index();
+  int index = AOTClassLocationConfig::get_path_index(ik);
   assert(index >= 0, "Sanity");
   const AOTClassLocation* cl = AOTClassLocationConfig::runtime()->class_location_at(index);
   Symbol* class_name = ik->name();
@@ -72,7 +72,7 @@ Handle CDSProtectionDomain::init_security_info(Handle class_loader, InstanceKlas
     //
     //   If a shared InstanceKlass k is loaded from the class path, let
     //
-    //     index = k->shared_classpath_index();
+    //     index = k->aot_class_location_id();
     //
     //   AOTClassLocationConfig::_runtime_instance->_array->at(index) identifies the JAR file that contains k.
     //

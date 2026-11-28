@@ -2182,7 +2182,7 @@ ClassPathEntry* FileMapInfo::get_classpath_entry_for_jvmti(int i, TRAPS) {
 }
 
 ClassFileStream* FileMapInfo::open_stream_for_jvmti(InstanceKlass* ik, Handle class_loader, TRAPS) {
-  int path_index = ik->shared_classpath_index();
+  int path_index = AOTClassLocationConfig::get_path_index(ik);
   assert(path_index >= 0, "should be called for shared built-in classes only");
   assert(path_index < AOTClassLocationConfig::runtime()->length(), "sanity");
 

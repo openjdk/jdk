@@ -63,10 +63,16 @@ void ModuleEntry::set_location(Symbol* location) {
   if (location != nullptr) {
     location->increment_refcount();
     CDS_ONLY(if (CDSConfig::is_using_archive()) {
-        _shared_path_index = AOTClassLocationConfig::runtime()->get_module_shared_path_index(_location);
+        _aot_class_location_id = AOTClassLocationConfig::runtime()->get_module_location_id(_location);
       });
   }
 }
+
+void ModuleEntry::set_is_patched() {
+  _is_patched = true;
+  CDS_ONLY(_aot_class_location_id = AOTClassLocationID::INVALID); // Mark all AOT classes in this module invisible.
+}
+
 
 // Return true if the module's version should be displayed in error messages,
 // logging, etc.
@@ -269,7 +275,7 @@ ModuleEntry::ModuleEntry(Handle module_handle,
     _reads(nullptr),
     _version(nullptr),
     _location(nullptr),
-    CDS_ONLY(_shared_path_index(-1) COMMA)
+    CDS_ONLY(_aot_class_location_id(AOTClassLocationID::INVALID) COMMA)
     _can_read_all_unnamed(false),
     _has_default_read_edges(false),
     _must_walk_reads(false),
@@ -433,11 +439,11 @@ void ModuleEntry::remove_unshareable_info() {
   _loader_data = nullptr;  // re-init at runtime
   if (name() != nullptr) {
     Symbol* src_location = ArchiveBuilder::current()->get_source_addr(_location);
-    _shared_path_index = AOTClassLocationConfig::dumptime()->get_module_shared_path_index(src_location);
+    _aot_class_location_id = AOTClassLocationConfig::dumptime()->get_module_location_id(src_location);
   } else {
-    // _shared_path_index is used only by SystemDictionary::is_shared_class_visible_impl()
+    // _aot_class_location_id is used only by SystemDictionary::is_shared_class_visible_impl()
     // for checking classes in named modules.
-    _shared_path_index = -1;
+    _aot_class_location_id = AOTClassLocationID::INVALID;
   }
   JFR_ONLY(set_trace_id(0);) // re-init at runtime
 }
