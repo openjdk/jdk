@@ -30,7 +30,7 @@ import jdk.test.lib.Asserts;
 
 /**
  * @test
- * @bug 8363989
+ * @bug 8363989 8393246
  * @key randomness
  * @library /test/lib /
  * @summary AArch64: Add missing backend support of VectorAPI expand operation
@@ -42,6 +42,7 @@ import jdk.test.lib.Asserts;
 public class VectorExpandTest {
     static final VectorSpecies<Byte> B_SPECIES = ByteVector.SPECIES_MAX;
     static final VectorSpecies<Short> S_SPECIES = ShortVector.SPECIES_MAX;
+    static final VectorSpecies<Float16> HF_SPECIES = Float16Vector.SPECIES_MAX;
     static final VectorSpecies<Integer> I_SPECIES = IntVector.SPECIES_MAX;
     static final VectorSpecies<Float> F_SPECIES = FloatVector.SPECIES_MAX;
     static final VectorSpecies<Long> L_SPECIES = LongVector.SPECIES_MAX;
@@ -50,6 +51,7 @@ public class VectorExpandTest {
     static final Generators RD = Generators.G;
     static byte[] ba, bb;
     static short[] sa, sb;
+    static short[] hfa, hfb;
     static int[] ia, ib;
     static long[] la, lb;
     static float[] fa, fb;
@@ -61,6 +63,8 @@ public class VectorExpandTest {
         bb = new byte[LENGTH];
         sa = new short[LENGTH];
         sb = new short[LENGTH];
+        hfa = new short[LENGTH];
+        hfb = new short[LENGTH];
         ia = new int[LENGTH];
         ib = new int[LENGTH];
         la = new long[LENGTH];
@@ -75,10 +79,12 @@ public class VectorExpandTest {
         Generator<Long> lGen = RD.longs();
         Generator<Float> fGen = RD.floats();
         Generator<Double> dGen = RD.doubles();
+        Generator<Short> hfGen = RD.float16s();
 
         for (int i = 0; i < LENGTH; i++) {
             ba[i] = iGen.next().byteValue();
             sa[i] = iGen.next().shortValue();
+            hfa[i] = hfGen.next();
             ma[i] = iGen.next() % 2 == 0;
         }
         RD.fill(iGen, ia);
@@ -118,6 +124,27 @@ public class VectorExpandTest {
         int index = 0;
         for (int i = 0; i < m.length(); i++) {
             Asserts.assertEquals(m.laneIsSet(i) ? sa[index++] : (short)0, sb[i]);
+        }
+    }
+
+    @Test
+    @IR(counts = { IRNode.EXPAND_VS, "= 1" }, applyIfCPUFeatureOr = { "asimd", "true", "rvv", "true" })
+    @IR(counts = { IRNode.EXPAND_VS, "= 1" },
+        applyIfCPUFeatureAnd = { "avx512_vbmi2", "true", "avx512vl", "true" })
+    public static void testVectorExpandFloat16(Float16Vector av, VectorMask<Float16> m) {
+        av.expand(m).intoArray(hfb, 0);
+    }
+
+    // Expand is a pure lane permutation, so the Float16 lanes are compared as
+    // raw binary16 bit patterns to also cover NaN payload preservation.
+    @Run(test = "testVectorExpandFloat16")
+    public static void testVectorExpandFloat16_runner() {
+        Float16Vector av = Float16Vector.fromArray(HF_SPECIES, hfa, 0);
+        VectorMask<Float16> m = VectorMask.fromArray(HF_SPECIES, ma, 0);
+        testVectorExpandFloat16(av, m);
+        int index = 0;
+        for (int i = 0; i < m.length(); i++) {
+            Asserts.assertEquals(m.laneIsSet(i) ? hfa[index++] : (short)0, hfb[i]);
         }
     }
 
