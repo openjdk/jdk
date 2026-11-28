@@ -341,19 +341,6 @@ LIR_OpTypeCheck::LIR_OpTypeCheck(LIR_Code code, LIR_Opr object, LIR_Opr array, L
   }
 }
 
-LIR_OpFlattenedArrayCheck::LIR_OpFlattenedArrayCheck(LIR_Opr array, LIR_Opr tmp, CodeStub* stub)
-  : LIR_Op(lir_flat_array_check, LIR_OprFact::illegalOpr, nullptr)
-  , _array(array)
-  , _tmp(tmp)
-  , _stub(stub) {}
-
-
-LIR_OpNullFreeArrayCheck::LIR_OpNullFreeArrayCheck(LIR_Opr array, LIR_Opr tmp)
-  : LIR_Op(lir_null_free_array_check, LIR_OprFact::illegalOpr, nullptr)
-  , _array(array)
-  , _tmp(tmp) {}
-
-
 LIR_OpSubstitutabilityCheck::LIR_OpSubstitutabilityCheck(LIR_Opr result, LIR_Opr left, LIR_Opr right, LIR_Opr equal_result, LIR_Opr not_equal_result,
                                                          ciKlass* left_klass, ciKlass* right_klass, LIR_Opr tmp1, LIR_Opr tmp2,
                                                          CodeEmitInfo* info, CodeStub* stub)
@@ -853,35 +840,6 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
       break;
     }
 
-// LIR_OpFlattenedArrayCheck
-    case lir_flat_array_check: {
-      assert(op->as_OpFlattenedArrayCheck() != nullptr, "must be");
-      LIR_OpFlattenedArrayCheck* opFlattenedArrayCheck = (LIR_OpFlattenedArrayCheck*)op;
-
-      if (opFlattenedArrayCheck->_array->is_valid()) do_input(opFlattenedArrayCheck->_array);
-      if (opFlattenedArrayCheck->_tmp->is_valid())   do_temp(opFlattenedArrayCheck->_tmp);
-
-      do_stub(opFlattenedArrayCheck->_stub);
-
-      break;
-    }
-
-// LIR_OpNullFreeArrayCheck
-    case lir_null_free_array_check: {
-      assert(op->as_OpNullFreeArrayCheck() != nullptr, "must be");
-      LIR_OpNullFreeArrayCheck* opNullFreeArrayCheck = (LIR_OpNullFreeArrayCheck*)op;
-
-      if (opNullFreeArrayCheck->_array->is_valid()) do_input(opNullFreeArrayCheck->_array);
-#ifdef RISCV
-      // tmp is used to hold the result of null free array check on riscv
-      // See LIR_Assembler::emit_opNullFreeArrayCheck
-      if (opNullFreeArrayCheck->_tmp->is_valid())   do_output(opNullFreeArrayCheck->_tmp);
-#else
-      if (opNullFreeArrayCheck->_tmp->is_valid())   do_temp(opNullFreeArrayCheck->_tmp);
-#endif
-      break;
-    }
-
 // LIR_OpSubstitutabilityCheck
     case lir_substitutability_check: {
       assert(op->as_OpSubstitutabilityCheck() != nullptr, "must be");
@@ -1150,17 +1108,6 @@ void LIR_OpTypeCheck::emit_code(LIR_Assembler* masm) {
   if (stub()) {
     masm->append_code_stub(stub());
   }
-}
-
-void LIR_OpFlattenedArrayCheck::emit_code(LIR_Assembler* masm) {
-  masm->emit_opFlattenedArrayCheck(this);
-  if (stub() != nullptr) {
-    masm->append_code_stub(stub());
-  }
-}
-
-void LIR_OpNullFreeArrayCheck::emit_code(LIR_Assembler* masm) {
-  masm->emit_opNullFreeArrayCheck(this);
 }
 
 void LIR_OpSubstitutabilityCheck::emit_code(LIR_Assembler* masm) {
@@ -1618,16 +1565,6 @@ void LIR_List::null_check(LIR_Opr opr, CodeEmitInfo* info, bool deoptimize_on_nu
   }
 }
 
-void LIR_List::check_flat_array(LIR_Opr array, LIR_Opr tmp, CodeStub* stub) {
-  LIR_OpFlattenedArrayCheck* c = new LIR_OpFlattenedArrayCheck(array, tmp, stub);
-  append(c);
-}
-
-void LIR_List::check_null_free_array(LIR_Opr array, LIR_Opr tmp) {
-  LIR_OpNullFreeArrayCheck* c = new LIR_OpNullFreeArrayCheck(array, tmp);
-  append(c);
-}
-
 void LIR_List::substitutability_check(LIR_Opr result, LIR_Opr left, LIR_Opr right, LIR_Opr equal_result, LIR_Opr not_equal_result,
                                       ciKlass* left_klass, ciKlass* right_klass, LIR_Opr tmp1, LIR_Opr tmp2,
                                       CodeEmitInfo* info, CodeStub* stub) {
@@ -1916,10 +1853,6 @@ const char * LIR_Op::name() const {
      case lir_instanceof:            s = "instanceof";    break;
      case lir_checkcast:             s = "checkcast";     break;
      case lir_store_check:           s = "store_check";   break;
-     // LIR_OpFlattenedArrayCheck
-     case lir_flat_array_check:      s = "flat_array_check"; break;
-     // LIR_OpNullFreeArrayCheck
-     case lir_null_free_array_check: s = "null_free_array_check"; break;
      // LIR_OpSubstitutabilityCheck
      case lir_substitutability_check: s = "substitutability_check"; break;
      // LIR_OpCompareAndSwap
@@ -2155,19 +2088,6 @@ void LIR_OpTypeCheck::print_instr(outputStream* out) const {
   tmp3()->print(out);                    out->print(" ");
   result_opr()->print(out);              out->print(" ");
   if (info_for_exception() != nullptr) out->print(" [bci:%d]", info_for_exception()->stack()->bci());
-}
-
-void LIR_OpFlattenedArrayCheck::print_instr(outputStream* out) const {
-  array()->print(out);                   out->print(" ");
-  tmp()->print(out);                     out->print(" ");
-  if (stub() != nullptr) {
-    out->print("[label:" INTPTR_FORMAT "]", p2i(stub()->entry()));
-  }
-}
-
-void LIR_OpNullFreeArrayCheck::print_instr(outputStream* out) const {
-  array()->print(out);                   out->print(" ");
-  tmp()->print(out);                     out->print(" ");
 }
 
 void LIR_OpSubstitutabilityCheck::print_instr(outputStream* out) const {

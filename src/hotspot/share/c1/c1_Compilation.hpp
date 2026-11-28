@@ -85,6 +85,7 @@ class Compilation: public StackObj {
   bool               _has_reserved_stack_access;
   bool               _has_monitors; // Fastpath monitors detection for Continuations
   bool               _has_scoped_access; // For shared scope closure
+  bool               _has_late_control_flow;
   bool               _install_code;
   const char*        _bailout_msg;
   CompilationFailureInfo* _first_failure_details; // Details for the first failure happening during compilation
@@ -147,6 +148,7 @@ class Compilation: public StackObj {
   bool has_monitors() const                      { return _has_monitors; }
   bool has_scoped_access() const                 { return _has_scoped_access; }
   bool has_irreducible_loops() const             { return _has_irreducible_loops; }
+  bool has_late_control_flow() const             { return _has_late_control_flow; }
   int max_vector_size() const                    { return 0; }
   ciMethod* method() const                       { return _method; }
   int osr_bci() const                            { return _osr_bci; }
@@ -178,6 +180,7 @@ class Compilation: public StackObj {
   void set_has_access_indexed(bool f)            { _has_access_indexed = f; }
   void set_has_monitors(bool f)                  { _has_monitors = f; }
   void set_has_scoped_access(bool f)             { _has_scoped_access = f; }
+  void set_has_late_control_flow(bool f)         { _has_late_control_flow = f; }
   // Add a set of exception handlers covering the given PC offset
   void add_exception_handlers_for_pco(int pco, XHandlers* exception_handlers);
   // Statistics gathering

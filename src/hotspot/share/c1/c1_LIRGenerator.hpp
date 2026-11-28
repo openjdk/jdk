@@ -29,6 +29,7 @@
 #include "c1/c1_Instruction.hpp"
 #include "c1/c1_LIR.hpp"
 #include "gc/shared/barrierSet.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/sizes.hpp"
 
@@ -150,6 +151,100 @@ class PhiResolver: public CompilationResourceObj {
 };
 
 
+// The LateControlFlowDiamond and associated (Not)TakenBlock classes are RAII-style helpers
+// to add control flow that is visible to the register allocator during LIR generation.
+// Adding a conditional branch somewhere in a block, named origin, requires splitting origin
+// into two and moving the part after the split into a new block, called continuation.
+//     origin
+//     /    \
+// taken    not_taken
+//     \    /
+//  continuation
+// With our classes this becomes:
+// {
+//    LateControlFlowDiamond lcfd(this, instr, [&](BlockBegin* taken, BlockBegin* not_taken) {
+//        branching_condition(lir_cond, operand);
+//        __ branch(lir_cond, taken);
+//        __ jump(not_taken);
+//      });
+//    {
+//      LateControlFlowDiamond::NotTakenBlock not_taken(lcfd);
+//      conditional_work();
+//    } {
+//      LateControlFlowDiamond::TakenBlock taken(lcfd);
+//      other_conditional_work();
+//    }
+// }
+//
+// The classes take care of creating new blocks, adding them into the control flow graph,
+// switching the LIRGeneration context to different blocks, and emitting jumps to the
+// next block.
+// Each scope becomes a new basic block with this machinery and the LIR generation also
+// switches to a new block. Thus, all LIRItems and LIR operands must be reloaded so they
+// become live in the new basic block. Otherwise, you will see asserts in the register
+// allocator.
+//
+// To represent more complicated control flow than a simple diamond we can nest LateControlFlowDiamonds.
+// Further, we can omit either the TakenBranch or the NotTakenBranch, which will still emit an
+// empty block to prevent the creation of a critical edge.
+class LateControlFlowDiamond: public StackObj {
+ public:
+  class Block: public StackObj {
+   friend class LateControlFlowDiamond;
+   private:
+    LateControlFlowDiamond& _lcfd;
+    BlockBegin* _block;
+
+    // This is only to be used by a nested LateControlFlowDiamond ctor to update where
+    // LIR generation will pick back up.
+    void set_block(BlockBegin* replacement) { _block = replacement; }
+
+    explicit Block(LateControlFlowDiamond& lcfd, BlockBegin* block);
+    ~Block();
+   public:
+    BlockBegin* block() const { return _block; }
+  };
+  class TakenBlock: public Block {
+   public:
+    explicit TakenBlock(LateControlFlowDiamond& lcfd) : Block(lcfd, lcfd.taken()) {}
+  };
+  class NotTakenBlock: public Block {
+   public:
+    explicit NotTakenBlock(LateControlFlowDiamond& lcfd) : Block(lcfd, lcfd.not_taken()) {}
+  };
+
+ private:
+  LIRGenerator* _gen;
+  Instruction*  _instr;
+  int           _bci;
+  CodeEmitInfo* _info;
+  BlockBegin*   _origin;
+  BlockBegin*   _not_taken;
+  BlockBegin*   _taken;
+  BlockBegin*   _continuation;
+  // For nested late control flow we need to keep track of the outermost continuation.
+  BlockBegin*   _outer_continuation;
+
+  // Setup helpers
+  BlockBegin* make_late_block();
+  void setup_out_edges();
+
+ public:
+  BlockBegin*   origin()       const { return _origin; }
+  BlockBegin*   not_taken()    const { return _not_taken; }
+  BlockBegin*   taken()        const { return _taken; }
+  BlockBegin*   continuation() const { return _continuation; }
+  // CodeEmitInfo computed before splitting the control flow. Does not have exception state.
+  CodeEmitInfo* info()         const { return _info; }
+
+  template <typename EmitBranch>
+  explicit LateControlFlowDiamond(LIRGenerator* _lir_gen, Instruction* instr, EmitBranch&& branching_condition);
+  template <typename EmitBranch>
+  explicit LateControlFlowDiamond(Block& parent, EmitBranch&& branching_condition);
+  ~LateControlFlowDiamond();
+};
+
+
 // only the classes below belong in the same file
 class LIRGenerator: public InstructionVisitor, public BlockClosure {
  // LIRGenerator should never get instatiated on the heap.
@@ -169,7 +264,6 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
 #endif
   BitMap2D      _vreg_flags; // flags which can be set on a per-vreg basis
   LIR_List*     _lir;
-  bool          _in_conditional_code;
 
   LIRGenerator* gen() {
     return this;
@@ -196,7 +290,6 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
 
   friend class PhiResolver;
 
-  void set_in_conditional_code(bool v);
  public:
   // unified bailout support
   void bailout(const char* msg) const            { compilation()->bailout(msg); }
@@ -215,7 +308,6 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   LIR_Opr load_constant(Constant* x);
   LIR_Opr load_constant(LIR_Const* constant);
 
-  bool in_conditional_code() const { return _in_conditional_code; }
   // Given an immediate value, return an operand usable in logical ops.
   LIR_Opr load_immediate(jlong x, BasicType type);
 
@@ -276,13 +368,15 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
 
   void deoptimize_vmalloc_for_jvmti(bool is_allocated_by_vm, CodeEmitInfo* info);
 
-  LIR_Opr access_flat_array(bool is_load, LIRItem& array, LIRItem& index, LIRItem& obj_item, ciField* field = nullptr, size_t offset = 0);
+  Value make_lir_temporary(BasicType bt);
+
+  LIR_Opr access_flat_array(AccessIndexed* x, LIRItem& array, LIRItem& index, LIRItem& obj_item, ciField* field = nullptr, size_t offset = 0);
   void access_sub_element(LIRItem& array, LIRItem& index, LIR_Opr& result, ciField* field, size_t sub_offset);
   LIR_Opr get_and_load_element_address(LIRItem& array, LIRItem& index);
   static bool needs_flat_array_store_check(StoreIndexed* x);
-  void check_flat_array(LIR_Opr array, CodeStub* slow_path);
+  LIR_Condition is_array_flat(LIRItem& array, CodeEmitInfo* info);
   static bool needs_null_free_array_store_check(StoreIndexed* x);
-  void check_null_free_array(LIRItem& array, LIRItem& value,  CodeEmitInfo* info);
+  LIR_Condition is_array_null_free(LIRItem& array, CodeEmitInfo* info);
   void substitutability_check(IfOp* x, LIRItem& left, LIRItem& right, LIRItem& t_val, LIRItem& f_val);
   void substitutability_check(If* x, LIRItem& left, LIRItem& right);
   void substitutability_check_common(Value left_val, Value right_val, LIRItem& left, LIRItem& right,
@@ -493,7 +587,7 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   void profile_parameters(Base* x);
   void profile_parameters_at_call(ProfileCall* x);
   void profile_flags(ciMethodData* md, ciProfileData* load_store, int flag, LIR_Condition condition = lir_cond_always);
-  void profile_null_free_array(LIRItem array, ciMethodData* md, ciProfileData* load_store);
+  void profile_null_free_array(LIRItem array, ciMethodData* md, ciProfileData* load_store, CodeEmitInfo* info);
   template <class ArrayData> void profile_array_type(AccessIndexed* x, ciMethodData*& md, ArrayData*& load_store);
   void profile_element_type(Value element, ciMethodData* md, ciArrayLoadData* load_store);
   bool profile_value_klass(ciMethodData* md, ciProfileData* data, Value value, int flag);
@@ -504,7 +598,10 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   FrameMap*     frame_map() const                { return _compilation->frame_map(); }
   ciMethod*     method() const                   { return _method; }
   BlockBegin*   block() const                    { return _block; }
-  IRScope*      scope() const                    { return block()->scope(); }
+  IRScope*      scope() const {
+    assert(!block()->is_set(BlockBegin::late_block_flag), "late blocks do not have a well-defined scope");
+    return block()->scope();
+  }
 
   int max_virtual_register_number() const        { return _virtual_register_number; }
 
@@ -524,7 +621,6 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
     , _method(method)
     , _virtual_register_number(LIR_Opr::vreg_base)
     , _vreg_flags(num_vreg_flags)
-    , _in_conditional_code(false)
     , _barrier_set(BarrierSet::barrier_set()->barrier_set_c1()) {
   }
 
@@ -591,6 +687,7 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   virtual void do_MonitorExit    (MonitorExit*     x);
   virtual void do_Intrinsic      (Intrinsic*       x);
   virtual void do_BlockBegin     (BlockBegin*      x);
+  virtual void do_LateBlockEnd   (LateBlockEnd*    x) { assert(false, "must not visit late block end"); }
   virtual void do_Goto           (Goto*            x);
   virtual void do_If             (If*              x);
   virtual void do_TableSwitch    (TableSwitch*     x);
