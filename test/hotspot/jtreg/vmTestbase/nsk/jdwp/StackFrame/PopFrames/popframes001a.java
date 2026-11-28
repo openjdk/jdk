@@ -40,8 +40,11 @@ public class popframes001a {
     // name of the tested thread
     public static final String THREAD_NAME = "testedThread";
 
-    // line nunber for breakpoint
-    public static final int BREAKPOINT_LINE_NUMBER = 114;
+    // line number for breakpoint
+    public static final int BREAKPOINT_LINE_NUMBER = 160;
+
+    // line number of the popframes003 breakpoint in stop()
+    public static final int STOP_LINE_NUMBER = 177;
 
     // scaffold objects
     private static volatile ArgumentHandler argumentHandler = null;
@@ -62,6 +65,18 @@ public class popframes001a {
         TestedThreadClass thread = new TestedThreadClass(THREAD_NAME);
         log.display("  ... thread created");
 
+        if (thread.isVirtual()) {
+            // The thread joined by the virtual thread in testedMethod. It exits once the
+            // virtual thread has unmounted. Created here to avoid setup code in testedMethod
+            // that could trigger deoptimization before join().
+            Thread tested = thread.getThread();
+            TestedThreadClass.parker = Thread.ofVirtual().start(() -> {
+                while (tested.getState() != Thread.State.WAITING) {
+                    Thread.yield();
+                }
+            });
+        }
+
         // start tested thread
         log.display("Starting tested thread");
         thread.start();
@@ -78,6 +93,19 @@ public class popframes001a {
             return popframes001.FAILED;
         }
 
+        // the tested method is expected to be invoked twice
+        if (TestedThreadClass.invocations != 2) {
+            log.complain("Tested method invoked " + TestedThreadClass.invocations + " times, expected 2");
+            log.display("Debugee FAILED");
+            return popframes001.FAILED;
+        }
+
+        if (TestedThreadClass.argsMismatch != null) {
+            log.complain("Tested method got wrong arguments: " + TestedThreadClass.argsMismatch);
+            log.display("Debugee FAILED");
+            return popframes001.FAILED;
+        }
+
         log.display("Debugee PASSED");
         return popframes001.PASSED;
     }
@@ -85,36 +113,68 @@ public class popframes001a {
     // tested thread class
     public static class TestedThreadClass extends ThreadWrapper {
 
-        // number of invokations of tested method
-        public static volatile int invokations = 0;
+        // number of invocations of tested method
+        public static volatile int invocations = 0;
+
+        // arguments run() passes to testedMethod, checked on every invocation
+        static final long LONG_ARG = 0x1234567890ABL;
+        public static volatile String argsMismatch = null;
+
+        // popframes003 runs this debuggee with this set
+        private static final boolean COMPILED_CALLER = Boolean.getBoolean("popframes001.compiledCaller");
+
+        // joined by the tested method when the tested thread is virtual, started in runIt
+        public static Thread parker = null;
 
         public TestedThreadClass(String name) {
             super(name);
         }
 
-        // invoke tested method
+        // invoke tested method, nothing before the call that could deoptimize this frame
         public void run() {
-            log.display("Tested thread: started");
-
-            // invoke tested method
             int foo = 100;
-            foo = testedMethod(foo);
+            foo = testedMethod(foo, LONG_ARG, this);
 
             log.display("Tested thread: finished");
         }
 
         // tested method to pop frames
-        public int testedMethod(int arg) {
-            invokations++;
-            log.display("Tested method invoked " + invokations + " time");
+        public int testedMethod(int arg, long arg2, Object arg3) {
+            invocations++;
             int boo = 0;
+
+            if (isVirtual()) {
+                // PopFrame pops this frame, testedMethod() runs twice. The first join unmounts the
+                // thread, leaving the caller in the heap when PopFrame runs. Code before this join
+                // must not deoptimize this frame, an interpreted frame thaws its compiled caller.
+                try {
+                    parker.join();
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            log.display("Tested method invoked " + invocations + " time");
 
             log.display("Breakpoint line reached");
             // next line is for breakpoint
             boo = arg * 2; // BREAKPOINT_LINE_NUMBER
             log.display("Breakpoint line passed");
+            if (arg != 100 || arg2 != LONG_ARG || arg3 != this) {
+                argsMismatch = "arg " + arg + " arg2 " + arg2 + " arg3 " + arg3;
+            }
+
+            if (COMPILED_CALLER) {
+                // popframes003 breaks in stop() and pops this frame together with it
+                stop();
+            }
 
             return boo;
+        }
+
+        // breakpoint method for popframes003
+        public void stop() {
+            // next line is for breakpoint
+            log.display("Stop line reached"); // STOP_LINE_NUMBER
         }
     }
 }

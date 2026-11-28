@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,7 +139,7 @@ class Stream<T> extends ExchangeImpl<T> {
     // The exception with which this stream was canceled.
     private final AtomicReference<Throwable> errorRef = new AtomicReference<>();
     final CompletableFuture<Void> requestBodyCF = new MinimalFuture<>();
-    volatile CompletableFuture<T> responseBodyCF;
+    final CompletableFuture<T> responseBodyCF = new MinimalFuture<>();
     volatile BodySubscriber<T> pendingResponseSubscriber;
     volatile boolean stopRequested;
 
@@ -521,6 +522,30 @@ class Stream<T> extends ExchangeImpl<T> {
          }
     }
 
+    // Check whether we have an error, and if we have no pending data
+    // and FIN was not processed, complete the given cf exceptionally
+    // This avoids cancelling the response too early.
+    private void completeCfIfErrorAndNoPendingData(CompletableFuture<?> cf) {
+        Throwable error = null;
+        inputQLock.lock();
+        try {
+            // if the exchange is cancelled, and the scheduler is stopped,
+            // or we have no pending data, and we haven't reached the end of
+            // the stream, we need to cancel the cf.
+            // Otherwise, we will continue processing buffered data, even if
+            // we have an error. We will later report the error after the data
+            // has been processed if needed.
+            if (isCanceled() && (sched.isStopped() || (inputQ.isEmpty() && !endStreamReceived()))) {
+                error = getCancelCause();
+            }
+        } finally {
+            inputQLock.unlock();
+        }
+        if (error != null) {
+            cf.completeExceptionally(error);
+        }
+    }
+
     // pushes entire response body into response subscriber
     // blocking when required by local or remote flow control
     CompletableFuture<T> receiveData(BodySubscriber<T> bodySubscriber, Executor executor) {
@@ -530,13 +555,11 @@ class Stream<T> extends ExchangeImpl<T> {
 
         // We want to allow the subscriber's getBody() method to block so it
         // can work with InputStreams. So, we offload execution.
-        responseBodyCF = ResponseSubscribers.getBodyAsync(executor, bodySubscriber,
-                new MinimalFuture<>(), this::cancelImpl);
+        var cf = ResponseSubscribers.getBodyAsync(executor, bodySubscriber,
+                responseBodyCF, this::cancelImpl);
+        assert responseBodyCF == cf;
 
-        if (isCanceled()) {
-            Throwable t = getCancelCause();
-            responseBodyCF.completeExceptionally(t);
-        }
+        completeCfIfErrorAndNoPendingData(cf);
 
         sched.runOrSchedule(); // in case data waiting already to be processed, or error
 
@@ -581,14 +604,16 @@ class Stream<T> extends ExchangeImpl<T> {
         if (debug.on()) debug.log("incoming: %s", frame);
         var cancelled = checkRequestCancelled() || closed;
         if ((frame instanceof HeaderFrame hf)) {
+            if (hf.getFlag(HeaderFrame.END_STREAM)) {
+                endStreamSeen = true;
+            }
             if (hf.endHeaders()) {
                 Log.logTrace("handling response (streamid={0})", streamid);
                 handleResponse(hf);
-            }
-            if (hf.getFlag(HeaderFrame.END_STREAM)) {
-                endStreamSeen = true;
-                if (debug.on()) debug.log("handling END_STREAM: %d", streamid);
-                receiveDataFrame(new DataFrame(streamid, DataFrame.END_STREAM, List.of()));
+                if (endStreamSeen) {
+                    if (debug.on()) debug.log("handling END_STREAM: %d", streamid);
+                    receiveDataFrame(new DataFrame(streamid, DataFrame.END_STREAM, List.of()));
+                }
             }
         } else if (frame instanceof DataFrame df) {
             if (df.getFlag(DataFrame.END_STREAM)) endStreamSeen = true;
@@ -925,8 +950,6 @@ class Stream<T> extends ExchangeImpl<T> {
         }
         HttpHeaders sysh = filterHeaders(h.build());
         HttpHeaders userh = filterHeaders(request.getUserHeaders());
-        // Filter context restricted from userHeaders
-        userh = HttpHeaders.of(userh.map(), Utils.ACCEPT_ALL);
         Utils.setUserAuthFlags(request, userh);
 
         // Don't override Cookie values that have been set by the CookieHandler.
@@ -1359,6 +1382,7 @@ class Stream<T> extends ExchangeImpl<T> {
      * uncompleted CF then creates one (completes it) and adds to list
      */
     void completeResponse(Response resp) {
+        CompletableFuture<Response> toComplete = null;
         response_cfs_lock.lock();
         try {
             CompletableFuture<Response> cf;
@@ -1371,7 +1395,7 @@ class Stream<T> extends ExchangeImpl<T> {
                     if (debug.on())
                         debug.log("Completing responseCF(%d) with response headers", i);
                     response_cfs.remove(cf);
-                    cf.complete(resp);
+                    toComplete = cf;
                     return;
                 } else if (expectTimeoutRaised()) {
                     Log.logTrace("Completing response (streamid={0}): {1}",
@@ -1379,7 +1403,7 @@ class Stream<T> extends ExchangeImpl<T> {
                     if (debug.on())
                         debug.log("Completing responseCF(%d) with response headers", i);
                     // The Request will be removed in getResponseAsync()
-                    cf.complete(resp);
+                    toComplete = cf;
                     return;
                 } // else we found the previous response: just leave it alone.
             }
@@ -1391,6 +1415,7 @@ class Stream<T> extends ExchangeImpl<T> {
             response_cfs.add(cf);
         } finally {
             response_cfs_lock.unlock();
+            if (toComplete != null) toComplete.complete(resp);
         }
     }
 
@@ -1434,6 +1459,7 @@ class Stream<T> extends ExchangeImpl<T> {
      * same as above but for errors
      */
     void completeResponseExceptionally(Throwable t) {
+        CompletableFuture<Response> toComplete = null;
         response_cfs_lock.lock();
         try {
             // use index to avoid ConcurrentModificationException
@@ -1442,13 +1468,14 @@ class Stream<T> extends ExchangeImpl<T> {
                 CompletableFuture<Response> cf = response_cfs.get(i);
                 if (!cf.isDone()) {
                     response_cfs.remove(i);
-                    cf.completeExceptionally(t);
+                    toComplete = cf;
                     return;
                 }
             }
             response_cfs.add(MinimalFuture.failedFuture(t));
         } finally {
             response_cfs_lock.unlock();
+            if (toComplete != null) toComplete.completeExceptionally(t);
         }
     }
 
@@ -1514,12 +1541,28 @@ class Stream<T> extends ExchangeImpl<T> {
     }
 
     void connectionClosing(Throwable cause) {
-        Flow.Subscriber<?> subscriber =
-                responseSubscriber == null ? pendingResponseSubscriber : responseSubscriber;
-        errorRef.compareAndSet(null, cause);
-        if (subscriber != null && !sched.isStopped() && !inputQ.isEmpty()) {
+        boolean runScheduler = false;
+        // The inputQLock is needed to synchronize with the scheduler loop:
+        // if the scheduler loop pulls the last DATA frame that contains
+        // the END_STREAM, then without the lock, connectionClosing()
+        // may observe an empty inputQ and call cancelImpl() before
+        // the loop has a chance to call onComplete().
+        inputQLock.lock();
+        try {
+            errorRef.compareAndSet(null, cause);
+            if (!sched.isStopped() && !inputQ.isEmpty()) {
+                // avoid cancelling right away if we have buffered data.
+                runScheduler = true;
+            }
+        } finally {
+            inputQLock.unlock();
+        }
+        if (runScheduler) {
+            requestBodyCF.complete(null); // no need to continue sending
             sched.runOrSchedule();
-        } else cancelImpl(cause);
+        } else {
+            cancelImpl(cause);
+        }
     }
 
     // This method sends an RST_STREAM frame
@@ -1833,6 +1876,33 @@ class Stream<T> extends ExchangeImpl<T> {
      */
      boolean isCanceled() {
         return errorRef.get() != null;
+    }
+
+    /**
+     * Returns true if in closed/terminal state as defined by RFC 9113 (5.1).
+     * @return true if in closed/terminal state as defined by RFC 9113 (5.1).
+     */
+    boolean isTerminalState() {
+        // Closed locally or reset.
+        if (closed || streamState != 0) {
+            return true;
+        }
+        // Server finished sending.
+        if (!(endStreamSeen || endStreamReceived())) {
+            return false;
+        }
+        // Client finished sending. Never sends for PushedStream.
+        if (this instanceof PushedStream || requestBodyCF.isDone()) {
+            return true;
+        }
+        // Client finished sending for first request on an
+        // upgraded connection.
+        stateLock.lock();
+        try {
+            return requestSent;
+        } finally {
+            stateLock.unlock();
+        }
     }
 
     /**

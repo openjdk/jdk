@@ -51,7 +51,7 @@
  * @bug 6898462 8198826
  * @summary failed reallocations of scalar replaced objects during deoptimization causes crash
  *
- * @requires os.arch == "aarch64"
+ * @requires os.arch == "aarch64" | os.arch == "riscv64"
  * @requires vm.compiler2.enabled
  * @run main/othervm/timeout=480 -XX:-BackgroundCompilation -Xmx128M -XX:+IgnoreUnrecognizedVMOptions -XX:+VerifyStack
  *      -XX:CompileCommand=exclude,compiler.uncommontrap.TestDeoptOOM::main
@@ -65,7 +65,7 @@
  * @bug 8273456
  * @summary Test that ttyLock is ranked above StackWatermark_lock
  * @requires vm.gc.Z
- * @requires os.arch == "aarch64"
+ * @requires os.arch == "aarch64" | os.arch == "riscv64"
  * @requires vm.compiler2.enabled
  * @run main/othervm/timeout=480 -XX:-BackgroundCompilation -Xmx128M -XX:+IgnoreUnrecognizedVMOptions -XX:+VerifyStack
  *      -XX:CompileCommand=exclude,compiler.uncommontrap.TestDeoptOOM::main

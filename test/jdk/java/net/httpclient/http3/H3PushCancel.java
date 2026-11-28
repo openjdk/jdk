@@ -64,6 +64,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
@@ -384,6 +385,39 @@ public class H3PushCancel implements HttpServerAdapters {
         }
     }
 
+    @Test
+    public void testCancelPushFrameSent() throws Exception {
+        CompletableFuture<Long> cancelReceived = new CompletableFuture<>();
+
+        try (HttpClient client = newClientBuilderForH3()
+                .proxy(Builder.NO_PROXY)
+                .version(Version.HTTP_3)
+                .sslContext(SimpleSSLContext.findSSLContext())
+                .build()) {
+
+            sendHeadRequest(client);
+            pushHandler.setCancelPushListener(cancelReceived::complete);
+
+            PushPromiseHandler<String> custom = new PushPromiseHandler<>() {
+                @Override
+                public void applyPushPromise(HttpRequest initiatingRequest, HttpRequest pushPromiseRequest,
+                                             Function<BodyHandler<String>, CompletableFuture<HttpResponse<String>>> acceptor) {
+                }
+                @Override
+                public void applyPushPromise(HttpRequest initiatingRequest, HttpRequest pushPromiseRequest, PushId pushid,
+                                             Function<BodyHandler<String>, CompletableFuture<HttpResponse<String>>> acceptor) {
+                }
+            };
+
+            client.sendAsync(HttpRequest.newBuilder(uri).header("X-PromiseOnly", "true").build(),
+                    BodyHandlers.ofString(),
+                    custom).join();
+
+            // fails if sendCancelPush wrote no bytes (missing flip)
+            long cancelledId = cancelReceived.get();
+            assertTrue(cancelledId >= 0, "Server should receive CANCEL_PUSH");
+        }
+    }
 
     // --- server push handler ---
     static class ServerPushHandler implements HttpTestHandler {
@@ -391,6 +425,7 @@ public class H3PushCancel implements HttpServerAdapters {
         private final String mainResponseBody;
         private final Map<String,String> promises;
         private final ReentrantLock lock = new ReentrantLock();
+        private volatile Consumer<Long> cancelPushListener;
 
         public ServerPushHandler(String mainResponseBody,
                                  Map<String,String> promises)
@@ -399,6 +434,10 @@ public class H3PushCancel implements HttpServerAdapters {
             Objects.requireNonNull(promises);
             this.mainResponseBody = mainResponseBody;
             this.promises = promises;
+        }
+
+        void setCancelPushListener(Consumer<Long> listener) {
+            this.cancelPushListener = listener;
         }
 
         final AtomicInteger count = new AtomicInteger();
@@ -411,6 +450,12 @@ public class H3PushCancel implements HttpServerAdapters {
                 System.out.println("Server: handle " + exchange.getRequestURI());
                 try (InputStream is = exchange.getRequestBody()) {
                     is.readAllBytes();
+                }
+
+                Consumer<Long> listener = this.cancelPushListener;
+                if (listener != null) {
+                    exchange.setHttp3CancelPushListener(listener);
+                    this.cancelPushListener = null;
                 }
 
                 if (exchange.serverPushAllowed()) {
@@ -453,6 +498,20 @@ public class H3PushCancel implements HttpServerAdapters {
                     .firstValueAsLong("X-WaitForPushId").orElse(-1);
             long usePushId = exchange.getRequestHeaders()
                     .firstValueAsLong("X-UsePushId").orElse(-1);
+            boolean promiseOnly = exchange.getRequestHeaders()
+                    .firstValue("X-PromiseOnly").isPresent();
+            if (promiseOnly) {
+                URI pushUri = requestURI.resolve(promises.keySet().iterator().next());
+                HttpHeaders headers = HttpHeaders.of(Collections.emptyMap(), (x, y) -> true);
+                try {
+                    allowed = exchange.waitForHttp3MaxPushId(0);
+                } catch (InterruptedException ie) {
+                    ie.printStackTrace();
+                }
+                long pushId = exchange.sendHttp3PushPromiseFrame(-1, pushUri, headers);
+                System.err.println("Server: Sent promise-only frame: " + pushId);
+                return;
+            }
             if (waitForPushId >= 0) {
                 while (allowed <= waitForPushId) {
                     try {

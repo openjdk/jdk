@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8398147
  * @summary Test for CONTINUATION frame handling
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.http2.Http2TestServer jdk.test.lib.net.SimpleSSLContext
@@ -33,6 +34,7 @@
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.ProtocolException;
 import java.net.URI;
 import java.net.http.HttpHeaders;
 import java.nio.ByteBuffer;
@@ -49,6 +51,7 @@ import java.net.http.HttpResponse.BodyHandlers;
 
 import jdk.internal.net.http.common.HttpHeadersBuilder;
 import jdk.internal.net.http.frame.ContinuationFrame;
+import jdk.internal.net.http.frame.DataFrame;
 import jdk.internal.net.http.frame.HeaderFrame;
 import jdk.internal.net.http.frame.HeadersFrame;
 import jdk.internal.net.http.frame.Http2Frame;
@@ -59,6 +62,7 @@ import jdk.httpclient.test.lib.http2.Http2Handler;
 import jdk.httpclient.test.lib.http2.BodyOutputStream;
 import jdk.httpclient.test.lib.http2.Http2TestServerConnection;
 
+import jdk.internal.net.http.frame.PingFrame;
 import jdk.test.lib.net.SimpleSSLContext;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -67,6 +71,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import static java.lang.System.out;
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class ContinuationFrameTest {
 
@@ -151,6 +156,48 @@ public class ContinuationFrameTest {
         };
     }
 
+    /**
+     * A function that returns a list of 1) a CONTINUATION frame with headers
+     * and the END_HEADERS flag, 2) an empty DATA frame with END_STREAM
+     */
+    static BiFunction<Integer,List<ByteBuffer>,List<Http2Frame>> noHeaders =
+            (Integer streamid, List<ByteBuffer> encodedHeaders) -> {
+                List<ByteBuffer> empty =  List.of(ByteBuffer.wrap(new byte[0]));
+                ContinuationFrame cf = new ContinuationFrame(streamid,
+                        HeaderFrame.END_HEADERS,
+                        encodedHeaders);
+                DataFrame df = new DataFrame(streamid, HeaderFrame.END_STREAM, empty);
+
+                return List.of(cf, df);
+            };
+
+    /**
+     * A function that returns a list of 1) a HEADERS frame with END_STREAM
+     * ( and with an empty payload ), 2) a PING frame, 3) a CONTINUATION frame
+     * with headers and the END_HEADERS flag
+     */
+    static BiFunction<Integer,List<ByteBuffer>,List<Http2Frame>> strayPing =
+            (Integer streamid, List<ByteBuffer> encodedHeaders) -> {
+                List<ByteBuffer> empty =  List.of(ByteBuffer.wrap(new byte[0]));
+                HeadersFrame hf = new HeadersFrame(streamid, HeaderFrame.END_STREAM, empty);
+                PingFrame pf = new PingFrame(0, new byte[8]);
+                ContinuationFrame cf = new ContinuationFrame(streamid,
+                        HeaderFrame.END_HEADERS,
+                        encodedHeaders);
+
+                return List.of(hf, pf, cf);
+            };
+
+    static Object[][] badVariants() {
+        return new Object[][] {
+                { noBodyhttp2URI,  noHeaders },
+                { noBodyhttps2URI, noHeaders },
+
+                { noBodyhttp2URI,  strayPing },
+                { noBodyhttps2URI, strayPing },
+        };
+    }
+
     static final int ITERATION_COUNT = 20;
 
     static HttpClient sharedClient;
@@ -206,6 +253,20 @@ public class ContinuationFrameTest {
             assertEquals("Hello there!", resp.body());
             assertEquals(HTTP_2, resp.version());
         }
+    }
+
+    @ParameterizedTest
+    @MethodSource("badVariants")
+    void testBadContinuation(String uri,
+              BiFunction<Integer,List<ByteBuffer>,List<Http2Frame>> headerFramesSupplier) {
+        CFTHttp2TestExchange.setHeaderFrameSupplier(headerFramesSupplier);
+
+        HttpClient client = httpClient(true);
+        HttpRequest request = HttpRequest.newBuilder(URI.create(uri))
+                .POST(BodyPublishers.ofString("Hello there!"))
+                .build();
+        assertThrows(ProtocolException.class, ()->client.send(request, BodyHandlers.ofString()));
+
     }
 
     @BeforeAll
@@ -308,9 +369,7 @@ public class ContinuationFrameTest {
             if(headerFrames.get(0).getFlag(HeaderFrame.END_STREAM))
                 os.markClosed();
 
-            for (Http2Frame f : headerFrames) {
-                conn.addToOutputQ(f);
-            }
+            conn.addToOutputQ(headerFrames);
 
             os.goodToGo();
             System.err.println("Sent response headers " + rCode);

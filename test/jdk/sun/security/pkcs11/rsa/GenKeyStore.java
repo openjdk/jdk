@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 
 import java.io.*;
 import java.math.BigInteger;
+import java.time.Instant;
 import java.util.*;
 
 import java.security.*;
@@ -46,7 +47,7 @@ public class GenKeyStore {
     private static X509Certificate getCertificate(String suffix, PublicKey publicKey, PrivateKey privateKey) throws Exception {
         X500Name name = new X500Name("CN=Dummy Certificate " + suffix);
         String algorithm = "SHA1with" + publicKey.getAlgorithm();
-        Date date = new Date();
+        Instant instant = Instant.now();
         AlgorithmId algID = AlgorithmId.getAlgorithmId(algorithm);
 
         X509CertInfo certInfo = new X509CertInfo();
@@ -57,7 +58,7 @@ public class GenKeyStore {
         certInfo.set(X509CertInfo.SUBJECT, name);
         certInfo.set(X509CertInfo.ISSUER, name);
         certInfo.set(X509CertInfo.KEY, new CertificateX509Key(publicKey));
-        certInfo.set(X509CertInfo.VALIDITY, new CertificateValidity(date, date));
+        certInfo.set(X509CertInfo.VALIDITY, new CertificateValidity(instant, instant));
 
         X509CertImpl cert = new X509CertImpl(certInfo);
         cert.sign(privateKey, algorithm);

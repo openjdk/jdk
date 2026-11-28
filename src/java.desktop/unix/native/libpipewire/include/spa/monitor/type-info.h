@@ -5,13 +5,13 @@
 #ifndef SPA_DEVICE_TYPE_INFO_H
 #define SPA_DEVICE_TYPE_INFO_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <spa/utils/type-info.h>
 
 #include <spa/monitor/event.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * \addtogroup spa_device

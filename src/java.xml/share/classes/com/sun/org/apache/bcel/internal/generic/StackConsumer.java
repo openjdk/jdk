@@ -27,7 +27,10 @@ package com.sun.org.apache.bcel.internal.generic;
 public interface StackConsumer {
 
     /**
-     * @return how many words are consumed from stack
+     * Gets how many words are consumed from stack.
+     *
+     * @param cpg The constant pool generator.
+     * @return how many words are consumed from stack.
      */
     int consumeStack(ConstantPoolGen cpg);
 }

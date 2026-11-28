@@ -95,9 +95,9 @@ define_pd_global(bool, ValueTypeReturnedAsFields, false);
           "Extend i for r and o for w in the pred/succ flags of fence")          \
   product(bool, AvoidUnalignedAccesses, true,                                    \
           "Avoid generating unaligned memory accesses")                          \
-  product(bool, UseRVA20U64, true, "Use RVA20U64 profile")                       \
-  product(bool, UseRVA22U64, false, EXPERIMENTAL, "Use RVA22U64 profile")        \
-  product(bool, UseRVA23U64, false, EXPERIMENTAL, "Use RVA23U64 profile")        \
+  product(bool, UseRVA20U64, false, DIAGNOSTIC, "Use RVA20U64 profile")          \
+  product(bool, UseRVA22U64, false, DIAGNOSTIC, "Use RVA22U64 profile")          \
+  product(bool, UseRVA23U64, false, DIAGNOSTIC, "Use RVA23U64 profile")          \
   product(bool, UseRVC, false, DIAGNOSTIC, "Use RVC instructions")               \
   product(bool, UseRVV, false, DIAGNOSTIC, "Use RVV instructions")               \
   product(bool, UseZba, false, DIAGNOSTIC, "Use Zba instructions")               \
@@ -113,7 +113,6 @@ define_pd_global(bool, ValueTypeReturnedAsFields, false);
   product(bool, UseZalasr, false, EXPERIMENTAL, "Use Zalasr instructions")       \
   product(bool, UseZawrs, false, EXPERIMENTAL, "Use Zawrs instructions")         \
   product(bool, UseZcb, false, DIAGNOSTIC, "Use Zcb instructions")               \
-  product(bool, UseZic64b, false, EXPERIMENTAL, "Use Zic64b instructions")       \
   product(bool, UseZicbop, false, DIAGNOSTIC, "Use Zicbop instructions")         \
   product(bool, UseZiccid, false, EXPERIMENTAL,                                  \
           "Use Ziccid to omit icache flushes for atomic call patching")          \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,11 @@
 #include "gc/shared/gc_globals.hpp"
 #include "logging/logStream.hpp"
 #include "runtime/globals.hpp"
+#include "runtime/java.hpp"
 #include "runtime/os.hpp"
+#ifdef LINUX
+#include "os_linux.hpp"
+#endif
 
 G1NUMA* G1NUMA::_inst = nullptr;
 
@@ -62,15 +66,12 @@ const uint* G1NUMA::node_ids() const {
 }
 
 uint G1NUMA::index_of_node_id(uint node_id) const {
-  assert(node_id < _len_node_id_to_index_map, "invalid node id %d", node_id);
-  uint node_index = _node_id_to_index_map[node_id];
-  assert(node_index != G1NUMA::UnknownNodeIndex,
-         "invalid node id %d", node_id);
-  return node_index;
+  precond(node_id < _max_num_node_ids);
+  return _node_id_to_index_map[node_id];
 }
 
 G1NUMA::G1NUMA() :
-  _node_id_to_index_map(nullptr), _len_node_id_to_index_map(0),
+  _node_id_to_index_map(nullptr), _max_num_node_ids(0),
   _node_ids(nullptr), _num_active_node_ids(0),
   _region_size(0), _page_size(0), _stats(nullptr) {
 }
@@ -81,8 +82,8 @@ void G1NUMA::initialize_without_numa() {
   _node_ids = NEW_C_HEAP_ARRAY(uint, _num_active_node_ids, mtGC);
   _node_ids[0] = 0;
   // Map index 0 to node 0
-  _len_node_id_to_index_map = 1;
-  _node_id_to_index_map = NEW_C_HEAP_ARRAY(uint, _len_node_id_to_index_map, mtGC);
+  _max_num_node_ids = 1;
+  _node_id_to_index_map = NEW_C_HEAP_ARRAY(uint, _max_num_node_ids, mtGC);
   _node_id_to_index_map[0] = 0;
 }
 
@@ -92,24 +93,28 @@ void G1NUMA::initialize(bool use_numa) {
     return;
   }
 
-  assert(UseNUMA, "Invariant");
-  size_t num_node_ids = os::numa_get_groups_num();
+  guarantee(UseNUMA, "Must be enabled");
+#ifdef LINUX
+  const int max_num_node_ids = os::Linux::numa_max_node() + 1;
+  if (max_num_node_ids < 1) {
+    vm_exit_during_initialization("Cannot determine maximum number of available NUMA nodes. Run without NUMA using -XX:-UseNUMA");
+  }
+  _max_num_node_ids = checked_cast<uint>(max_num_node_ids);
+#endif /* LINUX */
+  const size_t num_node_ids = os::numa_get_groups_num();
+  if (num_node_ids > _max_num_node_ids) {
+    vm_exit_during_initialization("Cannot determine the number of available NUMA nodes. Run without NUMA using -XX:-UseNUMA");
+  }
 
   // Create an array of active node ids.
   _node_ids = NEW_C_HEAP_ARRAY(uint, num_node_ids, mtGC);
   _num_active_node_ids = checked_cast<uint>(os::numa_get_leaf_groups(_node_ids, num_node_ids));
 
-  uint max_node_id = 0;
-  for (uint i = 0; i < _num_active_node_ids; i++) {
-    max_node_id = MAX2(max_node_id, _node_ids[i]);
-  }
-
   // Create a mapping between node_id and index.
-  _len_node_id_to_index_map = max_node_id + 1;
-  _node_id_to_index_map = NEW_C_HEAP_ARRAY(uint, _len_node_id_to_index_map, mtGC);
+  _node_id_to_index_map = NEW_C_HEAP_ARRAY(uint, _max_num_node_ids, mtGC);
 
   // Set all indices with unknown node id.
-  for (uint i = 0; i < _len_node_id_to_index_map; i++) {
+  for (uint i = 0; i < _max_num_node_ids; i++) {
     _node_id_to_index_map[i] = G1NUMA::UnknownNodeIndex;
   }
 
@@ -158,8 +163,8 @@ uint G1NUMA::preferred_node_index_for_index(uint region_index) const {
 }
 
 uint G1NUMA::numa_id(uint index) const {
-  assert(index < _len_node_id_to_index_map, "Index %d out of range: [0,%d)",
-         index, _len_node_id_to_index_map);
+  assert(index < _num_active_node_ids, "Index %d out of range: [0,%d)",
+         index, _num_active_node_ids);
   return _node_ids[index];
 }
 

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2020, 2026, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/powerOfTwo.hpp"
 #ifdef COMPILER1
 #include "c1/c1_LIRAssembler.hpp"
 #include "c1/c1_MacroAssembler.hpp"
@@ -650,10 +651,15 @@ void ZBarrierSetAssembler::patch_barrier_relocation(address addr, int format) {
   int bytes;
   switch (format) {
     case ZBarrierRelocationFormatLoadBadMask:
+      assert(MacroAssembler::is_slli_at(addr), "invalid zgc barrier");
+      // Shift the load-bad bit into the sign bit for bgez.
+      Assembler::patch(addr, 25, 20, 63 - exact_log2(value));
+      bytes = MacroAssembler::instruction_size;
+      break;
     case ZBarrierRelocationFormatMarkBadMask:
     case ZBarrierRelocationFormatStoreGoodBits:
     case ZBarrierRelocationFormatStoreBadMask:
-      assert(MacroAssembler::is_li16u_at(addr), "invalide zgc barrier");
+      assert(MacroAssembler::is_li16u_at(addr), "invalid zgc barrier");
       bytes = MacroAssembler::pd_patch_instruction_size(addr, (address)(uintptr_t)value);
       break;
     default:
@@ -817,15 +823,26 @@ static void z_uncolor(LIR_Assembler* ce, LIR_Opr ref) {
   __ srli(ref->as_register(), ref->as_register(), ZPointerLoadShift);
 }
 
-static void check_color(LIR_Assembler* ce, LIR_Opr ref, bool on_non_strong) {
+static void check_color(LIR_Assembler* ce, LIR_Opr ref, bool on_non_strong, Label& good) {
   assert_different_registers(t0, xthread, ref->as_register());
   int format = on_non_strong ? ZBarrierRelocationFormatMarkBadMask
                              : ZBarrierRelocationFormatLoadBadMask;
-  Label good;
+  if (!on_non_strong) {
+    // The load bad mask is a single bit; shift it into the sign bit so the good check is a plain
+    // bgez. The GC patches the shamt field when the remapped bit changes. The raw _slli form must
+    // be used: for the zero unpatched shamt the slli wrapper emits a register move, leaving no
+    // shamt field for the patcher.
+    __ relocate(barrier_Relocation::spec(), [&] {
+      __ _slli(t0, ref->as_register(), barrier_Relocation::unpatched);
+    }, format);
+    __ bgez(t0, good);
+    return;
+  }
   __ relocate(barrier_Relocation::spec(), [&] {
     __ li16u(t0, barrier_Relocation::unpatched);
   }, format);
   __ andr(t0, ref->as_register(), t0);
+  __ beqz(t0, good);
 }
 
 void ZBarrierSetAssembler::generate_c1_color(LIR_Assembler* ce, LIR_Opr ref) const {
@@ -841,8 +858,7 @@ void ZBarrierSetAssembler::generate_c1_load_barrier(LIR_Assembler* ce,
                                                     ZLoadBarrierStubC1* stub,
                                                     bool on_non_strong) const {
   Label good;
-  check_color(ce, ref, on_non_strong);
-  __ beqz(t0, good);
+  check_color(ce, ref, on_non_strong, good);
   __ j(*stub->entry());
 
   __ bind(good);
@@ -1045,14 +1061,11 @@ void ZBarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Registe
 
   __ bind(check_zaddress);
   // Check if the oop is the right area of memory
-#if INCLUDE_CDS
   if (AOTCodeCache::is_on_for_dump()) {
     __ ld(tmp1, ExternalAddress(AOTRuntimeConstants::verify_oop_mask_address()));
     __ andr(tmp1, tmp1, obj);
     __ ld(obj, ExternalAddress(AOTRuntimeConstants::verify_oop_bits_address()));
-  } else
-#endif
-  {
+  } else {
     __ mv(tmp1, (intptr_t) Universe::verify_oop_mask());
     __ andr(tmp1, tmp1, obj);
     __ mv(obj, (intptr_t) Universe::verify_oop_bits());

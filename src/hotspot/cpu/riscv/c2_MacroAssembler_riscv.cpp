@@ -79,7 +79,7 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box,
 
   // Handle inflated monitor.
   Label inflated;
-  // Finish fast lock successfully. MUST branch to with flag == 0
+  // Finish fast lock successfully.
   Label locked;
   // Finish fast lock unsuccessfully. slow_path MUST branch to with flag != 0
   Label slow_path;
@@ -99,7 +99,7 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box,
 
   { // Fast locking
 
-    // Push lock to the lock stack and finish successfully. MUST branch to with flag == 0
+    // Push lock to the lock stack and finish successfully.
     Label push;
 
     const Register tmp2_top = tmp2;
@@ -248,10 +248,9 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box,
   mv(flag, zr);
 
 #ifdef ASSERT
-  // Check that locked label is reached with flag == 0.
+  // Skip the slow-path flag check.
   Label flag_correct;
-  beqz(flag, flag_correct);
-  stop("Fast Lock Flag != 0");
+  j(flag_correct);
 #endif
 
   bind(slow_path);
@@ -275,7 +274,7 @@ void C2_MacroAssembler::fast_unlock(Register obj, Register box,
 
   // Handle inflated monitor.
   Label inflated, inflated_load_mark;
-  // Finish fast unlock successfully. unlocked MUST branch to with flag == 0
+  // Finish fast unlock successfully.
   Label unlocked;
   // Finish fast unlock unsuccessfully. MUST branch to with flag != 0
   Label slow_path;
@@ -401,7 +400,6 @@ void C2_MacroAssembler::fast_unlock(Register obj, Register box,
     // to reacquire the lock in SharedRuntime::monitor_exit_helper().
     sd(tmp1_monitor, Address(xthread, JavaThread::unlocked_inflated_monitor_offset()));
 
-    mv(flag, 1);
     j(slow_path);
   }
 
@@ -409,17 +407,16 @@ void C2_MacroAssembler::fast_unlock(Register obj, Register box,
   mv(flag, zr);
 
 #ifdef ASSERT
-  // Check that unlocked label is reached with flag == 0.
+  // Skip the slow-path flag check.
   Label flag_correct;
-  beqz(flag, flag_correct);
-  stop("Fast Lock Flag != 0");
+  j(flag_correct);
 #endif
 
   bind(slow_path);
 #ifdef ASSERT
   // Check that slow_path label is reached with flag != 0.
   bnez(flag, flag_correct);
-  stop("Fast Lock Flag == 0");
+  stop("Fast Unlock Flag == 0");
   bind(flag_correct);
 #endif
   // C2 uses the value of flag (0 vs !0) to determine the continuation.
@@ -656,6 +653,8 @@ void C2_MacroAssembler::string_indexof(Register haystack, Register needle,
                                        Register result, int ae)
 {
   assert(ae != StrIntrinsicNode::LU, "Invalid encoding");
+  assert_different_registers(haystack, needle, haystack_len, needle_len, result,
+                             tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, t0, t1);
 
   Label LINEARSEARCH, LINEARSTUB, DONE, NOMATCH;
 
@@ -885,11 +884,8 @@ void C2_MacroAssembler::string_indexof(Register haystack, Register needle,
     // affect performance on in-order systems with 2 or more ld/st pipelines
     srli(tmp3, tmp6, BitsPerByte * (wordSize - needle_chr_size)); // UU/LL: pattern[m-1]
   }
-  if (!isLL) { // UU/UL case
-    slli(ch2, nlen_tmp, 1); // offsets in bytes
-  }
   bne(tmp3, skipch, BMSKIP); // if not equal, skipch is bad char
-  add(result, haystack, isLL ? nlen_tmp : ch2);
+  shift_left_add(result, nlen_tmp, haystack, haystack_chr_shift);
   // load 8 bytes from source string
   // if isLL is false then read granularity can be 2
   load_long_misaligned(ch2, Address(result), ch1, isLL ? 1 : 2); // can use ch1 as temp register here as it will be trashed by next mv anyway
@@ -2882,11 +2878,8 @@ void C2_MacroAssembler::element_compare(Register a1, Register a2, Register resul
   vfirst_m(tmp2, vrs);
   bgez(tmp2, DONE);
   sub(cnt, cnt, tmp1);
-  if (!islatin) {
-    slli(tmp1, tmp1, 1); // get byte counts
-  }
-  add(a1, a1, tmp1);
-  add(a2, a2, tmp1);
+  shift_left_add(a1, tmp1, a1, islatin ? 0 : 1, tmp2);
+  shift_left_add(a2, tmp1, a2, islatin ? 0 : 1, tmp2);
   bnez(cnt, loop);
 
   mv(result, true);
@@ -3155,6 +3148,7 @@ void C2_MacroAssembler::string_indexof_char_v(Register str1, Register cnt1,
                                               Register ch, Register result,
                                               Register tmp1, Register tmp2,
                                               bool isL) {
+  assert_different_registers(str1, cnt1, ch, result, tmp1, tmp2);
   mv(result, zr);
 
   Label loop, MATCH, DONE;
@@ -3168,8 +3162,7 @@ void C2_MacroAssembler::string_indexof_char_v(Register str1, Register cnt1,
 
   add(result, result, tmp1);
   sub(cnt1, cnt1, tmp1);
-  if (!isL) slli(tmp1, tmp1, 1);
-  add(str1, str1, tmp1);
+  shift_left_add(str1, tmp1, str1, isL ? 0 : 1, tmp1);
   bnez(cnt1, loop);
 
   mv(result, -1);
@@ -3615,5 +3608,17 @@ void C2_MacroAssembler::slidedown_v(VectorRegister dst, VectorRegister src,
   } else {
     mv(tmp, offset);
     vslidedown_vx(dst, src, tmp);
+  }
+}
+
+// Move elements up a vector register group.
+// Offset is the start index (offset) for the destination.
+void C2_MacroAssembler::slideup_v(VectorRegister dst, VectorRegister src,
+                                  uint32_t offset, Register tmp) {
+  if (is_uimm5(offset)) {
+    vslideup_vi(dst, src, offset);
+  } else {
+    mv(tmp, offset);
+    vslideup_vx(dst, src, tmp);
   }
 }

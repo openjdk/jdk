@@ -24,21 +24,24 @@ package com.sun.org.apache.bcel.internal.generic;
 /**
  * LNEG - Negate long
  *
- * <PRE>
+ * <pre>
  * Stack: ..., value.word1, value.word2 -&gt; ..., result.word1, result.word2
- * </PRE>
+ * </pre>
  */
 public class LNEG extends ArithmeticInstruction {
 
+    /**
+     * Constructs an LNEG instruction.
+     */
     public LNEG() {
         super(com.sun.org.apache.bcel.internal.Const.LNEG);
     }
 
     /**
      * Call corresponding visitor method(s). The order is: Call visitor methods of implemented interfaces first, then call
-     * methods according to the class hierarchy in descending order, i.e., the most specific visitXXX() call comes last.
+     * methods according to the class hierarchy in descending order, that is, the most specific visitXXX() call comes last.
      *
-     * @param v Visitor object
+     * @param v Visitor object.
      */
     @Override
     public void accept(final Visitor v) {

@@ -39,6 +39,10 @@ StoredEdge::StoredEdge(const StoredEdge& edge) : Edge(edge), _gc_root_id(edge._g
 
 traceid EdgeStore::_edge_id_counter = 0;
 
+traceid EdgeStore::allocate_id() {
+  return ++_edge_id_counter;
+}
+
 bool EdgeStore::is_empty() const {
   return !_edges->has_entries();
 }
@@ -46,7 +50,7 @@ bool EdgeStore::is_empty() const {
 void EdgeStore::on_link(EdgeEntry* entry) {
   assert(entry != nullptr, "invariant");
   assert(entry->id() == 0, "invariant");
-  entry->set_id(++_edge_id_counter);
+  entry->set_id(allocate_id());
 }
 
 bool EdgeStore::on_equals(uintptr_t hash, const EdgeEntry* entry) {

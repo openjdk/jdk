@@ -301,7 +301,7 @@ public class UnicodeReader {
 
         for (int i = 0; i < 4; i++) {
             // Translate and merge digit.
-            int digit = index < length ? Character.digit(buffer[index], 16) : -1;
+            int digit = index < length && buffer[index] < 0x80 ? Character.digit(buffer[index], 16) : -1;
             code = code << 4 | digit;
 
             // If invalid digit.

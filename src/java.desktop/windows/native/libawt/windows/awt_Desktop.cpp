@@ -113,16 +113,15 @@ JNIEXPORT jstring JNICALL Java_sun_awt_windows_WDesktopPeer_ShellExecute
     if ((int)((intptr_t)retval) <= 32) {
         // ShellExecute failed.
         LPTSTR buffer = NULL;
-        int len = ::FormatMessage(
-                    FORMAT_MESSAGE_ALLOCATE_BUFFER |
-                    FORMAT_MESSAGE_FROM_SYSTEM  |
-                    FORMAT_MESSAGE_IGNORE_INSERTS,
-                    NULL,
-                    error,
-                    MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), // Default language
-                    (LPTSTR)&buffer,
-                    0,
-                    NULL );
+        ::FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |
+                        FORMAT_MESSAGE_FROM_SYSTEM  |
+                        FORMAT_MESSAGE_IGNORE_INSERTS,
+                        NULL,
+                        error,
+                        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), // Default language
+                        (LPTSTR)&buffer,
+                        0,
+                        NULL);
 
         if (buffer) {
             jstring errmsg = JNU_NewStringPlatform(env, buffer);

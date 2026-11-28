@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,9 +107,9 @@ char* ZMountPoint::find_preferred_mountpoint(const char* filesystem,
                                               ZArray<char*>* mountpoints,
                                               const char** preferred_mountpoints) const {
   // Find preferred mount point
-  ZArrayIterator<char*> iter1(mountpoints);
-  for (char* mountpoint; iter1.next(&mountpoint);) {
-    for (const char** preferred = preferred_mountpoints; *preferred != nullptr; preferred++) {
+  for (const char** preferred = preferred_mountpoints; *preferred != nullptr; preferred++) {
+    ZArrayIterator<char*> iter1(mountpoints);
+    for (char* mountpoint; iter1.next(&mountpoint);) {
       if (!strcmp(mountpoint, *preferred)) {
         // Preferred mount point found
         return os::strdup(mountpoint, mtGC);

@@ -546,6 +546,7 @@ class Assembler : public AbstractAssembler {
     MTVSRD_OPCODE  = (31u << OPCODE_SHIFT |  179u << 1),
     MTVSRDD_OPCODE = (31u << OPCODE_SHIFT |  435u << 1),
     MTVSRWZ_OPCODE = (31u << OPCODE_SHIFT |  243u << 1),
+    MTVSRWS_OPCODE = (31u << OPCODE_SHIFT |  403u << 1),
     MFVSRD_OPCODE  = (31u << OPCODE_SHIFT |   51u << 1),
     MFVSRLD_OPCODE = (31u << OPCODE_SHIFT |  307u << 1),
     MTVSRWA_OPCODE = (31u << OPCODE_SHIFT |  211u << 1),
@@ -579,6 +580,7 @@ class Assembler : public AbstractAssembler {
     XVSQRTSP_OPCODE= (60u << OPCODE_SHIFT |  139u << 2),
     XVSQRTDP_OPCODE= (60u << OPCODE_SHIFT |  203u << 2),
     XSCVDPSPN_OPCODE=(60u << OPCODE_SHIFT |  267u << 2),
+    XSCVSPDPN_OPCODE=(60u << OPCODE_SHIFT |  331u << 2),
     XVADDDP_OPCODE = (60u << OPCODE_SHIFT |   96u << 3),
     XVSUBDP_OPCODE = (60u << OPCODE_SHIFT |  104u << 3),
     XVMULSP_OPCODE = (60u << OPCODE_SHIFT |   80u << 3),
@@ -2420,6 +2422,7 @@ class Assembler : public AbstractAssembler {
   inline void mfvsrld(  Register        d, VectorSRegister a); // Requires Power9.
   inline void mtvsrdd(  VectorSRegister d, Register a, Register b);
   inline void mtvsrwz(  VectorSRegister d, Register a);
+  inline void mtvsrws(  VectorSRegister d, Register a); // Requires Power9.
   inline void mfvsrwz(  Register        d, VectorSRegister a);
   inline void xxspltw(  VectorSRegister d, VectorSRegister b, int ui2);
   inline void xxlor(    VectorSRegister d, VectorSRegister a, VectorSRegister b);
@@ -2446,6 +2449,7 @@ class Assembler : public AbstractAssembler {
   inline void xvsqrtsp( VectorSRegister d, VectorSRegister b);
   inline void xvsqrtdp( VectorSRegister d, VectorSRegister b);
   inline void xscvdpspn(VectorSRegister d, VectorSRegister b);
+  inline void xscvspdpn(VectorSRegister d, VectorSRegister b);
   inline void xvadddp(  VectorSRegister d, VectorSRegister a, VectorSRegister b);
   inline void xvsubdp(  VectorSRegister d, VectorSRegister a, VectorSRegister b);
   inline void xvmulsp(  VectorSRegister d, VectorSRegister a, VectorSRegister b);
@@ -2479,6 +2483,8 @@ class Assembler : public AbstractAssembler {
   // Vector-Scalar (VSX) instructions.
   inline void mtfprd(   FloatRegister   d, Register a);
   inline void mtfprwa(  FloatRegister   d, Register a);
+  inline void mtfprwz(  FloatRegister   d, Register a);
+  inline void mtfprws(  FloatRegister   d, Register a); // Requires Power9.
   inline void mffprd(   Register        a, FloatRegister d);
 
   // Deliver A Random Number (introduced with POWER9)
@@ -2659,10 +2665,14 @@ class Assembler : public AbstractAssembler {
   // Tmp can be used to increase ILP. Set return_simm16_rest = true to get a
   // 16 bit immediate offset. This is useful if the offset can be encoded in
   // a succeeding instruction.
-         int load_const_optimized(Register d, long a,  Register tmp = noreg, bool return_simm16_rest = false);
+  int load_const_optimized(Register d, long a, Register tmp = noreg, bool return_simm16_rest = false);
   inline int load_const_optimized(Register d, void* a, Register tmp = noreg, bool return_simm16_rest = false) {
     return load_const_optimized(d, (long)(unsigned long)a, tmp, return_simm16_rest);
   }
+  // Load a single contiguous run of one bits (or wrapping run) in 2 insns; returns false if x is not such a value.
+  bool load_consec_ones(Register d, long x);
+  // Load a 16-bit field shifted into place (rest all zeros) in 2 insns; returns false if x is not such a value.
+  bool load_field16(Register d, long x);
 
   // If return_simm16_rest, the return value needs to get added afterwards.
          int add_const_optimized(Register d, Register s, long x, Register tmp = R0, bool return_simm16_rest = false);

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -351,14 +352,12 @@ class Http2Connection implements Closeable {
 
     private final class PushPromiseDecoder extends HeaderDecoder implements DecodingCallback {
 
-        final int parentStreamId;
         final int pushPromiseStreamId;
         final Stream<?> parent;
         final AtomicReference<Throwable> errorRef = new AtomicReference<>();
 
-        PushPromiseDecoder(int parentStreamId, int pushPromiseStreamId, Stream<?> parent) {
+        PushPromiseDecoder(int pushPromiseStreamId, Stream<?> parent) {
             super(Context.REQUEST);
-            this.parentStreamId = parentStreamId;
             this.pushPromiseStreamId = pushPromiseStreamId;
             this.parent = parent;
         }
@@ -942,30 +941,32 @@ class Http2Connection implements Closeable {
      */
     void processFrame(Http2Frame frame) throws IOException {
         Log.logFrames(frame, "IN");
-        int streamid = frame.streamid();
-        if (frame instanceof MalformedFrame) {
-            Log.logError(((MalformedFrame) frame).getMessage());
-            if (streamid == 0) {
-                framesDecoder.close("Malformed frame on stream 0");
-                protocolError(((MalformedFrame) frame).getErrorCode(),
-                        ((MalformedFrame) frame).getMessage());
+        if (frame instanceof MalformedFrame malformedFrame) {
+            Log.logError(malformedFrame.getMessage());
+            if (malformedFrame.isConnectionError()) {
+                protocolError(malformedFrame.getErrorCode(),
+                        malformedFrame.getMessage());
             } else {
-                if (debug.on())
-                    debug.log(() -> "Reset stream: " + ((MalformedFrame) frame).getMessage());
-                resetStream(streamid, ((MalformedFrame) frame).getErrorCode());
+                int errorStream = malformedFrame.streamid();
+                Stream<?> stream = getStream(errorStream);
+                if (stream != null && !stream.isTerminalState()) {
+                    if (debug.on())
+                        debug.log(() -> "Reset stream " + errorStream + ": "
+                                + malformedFrame.getMessage());
+                    stream.onProtocolError(new ProtocolException(
+                            malformedFrame.getMessage()),
+                            malformedFrame.getErrorCode());
+                } else if (debug.on()) {
+                    debug.log(() -> "Ignoring malformed frame on idle or closed stream "
+                            + errorStream + ": " + malformedFrame.getMessage());
+                }
             }
             return;
         }
+        int streamid = frame.streamid();
         if (streamid == 0) {
             handleConnectionFrame(frame);
         } else {
-            if (frame instanceof SettingsFrame) {
-                // The stream identifier for a SETTINGS frame MUST be zero
-                protocolError(ErrorFrame.PROTOCOL_ERROR,
-                        "The stream identifier for a SETTINGS frame MUST be zero");
-                return;
-            }
-
             if (frame instanceof PushPromiseFrame && !serverPushEnabled()) {
                 String protocolError = "received a PUSH_PROMISE when SETTINGS_ENABLE_PUSH is 0";
                 protocolError(ErrorFrame.PROTOCOL_ERROR, protocolError);
@@ -983,8 +984,6 @@ class Http2Connection implements Closeable {
             }
             PushContinuationState pcs = pushContinuationState;
             if (stream == null && pcs == null) {
-                // Should never receive a frame with unknown stream id
-
                 if (frame instanceof HeaderFrame hf) {
                     String protocolError = checkMaxOrphanedHeadersExceeded(hf);
                     if (protocolError != null) {
@@ -1020,9 +1019,6 @@ class Http2Connection implements Closeable {
                         } else {
                             resetStream(streamid, ResetFrame.PROTOCOL_ERROR);
                         }
-                    } else if (streamid >= nextstreamid) {
-                        // otherwise the stream has already been reset/closed
-                        resetStream(streamid, ResetFrame.PROTOCOL_ERROR);
                     }
                 }
                 return;
@@ -1161,7 +1157,7 @@ class Http2Connection implements Closeable {
         // always decode the headers as they may affect connection-level HPACK
         // decoding state
         assert pushContinuationState == null;
-        PushPromiseDecoder decoder = new PushPromiseDecoder(streamId, promisedStreamid, parent);
+        PushPromiseDecoder decoder = new PushPromiseDecoder(promisedStreamid, parent);
         decodeHeaders(pp, decoder);
         if (pp.endHeaders()) {
             if (decoder.errorRef.get() == null) {

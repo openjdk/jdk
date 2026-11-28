@@ -136,6 +136,9 @@ If a `@Test` annotated method has multiple preconditions (for example `applyIf` 
 
 Platform attributes are evaluated as a logical conjunction, and take precedence over VM Flag attributes. An example with both `applyIfPlatformXXX` and `applyIfXXX` can be found in [TestPreconditions](../../../testlibrary_tests/ir_framework/tests/TestPreconditions.java) (internal framework test).
 
+#### Disable IR Rules Due to Compiler Problems
+If an IR rule is failing due to compiler problems (e.g. not emitting the expected shape, compile phase wrongly skipped etc.) without having an immediate fix, it is preferred to additionally specify the `skip` attribute of [@IR](./IR.java): `@IR(skip = true, ...)` to disable IR matching of that particular IR rule over commenting it out. This allows to still perform IR matching for skipped IR rules on demand by passing the property flag `-DIgnoreSkipIR=true`. This can be useful when trying to quickly verify if a disabled IR rule is still failing or not.
+
 #### Implicitly Skipping IR Verification
 An IR verification cannot always be performed. Certain VM flags explicitly disable IR verification, change the IR shape in unexpected ways letting IR rules fail or even make IR verification impossible:
 
@@ -173,8 +176,8 @@ testFramework
 The framework provides various stress and debug flags. They should mainly be used as JTreg VM and/or Javaoptions (apart from `VerifyIR`). The following (property) flags are supported:
 
 - `-DVerifyIR=false`: Explicitly disable IR verification. This is useful, for example, if some scenarios use VM flags that let `@IR` annotation rules fail and the user does not want to provide separate IR rules or add flag preconditions to the already existing IR rules.
-- `-DTest=test1,test2`: Provide a list of `@Test` method names which should be executed. Case-insensitive, plural is allowed (`-DTests`, `-Dtest`, `Dtests` are all fine).
-- `-DExclude=test3`: Provide a list of `@Test` method names which should be excluded from execution. Case-insensitive, plural is allowed.
+- `-DTest=test1,test2`: Provide a list of `@Test` method names which should be executed. When one of these `@Test`-methods is called from a `@Run`-method that specifies multiple `@Test`-methods, then all of these methods will be run. Case-insensitive, plural is allowed (`-DTests`, `-Dtest`, `Dtests` are all fine).
+- `-DExclude=test3`: Provide a list of `@Test` method names which should be excluded from execution. When one of these `@Test`-methods is called from a `@Run`-method that specifies multiple `@Test`-methods, then the entire `@Run`-method is excluded which excludes all its `@Test`-methods as well. Case-insensitive, plural is allowed.
 - `-DScenario=1,2`: Provide a list of scenario indexes to specify which scenarios should be executed. Case-insensitive, plural is allowed.
 - `-DWarmup=200`: Provide a new default value of the number of warm-up iterations (framework default is 2000). This might have an influence on the resulting IR and could lead to matching failures (the user can also set a fixed default warm-up value in a test with `testFrameworkObject.setDefaultWarmup(200)`).
 - `-DReportStdout=true`: Print the standard output of the Test VM.
@@ -193,6 +196,7 @@ The framework provides various stress and debug flags. They should mainly be use
 - `-DIgnoreCompilerControls=true`: Ignore all compiler controls applied in the framework. This includes any compiler control annotations (`@DontCompile`, `@DontInline`, `@ForceCompile`, `@ForceInline`, `@ForceCompileStaticInitializer`), the exclusion of `@Run` and `@Check` methods from compilation, and the directive to not inline `@Test` annotated methods.
 - `-DPreferCommandLineFlags=true`: Prefer flags set via the command line over flags specified by the tests.
 - `-DIgnoreSkip=true`: Additionally run all skipped tests (i.e. tests with a `@Skip` annotation).
+- `-DIgnoreSkipIR=true`: Additionally perform IR matching of all skipped `@IR` rules (i.e. `@IR` rules with `@IR(skip = true, ...)`).
 
 ## 3. Test Framework Execution
 This section gives an overview of how the framework is executing a JTreg test that calls the framework from within its `main()` method.
