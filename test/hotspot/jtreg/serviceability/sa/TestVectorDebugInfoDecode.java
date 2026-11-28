@@ -54,6 +54,7 @@ import java.util.Set;
  * @summary Test SA debug info decoding with Vector API locations in a compiled frame
  * @requires vm.hasSA
  * @requires vm.compiler2.enabled
+ * @requires vm.gc != "Z"
  * @requires os.simpleArch == "x64" | os.arch == "aarch64"
  * @requires vm.opt.final.MaxVectorSize == null | vm.opt.final.MaxVectorSize >= 16
  * @library /test/lib
